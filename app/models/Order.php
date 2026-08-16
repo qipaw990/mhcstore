@@ -121,6 +121,7 @@ class Order extends Model
                 WHERE o.delivery_man_id IS NULL
                   AND o.zone_id = ?
                   AND o.order_status IN ('confirmed', 'processing', 'handover')
+                  AND (o.payment_method = 'cod' OR o.payment_status = 'paid')
                 ORDER BY o.id ASC";
         $orders = Database::query($sql, [$zoneId]);
         foreach ($orders as &$o) {

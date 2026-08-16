@@ -92,6 +92,10 @@ class OrderService
             $orderCode = 'CCG-' . strtoupper(substr(uniqid(), -6)) . rand(10, 99);
             $otp = str_pad((string)rand(1000, 9999), 4, '0', STR_PAD_LEFT);
 
+            $isCodOrPaid = ($paymentMethod === 'cod' || $paymentStatus === 'paid');
+            $orderStatus = $isCodOrPaid ? 'confirmed' : 'pending';
+            $confirmedAt = $isCodOrPaid ? date('Y-m-d H:i:s') : null;
+
             // Create Order record
             $orderId = Database::insert('orders', [
                 'order_code'            => $orderCode,
@@ -108,13 +112,13 @@ class OrderService
                 'total_amount'          => $totalAmount,
                 'payment_status'        => $paymentStatus,
                 'payment_method'        => $paymentMethod,
-                'order_status'          => 'confirmed', // Auto-confirmed for fast on-demand
+                'order_status'          => $orderStatus,
                 'order_type'            => $data['order_type'] ?? 'delivery',
                 'delivery_address_json' => json_encode($data['delivery_address'] ?? []),
                 'order_notes'           => $data['order_notes'] ?? null,
                 'otp'                   => $otp,
                 'distance_km'           => $distanceKm,
-                'confirmed_at'          => date('Y-m-d H:i:s')
+                'confirmed_at'          => $confirmedAt
             ]);
 
             // Create Order Items
@@ -189,6 +193,10 @@ class OrderService
             $orderCode = 'PCL-' . strtoupper(substr(uniqid(), -6)) . rand(10, 99);
             $otp = str_pad((string)rand(1000, 9999), 4, '0', STR_PAD_LEFT);
 
+            $isCodOrPaid = ($paymentMethod === 'cod' || $paymentStatus === 'paid');
+            $orderStatus = $isCodOrPaid ? 'confirmed' : 'pending';
+            $confirmedAt = $isCodOrPaid ? date('Y-m-d H:i:s') : null;
+
             $orderId = Database::insert('orders', [
                 'order_code'            => $orderCode,
                 'customer_id'           => $customerId,
@@ -203,14 +211,14 @@ class OrderService
                 'total_amount'          => $totalAmount,
                 'payment_status'        => $paymentStatus,
                 'payment_method'        => $paymentMethod,
-                'order_status'          => 'confirmed',
+                'order_status'          => $orderStatus,
                 'order_type'            => 'parcel',
                 'delivery_address_json' => json_encode($data['destination_address'] ?? []),
                 'order_notes'           => $data['parcel_notes'] ?? 'Pengiriman Paket Kilat Cicalengka',
                 'otp'                   => $otp,
                 'distance_km'           => $distanceKm,
                 'parcel_details_json'   => json_encode($data['parcel_details'] ?? []),
-                'confirmed_at'          => date('Y-m-d H:i:s')
+                'confirmed_at'          => $confirmedAt
             ]);
 
             return [

@@ -63,6 +63,8 @@ Router::post('/parcel/place', [OrderController::class, 'placeParcel'], ['AuthMid
 Router::get('/orders', [OrderController::class, 'ordersList'], ['AuthMiddleware']);
 Router::get('/orders/{code}/tracking', [OrderController::class, 'tracking']);
 Router::get('/orders/{code}/live-tracking', [OrderController::class, 'getLiveTracking']);
+Router::post('/orders/get-snap-token', [OrderController::class, 'getSnapToken'], ['AuthMiddleware']);
+Router::post('/orders/cancel-unpaid', [OrderController::class, 'cancelUnpaid'], ['AuthMiddleware']);
 Router::get('/orders/{code}', [OrderController::class, 'showOrder']);
 
 // ==========================================

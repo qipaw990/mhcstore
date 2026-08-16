@@ -18,6 +18,34 @@
     <?php else: ?>
         <div class="d-flex flex-column gap-3">
             <?php foreach ($orders as $order): ?>
+                <?php
+                $isCanceled = ($order['order_status'] === 'canceled');
+                $isUnpaid = ($order['payment_method'] === 'midtrans' && $order['payment_status'] !== 'paid' && !$isCanceled);
+                
+                $status = $order['order_status'];
+                $badgeClass = 'bg-secondary';
+                $statusLabel = $status;
+
+                if ($isCanceled) {
+                    $badgeClass = 'bg-danger-subtle text-danger border border-danger-subtle';
+                    $statusLabel = 'Dibatalkan';
+                } elseif ($isUnpaid) {
+                    $badgeClass = 'bg-warning-subtle text-warning-emphasis border border-warning';
+                    $statusLabel = 'Menunggu Pembayaran';
+                } elseif ($status === 'confirmed') {
+                    $badgeClass = 'bg-info-subtle text-info border border-info-subtle';
+                    $statusLabel = 'Dikonfirmasi';
+                } elseif ($status === 'processing') {
+                    $badgeClass = 'bg-warning-subtle text-warning border border-warning-subtle';
+                    $statusLabel = 'Diproses Resto';
+                } elseif ($status === 'on_the_way') {
+                    $badgeClass = 'bg-primary-subtle text-primary border border-primary-subtle';
+                    $statusLabel = 'Sedang Diantar';
+                } elseif ($status === 'delivered') {
+                    $badgeClass = 'bg-success-subtle text-success border border-success-subtle';
+                    $statusLabel = 'Selesai';
+                }
+                ?>
                 <div class="p-3 bg-white rounded-4 border shadow-sm">
                     <div class="d-flex align-items-center justify-content-between mb-2">
                         <div class="d-flex align-items-center gap-2">
@@ -27,17 +55,6 @@
                             <span class="fw-bold small" style="color: var(--gojek-charcoal);"><?= empty($order['items']) ? 'GoSend' : 'GoFood' ?></span>
                             <span class="text-muted" style="font-size: 11px;">#<?= htmlspecialchars($order['order_code']) ?></span>
                         </div>
-                        
-                        <?php
-                        $status = $order['order_status'];
-                        $badgeClass = 'bg-secondary';
-                        $statusLabel = $status;
-                        if ($status === 'confirmed') { $badgeClass = 'bg-info-subtle text-info'; $statusLabel = 'Dikonfirmasi'; }
-                        elseif ($status === 'processing') { $badgeClass = 'bg-warning-subtle text-warning'; $statusLabel = 'Diproses Resto'; }
-                        elseif ($status === 'on_the_way') { $badgeClass = 'bg-primary-subtle text-primary'; $statusLabel = 'Sedang Diantar'; }
-                        elseif ($status === 'delivered') { $badgeClass = 'bg-success-subtle text-success'; $statusLabel = 'Selesai'; }
-                        elseif ($status === 'canceled') { $badgeClass = 'bg-danger-subtle text-danger'; $statusLabel = 'Dibatalkan'; }
-                        ?>
                         <span class="badge <?= $badgeClass ?> fw-bold" style="font-size: 10px;"><?= $statusLabel ?></span>
                     </div>
 
@@ -59,12 +76,26 @@
 
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
-                            <div class="text-muted" style="font-size: 10px;">Total Pembayaran</div>
-                            <div class="fw-bold text-dark fs-6"><?= format_rupiah($order['total_amount']) ?></div>
+                            <div class="text-muted" style="font-size: 10px;">
+                                <?= $isUnpaid ? 'Total Tagihan' : 'Total Pembayaran' ?>
+                                <span class="fw-semibold">(<?= strtoupper($order['payment_method']) ?>)</span>
+                            </div>
+                            <div class="fw-bold <?= $isUnpaid ? 'text-danger' : 'text-dark' ?> fs-6"><?= format_rupiah($order['total_amount']) ?></div>
                         </div>
-                        <a href="<?= $baseUrl ?>/orders/<?= $order['order_code'] ?>/tracking" class="btn btn-sm rounded-pill fw-bold px-3 text-white shadow-xs" style="background:#EE2737; font-size: 11px;">
-                            <i class="bi bi-geo-alt-fill me-1"></i> Lacak Live
-                        </a>
+
+                        <?php if ($isUnpaid): ?>
+                            <a href="<?= $baseUrl ?>/orders/<?= $order['order_code'] ?>/tracking" class="btn btn-sm rounded-pill fw-bold px-3 text-white shadow-xs" style="background:#EE2737; font-size: 11px;">
+                                <i class="bi bi-credit-card-2-front-fill me-1"></i> Bayar Sekarang
+                            </a>
+                        <?php elseif ($isCanceled): ?>
+                            <a href="<?= $baseUrl ?>" class="btn btn-sm rounded-pill fw-semibold px-3 btn-light border" style="font-size: 11px;">
+                                <i class="bi bi-arrow-clockwise me-1"></i> Pesan Lagi
+                            </a>
+                        <?php else: ?>
+                            <a href="<?= $baseUrl ?>/orders/<?= $order['order_code'] ?>/tracking" class="btn btn-sm rounded-pill fw-bold px-3 text-white shadow-xs" style="background:#EE2737; font-size: 11px;">
+                                <i class="bi bi-geo-alt-fill me-1"></i> Lacak Live
+                            </a>
+                        <?php endif; ?>
                     </div>
                 </div>
             <?php endforeach; ?>

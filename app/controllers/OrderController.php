@@ -232,11 +232,145 @@ class OrderController extends Controller
             return;
         }
 
+        $snapToken = null;
+        $clientKey = $this->midtransService->getClientKey();
+        $snapUrl   = $this->midtransService->getSnapUrl();
+
+        if ($order['payment_method'] === 'midtrans' && $order['payment_status'] !== 'paid' && $order['order_status'] !== 'canceled') {
+            try {
+                $user = auth_user() ?: ['name' => 'Pelanggan', 'email' => 'customer@cicalengkago.id', 'phone' => '081234567890'];
+                $snapParams = [
+                    'transaction_details' => [
+                        'order_id'     => $order['order_code'],
+                        'gross_amount' => (int)round((float)$order['total_amount'])
+                    ],
+                    'customer_details' => [
+                        'first_name' => $order['delivery_address']['contact_name'] ?? ($user['name'] ?? 'Pelanggan'),
+                        'email'      => $user['email'] ?? 'customer@cicalengkago.id',
+                        'phone'      => $order['delivery_address']['contact_phone'] ?? ($user['phone'] ?? '081234567890')
+                    ],
+                    'item_details' => [
+                        [
+                            'id'       => 'ORDER_' . $order['order_code'],
+                            'price'    => (int)round((float)$order['total_amount']),
+                            'quantity' => 1,
+                            'name'     => 'Pesanan CicalengkaGO #' . $order['order_code']
+                        ]
+                    ]
+                ];
+                $snapRes = $this->midtransService->createSnapToken($snapParams);
+                $snapToken = $snapRes['token'];
+                $clientKey = $snapRes['client_key'] ?? $clientKey;
+                $snapUrl   = $this->midtransService->getSnapUrl();
+            } catch (\Exception $e) {
+                // Keep snapToken null, client can request later
+            }
+        }
+
         $this->view('customer.order_tracking', [
             'title'      => "Lacak Pesanan #{$order['order_code']}",
             'order'      => $order,
+            'snap_token' => $snapToken,
+            'client_key' => $clientKey,
+            'snap_url'   => $snapUrl,
             'active_tab' => 'orders'
         ], 'customer_layout');
+    }
+
+    public function getSnapToken(): void
+    {
+        $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Silakan login terlebih dahulu.', null, 401);
+            return;
+        }
+
+        $data = $this->getPost();
+        $orderCode = $data['order_code'] ?? '';
+
+        $order = $this->orderModel->findByIdOrCode($orderCode);
+        if (!$order) {
+            $this->errorResponse('Pesanan tidak ditemukan.');
+            return;
+        }
+
+        if ((int)$order['customer_id'] !== $userId) {
+            $this->errorResponse('Akses ditolak.');
+            return;
+        }
+
+        if ($order['payment_status'] === 'paid') {
+            $this->errorResponse('Pesanan ini sudah lunas.');
+            return;
+        }
+
+        try {
+            $user = auth_user();
+            $snapParams = [
+                'transaction_details' => [
+                    'order_id'     => $order['order_code'],
+                    'gross_amount' => (int)round((float)$order['total_amount'])
+                ],
+                'customer_details' => [
+                    'first_name' => $order['delivery_address']['contact_name'] ?? ($user['name'] ?? 'Pelanggan'),
+                    'email'      => $user['email'] ?? 'customer@cicalengkago.id',
+                    'phone'      => $order['delivery_address']['contact_phone'] ?? ($user['phone'] ?? '081234567890')
+                ],
+                'item_details' => [
+                    [
+                        'id'       => 'ORDER_' . $order['order_code'],
+                        'price'    => (int)round((float)$order['total_amount']),
+                        'quantity' => 1,
+                        'name'     => 'Pesanan CicalengkaGO #' . $order['order_code']
+                    ]
+                ]
+            ];
+
+            $snapResult = $this->midtransService->createSnapToken($snapParams);
+            $this->successResponse('Snap token siap', [
+                'snap_token'   => $snapResult['token'],
+                'client_key'   => $snapResult['client_key'],
+                'redirect_url' => $snapResult['redirect_url'],
+                'snap_url'     => $this->midtransService->getSnapUrl()
+            ]);
+        } catch (\Exception $e) {
+            $this->errorResponse($e->getMessage());
+        }
+    }
+
+    public function cancelUnpaid(): void
+    {
+        $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Silakan login terlebih dahulu.', null, 401);
+            return;
+        }
+
+        $data = $this->getPost();
+        $orderCode = $data['order_code'] ?? '';
+
+        $order = $this->orderModel->findByIdOrCode($orderCode);
+        if (!$order) {
+            $this->errorResponse('Pesanan tidak ditemukan.');
+            return;
+        }
+
+        if ((int)$order['customer_id'] !== $userId) {
+            $this->errorResponse('Akses ditolak.');
+            return;
+        }
+
+        if ($order['payment_status'] === 'paid') {
+            $this->errorResponse('Pesanan yang sudah dibayar tidak dapat dibatalkan otomatis.');
+            return;
+        }
+
+        \App\Core\Database::update('orders', [
+            'order_status' => 'canceled',
+            'canceled_at'  => date('Y-m-d H:i:s')
+        ], 'id = ?', [$order['id']]);
+
+        $this->successResponse('Pesanan berhasil dibatalkan.');
     }
 
     public function showOrder(string $idOrCode): void
