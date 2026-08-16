@@ -44,9 +44,18 @@ class AuthController extends Controller
         }
 
         try {
-            $this->authService->login($emailOrPhone, $password);
-            $_SESSION['info'] = 'Kode verifikasi OTP telah dikirimkan ke email Anda.';
-            $this->redirect('verify-otp');
+            $user = $this->authService->login($emailOrPhone, $password);
+
+            // If pending_otp is set, OTP verification is required
+            if (!empty($_SESSION['pending_otp'])) {
+                $_SESSION['info'] = 'Kode verifikasi OTP telah dikirimkan ke email Anda.';
+                $this->redirect('verify-otp');
+                return;
+            }
+
+            // OTP not required — session already set in AuthService, go straight to dashboard
+            $_SESSION['success'] = 'Selamat datang kembali, ' . htmlspecialchars($user['name']) . '!';
+            $this->redirectToRoleDashboard($user['role']);
         } catch (Exception $e) {
             $_SESSION['error'] = $e->getMessage();
             $this->redirect('login');

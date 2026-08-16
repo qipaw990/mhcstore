@@ -4,6 +4,7 @@ namespace App\Services;
 use App\Core\Database;
 use App\Models\User;
 use App\Models\Wallet;
+use App\Models\BusinessSetting;
 use Exception;
 
 class AuthService
@@ -22,6 +23,23 @@ class AuthService
 
         if (!$user || !password_verify($password, $user['password'])) {
             throw new Exception("Email/No. HP atau password salah.");
+        }
+
+        $role = $user['role'];
+
+        // Determine if OTP is required based on role settings
+        $isAdminRole    = in_array($role, ['admin', 'vendor', 'delivery_man']);
+        $isCustomer     = ($role === 'customer');
+
+        $requireAdminOtp    = BusinessSetting::get('require_login_otp', '1') === '1';
+        $requireCustomerOtp = BusinessSetting::get('require_customer_otp', '0') === '1';
+
+        $needsOtp = ($isAdminRole && $requireAdminOtp) || ($isCustomer && $requireCustomerOtp);
+
+        if (!$needsOtp) {
+            // Direct login — no OTP required
+            $_SESSION['user'] = $user;
+            return $user;
         }
 
         // Generate 6-digit OTP code for email verification

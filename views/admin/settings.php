@@ -243,6 +243,30 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center justify-content-between p-3 rounded-3 border border-danger-subtle" style="background: #fff5f5;">
+                                    <div>
+                                        <div class="fw-bold small text-danger"><i class="bi bi-shield-lock-fill me-1"></i> Wajibkan OTP saat Login Admin</div>
+                                        <small class="text-muted">Jika aktif, login Admin/Vendor/Driver selalu memerlukan verifikasi kode OTP via email.</small>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="require_login_otp" id="toggle-login-otp" value="1" <?= (!empty($settings['require_login_otp']) && $settings['require_login_otp'] == '1') ? 'checked' : '' ?> style="width: 44px; height: 22px;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center justify-content-between p-3 rounded-3 border border-primary-subtle" style="background: #f0f5ff;">
+                                    <div>
+                                        <div class="fw-bold small text-primary"><i class="bi bi-person-check-fill me-1"></i> Wajibkan OTP saat Login Customer</div>
+                                        <small class="text-muted">Jika aktif, setiap login pelanggan (customer) memerlukan verifikasi OTP via email.</small>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="require_customer_otp" id="toggle-customer-otp" value="1" <?= (!empty($settings['require_customer_otp']) && $settings['require_customer_otp'] == '1') ? 'checked' : '' ?> style="width: 44px; height: 22px;">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
