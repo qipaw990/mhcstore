@@ -13,48 +13,37 @@ $baseUrl = $appConfig['public_url'];
     <link rel="stylesheet" href="<?= $baseUrl ?>/assets/css/mobile.css">
     <style>
         body {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            background: #F8FAFC;
+            background-image: radial-gradient(circle at 50% 0%, rgba(238, 39, 55, 0.08) 0%, transparent 60%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px 16px;
+            padding: 16px;
             position: relative;
-            overflow-x: hidden;
-        }
-        body::before {
-            content: '';
-            position: absolute;
-            width: 320px;
-            height: 320px;
-            background: radial-gradient(circle, rgba(37, 99, 235, 0.35) 0%, rgba(37, 99, 235, 0) 70%);
-            top: -50px;
-            left: 50%;
-            transform: translateX(-50%);
-            pointer-events: none;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
         }
         .auth-card {
             background: #ffffff;
-            border-radius: 28px;
-            max-width: 440px;
+            border-radius: 20px;
+            max-width: 390px;
             width: 100%;
-            padding: 36px 28px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+            padding: 24px 20px;
+            box-shadow: 0 12px 36px rgba(16, 24, 32, 0.07);
+            border: 1px solid #E2E8F0;
             position: relative;
             z-index: 1;
         }
-        .auth-logo {
-            width: 64px;
-            height: 64px;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            color: #ffffff;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 30px;
-            margin: 0 auto 16px;
-            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+        .auth-logo-img {
+            width: 54px;
+            height: 54px;
+            border-radius: 14px;
+            box-shadow: 0 4px 12px rgba(238, 39, 55, 0.25);
+            object-fit: cover;
+        }
+        .form-control:focus, .input-group-text:focus {
+            box-shadow: none;
+            border-color: #EE2737 !important;
         }
     </style>
 </head>
@@ -62,12 +51,12 @@ $baseUrl = $appConfig['public_url'];
 <?php require_once dirname(__DIR__) . '/partials/preloader.php'; ?>
 
 <div class="auth-card">
-    <div class="text-center mb-4">
-        <a href="<?= $baseUrl ?>/" class="d-inline-block text-decoration-none mb-2">
-            <img src="<?= $baseUrl ?>/assets/images/logo-icon.svg" alt="CicalengkaGO Logo" style="width: 72px; height: 72px; border-radius: 18px; box-shadow: 0 8px 20px rgba(238,39,55,0.3);">
+    <div class="text-center mb-3.5">
+        <a href="<?= $baseUrl ?>/" class="d-inline-block text-decoration-none mb-1.5">
+            <img src="<?= $baseUrl ?>/assets/images/logo-icon.svg" alt="CicalengkaGO Logo" class="auth-logo-img">
         </a>
-        <h4 class="fw-bold mb-0 mt-2" style="letter-spacing: -0.5px; color: #111827;">Cicalengka<span style="color: #EE2737;">GO</span></h4>
-        <p class="text-muted small mb-0 mt-1">Super App On-Demand & Kuliner Lokal Cicalengka</p>
+        <h5 class="fw-bold mb-0 text-dark" style="letter-spacing: -0.3px;">Cicalengka<span style="color: #EE2737;">GO</span></h5>
+        <div class="text-muted" style="font-size: 11px; font-weight: 500;">Super App On-Demand & Kuliner Cicalengka</div>
     </div>
 
     <?= $content ?>
@@ -81,7 +70,8 @@ $baseUrl = $appConfig['public_url'];
         Swal.fire({
             icon: 'error',
             title: 'Gagal',
-            text: '<?= addslashes($_SESSION['error']) ?>'
+            text: '<?= addslashes($_SESSION['error']) ?>',
+            confirmButtonColor: '#EE2737'
         });
     </script>
     <?php unset($_SESSION['error']); ?>
@@ -89,3 +79,4 @@ $baseUrl = $appConfig['public_url'];
 
 </body>
 </html>
+
