@@ -80,7 +80,7 @@
             </div>
             <div>
                 <div class="fw-bold text-dark mb-0.5" style="font-size: 16px;">
-                    <?= number_format($store['rating'] ?? 5.0, 1) ?> 
+                    <?= !empty($store['reviews_count']) && (int)$store['reviews_count'] > 0 ? number_format($store['rating'], 1) : '0.0' ?>
                     <span style="font-size: 13px; color: #F59E0B;">★</span>
                 </div>
                 <div class="text-muted" style="font-size: 10.5px;">Rating Toko Anda</div>
@@ -151,7 +151,7 @@
         </div>
         <div class="d-flex align-items-center gap-1">
             <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-0.5 rounded-pill fw-bold" style="font-size: 10px;">
-                <?= number_format($store['rating'] ?? 5.0, 1) ?> ★ (<?= $store['reviews_count'] ?? 0 ?>)
+                <?= !empty($store['reviews_count']) && (int)$store['reviews_count'] > 0 ? number_format($store['rating'], 1) : '0.0' ?> ★ (<?= (int)($store['reviews_count'] ?? 0) ?>)
             </span>
         </div>
     </div>

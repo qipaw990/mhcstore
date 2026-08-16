@@ -72,7 +72,7 @@ if ($user) {
                     <?php else: ?>
                         <span class="merchant-store-status-pill closed"><i class="bi bi-circle-fill" style="font-size: 6px;"></i> Tutup</span>
                     <?php endif; ?>
-                    <span class="text-white-50" style="font-size: 10.5px;"><i class="bi bi-star-fill text-warning me-0.5"></i> <?= number_format($store['rating'] ?? 5.0, 1) ?></span>
+                    <span class="text-white-50" style="font-size: 10.5px;"><i class="bi bi-star-fill text-warning me-0.5"></i> <?= !empty($store['reviews_count']) && (int)$store['reviews_count'] > 0 ? number_format($store['rating'], 1) : '0.0' ?></span>
                 </div>
             </div>
         </div>

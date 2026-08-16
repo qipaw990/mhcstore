@@ -2198,6 +2198,369 @@ div[style*="border-radius: 18px"] .d-flex {
   white-space: nowrap !important;
 }
 
+/* =========================================================================
+ * Vendor Dashboard — Compact Content Area Overrides
+ * ========================================================================= */
+
+/* Main padding for vendor/delivery content wrapper */
+.merchant-app-wrapper > main.flex-grow-1.p-3 {
+  padding: 14px 12px !important;
+}
+
+/* Vendor Hero Status Switch Card */
+.merchant-hero-switch-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 10px 14px;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Stat Grid Cards — Compact Number + Label */
+.merchant-stat-grid .p-3\.5,
+.row.g-2\.5 .col-6 > [class*="p-3"] {
+  padding: 10px 12px !important;
+}
+
+.merchant-stat-grid .fw-bold,
+.row.g-2\.5 .col-6 .fw-bold[style*="font-size: 16px"] {
+  font-size: 14px !important;
+  letter-spacing: -0.3px;
+}
+
+/* Order Status Pipeline Minibars */
+.merchant-pipeline-bar {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 10px 14px;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+  margin-bottom: 10px;
+}
+
+.merchant-pipeline-bar .col-3 > div {
+  border-radius: 10px !important;
+  padding: 6px 4px !important;
+}
+
+.merchant-pipeline-bar .fw-bold.fs-6 {
+  font-size: 15px !important;
+  font-weight: 800 !important;
+}
+
+.merchant-pipeline-bar div[style*="font-size: 9.5px"] {
+  font-size: 8.5px !important;
+}
+
+/* Quick Action Strip Buttons */
+.merchant-quick-action-strip .btn {
+  font-size: 11px !important;
+  padding: 7px 10px !important;
+  border-radius: 999px !important;
+}
+
+/* Merchant Order Card — Compact Inner Spacing */
+.merchant-order-card {
+  padding: 10px 12px !important;
+  border-radius: 14px !important;
+  margin-bottom: 8px !important;
+}
+
+.merchant-order-header {
+  padding-bottom: 7px !important;
+  margin-bottom: 8px !important;
+}
+
+.merchant-order-items {
+  padding: 6px 10px !important;
+  border-radius: 10px !important;
+  margin-bottom: 7px !important;
+  font-size: 10.5px !important;
+}
+
+.merchant-btn-action {
+  padding: 8px 12px !important;
+  border-radius: 12px !important;
+  font-size: 11px !important;
+}
+
+/* Customer Reviews Section */
+.merchant-review-card {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid #E2E8F0;
+  margin-bottom: 6px;
+}
+
+/* Prevent overflow on product name + price row inside product cards */
+.merchant-product-card {
+  padding: 10px !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+}
+
+.merchant-product-card .merchant-product-info {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.merchant-product-card h6 {
+  font-size: 12.5px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 70px) !important;
+}
+
+.merchant-product-card .fw-extrabold {
+  font-size: 12.5px !important;
+}
+
+.merchant-product-img {
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: 10px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Rating badge in vendor header — real data display */
+.merchant-top-header .text-white-50 {
+  font-size: 10px !important;
+}
+
+/* =========================================================================
+ * Delivery Driver Dashboard — Compact Styling
+ * ========================================================================= */
+
+/* Delivery content wrapper main */
+.mobile-app-wrapper > main.flex-grow-1 > .p-3 {
+  padding: 14px 12px !important;
+}
+
+/* Driver status toggle card */
+.driver-status-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 10px 14px;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Driver Quick Stat Cards */
+.driver-quick-stat {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 10px 12px;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+}
+
+/* Delivery Active Order Card — Step Progression */
+.driver-active-order-card {
+  border-radius: 16px !important;
+  padding: 12px !important;
+  margin-bottom: 12px !important;
+}
+
+.driver-active-order-card .bg-white.text-dark.p-3.rounded-4 {
+  padding: 10px 12px !important;
+  border-radius: 14px !important;
+}
+
+/* Driver delivery action button */
+.driver-active-order-card .btn.w-100.fw-bold {
+  font-size: 11.5px !important;
+  padding: 10px 16px !important;
+  border-radius: 12px !important;
+}
+
+/* Driver radar map card */
+.card.border-0.shadow-sm.rounded-4.overflow-hidden {
+  border-radius: 16px !important;
+  margin-bottom: 12px !important;
+}
+
+.card.border-0.shadow-sm.rounded-4.overflow-hidden .p-3.bg-white {
+  padding: 10px 14px !important;
+}
+
+/* Driver delivery step progress bar */
+.driver-step-bar {
+  border-radius: 10px !important;
+  padding: 6px 10px !important;
+  font-size: 10.5px !important;
+  margin-bottom: 10px !important;
+}
+
+/* Order Info Box inside delivery card */
+.driver-order-info-box {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid #E2E8F0;
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+
+/* Driver toggle switch */
+.driver-toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.driver-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.driver-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #cbd5e1;
+  border-radius: 999px;
+  transition: 0.3s;
+}
+
+.driver-toggle-slider:before {
+  content: '';
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  transition: 0.3s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.driver-toggle-switch input:checked + .driver-toggle-slider {
+  background-color: #10b981;
+}
+
+.driver-toggle-switch input:checked + .driver-toggle-slider:before {
+  transform: translateX(22px);
+}
+
+/* Driver header status dot */
+.driver-status-dot {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid #ffffff;
+}
+
+.driver-status-dot.online {
+  background-color: #10b981;
+  animation: pulseGreen 2s infinite;
+}
+
+.driver-status-dot.offline {
+  background-color: #94a3b8;
+}
+
+/* Chat unread dot */
+.ccg-unread-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background-color: #EE2737;
+  border-radius: 50%;
+  border: 1.5px solid #ffffff;
+}
+
+/* =========================================================================
+ * Mobile delivery nav tab items (driver bottom bar)
+ * ========================================================================= */
+.mobile-bottom-nav {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 100% !important;
+  max-width: 480px !important;
+  height: calc(48px + env(safe-area-inset-bottom, 0px)) !important;
+  background-color: #ffffff !important;
+  border-top: 1px solid #E2E8F0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-around !important;
+  z-index: 1040 !important;
+  box-shadow: 0 -1px 6px rgba(0,0,0,0.04) !important;
+  padding: 0 4px !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  box-sizing: border-box !important;
+}
+
+.nav-tab-item {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+  height: 44px !important;
+  color: #94a3b8 !important;
+  text-decoration: none !important;
+  font-size: 8.5px !important;
+  font-weight: 600 !important;
+  gap: 2px !important;
+  padding: 0 !important;
+  transition: color 0.15s ease !important;
+}
+
+.nav-tab-item i {
+  font-size: 17px !important;
+  line-height: 1 !important;
+}
+
+.nav-tab-item span {
+  font-size: 8.5px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+.nav-tab-item.active,
+.nav-tab-item:not(.text-danger).active {
+  color: #EE2737 !important;
+  font-weight: 700 !important;
+}
+
+/* Delivery Earnings Page Compact Stat Card */
+.driver-earnings-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 12px 14px;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.driver-earnings-card .fw-bold[style*="font-size: 22px"],
+.driver-earnings-card .fw-bold[style*="font-size: 20px"] {
+  font-size: 18px !important;
+  letter-spacing: -0.4px !important;
+}
 
 
 
