@@ -172,33 +172,54 @@
                                 <?php endif; ?>
                             </td>
                             <td class="text-end pe-3">
-                                <div class="dropdown">
-                                    <button class="btn btn-light btn-sm border dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                        Kelola
+                                <div class="d-flex align-items-center justify-content-end gap-1">
+                                    <div class="dropdown">
+                                        <button class="btn btn-light btn-sm border dropdown-toggle fw-semibold" type="button" data-bs-toggle="dropdown">
+                                            Kelola
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                            <li>
+                                                <button class="dropdown-item small py-2" onclick="viewOrderDetail(<?= $o['id'] ?>)">
+                                                    <i class="bi bi-eye text-primary me-2"></i> Rincian Pesanan
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button class="dropdown-item small py-2 text-danger fw-semibold" onclick="viewMidtransDetail('<?= htmlspecialchars($o['order_code']) ?>')">
+                                                    <i class="bi bi-credit-card-2-front-fill me-2"></i> Detail Midtrans API
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item small py-2" href="<?= $baseUrl ?>/admin/orders/invoice/<?= $o['id'] ?>" target="_blank">
+                                                    <i class="bi bi-printer text-success me-2"></i> Cetak Faktur / Nota
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <button class="dropdown-item small py-2 text-primary" onclick="openAssignDriverModal(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>')">
+                                                    <i class="bi bi-bicycle me-2"></i> Ganti / Tugaskan Driver
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button class="dropdown-item small py-2 text-info text-dark" onclick="promptUpdateStatus(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>', '<?= $o['order_status'] ?>')">
+                                                    <i class="bi bi-arrow-repeat me-2 text-info"></i> Update Status Pesanan
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button class="dropdown-item small py-2 text-warning" onclick="promptCancelOrder(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>')">
+                                                    <i class="bi bi-x-circle me-2"></i> Batalkan Pesanan
+                                                </button>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <button class="dropdown-item small py-2 text-danger fw-bold" onclick="deleteOrder(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>')">
+                                                    <i class="bi bi-trash3-fill me-2"></i> Hapus Pesanan Permanen
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-danger btn-sm border-0 rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Hapus Pesanan #<?= htmlspecialchars($o['order_code']) ?>" onclick="deleteOrder(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>')">
+                                        <i class="bi bi-trash3"></i>
                                     </button>
-                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                                        <li>
-                                            <button class="dropdown-item small" onclick="viewOrderDetail(<?= $o['id'] ?>)">
-                                                <i class="bi bi-eye text-primary me-2"></i> Rincian Pesanan
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button class="dropdown-item small text-danger fw-semibold" onclick="viewMidtransDetail('<?= htmlspecialchars($o['order_code']) ?>')">
-                                                <i class="bi bi-credit-card-2-front-fill me-2"></i> Detail Midtrans API
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item small" href="<?= $baseUrl ?>/admin/invoice/<?= $o['id'] ?>" target="_blank">
-                                                <i class="bi bi-printer text-success me-2"></i> Cetak Faktur / Nota
-                                            </a>
-                                        </li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li>
-                                            <button class="dropdown-item small text-primary" onclick="openAssignDriverModal(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>')">
-                                                <i class="bi bi-bicycle me-2"></i> Ganti / Tugaskan Driver
-                                            </button>
-                                        </li>
-                                    </ul>
                                 </div>
                             </td>
                         </tr>
@@ -419,7 +440,7 @@ async function viewOrderDetail(orderId) {
     contentEl.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>';
 
     try {
-        const res = await fetch(window.BASE_URL + '/admin/orders/' + orderId);
+        const res = await fetch(window.BASE_URL + '/admin/orders/detail/' + orderId);
         const data = await res.json();
 
         if (data.success) {
@@ -450,8 +471,8 @@ async function viewOrderDetail(orderId) {
                             <div class="text-muted small">INFORMASI PESANAN</div>
                             <div class="fw-bold fs-6 text-primary">#${o.order_code}</div>
                             <div class="small">Tipe: <b class="text-uppercase">${o.order_type}</b></div>
-                            <div class="small">Status: <span class="badge bg-primary">${o.order_status}</span></div>
-                            <div class="small">Metode Bayar: <b>${o.payment_method.toUpperCase()} (${o.payment_status})</b></div>
+                            <div class="small">Status: <span class="badge bg-primary text-uppercase">${o.order_status}</span></div>
+                            <div class="small">Metode Bayar: <b>${(o.payment_method || '').toUpperCase()} (${(o.payment_status || '').toUpperCase()})</b></div>
                             <div class="small mt-2">OTP Pengantaran: <span class="badge bg-dark fs-6">${o.delivery_otp || '-'}</span></div>
                         </div>
                     </div>
@@ -473,6 +494,24 @@ async function viewOrderDetail(orderId) {
                             </div>
                         </div>
                     </div>
+                    <div class="col-12 border-top pt-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="${window.BASE_URL}/admin/orders/invoice/${o.id}" target="_blank" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold">
+                                <i class="bi bi-printer me-1"></i> Cetak Faktur
+                            </a>
+                            <button type="button" onclick="promptUpdateStatus(${o.id}, '${o.order_code}', '${o.order_status}')" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">
+                                <i class="bi bi-arrow-repeat me-1"></i> Ubah Status
+                            </button>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" onclick="promptCancelOrder(${o.id}, '${o.order_code}')" class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-semibold">
+                                <i class="bi bi-x-circle me-1"></i> Batalkan
+                            </button>
+                            <button type="button" onclick="deleteOrder(${o.id}, '${o.order_code}')" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold shadow-xs">
+                                <i class="bi bi-trash3-fill me-1"></i> Hapus Pesanan
+                            </button>
+                        </div>
+                    </div>
                 </div>
             `;
         } else {
@@ -480,6 +519,147 @@ async function viewOrderDetail(orderId) {
         }
     } catch (e) {
         contentEl.innerHTML = '<div class="alert alert-danger">Terjadi kesalahan saat memuat data.</div>';
+    }
+}
+
+// Hapus Pesanan Permanen (Admin Action)
+function deleteOrder(orderId, orderCode) {
+    Swal.fire({
+        title: 'Hapus Pesanan?',
+        html: `Apakah Anda yakin ingin menghapus pesanan <strong>#${orderCode}</strong> secara permanen?<br><div class="alert alert-danger p-2 mt-3 mb-0 text-start small"><i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Perhatian:</strong> Seluruh data rincian item, riwayat GPS kurir, ulasan, dan relasi pesanan ini akan dihapus dari sistem.</div>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: '<i class="bi bi-trash3-fill me-1"></i> Ya, Hapus Sekarang',
+        cancelButtonText: 'Batal',
+        reverseButtons: true
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Menghapus Pesanan...',
+                text: 'Sedang memproses pembersihan data...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            try {
+                const formData = new FormData();
+                formData.append('order_id', orderId);
+
+                const res = await fetch(window.BASE_URL + '/admin/orders/delete', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    // Close detail modal if open
+                    const detailModalEl = document.getElementById('orderDetailModal');
+                    const modalInst = bootstrap.Modal.getInstance(detailModalEl);
+                    if (modalInst) modalInst.hide();
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Pesanan Dihapus!',
+                        text: data.message || 'Pesanan berhasil dihapus secara permanen.',
+                        timer: 1600,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire('Gagal Menghapus', data.message || 'Terjadi kesalahan sistem.', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Terjadi kesalahan jaringan atau server.', 'error');
+            }
+        }
+    });
+}
+
+// Quick Update Status Pesanan
+async function promptUpdateStatus(orderId, orderCode, currentStatus) {
+    const { value: newStatus } = await Swal.fire({
+        title: `Update Status #${orderCode}`,
+        input: 'select',
+        inputOptions: {
+            'pending': 'Pending (Menunggu Konfirmasi)',
+            'confirmed': 'Confirmed (Terkonfirmasi)',
+            'processing': 'Processing (Sedang Disiapkan)',
+            'handover': 'Handover (Siap Diambil Kurir)',
+            'on_the_way': 'On The Way (Sedang Diantar)',
+            'delivered': 'Delivered (Selesai)',
+            'canceled': 'Canceled (Dibatalkan)'
+        },
+        inputValue: currentStatus,
+        showCancelButton: true,
+        confirmButtonText: 'Simpan Status',
+        cancelButtonText: 'Batal'
+    });
+
+    if (newStatus && newStatus !== currentStatus) {
+        Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+        try {
+            const formData = new FormData();
+            formData.append('order_id', orderId);
+            formData.append('status', newStatus);
+
+            const res = await fetch(window.BASE_URL + '/admin/orders/update-status', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                Swal.fire({ icon: 'success', title: 'Berhasil', text: data.message, timer: 1500, showConfirmButton: false })
+                    .then(() => location.reload());
+            } else {
+                Swal.fire('Gagal', data.message || 'Gagal mengubah status', 'error');
+            }
+        } catch (e) {
+            Swal.fire('Error', 'Gagal menghubungi server.', 'error');
+        }
+    }
+}
+
+// Prompt Batalkan Pesanan
+async function promptCancelOrder(orderId, orderCode) {
+    const { value: reason } = await Swal.fire({
+        title: `Batalkan Order #${orderCode}?`,
+        input: 'text',
+        inputLabel: 'Alasan Pembatalan',
+        placeholder: 'Contoh: Pelanggan meminta pembatalan / Toko tutup',
+        showCancelButton: true,
+        confirmButtonColor: '#d97706',
+        confirmButtonText: 'Batalkan Pesanan',
+        cancelButtonText: 'Tutup'
+    });
+
+    if (reason !== undefined) {
+        Swal.fire({ title: 'Membatalkan...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+        try {
+            const formData = new FormData();
+            formData.append('order_id', orderId);
+            formData.append('reason', reason || 'Dibatalkan oleh Administrator');
+
+            const res = await fetch(window.BASE_URL + '/admin/orders/cancel', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                Swal.fire({ icon: 'success', title: 'Pesanan Dibatalkan', text: data.message, timer: 1500, showConfirmButton: false })
+                    .then(() => location.reload());
+            } else {
+                Swal.fire('Gagal', data.message || 'Gagal membatalkan pesanan', 'error');
+            }
+        } catch (e) {
+            Swal.fire('Error', 'Gagal menghubungi server.', 'error');
+        }
     }
 }
 

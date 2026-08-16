@@ -215,6 +215,42 @@ class AdminController extends Controller
         $this->successResponse('Pesanan berhasil dibatalkan.');
     }
 
+    public function deleteOrder(): void
+    {
+        $data = $this->getPost();
+        $orderId = (int)($data['order_id'] ?? $data['id'] ?? 0);
+
+        if (!$orderId) {
+            $this->errorResponse('ID pesanan tidak valid.');
+            return;
+        }
+
+        $order = (new Order())->find($orderId);
+        if (!$order) {
+            $this->errorResponse('Pesanan tidak ditemukan atau sudah dihapus.');
+            return;
+        }
+
+        try {
+            Database::transaction(function () use ($orderId) {
+                // 1. Reset driver current order assignment if this order was active
+                Database::execute("UPDATE `delivery_men` SET `current_order_id` = NULL WHERE `current_order_id` = ?", [$orderId]);
+                // 2. Delete delivery trackings
+                Database::execute("DELETE FROM `delivery_trackings` WHERE `order_id` = ?", [$orderId]);
+                // 3. Delete reviews
+                Database::execute("DELETE FROM `reviews` WHERE `order_id` = ?", [$orderId]);
+                // 4. Delete order items
+                Database::execute("DELETE FROM `order_items` WHERE `order_id` = ?", [$orderId]);
+                // 5. Delete the order
+                Database::execute("DELETE FROM `orders` WHERE `id` = ?", [$orderId]);
+            });
+
+            $this->successResponse("Pesanan #{$order['order_code']} berhasil dihapus permanen.");
+        } catch (\Exception $e) {
+            $this->errorResponse('Gagal menghapus pesanan: ' . $e->getMessage());
+        }
+    }
+
     // =========================================================================
     // 3. Zones Management
     // =========================================================================

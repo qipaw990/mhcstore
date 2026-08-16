@@ -104,11 +104,14 @@ Router::group(['prefix' => '/admin', 'middleware' => ['AdminMiddleware']], funct
 
     // Orders & Dispatch
     Router::get('/orders', [AdminController::class, 'orders']);
+    Router::get('/orders/{id}', [AdminController::class, 'orderDetail']);
     Router::get('/orders/detail/{id}', [AdminController::class, 'orderDetail']);
     Router::get('/orders/invoice/{id}', [AdminController::class, 'invoice']);
+    Router::get('/invoice/{id}', [AdminController::class, 'invoice']);
     Router::post('/orders/assign-driver', [AdminController::class, 'assignDriver']);
     Router::post('/orders/update-status', [AdminController::class, 'updateOrderStatus']);
     Router::post('/orders/cancel', [AdminController::class, 'cancelOrder']);
+    Router::post('/orders/delete', [AdminController::class, 'deleteOrder']);
 
     // Zones
     Router::get('/zones', [AdminController::class, 'zones']);
