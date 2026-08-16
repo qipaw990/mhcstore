@@ -160,6 +160,11 @@ class Database
         return $stmt->execute($params);
     }
 
+    public static function raw(string $sql, array $params = []): bool
+    {
+        return self::execute($sql, $params);
+    }
+
     public static function insert(string $table, array $data): int|string
     {
         $columns = implode('`, `', array_keys($data));

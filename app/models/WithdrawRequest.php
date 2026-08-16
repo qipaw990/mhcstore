@@ -47,7 +47,7 @@ class WithdrawRequest extends Model
         );
 
         // Update total_withdrawn
-        Database::raw(
+        Database::execute(
             "UPDATE `wallets` SET `total_withdrawn` = `total_withdrawn` + ? WHERE `id` = ?",
             [$amount, $wallet['id']]
         );

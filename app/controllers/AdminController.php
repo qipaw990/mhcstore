@@ -1148,7 +1148,7 @@ class AdminController extends Controller
             );
 
             // Revert total_withdrawn
-            Database::raw(
+            Database::execute(
                 "UPDATE `wallets` SET `total_withdrawn` = GREATEST(0, `total_withdrawn` - ?) WHERE `user_id` = ?",
                 [(float)$req['amount'], (int)$req['user_id']]
             );

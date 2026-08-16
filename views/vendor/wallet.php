@@ -323,7 +323,15 @@ function openVendorWithdrawModal() {
                     method: 'POST',
                     body: fd
                 });
-                const data = await res.json();
+                
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch(e) {
+                    console.error('Server error response:', text);
+                    throw new Error('Respon server tidak valid.');
+                }
 
                 if (data.success) {
                     await Swal.fire({
@@ -345,7 +353,7 @@ function openVendorWithdrawModal() {
                 console.error(err);
                 Swal.fire({
                     title: 'Kesalahan Sistem',
-                    text: 'Gagal menghubungkan ke server.',
+                    text: err.message || 'Gagal menghubungkan ke server.',
                     icon: 'error',
                     confirmButtonColor: '#EE2737'
                 });
