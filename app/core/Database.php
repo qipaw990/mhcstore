@@ -18,12 +18,42 @@ class Database
     private function __construct()
     {
         $config = require APP_PATH . '/config/database.php';
-        $dsn = "mysql:host={$config['host']};port={$config['port']};dbname={$config['database']};charset={$config['charset']}";
+        
+        $candidateHosts = array_unique(array_filter([
+            $config['host'] ?? null,
+            'cicalengkago_db',
+            'mariadb',
+            '172.17.0.1',
+            'host.docker.internal',
+            '127.0.0.1',
+            'localhost'
+        ]));
 
-        try {
-            $this->pdo = new PDO($dsn, $config['username'], $config['password'], $config['options']);
-        } catch (PDOException $e) {
-            die("Database Connection Error: " . $e->getMessage());
+        $connected = false;
+        $lastException = null;
+
+        foreach ($candidateHosts as $host) {
+            $dsn = "mysql:host={$host};port={$config['port']};dbname={$config['database']};charset={$config['charset']}";
+            
+            // Retry loop for DB startup delay in Docker
+            for ($attempt = 1; $attempt <= 3; $attempt++) {
+                try {
+                    $this->pdo = new PDO($dsn, $config['username'], $config['password'], $config['options']);
+                    $connected = true;
+                    break 2; // Connected successfully
+                } catch (PDOException $e) {
+                    $lastException = $e;
+                    if ($e->getCode() == 2002 && $attempt < 3) {
+                        sleep(1);
+                    } else {
+                        break; // Try next host candidate
+                    }
+                }
+            }
+        }
+
+        if (!$connected) {
+            die("Database Connection Error: " . ($lastException ? $lastException->getMessage() : "Unable to connect to database"));
         }
     }
 
