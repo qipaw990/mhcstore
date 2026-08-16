@@ -117,7 +117,7 @@ class DeliveryController extends Controller
             $activeOrder = $this->orderModel->findByCode($activeOrder['order_code']);
         }
 
-        // Available nearby orders in driver zone
+        // Available nearby orders in driver radar
         $availableOrders = [];
         if (empty($activeOrder) && $dm['is_online']) {
             $availableOrders = $this->orderModel->getAvailableForDelivery((int)($dm['zone_id'] ?? 1));

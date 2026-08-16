@@ -114,22 +114,17 @@ class Order extends Model
     public function getAvailableForDelivery(int $zoneId = 0): array
     {
         $sql = "SELECT o.*, 
-                       COALESCE(s.name, 'Resto Cicalengka') as store_name, 
+                       COALESCE(s.name, 'Resto / Mitra Cicalengka') as store_name, 
                        COALESCE(s.address, 'Cicalengka, Jawa Barat') as store_address, 
-                       s.latitude as store_lat, 
-                       s.longitude as store_lng,
+                       COALESCE(s.latitude, -6.9835) as store_lat, 
+                       COALESCE(s.longitude, 107.8335) as store_lng,
                        COALESCE(u.name, 'Pelanggan') as customer_name, 
                        COALESCE(u.phone, '-') as customer_phone
                 FROM `orders` o
                 LEFT JOIN `stores` s ON o.store_id = s.id
                 LEFT JOIN `users` u ON o.customer_id = u.id
-                WHERE (o.delivery_man_id IS NULL OR o.delivery_man_id = 0)
+                WHERE (o.delivery_man_id IS NULL OR o.delivery_man_id = 0 OR o.delivery_man_id = '')
                   AND o.order_status NOT IN ('delivered', 'canceled', 'refunded', 'failed')
-                  AND (
-                      o.payment_method IN ('cod', 'cash', 'wallet')
-                      OR o.payment_status = 'paid'
-                      OR o.order_status IN ('confirmed', 'processing', 'handover', 'pending')
-                  )
                 ORDER BY o.id DESC";
         $orders = Database::query($sql);
         foreach ($orders as &$o) {
