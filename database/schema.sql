@@ -2,11 +2,6 @@
 -- CicalengkaGO Database Schema
 -- Multi-Vendor On-Demand Delivery Platform
 -- Clean, Modular, Indexed, InnoDB, utf8mb4
--- ==========================================================
-
-CREATE DATABASE IF NOT EXISTS `cicalengkago_db` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `cicalengkago_db`;
-
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- 1. Users Table (Admin, Vendor, Customer, Delivery Man)

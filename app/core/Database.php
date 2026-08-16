@@ -55,6 +55,34 @@ class Database
         if (!$connected) {
             die("Database Connection Error: " . ($lastException ? $lastException->getMessage() : "Unable to connect to database"));
         }
+
+        $this->autoMigrateIfNeeded();
+    }
+
+    private function autoMigrateIfNeeded(): void
+    {
+        try {
+            $stmt = $this->pdo->query("SHOW TABLES LIKE 'modules'");
+            $tableExists = $stmt ? $stmt->fetch() : false;
+
+            if (!$tableExists) {
+                $root = defined('ROOT_PATH') ? ROOT_PATH : dirname(__DIR__, 2);
+                $schemaFile = $root . '/database/schema.sql';
+                $seedersFile = $root . '/database/seeders.sql';
+
+                if (file_exists($schemaFile)) {
+                    $sql = file_get_contents($schemaFile);
+                    $this->pdo->exec($sql);
+                }
+
+                if (file_exists($seedersFile)) {
+                    $sql = file_get_contents($seedersFile);
+                    $this->pdo->exec($sql);
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Auto Migration Error: " . $e->getMessage());
+        }
     }
 
     public static function getInstance(): Database

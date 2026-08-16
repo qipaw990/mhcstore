@@ -2,10 +2,6 @@
 -- CicalengkaGO Seeders Data
 -- Realistic Localized Data for Cicalengka, Bandung
 -- Password for all demo accounts: password
--- ==========================================================
-
-USE `cicalengkago_db`;
-
 -- Default Password Hash for "password"
 -- $2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi
 
