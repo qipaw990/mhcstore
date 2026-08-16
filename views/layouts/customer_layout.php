@@ -68,6 +68,14 @@ $unreadNotifs = $user ? (new \App\Models\Notification())->getUnreadCount($user['
             </div>
 
             <div class="gojek-header-actions">
+                <a href="<?= $baseUrl ?>/cart" class="gojek-icon-btn position-relative" title="Keranjang Belanja">
+                    <i class="bi bi-cart3"></i>
+                    <?php if (!empty($cartSummary['count']) && $cartSummary['count'] > 0): ?>
+                        <span id="header-cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 8px; padding: 2px 4px; border: 1.5px solid #FFFFFF;">
+                            <?= $cartSummary['count'] ?>
+                        </span>
+                    <?php endif; ?>
+                </a>
                 <a href="<?= $baseUrl ?>/notifications" class="gojek-icon-btn" title="Notifikasi">
                     <i class="bi bi-bell"></i>
                     <?php if ($unreadNotifs > 0): ?>
@@ -107,12 +115,12 @@ $unreadNotifs = $user ? (new \App\Models\Notification())->getUnreadCount($user['
     <?php if (!$isCartOrCheckout): ?>
     <a href="<?= $baseUrl ?>/cart" id="floating-cart-pill" class="floating-cart-pill <?= empty($cartSummary['items']) ? 'd-none' : '' ?>">
         <div class="floating-cart-left">
-            <span id="floating-cart-count" class="cart-qty-badge"><?= $cartSummary['count'] ?? 0 ?> Menu</span>
+            <span id="floating-cart-count" class="cart-qty-badge"><i class="bi bi-bag-fill" style="font-size:9.5px;"></i> <span id="floating-cart-count-num"><?= $cartSummary['count'] ?? 0 ?></span> Menu</span>
             <span id="floating-cart-price" class="floating-cart-price"><?= format_rupiah($cartSummary['subtotal'] ?? 0) ?></span>
         </div>
         <div class="floating-cart-right">
             <span>Lihat Keranjang</span>
-            <i class="bi bi-arrow-right-circle-fill"></i>
+            <i class="bi bi-arrow-right-short"></i>
         </div>
     </a>
     <?php endif; ?>

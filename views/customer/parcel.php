@@ -1,38 +1,38 @@
-<div class="border-bottom bg-white d-flex align-items-center gap-2 sticky-top shadow-xs px-3 py-2">
-    <a href="<?= $baseUrl ?>" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; border: 1px solid #E2E8F0; background: #F8FAFC;"><i class="bi bi-arrow-left text-dark"></i></a>
-    <h6 class="fw-bold m-0 text-dark" style="font-size: 13px;">Kirim Paket (CicalengkaSend)</h6>
+<div class="border-bottom bg-white d-flex align-items-center gap-2.5 sticky-top shadow-xs px-3 py-2.5">
+    <a href="<?= $baseUrl ?>" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 34px; height: 34px; border: 1px solid #E2E8F0; background: #F8FAFC;"><i class="bi bi-arrow-left text-dark" style="font-size: 14px;"></i></a>
+    <h6 class="fw-bold m-0 text-dark" style="font-size: 13.5px; letter-spacing: -0.2px;">Kirim Paket (CicalengkaSend)</h6>
 </div>
 
-<div class="px-3 py-2.5">
+<div class="px-3 py-3">
     <!-- CicalengkaSend Header Banner -->
-    <div class="p-3 mb-2.5 text-white shadow-xs" style="background: linear-gradient(135deg, #EE2737 0%, #C61524 100%); border-radius: 14px;">
-        <div class="d-flex align-items-center gap-2.5">
-            <div class="rounded-3 bg-white text-danger d-flex align-items-center justify-content-center shadow-xs" style="width: 36px; height: 36px; font-size: 18px; flex-shrink: 0;">
+    <div class="p-3.5 mb-3 text-white shadow-2xs" style="background: linear-gradient(135deg, #EE2737 0%, #C61524 100%); border-radius: 16px;">
+        <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle bg-white text-danger d-flex align-items-center justify-content-center shadow-2xs" style="width: 40px; height: 40px; font-size: 20px; flex-shrink: 0;">
                 <i class="bi bi-box-seam-fill" style="color: #EE2737;"></i>
             </div>
             <div>
-                <h6 class="fw-bold mb-0.5" style="font-size: 12.5px;">CicalengkaSend Kilat</h6>
-                <div class="text-white-50" style="font-size: 10px; line-height: 1.3;">Kirim barang & dokumen se-Cicalengka cepat sampai dengan aman!</div>
+                <h6 class="fw-bold mb-0.5" style="font-size: 13px; letter-spacing: -0.2px;">CicalengkaSend Kilat</h6>
+                <div class="text-white-50" style="font-size: 10.5px; line-height: 1.35;">Kirim barang & dokumen se-Cicalengka cepat sampai dengan aman!</div>
             </div>
         </div>
     </div>
 
     <form id="parcelForm" onsubmit="handlePlaceParcel(event)">
         <!-- Interactive Parcel Route Map -->
-        <div class="p-3 bg-white border shadow-xs mb-2.5" style="border-radius: 14px;">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-                <h6 class="fw-bold m-0 text-dark" style="font-size: 12px;"><i class="bi bi-map-fill text-danger me-1"></i> Rute Antar Paket</h6>
-                <button type="button" onclick="getParcelGps()" class="btn btn-sm rounded-pill py-1 px-2.5 fw-bold text-white shadow-xs" style="background:#EE2737; font-size: 10px;">
-                    <i class="bi bi-crosshair me-0.5"></i> GPS Jemput
+        <div class="p-3.5 bg-white border shadow-2xs mb-3" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+            <div class="d-flex align-items-center justify-content-between mb-2.5">
+                <h6 class="fw-bold m-0 text-dark" style="font-size: 12.5px;"><i class="bi bi-map-fill text-danger me-1.5"></i> Rute Antar Paket</h6>
+                <button type="button" onclick="getParcelGps()" class="btn btn-sm rounded-pill py-1 px-3 fw-bold text-white shadow-2xs" style="background: linear-gradient(135deg, #EE2737, #C61524); font-size: 10px;">
+                    <i class="bi bi-crosshair me-1"></i> GPS Jemput
                 </button>
             </div>
-            <div class="text-muted mb-2" style="font-size: 9.5px;">
+            <div class="text-muted mb-2.5" style="font-size: 10px;">
                 Geser pin <span class="text-danger fw-bold">🔴 Jemput</span> dan <span class="text-dark fw-bold">🎯 Tujuan</span> pada peta.
             </div>
-            <div id="parcel-map" style="width: 100%; height: 170px; border-radius: 10px;" class="border shadow-xs mb-2"></div>
+            <div id="parcel-map" style="width: 100%; height: 180px; border-radius: 12px;" class="border shadow-2xs mb-2.5"></div>
             <div class="d-flex align-items-center justify-content-between">
-                <span class="badge bg-light text-dark border py-1 px-2" id="parcel-dist-badge" style="font-size: 9px;"><i class="bi bi-signpost-2 me-1"></i> Est. Jarak: 2.5 Km</span>
-                <span class="badge bg-danger-subtle text-danger py-1 px-2" style="font-size: 9px;"><i class="bi bi-clock-history me-1"></i> Est. Waktu: 15-25 Mnt</span>
+                <span class="badge bg-light text-dark border py-1.5 px-2.5" id="parcel-dist-badge" style="font-size: 9.5px; border-radius: 6px;"><i class="bi bi-signpost-2 me-1"></i> Est. Jarak: 2.5 Km</span>
+                <span class="badge bg-danger-subtle text-danger py-1.5 px-2.5" style="font-size: 9.5px; border-radius: 6px;"><i class="bi bi-clock-history me-1"></i> Est. Waktu: 15-25 Mnt</span>
             </div>
 
             <input type="hidden" name="pickup_lat" id="pickup_lat" value="-6.9840">
@@ -43,43 +43,43 @@
         </div>
 
         <!-- Sender Information -->
-        <div class="p-3 bg-white border shadow-xs mb-2.5" style="border-radius: 14px;">
-            <h6 class="fw-bold mb-2 text-dark" style="font-size: 12px;"><i class="bi bi-geo-alt text-danger me-1"></i> Penjemputan (Pengirim)</h6>
+        <div class="p-3.5 bg-white border shadow-2xs mb-3" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+            <h6 class="fw-bold mb-2.5 text-dark" style="font-size: 12.5px;"><i class="bi bi-geo-alt text-danger me-1.5"></i> Penjemputan (Pengirim)</h6>
             <div class="mb-2">
-                <input type="text" name="pickup_address" id="pickup_address" class="form-control form-control-sm bg-light" style="font-size: 10.5px; border-radius: 8px;" placeholder="Alamat penjemputan" required value="Jl. Dipati Ukur Cicalengka Kulon No. 12">
+                <input type="text" name="pickup_address" id="pickup_address" class="form-control form-control-sm bg-light" style="font-size: 11px; border-radius: 10px; border-color: #E2E8F0;" placeholder="Alamat penjemputan" required value="Jl. Dipati Ukur Cicalengka Kulon No. 12">
             </div>
             <div class="row g-2">
                 <div class="col-6">
-                    <input type="text" name="sender_name" id="sender_name" class="form-control form-control-sm bg-light" style="font-size: 10.5px; border-radius: 8px;" placeholder="Nama Pengirim" value="<?= htmlspecialchars($_SESSION['user']['name'] ?? '') ?>" required>
+                    <input type="text" name="sender_name" id="sender_name" class="form-control form-control-sm bg-light" style="font-size: 11px; border-radius: 10px; border-color: #E2E8F0;" placeholder="Nama Pengirim" value="<?= htmlspecialchars($_SESSION['user']['name'] ?? '') ?>" required>
                 </div>
                 <div class="col-6">
-                    <input type="text" name="sender_phone" id="sender_phone" class="form-control form-control-sm bg-light" style="font-size: 10.5px; border-radius: 8px;" placeholder="No HP Pengirim" value="<?= htmlspecialchars($_SESSION['user']['phone'] ?? '') ?>" required>
+                    <input type="text" name="sender_phone" id="sender_phone" class="form-control form-control-sm bg-light" style="font-size: 11px; border-radius: 10px; border-color: #E2E8F0;" placeholder="No HP Pengirim" value="<?= htmlspecialchars($_SESSION['user']['phone'] ?? '') ?>" required>
                 </div>
             </div>
         </div>
 
         <!-- Destination Information -->
-        <div class="p-3 bg-white border shadow-xs mb-2.5" style="border-radius: 14px;">
-            <h6 class="fw-bold mb-2 text-dark" style="font-size: 12px;"><i class="bi bi-geo-alt-fill text-danger me-1"></i> Tujuan (Penerima)</h6>
+        <div class="p-3.5 bg-white border shadow-2xs mb-3" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+            <h6 class="fw-bold mb-2.5 text-dark" style="font-size: 12.5px;"><i class="bi bi-geo-alt-fill text-danger me-1.5"></i> Tujuan (Penerima)</h6>
             <div class="mb-2">
-                <input type="text" name="destination_address" id="destination_address" class="form-control form-control-sm bg-light" style="font-size: 10.5px; border-radius: 8px;" placeholder="Alamat tujuan" required value="Komplek Griya Cicalengka Asri Blok C4">
+                <input type="text" name="destination_address" id="destination_address" class="form-control form-control-sm bg-light" style="font-size: 11px; border-radius: 10px; border-color: #E2E8F0;" placeholder="Alamat tujuan" required value="Komplek Griya Cicalengka Asri Blok C4">
             </div>
             <div class="row g-2">
                 <div class="col-6">
-                    <input type="text" name="recipient_name" id="recipient_name" class="form-control form-control-sm bg-light" style="font-size: 10.5px; border-radius: 8px;" placeholder="Nama Penerima" required value="Pak Agus">
+                    <input type="text" name="recipient_name" id="recipient_name" class="form-control form-control-sm bg-light" style="font-size: 11px; border-radius: 10px; border-color: #E2E8F0;" placeholder="Nama Penerima" required value="Pak Agus">
                 </div>
                 <div class="col-6">
-                    <input type="text" name="recipient_phone" id="recipient_phone" class="form-control form-control-sm bg-light" style="font-size: 10.5px; border-radius: 8px;" placeholder="No HP Penerima" required value="082199887766">
+                    <input type="text" name="recipient_phone" id="recipient_phone" class="form-control form-control-sm bg-light" style="font-size: 11px; border-radius: 10px; border-color: #E2E8F0;" placeholder="No HP Penerima" required value="082199887766">
                 </div>
             </div>
         </div>
 
         <!-- Parcel Details -->
-        <div class="p-3 bg-white border shadow-xs mb-2.5" style="border-radius: 14px;">
-            <h6 class="fw-bold mb-2 text-dark" style="font-size: 12px;"><i class="bi bi-box me-1 text-muted"></i> Detail Paket</h6>
+        <div class="p-3.5 bg-white border shadow-2xs mb-3" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+            <h6 class="fw-bold mb-2.5 text-dark" style="font-size: 12.5px;"><i class="bi bi-box me-1.5 text-muted"></i> Detail Paket</h6>
             <div class="row g-2 mb-2">
                 <div class="col-7">
-                    <select name="item_category" id="item_category" class="form-select form-select-sm bg-light" style="font-size: 10.5px; border-radius: 8px;">
+                    <select name="item_category" id="item_category" class="form-select form-select-sm bg-light" style="font-size: 11px; border-radius: 10px; border-color: #E2E8F0;">
                         <option value="Dokumen / Surat">Dokumen / Surat</option>
                         <option value="Makanan / Kue">Makanan / Kue</option>
                         <option value="Pakaian / Laundry">Pakaian / Laundry</option>
@@ -89,41 +89,41 @@
                 </div>
                 <div class="col-5">
                     <div class="input-group input-group-sm">
-                        <input type="number" name="weight_kg" id="weight_kg" onchange="calculateParcelFare()" class="form-control bg-light" style="font-size: 10.5px; border-radius: 8px 0 0 8px;" value="1.0" step="0.5" min="0.5" max="10">
-                        <span class="input-group-text bg-light" style="font-size: 10.5px; border-radius: 0 8px 8px 0;">Kg</span>
+                        <input type="number" name="weight_kg" id="weight_kg" onchange="calculateParcelFare()" class="form-control bg-light" style="font-size: 11px; border-radius: 10px 0 0 10px; border-color: #E2E8F0;" value="1.0" step="0.5" min="0.5" max="10">
+                        <span class="input-group-text bg-light text-muted" style="font-size: 11px; border-radius: 0 10px 10px 0; border-color: #E2E8F0;">Kg</span>
                     </div>
                 </div>
             </div>
-            <input type="text" name="parcel_notes" id="parcel_notes" class="form-control form-control-sm bg-light" style="font-size: 10.5px; border-radius: 8px;" placeholder="Instruksi tambahan untuk kurir...">
+            <input type="text" name="parcel_notes" id="parcel_notes" class="form-control form-control-sm bg-light" style="font-size: 11px; border-radius: 10px; border-color: #E2E8F0;" placeholder="Instruksi tambahan untuk kurir...">
         </div>
 
         <!-- Payment Method -->
-        <div class="p-3 bg-white border shadow-xs mb-2.5" style="border-radius: 14px;">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="fw-bold m-0 text-dark" style="font-size: 12px;"><i class="bi bi-wallet2 me-1 text-danger"></i> Pembayaran Ongkir</h6>
-                <span class="badge text-white px-2 py-0.5" style="background:#002B49; font-size: 8.5px; font-weight:700; border-radius: 4px;">MIDTRANS</span>
+        <div class="p-3.5 bg-white border shadow-2xs mb-3" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+            <div class="d-flex justify-content-between align-items-center mb-2.5">
+                <h6 class="fw-bold m-0 text-dark" style="font-size: 12.5px;"><i class="bi bi-wallet2 me-1.5 text-danger"></i> Pembayaran Ongkir</h6>
+                <span class="badge text-white px-2.5 py-1" style="background:#002B49; font-size: 9px; font-weight:700; border-radius: 6px;">MIDTRANS</span>
             </div>
             <div class="d-flex flex-column gap-2 pt-1">
-                <label class="d-flex align-items-center justify-content-between p-2 px-2.5 border rounded-3 cursor-pointer">
+                <label class="d-flex align-items-center justify-content-between p-2.5 border rounded-3 cursor-pointer" style="border-radius: 10px !important; border-color: #E2E8F0 !important;">
                     <div class="d-flex align-items-center gap-2">
                         <input type="radio" name="payment_method" value="midtrans">
                         <div>
-                            <span class="fw-bold text-dark" style="font-size: 11px;">Bayar Online (Midtrans)</span>
-                            <div class="text-muted" style="font-size: 9px;">QRIS, GoPay, ShopeePay, VA Bank</div>
+                            <span class="fw-bold text-dark" style="font-size: 11.5px;">Bayar Online (Midtrans)</span>
+                            <div class="text-muted" style="font-size: 9.5px;">QRIS, GoPay, ShopeePay, VA Bank</div>
                         </div>
                     </div>
-                    <span class="badge bg-danger-subtle text-danger py-0.5 px-1.5" style="font-size: 8.5px;">Otomatis</span>
+                    <span class="badge bg-danger-subtle text-danger py-0.5 px-2" style="font-size: 9px;">Otomatis</span>
                 </label>
-                <div class="d-flex gap-3 px-1" style="font-size: 10.5px;">
+                <div class="d-flex gap-3 px-1" style="font-size: 11px;">
                     <label class="d-flex align-items-center gap-1.5 cursor-pointer">
                         <input type="radio" name="payment_method" value="cod" checked>
-                        <span>Tunai (COD)</span>
+                        <span class="fw-medium">Tunai (COD)</span>
                     </label>
                     <label class="d-flex align-items-center gap-1.5 cursor-pointer">
                         <input type="radio" name="payment_method" value="wallet" <?= ((float)$wallet_balance >= 8000) ? '' : 'disabled' ?>>
                         <span class="d-flex align-items-center gap-1">
                             <span style="color:#EE2737;font-weight:800;">CicalengkaPay</span>
-                            <span class="text-muted" style="font-size: 9.5px;">(<?= format_rupiah($wallet_balance ?? 0) ?>)</span>
+                            <span class="text-muted" style="font-size: 10px;">(<?= format_rupiah($wallet_balance ?? 0) ?>)</span>
                         </span>
                     </label>
                 </div>
@@ -131,15 +131,15 @@
         </div>
 
         <!-- Estimated Fare Dynamic -->
-        <div class="p-3 bg-white border shadow-xs mb-3 d-flex align-items-center justify-content-between" style="border-radius: 14px;">
+        <div class="p-3.5 bg-white border shadow-2xs mb-3.5 d-flex align-items-center justify-content-between" style="border-radius: 16px; border-color: #E2E8F0 !important;">
             <div>
-                <div class="text-muted" style="font-size: 10px;">Tarif Instant (<span id="fare-dist-text">2.5 Km</span>)</div>
-                <div class="fw-bold" style="color: #EE2737; font-size: 15px;" id="parcel-fare-display">Rp 8.000</div>
+                <div class="text-muted" style="font-size: 10.5px;">Tarif Instant (<span id="fare-dist-text">2.5 Km</span>)</div>
+                <div class="fw-bold" style="color: #EE2737; font-size: 16px;" id="parcel-fare-display">Rp 8.000</div>
             </div>
-            <span class="badge text-white px-2.5 py-1.5 rounded-pill fw-bold" style="background:#EE2737; font-size: 10px;">Instant Delivery</span>
+            <span class="badge text-white px-3 py-1.5 rounded-pill fw-bold" style="background: linear-gradient(135deg, #EE2737, #C61524); font-size: 10.5px;">Instant Delivery</span>
         </div>
 
-        <button type="submit" id="btnParcelSubmit" class="btn btn-gojek-green w-100 mb-3" style="background:#EE2737 !important; color:#FFFFFF !important; border-radius:9999px; font-weight:700; padding:10px 16px; font-size:12px; box-shadow:0 3px 10px rgba(238,39,55,0.3); display:flex; align-items:center; justify-content:center; gap:8px;">
+        <button type="submit" id="btnParcelSubmit" class="btn btn-gojek-green w-100 mb-3" style="background: linear-gradient(135deg, #EE2737, #C61524) !important; color:#FFFFFF !important; border-radius:9999px; font-weight:800; padding:11px 16px; font-size:12.5px; box-shadow:0 4px 14px rgba(238,39,55,0.3); display:flex; align-items:center; justify-content:center; gap:8px;">
             <i class="bi bi-box-seam-fill"></i>
             <span>Panggil Kurir Sekarang</span>
         </button>

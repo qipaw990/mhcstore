@@ -56,14 +56,14 @@
         </div>
 
         <!-- Quick Promo Banner -->
-        <div class="rounded-3 text-white mb-3 p-3 position-relative overflow-hidden" style="background: linear-gradient(135deg, #EE2737 0%, #B91C1C 100%); box-shadow: 0 4px 12px rgba(238, 39, 55, 0.2);">
+        <div class="shadow-2xs text-white mb-3 p-3 position-relative overflow-hidden" style="background: linear-gradient(135deg, #EE2737 0%, #B91C1C 100%); border-radius: 16px;">
             <div class="d-flex align-items-center justify-content-between position-relative" style="z-index: 2;">
                 <div>
                     <span class="badge bg-white text-danger fw-bold px-2 py-0.5 rounded-pill mb-1.5 d-inline-block" style="font-size: 8.5px; letter-spacing: 0.3px;">PROMO SPESIAL</span>
                     <div class="fw-bold text-white" style="font-size: 13px; line-height: 1.3;">Gratis Ongkir s.d 10rb</div>
                     <div class="text-white-50 mt-1" style="font-size: 10px;">Berlaku di seluruh merchant Cicalengka</div>
                 </div>
-                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; background: rgba(255, 255, 255, 0.15);">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-2xs" style="width: 44px; height: 44px; background: rgba(255, 255, 255, 0.15);">
                     <i class="bi bi-ticket-perforated-fill text-white fs-4"></i>
                 </div>
             </div>
@@ -80,14 +80,14 @@
                 </div>
                 <div class="gofood-stores-scroll mb-0 p-0">
                     <?php foreach ($popular_stores as $s): ?>
-                        <a href="<?= $baseUrl ?>/stores/<?= $s['id'] ?>" class="gofood-store-card">
+                        <a href="<?= $baseUrl ?>/stores/<?= $s['id'] ?>" class="gofood-store-card shadow-2xs" style="border-radius: 16px; border-color: #E2E8F0 !important;">
                             <div class="gofood-store-img-box">
                                 <img src="<?= $baseUrl ?>/<?= htmlspecialchars($s['cover_photo'] ?? 'assets/images/stores/geprek_cover.jpg') ?>" class="gofood-store-img" alt="Store">
-                                <span class="gofood-open-tag"><i class="bi bi-door-open-fill me-0.5"></i> Buka</span>
+                                <span class="gofood-open-tag" style="border-radius: 6px;"><i class="bi bi-door-open-fill me-0.5"></i> Buka</span>
                             </div>
-                            <div class="gofood-store-body">
-                                <div class="gofood-store-name"><?= htmlspecialchars($s['name']) ?></div>
-                                <div class="gofood-store-meta">
+                            <div class="gofood-store-body p-2.5">
+                                <div class="gofood-store-name" style="font-size: 12px; letter-spacing: -0.2px;"><?= htmlspecialchars($s['name']) ?></div>
+                                <div class="gofood-store-meta" style="font-size: 10px;">
                                     <span class="gofood-rating"><i class="bi bi-star-fill"></i> <?= number_format($s['rating'] ?? 5.0, 1) ?></span>
                                     <span>•</span>
                                     <span><?= htmlspecialchars($s['delivery_time'] ?? '20-30 mnt') ?></span>

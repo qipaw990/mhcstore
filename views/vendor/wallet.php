@@ -1,7 +1,7 @@
 <!-- Merchant Digital Wallet & Withdrawal Hub -->
 <div class="mb-4">
     <!-- Merchant Balance Card -->
-    <div class="rounded-4 text-white shadow-sm mb-3 position-relative overflow-hidden" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); border: 1px solid rgba(255,255,255,0.12); padding: 22px 20px;">
+    <div class="p-3.5 text-white shadow-2xs mb-3 position-relative overflow-hidden" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); border-radius: 16px; border: 1px solid rgba(255,255,255,0.12);">
         <!-- Background Decor Icon -->
         <div class="position-absolute" style="right: 12px; bottom: 8px; font-size: 88px; opacity: 0.07; line-height: 1; pointer-events: none;">
             <i class="bi bi-wallet2"></i>
@@ -9,15 +9,15 @@
 
         <div class="position-relative z-1">
             <div class="d-flex align-items-center justify-content-between mb-1">
-                <span class="text-white-50 small fw-bold" style="font-size: 11px; letter-spacing: 0.6px; text-transform: uppercase;">
+                <span class="text-white-50 fw-bold" style="font-size: 10.5px; letter-spacing: 0.6px; text-transform: uppercase;">
                     <i class="bi bi-shop me-1 text-danger"></i> SALDO PENGHASILAN TOKO
                 </span>
-                <span class="badge bg-success-subtle text-success px-2.5 py-1 rounded-pill" style="font-size: 10px; font-weight: 700;">
+                <span class="badge bg-success-subtle text-success px-2.5 py-1 rounded-pill" style="font-size: 9.5px; font-weight: 700;">
                     <i class="bi bi-shield-check me-0.5"></i> Siap Ditarik
                 </span>
             </div>
 
-            <div class="fw-extrabold my-1" style="letter-spacing: -0.5px; font-size: 32px; line-height: 1.1;">
+            <div class="fw-extrabold my-1" style="letter-spacing: -0.5px; font-size: 28px; font-weight: 800; line-height: 1.1;">
                 <?= format_rupiah($wallet['balance'] ?? 0) ?>
             </div>
 
@@ -25,20 +25,20 @@
             <div class="row g-2 mt-2 mb-3">
                 <div class="col-6">
                     <div class="p-2 rounded-3" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);">
-                        <div class="text-white-50" style="font-size: 10.5px;">Total Penghasilan</div>
+                        <div class="text-white-50" style="font-size: 10px;">Total Penghasilan</div>
                         <div class="fw-bold text-white small mt-0.5"><?= format_rupiah($wallet['total_earned'] ?? 0) ?></div>
                     </div>
                 </div>
                 <div class="col-6">
                     <div class="p-2 rounded-3" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);">
-                        <div class="text-white-50" style="font-size: 10.5px;">Total Telah Ditarik</div>
+                        <div class="text-white-50" style="font-size: 10px;">Total Telah Ditarik</div>
                         <div class="fw-bold text-warning small mt-0.5"><?= format_rupiah($total_withdrawn ?? 0) ?></div>
                     </div>
                 </div>
             </div>
 
             <div>
-                <button type="button" onclick="openVendorWithdrawModal()" class="btn btn-danger w-100 rounded-pill fw-bold py-2.5 d-flex align-items-center justify-content-center gap-2 shadow-sm" style="background: #EE2737; font-size: 13.5px; border: none;">
+                <button type="button" onclick="openVendorWithdrawModal()" class="btn btn-danger w-100 rounded-pill fw-bold py-2.5 d-flex align-items-center justify-content-center gap-2 shadow-2xs" style="background: linear-gradient(135deg, #EE2737, #C61524); font-size: 12.5px; border: none;">
                     <i class="bi bi-arrow-up-right-circle-fill fs-6"></i>
                     <span>Ajukan Penarikan Dana (Payout)</span>
                 </button>
@@ -47,19 +47,19 @@
     </div>
 
     <!-- Navigation Tabs for History -->
-    <ul class="nav nav-pills nav-fill bg-white p-1 rounded-4 shadow-sm border mb-3" id="walletTab" role="tablist">
+    <ul class="nav nav-pills nav-fill bg-white p-1 shadow-2xs border mb-3" id="walletTab" role="tablist" style="border-radius: 14px; border-color: #E2E8F0 !important;">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active rounded-4 fw-bold py-2 px-3 small d-flex align-items-center justify-content-center gap-1.5" id="withdraw-tab" data-bs-toggle="tab" data-bs-target="#withdraw-pane" type="button" role="tab" style="font-size: 12px;">
+            <button class="nav-link active fw-bold py-2 px-3 small d-flex align-items-center justify-content-center gap-1.5" id="withdraw-tab" data-bs-toggle="tab" data-bs-target="#withdraw-pane" type="button" role="tab" style="font-size: 11.5px; border-radius: 10px;">
                 <i class="bi bi-cash-stack text-danger"></i>
                 <span>Riwayat Penarikan</span>
-                <span class="badge bg-danger-subtle text-danger rounded-pill px-1.5 ms-1" style="font-size: 10px;"><?= count($withdraw_requests ?? []) ?></span>
+                <span class="badge bg-danger-subtle text-danger rounded-pill px-1.5 ms-1" style="font-size: 9.5px;"><?= count($withdraw_requests ?? []) ?></span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link rounded-4 fw-bold py-2 px-3 small d-flex align-items-center justify-content-center gap-1.5" id="mutation-tab" data-bs-toggle="tab" data-bs-target="#mutation-pane" type="button" role="tab" style="font-size: 12px;">
+            <button class="nav-link fw-bold py-2 px-3 small d-flex align-items-center justify-content-center gap-1.5" id="mutation-tab" data-bs-toggle="tab" data-bs-target="#mutation-pane" type="button" role="tab" style="font-size: 11.5px; border-radius: 10px;">
                 <i class="bi bi-receipt text-secondary"></i>
                 <span>Mutasi Transaksi</span>
-                <span class="badge bg-secondary-subtle text-secondary rounded-pill px-1.5 ms-1" style="font-size: 10px;"><?= count($transactions ?? []) ?></span>
+                <span class="badge bg-secondary-subtle text-secondary rounded-pill px-1.5 ms-1" style="font-size: 9.5px;"><?= count($transactions ?? []) ?></span>
             </button>
         </li>
     </ul>
@@ -68,7 +68,7 @@
     <div class="tab-content" id="walletTabContent">
         <!-- PANE 1: Riwayat Penarikan Dana -->
         <div class="tab-pane fade show active" id="withdraw-pane" role="tabpanel" tabindex="0">
-            <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+            <div class="card border-0 shadow-2xs bg-white overflow-hidden" style="border-radius: 16px; border: 1px solid #E2E8F0 !important;">
                 <div class="card-header bg-white border-0 py-3 px-3 d-flex align-items-center justify-content-between">
                     <h6 class="fw-bold m-0 text-dark" style="font-size: 13.5px;">
                         <i class="bi bi-clock-history text-danger me-1.5"></i> Riwayat Penarikan Saldo Toko

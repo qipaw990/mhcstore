@@ -1,20 +1,20 @@
 <div class="p-3">
     <!-- Driver Balance Card (CicalengkaGO Pay / Dompet Mitra Kurir) -->
-    <div class="p-4 rounded-4 text-white shadow-sm mb-3 position-relative overflow-hidden" style="background: linear-gradient(135deg, #EE2737 0%, #991B1B 100%); border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 8px 24px rgba(238, 39, 55, 0.35) !important;">
+    <div class="p-3.5 text-white shadow-2xs mb-3 position-relative overflow-hidden" style="background: linear-gradient(135deg, #EE2737 0%, #991B1B 100%); border-radius: 16px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 8px 24px rgba(238, 39, 55, 0.35) !important;">
         <!-- Background decorative ambient circle -->
         <div style="position: absolute; top: -30px; right: -30px; width: 130px; height: 130px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%); pointer-events: none;"></div>
 
         <div class="d-flex justify-content-between align-items-start mb-2 position-relative" style="z-index: 1;">
             <div>
                 <div class="d-flex align-items-center gap-1.5 mb-1">
-                    <span class="badge rounded-pill bg-white text-danger px-2.5 py-0.5 fw-bold" style="font-size: 10px; letter-spacing: 0.5px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+                    <span class="badge rounded-pill bg-white text-danger px-2.5 py-0.5 fw-bold" style="font-size: 9.5px; letter-spacing: 0.5px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
                         <i class="bi bi-wallet-fill me-1"></i> DOMPET MITRA DRIVER
                     </span>
                 </div>
-                <div class="fs-2 fw-extrabold text-white" style="letter-spacing: -0.5px;"><?= format_rupiah($wallet['balance'] ?? 0) ?></div>
+                <div class="fw-extrabold text-white" style="letter-spacing: -0.5px; font-size: 22px; font-weight: 800;"><?= format_rupiah($wallet['balance'] ?? 0) ?></div>
             </div>
-            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 46px; height: 46px; background: rgba(255, 255, 255, 0.22); border: 1.5px solid rgba(255, 255, 255, 0.35); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                <i class="bi bi-wallet2 text-white" style="font-size: 22px; line-height: 1;"></i>
+            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: rgba(255, 255, 255, 0.22); border: 1.5px solid rgba(255, 255, 255, 0.35); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+                <i class="bi bi-wallet2 text-white" style="font-size: 20px; line-height: 1;"></i>
             </div>
         </div>
 
@@ -35,42 +35,42 @@
         </div>
 
         <div class="d-flex align-items-center gap-2 pt-2 border-top border-white border-opacity-25 mt-2 position-relative" style="z-index: 1;">
-            <button onclick="openDriverWithdrawModal()" class="btn btn-light btn-sm fw-bold px-3 py-1.5 rounded-pill shadow-sm d-flex align-items-center gap-1.5" style="font-size: 12px; color: #EE2737 !important; background: #ffffff; border: none;">
+            <button onclick="openDriverWithdrawModal()" class="btn btn-light btn-sm fw-bold px-3 py-1.5 rounded-pill shadow-2xs d-flex align-items-center gap-1.5" style="font-size: 11.5px; color: #EE2737 !important; background: #ffffff; border: none;">
                 <i class="bi bi-arrow-up-right-circle-fill" style="color: #EE2737; font-size: 13px;"></i> Tarik Dana Komisi
             </button>
-            <span class="text-white-50 small" style="font-size: 11px;">
+            <span class="text-white-50" style="font-size: 10.5px;">
                 <i class="bi bi-shield-lock-fill me-1"></i>Pencairan Cepat
             </span>
         </div>
     </div>
 
     <!-- Quick Driver Performance Info -->
-    <div class="row g-2 mb-3">
+    <div class="row g-2.5 mb-3">
         <div class="col-6">
-            <div class="p-2.5 bg-white rounded-4 border shadow-sm text-center">
-                <div class="text-muted fw-semibold" style="font-size: 10.5px;">Bagi Hasil Driver</div>
-                <div class="fw-bold fs-6 text-success mt-0.5">85% Bersih</div>
+            <div class="p-3 bg-white border shadow-2xs text-center" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+                <div class="text-muted fw-bold" style="font-size: 10.5px;">Bagi Hasil Driver</div>
+                <div class="fw-bold text-success mt-0.5" style="font-size: 14px;">85% Bersih</div>
             </div>
         </div>
         <div class="col-6">
-            <div class="p-2.5 bg-white rounded-4 border shadow-sm text-center">
-                <div class="text-muted fw-semibold" style="font-size: 10.5px;">Biaya Penarikan</div>
-                <div class="fw-bold fs-6 text-primary mt-0.5">Gratis (Rp 0)</div>
+            <div class="p-3 bg-white border shadow-2xs text-center" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+                <div class="text-muted fw-bold" style="font-size: 10.5px;">Biaya Penarikan</div>
+                <div class="fw-bold text-primary mt-0.5" style="font-size: 14px;">Gratis (Rp 0)</div>
             </div>
         </div>
     </div>
 
     <!-- Navigation Tabs for Driver Earnings & Withdrawals -->
-    <ul class="nav nav-pills nav-fill bg-white p-1 rounded-4 shadow-sm border mb-3" id="driverWalletTab" role="tablist">
+    <ul class="nav nav-pills nav-fill bg-white p-1 shadow-2xs border mb-3" id="driverWalletTab" role="tablist" style="border-radius: 14px; border-color: #E2E8F0 !important;">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active rounded-4 fw-bold py-2 px-2 small d-flex align-items-center justify-content-center gap-1" id="driver-withdraw-tab" data-bs-toggle="tab" data-bs-target="#driver-withdraw-pane" type="button" role="tab" style="font-size: 11.5px;">
+            <button class="nav-link active fw-bold py-2 px-2 small d-flex align-items-center justify-content-center gap-1" id="driver-withdraw-tab" data-bs-toggle="tab" data-bs-target="#driver-withdraw-pane" type="button" role="tab" style="font-size: 11.5px; border-radius: 10px;">
                 <i class="bi bi-cash-stack text-danger"></i>
                 <span>Riwayat Penarikan</span>
                 <span class="badge bg-danger-subtle text-danger rounded-pill px-1.5 ms-0.5" style="font-size: 9.5px;"><?= count($withdraw_requests ?? []) ?></span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link rounded-4 fw-bold py-2 px-2 small d-flex align-items-center justify-content-center gap-1" id="driver-mutation-tab" data-bs-toggle="tab" data-bs-target="#driver-mutation-pane" type="button" role="tab" style="font-size: 11.5px;">
+            <button class="nav-link fw-bold py-2 px-2 small d-flex align-items-center justify-content-center gap-1" id="driver-mutation-tab" data-bs-toggle="tab" data-bs-target="#driver-mutation-pane" type="button" role="tab" style="font-size: 11.5px; border-radius: 10px;">
                 <i class="bi bi-bicycle text-secondary"></i>
                 <span>Komisi Order</span>
                 <span class="badge bg-secondary-subtle text-secondary rounded-pill px-1.5 ms-0.5" style="font-size: 9.5px;"><?= count($transactions ?? []) ?></span>
@@ -82,7 +82,7 @@
     <div class="tab-content" id="driverWalletTabContent">
         <!-- PANE 1: Riwayat Penarikan Dana Driver -->
         <div class="tab-pane fade show active" id="driver-withdraw-pane" role="tabpanel" tabindex="0">
-            <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-3">
+            <div class="card border-0 shadow-2xs bg-white overflow-hidden mb-3" style="border-radius: 16px; border: 1px solid #E2E8F0 !important;">
                 <div class="card-header bg-white border-0 py-3 px-3 d-flex align-items-center justify-content-between">
                     <h6 class="fw-bold m-0 text-dark" style="font-size: 13px;">
                         <i class="bi bi-clock-history text-danger me-1.5"></i> Riwayat Pencairan Dana Kurir

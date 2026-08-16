@@ -1,23 +1,23 @@
 <!-- Store & Owner Summary Card -->
-<div class="card border-0 shadow-sm rounded-4 bg-white text-center mb-3 overflow-hidden">
+<div class="card border-0 shadow-2xs bg-white text-center mb-3 overflow-hidden" style="border-radius: 16px; border: 1px solid #E2E8F0 !important;">
     <div class="p-3.5 text-white" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);">
-        <div class="position-relative d-inline-block mx-auto mt-2 mb-2">
-            <img src="<?= $baseUrl ?>/<?= htmlspecialchars($store['logo'] ?? 'assets/images/stores/default.jpg') ?>" alt="Store Logo" class="rounded-circle border border-3 border-white shadow" style="width: 78px; height: 78px; object-fit: cover; background: #ffffff;">
+        <div class="position-relative d-inline-block mx-auto mt-1 mb-2">
+            <img src="<?= $baseUrl ?>/<?= htmlspecialchars($store['logo'] ?? 'assets/images/stores/default.jpg') ?>" alt="Store Logo" class="rounded-circle border border-3 border-white shadow-2xs" style="width: 76px; height: 76px; object-fit: cover; background: #ffffff;">
             <?php if ($store && $store['is_open']): ?>
-                <span class="position-absolute bottom-0 end-0 bg-success border border-2 border-white rounded-circle" style="width: 16px; height: 16px;" title="Toko Buka"></span>
+                <span class="position-absolute bottom-0 end-0 bg-success border border-2 border-white rounded-circle p-1.5" title="Toko Buka"></span>
             <?php else: ?>
-                <span class="position-absolute bottom-0 end-0 bg-danger border border-2 border-white rounded-circle" style="width: 16px; height: 16px;" title="Toko Tutup"></span>
+                <span class="position-absolute bottom-0 end-0 bg-danger border border-2 border-white rounded-circle p-1.5" title="Toko Tutup"></span>
             <?php endif; ?>
         </div>
         
-        <h5 class="fw-bold text-white m-0" style="font-size: 16px; letter-spacing: -0.3px;"><?= htmlspecialchars($store['name'] ?? 'Nama Toko') ?></h5>
-        <span class="badge bg-danger text-white rounded-pill px-2.5 py-1 my-1.5 fw-bold" style="font-size: 9.5px; letter-spacing: 0.3px;">
+        <h6 class="fw-bold text-white m-0" style="font-size: 15px; letter-spacing: -0.3px;"><?= htmlspecialchars($store['name'] ?? 'Nama Toko') ?></h6>
+        <span class="badge bg-danger text-white rounded-pill px-2.5 py-1 my-1.5 fw-bold" style="font-size: 9px; letter-spacing: 0.3px;">
             <i class="bi bi-patch-check-fill me-1"></i> MITRA RESMI CICALENGKAGO
         </span>
     </div>
 
     <div class="p-3">
-        <div class="p-2.5 bg-light rounded-3 text-start small border" style="font-size: 11.5px;">
+        <div class="p-2.5 bg-light rounded-3 text-start small border" style="font-size: 11px; border-color: #E2E8F0 !important;">
             <div class="mb-1.5 text-muted d-flex align-items-center"><i class="bi bi-person-fill text-danger me-2 fs-6"></i> <span><strong>Pemilik:</strong> <?= htmlspecialchars($user['name'] ?? '-') ?></span></div>
             <div class="mb-1.5 text-muted d-flex align-items-center"><i class="bi bi-envelope-fill text-danger me-2 fs-6"></i> <span><strong>Email:</strong> <?= htmlspecialchars($user['email'] ?? '-') ?></span></div>
             <div class="mb-1.5 text-muted d-flex align-items-center"><i class="bi bi-phone-fill text-danger me-2 fs-6"></i> <span><strong>No. HP:</strong> <?= htmlspecialchars($user['phone'] ?? '-') ?></span></div>
@@ -27,27 +27,27 @@
 </div>
 
 <!-- Edit Settings Form -->
-<div class="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
+<div class="p-3.5 bg-white border shadow-2xs mb-4" style="border-radius: 16px; border-color: #E2E8F0 !important;">
     <div class="d-flex align-items-center justify-content-between border-bottom pb-2.5 mb-3">
-        <h6 class="fw-bold text-dark m-0" style="font-size: 13.5px;">
+        <h6 class="fw-bold text-dark m-0" style="font-size: 13px;">
             <i class="bi bi-sliders text-danger me-1.5"></i> Pengaturan Toko & Pemilik
         </h6>
-        <span class="badge bg-light text-muted border px-2 py-0.5" style="font-size: 10px;">Mitra Merchant</span>
+        <span class="badge bg-light text-muted border px-2 py-0.5" style="font-size: 9.5px;">Mitra Merchant</span>
     </div>
 
     <form action="<?= $baseUrl ?>/vendor/profile/update" method="POST" enctype="multipart/form-data">
         <!-- 1. Owner Profile -->
-        <h6 class="fw-bold text-dark mb-2.5 pb-1 border-bottom d-flex align-items-center gap-1.5" style="font-size: 12.5px;">
+        <h6 class="fw-bold text-dark mb-2.5 pb-1 border-bottom d-flex align-items-center gap-1.5" style="font-size: 12px;">
             <i class="bi bi-person-circle text-primary"></i> 1. Informasi Akun Pemilik
         </h6>
 
         <!-- Foto Profil Pemilik -->
         <div class="mb-3">
-            <label class="form-label small fw-bold text-dark mb-1" for="vendor_avatar" style="font-size: 11.5px;">Foto Profil Pemilik</label>
-            <div class="d-flex align-items-center gap-3 p-2.5 bg-light rounded-3 border">
-                <img id="vendor-avatar-preview" src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/default.png') ?>" alt="Preview" class="rounded-circle border border-2 border-danger shadow-xs" style="width: 52px; height: 52px; object-fit: cover; flex-shrink: 0;">
+            <label class="form-label small fw-bold text-dark mb-1" for="vendor_avatar" style="font-size: 11px;">Foto Profil Pemilik</label>
+            <div class="d-flex align-items-center gap-3 p-2.5 bg-light rounded-3 border" style="border-color: #E2E8F0 !important;">
+                <img id="vendor-avatar-preview" src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/default.png') ?>" alt="Preview" class="rounded-circle border border-2 border-danger shadow-2xs" style="width: 52px; height: 52px; object-fit: cover; flex-shrink: 0;">
                 <div class="flex-grow-1">
-                    <label class="btn btn-outline-dark btn-sm rounded-pill fw-semibold mb-1" style="font-size: 11px; cursor: pointer;">
+                    <label class="btn btn-outline-dark btn-sm rounded-pill fw-semibold mb-1" style="font-size: 10.5px; cursor: pointer;">
                         <i class="bi bi-camera-fill me-1"></i> Pilih Foto Profil
                         <input type="file" name="avatar" id="vendor_avatar" class="d-none" accept="image/*" onchange="previewImg(this, 'vendor-avatar-preview')">
                     </label>
@@ -57,35 +57,35 @@
         </div>
 
         <div class="mb-2.5">
-            <label class="form-label small fw-bold text-dark mb-1" for="vendor_name" style="font-size: 11.5px;">Nama Pemilik Toko <span class="text-danger">*</span></label>
-            <input type="text" name="name" id="vendor_name" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($user['name'] ?? '') ?>" required style="padding: 8px 12px; font-size: 12.5px;">
+            <label class="form-label fw-bold text-dark mb-1" for="vendor_name" style="font-size: 11px;">Nama Pemilik Toko <span class="text-danger">*</span></label>
+            <input type="text" name="name" id="vendor_name" class="form-control form-control-sm bg-light" style="font-size: 11.5px; border-radius: 10px; border-color: #E2E8F0;" value="<?= htmlspecialchars($user['name'] ?? '') ?>" required>
         </div>
 
         <div class="mb-2.5">
-            <label class="form-label small fw-bold text-dark mb-1" for="vendor_phone" style="font-size: 11.5px;">No HP / WhatsApp Pemilik <span class="text-danger">*</span></label>
-            <input type="text" name="phone" id="vendor_phone" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($user['phone'] ?? '') ?>" required style="padding: 8px 12px; font-size: 12.5px;">
+            <label class="form-label fw-bold text-dark mb-1" for="vendor_phone" style="font-size: 11px;">No HP / WhatsApp Pemilik <span class="text-danger">*</span></label>
+            <input type="text" name="phone" id="vendor_phone" class="form-control form-control-sm bg-light" style="font-size: 11.5px; border-radius: 10px; border-color: #E2E8F0;" value="<?= htmlspecialchars($user['phone'] ?? '') ?>" required>
         </div>
 
         <div class="mb-3">
-            <label class="form-label small fw-bold text-dark mb-1" for="vendor_email" style="font-size: 11.5px;">Alamat Email <span class="text-danger">*</span></label>
-            <input type="email" name="email" id="vendor_email" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($user['email'] ?? '') ?>" required style="padding: 8px 12px; font-size: 12.5px;">
+            <label class="form-label fw-bold text-dark mb-1" for="vendor_email" style="font-size: 11px;">Alamat Email <span class="text-danger">*</span></label>
+            <input type="email" name="email" id="vendor_email" class="form-control form-control-sm bg-light" style="font-size: 11.5px; border-radius: 10px; border-color: #E2E8F0;" value="<?= htmlspecialchars($user['email'] ?? '') ?>" required>
             <div class="text-muted mt-1" style="font-size: 10px;">
                 <i class="bi bi-shield-check text-warning me-0.5"></i> Perubahan email memerlukan verifikasi OTP.
             </div>
         </div>
 
         <!-- 2. Store Info -->
-        <h6 class="fw-bold text-dark mb-2.5 pb-1 border-bottom mt-3.5 d-flex align-items-center gap-1.5" style="font-size: 12.5px;">
+        <h6 class="fw-bold text-dark mb-2.5 pb-1 border-bottom mt-3.5 d-flex align-items-center gap-1.5" style="font-size: 12px;">
             <i class="bi bi-shop text-success"></i> 2. Informasi Toko / Resto
         </h6>
 
         <!-- Logo Toko -->
         <div class="mb-3">
-            <label class="form-label small fw-bold text-dark mb-1" for="store_logo" style="font-size: 11.5px;">Logo / Foto Profil Toko</label>
-            <div class="d-flex align-items-center gap-3 p-2.5 bg-light rounded-3 border">
-                <img id="store-logo-preview" src="<?= $baseUrl ?>/<?= htmlspecialchars($store['logo'] ?? 'assets/images/stores/default.jpg') ?>" alt="Preview" class="rounded-3 border border-2 border-danger shadow-xs" style="width: 52px; height: 52px; object-fit: cover; flex-shrink: 0;">
+            <label class="form-label small fw-bold text-dark mb-1" for="store_logo" style="font-size: 11px;">Logo / Foto Profil Toko</label>
+            <div class="d-flex align-items-center gap-3 p-2.5 bg-light rounded-3 border" style="border-color: #E2E8F0 !important;">
+                <img id="store-logo-preview" src="<?= $baseUrl ?>/<?= htmlspecialchars($store['logo'] ?? 'assets/images/stores/default.jpg') ?>" alt="Preview" class="rounded-3 border border-2 border-danger shadow-2xs" style="width: 52px; height: 52px; object-fit: cover; flex-shrink: 0;">
                 <div class="flex-grow-1">
-                    <label class="btn btn-outline-danger btn-sm rounded-pill fw-semibold mb-1" style="font-size: 11px; cursor: pointer;">
+                    <label class="btn btn-outline-danger btn-sm rounded-pill fw-semibold mb-1" style="font-size: 10.5px; cursor: pointer;">
                         <i class="bi bi-image-fill me-1"></i> Pilih Logo Toko
                         <input type="file" name="store_logo" id="store_logo" class="d-none" accept="image/*" onchange="previewImg(this, 'store-logo-preview')">
                     </label>
@@ -95,29 +95,29 @@
         </div>
 
         <div class="mb-2.5">
-            <label class="form-label small fw-bold text-dark mb-1" for="store_name" style="font-size: 11.5px;">Nama Toko / Resto <span class="text-danger">*</span></label>
-            <input type="text" name="store_name" id="store_name" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($store['name'] ?? '') ?>" required style="padding: 8px 12px; font-size: 12.5px;">
+            <label class="form-label fw-bold text-dark mb-1" for="store_name" style="font-size: 11px;">Nama Toko / Resto <span class="text-danger">*</span></label>
+            <input type="text" name="store_name" id="store_name" class="form-control form-control-sm bg-light" style="font-size: 11.5px; border-radius: 10px; border-color: #E2E8F0;" value="<?= htmlspecialchars($store['name'] ?? '') ?>" required>
         </div>
 
         <div class="mb-2.5">
-            <label class="form-label small fw-bold text-dark mb-1" for="store_phone" style="font-size: 11.5px;">No HP / Kontak Toko</label>
-            <input type="text" name="store_phone" id="store_phone" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($store['phone'] ?? '') ?>" style="padding: 8px 12px; font-size: 12.5px;">
+            <label class="form-label fw-bold text-dark mb-1" for="store_phone" style="font-size: 11px;">No HP / Kontak Toko</label>
+            <input type="text" name="store_phone" id="store_phone" class="form-control form-control-sm bg-light" style="font-size: 11.5px; border-radius: 10px; border-color: #E2E8F0;" value="<?= htmlspecialchars($store['phone'] ?? '') ?>">
         </div>
 
         <div class="mb-3">
-            <label class="form-label small fw-bold text-dark mb-1" for="store_address" style="font-size: 11.5px;">Alamat Lengkap Toko</label>
-            <textarea name="store_address" id="store_address" class="form-control form-control-sm rounded-3" rows="2" style="padding: 8px 12px; font-size: 12.5px;"><?= htmlspecialchars($store['address'] ?? '') ?></textarea>
+            <label class="form-label fw-bold text-dark mb-1" for="store_address" style="font-size: 11px;">Alamat Lengkap Toko</label>
+            <textarea name="store_address" id="store_address" class="form-control form-control-sm bg-light" style="font-size: 11.5px; border-radius: 10px; border-color: #E2E8F0;" rows="2"><?= htmlspecialchars($store['address'] ?? '') ?></textarea>
         </div>
 
         <!-- 3. GPS Pinpoint Picker (Leaflet Map) -->
-        <h6 class="fw-bold text-dark mb-2 pb-1 border-bottom mt-3.5 d-flex align-items-center gap-1.5" style="font-size: 12.5px;">
+        <h6 class="fw-bold text-dark mb-2 pb-1 border-bottom mt-3.5 d-flex align-items-center gap-1.5" style="font-size: 12px;">
             <i class="bi bi-geo-alt-fill text-danger"></i> 3. Titik Koordinat GPS Toko
         </h6>
 
         <div class="mb-2">
             <div class="d-flex align-items-center justify-content-between mb-1.5">
-                <span class="small text-muted" style="font-size: 11px;">Geser pin merah ke lokasi toko:</span>
-                <button type="button" onclick="detectCurrentStoreGps()" class="btn btn-outline-danger btn-sm rounded-pill px-2.5 py-0.5" style="font-size: 10.5px;">
+                <span class="small text-muted" style="font-size: 10.5px;">Geser pin merah ke lokasi toko:</span>
+                <button type="button" onclick="detectCurrentStoreGps()" class="btn btn-outline-danger btn-sm rounded-pill px-2.5 py-0.5" style="font-size: 10px;">
                     <i class="bi bi-crosshair me-1"></i> Deteksi GPS Saya
                 </button>
             </div>
@@ -138,7 +138,7 @@
 
         <!-- Submit Button -->
         <div class="mt-4 pt-2 border-top">
-            <button type="submit" class="btn btn-danger w-100 rounded-pill py-2.5 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2" style="background: #EE2737; font-size: 13px; border: none;">
+            <button type="submit" class="btn text-white w-100 py-2.5 fw-bold shadow-2xs d-flex align-items-center justify-content-center gap-2" style="background: linear-gradient(135deg, #EE2737, #C61524); border-radius: 9999px; font-size: 12.5px; border: none;">
                 <i class="bi bi-floppy2-fill"></i> Simpan Perubahan Profil & Toko
             </button>
         </div>

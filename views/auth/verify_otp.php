@@ -1,29 +1,29 @@
-<div class="text-center mb-4">
-    <div class="d-inline-flex align-items-center justify-content-center bg-danger-subtle text-danger rounded-circle mb-3" style="width: 64px; height: 64px;">
-        <i class="bi bi-envelope-check-fill fs-2"></i>
+<div class="text-center mb-3">
+    <div class="d-inline-flex align-items-center justify-content-center bg-danger-subtle text-danger rounded-circle mb-2" style="width: 56px; height: 56px;">
+        <i class="bi bi-envelope-check-fill fs-3"></i>
     </div>
-    <h5 class="fw-bold text-dark mb-1">Verifikasi Kode OTP Email</h5>
-    <p class="text-muted small mb-0">
+    <h6 class="fw-bold text-dark mb-1" style="font-size: 15px;">Verifikasi Kode OTP Email</h6>
+    <p class="text-muted small mb-0" style="font-size: 11px;">
         Kode verifikasi 6-digit telah dikirimkan ke email:<br>
-        <span class="fw-bold text-dark text-break"><?= htmlspecialchars($email ?? '') ?></span>
+        <span class="fw-bold text-dark text-break" style="font-size: 11.5px;"><?= htmlspecialchars($email ?? '') ?></span>
     </p>
 </div>
 
 <!-- DEMO / REAL MODE OTP BANNER -->
 <?php if (!empty($demoOtp)): ?>
-<div class="alert alert-warning border-0 rounded-4 shadow-xs p-3 mb-4 d-flex align-items-center justify-content-between">
+<div class="p-3 bg-white border shadow-2xs mb-3 d-flex align-items-center justify-content-between" style="border-radius: 16px; border-color: #E2E8F0 !important;">
     <div>
-        <small class="fw-bold text-dark d-block mb-1"><i class="bi bi-shield-lock-fill text-warning me-1"></i> Mode Testing / Demo OTP:</small>
-        <div class="h4 fw-bold text-danger m-0 font-monospace tracking-wider"><?= htmlspecialchars($demoOtp) ?></div>
+        <small class="fw-bold text-dark d-block mb-1" style="font-size: 10.5px;"><i class="bi bi-shield-lock-fill text-warning me-1"></i> Mode Testing / Demo OTP:</small>
+        <div class="h5 fw-bold text-danger m-0 font-monospace tracking-wider"><?= htmlspecialchars($demoOtp) ?></div>
     </div>
-    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1.5 fw-bold text-nowrap" onclick="fillOtp('<?= htmlspecialchars($demoOtp) ?>')">
+    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1.5 fw-bold text-nowrap" style="font-size: 11px;" onclick="fillOtp('<?= htmlspecialchars($demoOtp) ?>')">
         <i class="bi bi-magic me-1"></i> Isi Otomatis
     </button>
 </div>
 <?php else: ?>
-<div class="alert alert-info border-0 rounded-4 shadow-xs p-3 mb-4 d-flex align-items-center gap-3" style="background:#eef6ff;">
+<div class="p-3 bg-white border shadow-2xs mb-3 d-flex align-items-center gap-2.5" style="border-radius: 16px; border-color: #E2E8F0 !important;">
     <i class="bi bi-shield-check text-primary fs-3 flex-shrink-0"></i>
-    <small class="text-dark">
+    <small class="text-dark" style="font-size: 11px;">
         <strong>Mode Real Aktif:</strong> Silakan buka kotak masuk (inbox) atau folder spam pada email Anda untuk melihat 6 digit kode OTP rahasia.
     </small>
 </div>
@@ -31,12 +31,13 @@
 
 <form action="<?= $baseUrl ?>/verify-otp" method="POST" id="otp-form">
     <!-- 6 Digit Input Group -->
-    <div class="d-flex justify-content-between gap-2 mb-4">
+    <div class="d-flex justify-content-between gap-1.5 mb-3">
         <?php for ($i = 0; $i < 6; $i++): ?>
             <input type="text" 
                    name="otp_digit[]" 
                    id="otp_digit_<?= $i ?>"
-                   class="form-control text-center fw-bold fs-3 rounded-3 py-2 border-2 otp-input" 
+                   class="form-control text-center fw-bold fs-4 py-2 border otp-input bg-light" 
+                   style="border-radius: 12px; border-color: #E2E8F0 !important;"
                    maxlength="1" 
                    pattern="[0-9]" 
                    inputmode="numeric" 
@@ -49,7 +50,7 @@
     <!-- Hidden full OTP field fallback -->
     <input type="hidden" name="otp" id="full-otp">
 
-    <button type="submit" class="btn text-white w-100 py-3 fw-bold rounded-4 shadow-sm mb-3" style="background:#EE2737;">
+    <button type="submit" class="btn text-white w-100 py-2.5 fw-bold shadow-2xs mb-3" style="background: linear-gradient(135deg, #EE2737, #C61524); border-radius: 9999px; font-size: 12.5px;">
         <i class="bi bi-shield-check me-1"></i> Konfirmasi & Verifikasi OTP
     </button>
 </form>
@@ -60,17 +61,17 @@ $elapsed = time() - $lastSent;
 $cooldownRemaining = max(0, 60 - $elapsed);
 ?>
 
-<div class="d-flex align-items-center justify-content-between text-muted small pt-2 border-top">
+<div class="d-flex align-items-center justify-content-between text-muted small pt-2 border-top" style="font-size: 11px;">
     <span>Tidak menerima kode?</span>
     <form action="<?= $baseUrl ?>/resend-otp" method="POST" class="d-inline" id="resend-form">
-        <button type="submit" class="btn btn-link p-0 small fw-bold text-danger text-decoration-none" id="btn-resend">
+        <button type="submit" class="btn btn-link p-0 small fw-bold text-danger text-decoration-none" id="btn-resend" style="font-size: 11px;">
             <i class="bi bi-arrow-clockwise me-1"></i> Kirim Ulang OTP
         </button>
     </form>
 </div>
 
-<div class="text-center mt-4">
-    <a href="<?= $baseUrl ?>/logout" class="small text-muted text-decoration-none">
+<div class="text-center mt-3">
+    <a href="<?= $baseUrl ?>/logout" class="text-muted text-decoration-none" style="font-size: 11px;">
         <i class="bi bi-arrow-left me-1"></i> Kembali ke Halaman Masuk
     </a>
 </div>

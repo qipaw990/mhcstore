@@ -1,10 +1,10 @@
 <!-- Store Open/Close Status Hero Card -->
-<div class="merchant-hero-status mb-3">
+<div class="p-3.5 bg-white border shadow-2xs mb-3 d-flex align-items-center justify-content-between" style="border-radius: 16px; border-color: #E2E8F0 !important;">
     <div class="d-flex align-items-center gap-3">
         <span class="merchant-status-indicator <?= $store['is_open'] ? 'online' : 'offline' ?>"></span>
         <div>
-            <div class="fw-bold text-dark" style="font-size: 14px;"><?= htmlspecialchars($store['name']) ?></div>
-            <span class="badge <?= $store['is_open'] ? 'bg-success' : 'bg-danger' ?>" style="font-size: 10px; font-weight: 700;">
+            <div class="fw-bold text-dark" style="font-size: 14px; letter-spacing: -0.2px;"><?= htmlspecialchars($store['name']) ?></div>
+            <span class="badge <?= $store['is_open'] ? 'bg-success' : 'bg-danger' ?>" style="font-size: 9.5px; font-weight: 700;">
                 <i class="bi <?= $store['is_open'] ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' ?> me-1"></i>
                 <?= $store['is_open'] ? 'TOKO BUKA (MENERIMA PESANAN)' : 'TOKO TUTUP SEMENTARA' ?>
             </span>
@@ -16,10 +16,10 @@
 </div>
 
 <!-- Merchant Main Stat Grid -->
-<div class="row g-2 mb-3">
+<div class="row g-2.5 mb-3">
     <!-- Card 1: Saldo Dompet Toko -->
     <div class="col-6">
-        <a href="<?= $baseUrl ?>/vendor/wallet" class="p-3 bg-white rounded-4 border shadow-xs d-flex flex-column justify-content-between text-decoration-none h-100 position-relative overflow-hidden hover-red-card" style="transition: all 0.2s ease;">
+        <a href="<?= $baseUrl ?>/vendor/wallet" class="p-3.5 bg-white border shadow-2xs d-flex flex-column justify-content-between text-decoration-none h-100 position-relative overflow-hidden hover-red-card" style="border-radius: 16px; border-color: #E2E8F0 !important; transition: all 0.2s ease;">
             <div class="d-flex justify-content-between align-items-start mb-2">
                 <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; font-size: 18px;">
                     <i class="bi bi-wallet2"></i>
@@ -27,15 +27,15 @@
                 <span class="badge bg-light text-muted border" style="font-size: 9.5px;">Dompet <i class="bi bi-chevron-right"></i></span>
             </div>
             <div>
-                <div class="fw-extrabold text-success fs-6 mb-0.5" style="letter-spacing: -0.3px;"><?= format_rupiah($wallet['balance'] ?? 0) ?></div>
-                <div class="text-muted small" style="font-size: 11px;">Saldo Siap Ditarik</div>
+                <div class="fw-bold text-success mb-0.5" style="font-size: 16px; letter-spacing: -0.3px;"><?= format_rupiah($wallet['balance'] ?? 0) ?></div>
+                <div class="text-muted" style="font-size: 10.5px;">Saldo Siap Ditarik</div>
             </div>
         </a>
     </div>
 
     <!-- Card 2: Total Pesanan Masuk -->
     <div class="col-6">
-        <a href="<?= $baseUrl ?>/vendor/orders" class="p-3 bg-white rounded-4 border shadow-xs d-flex flex-column justify-content-between text-decoration-none h-100 position-relative overflow-hidden hover-red-card" style="transition: all 0.2s ease;">
+        <a href="<?= $baseUrl ?>/vendor/orders" class="p-3.5 bg-white border shadow-2xs d-flex flex-column justify-content-between text-decoration-none h-100 position-relative overflow-hidden hover-red-card" style="border-radius: 16px; border-color: #E2E8F0 !important; transition: all 0.2s ease;">
             <div class="d-flex justify-content-between align-items-start mb-2">
                 <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; font-size: 18px;">
                     <i class="bi bi-receipt"></i>
@@ -45,15 +45,15 @@
                 </span>
             </div>
             <div>
-                <div class="fw-extrabold text-dark fs-6 mb-0.5"><?= (int)($stats['total_orders'] ?? $total_orders ?? 0) ?> <span style="font-size: 12px; font-weight: 600;" class="text-muted">Pesanan</span></div>
-                <div class="text-muted small" style="font-size: 11px;">Total Order Masuk</div>
+                <div class="fw-bold text-dark mb-0.5" style="font-size: 16px;"><?= (int)($stats['total_orders'] ?? $total_orders ?? 0) ?> <span style="font-size: 11px; font-weight: 600;" class="text-muted">Pesanan</span></div>
+                <div class="text-muted" style="font-size: 10.5px;">Total Order Masuk</div>
             </div>
         </a>
     </div>
 
     <!-- Card 3: Total Omzet / Pendapatan Selesai -->
     <div class="col-6">
-        <div class="p-3 bg-white rounded-4 border shadow-xs d-flex flex-column justify-content-between h-100">
+        <div class="p-3.5 bg-white border shadow-2xs d-flex flex-column justify-content-between h-100" style="border-radius: 16px; border-color: #E2E8F0 !important;">
             <div class="d-flex justify-content-between align-items-start mb-2">
                 <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; font-size: 18px;">
                     <i class="bi bi-graph-up-arrow"></i>
@@ -61,15 +61,15 @@
                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 9px; font-weight: 700;">Bersih 90%</span>
             </div>
             <div>
-                <div class="fw-extrabold text-dark fs-6 mb-0.5" style="letter-spacing: -0.3px;"><?= format_rupiah($stats['total_revenue'] ?? 0) ?></div>
-                <div class="text-muted small" style="font-size: 11px;">Total Omzet Pesanan</div>
+                <div class="fw-bold text-dark mb-0.5" style="font-size: 16px; letter-spacing: -0.3px;"><?= format_rupiah($stats['total_revenue'] ?? 0) ?></div>
+                <div class="text-muted" style="font-size: 10.5px;">Total Omzet Pesanan</div>
             </div>
         </div>
     </div>
 
     <!-- Card 4: Rating & Ulasan Pelanggan -->
     <div class="col-6">
-        <a href="#customer-reviews-section" class="p-3 bg-white rounded-4 border shadow-xs d-flex flex-column justify-content-between text-decoration-none h-100 hover-red-card" style="transition: all 0.2s ease;">
+        <a href="#customer-reviews-section" class="p-3.5 bg-white border shadow-2xs d-flex flex-column justify-content-between text-decoration-none h-100 hover-red-card" style="border-radius: 16px; border-color: #E2E8F0 !important; transition: all 0.2s ease;">
             <div class="d-flex justify-content-between align-items-start mb-2">
                 <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; font-size: 18px;">
                     <i class="bi bi-star-fill text-warning"></i>
@@ -79,22 +79,22 @@
                 </span>
             </div>
             <div>
-                <div class="fw-extrabold text-dark fs-6 mb-0.5">
+                <div class="fw-bold text-dark mb-0.5" style="font-size: 16px;">
                     <?= number_format($store['rating'] ?? 5.0, 1) ?> 
                     <span style="font-size: 13px; color: #F59E0B;">★</span>
                 </div>
-                <div class="text-muted small" style="font-size: 11px;">Rating Toko Anda</div>
+                <div class="text-muted" style="font-size: 10.5px;">Rating Toko Anda</div>
             </div>
         </a>
     </div>
 </div>
 
 <!-- Today's Order Pipeline Breakdown -->
-<div class="p-3 bg-white rounded-4 border shadow-xs mb-3">
+<div class="p-3.5 bg-white border shadow-2xs mb-3" style="border-radius: 16px; border-color: #E2E8F0 !important;">
     <div class="d-flex justify-content-between align-items-center mb-2.5">
         <div class="d-flex align-items-center gap-1.5">
             <i class="bi bi-calendar2-check-fill text-danger"></i>
-            <h6 class="fw-bold m-0 small" style="color: var(--gojek-charcoal); font-size: 12.5px;">Ringkasan Status Order Toko</h6>
+            <h6 class="fw-bold m-0 text-dark" style="font-size: 12.5px;">Ringkasan Status Order Toko</h6>
         </div>
         <span class="badge bg-light text-dark border px-2 py-0.5" style="font-size: 10px;">
             Hari Ini: <strong><?= $stats['today_orders'] ?? 0 ?> Order</strong>
@@ -104,25 +104,25 @@
     <div class="row g-1.5 text-center">
         <div class="col-3">
             <div class="p-2 rounded-3 bg-warning-subtle text-warning-emphasis border border-warning-subtle">
-                <div class="fw-extrabold fs-6"><?= $stats['pending_count'] ?? 0 ?></div>
+                <div class="fw-bold fs-6"><?= $stats['pending_count'] ?? 0 ?></div>
                 <div style="font-size: 9.5px;" class="fw-semibold">Menunggu</div>
             </div>
         </div>
         <div class="col-3">
             <div class="p-2 rounded-3 bg-info-subtle text-info border border-info-subtle">
-                <div class="fw-extrabold fs-6"><?= $stats['processing_count'] ?? 0 ?></div>
+                <div class="fw-bold fs-6"><?= $stats['processing_count'] ?? 0 ?></div>
                 <div style="font-size: 9.5px;" class="fw-semibold">Dimasak</div>
             </div>
         </div>
         <div class="col-3">
             <div class="p-2 rounded-3 bg-primary-subtle text-primary border border-primary-subtle">
-                <div class="fw-extrabold fs-6"><?= $stats['on_the_way_count'] ?? 0 ?></div>
+                <div class="fw-bold fs-6"><?= $stats['on_the_way_count'] ?? 0 ?></div>
                 <div style="font-size: 9.5px;" class="fw-semibold">Diantar</div>
             </div>
         </div>
         <div class="col-3">
             <div class="p-2 rounded-3 bg-success-subtle text-success border border-success-subtle">
-                <div class="fw-extrabold fs-6"><?= $stats['delivered_count'] ?? 0 ?></div>
+                <div class="fw-bold fs-6"><?= $stats['delivered_count'] ?? 0 ?></div>
                 <div style="font-size: 9.5px;" class="fw-semibold">Selesai</div>
             </div>
         </div>
@@ -131,19 +131,19 @@
 
 <!-- Quick Action Strip -->
 <div class="d-flex gap-2 mb-3">
-    <a href="<?= $baseUrl ?>/vendor/products/create" class="btn btn-danger btn-sm rounded-pill fw-bold px-3 py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-sm" style="background:#EE2737; font-size: 12px; border:none;">
+    <a href="<?= $baseUrl ?>/vendor/products/create" class="btn btn-danger btn-sm rounded-pill fw-bold px-3 py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-2xs" style="background: linear-gradient(135deg, #EE2737, #C61524); font-size: 11.5px; border:none;">
         <i class="bi bi-plus-circle-fill"></i> Tambah Menu Baru
     </a>
-    <a href="<?= $baseUrl ?>/vendor/products" class="btn btn-light border btn-sm rounded-pill fw-bold px-3 py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-sm text-dark" style="font-size: 12px;">
+    <a href="<?= $baseUrl ?>/vendor/products" class="btn btn-light border btn-sm rounded-pill fw-bold px-3 py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-2xs text-dark" style="font-size: 11.5px; border-color: #E2E8F0 !important;">
         <i class="bi bi-egg-fried text-warning"></i> Menu (<?= $products_count ?? 0 ?>)
     </a>
-    <a href="<?= $baseUrl ?>/vendor/wallet" class="btn btn-dark btn-sm rounded-pill fw-bold px-3 py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-sm" style="font-size: 12px;">
+    <a href="<?= $baseUrl ?>/vendor/wallet" class="btn btn-dark btn-sm rounded-pill fw-bold px-3 py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-2xs" style="font-size: 11.5px;">
         <i class="bi bi-cash-stack text-success"></i> Tarik Dana
     </a>
 </div>
 
 <!-- Customer Reviews & Rating Section -->
-<div class="card border-0 shadow-sm rounded-4 p-3 mb-3 bg-white" id="customer-reviews-section">
+<div class="p-3.5 bg-white border shadow-2xs mb-3" id="customer-reviews-section" style="border-radius: 16px; border-color: #E2E8F0 !important;">
     <div class="d-flex justify-content-between align-items-center mb-2.5">
         <div class="d-flex align-items-center gap-1.5">
             <i class="bi bi-chat-heart-fill text-warning"></i>

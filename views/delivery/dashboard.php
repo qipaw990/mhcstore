@@ -1,18 +1,18 @@
 <div class="p-3">
     <!-- Status Driver Online / Offline Switch Card -->
-    <div class="p-3 bg-white rounded-4 border shadow-sm mb-3 d-flex align-items-center justify-content-between">
+    <div class="p-3.5 bg-white border shadow-2xs mb-3 d-flex align-items-center justify-content-between" style="border-radius: 16px; border-color: #E2E8F0 !important;">
         <div class="d-flex align-items-center gap-3">
             <div class="rounded-circle d-flex align-items-center justify-content-center <?= $driver['is_online'] ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' ?>" style="width: 44px; height: 44px; font-size: 20px;">
                 <i class="bi <?= $driver['is_online'] ? 'bi-broadcast-pin text-success' : 'bi-pause-circle' ?>"></i>
             </div>
             <div>
                 <div class="d-flex align-items-center gap-2">
-                    <span class="fw-bold text-dark small">Status Kurir:</span>
-                    <span class="badge rounded-pill <?= $driver['is_online'] ? 'bg-success text-white' : 'bg-secondary' ?>" style="font-size: 10px; font-weight: 700; letter-spacing: 0.3px;">
+                    <span class="fw-bold text-dark" style="font-size: 12px;">Status Kurir:</span>
+                    <span class="badge rounded-pill <?= $driver['is_online'] ? 'bg-success text-white' : 'bg-secondary' ?>" style="font-size: 9.5px; font-weight: 700; letter-spacing: 0.3px;">
                         <?= $driver['is_online'] ? '● ONLINE (SIAP ANTAR)' : '● OFFLINE (ISTIRAHAT)' ?>
                     </span>
                 </div>
-                <div class="text-muted" style="font-size: 11px; margin-top: 2px;">
+                <div class="text-muted" style="font-size: 10.5px; margin-top: 2px;">
                     <?= $driver['is_online'] ? 'GPS aktif: Radar memindai orderan sekitar Cicalengka' : 'Geser saklar untuk mulai menerima pesanan' ?>
                 </div>
             </div>
@@ -24,17 +24,17 @@
     </div>
 
     <!-- Quick Stats Metric -->
-    <div class="row g-2 mb-3">
+    <div class="row g-2.5 mb-3">
         <div class="col-6">
-            <div class="p-3 bg-white rounded-4 border shadow-sm h-100 d-flex flex-column justify-content-between">
-                <div class="d-flex align-items-center justify-content-between mb-1">
-                    <span class="text-muted fw-semibold" style="font-size: 11px;">Dompet Driver</span>
-                    <div class="rounded-2 p-1 d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 13px; background: rgba(238, 39, 55, 0.12); color: #EE2737;">
+            <div class="p-3.5 bg-white border shadow-2xs h-100 d-flex flex-column justify-content-between" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                    <span class="text-muted fw-bold" style="font-size: 11px;">Dompet Driver</span>
+                    <div class="rounded-circle p-1 d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 14px; background: rgba(238, 39, 55, 0.12); color: #EE2737;">
                         <i class="bi bi-wallet2"></i>
                     </div>
                 </div>
                 <div>
-                    <div id="driverWalletBalanceText" class="fw-extrabold fs-6" style="color: #EE2737; font-weight: 800;"><?= format_rupiah($wallet['balance'] ?? 0) ?></div>
+                    <div id="driverWalletBalanceText" class="fw-bold" style="color: #EE2737; font-size: 16px; letter-spacing: -0.2px;"><?= format_rupiah($wallet['balance'] ?? 0) ?></div>
                     <a href="<?= $baseUrl ?>/delivery/earnings" class="text-decoration-none text-muted" style="font-size: 10px; font-weight: 600;">
                         Rincian Saldo <i class="bi bi-chevron-right" style="font-size: 9px; color: #EE2737;"></i>
                     </a>
@@ -42,16 +42,16 @@
             </div>
         </div>
         <div class="col-6">
-            <div class="p-3 bg-white rounded-4 border shadow-sm h-100 d-flex flex-column justify-content-between">
-                <div class="d-flex align-items-center justify-content-between mb-1">
-                    <span class="text-muted fw-semibold" style="font-size: 11px;">Pesanan Selesai</span>
-                    <div class="rounded-2 bg-success-subtle text-success p-1 d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 13px;">
+            <div class="p-3.5 bg-white border shadow-2xs h-100 d-flex flex-column justify-content-between" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                    <span class="text-muted fw-bold" style="font-size: 11px;">Pesanan Selesai</span>
+                    <div class="rounded-circle bg-success-subtle text-success p-1 d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 14px;">
                         <i class="bi bi-check2-circle"></i>
                     </div>
                 </div>
                 <div>
-                    <div class="fw-bold fs-6 text-dark"><span id="driverTotalOrdersText"><?= $driver['total_orders'] ?? 0 ?></span> <span class="fs-6 fw-normal text-muted">Order</span></div>
-                    <span class="badge bg-success-subtle text-success rounded-pill px-2" style="font-size: 10px; font-weight: 700;">
+                    <div class="fw-bold text-dark" style="font-size: 16px;"><span id="driverTotalOrdersText"><?= $driver['total_orders'] ?? 0 ?></span> <span class="fw-normal text-muted" style="font-size: 11px;">Order</span></div>
+                    <span class="badge bg-success-subtle text-success rounded-pill px-2 py-0.5" style="font-size: 9.5px; font-weight: 700;">
                         Performa 100%
                     </span>
                 </div>
