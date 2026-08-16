@@ -1,0 +1,189 @@
+<?php
+namespace App\Controllers;
+
+use App\Core\Controller;
+use App\Models\Module;
+use App\Models\Store;
+use App\Models\Product;
+use App\Models\Banner;
+use App\Models\Category;
+use App\Models\Cart;
+use App\Models\Wallet;
+use App\Models\Notification;
+use App\Models\Coupon;
+use App\Models\CustomerAddress;
+use App\Core\Database;
+
+class CustomerController extends Controller
+{
+    private Module $moduleModel;
+    private Store $storeModel;
+    private Product $productModel;
+    private Banner $bannerModel;
+    private Cart $cartModel;
+    private Wallet $walletModel;
+
+    public function __construct()
+    {
+        $this->moduleModel = new Module();
+        $this->storeModel = new Store();
+        $this->productModel = new Product();
+        $this->bannerModel = new Banner();
+        $this->cartModel = new Cart();
+        $this->walletModel = new Wallet();
+    }
+
+    public function home(): void
+    {
+        $userId = auth_id();
+        $selectedModuleId = (int)($_GET['module_id'] ?? 1); // Default to Kuliner/Food
+
+        $modules = $this->moduleModel->activeModules();
+        $banners = $this->bannerModel->getActiveBanners($selectedModuleId);
+        $categories = (new Category())->getByModule($selectedModuleId);
+        $popularStores = $this->storeModel->getByModule($selectedModuleId);
+        $recommendedProducts = $this->productModel->getRecommended(10);
+        $cartSummary = $this->cartModel->getUserCart($userId, session_id());
+        
+        $walletBalance = 0.00;
+        if ($userId) {
+            $wallet = $this->walletModel->getOrCreate($userId, 'customer');
+            $walletBalance = (float)$wallet['balance'];
+        }
+
+        $coupons = (new Coupon())->where('status', 1);
+
+        $this->view('customer.home', [
+            'title'               => 'CicalengkaGO - Pesan Antar Makanan & Kebutuhan Cicalengka',
+            'modules'             => $modules,
+            'selected_module_id'  => $selectedModuleId,
+            'banners'             => $banners,
+            'categories'          => $categories,
+            'popular_stores'      => $popularStores,
+            'recommended_products'=> $recommendedProducts,
+            'cart_summary'        => $cartSummary,
+            'wallet_balance'      => $walletBalance,
+            'coupons'             => $coupons,
+            'active_tab'          => 'home'
+        ], 'customer_layout');
+    }
+
+    public function search(): void
+    {
+        $query = trim($_GET['q'] ?? '');
+        $moduleId = !empty($_GET['module_id']) ? (int)$_GET['module_id'] : null;
+        
+        $products = [];
+        $stores = [];
+
+        if (!empty($query)) {
+            $products = $this->productModel->search($query, $moduleId);
+            $stores = Database::query("SELECT * FROM `stores` WHERE `name` LIKE ? OR `address` LIKE ?", ["%{$query}%", "%{$query}%"]);
+        }
+
+        $this->view('customer.search', [
+            'title'      => 'Cari Kuliner & Produk di Cicalengka',
+            'query'      => $query,
+            'products'   => $products,
+            'stores'     => $stores,
+            'active_tab' => 'search'
+        ], 'customer_layout');
+    }
+
+    public function storeDetail(int $id): void
+    {
+        $store = $this->storeModel->findWithDetails($id);
+        if (!$store) {
+            $this->redirect('404');
+            return;
+        }
+
+        $products = $this->productModel->getByStore($id);
+        $cartSummary = $this->cartModel->getUserCart(auth_id(), session_id());
+
+        $this->view('customer.store', [
+            'title'        => $store['name'] . ' - CicalengkaGO',
+            'store'        => $store,
+            'products'     => $products,
+            'cart_summary' => $cartSummary,
+            'active_tab'   => 'store'
+        ], 'customer_layout');
+    }
+
+    public function parcel(): void
+    {
+        $userId = auth_id();
+        $walletBalance = 0.00;
+        if ($userId) {
+            $wallet = $this->walletModel->getOrCreate($userId, 'customer');
+            $walletBalance = (float)$wallet['balance'];
+        }
+
+        $this->view('customer.parcel', [
+            'title'          => 'Kirim Paket Kilat Cicalengka (Cicago Parcel)',
+            'wallet_balance' => $walletBalance,
+            'active_tab'     => 'parcel'
+        ], 'customer_layout');
+    }
+
+    public function profile(): void
+    {
+        $userId = auth_id();
+        $user = auth_user();
+        $wallet = null;
+        $addresses = [];
+
+        if ($userId) {
+            $wallet = $this->walletModel->getOrCreate($userId, 'customer');
+            $addresses = Database::query("SELECT * FROM `customer_addresses` WHERE `user_id` = ? ORDER BY `is_default` DESC", [$userId]);
+        }
+
+        $this->view('customer.profile', [
+            'title'      => 'Akun Saya - CicalengkaGO',
+            'user'       => $user,
+            'wallet'     => $wallet,
+            'addresses'  => $addresses,
+            'active_tab' => 'profile'
+        ], 'customer_layout');
+    }
+
+    public function wallet(): void
+    {
+        $userId = auth_id();
+        if (!$userId) {
+            $this->redirect('login');
+            return;
+        }
+
+        $wallet = $this->walletModel->getOrCreate($userId, 'customer');
+        $transactions = $this->walletModel->getTransactions($userId, 30);
+
+        $this->view('customer.wallet', [
+            'title'        => 'Dompet Digital CicagoPay',
+            'wallet'       => $wallet,
+            'transactions' => $transactions,
+            'active_tab'   => 'profile'
+        ], 'customer_layout');
+    }
+
+    public function notifications(): void
+    {
+        $userId = auth_id();
+        if (!$userId) {
+            $this->redirect('login');
+            return;
+        }
+
+        $notifModel = new Notification();
+        $notifications = $notifModel->getUserNotifications($userId, 50);
+
+        // Mark all as read
+        Database::execute("UPDATE `notifications` SET `is_read` = 1 WHERE `user_id` = ?", [$userId]);
+
+        $this->view('customer.notifications', [
+            'title'         => 'Notifikasi',
+            'notifications' => $notifications,
+            'active_tab'    => 'profile'
+        ], 'customer_layout');
+    }
+}

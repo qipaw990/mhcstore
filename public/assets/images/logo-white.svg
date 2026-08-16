@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 100" width="100%" height="100%">
+  <defs>
+    <linearGradient id="cgoRedMarkBgWhite" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF3848" />
+      <stop offset="100%" stop-color="#C61524" />
+    </linearGradient>
+  </defs>
+
+  <!-- Left Icon Mark -->
+  <g transform="translate(10, 10)">
+    <rect x="0" y="0" width="80" height="80" rx="22" fill="url(#cgoRedMarkBgWhite)" />
+    <path d="M 52 24 A 22 22 0 1 0 52 56" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" />
+    <polygon points="53,17 67,24 53,31" fill="#FFFFFF" />
+    <circle cx="40" cy="40" r="7.5" fill="#FFFFFF" />
+  </g>
+
+  <!-- Brand Typography (White text with Red GO) -->
+  <g transform="translate(106, 52)">
+    <text x="0" y="0" font-family="system-ui, -apple-system, 'Inter', 'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="900" fill="#FFFFFF" letter-spacing="-1.2">Cicalengka</text>
+    <text x="186" y="0" font-family="system-ui, -apple-system, 'Inter', 'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="900" fill="#FF4B5A" letter-spacing="-0.5">GO</text>
+  </g>
+
+  <!-- Tagline / Subtitle -->
+  <g transform="translate(108, 73)">
+    <text x="0" y="0" font-family="system-ui, -apple-system, 'Inter', 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#94A3B8" letter-spacing="1.5">SUPER APP CICALENGKA</text>
+  </g>
+
+  <circle cx="348" cy="45" r="4.5" fill="#FF4B5A" />
+</svg>

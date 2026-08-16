@@ -1,0 +1,389 @@
+<div class="p-3 border-bottom bg-white d-flex align-items-center gap-2">
+    <a href="<?= $baseUrl ?>/cart" class="btn btn-light btn-sm rounded-circle"><i class="bi bi-arrow-left"></i></a>
+    <h6 class="fw-bold m-0" style="color: var(--gojek-charcoal);">Konfirmasi & Pembayaran</h6>
+</div>
+
+<form id="checkoutForm" onsubmit="handlePlaceOrder(event)" class="p-3">
+    <!-- Map Location Picker Card -->
+    <div class="p-3 bg-white rounded-4 border shadow-sm mb-3">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="fw-bold small m-0" style="color: var(--gojek-charcoal);"><i class="bi bi-geo-alt-fill text-danger me-1"></i> Titik Lokasi Pengantaran</h6>
+            <button type="button" onclick="getCurrentLocation()" class="btn btn-sm rounded-pill py-0 px-2 fw-bold text-white shadow-xs" style="background:#EE2737; font-size: 11px;">
+                <i class="bi bi-crosshair me-1"></i> GPS Saya
+            </button>
+        </div>
+        <div class="small text-muted mb-2" style="font-size: 11px;">
+            Geser pin merah atau ketuk peta untuk menyesuaikan lokasi tepat rumah Anda di Cicalengka.
+        </div>
+        <div id="checkout-map" style="width: 100%; height: 210px; border-radius: 12px;" class="border shadow-sm mb-2"></div>
+        <div class="d-flex align-items-center justify-content-between px-1">
+            <span class="badge bg-light text-dark border small" id="distance-badge"><i class="bi bi-signpost-2 me-1"></i> Est. Jarak: 1.5 Km</span>
+            <span class="badge bg-danger-subtle text-danger small" id="zone-badge"><i class="bi bi-shield-check me-1"></i> Tercover Zona Cicalengka</span>
+        </div>
+
+        <input type="hidden" name="latitude" id="input-lat" value="-6.9855">
+        <input type="hidden" name="longitude" id="input-lng" value="107.8350">
+        <input type="hidden" name="distance_km" id="input-distance" value="1.5">
+    </div>
+
+    <!-- Delivery Address Details -->
+    <div class="p-3 bg-white rounded-4 border shadow-sm mb-3">
+        <div class="mb-2">
+            <label class="form-label text-muted" style="font-size: 11px;">Alamat Lengkap / Patokan Rumah</label>
+            <textarea name="address" id="input-address" class="form-control form-control-sm bg-light" rows="2" required placeholder="Jl. Raya Cicalengka No. 45 (Dekat Stasiun / Rumah Cat Hijau)">Jl. Cicalengka Raya No. 45, RT 02/03</textarea>
+        </div>
+        <div class="row g-2">
+            <div class="col-6">
+                <label class="form-label text-muted" style="font-size: 11px;">Nama Penerima</label>
+                <input type="text" name="contact_name" class="form-control form-control-sm bg-light" value="<?= htmlspecialchars($_SESSION['user']['name'] ?? '') ?>" required>
+            </div>
+            <div class="col-6">
+                <label class="form-label text-muted" style="font-size: 11px;">No. WhatsApp</label>
+                <input type="text" name="contact_phone" class="form-control form-control-sm bg-light" value="<?= htmlspecialchars($_SESSION['user']['phone'] ?? '') ?>" required>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Method Selector -->
+    <div class="p-3 bg-white rounded-4 border shadow-sm mb-3">
+        <h6 class="fw-bold small mb-3" style="color: var(--gojek-charcoal);"><i class="bi bi-wallet2 text-danger me-1"></i> Metode Pembayaran</h6>
+
+        <div class="d-flex flex-column gap-2">
+            <!-- CicalengkaPay Digital Wallet -->
+            <label class="p-3 border rounded-4 d-flex align-items-center justify-content-between cursor-pointer payment-option <?= ((float)$wallet['balance'] >= (float)$cart_data['subtotal']) ? 'border-danger bg-danger-subtle' : 'opacity-75' ?>" style="cursor: pointer;">
+                <div class="d-flex align-items-center gap-3">
+                    <input type="radio" name="payment_method" value="wallet" <?= ((float)$wallet['balance'] >= (float)$cart_data['subtotal']) ? 'checked' : 'disabled' ?>>
+                    <div>
+                        <div class="fw-bold small d-flex align-items-center gap-1">
+                            <span style="color:#EE2737;font-weight:800;">CicalengkaPay</span>
+                            <span class="text-muted">(Saldo Digital)</span>
+                        </div>
+                        <div class="text-muted" style="font-size: 11px;">Saldo: <?= format_rupiah($wallet['balance'] ?? 0) ?></div>
+                    </div>
+                </div>
+                <?php if ((float)$wallet['balance'] < (float)$cart_data['subtotal']): ?>
+                    <span class="badge bg-warning text-dark" style="font-size: 10px;">Saldo Kurang</span>
+                <?php else: ?>
+                    <span class="badge bg-danger" style="background:#EE2737 !important; font-size: 10px;">Tersedia</span>
+                <?php endif; ?>
+            </label>
+
+            <!-- Midtrans Online Payment (QRIS / VA / E-Wallet) -->
+            <label class="p-3 border rounded-4 d-flex align-items-center justify-content-between cursor-pointer payment-option" style="cursor: pointer;">
+                <div class="d-flex align-items-center gap-3">
+                    <input type="radio" name="payment_method" value="midtrans">
+                    <div>
+                        <div class="fw-bold small d-flex align-items-center gap-1 text-dark">
+                            <span>Bayar Online (Midtrans)</span>
+                            <span class="badge bg-danger-subtle text-danger" style="font-size: 9px; font-weight: 700;">Otomatis</span>
+                        </div>
+                        <div class="text-muted" style="font-size: 11px;">QRIS, GoPay, ShopeePay, Virtual Account BCA/BRI/Mandiri/BNI</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center">
+                    <span class="badge text-white px-2 py-1" style="background: #002B49; font-size: 10px; font-weight: 700; border-radius: 6px;">MIDTRANS</span>
+                </div>
+            </label>
+
+            <!-- COD (Cash on Delivery) -->
+            <label class="p-3 border rounded-4 d-flex align-items-center justify-content-between cursor-pointer payment-option" style="cursor: pointer;">
+                <div class="d-flex align-items-center gap-3">
+                    <input type="radio" name="payment_method" value="cod" <?= ((float)$wallet['balance'] < (float)$cart_data['subtotal']) ? 'checked' : '' ?>>
+                    <div>
+                        <div class="fw-bold small text-dark">Tunai saat Pesanan Tiba (COD)</div>
+                        <div class="text-muted" style="font-size: 11px;">Bayar langsung ke kurir motor</div>
+                    </div>
+                </div>
+                <i class="bi bi-cash-coin text-success fs-4"></i>
+            </label>
+        </div>
+    </div>
+
+    <!-- Voucher / Coupon Code -->
+    <div class="p-3 bg-white rounded-4 border shadow-sm mb-3">
+        <h6 class="fw-bold small mb-2"><i class="bi bi-percent text-warning me-1"></i> Promo & Kupon</h6>
+        <div class="input-group input-group-sm">
+            <input type="text" name="coupon_code" id="coupon_code" class="form-control bg-light" placeholder="Masukkan kode promo (Contoh: CCGHEMAT)">
+            <button type="button" class="btn text-white fw-bold" style="background:#EE2737;" onclick="applyCouponPreview()">Pakai</button>
+        </div>
+    </div>
+
+    <!-- Order Notes -->
+    <div class="p-3 bg-white rounded-4 border shadow-sm mb-3">
+        <h6 class="fw-bold small mb-2"><i class="bi bi-chat-left-text me-1 text-muted"></i> Catatan untuk Resto & Driver</h6>
+        <input type="text" name="order_notes" class="form-control form-control-sm bg-light" placeholder="Contoh: Sambal dipisah, jangan pakai bawang goreng">
+    </div>
+
+    <!-- Order Breakdown Card -->
+    <div class="p-3 bg-white rounded-4 border shadow-sm mb-4">
+        <h6 class="fw-bold small mb-3" style="color: var(--gojek-charcoal);">Rincian Tagihan</h6>
+        <div class="d-flex justify-content-between small text-muted mb-2">
+            <span>Subtotal Pesanan</span>
+            <span class="text-dark fw-bold"><?= format_rupiah($cart_data['subtotal']) ?></span>
+        </div>
+        <div class="d-flex justify-content-between small text-muted mb-2">
+            <span>Ongkos Kirim (<span id="fee-dist-text">1.5 Km</span>)</span>
+            <span class="text-dark fw-bold" id="delivery-fee-display"><?= format_rupiah($cart_data['store']['delivery_fee']) ?></span>
+        </div>
+        <hr class="my-2">
+        <div class="d-flex justify-content-between fw-bold">
+            <span>Total Pembayaran</span>
+            <span class="text-dark fs-6" id="total-amount-display"><?= format_rupiah($cart_data['subtotal'] + $cart_data['store']['delivery_fee']) ?></span>
+        </div>
+    </div>
+
+    <!-- Submit Order Button -->
+    <button type="submit" id="btnPlaceOrder" class="btn btn-gojek-green mb-3" style="background:#EE2737 !important; color:#FFFFFF !important; border-radius:9999px; font-weight:800; padding:14px 20px; box-shadow:0 4px 14px rgba(238,39,55,0.35);">
+        <i class="bi bi-shield-check"></i>
+        <span>Pesan & Antar Sekarang</span>
+    </button>
+</form>
+
+<script>
+const STORE_LAT = <?= (float)($cart_data['store']['latitude'] ?? -6.9835) ?>;
+const STORE_LNG = <?= (float)($cart_data['store']['longitude'] ?? 107.8335) ?>;
+const STORE_NAME = "<?= htmlspecialchars($cart_data['store']['name'] ?? 'Resto') ?>";
+const BASE_SUBTOTAL = <?= (float)$cart_data['subtotal'] ?>;
+const BASE_DELIVERY_FEE = <?= (float)$cart_data['store']['delivery_fee'] ?>;
+
+let map, customerMarker, storeMarker, routeLine;
+
+function initCheckoutMap() {
+    const initialLat = parseFloat(document.getElementById('input-lat').value) || -6.9855;
+    const initialLng = parseFloat(document.getElementById('input-lng').value) || 107.8350;
+
+    map = L.map('checkout-map', { zoomControl: false }).setView([initialLat, initialLng], 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    // Store Marker (Red)
+    const storeIcon = L.divIcon({
+        className: 'custom-pin',
+        html: '<div style="background:#EE2737;color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.3);"><i class="bi bi-shop"></i></div>',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+    });
+    storeMarker = L.marker([STORE_LAT, STORE_LNG], { icon: storeIcon }).addTo(map).bindPopup(`<b>${STORE_NAME}</b> (Titik Toko)`);
+
+    // Customer Marker (CicalengkaGO Red Draggable)
+    const custIcon = L.divIcon({
+        className: 'custom-pin',
+        html: '<div style="background:#EE2737;color:white;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 4px 10px rgba(238,39,55,0.4);"><i class="bi bi-geo-alt-fill"></i></div>',
+        iconSize: [34, 34],
+        iconAnchor: [17, 17]
+    });
+
+    customerMarker = L.marker([initialLat, initialLng], {
+        icon: custIcon,
+        draggable: true
+    }).addTo(map).bindPopup('<b>Lokasi Pengantaran Anda</b> (Geser untuk ubah)').openPopup();
+
+    customerMarker.on('dragend', function (e) {
+        const pos = e.target.getLatLng();
+        updateLocationData(pos.lat, pos.lng);
+    });
+
+    map.on('click', function (e) {
+        customerMarker.setLatLng(e.latlng);
+        updateLocationData(e.latlng.lat, e.latlng.lng);
+    });
+
+    updateRouteAndDistance(initialLat, initialLng);
+
+    // Auto-detect real device GPS on load silently
+    setTimeout(() => {
+        getCurrentLocation(true);
+    }, 500);
+}
+
+function updateLocationData(lat, lng) {
+    document.getElementById('input-lat').value = lat.toFixed(6);
+    document.getElementById('input-lng').value = lng.toFixed(6);
+    updateRouteAndDistance(lat, lng);
+}
+
+function updateRouteAndDistance(lat, lng) {
+    if (routeLine) map.removeLayer(routeLine);
+
+    routeLine = L.polyline([[STORE_LAT, STORE_LNG], [lat, lng]], {
+        color: '#EE2737',
+        weight: 4,
+        opacity: 0.8,
+        dashArray: '6, 8'
+    }).addTo(map);
+
+    const bounds = L.latLngBounds([[STORE_LAT, STORE_LNG], [lat, lng]]);
+    map.fitBounds(bounds, { padding: [30, 30] });
+
+    // Haversine Distance in KM
+    const dLat = (lat - STORE_LAT) * Math.PI / 180;
+    const dLng = (lng - STORE_LNG) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(STORE_LAT * Math.PI / 180) * Math.cos(lat * Math.PI / 180) *
+              Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distKm = Math.max(0.5, Math.round((6371 * c) * 10) / 10);
+
+    document.getElementById('input-distance').value = distKm;
+    document.getElementById('distance-badge').innerHTML = `<i class="bi bi-signpost-2 me-1"></i> Est. Jarak: ${distKm} Km`;
+    document.getElementById('fee-dist-text').textContent = `${distKm} Km`;
+
+    // Dynamic Delivery Fee: Base 5000 + 2000/km after 2km
+    let currentFee = BASE_DELIVERY_FEE;
+    if (distKm > 2) {
+        currentFee = BASE_DELIVERY_FEE + Math.round((distKm - 2) * 2000);
+    }
+    const total = BASE_SUBTOTAL + currentFee;
+
+    document.getElementById('delivery-fee-display').textContent = 'Rp ' + currentFee.toLocaleString('id-ID');
+    document.getElementById('total-amount-display').textContent = 'Rp ' + total.toLocaleString('id-ID');
+}
+
+function getCurrentLocation(isSilent = false) {
+    if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                if (customerMarker) customerMarker.setLatLng([lat, lng]);
+                if (map) map.setView([lat, lng], 15);
+                updateLocationData(lat, lng);
+
+                if (!isSilent) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Lokasi Ditemukan!',
+                        text: 'Pin pengantaran disesuaikan ke posisi GPS Anda.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                }
+            },
+            (err) => {
+                if (!isSilent) {
+                    Swal.fire('GPS Error', 'Gagal membaca koordinat GPS perangkat. Silakan klik manual pada peta.', 'warning');
+                }
+            },
+            { enableHighAccuracy: true, timeout: 7000 }
+        );
+    }
+}
+
+async function handlePlaceOrder(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnPlaceOrder');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Memproses Pesanan...';
+
+    const formData = new FormData(document.getElementById('checkoutForm'));
+
+    try {
+        const res = await fetch(window.BASE_URL + '/orders/place', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            // Check if Midtrans Snap Online Payment is chosen
+            if (data.data.payment_method === 'midtrans' && data.data.snap_token) {
+                btn.innerHTML = '<i class="bi bi-credit-card me-1"></i> Menunggu Pembayaran Midtrans...';
+                
+                window.snap.pay(data.data.snap_token, {
+                    onSuccess: function(result) {
+                        // Notify backend to confirm payment immediately
+                        fetch(window.BASE_URL + '/payment/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                order_id: data.data.order_code,
+                                transaction_status: result.transaction_status || 'settlement',
+                                payment_type: result.payment_type || 'midtrans',
+                                gross_amount: result.gross_amount
+                            })
+                        }).finally(() => {
+                            Swal.fire({
+                                title: 'Pembayaran Berhasil! 🎉',
+                                text: 'Pesanan Anda telah lunas dan siap diantar kurir CicalengkaGO.',
+                                icon: 'success',
+                                timer: 2500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                window.location.href = window.BASE_URL + '/' + data.data.redirect;
+                            });
+                        });
+                    },
+                    onPending: function(result) {
+                        Swal.fire({
+                            title: 'Menunggu Pembayaran ⏳',
+                            text: 'Silakan selesaikan pembayaran Anda via QRIS / Virtual Account.',
+                            icon: 'info',
+                            confirmButtonText: 'Lihat Status Pesanan',
+                            confirmButtonColor: '#EE2737'
+                        }).then(() => {
+                            window.location.href = window.BASE_URL + '/' + data.data.redirect;
+                        });
+                    },
+                    onError: function(result) {
+                        Swal.fire('Pembayaran Gagal', 'Terjadi kendala saat memproses pembayaran online.', 'error');
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="bi bi-shield-check"></i> <span>Coba Bayar Lagi</span>';
+                    },
+                    onClose: function() {
+                        Swal.fire({
+                            title: 'Pembayaran Belum Selesai',
+                            text: 'Pesanan Anda telah dicatat. Anda dapat memantau status pesanan di riwayat transaksi.',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Ke Lacak Pesanan',
+                            confirmButtonColor: '#EE2737',
+                            cancelButtonText: 'Tutup'
+                        }).then((r) => {
+                            if (r.isConfirmed) {
+                                window.location.href = window.BASE_URL + '/' + data.data.redirect;
+                            } else {
+                                btn.disabled = false;
+                                btn.innerHTML = '<i class="bi bi-shield-check"></i> <span>Pesan & Antar Sekarang</span>';
+                            }
+                        });
+                    }
+                });
+                return;
+            }
+
+            // Regular COD or Wallet Payment
+            Swal.fire({
+                title: 'Pesanan Berhasil!',
+                text: 'Pesanan Anda langsung diteruskan ke resto dan kurir Cicalengka.',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                window.location.href = window.BASE_URL + '/' + data.data.redirect;
+            });
+        } else {
+            Swal.fire('Gagal', data.message || 'Terjadi kesalahan.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-shield-check"></i> <span>Pesan & Antar Sekarang</span>';
+        }
+    } catch (err) {
+        console.error(err);
+        Swal.fire('Error', 'Terjadi kesalahan sistem.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-shield-check"></i> <span>Pesan & Antar Sekarang</span>';
+    }
+}
+
+function applyCouponPreview() {
+    const code = document.getElementById('coupon_code').value.trim();
+    if (!code) {
+        Swal.fire('Info', 'Ketikkan kode voucher terlebih dahulu.', 'info');
+        return;
+    }
+    Swal.fire('Kupon Dipasang', 'Kupon ' + code + ' akan dihitung pada saat konfirmasi pesanan.', 'success');
+}
+
+document.addEventListener('DOMContentLoaded', initCheckoutMap);
+</script>
