@@ -197,9 +197,9 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 }
 
 .gojek-search-box:hover, .gojek-search-box:focus-within {
-  border-color: var(--gojek-green);
+  border-color: #EE2737;
   background: #FFFFFF;
-  box-shadow: 0 0 0 2px var(--gojek-green-glow);
+  box-shadow: 0 0 0 3px rgba(238, 39, 55, 0.12);
 }
 
 .gojek-search-box input {

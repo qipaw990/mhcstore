@@ -75,18 +75,26 @@ class CustomerController extends Controller
         
         $products = [];
         $stores = [];
+        $popularStores = [];
+        $recommendProducts = [];
 
         if (!empty($query)) {
             $products = $this->productModel->search($query, $moduleId);
             $stores = Database::query("SELECT * FROM `stores` WHERE `name` LIKE ? OR `address` LIKE ?", ["%{$query}%", "%{$query}%"]);
+        } else {
+            // Data rekomendasi untuk halaman pencarian discovery
+            $popularStores = Database::query("SELECT * FROM `stores` WHERE `status` = 1 ORDER BY `rating` DESC LIMIT 6");
+            $recommendProducts = Database::query("SELECT p.*, s.name as store_name FROM `products` p JOIN `stores` s ON p.store_id = s.id WHERE p.status = 1 ORDER BY p.id DESC LIMIT 8");
         }
 
         $this->view('customer.search', [
-            'title'      => 'Cari Kuliner & Produk di Cicalengka',
-            'query'      => $query,
-            'products'   => $products,
-            'stores'     => $stores,
-            'active_tab' => 'search'
+            'title'              => 'Cari Kuliner & Produk di Cicalengka',
+            'query'              => $query,
+            'products'           => $products,
+            'stores'             => $stores,
+            'popular_stores'     => $popularStores,
+            'recommend_products' => $recommendProducts,
+            'active_tab'         => 'search'
         ], 'customer_layout');
     }
 

@@ -123,7 +123,7 @@ $unreadNotifs = $user ? (new \App\Models\Notification())->getUnreadCount($user['
             <i class="bi bi-house-door<?= ($active_tab ?? '') === 'home' ? '-fill' : '' ?>"></i>
             <span>Beranda</span>
         </a>
-        <a href="<?= $baseUrl ?>/search" class="gojek-nav-item <?= ($active_tab ?? '') === 'promos' ? 'active' : '' ?>">
+        <a href="<?= $baseUrl ?>/search" class="gojek-nav-item <?= in_array(($active_tab ?? ''), ['promos', 'search']) ? 'active' : '' ?>">
             <i class="bi bi-percent"></i>
             <span>Promo</span>
         </a>
