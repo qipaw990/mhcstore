@@ -27,6 +27,7 @@ if ($user) {
     <!-- PWA Manifest & Theme -->
     <link rel="manifest" href="<?= $baseUrl ?>/manifest.json">
     <meta name="theme-color" content="#0F172A">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Cicago Merchant">

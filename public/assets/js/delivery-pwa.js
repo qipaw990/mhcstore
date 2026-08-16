@@ -199,11 +199,27 @@ function startDriverGpsTracking() {
 async function syncDriverLiveDashboard() {
   try {
     const res = await fetch(API_BASE + '/delivery/live-dashboard');
-    if (!res.ok) return;
+    if (!res.ok) {
+      console.warn(`[📡 Radar Sync] Response status error: ${res.status}`);
+      return;
+    }
     const json = await res.json();
-    if (!json.success || !json.data) return;
+    if (!json.success || !json.data) {
+      console.warn('[📡 Radar Sync] Invalid JSON response:', json);
+      return;
+    }
 
     const data = json.data;
+    const timeStr = new Date().toLocaleTimeString('id-ID');
+    const availableCount = data.available_count || 0;
+
+    console.log(
+      `%c[📡 Radar Sync ${timeStr}]%c Status: ${data.is_online ? 'ONLINE' : 'OFFLINE'} | Aktif: ${data.active_order ? '#' + data.active_order.order_code : 'Kosong'} | Order Radar: ${availableCount}`,
+      'color: #EE2737; font-weight: bold;',
+      'color: #0284c7; font-weight: 500;',
+      data.available_orders || []
+    );
+
     window.HAS_ACTIVE_ORDER = !!data.has_active_order;
 
     // 1. Sync Wallet & Completed Orders

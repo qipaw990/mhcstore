@@ -13,6 +13,7 @@ $user = auth_user();
     
     <link rel="manifest" href="<?= $baseUrl ?>/manifest.json">
     <meta name="theme-color" content="#EE2737">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="<?= $baseUrl ?>/assets/icons/icon-192.png">

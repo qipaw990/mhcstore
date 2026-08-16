@@ -16,6 +16,7 @@ $unreadNotifs = $user ? (new \App\Models\Notification())->getUnreadCount($user['
     <!-- PWA Manifest & Theme -->
     <link rel="manifest" href="<?= $baseUrl ?>/manifest.json">
     <meta name="theme-color" content="#EE2737">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="CicalengkaGO">
