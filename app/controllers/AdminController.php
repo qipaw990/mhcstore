@@ -98,50 +98,25 @@ class AdminController extends Controller
 
     public function orderDetail(string $id): void
     {
-        $orderId = (int)$id;
-        $order = Database::fetchOne("
-            SELECT o.*, s.name as store_name, s.address as store_address, s.phone as store_phone,
-                   u.name as customer_name, u.phone as customer_phone, u.email as customer_email,
-                   dmu.name as dm_name, dmu.phone as dm_phone, dm.vehicle_type, dm.vehicle_number
-            FROM `orders` o
-            LEFT JOIN `stores` s ON o.store_id = s.id
-            JOIN `users` u ON o.customer_id = u.id
-            LEFT JOIN `delivery_men` dm ON o.delivery_man_id = dm.id
-            LEFT JOIN `users` dmu ON dm.user_id = dmu.id
-            WHERE o.id = ? LIMIT 1
-        ", [$orderId]);
+        $order = (new Order())->findByIdOrCode($id);
 
         if (!$order) {
             $this->errorResponse('Pesanan tidak ditemukan.', null, 404);
             return;
         }
 
-        $order['items'] = Database::query("SELECT * FROM `order_items` WHERE `order_id` = ?", [$orderId]);
-        $order['delivery_address'] = json_decode($order['delivery_address_json'] ?? '{}', true) ?: [];
-        $order['parcel_details'] = json_decode($order['parcel_details_json'] ?? '{}', true) ?: [];
-
         $this->json(['success' => true, 'data' => $order]);
     }
 
     public function invoice(string $id): void
     {
-        $orderId = (int)$id;
-        $order = Database::fetchOne("
-            SELECT o.*, s.name as store_name, s.address as store_address, s.phone as store_phone,
-                   u.name as customer_name, u.phone as customer_phone, u.email as customer_email,
-                   dmu.name as dm_name, dmu.phone as dm_phone, dm.vehicle_type, dm.vehicle_number
-            FROM `orders` o
-            LEFT JOIN `stores` s ON o.store_id = s.id
-            JOIN `users` u ON o.customer_id = u.id
-            LEFT JOIN `delivery_men` dm ON o.delivery_man_id = dm.id
-            LEFT JOIN `users` dmu ON dm.user_id = dmu.id
-            WHERE o.id = ? LIMIT 1
-        ", [$orderId]);
+        $order = (new Order())->findByIdOrCode($id);
 
         if (!$order) {
             die('Invoice pesanan tidak ditemukan.');
         }
 
+        $orderId = (int)$order['id'];
         $items = Database::query("SELECT * FROM `order_items` WHERE `order_id` = ?", [$orderId]);
         $delAddress = json_decode($order['delivery_address_json'] ?? '{}', true) ?: [];
         $parcelDetails = json_decode($order['parcel_details_json'] ?? '{}', true) ?: [];

@@ -45,6 +45,38 @@ class Order extends Model
         return $order;
     }
 
+    public function findByIdOrCode(string|int $idOrCode): ?array
+    {
+        if (is_numeric($idOrCode)) {
+            $sql = "SELECT o.*, s.name as store_name, s.phone as store_phone, s.address as store_address,
+                           s.latitude as store_lat, s.longitude as store_lng, s.logo as store_logo,
+                           u.name as customer_name, u.phone as customer_phone,
+                           dm.vehicle_type, dm.vehicle_number, dm.current_latitude as dm_lat, dm.current_longitude as dm_lng,
+                           dmu.name as dm_name, dmu.phone as dm_phone, dmu.avatar as dm_avatar
+                    FROM `orders` o
+                    LEFT JOIN `stores` s ON o.store_id = s.id
+                    JOIN `users` u ON o.customer_id = u.id
+                    LEFT JOIN `delivery_men` dm ON o.delivery_man_id = dm.id
+                    LEFT JOIN `users` dmu ON dm.user_id = dmu.id
+                    WHERE o.id = ? LIMIT 1";
+            $order = Database::fetchOne($sql, [(int)$idOrCode]);
+            if ($order) {
+                $order['items'] = Database::query("SELECT * FROM `order_items` WHERE `order_id` = ?", [$order['id']]);
+                $order['delivery_address'] = json_decode($order['delivery_address_json'] ?? '{}', true) ?: [];
+                $order['parcel_details'] = json_decode($order['parcel_details_json'] ?? '{}', true) ?: [];
+
+                if ($order['order_type'] === 'parcel' && !empty($order['parcel_details'])) {
+                    $order['store_name'] = $order['parcel_details']['pickup_address'] ?? 'Titik Penjemputan Paket';
+                    $order['store_lat'] = $order['parcel_details']['pickup_lat'] ?? $order['store_lat'] ?? -6.9840;
+                    $order['store_lng'] = $order['parcel_details']['pickup_lng'] ?? $order['store_lng'] ?? 107.8340;
+                }
+            }
+            return $order;
+        }
+
+        return $this->findByCode((string)$idOrCode);
+    }
+
     public function getCustomerOrders(int $customerId): array
     {
         $sql = "SELECT o.*, s.name as store_name, s.logo as store_logo, m.name as module_name

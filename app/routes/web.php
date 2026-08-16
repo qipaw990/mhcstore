@@ -63,6 +63,7 @@ Router::post('/parcel/place', [OrderController::class, 'placeParcel'], ['AuthMid
 Router::get('/orders', [OrderController::class, 'ordersList'], ['AuthMiddleware']);
 Router::get('/orders/{code}/tracking', [OrderController::class, 'tracking']);
 Router::get('/orders/{code}/live-tracking', [OrderController::class, 'getLiveTracking']);
+Router::get('/orders/{code}', [OrderController::class, 'showOrder']);
 
 // ==========================================
 // 3. Delivery Man PWA Routes

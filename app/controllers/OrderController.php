@@ -226,9 +226,9 @@ class OrderController extends Controller
 
     public function tracking(string $code): void
     {
-        $order = $this->orderModel->findByCode($code);
+        $order = $this->orderModel->findByIdOrCode($code);
         if (!$order) {
-            $this->redirect('404');
+            $this->redirect('orders');
             return;
         }
 
@@ -239,9 +239,31 @@ class OrderController extends Controller
         ], 'customer_layout');
     }
 
+    public function showOrder(string $idOrCode): void
+    {
+        $order = $this->orderModel->findByIdOrCode($idOrCode);
+        if (!$order) {
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) || (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))) {
+                $this->errorResponse('Pesanan tidak ditemukan.', null, 404);
+                return;
+            }
+            $this->redirect('orders');
+            return;
+        }
+
+        // If AJAX request, return JSON
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) || (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))) {
+            $this->json(['success' => true, 'data' => $order]);
+            return;
+        }
+
+        // Otherwise redirect to tracking page
+        $this->redirect('orders/' . $order['order_code'] . '/tracking');
+    }
+
     public function getLiveTracking(string $code): void
     {
-        $order = $this->orderModel->findByCode($code);
+        $order = $this->orderModel->findByIdOrCode($code);
         if (!$order) {
             $this->errorResponse('Pesanan tidak ditemukan.', null, 404);
             return;
