@@ -1,15 +1,15 @@
 <!-- Gojek Search Header Bar -->
-<div class="bg-white border-bottom sticky-top shadow-xs px-3.5 py-3">
-    <div class="d-flex align-items-center gap-2.5">
-        <a href="<?= $baseUrl ?>" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; border: 1px solid #E2E8F0; background: #F8FAFC;">
-            <i class="bi bi-arrow-left text-dark" style="font-size: 15px;"></i>
+<div class="bg-white border-bottom sticky-top shadow-xs px-3 py-2">
+    <div class="d-flex align-items-center gap-2">
+        <a href="<?= $baseUrl ?>" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 34px; height: 34px; border: 1px solid #E2E8F0; background: #F8FAFC;">
+            <i class="bi bi-arrow-left text-dark" style="font-size: 14px;"></i>
         </a>
         <form action="<?= $baseUrl ?>/search" method="GET" class="flex-grow-1 m-0 position-relative">
-            <div class="m-0 d-flex align-items-center gap-2.5 px-3.5 py-2 rounded-pill" style="background: #F1F5F9; border: 1px solid #E2E8F0; height: 42px;">
-                <i class="bi bi-search text-muted" style="font-size: 14px;"></i>
-                <input type="text" name="q" id="search-input" value="<?= htmlspecialchars($query ?? '') ?>" placeholder="Cari sate, geprek, martabak, sembako..." autocomplete="off" style="border: none; background: transparent; outline: none; font-size: 13px; width: 100%; font-weight: 500; color: #1E293B;">
+            <div class="m-0 d-flex align-items-center gap-2 px-3 py-1.5 rounded-pill" style="background: #F1F5F9; border: 1px solid #E2E8F0; height: 36px;">
+                <i class="bi bi-search text-muted" style="font-size: 13px;"></i>
+                <input type="text" name="q" id="search-input" value="<?= htmlspecialchars($query ?? '') ?>" placeholder="Cari sate, geprek, martabak, sembako..." autocomplete="off" style="border: none; background: transparent; outline: none; font-size: 12px; width: 100%; font-weight: 500; color: #1E293B;">
                 <?php if (!empty($query)): ?>
-                    <a href="<?= $baseUrl ?>/search<?= !empty($_GET['module_id']) ? '?module_id=' . (int)$_GET['module_id'] : '' ?>" class="text-muted text-decoration-none" title="Hapus"><i class="bi bi-x-circle-fill text-secondary" style="font-size: 16px;"></i></a>
+                    <a href="<?= $baseUrl ?>/search<?= !empty($_GET['module_id']) ? '?module_id=' . (int)$_GET['module_id'] : '' ?>" class="text-muted text-decoration-none" title="Hapus"><i class="bi bi-x-circle-fill text-secondary" style="font-size: 14px;"></i></a>
                 <?php endif; ?>
             </div>
             <?php if (!empty($_GET['module_id'])): ?>
@@ -19,51 +19,51 @@
     </div>
 
     <!-- Category Chips Pill Scroll -->
-    <div class="d-flex gap-2 overflow-x-auto mt-2.5 pb-1" style="scrollbar-width: none;">
-        <a href="<?= $baseUrl ?>/search<?= !empty($query) ? '?q=' . urlencode($query) : '' ?>" class="badge rounded-pill px-3.5 py-2 text-decoration-none d-flex align-items-center gap-1.5 <?= empty($_GET['module_id']) ? 'bg-danger text-white shadow-2xs' : 'bg-white text-secondary border' ?>" style="font-size: 11px; font-weight: 600;">
+    <div class="d-flex gap-1.5 overflow-x-auto mt-2 pb-1" style="scrollbar-width: none;">
+        <a href="<?= $baseUrl ?>/search<?= !empty($query) ? '?q=' . urlencode($query) : '' ?>" class="badge rounded-pill px-3 py-1.5 text-decoration-none d-flex align-items-center gap-1.5 <?= empty($_GET['module_id']) ? 'bg-danger text-white shadow-2xs' : 'bg-white text-secondary border' ?>" style="font-size: 10.5px; font-weight: 600;">
             <i class="bi bi-grid-fill"></i> Semua
         </a>
-        <a href="<?= $baseUrl ?>/search?module_id=1<?= !empty($query) ? '&q=' . urlencode($query) : '' ?>" class="badge rounded-pill px-3.5 py-2 text-decoration-none d-flex align-items-center gap-1.5 <?= (($_GET['module_id'] ?? '') == '1') ? 'bg-danger text-white shadow-2xs' : 'bg-white text-secondary border' ?>" style="font-size: 11px; font-weight: 600;">
+        <a href="<?= $baseUrl ?>/search?module_id=1<?= !empty($query) ? '&q=' . urlencode($query) : '' ?>" class="badge rounded-pill px-3 py-1.5 text-decoration-none d-flex align-items-center gap-1.5 <?= (($_GET['module_id'] ?? '') == '1') ? 'bg-danger text-white shadow-2xs' : 'bg-white text-secondary border' ?>" style="font-size: 10.5px; font-weight: 600;">
             <i class="bi bi-egg-fried"></i> GoFood
         </a>
-        <a href="<?= $baseUrl ?>/search?module_id=2<?= !empty($query) ? '&q=' . urlencode($query) : '' ?>" class="badge rounded-pill px-3.5 py-2 text-decoration-none d-flex align-items-center gap-1.5 <?= (($_GET['module_id'] ?? '') == '2') ? 'text-white' : 'bg-white text-secondary border' ?>" style="<?= (($_GET['module_id'] ?? '') == '2') ? 'background:#F06400;' : '' ?> font-size: 11px; font-weight: 600;">
+        <a href="<?= $baseUrl ?>/search?module_id=2<?= !empty($query) ? '&q=' . urlencode($query) : '' ?>" class="badge rounded-pill px-3 py-1.5 text-decoration-none d-flex align-items-center gap-1.5 <?= (($_GET['module_id'] ?? '') == '2') ? 'text-white' : 'bg-white text-secondary border' ?>" style="<?= (($_GET['module_id'] ?? '') == '2') ? 'background:#F06400;' : '' ?> font-size: 10.5px; font-weight: 600;">
             <i class="bi bi-cart3"></i> GoMart
         </a>
-        <a href="<?= $baseUrl ?>/search?module_id=3<?= !empty($query) ? '&q=' . urlencode($query) : '' ?>" class="badge rounded-pill px-3.5 py-2 text-decoration-none d-flex align-items-center gap-1.5 <?= (($_GET['module_id'] ?? '') == '3') ? 'text-white' : 'bg-white text-secondary border' ?>" style="<?= (($_GET['module_id'] ?? '') == '3') ? 'background:#0081A0;' : '' ?> font-size: 11px; font-weight: 600;">
+        <a href="<?= $baseUrl ?>/search?module_id=3<?= !empty($query) ? '&q=' . urlencode($query) : '' ?>" class="badge rounded-pill px-3 py-1.5 text-decoration-none d-flex align-items-center gap-1.5 <?= (($_GET['module_id'] ?? '') == '3') ? 'text-white' : 'bg-white text-secondary border' ?>" style="<?= (($_GET['module_id'] ?? '') == '3') ? 'background:#0081A0;' : '' ?> font-size: 10.5px; font-weight: 600;">
             <i class="bi bi-capsule"></i> GoMed
         </a>
-        <a href="<?= $baseUrl ?>/search?module_id=4<?= !empty($query) ? '&q=' . urlencode($query) : '' ?>" class="badge rounded-pill px-3.5 py-2 text-decoration-none d-flex align-items-center gap-1.5 <?= (($_GET['module_id'] ?? '') == '4') ? 'text-white' : 'bg-white text-secondary border' ?>" style="<?= (($_GET['module_id'] ?? '') == '4') ? 'background:#8B5CF6;' : '' ?> font-size: 11px; font-weight: 600;">
+        <a href="<?= $baseUrl ?>/search?module_id=4<?= !empty($query) ? '&q=' . urlencode($query) : '' ?>" class="badge rounded-pill px-3 py-1.5 text-decoration-none d-flex align-items-center gap-1.5 <?= (($_GET['module_id'] ?? '') == '4') ? 'text-white' : 'bg-white text-secondary border' ?>" style="<?= (($_GET['module_id'] ?? '') == '4') ? 'background:#8B5CF6;' : '' ?> font-size: 10.5px; font-weight: 600;">
             <i class="bi bi-bag-heart"></i> GoShop
         </a>
     </div>
 </div>
 
-<div class="px-3.5 pt-4 pb-5" style="min-height: 85vh;">
+<div class="px-3 py-2.5">
     <?php if (empty($query)): ?>
         <!-- Trending & Popular Searches -->
-        <div class="mb-4">
-            <h6 class="fw-bold mb-2.5 text-dark d-flex align-items-center gap-1.5" style="font-size: 13px;">
+        <div class="mb-3">
+            <h6 class="fw-bold mb-2 text-dark d-flex align-items-center gap-1" style="font-size: 12px;">
                 <i class="bi bi-fire text-danger"></i> Pencarian Populer
             </h6>
-            <div class="d-flex flex-wrap gap-2">
-                <button type="button" onclick="quickSearch('Ayam Geprek')" class="btn btn-sm bg-white rounded-pill px-3 py-1.5 border text-dark fw-medium" style="font-size: 11px; border-color: #E2E8F0 !important;">🍗 Ayam Geprek</button>
-                <button type="button" onclick="quickSearch('Sate Maranggi')" class="btn btn-sm bg-white rounded-pill px-3 py-1.5 border text-dark fw-medium" style="font-size: 11px; border-color: #E2E8F0 !important;">🍢 Sate Maranggi</button>
-                <button type="button" onclick="quickSearch('Seblak Pedas')" class="btn btn-sm bg-white rounded-pill px-3 py-1.5 border text-dark fw-medium" style="font-size: 11px; border-color: #E2E8F0 !important;">🌶️ Seblak</button>
-                <button type="button" onclick="quickSearch('Martabak')" class="btn btn-sm bg-white rounded-pill px-3 py-1.5 border text-dark fw-medium" style="font-size: 11px; border-color: #E2E8F0 !important;">🥞 Martabak</button>
-                <button type="button" onclick="quickSearch('Beras')" class="btn btn-sm bg-white rounded-pill px-3 py-1.5 border text-dark fw-medium" style="font-size: 11px; border-color: #E2E8F0 !important;">🍚 Sembako</button>
-                <button type="button" onclick="quickSearch('Kopi')" class="btn btn-sm bg-white rounded-pill px-3 py-1.5 border text-dark fw-medium" style="font-size: 11px; border-color: #E2E8F0 !important;">☕ Kopi Susu</button>
+            <div class="d-flex flex-wrap gap-1.5">
+                <button type="button" onclick="quickSearch('Ayam Geprek')" class="btn btn-sm bg-white rounded-pill px-2.5 py-1 border text-dark fw-medium" style="font-size: 10.5px; border-color: #E2E8F0 !important;">🍗 Ayam Geprek</button>
+                <button type="button" onclick="quickSearch('Sate Maranggi')" class="btn btn-sm bg-white rounded-pill px-2.5 py-1 border text-dark fw-medium" style="font-size: 10.5px; border-color: #E2E8F0 !important;">🍢 Sate Maranggi</button>
+                <button type="button" onclick="quickSearch('Seblak Pedas')" class="btn btn-sm bg-white rounded-pill px-2.5 py-1 border text-dark fw-medium" style="font-size: 10.5px; border-color: #E2E8F0 !important;">🌶️ Seblak</button>
+                <button type="button" onclick="quickSearch('Martabak')" class="btn btn-sm bg-white rounded-pill px-2.5 py-1 border text-dark fw-medium" style="font-size: 10.5px; border-color: #E2E8F0 !important;">🥞 Martabak</button>
+                <button type="button" onclick="quickSearch('Beras')" class="btn btn-sm bg-white rounded-pill px-2.5 py-1 border text-dark fw-medium" style="font-size: 10.5px; border-color: #E2E8F0 !important;">🍚 Sembako</button>
+                <button type="button" onclick="quickSearch('Kopi')" class="btn btn-sm bg-white rounded-pill px-2.5 py-1 border text-dark fw-medium" style="font-size: 10.5px; border-color: #E2E8F0 !important;">☕ Kopi Susu</button>
             </div>
         </div>
 
         <!-- Quick Promo Banner -->
-        <div class="rounded-3 text-white mb-4 p-3.5 position-relative overflow-hidden" style="background: linear-gradient(135deg, #EE2737 0%, #B91C1C 100%); box-shadow: 0 4px 12px rgba(238, 39, 55, 0.2); border-radius: 16px;">
+        <div class="rounded-3 text-white mb-3 p-3 position-relative overflow-hidden" style="background: linear-gradient(135deg, #EE2737 0%, #B91C1C 100%); box-shadow: 0 4px 12px rgba(238, 39, 55, 0.2);">
             <div class="d-flex align-items-center justify-content-between position-relative" style="z-index: 2;">
                 <div>
-                    <span class="badge bg-white text-danger fw-bold px-2.5 py-1 rounded-pill mb-1.5 d-inline-block" style="font-size: 9px; letter-spacing: 0.3px;">PROMO SPESIAL</span>
-                    <div class="fw-bold text-white" style="font-size: 13.5px; line-height: 1.3;">Gratis Ongkir s.d 10rb</div>
-                    <div class="text-white-50 mt-1" style="font-size: 10.5px;">Berlaku di seluruh merchant Cicalengka</div>
+                    <span class="badge bg-white text-danger fw-bold px-2 py-0.5 rounded-pill mb-1.5 d-inline-block" style="font-size: 8.5px; letter-spacing: 0.3px;">PROMO SPESIAL</span>
+                    <div class="fw-bold text-white" style="font-size: 13px; line-height: 1.3;">Gratis Ongkir s.d 10rb</div>
+                    <div class="text-white-50 mt-1" style="font-size: 10px;">Berlaku di seluruh merchant Cicalengka</div>
                 </div>
-                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 46px; height: 46px; background: rgba(255, 255, 255, 0.15);">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; background: rgba(255, 255, 255, 0.15);">
                     <i class="bi bi-ticket-perforated-fill text-white fs-4"></i>
                 </div>
             </div>

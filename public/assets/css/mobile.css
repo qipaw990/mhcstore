@@ -60,7 +60,7 @@
   --gojek-shadow: 0 4px 14px rgba(16, 24, 32, 0.06);
   --gojek-shadow-lg: 0 10px 24px rgba(16, 24, 32, 0.09);
   
-  --bottom-nav-height: 58px;
+  --bottom-nav-height: 44px;
 }
 
 * {
@@ -73,7 +73,7 @@ body {
   color: var(--gojek-charcoal);
   font-family: var(--gojek-font);
   font-size: 12px;
-  line-height: 1.4;
+  line-height: 1.35;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
@@ -100,40 +100,39 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   margin: 0 auto;
   min-height: 100vh;
   min-height: 100dvh;
-  background-color: #F8FAFC;
+  background-color: #FFFFFF;
   position: relative;
-  box-shadow: 0 0 35px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
-  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+  padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px)) !important;
   box-sizing: border-box;
 }
 
-/* Super App Header */
+/* Compact Super App Header */
 .gojek-header {
   position: sticky;
   top: 0;
   z-index: 1000;
   background: #FFFFFF;
   border-bottom: 1px solid var(--gojek-border);
-  padding: 12px 16px 14px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  padding: 6px 10px;
 }
 
 .gojek-top-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 
 .gojek-location-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   cursor: pointer;
   background: var(--gojek-gray-light);
-  padding: 5px 10px;
+  padding: 3px 8px;
   border-radius: var(--gojek-radius-pill);
   border: 1px solid var(--gojek-border);
   max-width: 78%;
@@ -146,11 +145,11 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 
 .gojek-location-icon {
   color: var(--gojek-green);
-  font-size: 13px;
+  font-size: 11.5px;
 }
 
 .gojek-location-text {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--gojek-charcoal);
   white-space: nowrap;
@@ -161,12 +160,12 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 .gojek-header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .gojek-icon-btn {
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: var(--gojek-gray-light);
   border: 1px solid var(--gojek-border);
@@ -174,7 +173,7 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   align-items: center;
   justify-content: center;
   color: var(--gojek-charcoal);
-  font-size: 15px;
+  font-size: 13px;
   text-decoration: none;
   position: relative;
   transition: all 0.2s ease;
@@ -184,15 +183,15 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   transform: scale(0.9);
 }
 
-/* Modern Super App Search Bar */
+/* Compact Search Bar */
 .gojek-search-box {
   display: flex;
   align-items: center;
-  background: #F1F5F9;
+  background: var(--gojek-gray-light);
   border: 1px solid var(--gojek-border);
   border-radius: var(--gojek-radius-pill);
-  padding: 8px 14px;
-  gap: 8px;
+  padding: 5px 10px;
+  gap: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -207,7 +206,7 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   border: none;
   background: transparent;
   width: 100%;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 500;
   font-family: inherit;
   outline: none;
@@ -216,19 +215,19 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 
 .gojek-search-box i {
   color: var(--gojek-gray);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 /* =========================================================================
- * CicalengkaPay Wallet Card (Super App Style)
+ * Compact CicalengkaPay Wallet Card (Super App Style)
  * ========================================================================= */
 .gopay-super-card {
-  margin: 16px 16px 14px;
+  margin: 10px 12px;
   background: linear-gradient(135deg, #EE2737 0%, #B91C1C 100%);
-  border-radius: 18px;
-  padding: 16px 18px;
+  border-radius: 16px;
+  padding: 12px 14px;
   color: #FFFFFF;
-  box-shadow: 0 4px 18px rgba(238, 39, 55, 0.22);
+  box-shadow: 0 4px 16px rgba(238, 39, 55, 0.22);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -241,24 +240,24 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   position: absolute;
   top: -20px;
   right: -20px;
-  width: 100px;
-  height: 100px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 70%);
   pointer-events: none;
 }
 
 .gopay-left {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 }
 
 .gopay-logo-badge {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: 5px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: -0.2px;
   color: #FFFFFF;
@@ -277,12 +276,12 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 .gopay-balance-row {
   display: flex;
   align-items: baseline;
-  gap: 5px;
-  margin-top: 3px;
+  gap: 4px;
+  margin-top: 2px;
 }
 
 .gopay-amount {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 800;
   letter-spacing: -0.3px;
 }
@@ -290,11 +289,11 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 .gopay-coins-row {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 10.5px;
+  gap: 4px;
+  font-size: 10px;
   color: #FFE4E6;
   font-weight: 600;
-  margin-top: 3px;
+  margin-top: 2px;
 }
 
 .gopay-coins-row i {
@@ -303,14 +302,14 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 
 .gopay-actions-grid {
   display: flex;
-  gap: 12px;
+  gap: 10px;
 }
 
 .gopay-action-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   color: #FFFFFF;
   text-decoration: none;
   transition: transform 0.2s ease;
@@ -321,42 +320,42 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 }
 
 .gopay-action-icon {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   background: rgba(255, 255, 255, 0.22);
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: 13px;
   backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .gopay-action-label {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
   letter-spacing: -0.1px;
 }
 
 /* =========================================================================
- * 8-Icon Service Launcher Grid (4x2)
+ * Compact 8-Icon Service Launcher Grid (4x2)
  * ========================================================================= */
 .gojek-services-section {
-  padding: 8px 16px 16px;
+  padding: 4px 12px 8px;
 }
 
 .gojek-services-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px 10px;
+  gap: 12px 6px;
 }
 
 .gojek-service-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   text-decoration: none;
   color: var(--gojek-charcoal);
   transition: all 0.2s ease;
@@ -367,52 +366,52 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 }
 
 .gojek-service-squircle {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 17px;
   color: #FFFFFF;
   position: relative;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
   transition: all 0.2s ease;
 }
 
 .gojek-service-squircle.gofood {
   background: var(--gofood-gradient);
-  box-shadow: 0 3px 10px rgba(238, 39, 55, 0.25);
+  box-shadow: 0 2px 8px rgba(238, 39, 55, 0.25);
 }
 
 .gojek-service-squircle.gosend {
   background: var(--gosend-gradient);
-  box-shadow: 0 3px 10px rgba(238, 39, 55, 0.25);
+  box-shadow: 0 2px 8px rgba(238, 39, 55, 0.25);
 }
 
 .gojek-service-squircle.gomart {
   background: var(--gomart-gradient);
-  box-shadow: 0 3px 10px rgba(240, 100, 0, 0.25);
+  box-shadow: 0 2px 8px rgba(240, 100, 0, 0.25);
 }
 
 .gojek-service-squircle.gomed {
   background: var(--gomed-gradient);
-  box-shadow: 0 3px 10px rgba(0, 174, 214, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 174, 214, 0.25);
 }
 
 .gojek-service-squircle.goshop {
   background: var(--goshop-gradient);
-  box-shadow: 0 3px 10px rgba(139, 92, 246, 0.25);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25);
 }
 
 .gojek-service-squircle.goride {
   background: var(--gosend-gradient);
-  box-shadow: 0 3px 10px rgba(238, 39, 55, 0.25);
+  box-shadow: 0 2px 8px rgba(238, 39, 55, 0.25);
 }
 
 .gojek-service-squircle.promo {
   background: linear-gradient(135deg, #F59E0B, #D97706);
-  box-shadow: 0 3px 10px rgba(245, 158, 11, 0.25);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
 }
 
 .gojek-service-squircle.more {
@@ -424,79 +423,78 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 
 .gojek-service-squircle.ayam {
   background: linear-gradient(135deg, #EF4444, #B91C1C);
-  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.25);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
 }
 
 .gojek-service-squircle.seblak {
   background: linear-gradient(135deg, #F97316, #C2410C);
-  box-shadow: 0 3px 10px rgba(249, 115, 22, 0.25);
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.25);
 }
 
 .gojek-service-squircle.bakso {
   background: linear-gradient(135deg, #F59E0B, #B45309);
-  box-shadow: 0 3px 10px rgba(245, 158, 11, 0.25);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
 }
 
 .gojek-service-squircle.sunda {
   background: linear-gradient(135deg, #10B981, #047857);
-  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
 }
 
 .gojek-service-squircle.martabak {
   background: linear-gradient(135deg, #EC4899, #BE185D);
-  box-shadow: 0 3px 10px rgba(236, 72, 153, 0.25);
+  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.25);
 }
 
 .gojek-service-squircle.kopi {
   background: linear-gradient(135deg, #0D9488, #115E59);
-  box-shadow: 0 3px 10px rgba(13, 148, 136, 0.25);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25);
 }
 
 .gojek-service-squircle.sate {
   background: linear-gradient(135deg, #8B5CF6, #6D28D9);
-  box-shadow: 0 3px 10px rgba(139, 92, 246, 0.25);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25);
 }
 
 .gojek-service-label {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
   color: var(--gojek-charcoal);
   text-align: center;
   letter-spacing: -0.15px;
-  line-height: 1.2;
-  margin-top: 2px;
+  line-height: 1.15;
 }
 
 /* =========================================================================
- * Promo Carousel Section
+ * Compact Promo Carousel Section
  * ========================================================================= */
 .gojek-promo-section {
-  padding: 6px 16px 16px;
+  padding: 4px 12px 8px;
 }
 
 .gojek-carousel-container {
-  border-radius: 16px;
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--gojek-shadow-xs);
   position: relative;
 }
 
 .gojek-carousel-container img {
   width: 100%;
-  height: 120px;
+  height: 105px;
   object-fit: cover;
 }
 
-/* Section Titles */
+/* Compact Section Titles */
 .gojek-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px 8px;
+  padding: 8px 12px 4px;
 }
 
 .gojek-section-title {
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: 800;
   margin: 0;
   color: var(--gojek-charcoal);
@@ -504,23 +502,23 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 }
 
 .gojek-section-subtitle {
-  font-size: 10.5px;
+  font-size: 9.5px;
   color: var(--gojek-gray);
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 .gojek-section-link {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   color: var(--gojek-green);
   text-decoration: none;
 }
 
-/* Horizontal Store Scroll (GoFood Style) */
+/* Compact Horizontal Store Scroll (GoFood Style) */
 .gofood-stores-scroll {
   display: flex;
-  gap: 12px;
-  padding: 0 16px 14px;
+  gap: 10px;
+  padding: 0 12px 10px;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -530,13 +528,13 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 }
 
 .gofood-store-card {
-  min-width: 155px;
-  max-width: 155px;
+  min-width: 145px;
+  max-width: 145px;
   background: #FFFFFF;
-  border-radius: 16px;
+  border-radius: 14px;
   border: 1px solid #E2E8F0;
   overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   text-decoration: none;
   color: inherit;
   display: block;
@@ -550,7 +548,7 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 .gofood-store-img-box {
   position: relative;
   width: 100%;
-  height: 90px;
+  height: 80px;
 }
 
 .gofood-store-img {
@@ -561,38 +559,38 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 
 .gofood-open-tag {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: 6px;
+  left: 6px;
   background: #10B981;
   color: #FFFFFF;
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 700;
-  padding: 2.5px 7px;
+  padding: 2px 6px;
   border-radius: 6px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .gofood-closed-tag {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: 6px;
+  left: 6px;
   background: #E02424;
   color: #FFFFFF;
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 700;
-  padding: 2.5px 7px;
+  padding: 2px 6px;
   border-radius: 6px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .gofood-store-body {
-  padding: 10px 12px 12px;
+  padding: 8px 10px 10px;
 }
 
 .gofood-store-name {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -602,8 +600,8 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 .gofood-store-meta {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 10px;
+  gap: 4px;
+  font-size: 9.5px;
   color: #64748B;
   font-weight: 600;
 }
@@ -613,23 +611,23 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
 }
 
-/* GoFood Product Cards Grid */
+/* Compact GoFood Product Cards Grid */
 .gofood-products-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
-  padding: 0 16px 18px;
+  gap: 12px;
+  padding: 0 12px 14px;
 }
 
 .gofood-product-card {
   background: #FFFFFF;
-  border-radius: 16px;
+  border-radius: 14px;
   border: 1px solid #E2E8F0;
   overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -642,52 +640,52 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 
 .gofood-prod-img {
   width: 100%;
-  height: 110px;
+  height: 96px;
   object-fit: cover;
   background: #F8FAFC;
 }
 
 .gofood-discount-tag {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: 6px;
+  left: 6px;
   background: linear-gradient(135deg, #EE2737, #C61524);
   color: #FFFFFF;
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 800;
-  padding: 3px 8px;
+  padding: 2.5px 7px;
   border-radius: 6px;
   box-shadow: 0 2px 5px rgba(238, 39, 55, 0.25);
   letter-spacing: 0.2px;
 }
 
 .gofood-prod-body {
-  padding: 12px 14px 14px;
+  padding: 10px 12px 12px;
   display: flex;
   flex-direction: column;
   flex-grow: 1;
 }
 
 .gofood-prod-store {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
   color: #64748B;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .gofood-prod-name {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   color: #0F172A;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: 34px;
+  min-height: 32px;
   line-height: 1.35;
 }
 
@@ -696,19 +694,19 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   align-items: center;
   justify-content: space-between;
   margin-top: auto;
-  padding-top: 6px;
+  padding-top: 4px;
 }
 
 .gofood-price {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 800;
   color: #0F172A;
   line-height: 1.2;
 }
 
 .gofood-btn-add {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: #EE2737;
   color: #FFFFFF;
@@ -716,9 +714,9 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: 14px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(238, 39, 55, 0.3);
+  box-shadow: 0 2px 6px rgba(238, 39, 55, 0.3);
   transition: transform 0.15s ease;
   flex-shrink: 0;
 }
@@ -728,7 +726,7 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 }
 
 /* =========================================================================
- * 5-Tab Bottom Navigation Bar
+ * Compact 5-Tab Bottom Navigation Bar
  * ========================================================================= */
 .gojek-bottom-nav {
   position: fixed !important;
@@ -737,17 +735,17 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   transform: translateX(-50%) !important;
   width: 100% !important;
   max-width: 480px !important;
-  height: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
-  min-height: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
+  height: calc(44px + env(safe-area-inset-bottom, 0px)) !important;
+  min-height: calc(44px + env(safe-area-inset-bottom, 0px)) !important;
   background: #FFFFFF !important;
   border-top: 1px solid #E2E8F0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-around !important;
   z-index: 1040 !important;
-  padding: 4px 8px !important;
-  padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px)) !important;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05) !important;
+  padding: 0 2px !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.04) !important;
   box-sizing: border-box !important;
 }
 
@@ -758,14 +756,14 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   justify-content: center !important;
   color: #94A3B8 !important;
   text-decoration: none !important;
-  font-size: 10px !important;
+  font-size: 8.5px !important;
   font-weight: 600 !important;
-  line-height: 1.2 !important;
-  gap: 3px !important;
+  line-height: 1 !important;
+  gap: 2px !important;
   flex: 1 !important;
   min-width: 0 !important;
-  height: 48px !important;
-  max-height: 48px !important;
+  height: 40px !important;
+  max-height: 40px !important;
   transition: color 0.15s ease !important;
   position: relative !important;
   padding: 0 !important;
@@ -773,9 +771,9 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 }
 
 .gojek-nav-item i {
-  font-size: 19px !important;
+  font-size: 16px !important;
   line-height: 1 !important;
-  height: 20px !important;
+  height: 16px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -784,7 +782,7 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 }
 
 .gojek-nav-item span {
-  font-size: 10px !important;
+  font-size: 8.5px !important;
   font-weight: 600 !important;
   line-height: 1 !important;
   display: block !important;
@@ -1043,17 +1041,17 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   transform: translateX(-50%) !important;
   width: 100% !important;
   max-width: 480px !important;
-  height: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
-  min-height: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
+  height: calc(44px + env(safe-area-inset-bottom, 0px)) !important;
+  min-height: calc(44px + env(safe-area-inset-bottom, 0px)) !important;
   background: #FFFFFF !important;
   border-top: 1px solid #E2E8F0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-around !important;
   z-index: 1040 !important;
-  padding: 4px 8px !important;
-  padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px)) !important;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05) !important;
+  padding: 0 2px !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.04) !important;
   box-sizing: border-box !important;
 }
 
@@ -1065,14 +1063,14 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   justify-content: center !important;
   color: #94a3b8 !important;
   text-decoration: none !important;
-  font-size: 10px !important;
+  font-size: 8.5px !important;
   font-weight: 600 !important;
-  line-height: 1.2 !important;
-  gap: 3px !important;
+  line-height: 1 !important;
+  gap: 2px !important;
   flex: 1 !important;
   min-width: 0 !important;
-  height: 48px !important;
-  max-height: 48px !important;
+  height: 40px !important;
+  max-height: 40px !important;
   transition: color 0.15s ease !important;
   position: relative !important;
   padding: 0 !important;
@@ -1081,9 +1079,9 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 
 .mobile-bottom-nav .nav-tab-item i,
 .driver-bottom-nav .nav-tab-item i {
-  font-size: 19px !important;
+  font-size: 16px !important;
   line-height: 1 !important;
-  height: 20px !important;
+  height: 16px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -1093,7 +1091,7 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 
 .mobile-bottom-nav .nav-tab-item span,
 .driver-bottom-nav .nav-tab-item span {
-  font-size: 10px !important;
+  font-size: 8.5px !important;
   font-weight: 600 !important;
   line-height: 1 !important;
   display: block !important;
@@ -1847,17 +1845,17 @@ input:checked + .driver-toggle-slider:before {
   transform: translateX(-50%) !important;
   width: 100% !important;
   max-width: 480px !important;
-  height: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
-  min-height: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
+  height: calc(44px + env(safe-area-inset-bottom, 0px)) !important;
+  min-height: calc(44px + env(safe-area-inset-bottom, 0px)) !important;
   background-color: #ffffff !important;
   border-top: 1px solid var(--merchant-card-border) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-around !important;
   z-index: 1040 !important;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05) !important;
-  padding: 4px 8px !important;
-  padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px)) !important;
+  box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.04) !important;
+  padding: 0 2px !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
   box-sizing: border-box !important;
 }
 
@@ -1868,24 +1866,24 @@ input:checked + .driver-toggle-slider:before {
   justify-content: center !important;
   flex: 1 !important;
   min-width: 0 !important;
-  height: 48px !important;
-  max-height: 48px !important;
+  height: 40px !important;
+  max-height: 40px !important;
   color: #94a3b8 !important;
   text-decoration: none !important;
-  font-size: 10px !important;
+  font-size: 8.5px !important;
   font-weight: 600 !important;
-  line-height: 1.2 !important;
+  line-height: 1 !important;
   position: relative !important;
   transition: color 0.15s ease !important;
-  gap: 3px !important;
+  gap: 2px !important;
   padding: 0 !important;
   margin: 0 !important;
 }
 
 .merchant-nav-item i {
-  font-size: 19px !important;
+  font-size: 16px !important;
   line-height: 1 !important;
-  height: 20px !important;
+  height: 16px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -1894,7 +1892,7 @@ input:checked + .driver-toggle-slider:before {
 }
 
 .merchant-nav-item span {
-  font-size: 10px !important;
+  font-size: 8.5px !important;
   font-weight: 600 !important;
   line-height: 1 !important;
   display: block !important;
@@ -1920,13 +1918,13 @@ input:checked + .driver-toggle-slider:before {
 
 .merchant-nav-item .nav-badge {
   position: absolute !important;
-  top: 3px !important;
+  top: 2px !important;
   right: calc(50% - 14px) !important;
   background-color: #ef4444 !important;
   color: #ffffff !important;
-  font-size: 8px !important;
+  font-size: 7.5px !important;
   font-weight: 800 !important;
-  padding: 1.5px 4px !important;
+  padding: 1px 3px !important;
   line-height: 1 !important;
   border-radius: 6px !important;
   border: 1px solid #ffffff !important;

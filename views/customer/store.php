@@ -80,13 +80,13 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <!-- GoFood Product Catalog -->
-<div class="px-3 pt-3.5 pb-5" style="min-height: 85vh;">
-    <h6 class="fw-bold mb-3 text-dark" style="font-size: 12.5px;"><i class="bi bi-egg-fried me-1 text-danger"></i> Daftar Menu Makanan & Minuman</h6>
+<div class="px-3 py-2.5">
+    <h6 class="fw-bold mb-2.5 text-dark" style="font-size: 12px;"><i class="bi bi-egg-fried me-1 text-danger"></i> Daftar Menu Makanan & Minuman</h6>
 
     <?php if (empty($products)): ?>
         <div class="text-center py-4 text-muted bg-light rounded-3 border p-3" style="font-size: 11px;">Belum ada menu yang ditampilkan.</div>
     <?php else: ?>
-        <div class="d-flex flex-column gap-3 mb-4">
+        <div class="d-flex flex-column gap-2.5 mb-3">
             <?php foreach ($products as $prod): ?>
                 <div class="p-3 bg-white border shadow-xs d-flex align-items-center justify-content-between gap-3" style="border-radius: 14px;">
                     <div class="flex-grow-1 min-w-0">
