@@ -100,11 +100,17 @@ class CustomerController extends Controller
 
         $products = $this->productModel->getByStore($id);
         $cartSummary = $this->cartModel->getUserCart(auth_id(), session_id());
+        
+        $reviewModel = new \App\Models\Review();
+        $reviewModel->recalculateStoreRating($id);
+        $store = $this->storeModel->findWithDetails($id);
+        $reviews = $reviewModel->getStoreReviews($id, 15);
 
         $this->view('customer.store', [
             'title'        => $store['name'] . ' - CicalengkaGO',
             'store'        => $store,
             'products'     => $products,
+            'reviews'      => $reviews,
             'cart_summary' => $cartSummary,
             'active_tab'   => 'store'
         ], 'customer_layout');

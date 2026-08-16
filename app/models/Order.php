@@ -41,6 +41,11 @@ class Order extends Model
                 $order['store_lat'] = $order['parcel_details']['pickup_lat'] ?? $order['store_lat'] ?? -6.9840;
                 $order['store_lng'] = $order['parcel_details']['pickup_lng'] ?? $order['store_lng'] ?? 107.8340;
             }
+
+            $currentUserId = auth_id() ?: (int)($order['customer_id'] ?? 0);
+            if ($currentUserId) {
+                $order['review_info'] = (new \App\Models\Review())->getOrderReview((int)$order['id'], $currentUserId);
+            }
         }
         return $order;
     }
@@ -70,6 +75,11 @@ class Order extends Model
                     $order['store_lat'] = $order['parcel_details']['pickup_lat'] ?? $order['store_lat'] ?? -6.9840;
                     $order['store_lng'] = $order['parcel_details']['pickup_lng'] ?? $order['store_lng'] ?? 107.8340;
                 }
+
+                $currentUserId = auth_id() ?: (int)($order['customer_id'] ?? 0);
+                if ($currentUserId) {
+                    $order['review_info'] = (new \App\Models\Review())->getOrderReview((int)$order['id'], $currentUserId);
+                }
             }
             return $order;
         }
@@ -89,6 +99,7 @@ class Order extends Model
         foreach ($orders as &$o) {
             $o['items'] = Database::query("SELECT * FROM `order_items` WHERE `order_id` = ?", [$o['id']]);
             $o['delivery_address'] = json_decode($o['delivery_address_json'] ?? '{}', true) ?: [];
+            $o['is_reviewed'] = Database::fetchOne("SELECT id FROM `reviews` WHERE `order_id` = ? AND `user_id` = ? LIMIT 1", [$o['id'], $customerId]) ? true : false;
         }
         return $orders;
     }

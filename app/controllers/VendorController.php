@@ -38,15 +38,66 @@ class VendorController extends Controller
             return;
         }
 
-        $orders = $this->orderModel->getStoreOrders($store['id']);
-        $productsCount = $this->productModel->count('store_id = ?', [$store['id']]);
+        $storeId = (int)$store['id'];
+
+        // Auto-heal vendor wallet credit for any delivered orders that haven't been credited yet
+        $deliveredOrders = Database::query(
+            "SELECT id, order_code, order_amount FROM `orders` WHERE `store_id` = ? AND `order_status` = 'delivered'",
+            [$storeId]
+        );
+        foreach ($deliveredOrders as $dOrder) {
+            $alreadyCredited = Database::fetchOne(
+                "SELECT id FROM `wallet_transactions` WHERE `user_id` = ? AND `category` = 'order_earning' AND `reference_id` = ? LIMIT 1",
+                [$userId, (string)$dOrder['id']]
+            );
+            if (!$alreadyCredited) {
+                $vendorEarning = (float)$dOrder['order_amount'] * 0.90;
+                $this->walletModel->credit(
+                    $userId,
+                    $vendorEarning,
+                    'order_earning',
+                    "Penjualan pesanan #{$dOrder['order_code']}",
+                    (string)$dOrder['id']
+                );
+            }
+        }
+
         $wallet = $this->walletModel->getOrCreate($userId, 'vendor');
+
+        // Detailed Statistics strictly from orders table for this store
+        $stats = Database::fetchOne(
+            "SELECT 
+                COUNT(*) as total_orders,
+                COALESCE(SUM(CASE WHEN order_status = 'delivered' THEN order_amount * 0.90 ELSE 0 END), 0) as total_revenue,
+                COALESCE(SUM(CASE WHEN order_status = 'delivered' THEN order_amount ELSE 0 END), 0) as gross_sales,
+                COUNT(CASE WHEN order_status IN ('pending', 'confirmed') THEN 1 END) as pending_count,
+                COUNT(CASE WHEN order_status = 'processing' THEN 1 END) as processing_count,
+                COUNT(CASE WHEN order_status IN ('handover', 'picked_up', 'on_the_way') THEN 1 END) as on_the_way_count,
+                COUNT(CASE WHEN order_status = 'delivered' THEN 1 END) as delivered_count,
+                COUNT(CASE WHEN order_status = 'canceled' THEN 1 END) as canceled_count,
+                COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as today_orders,
+                COALESCE(SUM(CASE WHEN order_status = 'delivered' AND DATE(created_at) = CURDATE() THEN order_amount * 0.90 ELSE 0 END), 0) as today_revenue
+             FROM `orders`
+             WHERE `store_id` = ?",
+            [$storeId]
+        );
+
+        $orders = $this->orderModel->getStoreOrders($storeId);
+        $productsCount = $this->productModel->count('store_id = ?', [$storeId]);
+        
+        // Recalculate & fetch reviews
+        $reviewModel = new \App\Models\Review();
+        $reviewModel->recalculateStoreRating($storeId);
+        $store = $this->storeModel->find($storeId);
+        $reviews = $reviewModel->getStoreReviews($storeId, 10);
 
         $this->view('vendor.dashboard', [
             'title'          => 'Dashboard Mitra Toko - ' . $store['name'],
             'store'          => $store,
             'orders'         => array_slice($orders, 0, 10),
-            'total_orders'   => count($orders),
+            'total_orders'   => (int)($stats['total_orders'] ?? count($orders)),
+            'stats'          => $stats,
+            'reviews'        => $reviews,
             'products_count' => $productsCount,
             'wallet'         => $wallet,
             'active_tab'     => 'dashboard'

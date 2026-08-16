@@ -69,6 +69,8 @@ Router::get('/orders/{code}/tracking', [OrderController::class, 'tracking']);
 Router::get('/orders/{code}/live-tracking', [OrderController::class, 'getLiveTracking']);
 Router::post('/orders/get-snap-token', [OrderController::class, 'getSnapToken'], ['AuthMiddleware']);
 Router::post('/orders/cancel-unpaid', [OrderController::class, 'cancelUnpaid'], ['AuthMiddleware']);
+Router::post('/orders/review', [OrderController::class, 'submitReview'], ['AuthMiddleware']);
+Router::post('/reviews/submit', [OrderController::class, 'submitReview'], ['AuthMiddleware']);
 Router::get('/orders/{code}', [OrderController::class, 'showOrder']);
 
 // In-App Chat Routes — no middleware, auth handled inside controller via order_code

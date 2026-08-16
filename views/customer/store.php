@@ -17,7 +17,7 @@
             <div class="text-muted small mb-2" style="font-size: 11px;"><i class="bi bi-geo-alt-fill text-danger me-1"></i><?= htmlspecialchars($store['address']) ?></div>
             
             <div class="d-flex align-items-center gap-2 small">
-                <span class="text-warning fw-bold"><i class="bi bi-star-fill me-1"></i><?= number_format($store['rating'] ?? 5.0, 1) ?></span>
+                <span class="text-warning fw-bold"><i class="bi bi-star-fill me-1"></i><?= number_format($store['rating'] ?? 5.0, 1) ?> <span class="text-muted fw-normal">(<?= $store['reviews_count'] ?? 0 ?> ulasan)</span></span>
                 <span class="text-muted">•</span>
                 <span class="text-muted"><i class="bi bi-clock me-1"></i><?= htmlspecialchars($store['delivery_time'] ?? '20-30 mnt') ?></span>
                 <span class="text-muted">•</span>
@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <?php if (empty($products)): ?>
         <div class="text-center py-4 text-muted small">Belum ada menu yang ditampilkan.</div>
     <?php else: ?>
-        <div class="d-flex flex-column gap-3">
+        <div class="d-flex flex-column gap-3 mb-4">
             <?php foreach ($products as $prod): ?>
                 <div class="p-3 bg-white rounded-4 border shadow-sm d-flex align-items-center justify-content-between gap-3">
                     <div class="flex-grow-1">
@@ -121,4 +121,57 @@ document.addEventListener('DOMContentLoaded', () => {
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
+
+    <!-- Store Reviews & Customer Testimonials Section -->
+    <div class="bg-white rounded-4 border shadow-sm p-3 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                    <i class="bi bi-star-fill"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold m-0 text-dark" style="font-size: 13.5px;">Ulasan & Rating Pembeli</h6>
+                    <span class="text-muted" style="font-size: 11px;"><?= $store['reviews_count'] ?? 0 ?> ulasan dari pembeli</span>
+                </div>
+            </div>
+            <div class="text-end">
+                <div class="fw-bold text-dark fs-6"><?= number_format($store['rating'] ?? 5.0, 1) ?> <span class="text-warning">★</span></div>
+            </div>
+        </div>
+
+        <?php if (empty($reviews)): ?>
+            <div class="text-center py-3 bg-light rounded-3 text-muted small" style="font-size: 11.5px;">
+                <i class="bi bi-chat-square-heart text-muted fs-4 mb-1 d-block"></i>
+                Belum ada ulasan untuk toko ini. Jadilah yang pertama memberikan penilaian!
+            </div>
+        <?php else: ?>
+            <div class="d-flex flex-column gap-2.5">
+                <?php foreach ($reviews as $rev): ?>
+                    <div class="p-2.5 bg-light rounded-3 border">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-circle bg-white text-dark d-flex align-items-center justify-content-center border" style="width: 28px; height: 28px; font-size: 11px; font-weight: 700;">
+                                    <?= strtoupper(substr($rev['customer_name'] ?? 'P', 0, 1)) ?>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark small" style="font-size: 12px;"><?= htmlspecialchars($rev['customer_name'] ?? 'Pembeli CicalengkaGO') ?></div>
+                                    <div class="text-muted" style="font-size: 10px;"><?= date('d M Y', strtotime($rev['created_at'])) ?></div>
+                                </div>
+                            </div>
+                            <div class="text-warning small fw-bold">
+                                <?php for ($s = 1; $s <= 5; $s++): ?>
+                                    <i class="bi <?= $s <= (int)$rev['rating'] ? 'bi-star-fill' : 'bi-star' ?>" style="font-size: 11px;"></i>
+                                <?php endfor; ?>
+                            </div>
+                        </div>
+                        <?php if (!empty($rev['comment'])): ?>
+                            <div class="text-dark small mt-1 ps-1 fst-italic" style="font-size: 11.5px;">
+                                "<?= htmlspecialchars($rev['comment']) ?>"
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
 </div>

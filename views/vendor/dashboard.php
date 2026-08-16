@@ -3,10 +3,10 @@
     <div class="d-flex align-items-center gap-3">
         <span class="merchant-status-indicator <?= $store['is_open'] ? 'online' : 'offline' ?>"></span>
         <div>
-            <div class="fw-bold text-dark" style="font-size: 13.5px;"><?= htmlspecialchars($store['name']) ?></div>
+            <div class="fw-bold text-dark" style="font-size: 14px;"><?= htmlspecialchars($store['name']) ?></div>
             <span class="badge <?= $store['is_open'] ? 'bg-success' : 'bg-danger' ?>" style="font-size: 10px; font-weight: 700;">
                 <i class="bi <?= $store['is_open'] ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' ?> me-1"></i>
-                <?= $store['is_open'] ? 'TOKO BUKA (TERIMA PESANAN)' : 'TOKO TUTUP SEMENTARA' ?>
+                <?= $store['is_open'] ? 'TOKO BUKA (MENERIMA PESANAN)' : 'TOKO TUTUP SEMENTARA' ?>
             </span>
         </div>
     </div>
@@ -15,61 +15,116 @@
     </div>
 </div>
 
-<!-- Merchant Quick Stat Grid -->
-<div class="merchant-stat-grid mb-3">
-    <!-- Saldo -->
-    <a href="<?= $baseUrl ?>/vendor/wallet" class="merchant-stat-box text-decoration-none">
-        <div class="d-flex justify-content-between align-items-start">
-            <div class="merchant-stat-icon bg-success-subtle text-success">
-                <i class="bi bi-wallet2"></i>
+<!-- Merchant Main Stat Grid -->
+<div class="row g-2 mb-3">
+    <!-- Card 1: Saldo Dompet Toko -->
+    <div class="col-6">
+        <a href="<?= $baseUrl ?>/vendor/wallet" class="p-3 bg-white rounded-4 border shadow-xs d-flex flex-column justify-content-between text-decoration-none h-100 position-relative overflow-hidden hover-red-card" style="transition: all 0.2s ease;">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; font-size: 18px;">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+                <span class="badge bg-light text-muted border" style="font-size: 9.5px;">Dompet <i class="bi bi-chevron-right"></i></span>
             </div>
-            <i class="bi bi-chevron-right text-muted" style="font-size: 11px;"></i>
-        </div>
-        <div>
-            <div class="merchant-stat-val text-success"><?= format_rupiah($wallet['balance'] ?? 0) ?></div>
-            <div class="merchant-stat-lbl">Saldo Dompet Toko</div>
-        </div>
-    </a>
+            <div>
+                <div class="fw-extrabold text-success fs-6 mb-0.5" style="letter-spacing: -0.3px;"><?= format_rupiah($wallet['balance'] ?? 0) ?></div>
+                <div class="text-muted small" style="font-size: 11px;">Saldo Siap Ditarik</div>
+            </div>
+        </a>
+    </div>
 
-    <!-- Total Orders -->
-    <a href="<?= $baseUrl ?>/vendor/orders" class="merchant-stat-box text-decoration-none">
-        <div class="d-flex justify-content-between align-items-start">
-            <div class="merchant-stat-icon bg-danger-subtle text-danger">
-                <i class="bi bi-receipt"></i>
+    <!-- Card 2: Total Pesanan Masuk -->
+    <div class="col-6">
+        <a href="<?= $baseUrl ?>/vendor/orders" class="p-3 bg-white rounded-4 border shadow-xs d-flex flex-column justify-content-between text-decoration-none h-100 position-relative overflow-hidden hover-red-card" style="transition: all 0.2s ease;">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; font-size: 18px;">
+                    <i class="bi bi-receipt"></i>
+                </div>
+                <span class="badge bg-danger text-white rounded-pill px-2 py-0.5" style="font-size: 9px; font-weight: 700;">
+                    <?= $stats['delivered_count'] ?? 0 ?> Selesai
+                </span>
             </div>
-            <i class="bi bi-chevron-right text-muted" style="font-size: 11px;"></i>
-        </div>
-        <div>
-            <div class="merchant-stat-val"><?= $total_orders ?? 0 ?> <span style="font-size: 13px; font-weight: 600;">Pesanan</span></div>
-            <div class="merchant-stat-lbl">Semua Order</div>
-        </div>
-    </a>
+            <div>
+                <div class="fw-extrabold text-dark fs-6 mb-0.5"><?= (int)($stats['total_orders'] ?? $total_orders ?? 0) ?> <span style="font-size: 12px; font-weight: 600;" class="text-muted">Pesanan</span></div>
+                <div class="text-muted small" style="font-size: 11px;">Total Order Masuk</div>
+            </div>
+        </a>
+    </div>
 
-    <!-- Active Menu Items -->
-    <a href="<?= $baseUrl ?>/vendor/products" class="merchant-stat-box text-decoration-none">
-        <div class="d-flex justify-content-between align-items-start">
-            <div class="merchant-stat-icon bg-warning-subtle text-warning">
-                <i class="bi bi-egg-fried"></i>
+    <!-- Card 3: Total Omzet / Pendapatan Selesai -->
+    <div class="col-6">
+        <div class="p-3 bg-white rounded-4 border shadow-xs d-flex flex-column justify-content-between h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; font-size: 18px;">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 9px; font-weight: 700;">Bersih 90%</span>
             </div>
-            <i class="bi bi-chevron-right text-muted" style="font-size: 11px;"></i>
+            <div>
+                <div class="fw-extrabold text-dark fs-6 mb-0.5" style="letter-spacing: -0.3px;"><?= format_rupiah($stats['total_revenue'] ?? 0) ?></div>
+                <div class="text-muted small" style="font-size: 11px;">Total Omzet Pesanan</div>
+            </div>
         </div>
-        <div>
-            <div class="merchant-stat-val"><?= $products_count ?? 0 ?> <span style="font-size: 13px; font-weight: 600;">Item</span></div>
-            <div class="merchant-stat-lbl">Menu Aktif</div>
-        </div>
-    </a>
+    </div>
 
-    <!-- Rating -->
-    <div class="merchant-stat-box">
-        <div class="d-flex justify-content-between align-items-start">
-            <div class="merchant-stat-icon bg-primary-subtle text-primary">
-                <i class="bi bi-star-fill text-warning"></i>
+    <!-- Card 4: Rating & Ulasan Pelanggan -->
+    <div class="col-6">
+        <a href="#customer-reviews-section" class="p-3 bg-white rounded-4 border shadow-xs d-flex flex-column justify-content-between text-decoration-none h-100 hover-red-card" style="transition: all 0.2s ease;">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; font-size: 18px;">
+                    <i class="bi bi-star-fill text-warning"></i>
+                </div>
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 9.5px; font-weight: 700;">
+                    <?= $store['reviews_count'] ?? 0 ?> Ulasan
+                </span>
             </div>
-            <span class="badge bg-light text-muted border" style="font-size: 9px;">Mitra</span>
+            <div>
+                <div class="fw-extrabold text-dark fs-6 mb-0.5">
+                    <?= number_format($store['rating'] ?? 5.0, 1) ?> 
+                    <span style="font-size: 13px; color: #F59E0B;">★</span>
+                </div>
+                <div class="text-muted small" style="font-size: 11px;">Rating Toko Anda</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Today's Order Pipeline Breakdown -->
+<div class="p-3 bg-white rounded-4 border shadow-xs mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2.5">
+        <div class="d-flex align-items-center gap-1.5">
+            <i class="bi bi-calendar2-check-fill text-danger"></i>
+            <h6 class="fw-bold m-0 small" style="color: var(--gojek-charcoal); font-size: 12.5px;">Ringkasan Status Order Toko</h6>
         </div>
-        <div>
-            <div class="merchant-stat-val"><?= number_format($store['rating'] ?? 5.0, 1) ?> <span style="font-size: 12px; color: #F59E0B;">★</span></div>
-            <div class="merchant-stat-lbl"><?= $store['reviews_count'] ?? 0 ?> Ulasan Pelanggan</div>
+        <span class="badge bg-light text-dark border px-2 py-0.5" style="font-size: 10px;">
+            Hari Ini: <strong><?= $stats['today_orders'] ?? 0 ?> Order</strong>
+        </span>
+    </div>
+
+    <div class="row g-1.5 text-center">
+        <div class="col-3">
+            <div class="p-2 rounded-3 bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                <div class="fw-extrabold fs-6"><?= $stats['pending_count'] ?? 0 ?></div>
+                <div style="font-size: 9.5px;" class="fw-semibold">Menunggu</div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="p-2 rounded-3 bg-info-subtle text-info border border-info-subtle">
+                <div class="fw-extrabold fs-6"><?= $stats['processing_count'] ?? 0 ?></div>
+                <div style="font-size: 9.5px;" class="fw-semibold">Dimasak</div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="p-2 rounded-3 bg-primary-subtle text-primary border border-primary-subtle">
+                <div class="fw-extrabold fs-6"><?= $stats['on_the_way_count'] ?? 0 ?></div>
+                <div style="font-size: 9.5px;" class="fw-semibold">Diantar</div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="p-2 rounded-3 bg-success-subtle text-success border border-success-subtle">
+                <div class="fw-extrabold fs-6"><?= $stats['delivered_count'] ?? 0 ?></div>
+                <div style="font-size: 9.5px;" class="fw-semibold">Selesai</div>
+            </div>
         </div>
     </div>
 </div>
@@ -79,20 +134,84 @@
     <a href="<?= $baseUrl ?>/vendor/products/create" class="btn btn-danger btn-sm rounded-pill fw-bold px-3 py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-sm" style="background:#EE2737; font-size: 12px; border:none;">
         <i class="bi bi-plus-circle-fill"></i> Tambah Menu Baru
     </a>
-    <a href="<?= $baseUrl ?>/vendor/orders" class="btn btn-dark btn-sm rounded-pill fw-bold px-3 py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-sm" style="font-size: 12px;">
-        <i class="bi bi-clock-history"></i> Kelola Pesanan
+    <a href="<?= $baseUrl ?>/vendor/products" class="btn btn-light border btn-sm rounded-pill fw-bold px-3 py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-sm text-dark" style="font-size: 12px;">
+        <i class="bi bi-egg-fried text-warning"></i> Menu (<?= $products_count ?? 0 ?>)
+    </a>
+    <a href="<?= $baseUrl ?>/vendor/wallet" class="btn btn-dark btn-sm rounded-pill fw-bold px-3 py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-1.5 shadow-sm" style="font-size: 12px;">
+        <i class="bi bi-cash-stack text-success"></i> Tarik Dana
     </a>
 </div>
 
+<!-- Customer Reviews & Rating Section -->
+<div class="card border-0 shadow-sm rounded-4 p-3 mb-3 bg-white" id="customer-reviews-section">
+    <div class="d-flex justify-content-between align-items-center mb-2.5">
+        <div class="d-flex align-items-center gap-1.5">
+            <i class="bi bi-chat-heart-fill text-warning"></i>
+            <h6 class="fw-bold m-0 text-dark small" style="font-size: 13px;">Ulasan & Rating Pembeli</h6>
+        </div>
+        <div class="d-flex align-items-center gap-1">
+            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-0.5 rounded-pill fw-bold" style="font-size: 10px;">
+                <?= number_format($store['rating'] ?? 5.0, 1) ?> ★ (<?= $store['reviews_count'] ?? 0 ?>)
+            </span>
+        </div>
+    </div>
+
+    <?php if (empty($reviews)): ?>
+        <div class="text-center py-3 bg-light rounded-3 text-muted small">
+            <i class="bi bi-star text-muted fs-3 mb-1 d-block"></i>
+            <div class="fw-semibold text-dark mb-0.5">Belum Ada Ulasan Pembeli</div>
+            <div style="font-size: 11px;">Ulasan dan rating dari pembeli setelah pesanan selesai akan tampil di sini.</div>
+        </div>
+    <?php else: ?>
+        <div class="d-flex flex-column gap-2">
+            <?php foreach ($reviews as $rev): ?>
+                <div class="p-2.5 bg-light rounded-3 border">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle bg-white text-dark d-flex align-items-center justify-content-center border" style="width: 28px; height: 28px; font-size: 12px; font-weight: 700;">
+                                <?= strtoupper(substr($rev['customer_name'] ?? 'P', 0, 1)) ?>
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark small" style="font-size: 12px;"><?= htmlspecialchars($rev['customer_name'] ?? 'Pembeli CicalengkaGO') ?></div>
+                                <div class="text-muted" style="font-size: 10px;">
+                                    <?= date('d M Y, H:i', strtotime($rev['created_at'])) ?>
+                                    <?php if (!empty($rev['order_code'])): ?>
+                                        • #<?= htmlspecialchars($rev['order_code']) ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-warning small fw-bold">
+                            <?php for ($s = 1; $s <= 5; $s++): ?>
+                                <i class="bi <?= $s <= (int)$rev['rating'] ? 'bi-star-fill' : 'bi-star' ?>" style="font-size: 11px;"></i>
+                            <?php endfor; ?>
+                        </div>
+                    </div>
+
+                    <?php if (!empty($rev['comment'])): ?>
+                        <div class="text-dark small mt-1 ps-1 fst-italic" style="font-size: 11.5px;">
+                            "<?= htmlspecialchars($rev['comment']) ?>"
+                        </div>
+                    <?php else: ?>
+                        <div class="text-muted small mt-1 ps-1" style="font-size: 10.5px;">
+                            (Memberikan rating <?= (int)$rev['rating'] ?> bintang)
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+</div>
+
 <!-- Recent Active Orders Section -->
-<div class="mb-4">
+<div class="mb-3">
     <div class="d-flex align-items-center justify-content-between mb-2.5">
         <div class="d-flex align-items-center gap-1.5">
             <i class="bi bi-bell-fill text-danger fs-6"></i>
             <h6 class="fw-bold m-0 text-dark" style="font-size: 13.5px;">Pesanan Terbaru Masuk</h6>
         </div>
         <a href="<?= $baseUrl ?>/vendor/orders" class="text-danger fw-bold text-decoration-none small" style="font-size: 11.5px;">
-            Lihat Semua <i class="bi bi-arrow-right"></i>
+            Lihat Semua (<?= count($orders) ?>) <i class="bi bi-arrow-right"></i>
         </a>
     </div>
 
@@ -102,7 +221,7 @@
                 <i class="bi bi-inbox text-muted fs-4"></i>
             </div>
             <div class="fw-bold small text-dark">Belum Ada Pesanan Masuk</div>
-            <div class="text-muted" style="font-size: 11px;">Pesanan baru dari pembeli akan otomatis muncul di sini.</div>
+            <div class="text-muted" style="font-size: 11px;">Pesanan baru dari pembeli akan otomatis muncul di sini secara real-time.</div>
         </div>
     <?php else: ?>
         <div class="d-flex flex-column gap-2.5">
@@ -143,7 +262,7 @@
                         </div>
                         <div class="text-end">
                             <div class="fw-bold text-danger" style="font-size: 13.5px;"><?= format_rupiah($ord['total_amount']) ?></div>
-                            <span class="badge bg-light text-muted border" style="font-size: 9px;"><?= $ord['payment_method'] ?></span>
+                            <span class="badge bg-light text-muted border" style="font-size: 9px;"><?= strtoupper($ord['payment_method']) ?></span>
                         </div>
                     </div>
 
@@ -176,6 +295,10 @@
                     <?php elseif ($ord['order_status'] === 'handover'): ?>
                         <div class="p-2 bg-light rounded-3 text-center small text-muted border">
                             <i class="bi bi-bicycle text-primary me-1"></i> Menunggu kurir mengambil pesanan
+                        </div>
+                    <?php elseif ($ord['order_status'] === 'delivered'): ?>
+                        <div class="p-2 bg-success-subtle text-success rounded-3 text-center small fw-bold border border-success-subtle">
+                            <i class="bi bi-check-circle-fill me-1"></i> Pesanan Telah Selesai (Dana Masuk ke Saldo)
                         </div>
                     <?php endif; ?>
                 </div>

@@ -83,19 +83,34 @@
                             <div class="fw-bold <?= $isUnpaid ? 'text-danger' : 'text-dark' ?> fs-6"><?= format_rupiah($order['total_amount']) ?></div>
                         </div>
 
-                        <?php if ($isUnpaid): ?>
-                            <a href="<?= $baseUrl ?>/orders/<?= $order['order_code'] ?>/tracking" class="btn btn-sm rounded-pill fw-bold px-3 text-white shadow-xs" style="background:#EE2737; font-size: 11px;">
-                                <i class="bi bi-credit-card-2-front-fill me-1"></i> Bayar Sekarang
-                            </a>
-                        <?php elseif ($isCanceled): ?>
-                            <a href="<?= $baseUrl ?>" class="btn btn-sm rounded-pill fw-semibold px-3 btn-light border" style="font-size: 11px;">
-                                <i class="bi bi-arrow-clockwise me-1"></i> Pesan Lagi
-                            </a>
-                        <?php else: ?>
-                            <a href="<?= $baseUrl ?>/orders/<?= $order['order_code'] ?>/tracking" class="btn btn-sm rounded-pill fw-bold px-3 text-white shadow-xs" style="background:#EE2737; font-size: 11px;">
-                                <i class="bi bi-geo-alt-fill me-1"></i> Lacak Live
-                            </a>
-                        <?php endif; ?>
+                        <div class="d-flex gap-1.5 align-items-center">
+                            <?php if ($isUnpaid): ?>
+                                <a href="<?= $baseUrl ?>/orders/<?= $order['order_code'] ?>/tracking" class="btn btn-sm rounded-pill fw-bold px-3 text-white shadow-xs" style="background:#EE2737; font-size: 11px;">
+                                    <i class="bi bi-credit-card-2-front-fill me-1"></i> Bayar Sekarang
+                                </a>
+                            <?php elseif ($isCanceled): ?>
+                                <a href="<?= $baseUrl ?>" class="btn btn-sm rounded-pill fw-semibold px-3 btn-light border" style="font-size: 11px;">
+                                    <i class="bi bi-arrow-clockwise me-1"></i> Pesan Lagi
+                                </a>
+                            <?php elseif ($status === 'delivered'): ?>
+                                <a href="<?= $baseUrl ?>/orders/<?= $order['order_code'] ?>/tracking" class="btn btn-sm rounded-pill fw-semibold px-2.5 btn-light border" style="font-size: 11px;">
+                                    <i class="bi bi-receipt me-0.5"></i> Rincian
+                                </a>
+                                <?php if (!empty($order['is_reviewed'])): ?>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle py-1.5 px-2.5 rounded-pill" style="font-size: 10.5px; font-weight: 700;">
+                                        <i class="bi bi-star-fill text-warning me-0.5"></i> Diulas
+                                    </span>
+                                <?php else: ?>
+                                    <button type="button" onclick="openOrderReviewModal(<?= (int)$order['id'] ?>, '<?= htmlspecialchars($order['order_code']) ?>', '<?= htmlspecialchars(addslashes($order['store_name'] ?? 'Toko')) ?>', <?= !empty($order['delivery_man_id']) ? 'true' : 'false' ?>)" class="btn btn-sm rounded-pill fw-bold px-2.5 text-dark shadow-xs" style="background: #FBBF24; font-size: 11px; border:none;">
+                                        <i class="bi bi-star-fill me-1 text-dark"></i> Beri Ulasan
+                                    </button>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <a href="<?= $baseUrl ?>/orders/<?= $order['order_code'] ?>/tracking" class="btn btn-sm rounded-pill fw-bold px-3 text-white shadow-xs" style="background:#EE2737; font-size: 11px;">
+                                    <i class="bi bi-geo-alt-fill me-1"></i> Lacak Live
+                                </a>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -104,10 +119,132 @@
 </div>
 
 <script>
+// Review Modal for Customer Orders
+function openOrderReviewModal(orderId, orderCode, storeName, hasDriver) {
+    let currentStoreRating = 5;
+    let currentDriverRating = 5;
+
+    const html = `
+        <div class="text-start" style="font-size: 13px;">
+            <div class="mb-3 text-center">
+                <div class="text-muted small mb-1">Pesanan #${orderCode}</div>
+                <div class="fw-bold text-dark fs-6">${storeName}</div>
+            </div>
+
+            <div class="mb-3 p-3 bg-light rounded-4 border">
+                <label class="fw-bold text-dark d-block mb-1.5">Rating untuk Toko / Makanan</label>
+                <div class="d-flex justify-content-center gap-2 mb-2" id="store-star-rating">
+                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="1" onclick="setStoreStar(1)"></i>
+                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="2" onclick="setStoreStar(2)"></i>
+                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="3" onclick="setStoreStar(3)"></i>
+                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="4" onclick="setStoreStar(4)"></i>
+                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="5" onclick="setStoreStar(5)"></i>
+                </div>
+                <div class="text-center small fw-bold text-warning-emphasis mb-2" id="store-star-text">Sangat Puas (5 Bintang)</div>
+                <textarea id="store-review-comment" class="form-control form-control-sm rounded-3" rows="2" placeholder="Bagaimana rasa makanan / kualitas pesanan toko ini?"></textarea>
+            </div>
+
+            ${hasDriver ? `
+            <div class="mb-2 p-3 bg-light rounded-4 border">
+                <label class="fw-bold text-dark d-block mb-1.5">Rating Pelayanan Kurir Driver</label>
+                <div class="d-flex justify-content-center gap-2 mb-2" id="driver-star-rating">
+                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="1" onclick="setDriverStar(1)"></i>
+                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="2" onclick="setDriverStar(2)"></i>
+                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="3" onclick="setDriverStar(3)"></i>
+                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="4" onclick="setDriverStar(4)"></i>
+                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="5" onclick="setDriverStar(5)"></i>
+                </div>
+                <div class="text-center small fw-bold text-warning-emphasis mb-2" id="driver-star-text">Pengantaran Cepat & Ramah (5 Bintang)</div>
+                <textarea id="driver-review-comment" class="form-control form-control-sm rounded-3" rows="2" placeholder="Tuliskan ulasan untuk kurir (opsional)..."></textarea>
+            </div>
+            ` : ''}
+        </div>
+    `;
+
+    Swal.fire({
+        title: 'Beri Rating & Ulasan ⭐',
+        html: html,
+        showCancelButton: true,
+        confirmButtonText: 'Kirim Ulasan',
+        confirmButtonColor: '#EE2737',
+        cancelButtonText: 'Nanti Saja',
+        focusConfirm: false,
+        didOpen: () => {
+            window.setStoreStar = function(val) {
+                currentStoreRating = val;
+                const stars = document.querySelectorAll('#store-star-rating i');
+                stars.forEach((s, idx) => {
+                    if (idx < val) {
+                        s.className = 'bi bi-star-fill text-warning fs-3 cursor-pointer';
+                    } else {
+                        s.className = 'bi bi-star text-muted fs-3 cursor-pointer';
+                    }
+                });
+                const texts = ['', 'Kecewa (1 Bintang)', 'Kurang Puas (2 Bintang)', 'Cukup Baik (3 Bintang)', 'Puas (4 Bintang)', 'Sangat Puas (5 Bintang)'];
+                document.getElementById('store-star-text').textContent = texts[val] || '';
+            };
+
+            window.setDriverStar = function(val) {
+                currentDriverRating = val;
+                const stars = document.querySelectorAll('#driver-star-rating i');
+                stars.forEach((s, idx) => {
+                    if (idx < val) {
+                        s.className = 'bi bi-star-fill text-warning fs-3 cursor-pointer';
+                    } else {
+                        s.className = 'bi bi-star text-muted fs-3 cursor-pointer';
+                    }
+                });
+                const texts = ['', 'Kurang Baik (1 Bintang)', 'Biasa Saja (2 Bintang)', 'Cukup Ramah (3 Bintang)', 'Pengantaran Baik (4 Bintang)', 'Pengantaran Cepat & Ramah (5 Bintang)'];
+                const txtEl = document.getElementById('driver-star-text');
+                if (txtEl) txtEl.textContent = texts[val] || '';
+            };
+        },
+        preConfirm: async () => {
+            const storeComment = document.getElementById('store-review-comment')?.value || '';
+            const driverComment = document.getElementById('driver-review-comment')?.value || '';
+
+            const fd = new FormData();
+            fd.append('order_id', orderId);
+            fd.append('order_code', orderCode);
+            fd.append('store_rating', currentStoreRating);
+            fd.append('store_comment', storeComment);
+            if (hasDriver) {
+                fd.append('dm_rating', currentDriverRating);
+                fd.append('dm_comment', driverComment);
+            }
+
+            try {
+                const res = await fetch(window.BASE_URL + '/orders/review', {
+                    method: 'POST',
+                    body: fd
+                });
+                const data = await res.json();
+                if (!data.success) {
+                    throw new Error(data.message || 'Gagal mengirimkan ulasan.');
+                }
+                return data;
+            } catch (err) {
+                Swal.showValidationMessage(err.message || 'Terjadi kesalahan sistem.');
+                return false;
+            }
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Ulasan Terkirim! 🎉',
+                text: 'Terima kasih telah memberikan rating dan penilaian Anda.',
+                timer: 1800,
+                showConfirmButton: false
+            }).then(() => {
+                location.reload();
+            });
+        }
+    });
+}
+
 // Customer Order List Live Auto-Sync
 (function() {
-    let lastOrderStateHash = '';
-
     function getStatusMeta(status, paymentMethod, paymentStatus) {
         const isCanceled = (status === 'canceled');
         const isUnpaid = (paymentMethod === 'midtrans' && paymentStatus !== 'paid' && !isCanceled);
@@ -148,6 +285,6 @@
         }
     }
 
-    setInterval(syncOrdersList, 3500);
+    setInterval(syncOrdersList, 4000);
 })();
 </script>

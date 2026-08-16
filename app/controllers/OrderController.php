@@ -502,4 +502,48 @@ class OrderController extends Controller
             ]
         ]);
     }
+
+    public function submitReview(): void
+    {
+        $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Silakan login terlebih dahulu.', null, 401);
+            return;
+        }
+
+        $data = $this->getPost();
+        $orderId = (int)($data['order_id'] ?? 0);
+        $orderCode = trim($data['order_code'] ?? '');
+
+        if (!$orderId && !empty($orderCode)) {
+            $ord = $this->orderModel->findByCode($orderCode);
+            if ($ord) $orderId = (int)$ord['id'];
+        }
+
+        if (!$orderId) {
+            $this->errorResponse('ID atau kode pesanan wajib disertakan.');
+            return;
+        }
+
+        $storeRating = (int)($data['store_rating'] ?? 5);
+        $storeComment = sanitize($data['store_comment'] ?? '');
+        $dmRating = (isset($data['dm_rating']) && $data['dm_rating'] !== '') ? (int)$data['dm_rating'] : null;
+        $dmComment = sanitize($data['dm_comment'] ?? '');
+
+        try {
+            $reviewModel = new \App\Models\Review();
+            $res = $reviewModel->submitReview(
+                $orderId,
+                $userId,
+                $storeRating,
+                $storeComment,
+                $dmRating,
+                $dmComment
+            );
+
+            $this->successResponse('Terima kasih! Ulasan dan rating bintang berhasil dikirimkan.', $res);
+        } catch (Exception $e) {
+            $this->errorResponse($e->getMessage());
+        }
+    }
 }
