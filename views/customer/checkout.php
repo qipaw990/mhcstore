@@ -1,24 +1,24 @@
-<div class="p-3 border-bottom bg-white d-flex align-items-center gap-2">
-    <a href="<?= $baseUrl ?>/cart" class="btn btn-light btn-sm rounded-circle"><i class="bi bi-arrow-left"></i></a>
-    <h6 class="fw-bold m-0" style="color: var(--gojek-charcoal);">Konfirmasi & Pembayaran</h6>
+<div class="p-2 border-bottom bg-white d-flex align-items-center gap-1.5" style="padding: 8px 12px !important;">
+    <a href="<?= $baseUrl ?>/cart" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 12px;"><i class="bi bi-arrow-left"></i></a>
+    <h6 class="fw-bold m-0" style="color: var(--gojek-charcoal); font-size: 12.5px;">Konfirmasi & Pembayaran</h6>
 </div>
 
-<form id="checkoutForm" onsubmit="handlePlaceOrder(event)" class="p-3">
+<form id="checkoutForm" onsubmit="handlePlaceOrder(event)" class="p-2" style="padding: 8px 10px !important;">
     <!-- Map Location Picker Card -->
-    <div class="p-3 bg-white rounded-4 border shadow-sm mb-3">
-        <div class="d-flex align-items-center justify-content-between mb-2">
-            <h6 class="fw-bold small m-0" style="color: var(--gojek-charcoal);"><i class="bi bi-geo-alt-fill text-danger me-1"></i> Titik Lokasi Pengantaran</h6>
-            <button type="button" onclick="getCurrentLocation()" class="btn btn-sm rounded-pill py-0 px-2 fw-bold text-white shadow-xs" style="background:#EE2737; font-size: 11px;">
-                <i class="bi bi-crosshair me-1"></i> GPS Saya
+    <div class="p-2.5 bg-white rounded-3 border shadow-xs mb-2">
+        <div class="d-flex align-items-center justify-content-between mb-1.5">
+            <h6 class="fw-bold m-0" style="color: var(--gojek-charcoal); font-size: 11px;"><i class="bi bi-geo-alt-fill text-danger me-1"></i> Titik Lokasi Antar</h6>
+            <button type="button" onclick="getCurrentLocation()" class="btn btn-sm rounded-pill py-0.5 px-2 fw-bold text-white shadow-xs" style="background:#EE2737; font-size: 9.5px;">
+                <i class="bi bi-crosshair me-0.5"></i> GPS Saya
             </button>
         </div>
-        <div class="small text-muted mb-2" style="font-size: 11px;">
-            Geser pin merah atau ketuk peta untuk menyesuaikan lokasi tepat rumah Anda di Cicalengka.
+        <div class="text-muted mb-1.5" style="font-size: 9.5px; line-height: 1.3;">
+            Geser pin merah atau ketuk peta untuk menyesuaikan lokasi tepat rumah Anda.
         </div>
-        <div id="checkout-map" style="width: 100%; height: 210px; border-radius: 12px;" class="border shadow-sm mb-2"></div>
-        <div class="d-flex align-items-center justify-content-between px-1">
-            <span class="badge bg-light text-dark border small" id="distance-badge"><i class="bi bi-signpost-2 me-1"></i> Est. Jarak: 1.5 Km</span>
-            <span class="badge bg-danger-subtle text-danger small" id="zone-badge"><i class="bi bi-shield-check me-1"></i> Tercover Zona Cicalengka</span>
+        <div id="checkout-map" style="width: 100%; height: 160px; border-radius: 8px;" class="border shadow-xs mb-1.5"></div>
+        <div class="d-flex align-items-center justify-content-between">
+            <span class="badge bg-light text-dark border" id="distance-badge" style="font-size: 8.5px;"><i class="bi bi-signpost-2 me-0.5"></i> Est. Jarak: 1.5 Km</span>
+            <span class="badge bg-danger-subtle text-danger" id="zone-badge" style="font-size: 8.5px;"><i class="bi bi-shield-check me-0.5"></i> Tercover Zona Cicalengka</span>
         </div>
 
         <input type="hidden" name="latitude" id="input-lat" value="-6.9855">
@@ -27,113 +27,113 @@
     </div>
 
     <!-- Delivery Address Details -->
-    <div class="p-3 bg-white rounded-4 border shadow-sm mb-3">
-        <div class="mb-2">
-            <label class="form-label text-muted" style="font-size: 11px;">Alamat Lengkap / Patokan Rumah</label>
-            <textarea name="address" id="input-address" class="form-control form-control-sm bg-light" rows="2" required placeholder="Jl. Raya Cicalengka No. 45 (Dekat Stasiun / Rumah Cat Hijau)">Jl. Cicalengka Raya No. 45, RT 02/03</textarea>
+    <div class="p-2.5 bg-white rounded-3 border shadow-xs mb-2">
+        <div class="mb-1.5">
+            <label class="form-label text-muted mb-0.5" style="font-size: 9.5px;">Alamat Lengkap / Patokan Rumah</label>
+            <textarea name="address" id="input-address" class="form-control form-control-sm bg-light" rows="2" style="font-size: 10.5px;" required placeholder="Jl. Raya Cicalengka No. 45 (Dekat Stasiun / Rumah Cat Hijau)">Jl. Cicalengka Raya No. 45, RT 02/03</textarea>
         </div>
-        <div class="row g-2">
+        <div class="row g-1.5">
             <div class="col-6">
-                <label class="form-label text-muted" for="contact_name" style="font-size: 11px;">Nama Penerima</label>
-                <input type="text" name="contact_name" id="contact_name" class="form-control form-control-sm bg-light" value="<?= htmlspecialchars($_SESSION['user']['name'] ?? '') ?>" required>
+                <label class="form-label text-muted mb-0.5" for="contact_name" style="font-size: 9.5px;">Nama Penerima</label>
+                <input type="text" name="contact_name" id="contact_name" class="form-control form-control-sm bg-light" style="font-size: 10.5px;" value="<?= htmlspecialchars($_SESSION['user']['name'] ?? '') ?>" required>
             </div>
             <div class="col-6">
-                <label class="form-label text-muted" for="contact_phone" style="font-size: 11px;">No. WhatsApp</label>
-                <input type="text" name="contact_phone" id="contact_phone" class="form-control form-control-sm bg-light" value="<?= htmlspecialchars($_SESSION['user']['phone'] ?? '') ?>" required>
+                <label class="form-label text-muted mb-0.5" for="contact_phone" style="font-size: 9.5px;">No. WhatsApp</label>
+                <input type="text" name="contact_phone" id="contact_phone" class="form-control form-control-sm bg-light" style="font-size: 10.5px;" value="<?= htmlspecialchars($_SESSION['user']['phone'] ?? '') ?>" required>
             </div>
         </div>
     </div>
 
     <!-- Payment Method Selector -->
-    <div class="p-3 bg-white rounded-4 border shadow-sm mb-3">
-        <h6 class="fw-bold small mb-3" style="color: var(--gojek-charcoal);"><i class="bi bi-wallet2 text-danger me-1"></i> Metode Pembayaran</h6>
+    <div class="p-2.5 bg-white rounded-3 border shadow-xs mb-2">
+        <h6 class="fw-bold mb-2" style="color: var(--gojek-charcoal); font-size: 11px;"><i class="bi bi-wallet2 text-danger me-1"></i> Metode Pembayaran</h6>
 
-        <div class="d-flex flex-column gap-2">
+        <div class="d-flex flex-column gap-1.5">
             <!-- CicalengkaPay Digital Wallet -->
-            <label class="p-3 border rounded-4 d-flex align-items-center justify-content-between cursor-pointer payment-option <?= ((float)$wallet['balance'] >= (float)$cart_data['subtotal']) ? 'border-danger bg-danger-subtle' : 'opacity-75' ?>" style="cursor: pointer;">
-                <div class="d-flex align-items-center gap-3">
+            <label class="p-2 border rounded-3 d-flex align-items-center justify-content-between cursor-pointer payment-option <?= ((float)$wallet['balance'] >= (float)$cart_data['subtotal']) ? 'border-danger bg-danger-subtle' : 'opacity-75' ?>" style="cursor: pointer;">
+                <div class="d-flex align-items-center gap-2">
                     <input type="radio" name="payment_method" id="pay_wallet" value="wallet" <?= ((float)$wallet['balance'] >= (float)$cart_data['subtotal']) ? 'checked' : 'disabled' ?>>
                     <div>
-                        <div class="fw-bold small d-flex align-items-center gap-1">
+                        <div class="fw-bold d-flex align-items-center gap-1" style="font-size: 10.5px;">
                             <span style="color:#EE2737;font-weight:800;">CicalengkaPay</span>
-                            <span class="text-muted">(Saldo Digital)</span>
+                            <span class="text-muted" style="font-size: 9px;">(Saldo Digital)</span>
                         </div>
-                        <div class="text-muted" style="font-size: 11px;">Saldo: <?= format_rupiah($wallet['balance'] ?? 0) ?></div>
+                        <div class="text-muted" style="font-size: 9px;">Saldo: <?= format_rupiah($wallet['balance'] ?? 0) ?></div>
                     </div>
                 </div>
                 <?php if ((float)$wallet['balance'] < (float)$cart_data['subtotal']): ?>
-                    <span class="badge bg-warning text-dark" style="font-size: 10px;">Saldo Kurang</span>
+                    <span class="badge bg-warning text-dark" style="font-size: 8px;">Kurang</span>
                 <?php else: ?>
-                    <span class="badge bg-danger" style="background:#EE2737 !important; font-size: 10px;">Tersedia</span>
+                    <span class="badge bg-danger" style="background:#EE2737 !important; font-size: 8px;">Tersedia</span>
                 <?php endif; ?>
             </label>
 
             <!-- Midtrans Online Payment (QRIS / VA / E-Wallet) -->
-            <label class="p-3 border rounded-4 d-flex align-items-center justify-content-between cursor-pointer payment-option" style="cursor: pointer;">
-                <div class="d-flex align-items-center gap-3">
+            <label class="p-2 border rounded-3 d-flex align-items-center justify-content-between cursor-pointer payment-option" style="cursor: pointer;">
+                <div class="d-flex align-items-center gap-2">
                     <input type="radio" name="payment_method" id="pay_midtrans" value="midtrans">
                     <div>
-                        <div class="fw-bold small d-flex align-items-center gap-1 text-dark">
+                        <div class="fw-bold d-flex align-items-center gap-1 text-dark" style="font-size: 10.5px;">
                             <span>Bayar Online (Midtrans)</span>
-                            <span class="badge bg-danger-subtle text-danger" style="font-size: 9px; font-weight: 700;">Otomatis</span>
+                            <span class="badge bg-danger-subtle text-danger" style="font-size: 8px; font-weight: 700;">Otomatis</span>
                         </div>
-                        <div class="text-muted" style="font-size: 11px;">QRIS, GoPay, ShopeePay, Virtual Account BCA/BRI/Mandiri/BNI</div>
+                        <div class="text-muted" style="font-size: 9px;">QRIS, GoPay, ShopeePay, VA Bank</div>
                     </div>
                 </div>
                 <div class="d-flex align-items-center">
-                    <span class="badge text-white px-2 py-1" style="background: #002B49; font-size: 10px; font-weight: 700; border-radius: 6px;">MIDTRANS</span>
+                    <span class="badge text-white px-1.5 py-0.5" style="background: #002B49; font-size: 8px; font-weight: 700; border-radius: 4px;">MIDTRANS</span>
                 </div>
             </label>
 
             <!-- COD (Cash on Delivery) -->
-            <label class="p-3 border rounded-4 d-flex align-items-center justify-content-between cursor-pointer payment-option" style="cursor: pointer;">
-                <div class="d-flex align-items-center gap-3">
+            <label class="p-2 border rounded-3 d-flex align-items-center justify-content-between cursor-pointer payment-option" style="cursor: pointer;">
+                <div class="d-flex align-items-center gap-2">
                     <input type="radio" name="payment_method" id="pay_cod" value="cod" <?= ((float)$wallet['balance'] < (float)$cart_data['subtotal']) ? 'checked' : '' ?>>
                     <div>
-                        <div class="fw-bold small text-dark">Tunai saat Pesanan Tiba (COD)</div>
-                        <div class="text-muted" style="font-size: 11px;">Bayar langsung ke kurir motor</div>
+                        <div class="fw-bold text-dark" style="font-size: 10.5px;">Tunai saat Tiba (COD)</div>
+                        <div class="text-muted" style="font-size: 9px;">Bayar langsung ke kurir motor</div>
                     </div>
                 </div>
-                <i class="bi bi-cash-coin text-success fs-4"></i>
+                <i class="bi bi-cash-coin text-success fs-5"></i>
             </label>
         </div>
     </div>
 
     <!-- Voucher / Coupon Code -->
-    <div class="p-3 bg-white rounded-4 border shadow-sm mb-3">
-        <h6 class="fw-bold small mb-2"><i class="bi bi-percent text-warning me-1"></i> Promo & Kupon</h6>
+    <div class="p-2.5 bg-white rounded-3 border shadow-xs mb-2">
+        <h6 class="fw-bold mb-1.5" style="font-size: 10.5px;"><i class="bi bi-percent text-warning me-1"></i> Promo & Kupon</h6>
         <div class="input-group input-group-sm">
-            <input type="text" name="coupon_code" id="coupon_code" class="form-control bg-light" placeholder="Masukkan kode promo (Contoh: CCGHEMAT)">
-            <button type="button" class="btn text-white fw-bold" style="background:#EE2737;" onclick="applyCouponPreview()">Pakai</button>
+            <input type="text" name="coupon_code" id="coupon_code" class="form-control bg-light" style="font-size: 10px;" placeholder="Kode promo (Contoh: CCGHEMAT)">
+            <button type="button" class="btn text-white fw-bold px-2.5" style="background:#EE2737; font-size: 10px;" onclick="applyCouponPreview()">Pakai</button>
         </div>
     </div>
 
     <!-- Order Notes -->
-    <div class="p-3 bg-white rounded-4 border shadow-sm mb-3">
-        <label class="form-label fw-bold small mb-2 d-block" for="order_notes"><i class="bi bi-chat-left-text me-1 text-muted"></i> Catatan untuk Resto & Driver</label>
-        <input type="text" name="order_notes" id="order_notes" class="form-control form-control-sm bg-light" placeholder="Contoh: Sambal dipisah, jangan pakai bawang goreng">
+    <div class="p-2.5 bg-white rounded-3 border shadow-xs mb-2">
+        <label class="form-label fw-bold mb-1 d-block" for="order_notes" style="font-size: 10.5px;"><i class="bi bi-chat-left-text me-1 text-muted"></i> Catatan Pesanan</label>
+        <input type="text" name="order_notes" id="order_notes" class="form-control form-control-sm bg-light" style="font-size: 10px;" placeholder="Contoh: Sambal dipisah, jangan pakai bawang goreng">
     </div>
 
     <!-- Order Breakdown Card -->
-    <div class="p-3 bg-white rounded-4 border shadow-sm mb-4">
-        <h6 class="fw-bold small mb-3" style="color: var(--gojek-charcoal);">Rincian Tagihan</h6>
-        <div class="d-flex justify-content-between small text-muted mb-2">
+    <div class="p-2.5 bg-white rounded-3 border shadow-xs mb-3">
+        <h6 class="fw-bold mb-2" style="color: var(--gojek-charcoal); font-size: 11px;">Rincian Tagihan</h6>
+        <div class="d-flex justify-content-between text-muted mb-1" style="font-size: 10px;">
             <span>Subtotal Pesanan</span>
             <span class="text-dark fw-bold"><?= format_rupiah($cart_data['subtotal']) ?></span>
         </div>
-        <div class="d-flex justify-content-between small text-muted mb-2">
-            <span>Ongkos Kirim (<span id="fee-dist-text">1.5 Km</span>)</span>
+        <div class="d-flex justify-content-between text-muted mb-1" style="font-size: 10px;">
+            <span>Ongkir (<span id="fee-dist-text">1.5 Km</span>)</span>
             <span class="text-dark fw-bold" id="delivery-fee-display"><?= format_rupiah($cart_data['store']['delivery_fee']) ?></span>
         </div>
-        <hr class="my-2">
-        <div class="d-flex justify-content-between fw-bold">
+        <hr class="my-1.5">
+        <div class="d-flex justify-content-between fw-bold" style="font-size: 11.5px;">
             <span>Total Pembayaran</span>
-            <span class="text-dark fs-6" id="total-amount-display"><?= format_rupiah($cart_data['subtotal'] + $cart_data['store']['delivery_fee']) ?></span>
+            <span class="text-danger" id="total-amount-display"><?= format_rupiah($cart_data['subtotal'] + $cart_data['store']['delivery_fee']) ?></span>
         </div>
     </div>
 
     <!-- Submit Order Button -->
-    <button type="submit" id="btnPlaceOrder" class="btn btn-gojek-green mb-3" style="background:#EE2737 !important; color:#FFFFFF !important; border-radius:9999px; font-weight:800; padding:14px 20px; box-shadow:0 4px 14px rgba(238,39,55,0.35);">
+    <button type="submit" id="btnPlaceOrder" class="btn btn-gojek-green w-100 mb-2" style="background:#EE2737 !important; color:#FFFFFF !important; border-radius:9999px; font-weight:700; padding:8px 14px; font-size:11.5px; box-shadow:0 2px 8px rgba(238,39,55,0.3); display:flex; align-items:center; justify-content:center; gap:6px;">
         <i class="bi bi-shield-check"></i>
         <span>Pesan & Antar Sekarang</span>
     </button>

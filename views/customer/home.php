@@ -39,12 +39,12 @@
 
 <!-- Kategori Pilihan & Layanan CicalengkaGO -->
 <div class="gojek-services-section">
-    <div class="d-flex align-items-center justify-content-between mb-3 px-1">
-        <h6 class="fw-bold m-0" style="font-size: 15px; color: var(--gojek-charcoal); letter-spacing: -0.3px;">
+    <div class="d-flex align-items-center justify-content-between mb-2 px-1">
+        <h6 class="fw-bold m-0" style="font-size: 12.5px; color: var(--gojek-charcoal); letter-spacing: -0.2px;">
             <i class="bi bi-grid-1x2-fill me-1" style="color: var(--gojek-green);"></i> Kategori Pilihan
         </h6>
-        <a href="<?= $baseUrl ?>/search" class="text-decoration-none fw-bold" style="font-size: 12px; color: var(--gojek-green);">
-            Lihat Semua <i class="bi bi-chevron-right" style="font-size: 10px;"></i>
+        <a href="<?= $baseUrl ?>/search" class="text-decoration-none fw-bold" style="font-size: 10.5px; color: var(--gojek-green);">
+            Lihat Semua <i class="bi bi-chevron-right" style="font-size: 9px;"></i>
         </a>
     </div>
 
