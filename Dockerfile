@@ -14,8 +14,8 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo pdo_mysql gd zip bcmath opcache \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Enable Apache mod_rewrite
-RUN a2enmod rewrite
+# Enable Apache mod_rewrite & mod_headers
+RUN a2enmod rewrite headers
 
 # Change DocumentRoot to /var/www/html/public
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
