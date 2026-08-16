@@ -683,6 +683,13 @@ function sendDriverQuickReply(text) {
     }
 }
 
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 // Background driver unread polling
 <?php if (!empty($active_order)): ?>
 setInterval(async () => {
