@@ -34,7 +34,7 @@
                     </div>
                 </div>
                 <div>
-                    <div class="fw-extrabold fs-6" style="color: #EE2737; font-weight: 800;"><?= format_rupiah($wallet['balance'] ?? 0) ?></div>
+                    <div id="driverWalletBalanceText" class="fw-extrabold fs-6" style="color: #EE2737; font-weight: 800;"><?= format_rupiah($wallet['balance'] ?? 0) ?></div>
                     <a href="<?= $baseUrl ?>/delivery/earnings" class="text-decoration-none text-muted" style="font-size: 10px; font-weight: 600;">
                         Rincian Saldo <i class="bi bi-chevron-right" style="font-size: 9px; color: #EE2737;"></i>
                     </a>
@@ -50,7 +50,7 @@
                     </div>
                 </div>
                 <div>
-                    <div class="fw-bold fs-6 text-dark"><?= $driver['total_orders'] ?? 0 ?> <span class="fs-6 fw-normal text-muted">Order</span></div>
+                    <div class="fw-bold fs-6 text-dark"><span id="driverTotalOrdersText"><?= $driver['total_orders'] ?? 0 ?></span> <span class="fs-6 fw-normal text-muted">Order</span></div>
                     <span class="badge bg-success-subtle text-success rounded-pill px-2" style="font-size: 10px; font-weight: 700;">
                         Performa 100%
                     </span>
@@ -79,6 +79,7 @@
     </div>
 
     <!-- Active Delivery Task (Step-by-Step Navigation: Store First, Then Customer) -->
+    <div id="driverActiveOrderSection">
     <?php if (!empty($active_order)): ?>
         <?php 
             $isPickedUp = in_array($active_order['order_status'], ['picked_up', 'on_the_way', 'delivered']);
@@ -232,19 +233,19 @@
             </div>
         </div>
     <?php endif; ?>
+    </div>
 
     <!-- Radar Incoming Orders in Cicalengka Zone -->
     <div class="d-flex align-items-center justify-content-between mb-2">
         <h6 class="fw-bold small m-0 text-dark">
             <i class="bi bi-radar me-1" style="color: #EE2737;"></i> Radar Order Sekitar Cicalengka
         </h6>
-        <?php if (empty($active_order) && $driver['is_online'] && !empty($available_orders)): ?>
-            <span class="badge rounded-pill px-2.5 py-1 text-white" style="font-size: 10px; font-weight: 700; background: #EE2737;">
-                <?= count($available_orders) ?> Order Siap
-            </span>
-        <?php endif; ?>
+        <span id="radarOrderCountBadge" class="badge rounded-pill px-2.5 py-1 text-white <?= (empty($active_order) && $driver['is_online'] && !empty($available_orders)) ? '' : 'd-none' ?>" style="font-size: 10px; font-weight: 700; background: #EE2737;">
+            <?= count($available_orders) ?> Order Siap
+        </span>
     </div>
 
+    <div id="driverRadarOrderSection">
     <?php if (!empty($active_order)): ?>
         <div class="p-3 bg-white rounded-4 border shadow-sm mb-3">
             <div class="d-flex align-items-center gap-3">
@@ -281,9 +282,9 @@
             <div class="text-muted" style="font-size: 11px;">Radar aktif di area Cicalengka. Pesanan terdekat akan otomatis muncul di sini.</div>
         </div>
     <?php else: ?>
-        <div class="d-flex flex-column gap-3">
+        <div class="d-flex flex-column gap-3" id="availableOrdersList">
             <?php foreach ($available_orders as $ord): ?>
-                <div class="p-3 bg-white rounded-4 border shadow-sm">
+                <div class="p-3 bg-white rounded-4 border shadow-sm order-incoming-card" id="avail-order-<?= $ord['id'] ?>">
                     <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
                         <div class="d-flex align-items-center gap-1.5">
                             <span class="badge rounded-pill px-2.5 py-1 text-white" style="font-size: 10px; font-weight: 700; background: #EE2737;">
@@ -325,6 +326,8 @@
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
+    </div>
+</div>
 </div>
 
 <script>

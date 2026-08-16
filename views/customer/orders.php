@@ -1,13 +1,13 @@
 <div class="p-3 border-bottom bg-white d-flex align-items-center justify-content-between">
     <h6 class="fw-bold m-0" style="color: var(--gojek-charcoal);">Pesanan Saya</h6>
-    <span class="badge text-white px-2 py-1 rounded-pill" style="background:#EE2737; font-size: 10px;">
+    <span id="order-count-badge" class="badge text-white px-2 py-1 rounded-pill" style="background:#EE2737; font-size: 10px;">
         <?= count($orders) ?> Pesanan
     </span>
 </div>
 
-<div class="p-3">
+<div class="p-3" id="orders-main-container">
     <?php if (empty($orders)): ?>
-        <div class="text-center py-5">
+        <div class="text-center py-5" id="empty-orders-view">
             <div class="rounded-circle bg-light text-muted d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px; font-size: 28px;">
                 <i class="bi bi-receipt text-muted"></i>
             </div>
@@ -16,14 +16,14 @@
             <a href="<?= $baseUrl ?>" class="btn btn-gojek-green px-4 mt-2" style="background:#EE2737 !important; color:#FFFFFF !important; border-radius:9999px; width: auto; display: inline-flex; text-decoration:none;">Pesan Sekarang</a>
         </div>
     <?php else: ?>
-        <div class="d-flex flex-column gap-3">
+        <div class="d-flex flex-column gap-3" id="orders-list-wrapper">
             <?php foreach ($orders as $order): ?>
                 <?php
                 $isCanceled = ($order['order_status'] === 'canceled');
                 $isUnpaid = ($order['payment_method'] === 'midtrans' && $order['payment_status'] !== 'paid' && !$isCanceled);
                 
                 $status = $order['order_status'];
-                $badgeClass = 'bg-secondary';
+                $badgeClass = 'bg-secondary text-white';
                 $statusLabel = $status;
 
                 if ($isCanceled) {
@@ -38,7 +38,7 @@
                 } elseif ($status === 'processing') {
                     $badgeClass = 'bg-warning-subtle text-warning border border-warning-subtle';
                     $statusLabel = 'Diproses Resto';
-                } elseif ($status === 'on_the_way') {
+                } elseif (in_array($status, ['handover', 'picked_up', 'on_the_way'])) {
                     $badgeClass = 'bg-primary-subtle text-primary border border-primary-subtle';
                     $statusLabel = 'Sedang Diantar';
                 } elseif ($status === 'delivered') {
@@ -46,7 +46,7 @@
                     $statusLabel = 'Selesai';
                 }
                 ?>
-                <div class="p-3 bg-white rounded-4 border shadow-sm">
+                <div class="p-3 bg-white rounded-4 border shadow-sm order-card-item" id="order-card-<?= htmlspecialchars($order['order_code']) ?>">
                     <div class="d-flex align-items-center justify-content-between mb-2">
                         <div class="d-flex align-items-center gap-2">
                             <div class="rounded-circle text-white d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; background: #EE2737;">
@@ -55,7 +55,7 @@
                             <span class="fw-bold small" style="color: var(--gojek-charcoal);"><?= empty($order['items']) ? 'GoSend' : 'GoFood' ?></span>
                             <span class="text-muted" style="font-size: 11px;">#<?= htmlspecialchars($order['order_code']) ?></span>
                         </div>
-                        <span class="badge <?= $badgeClass ?> fw-bold" style="font-size: 10px;"><?= $statusLabel ?></span>
+                        <span class="badge <?= $badgeClass ?> fw-bold status-badge" style="font-size: 10px;"><?= $statusLabel ?></span>
                     </div>
 
                     <div class="d-flex align-items-center gap-2 mb-2">
@@ -102,3 +102,52 @@
         </div>
     <?php endif; ?>
 </div>
+
+<script>
+// Customer Order List Live Auto-Sync
+(function() {
+    let lastOrderStateHash = '';
+
+    function getStatusMeta(status, paymentMethod, paymentStatus) {
+        const isCanceled = (status === 'canceled');
+        const isUnpaid = (paymentMethod === 'midtrans' && paymentStatus !== 'paid' && !isCanceled);
+
+        if (isCanceled) return { label: 'Dibatalkan', class: 'bg-danger-subtle text-danger border border-danger-subtle' };
+        if (isUnpaid) return { label: 'Menunggu Pembayaran', class: 'bg-warning-subtle text-warning-emphasis border border-warning' };
+        if (status === 'confirmed') return { label: 'Dikonfirmasi', class: 'bg-info-subtle text-info border border-info-subtle' };
+        if (status === 'processing') return { label: 'Diproses Resto', class: 'bg-warning-subtle text-warning border border-warning-subtle' };
+        if (['handover', 'picked_up', 'on_the_way'].includes(status)) return { label: 'Sedang Diantar', class: 'bg-primary-subtle text-primary border border-primary-subtle' };
+        if (status === 'delivered') return { label: 'Selesai', class: 'bg-success-subtle text-success border border-success-subtle' };
+        return { label: status, class: 'bg-secondary text-white' };
+    }
+
+    async function syncOrdersList() {
+        try {
+            const res = await fetch(window.BASE_URL + '/orders/live-list');
+            if (!res.ok) return;
+            const json = await res.json();
+            if (!json.success || !json.data) return;
+
+            const orders = json.data.orders || [];
+            const badgeCount = document.getElementById('order-count-badge');
+            if (badgeCount) badgeCount.textContent = `${orders.length} Pesanan`;
+
+            orders.forEach(ord => {
+                const card = document.getElementById(`order-card-${ord.order_code}`);
+                if (card) {
+                    const badge = card.querySelector('.status-badge');
+                    if (badge) {
+                        const meta = getStatusMeta(ord.order_status, ord.payment_method, ord.payment_status);
+                        badge.className = `badge ${meta.class} fw-bold status-badge`;
+                        badge.textContent = meta.label;
+                    }
+                }
+            });
+        } catch (e) {
+            console.warn('Customer orders sync error:', e);
+        }
+    }
+
+    setInterval(syncOrdersList, 3500);
+})();
+</script>

@@ -206,6 +206,21 @@ class OrderController extends Controller
         ], 'customer_layout');
     }
 
+    public function getLiveOrdersList(): void
+    {
+        $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Unauthorized', null, 401);
+            return;
+        }
+
+        $orders = $this->orderModel->getCustomerOrders($userId);
+        $this->successResponse('Live customer orders sync', [
+            'count'  => count($orders),
+            'orders' => $orders
+        ]);
+    }
+
     public function tracking(string $code): void
     {
         $order = $this->orderModel->findByIdOrCode($code);

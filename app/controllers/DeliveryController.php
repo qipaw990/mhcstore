@@ -73,6 +73,59 @@ class DeliveryController extends Controller
         ], 'delivery_layout');
     }
 
+    public function getLiveDashboard(): void
+    {
+        $userId = auth_id();
+        $dm = $this->dmModel->findByUserId($userId);
+
+        if (!$dm) {
+            $this->errorResponse('Driver tidak ditemukan');
+            return;
+        }
+
+        // Active Order
+        $activeOrder = null;
+        if (!empty($dm['current_order_id'])) {
+            $activeOrder = $this->orderModel->find($dm['current_order_id']);
+            if ($activeOrder && $activeOrder['order_status'] !== 'delivered' && $activeOrder['order_status'] !== 'canceled') {
+                $activeOrder = $this->orderModel->findByCode($activeOrder['order_code']);
+            } else {
+                $activeOrder = null;
+                Database::update('delivery_men', ['current_order_id' => null], 'id = ?', [$dm['id']]);
+            }
+        }
+
+        // Available nearby orders in driver zone
+        $availableOrders = [];
+        if (empty($activeOrder) && $dm['is_online']) {
+            $availableOrders = $this->orderModel->getAvailableForDelivery((int)$dm['zone_id']);
+        }
+
+        // Today's summary
+        $wallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
+
+        // Unread chats
+        $unreadChats = 0;
+        if ($activeOrder) {
+            $chatCount = Database::query(
+                "SELECT COUNT(*) as unread FROM order_chats WHERE order_id = ? AND sender_id != ? AND is_read = 0",
+                [$activeOrder['id'], $userId]
+            );
+            $unreadChats = (int)($chatCount[0]['unread'] ?? 0);
+        }
+
+        $this->successResponse('Live dashboard sync', [
+            'is_online'        => (int)$dm['is_online'],
+            'has_active_order' => !empty($activeOrder),
+            'active_order'     => $activeOrder,
+            'available_orders' => $availableOrders,
+            'available_count'  => count($availableOrders),
+            'wallet_balance'   => (float)($wallet['balance'] ?? 0),
+            'total_orders'     => (int)($dm['total_orders'] ?? 0),
+            'unread_chats'     => $unreadChats
+        ]);
+    }
+
     public function toggleOnline(): void
     {
         $userId = auth_id();

@@ -62,6 +62,7 @@ Router::post('/orders/place', [OrderController::class, 'placeOrder'], ['AuthMidd
 Router::post('/orders/place-parcel', [OrderController::class, 'placeParcel'], ['AuthMiddleware']);
 Router::post('/parcel/place', [OrderController::class, 'placeParcel'], ['AuthMiddleware']);
 Router::get('/orders', [OrderController::class, 'ordersList'], ['AuthMiddleware']);
+Router::get('/orders/live-list', [OrderController::class, 'getLiveOrdersList'], ['AuthMiddleware']);
 Router::get('/orders/{code}/tracking', [OrderController::class, 'tracking']);
 Router::get('/orders/{code}/live-tracking', [OrderController::class, 'getLiveTracking']);
 Router::post('/orders/get-snap-token', [OrderController::class, 'getSnapToken'], ['AuthMiddleware']);
@@ -79,6 +80,7 @@ Router::get('/chats/unread-count', [ChatController::class, 'unreadCount'], ['Aut
 // ==========================================
 Router::group(['prefix' => '/delivery', 'middleware' => ['DeliveryMiddleware']], function () {
     Router::get('', [DeliveryController::class, 'dashboard']);
+    Router::get('/live-dashboard', [DeliveryController::class, 'getLiveDashboard']);
     Router::post('/toggle-online', [DeliveryController::class, 'toggleOnline']);
     Router::post('/accept-order', [DeliveryController::class, 'acceptOrder']);
     Router::post('/update-status', [DeliveryController::class, 'updateDeliveryStatus']);
