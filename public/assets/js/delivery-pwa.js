@@ -342,11 +342,24 @@ async function syncDriverLiveDashboard() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  startDriverGpsTracking();
+function initDeliveryPwaApp() {
+  try {
+    startDriverGpsTracking();
+  } catch (e) {
+    console.warn('GPS tracking init error:', e);
+  }
+
   // Start 3-second live auto-sync polling on driver dashboard
-  if (document.getElementById('driver-radar-map') || document.getElementById('driverRadarOrderSection')) {
+  if (document.getElementById('driver-radar-map') || document.getElementById('driverRadarOrderSection') || document.getElementById('driverWalletBalanceText')) {
+    console.log('[CicalengkaGO] Mitra Driver real-time radar sync started.');
     syncDriverLiveDashboard();
     setInterval(syncDriverLiveDashboard, 3000);
   }
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initDeliveryPwaApp);
+} else {
+  initDeliveryPwaApp();
+}
+
