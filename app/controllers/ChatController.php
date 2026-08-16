@@ -44,7 +44,7 @@ class ChatController extends Controller
         }
 
         $isCustomer = ((int)$order['cust_user_id'] === $userId);
-        $isDriver   = (!empty($order['dm_user_id']) && (int)$order['dm_user_id'] === $userId) || (auth_role() === 'delivery_man');
+        $isDriver   = auth_role() === 'delivery_man';
         $isAdmin    = (auth_user()['role'] ?? '') === 'admin';
 
         if (!$isCustomer && !$isDriver && !$isAdmin) {
@@ -125,13 +125,15 @@ class ChatController extends Controller
             return;
         }
 
+        // Accept both application/json and multipart/form-data
         $data = $this->getPost();
-        if (empty($data)) {
+        if (empty($data['order_code']) && empty($data['message'])) {
             $raw = file_get_contents('php://input');
-            $data = json_decode($raw, true) ?: [];
+            $decoded = json_decode($raw, true);
+            if (!empty($decoded)) $data = $decoded;
         }
 
-        $orderCode = sanitize($data['order_code'] ?? '');
+        $orderCode = sanitize(trim($data['order_code'] ?? ''));
         $message   = trim($data['message'] ?? '');
 
         if (empty($orderCode)) {
@@ -146,13 +148,15 @@ class ChatController extends Controller
 
         $order = $this->chatModel->getOrderChatDetails($orderCode);
         if (!$order) {
-            $this->errorResponse('Pesanan tidak ditemukan.');
+            $this->errorResponse('Pesanan tidak ditemukan. Kode: ' . $orderCode);
             return;
         }
 
+        $userRole   = auth_role();
         $isCustomer = ((int)$order['cust_user_id'] === $userId);
-        $isDriver   = (!empty($order['dm_user_id']) && (int)$order['dm_user_id'] === $userId) || (auth_role() === 'delivery_man');
-        $isAdmin    = (auth_user()['role'] ?? '') === 'admin';
+        // Driver check: either their user_id matches order's dm_user_id, OR they have the delivery_man role
+        $isDriver   = $userRole === 'delivery_man';
+        $isAdmin    = $userRole === 'admin';
 
         if (!$isCustomer && !$isDriver && !$isAdmin) {
             $this->errorResponse('Akses pengiriman pesan ditolak.', null, 403);
@@ -161,8 +165,10 @@ class ChatController extends Controller
 
         $receiverId = 0;
         if ($isCustomer) {
+            // Customer sends to driver
             $receiverId = !empty($order['dm_user_id']) ? (int)$order['dm_user_id'] : 0;
         } elseif ($isDriver) {
+            // Driver always sends to customer
             $receiverId = (int)$order['cust_user_id'];
         } elseif ($isAdmin) {
             $receiverId = !empty($order['dm_user_id']) ? (int)$order['dm_user_id'] : (int)$order['cust_user_id'];

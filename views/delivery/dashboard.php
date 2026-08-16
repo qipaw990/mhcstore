@@ -710,13 +710,13 @@ async function handleSendDriverChat(e) {
     btn.disabled = true;
 
     try {
+        const fd = new FormData();
+        fd.append('order_code', currentDriverChatOrderCode);
+        fd.append('message', message);
+
         const res = await fetch(window.BASE_URL + '/chats/send', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                order_code: currentDriverChatOrderCode,
-                message: message
-            })
+            body: fd
         });
 
         const result = await res.json();
