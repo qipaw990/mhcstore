@@ -40,7 +40,20 @@ abstract class Controller
 
     protected function redirect(string $url): void
     {
-        header("Location: {$url}");
+        // If URL is already absolute (starts with http:// or https://), use as-is
+        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+            header("Location: {$url}");
+            exit;
+        }
+
+        // Build absolute URL using public_url from config
+        $appConfig = require APP_PATH . '/config/app.php';
+        $base = rtrim($appConfig['public_url'], '/');
+
+        // Strip any leading slash from the relative path
+        $path = ltrim($url, '/');
+
+        header("Location: {$base}/{$path}");
         exit;
     }
 
