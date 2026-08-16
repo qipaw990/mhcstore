@@ -890,17 +890,34 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 }
 
 /* =========================================================================
- * Card Inner Padding & Border Spacing Rules (Content Breathing Room)
+ * Super App Master Card Design System (Ultra-Compact + Aesthetic Breathing Room)
  * ========================================================================= */
-.card {
+.card,
+.merchant-card,
+.driver-card,
+.order-card-item,
+.payment-option,
+.gofood-store-card,
+.gofood-product-card,
+[class*="shadow-2xs"],
+div[style*="border-radius: 16px"],
+div[style*="border-radius: 18px"],
+div[style*="border-radius: 14px"] {
+  box-sizing: border-box !important;
+}
+
+.card, 
+.merchant-card, 
+.driver-card {
   border-radius: 16px !important;
   border: 1px solid #E2E8F0 !important;
-  overflow: hidden;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  background-color: #FFFFFF;
 }
 
 .card-body,
-.merchant-card-body {
+.merchant-card-body,
+.driver-card-body {
   padding: 14px 16px !important;
 }
 
@@ -918,10 +935,19 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   border: 1px solid #E2E8F0 !important;
 }
 
-/* Enforce internal spacing inside card wrappers so text/badges never touch border edges */
-div[style*="border-radius: 16px"],
-div[style*="border-radius: 18px"] {
-  box-sizing: border-box !important;
+/* Compact Aesthetic Input Controls Inside Cards */
+.form-control,
+.form-select {
+  border-radius: 10px !important;
+  border-color: #E2E8F0 !important;
+  font-size: 11.5px !important;
+  padding: 8px 12px !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #EE2737 !important;
+  box-shadow: 0 0 0 3px rgba(238, 39, 55, 0.12) !important;
 }
 
 /* =========================================================================
