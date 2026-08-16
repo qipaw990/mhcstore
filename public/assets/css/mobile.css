@@ -97,12 +97,14 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   max-width: 480px;
   margin: 0 auto;
   min-height: 100vh;
+  min-height: 100dvh;
   background-color: #FFFFFF;
   position: relative;
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  padding-bottom: calc(var(--bottom-nav-height) + 24px);
+  padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
+  box-sizing: border-box;
 }
 
 /* Gojek Signature Solv Ring Icon */
@@ -752,14 +754,20 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
-  height: var(--bottom-nav-height);
+  height: calc(62px + env(safe-area-inset-bottom, 0px));
+  min-height: calc(62px + env(safe-area-inset-bottom, 0px));
   background: #FFFFFF;
   border-top: 1px solid var(--gojek-border);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-around;
   z-index: 1000;
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-top: 5px;
+  padding-bottom: calc(5px + env(safe-area-inset-bottom, 0px));
+  padding-left: 2px;
+  padding-right: 2px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
 }
 
 .gojek-nav-item {
@@ -769,17 +777,18 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   justify-content: center;
   color: #8C96A0;
   text-decoration: none;
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 600;
-  gap: 3px;
+  gap: 2px;
   flex: 1;
-  height: 100%;
+  height: 48px;
   transition: all 0.2s ease;
   position: relative;
 }
 
 .gojek-nav-item i {
   font-size: 20px;
+  line-height: 1;
 }
 
 .gojek-nav-item.active {
@@ -790,9 +799,9 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 .gojek-nav-item.active::after {
   content: '';
   position: absolute;
-  bottom: 6px;
-  width: 18px;
-  height: 3px;
+  bottom: 2px;
+  width: 16px;
+  height: 2.5px;
   background: var(--gojek-green);
   border-radius: 4px;
 }
@@ -1034,15 +1043,20 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
-  height: var(--bottom-nav-height);
+  height: calc(62px + env(safe-area-inset-bottom, 0px));
+  min-height: calc(62px + env(safe-area-inset-bottom, 0px));
   background: #FFFFFF;
   border-top: 1px solid var(--gojek-border);
   display: flex !important;
-  align-items: center !important;
+  align-items: flex-start !important;
   justify-content: space-around !important;
   z-index: 1040;
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-top: 5px;
+  padding-bottom: calc(5px + env(safe-area-inset-bottom, 0px));
+  padding-left: 2px;
+  padding-right: 2px;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
 }
 
 .mobile-bottom-nav .nav-tab-item,
@@ -1053,11 +1067,11 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   justify-content: center;
   color: #64748b;
   text-decoration: none;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
-  gap: 3px;
+  gap: 2px;
   flex: 1;
-  height: 100%;
+  height: 48px;
   transition: all 0.2s ease;
   position: relative;
 }
@@ -1492,13 +1506,15 @@ input:checked + .driver-toggle-slider:before {
 .merchant-app-wrapper {
   max-width: 480px;
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0 auto;
   background-color: #f8fafc;
   display: flex;
   flex-direction: column;
   box-shadow: 0 0 50px rgba(0, 0, 0, 0.35);
   position: relative;
-  padding-bottom: 78px;
+  padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
+  box-sizing: border-box;
 }
 
 /* Merchant Header */
@@ -1805,15 +1821,20 @@ input:checked + .driver-toggle-slider:before {
   transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
-  height: 66px;
+  height: calc(62px + env(safe-area-inset-bottom, 0px));
+  min-height: calc(62px + env(safe-area-inset-bottom, 0px));
   background-color: #ffffff;
   border-top: 1px solid var(--merchant-card-border);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-around;
   z-index: 1030;
-  box-shadow: 0 -3px 15px rgba(0, 0, 0, 0.06);
-  padding: 0 4px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  padding-top: 5px;
+  padding-bottom: calc(5px + env(safe-area-inset-bottom, 0px));
+  padding-left: 2px;
+  padding-right: 2px;
+  box-sizing: border-box;
 }
 
 .merchant-nav-item {
@@ -1822,18 +1843,20 @@ input:checked + .driver-toggle-slider:before {
   align-items: center;
   justify-content: center;
   flex: 1;
-  height: 100%;
+  height: 48px;
   color: #94a3b8;
   text-decoration: none;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
   position: relative;
   transition: color 0.15s ease;
+  gap: 2px;
 }
 
 .merchant-nav-item i {
   font-size: 20px;
-  margin-bottom: 2px;
+  line-height: 1;
+  margin-bottom: 1px;
   transition: transform 0.15s ease;
 }
 
@@ -1843,12 +1866,12 @@ input:checked + .driver-toggle-slider:before {
 }
 
 .merchant-nav-item.active i {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .merchant-nav-item .nav-badge {
   position: absolute;
-  top: 6px;
+  top: 2px;
   right: calc(50% - 16px);
   background-color: #ef4444;
   color: #ffffff;
@@ -1858,5 +1881,6 @@ input:checked + .driver-toggle-slider:before {
   border-radius: 10px;
   border: 1.5px solid #ffffff;
 }
+
 
 
