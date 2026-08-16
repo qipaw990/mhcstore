@@ -9,37 +9,69 @@
 
 <div class="p-3">
     <!-- CicalengkaPay Card Banner -->
-    <div class="p-4 rounded-4 text-white shadow mb-4" style="background: linear-gradient(135deg, #EE2737 0%, #B91C1C 100%);">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-            <div>
-                <div class="d-flex align-items-center gap-2 mb-1">
-                    <span style="font-weight: 900; font-size: 20px; letter-spacing: -0.5px;">Cicalengka<span style="color: #FFE4E6;">Pay</span></span>
-                </div>
-                <div class="text-white-50 small" style="font-size: 11px;">SALDO UTAMA</div>
-                <div class="display-6 fw-bold"><?= format_rupiah($wallet['balance'] ?? 0) ?></div>
-            </div>
-            <div class="rounded-circle bg-white text-dark d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
-                <i class="bi bi-shield-lock-fill fs-4" style="color: #EE2737;"></i>
-            </div>
+    <div class="p-4 rounded-4 text-white shadow-sm mb-3 position-relative overflow-hidden" style="background: linear-gradient(135deg, #EE2737 0%, #991B1B 100%);">
+        <!-- Watermark Icon -->
+        <div class="position-absolute" style="right: -10px; bottom: -15px; font-size: 110px; opacity: 0.08; line-height: 1; pointer-events: none;">
+            <i class="bi bi-wallet-fill"></i>
         </div>
 
-        <div class="d-flex gap-2 flex-wrap">
-            <button onclick="customTopUpDialog()" class="btn btn-light btn-sm fw-bold px-3 rounded-pill shadow-xs" style="color: #EE2737;">
-                <i class="bi bi-plus-circle-fill me-1"></i> Top Up Saldo
-            </button>
-            <?php if (!empty($is_sandbox)): ?>
-            <button onclick="instantSandboxTopUp(100000)" class="btn btn-warning btn-sm fw-bold px-3 rounded-pill text-dark shadow-xs border-0">
-                <i class="bi bi-lightning-charge-fill me-1 text-dark"></i> +100rb (Sandbox)
-            </button>
-            <?php endif; ?>
+        <div class="position-relative z-1">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <div class="d-flex align-items-center gap-1.5 mb-1">
+                        <span style="font-weight: 900; font-size: 20px; letter-spacing: -0.5px;">Cicalengka<span style="color: #FFE4E6;">Pay</span></span>
+                        <span class="badge bg-white text-danger px-2 py-0.5 rounded-pill fw-bold" style="font-size: 9.5px;">DIGITAL WALLET</span>
+                    </div>
+                    <div class="text-white-50 small" style="font-size: 11px; letter-spacing: 0.5px;">SALDO UTAMA AKTIF</div>
+                    <div class="display-6 fw-extrabold my-1" style="font-size: 32px; letter-spacing: -0.5px;"><?= format_rupiah($wallet['balance'] ?? 0) ?></div>
+                </div>
+                <div class="rounded-circle bg-white text-dark d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+                    <i class="bi bi-shield-lock-fill fs-4" style="color: #EE2737;"></i>
+                </div>
+            </div>
+
+            <!-- Mini Quick Stats -->
+            <div class="row g-2 mt-2 mb-3">
+                <div class="col-4">
+                    <div class="p-2 rounded-3 text-center" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.12);">
+                        <div class="text-white-50" style="font-size: 9.5px;">Topup Berhasil</div>
+                        <div class="fw-bold text-white small mt-0.5"><?= $topup_stats['success_count'] ?? 0 ?>x</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="p-2 rounded-3 text-center" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.12);">
+                        <div class="text-white-50" style="font-size: 9.5px;">Menunggu</div>
+                        <div class="fw-bold text-warning small mt-0.5"><?= $topup_stats['pending_count'] ?? 0 ?>x</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="p-2 rounded-3 text-center" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.12);">
+                        <div class="text-white-50" style="font-size: 9.5px;">Gagal/Batal</div>
+                        <div class="fw-bold text-white-50 small mt-0.5"><?= $topup_stats['failed_count'] ?? 0 ?>x</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap">
+                <button onclick="customTopUpDialog()" class="btn btn-light btn-sm fw-bold px-3 py-2 rounded-pill shadow-xs flex-grow-1" style="color: #EE2737; font-size: 12.5px;">
+                    <i class="bi bi-plus-circle-fill me-1"></i> Top Up Saldo
+                </button>
+                <?php if (!empty($is_sandbox)): ?>
+                <button onclick="instantSandboxTopUp(100000)" class="btn btn-warning btn-sm fw-bold px-3 py-2 rounded-pill text-dark shadow-xs border-0" style="font-size: 12.5px;">
+                    <i class="bi bi-lightning-charge-fill me-0.5 text-dark"></i> +100rb (Sandbox)
+                </button>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 
     <!-- Quick Top Up Amount Selector -->
-    <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="fw-bold small m-0" style="color: var(--gojek-charcoal);"><i class="bi bi-lightning-charge-fill text-warning me-1"></i> Isi Saldo Cepat (Midtrans)</h6>
-            <span class="badge text-white px-2 py-1" style="background:#002B49; font-size: 10px; font-weight: 700; border-radius: 6px;">MIDTRANS SNAP</span>
+    <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 bg-white">
+        <div class="d-flex justify-content-between align-items-center mb-2.5">
+            <h6 class="fw-bold small m-0" style="color: var(--gojek-charcoal); font-size: 12.5px;">
+                <i class="bi bi-lightning-charge-fill text-warning me-1"></i> Isi Saldo Instan (Midtrans Snap)
+            </h6>
+            <span class="badge text-white px-2 py-0.5" style="background:#002B49; font-size: 9.5px; font-weight: 700; border-radius: 5px;">QRIS / VA / E-WALLET</span>
         </div>
         <div class="row g-2">
             <div class="col-6">
@@ -67,48 +99,218 @@
                 </button>
             </div>
         </div>
-        <div class="mt-3 text-center">
-            <button onclick="customTopUpDialog()" class="btn btn-outline-danger btn-sm rounded-pill fw-semibold px-4 w-100">
+        <div class="mt-2 text-center">
+            <button onclick="customTopUpDialog()" class="btn btn-outline-danger btn-sm rounded-pill fw-semibold px-3 py-1.5 w-100" style="font-size: 12px;">
                 <i class="bi bi-pencil-square me-1"></i> Masukkan Nominal Lainnya
             </button>
         </div>
     </div>
 
-    <!-- Riwayat Transaksi -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h6 class="fw-bold small m-0" style="color: var(--gojek-charcoal);">Riwayat Transaksi Dompet</h6>
-        <span class="badge bg-light text-muted border px-2 py-1" style="font-size: 10px;"><?= count($transactions) ?> Transaksi</span>
-    </div>
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-pills nav-fill bg-white p-1 rounded-4 shadow-sm border mb-3" id="walletTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active rounded-4 fw-bold py-2 px-2 small d-flex align-items-center justify-content-center gap-1.5" id="topup-tab" data-bs-toggle="tab" data-bs-target="#topup-pane" type="button" role="tab" style="font-size: 12px;">
+                <i class="bi bi-journal-check text-danger"></i>
+                <span>Riwayat Log Top Up</span>
+                <span class="badge bg-danger-subtle text-danger rounded-pill px-1.5 ms-0.5" style="font-size: 9.5px;"><?= count($topup_logs ?? []) ?></span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-4 fw-bold py-2 px-2 small d-flex align-items-center justify-content-center gap-1.5" id="mutation-tab" data-bs-toggle="tab" data-bs-target="#mutation-pane" type="button" role="tab" style="font-size: 12px;">
+                <i class="bi bi-receipt text-secondary"></i>
+                <span>Semua Mutasi</span>
+                <span class="badge bg-secondary-subtle text-secondary rounded-pill px-1.5 ms-0.5" style="font-size: 9.5px;"><?= count($transactions ?? []) ?></span>
+            </button>
+        </li>
+    </ul>
 
-    <?php if (empty($transactions)): ?>
-        <div class="p-4 bg-white rounded-4 border text-center text-muted small">
-            <i class="bi bi-receipt-cutoff fs-2 text-muted mb-2 d-block"></i>
-            Belum ada mutasi transaksi dompet digital.
-        </div>
-    <?php else: ?>
-        <div class="d-flex flex-column gap-2">
-            <?php foreach ($transactions as $tx): ?>
-                <div class="p-3 bg-white rounded-4 border shadow-xs d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center <?= $tx['type'] === 'credit' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger' ?>" style="width: 38px; height: 38px;">
-                            <i class="bi <?= $tx['type'] === 'credit' ? 'bi-arrow-down-left' : 'bi-arrow-up-right' ?> fs-5"></i>
-                        </div>
-                        <div>
-                            <div class="fw-semibold small text-dark"><?= htmlspecialchars($tx['description'] ?? 'Transaksi Dompet') ?></div>
-                            <div class="text-muted" style="font-size: 11px;"><?= date('d M Y, H:i', strtotime($tx['created_at'])) ?></div>
-                        </div>
+    <!-- Tab Contents -->
+    <div class="tab-content" id="walletTabContent">
+        <!-- PANE 1: Riwayat Log Top Up (Berhasil, Gagal, Pending) -->
+        <div class="tab-pane fade show active" id="topup-pane" role="tabpanel">
+            <!-- Filter Pills -->
+            <div class="d-flex gap-1.5 mb-2.5 overflow-auto pb-1" style="scrollbar-width: none;">
+                <button type="button" onclick="filterTopupList('all')" class="btn btn-sm btn-dark rounded-pill px-3 py-1 fw-bold topup-filter-btn active" data-filter="all" style="font-size: 11px;">
+                    Semua (<?= count($topup_logs ?? []) ?>)
+                </button>
+                <button type="button" onclick="filterTopupList('success')" class="btn btn-sm btn-light border rounded-pill px-3 py-1 fw-semibold topup-filter-btn text-success" data-filter="success" style="font-size: 11px;">
+                    <i class="bi bi-check-circle-fill me-1 text-success"></i> Berhasil (<?= $topup_stats['success_count'] ?? 0 ?>)
+                </button>
+                <button type="button" onclick="filterTopupList('pending')" class="btn btn-sm btn-light border rounded-pill px-3 py-1 fw-semibold topup-filter-btn text-warning-emphasis" data-filter="pending" style="font-size: 11px;">
+                    <i class="bi bi-hourglass-split me-1 text-warning"></i> Menunggu (<?= $topup_stats['pending_count'] ?? 0 ?>)
+                </button>
+                <button type="button" onclick="filterTopupList('failed')" class="btn btn-sm btn-light border rounded-pill px-3 py-1 fw-semibold topup-filter-btn text-danger" data-filter="failed" style="font-size: 11px;">
+                    <i class="bi bi-x-circle-fill me-1 text-danger"></i> Gagal/Batal (<?= $topup_stats['failed_count'] ?? 0 ?>)
+                </button>
+            </div>
+
+            <?php if (empty($topup_logs)): ?>
+                <div class="p-4 bg-white rounded-4 border text-center text-muted small">
+                    <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 44px; height: 44px; font-size: 20px;">
+                        <i class="bi bi-journal-x"></i>
                     </div>
-                    <div class="fw-bold small <?= $tx['type'] === 'credit' ? 'text-success' : 'text-danger' ?>">
-                        <?= $tx['type'] === 'credit' ? '+' : '-' ?><?= format_rupiah($tx['amount']) ?>
+                    <div class="fw-bold text-dark mb-1">Belum Ada Riwayat Top Up</div>
+                    <div class="text-muted" style="font-size: 11.5px;">
+                        Anda belum pernah melakukan transaksi pengisian saldo. Pilih nominal di atas untuk mengisi saldo CicalengkaPay.
                     </div>
                 </div>
-            <?php endforeach; ?>
+            <?php else: ?>
+                <div class="d-flex flex-column gap-2" id="topupLogsContainer">
+                    <?php foreach ($topup_logs as $log): 
+                        $status = $log['status'] ?? 'pending';
+                        $statusClass = 'pending';
+                        $badgeClass = 'bg-warning-subtle text-warning-emphasis border-warning-subtle';
+                        $badgeText = 'Menunggu Pembayaran';
+                        $badgeIcon = 'bi-hourglass-split';
+                        $amountClass = 'text-warning-emphasis';
+                        $iconClass = 'bg-warning-subtle text-warning';
+                        $mainIcon = 'bi-clock-history';
+
+                        if ($status === 'success') {
+                            $statusClass = 'success';
+                            $badgeClass = 'bg-success-subtle text-success border-success-subtle';
+                            $badgeText = 'Top Up Berhasil';
+                            $badgeIcon = 'bi-check-circle-fill';
+                            $amountClass = 'text-success';
+                            $iconClass = 'bg-success-subtle text-success';
+                            $mainIcon = 'bi-arrow-down-left-circle-fill';
+                        } elseif ($status === 'failed' || $status === 'canceled') {
+                            $statusClass = 'failed';
+                            $badgeClass = 'bg-danger-subtle text-danger border-danger-subtle';
+                            $badgeText = ($status === 'canceled') ? 'Dibatalkan' : 'Top Up Gagal';
+                            $badgeIcon = 'bi-x-circle-fill';
+                            $amountClass = 'text-danger text-decoration-line-through';
+                            $iconClass = 'bg-danger-subtle text-danger';
+                            $mainIcon = 'bi-x-circle-fill';
+                        }
+                    ?>
+                        <div class="topup-item-card p-3 bg-white rounded-4 border shadow-xs" data-status="<?= $statusClass ?>">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="d-flex align-items-center gap-2.5">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center <?= $iconClass ?>" style="width: 36px; height: 36px; font-size: 18px; flex-shrink: 0;">
+                                        <i class="bi <?= $mainIcon ?>"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold small text-dark" style="font-size: 13px;">
+                                            Top Up CicalengkaPay
+                                        </div>
+                                        <div class="text-muted" style="font-size: 10.5px; font-family: monospace;">
+                                            <?= htmlspecialchars($log['topup_code']) ?>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-extrabold small <?= $amountClass ?>" style="font-size: 13.5px;">
+                                        <?= $status === 'success' ? '+' : '' ?><?= format_rupiah($log['amount']) ?>
+                                    </div>
+                                    <span class="badge <?= $badgeClass ?> border px-2 py-0.5 rounded-pill" style="font-size: 9.5px; font-weight: 700;">
+                                        <i class="bi <?= $badgeIcon ?> me-0.5"></i> <?= $badgeText ?>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="pt-2 border-top d-flex justify-content-between align-items-center text-muted" style="font-size: 11px;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span><i class="bi bi-clock me-1"></i><?= date('d M Y, H:i', strtotime($log['created_at'])) ?></span>
+                                    <span class="text-secondary">• <?= htmlspecialchars($log['payment_type'] ?? 'Midtrans Snap') ?></span>
+                                </div>
+
+                                <?php if ($status === 'pending'): ?>
+                                    <div class="d-flex gap-1">
+                                        <?php if (!empty($is_sandbox)): ?>
+                                        <button type="button" onclick="instantSandboxTopUp(<?= (int)$log['amount'] ?>, '<?= htmlspecialchars($log['topup_code']) ?>')" class="btn btn-success btn-sm rounded-pill py-0.5 px-2 fw-bold" style="font-size: 10.5px;">
+                                            <i class="bi bi-lightning-fill"></i> Lunas (Sandbox)
+                                        </button>
+                                        <?php endif; ?>
+                                        <?php if (!empty($log['snap_token'])): ?>
+                                        <button type="button" onclick="resumePendingSnap('<?= htmlspecialchars($log['snap_token']) ?>', '<?= htmlspecialchars($log['topup_code']) ?>', <?= (int)$log['amount'] ?>)" class="btn btn-danger btn-sm rounded-pill py-0.5 px-2 fw-bold" style="font-size: 10.5px;">
+                                            <i class="bi bi-credit-card-fill"></i> Bayar
+                                        </button>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php elseif ($status === 'failed' || $status === 'canceled'): ?>
+                                    <button type="button" onclick="quickTopUp(<?= (int)$log['amount'] ?>)" class="btn btn-outline-danger btn-sm rounded-pill py-0.5 px-2 fw-semibold" style="font-size: 10.5px;">
+                                        <i class="bi bi-arrow-repeat"></i> Coba Lagi
+                                    </button>
+                                <?php else: ?>
+                                    <span class="text-success small fw-semibold" style="font-size: 10.5px;">
+                                        <i class="bi bi-check2-all me-0.5"></i> Saldo Masuk
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+
+                            <?php if (!empty($log['notes'])): ?>
+                            <div class="mt-1.5 px-2 py-1 rounded-2 bg-light text-secondary" style="font-size: 10px;">
+                                <i class="bi bi-info-circle me-1"></i><?= htmlspecialchars($log['notes']) ?>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
-    <?php endif; ?>
+
+        <!-- PANE 2: Semua Mutasi Dompet (Debit & Credit) -->
+        <div class="tab-pane fade" id="mutation-pane" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-2.5">
+                <h6 class="fw-bold small m-0" style="color: var(--gojek-charcoal); font-size: 12.5px;">Riwayat Mutasi Saldo</h6>
+                <span class="badge bg-light text-muted border px-2 py-1" style="font-size: 10px;"><?= count($transactions) ?> Mutasi</span>
+            </div>
+
+            <?php if (empty($transactions)): ?>
+                <div class="p-4 bg-white rounded-4 border text-center text-muted small">
+                    <i class="bi bi-receipt-cutoff fs-2 text-muted mb-2 d-block"></i>
+                    Belum ada mutasi transaksi dompet digital.
+                </div>
+            <?php else: ?>
+                <div class="d-flex flex-column gap-2">
+                    <?php foreach ($transactions as $tx): ?>
+                        <div class="p-3 bg-white rounded-4 border shadow-xs d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-2.5">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center <?= $tx['type'] === 'credit' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger' ?>" style="width: 36px; height: 36px; flex-shrink: 0;">
+                                    <i class="bi <?= $tx['type'] === 'credit' ? 'bi-arrow-down-left' : 'bi-arrow-up-right' ?> fs-5"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold small text-dark" style="font-size: 12.5px;"><?= htmlspecialchars($tx['description'] ?? 'Transaksi Dompet') ?></div>
+                                    <div class="text-muted" style="font-size: 10.5px;"><?= date('d M Y, H:i', strtotime($tx['created_at'])) ?></div>
+                                </div>
+                            </div>
+                            <div class="fw-bold small text-end <?= $tx['type'] === 'credit' ? 'text-success' : 'text-danger' ?>" style="font-size: 13px;">
+                                <?= $tx['type'] === 'credit' ? '+' : '-' ?><?= format_rupiah($tx['amount']) ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
 </div>
 
 <script>
 const IS_SANDBOX = <?= !empty($is_sandbox) ? 'true' : 'false' ?>;
+
+function filterTopupList(status) {
+    // Update active filter button style
+    document.querySelectorAll('.topup-filter-btn').forEach(btn => {
+        if (btn.dataset.filter === status) {
+            btn.classList.remove('btn-light', 'border');
+            btn.classList.add('btn-dark');
+        } else {
+            btn.classList.remove('btn-dark');
+            btn.classList.add('btn-light', 'border');
+        }
+    });
+
+    // Filter items
+    const items = document.querySelectorAll('.topup-item-card');
+    items.forEach(card => {
+        if (status === 'all' || card.dataset.status === status) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
 
 async function quickTopUp(nominal) {
     Swal.fire({
@@ -148,7 +350,7 @@ function customTopUpDialog() {
     });
 }
 
-async function instantSandboxTopUp(nominal) {
+async function instantSandboxTopUp(nominal, existingOrderId = null) {
     Swal.fire({
         title: 'Top Up Sandbox Instan ⚡',
         text: 'Menambahkan saldo simulasi Rp ' + nominal.toLocaleString('id-ID') + ' ke akun Anda...',
@@ -157,7 +359,7 @@ async function instantSandboxTopUp(nominal) {
     });
 
     try {
-        const orderId = 'TOPUP-<?= auth_id() ?>-' + Date.now() + '-' + Math.floor(Math.random() * 900 + 100);
+        const orderId = existingOrderId || ('TOPUP-<?= auth_id() ?>-' + Date.now() + '-' + Math.floor(Math.random() * 900 + 100));
         const res = await fetch(window.BASE_URL + '/payment/simulate-sandbox-success', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -174,7 +376,7 @@ async function instantSandboxTopUp(nominal) {
                 icon: 'success',
                 title: 'Top Up Berhasil! 🎉',
                 text: 'Saldo CicalengkaPay sebesar Rp ' + nominal.toLocaleString('id-ID') + ' berhasil ditambahkan.',
-                timer: 2000,
+                timer: 1800,
                 showConfirmButton: false
             }).then(() => {
                 location.reload();
@@ -185,6 +387,14 @@ async function instantSandboxTopUp(nominal) {
     } catch(e) {
         Swal.fire('Error', 'Terjadi kesalahan sistem.', 'error');
     }
+}
+
+function resumePendingSnap(snapToken, orderId, nominal) {
+    if (typeof window.snap === 'undefined') {
+        Swal.fire('Error', 'Script Midtrans Snap belum termuat. Silakan muat ulang halaman.', 'error');
+        return;
+    }
+    openSnapPayment(snapToken, orderId, nominal);
 }
 
 async function executeMidtransTopUp(nominal) {
@@ -219,109 +429,147 @@ async function executeMidtransTopUp(nominal) {
             throw new Error('Script Midtrans Snap belum termuat. Silakan muat ulang halaman.');
         }
 
-        window.snap.pay(data.data.snap_token, {
-            onSuccess: function(result) {
-                // Auto verify payment on backend
-                fetch(window.BASE_URL + '/payment/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        order_id: data.data.order_id,
-                        transaction_status: result.transaction_status || 'settlement',
-                        payment_type: result.payment_type || 'midtrans',
-                        gross_amount: nominal
-                    })
-                }).finally(() => {
-                    Swal.fire({
-                        title: 'Top Up Berhasil! 🎉',
-                        text: 'Saldo CicalengkaPay sebesar Rp ' + nominal.toLocaleString('id-ID') + ' telah masuk ke dompet Anda.',
-                        icon: 'success',
-                        confirmButtonColor: '#EE2737',
-                        confirmButtonText: 'Selesai'
-                    }).then(() => {
-                        location.reload();
-                    });
-                });
-            },
-            onPending: function(result) {
-                if (IS_SANDBOX) {
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Pembayaran Menunggu (Sandbox)',
-                        text: 'Kode virtual account/QRIS top up telah dibuat. Ingin langsung menyelesaikan top up (Berhasil)?',
-                        showCancelButton: true,
-                        confirmButtonText: '⚡ Jadikan Berhasil (Lunas)',
-                        confirmButtonColor: '#10B981',
-                        cancelButtonText: 'Tutup'
-                    }).then(async (r) => {
-                        if (r.isConfirmed) {
-                            await fetch(window.BASE_URL + '/payment/simulate-sandbox-success', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    order_id: data.data.order_id,
-                                    amount: nominal,
-                                    payment_type: result.payment_type || 'midtrans_sandbox_va'
-                                })
-                            });
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Top Up Berhasil! 🎉',
-                                text: 'Saldo sebesar Rp ' + nominal.toLocaleString('id-ID') + ' telah berhasil ditambahkan.',
-                                timer: 1800,
-                                showConfirmButton: false
-                            }).then(() => { location.reload(); });
-                        }
-                    });
-                } else {
-                    Swal.fire({
-                        title: 'Menunggu Pembayaran ⏳',
-                        text: 'Silakan selesaikan pembayaran sesuai instruksi Virtual Account / QRIS yang dipilih.',
-                        icon: 'info',
-                        confirmButtonColor: '#EE2737'
-                    });
-                }
-            },
-            onError: function(result) {
-                Swal.fire('Pembayaran Gagal', 'Proses top up dibatalkan atau gagal diproses.', 'error');
-            },
-            onClose: function() {
-                if (IS_SANDBOX) {
-                    Swal.fire({
-                        icon: 'question',
-                        title: 'Jendela Ditutup',
-                        text: 'Apakah Anda ingin menyelesaikan top up Rp ' + nominal.toLocaleString('id-ID') + ' sekarang (Mode Sandbox)?',
-                        showCancelButton: true,
-                        confirmButtonText: '⚡ Ya, Selesaikan Top Up',
-                        confirmButtonColor: '#10B981',
-                        cancelButtonText: 'Batal'
-                    }).then(async (r) => {
-                        if (r.isConfirmed) {
-                            await fetch(window.BASE_URL + '/payment/simulate-sandbox-success', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    order_id: data.data.order_id,
-                                    amount: nominal,
-                                    payment_type: 'midtrans_sandbox_close'
-                                })
-                            });
-                            location.reload();
-                        }
-                    });
-                } else {
-                    Swal.fire({
-                        title: 'Batal Top Up',
-                        text: 'Jendela pembayaran ditutup sebelum transaksi diselesaikan.',
-                        icon: 'warning',
-                        confirmButtonColor: '#EE2737'
-                    });
-                }
-            }
-        });
+        openSnapPayment(data.data.snap_token, data.data.order_id, nominal);
     } catch (err) {
         console.error(err);
         Swal.fire('Error', err.message || 'Terjadi kesalahan sistem saat menghubungi gateway pembayaran.', 'error');
     }
+}
+
+function openSnapPayment(snapToken, orderId, nominal) {
+    window.snap.pay(snapToken, {
+        onSuccess: function(result) {
+            // Auto verify payment on backend
+            fetch(window.BASE_URL + '/payment/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    order_id: orderId,
+                    transaction_status: result.transaction_status || 'settlement',
+                    payment_type: result.payment_type || 'midtrans',
+                    gross_amount: nominal
+                })
+            }).finally(() => {
+                Swal.fire({
+                    title: 'Top Up Berhasil! 🎉',
+                    text: 'Saldo CicalengkaPay sebesar Rp ' + nominal.toLocaleString('id-ID') + ' telah masuk ke dompet Anda.',
+                    icon: 'success',
+                    confirmButtonColor: '#EE2737',
+                    confirmButtonText: 'Selesai'
+                }).then(() => {
+                    location.reload();
+                });
+            });
+        },
+        onPending: function(result) {
+            // Update log to pending
+            fetch(window.BASE_URL + '/payment/topup-update-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    order_id: orderId,
+                    status: 'pending',
+                    payment_type: result.payment_type || 'midtrans_va',
+                    notes: 'Menunggu pembayaran di channel yang dipilih'
+                })
+            });
+
+            if (IS_SANDBOX) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Pembayaran Menunggu (Sandbox)',
+                    text: 'Kode virtual account/QRIS top up telah dibuat. Ingin langsung menyelesaikan top up (Berhasil)?',
+                    showCancelButton: true,
+                    confirmButtonText: '⚡ Jadikan Berhasil (Lunas)',
+                    confirmButtonColor: '#10B981',
+                    cancelButtonText: 'Tutup'
+                }).then(async (r) => {
+                    if (r.isConfirmed) {
+                        await instantSandboxTopUp(nominal, orderId);
+                    } else {
+                        location.reload();
+                    }
+                });
+            } else {
+                Swal.fire({
+                    title: 'Menunggu Pembayaran ⏳',
+                    text: 'Silakan selesaikan pembayaran sesuai instruksi Virtual Account / QRIS yang dipilih.',
+                    icon: 'info',
+                    confirmButtonColor: '#EE2737'
+                }).then(() => {
+                    location.reload();
+                });
+            }
+        },
+        onError: function(result) {
+            // Update log to failed
+            fetch(window.BASE_URL + '/payment/topup-update-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    order_id: orderId,
+                    status: 'failed',
+                    notes: 'Pembayaran gagal diproses di gateway Midtrans'
+                })
+            }).finally(() => {
+                Swal.fire('Pembayaran Gagal', 'Proses top up dibatalkan atau gagal diproses.', 'error').then(() => {
+                    location.reload();
+                });
+            });
+        },
+        onClose: function() {
+            if (IS_SANDBOX) {
+                Swal.fire({
+                    icon: 'question',
+                    title: 'Jendela Pembayaran Ditutup',
+                    text: 'Apakah Anda ingin menandai top up ini Berhasil (Mode Sandbox) atau Batalkan (Gagal)?',
+                    showDenyButton: true,
+                    showCancelButton: true,
+                    confirmButtonText: '⚡ Selesaikan (Berhasil)',
+                    denyButtonText: '❌ Batalkan (Gagal)',
+                    confirmButtonColor: '#10B981',
+                    denyButtonColor: '#EF4444',
+                    cancelButtonText: 'Biarkan Pending'
+                }).then(async (r) => {
+                    if (r.isConfirmed) {
+                        await instantSandboxTopUp(nominal, orderId);
+                    } else if (r.isDenied) {
+                        await fetch(window.BASE_URL + '/payment/topup-update-status', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                order_id: orderId,
+                                status: 'failed',
+                                notes: 'Jendela pembayaran ditutup oleh pengguna'
+                            })
+                        });
+                        location.reload();
+                    } else {
+                        location.reload();
+                    }
+                });
+            } else {
+                // Update log as failed if cancelled/closed without payment
+                fetch(window.BASE_URL + '/payment/topup-update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        order_id: orderId,
+                        status: 'failed',
+                        notes: 'Jendela pembayaran ditutup sebelum transaksi diselesaikan'
+                    })
+                }).finally(() => {
+                    Swal.fire({
+                        title: 'Top Up Dibatalkan',
+                        text: 'Jendela pembayaran ditutup sebelum transaksi diselesaikan.',
+                        icon: 'warning',
+                        confirmButtonColor: '#EE2737'
+                    }).then(() => {
+                        location.reload();
+                    });
+                });
+            }
+        }
+    });
 }
 </script>

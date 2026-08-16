@@ -45,6 +45,7 @@ Router::get('/profile', [CustomerController::class, 'profile']);
 Router::post('/profile/update', [CustomerController::class, 'updateProfile'], ['AuthMiddleware']);
 Router::get('/wallet', [CustomerController::class, 'wallet'], ['AuthMiddleware']);
 Router::post('/wallet/topup-midtrans', [PaymentController::class, 'topupSnap'], ['AuthMiddleware']);
+Router::post('/payment/topup-update-status', [PaymentController::class, 'updateTopupStatus'], ['AuthMiddleware']);
 Router::post('/payment/verify', [PaymentController::class, 'verifyClientCallback']);
 Router::post('/payment/simulate-sandbox-success', [PaymentController::class, 'simulateSandboxSuccess']);
 Router::post('/payment/midtrans/notification', [PaymentController::class, 'notification']);

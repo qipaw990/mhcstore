@@ -192,6 +192,8 @@ class MidtransService
             return ['success' => false, 'message' => 'User ID tidak valid dalam ID topup'];
         }
 
+        $topupLogModel = new \App\Models\TopupLog();
+
         if ($isSettled) {
             // Check idempotency: avoid duplicate credits
             $existing = Database::fetchOne(
@@ -217,13 +219,17 @@ class MidtransService
                 );
             }
 
+            $topupLogModel->markSuccess($orderId, $paymentType, "Top Up via Midtrans ({$paymentType}) berhasil");
+
             return ['success' => true, 'status' => 'settled', 'message' => 'Top Up berhasil diproses'];
         }
 
         if ($isPending) {
+            $topupLogModel->recordPending($userId, $orderId, $amount, null, $paymentType, 'Menunggu pembayaran');
             return ['success' => true, 'status' => 'pending', 'message' => 'Menunggu pembayaran top-up'];
         }
 
+        $topupLogModel->markFailed($orderId, "Top Up via Midtrans ({$paymentType}) gagal/dibatalkan");
         return ['success' => true, 'status' => 'failed', 'message' => 'Top Up gagal atau dibatalkan'];
     }
 

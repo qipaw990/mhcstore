@@ -456,4 +456,23 @@ CREATE TABLE `chats` (
   CONSTRAINT `fk_chat_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+DROP TABLE IF EXISTS `topup_logs`;
+CREATE TABLE `topup_logs` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `topup_code` varchar(64) NOT NULL,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `amount` decimal(14,2) NOT NULL,
+  `payment_method` varchar(50) NOT NULL DEFAULT 'midtrans',
+  `payment_type` varchar(50) NOT NULL DEFAULT 'midtrans_snap',
+  `status` enum('pending','success','failed','canceled') NOT NULL DEFAULT 'pending',
+  `snap_token` varchar(255) DEFAULT NULL,
+  `notes` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_topup_code` (`topup_code`),
+  KEY `idx_topup_user` (`user_id`),
+  KEY `idx_topup_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;

@@ -68,6 +68,16 @@ class PaymentController extends Controller
 
             $snapResult = $this->midtransService->createSnapToken($params);
 
+            // Record pending log in topup_logs
+            (new \App\Models\TopupLog())->recordPending(
+                $userId,
+                $orderId,
+                $amount,
+                $snapResult['token'],
+                'midtrans_snap',
+                'Menunggu pembayaran via Midtrans Snap'
+            );
+
             $this->successResponse('Snap token berhasil dibuat', [
                 'snap_token'   => $snapResult['token'],
                 'order_id'     => $orderId,
@@ -77,6 +87,39 @@ class PaymentController extends Controller
         } catch (Exception $e) {
             $this->errorResponse($e->getMessage());
         }
+    }
+
+    /**
+     * Update status log for top up (e.g. failed/canceled when user closes window or fails)
+     */
+    public function updateTopupStatus(): void
+    {
+        $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Silakan login terlebih dahulu.', null, 401);
+            return;
+        }
+
+        $rawInput = file_get_contents('php://input');
+        $data = json_decode($rawInput, true) ?: $this->getPost();
+
+        $orderId = trim($data['order_id'] ?? '');
+        $status = trim($data['status'] ?? 'failed');
+        $notes = trim($data['notes'] ?? 'Dibatalkan oleh pengguna');
+
+        if (empty($orderId)) {
+            $this->errorResponse('Order ID tidak valid.');
+            return;
+        }
+
+        $topupLogModel = new \App\Models\TopupLog();
+        if ($status === 'failed' || $status === 'canceled') {
+            $topupLogModel->markFailed($orderId, $notes);
+        } elseif ($status === 'success') {
+            $topupLogModel->markSuccess($orderId, $data['payment_type'] ?? 'midtrans', $notes);
+        }
+
+        $this->successResponse('Status log top up berhasil diperbarui');
     }
 
     public function verifyClientCallback(): void
@@ -90,6 +133,23 @@ class PaymentController extends Controller
         }
 
         $orderId = $data['order_id'];
+
+        // Handle Top Up Callback
+        if (str_starts_with($orderId, 'TOPUP-')) {
+            try {
+                if ($this->midtransService->isSandbox()) {
+                    $data['transaction_status'] = 'settlement';
+                }
+                $result = $this->midtransService->processNotification($data);
+                (new \App\Models\TopupLog())->markSuccess($orderId, $data['payment_type'] ?? 'midtrans', 'Pembayaran terkonfirmasi');
+                $this->successResponse('Top Up berhasil diverifikasi', $result);
+                return;
+            } catch (Exception $e) {
+                (new \App\Models\TopupLog())->markFailed($orderId, $e->getMessage());
+                $this->errorResponse($e->getMessage());
+                return;
+            }
+        }
 
         // Extract base order code
         $cleanCode = $orderId;
@@ -184,6 +244,11 @@ class PaymentController extends Controller
                     "Top Up CicalengkaPay via Midtrans Sandbox ({$paymentType})",
                     $orderId
                 );
+
+                // Update or record TopupLog as success
+                $topupLogModel = new \App\Models\TopupLog();
+                $topupLogModel->recordPending($userId, $orderId, $amount, null, $paymentType);
+                $topupLogModel->markSuccess($orderId, $paymentType, 'Top Up Midtrans Sandbox Berhasil');
 
                 (new \App\Models\Notification())->createNotification(
                     $userId,

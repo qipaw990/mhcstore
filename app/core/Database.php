@@ -170,6 +170,54 @@ class Database
                 }
             } catch (Exception $e) {}
 
+            // Guarantee topup_logs table existence
+            try {
+                $this->pdo->exec("CREATE TABLE IF NOT EXISTS `topup_logs` (
+                  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                  `topup_code` varchar(64) NOT NULL,
+                  `user_id` bigint(20) unsigned NOT NULL,
+                  `amount` decimal(14,2) NOT NULL,
+                  `payment_method` varchar(50) NOT NULL DEFAULT 'midtrans',
+                  `payment_type` varchar(50) NOT NULL DEFAULT 'midtrans_snap',
+                  `status` enum('pending','success','failed','canceled') NOT NULL DEFAULT 'pending',
+                  `snap_token` varchar(255) DEFAULT NULL,
+                  `notes` varchar(255) DEFAULT NULL,
+                  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+                  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+                  PRIMARY KEY (`id`),
+                  UNIQUE KEY `idx_topup_code` (`topup_code`),
+                  KEY `idx_topup_user` (`user_id`),
+                  KEY `idx_topup_status` (`status`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+
+                // Auto-sync existing successful topup wallet transactions
+                $orphansTopup = $this->pdo->query("
+                    SELECT wt.*, w.user_id 
+                    FROM `wallet_transactions` wt 
+                    JOIN `wallets` w ON wt.wallet_id = w.id 
+                    LEFT JOIN `topup_logs` tl ON (tl.topup_code = wt.reference_id OR (tl.user_id = w.user_id AND tl.amount = wt.amount))
+                    WHERE wt.category = 'topup' AND tl.id IS NULL
+                ")->fetchAll(PDO::FETCH_ASSOC);
+
+                foreach ($orphansTopup as $opt) {
+                    $code = (!empty($opt['reference_id']) && str_starts_with($opt['reference_id'], 'TOPUP-'))
+                        ? $opt['reference_id']
+                        : ('TOPUP-' . $opt['user_id'] . '-' . strtotime($opt['created_at']) . '-' . rand(100, 999));
+
+                    $this->pdo->prepare("
+                        INSERT IGNORE INTO `topup_logs`
+                        (`topup_code`, `user_id`, `amount`, `payment_method`, `payment_type`, `status`, `notes`, `created_at`, `updated_at`)
+                        VALUES (?, ?, ?, 'midtrans', 'midtrans_snap', 'success', 'Pengisian saldo CicalengkaPay berhasil', ?, ?)
+                    ")->execute([
+                        $code,
+                        $opt['user_id'],
+                        $opt['amount'],
+                        $opt['created_at'] ?: date('Y-m-d H:i:s'),
+                        $opt['created_at'] ?: date('Y-m-d H:i:s')
+                    ]);
+                }
+            } catch (Exception $e) {}
+
         } catch (Exception $e) {
             error_log("Auto Migration Error: " . $e->getMessage());
         }

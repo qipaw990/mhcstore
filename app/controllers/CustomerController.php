@@ -173,12 +173,18 @@ class CustomerController extends Controller
         }
 
         $wallet = $this->walletModel->getOrCreate($userId, 'customer');
-        $transactions = $this->walletModel->getTransactions($userId, 30);
+        $transactions = $this->walletModel->getTransactions($userId, 50);
+
+        $topupLogModel = new \App\Models\TopupLog();
+        $topupLogs = $topupLogModel->getByUser($userId, null, 50);
+        $topupStats = $topupLogModel->getStats($userId);
 
         $this->view('customer.wallet', [
             'title'        => 'Dompet Digital CicalengkaPay',
             'wallet'       => $wallet,
             'transactions' => $transactions,
+            'topup_logs'   => $topupLogs,
+            'topup_stats'  => $topupStats,
             'client_key'   => $midtransService->getClientKey(),
             'snap_url'     => $midtransService->getSnapUrl(),
             'is_sandbox'   => $midtransService->isSandbox(),
