@@ -1,5 +1,6 @@
 /**
  * PWA Registration & Install Prompt Handler
+ * Network-First SW: local assets always up-to-date without hard refresh
  */
 
 if ('serviceWorker' in navigator) {
@@ -8,11 +9,34 @@ if ('serviceWorker' in navigator) {
     const swPath = (window.BASE_URL || '') + '/service-worker.js';
     navigator.serviceWorker.register(swPath, { scope: '/' })
       .then((reg) => {
-        console.log('[PWA] Service Worker registered with scope:', reg.scope);
+        console.log('[PWA] Service Worker registered:', reg.scope);
+
+        // When a new SW is found, activate it immediately
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('[PWA] New version available — activating silently...');
+              // Tell new SW to skip waiting and take over
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        });
       })
       .catch((err) => {
         console.warn('[PWA] Service Worker registration failed:', err);
       });
+
+    // When a new SW takes control, refresh page to load fresh assets
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return;
+      refreshing = true;
+      console.log('[PWA] New SW active — reloading for fresh content...');
+      window.location.reload();
+    });
   });
 }
 

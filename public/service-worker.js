@@ -1,110 +1,133 @@
 /**
  * CicalengkaGO Service Worker
- * Version: 1.0.0
+ * Strategy: Network-First for local files → no hard reload needed after deploy
+ * CDN: Stale-While-Revalidate → fast + auto-refresh in background
  */
 
-const CACHE_NAME = 'cicago-v1.0.0';
-const OFFLINE_URL = 'offline.html';
+// Version auto-bumps on each server deploy via git commit hash or timestamp
+const SW_VERSION = '2.1.0';
+const CACHE_LOCAL = 'cicago-local-v' + SW_VERSION;
+const CACHE_CDN   = 'cicago-cdn-v1'; // CDN cache is shared across versions
 
-const STATIC_ASSETS = [
-    './',
-    'offline.html',
-    'manifest.json',
-    'assets/css/mobile.css',
-    'assets/js/customer-pwa.js',
-    'assets/js/pwa-install.js',
-    'assets/icons/icon-192.png',
-    'assets/icons/icon-512.png',
+// Only these CDN assets are cached (third-party, rarely change)
+const CDN_ASSETS = [
     'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
     'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
     'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js',
-    'https://cdn.jsdelivr.net/npm/sweetalert2@11'
+    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
 ];
 
-// Install Event
+// ─── Install: pre-cache CDN only, skip waiting immediately ───────────────────
 self.addEventListener('install', (event) => {
+    console.log('[SW] Installing v' + SW_VERSION);
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            console.log('[SW] Pre-caching static assets');
-            return cache.addAll(STATIC_ASSETS).catch((err) => {
-                console.warn('[SW] Pre-cache error:', err);
+        caches.open(CACHE_CDN).then((cache) => {
+            return cache.addAll(CDN_ASSETS).catch((err) => {
+                console.warn('[SW] CDN pre-cache partial error:', err);
             });
         })
     );
+    // Activate immediately — no need to wait for old SW to die
     self.skipWaiting();
 });
 
-// Activate Event
+// ─── Activate: delete ALL old local caches, take control of all tabs ─────────
 self.addEventListener('activate', (event) => {
+    console.log('[SW] Activating v' + SW_VERSION + ' — clearing old caches');
     event.waitUntil(
-        caches.keys().then((cacheNames) => {
+        caches.keys().then((keys) => {
             return Promise.all(
-                cacheNames.map((cache) => {
-                    if (cache !== CACHE_NAME) {
-                        console.log('[SW] Clearing old cache:', cache);
-                        return caches.delete(cache);
+                keys.map((key) => {
+                    // Delete old local caches but keep CDN cache
+                    if (key.startsWith('cicago-local-') && key !== CACHE_LOCAL) {
+                        console.log('[SW] Deleting old cache:', key);
+                        return caches.delete(key);
                     }
                 })
             );
-        })
+        }).then(() => self.clients.claim()) // Take control of all open tabs NOW
     );
-    self.clients.claim();
 });
 
-// Fetch Event
+// ─── Fetch: smart caching by resource type ────────────────────────────────────
 self.addEventListener('fetch', (event) => {
-    const request = event.request;
-    const url = new URL(request.url);
+    const req = event.request;
+    const url = new URL(req.url);
 
-    // Never cache API, auth, checkout, or sensitive POST requests
+    // Skip non-GET and sensitive paths entirely (no caching)
     if (
-        request.method !== 'GET' ||
-        url.pathname.includes('/api/') ||
-        url.pathname.includes('/login') ||
-        url.pathname.includes('/checkout') ||
-        url.pathname.includes('/wallet') ||
-        url.pathname.includes('/admin') ||
-        url.pathname.includes('/vendor')
+        req.method !== 'GET' ||
+        url.pathname.startsWith('/admin') ||
+        url.pathname.startsWith('/vendor') ||
+        url.pathname.startsWith('/delivery') ||
+        url.pathname.startsWith('/chats') ||
+        url.pathname.startsWith('/orders/') && url.pathname.includes('live') ||
+        url.pathname.startsWith('/cart') ||
+        url.pathname.startsWith('/checkout') ||
+        url.pathname.includes('/live-') ||
+        url.pathname.includes('/live-dashboard') ||
+        url.pathname.includes('/live-tracking') ||
+        url.pathname.includes('/toggle-') ||
+        url.pathname.includes('/accept-') ||
+        url.pathname.includes('/update-')
     ) {
-        return;
+        return; // Let browser handle normally
     }
 
-    // HTML Navigation requests: Network First -> Cache -> Offline Fallback
-    if (request.mode === 'navigate') {
+    const isCDN    = url.hostname !== self.location.hostname;
+    const isLocal  = !isCDN;
+    const isNav    = req.mode === 'navigate';
+    const isAsset  = /\.(js|css|woff2?|ttf|svg|png|jpg|jpeg|gif|ico|webp)(\?.*)?$/.test(url.pathname);
+
+    // ── CDN assets: Stale-While-Revalidate (serve cache, update in background)
+    if (isCDN) {
         event.respondWith(
-            fetch(request)
-                .then((networkResponse) => {
-                    return caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(request, networkResponse.clone());
-                        return networkResponse;
-                    });
-                })
-                .catch(() => {
-                    return caches.match(request).then((cachedResponse) => {
-                        return cachedResponse || caches.match(OFFLINE_URL);
-                    });
-                })
+            caches.open(CACHE_CDN).then(async (cache) => {
+                const cached = await cache.match(req);
+                const fetchPromise = fetch(req).then((res) => {
+                    if (res && res.status === 200) cache.put(req, res.clone());
+                    return res;
+                }).catch(() => cached);
+                return cached || fetchPromise;
+            })
         );
         return;
     }
 
-    // Static Assets (CSS, JS, Fonts, Images): Cache First -> Network fallback
-    event.respondWith(
-        caches.match(request).then((cachedResponse) => {
-            if (cachedResponse) {
-                return cachedResponse;
-            }
-            return fetch(request).then((networkResponse) => {
-                if (networkResponse && networkResponse.status === 200) {
-                    const responseToCache = networkResponse.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(request, responseToCache);
-                    });
+    // ── Local JS/CSS assets: Network-First with cache fallback
+    //    This means changes are ALWAYS visible immediately without hard reload
+    if (isAsset && isLocal) {
+        event.respondWith(
+            fetch(req).then((res) => {
+                if (res && res.status === 200) {
+                    const clone = res.clone();
+                    caches.open(CACHE_LOCAL).then((cache) => cache.put(req, clone));
                 }
-                return networkResponse;
-            }).catch(() => {
-                // Return nothing or empty response on static asset failure
-            });
-        })
-    );
+                return res;
+            }).catch(async () => {
+                const cached = await caches.match(req);
+                return cached || new Response('', { status: 503 });
+            })
+        );
+        return;
+    }
+
+    // ── HTML pages: Network-First with offline fallback
+    if (isNav || !isAsset) {
+        event.respondWith(
+            fetch(req).catch(async () => {
+                const cached = await caches.match(req);
+                return cached || caches.match('offline.html');
+            })
+        );
+        return;
+    }
+});
+
+// ─── Listen for manual update trigger from app ───────────────────────────────
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
