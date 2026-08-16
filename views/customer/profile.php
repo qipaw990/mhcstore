@@ -8,6 +8,20 @@
 </div>
 
 <div class="p-3">
+    <?php if (!empty($_SESSION['error'])): ?>
+        <div class="alert alert-danger rounded-4 border-0 small mb-3">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i> <?= htmlspecialchars($_SESSION['error']) ?>
+        </div>
+        <?php unset($_SESSION['error']); ?>
+    <?php endif; ?>
+
+    <?php if (!empty($_SESSION['success'])): ?>
+        <div class="alert alert-success rounded-4 border-0 small mb-3">
+            <i class="bi bi-check-circle-fill me-1"></i> <?= htmlspecialchars($_SESSION['success']) ?>
+        </div>
+        <?php unset($_SESSION['success']); ?>
+    <?php endif; ?>
+
     <?php if ($user): ?>
         <!-- User Profile Header Card -->
         <div class="p-3 bg-white rounded-4 border shadow-sm mb-3 d-flex align-items-center gap-3">
@@ -21,7 +35,7 @@
                     <div class="text-muted small" style="font-size: 11px;"><?= htmlspecialchars($user['email']) ?></div>
                 <?php endif; ?>
             </div>
-            <button type="button" class="btn btn-light btn-sm rounded-circle border shadow-xs" data-bs-toggle="modal" data-bs-target="#editProfileModal" title="Edit Profil">
+            <button type="button" class="btn btn-light btn-sm rounded-circle border shadow-xs" data-bs-toggle="modal" data-bs-target="#editProfileModal" title="Edit Profil & Kata Sandi">
                 <i class="bi bi-pencil-fill text-danger" style="font-size: 12px;"></i>
             </button>
         </div>
@@ -44,6 +58,17 @@
 
         <!-- Menu Navigation List -->
         <div class="bg-white rounded-4 border shadow-sm overflow-hidden mb-3">
+            <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#editProfileModal" class="p-3 d-flex align-items-center justify-content-between text-decoration-none text-dark border-bottom">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-person-gear fs-5" style="color: #EE2737 !important;"></i>
+                    <div>
+                        <div class="small fw-bold">Edit Profil & Ganti Kata Sandi</div>
+                        <div class="text-muted" style="font-size: 11px;">Ubah foto, nama, email, no HP & password</div>
+                    </div>
+                </div>
+                <i class="bi bi-chevron-right text-muted small"></i>
+            </a>
+
             <a href="<?= $baseUrl ?>/orders" class="p-3 d-flex align-items-center justify-content-between text-decoration-none text-dark border-bottom">
                 <div class="d-flex align-items-center gap-3">
                     <i class="bi bi-receipt fs-5" style="color: #EE2737 !important;"></i>
