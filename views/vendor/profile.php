@@ -1,209 +1,220 @@
-<div class="row g-4">
-    <div class="col-lg-4">
-        <!-- Store & Owner Summary Card -->
-        <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
-            <div class="position-relative d-inline-block mx-auto mb-3">
-                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($store['logo'] ?? 'assets/images/stores/default.jpg') ?>" alt="Store Logo" class="rounded-circle border border-3 border-danger shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
-                <span class="position-absolute bottom-0 end-0 bg-success border border-2 border-white rounded-circle p-2" title="Toko Buka"></span>
-            </div>
-            <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($store['name'] ?? 'Nama Toko') ?></h5>
-            <div class="badge bg-success-subtle text-success rounded-pill px-3 py-1 mb-3 fw-bold" style="font-size: 11px;">
-                <i class="bi bi-shop me-1"></i> MITRA RESMI CICALENGKAGO
-            </div>
-            
-            <hr class="my-3 opacity-25">
-
-            <div class="text-start small">
-                <div class="mb-2 text-muted">
-                    <i class="bi bi-person-fill me-2 text-danger"></i> <strong>Pemilik:</strong> <?= htmlspecialchars($user['name'] ?? '-') ?>
-                </div>
-                <div class="mb-2 text-muted">
-                    <i class="bi bi-envelope me-2 text-danger"></i> <strong>Email:</strong> <?= htmlspecialchars($user['email'] ?? '-') ?>
-                </div>
-                <div class="mb-2 text-muted">
-                    <i class="bi bi-phone me-2 text-danger"></i> <strong>No. HP Pemilik:</strong> <?= htmlspecialchars($user['phone'] ?? '-') ?>
-                </div>
-                <div class="mb-0 text-muted">
-                    <i class="bi bi-geo-alt-fill me-2 text-danger"></i> <strong>Alamat Toko:</strong> <?= htmlspecialchars($store['address'] ?? '-') ?>
-                </div>
-            </div>
-        </div>
+<!-- Store & Owner Summary Card -->
+<div class="card border-0 shadow-sm rounded-4 p-3 bg-white text-center mb-3">
+    <div class="position-relative d-inline-block mx-auto mb-2">
+        <img src="<?= $baseUrl ?>/<?= htmlspecialchars($store['logo'] ?? 'assets/images/stores/default.jpg') ?>" alt="Store Logo" class="rounded-circle border border-3 border-danger shadow-xs" style="width: 80px; height: 80px; object-fit: cover;">
+        <?php if ($store && $store['is_open']): ?>
+            <span class="position-absolute bottom-0 end-0 bg-success border border-2 border-white rounded-circle p-1.5" style="width: 14px; height: 14px;" title="Toko Buka"></span>
+        <?php else: ?>
+            <span class="position-absolute bottom-0 end-0 bg-danger border border-2 border-white rounded-circle p-1.5" style="width: 14px; height: 14px;" title="Toko Tutup"></span>
+        <?php endif; ?>
     </div>
+    
+    <h6 class="fw-bold text-dark m-0" style="font-size: 15px;"><?= htmlspecialchars($store['name'] ?? 'Nama Toko') ?></h6>
+    <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1 my-1.5 fw-bold" style="font-size: 10px;">
+        <i class="bi bi-shop me-1"></i> MITRA RESMI CICALENGKAGO
+    </span>
 
-    <div class="col-lg-8">
-        <!-- Edit Form Card -->
-        <div class="card border-0 shadow-sm rounded-4 p-4">
-            <div class="d-flex align-items-center justify-content-between border-bottom pb-3 mb-4">
-                <h6 class="fw-bold text-dark m-0"><i class="bi bi-sliders text-danger me-2"></i> Pengaturan Profil Pemilik & Informasi Toko</h6>
-                <span class="badge bg-light text-muted border px-2.5 py-1 rounded-pill" style="font-size: 11px;">Mitra Merchant</span>
-            </div>
-
-            <?php if (!empty($_SESSION['error'])): ?>
-                <div class="alert alert-danger rounded-3 border-0 small mb-3">
-                    <i class="bi bi-exclamation-triangle-fill me-1"></i> <?= htmlspecialchars($_SESSION['error']) ?>
-                </div>
-                <?php unset($_SESSION['error']); ?>
-            <?php endif; ?>
-
-            <?php if (!empty($_SESSION['success'])): ?>
-                <div class="alert alert-success rounded-3 border-0 small mb-3">
-                    <i class="bi bi-check-circle-fill me-1"></i> <?= htmlspecialchars($_SESSION['success']) ?>
-                </div>
-                <?php unset($_SESSION['success']); ?>
-            <?php endif; ?>
-
-            <form action="<?= $baseUrl ?>/vendor/profile/update" method="POST" enctype="multipart/form-data">
-                <div class="row g-3">
-                    <div class="col-12">
-                        <h6 class="fw-bold text-dark mb-2 pb-1 border-bottom" style="font-size: 13px;">
-                            <i class="bi bi-person-circle text-primary me-1"></i> 1. Informasi Akun Pemilik Toko
-                        </h6>
-                    </div>
-
-                    <!-- Foto Profil Pemilik -->
-                    <div class="col-12">
-                        <label class="form-label small fw-bold text-dark d-block">Foto Profil Pemilik</label>
-                        <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-4 border">
-                            <img id="vendor-avatar-preview" src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/default.png') ?>" alt="Preview Pemilik" class="rounded-circle border border-2 border-danger shadow-xs" style="width: 65px; height: 65px; object-fit: cover;">
-                            <div class="flex-grow-1">
-                                <input type="file" name="avatar" class="form-control rounded-3 form-control-sm" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewImage(this, 'vendor-avatar-preview')">
-                                <small class="text-muted" style="font-size: 11px;">Format JPG, PNG, WEBP. Maks 2MB.</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label small fw-bold text-dark">Nama Pemilik Toko</label>
-                        <input type="text" name="name" class="form-control rounded-3" value="<?= htmlspecialchars($user['name'] ?? '') ?>" required>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label small fw-bold text-dark">No HP / WA Pemilik</label>
-                        <input type="text" name="phone" class="form-control rounded-3" value="<?= htmlspecialchars($user['phone'] ?? '') ?>" required>
-                    </div>
-
-                    <div class="col-12">
-                        <label class="form-label small fw-bold text-dark">Alamat Email (Gmail)</label>
-                        <input type="email" name="email" class="form-control rounded-3" value="<?= htmlspecialchars($user['email'] ?? '') ?>" required>
-                        <div class="alert alert-warning border-0 rounded-3 p-2.5 mt-2 mb-0 d-flex align-items-start gap-2" style="font-size: 11px;">
-                            <i class="bi bi-shield-exclamation text-warning fs-6 mt-0.5"></i>
-                            <div>
-                                <strong>Verifikasi OTP Email:</strong> Mengubah alamat email membutuhkan <strong>kode OTP 6-digit</strong> yang dikirim ke email baru sebelum diterapkan.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-12 mt-4">
-                        <h6 class="fw-bold text-dark mb-2 pb-1 border-bottom" style="font-size: 13px;">
-                            <i class="bi bi-shop text-success me-1"></i> 2. Informasi Toko / Resto
-                        </h6>
-                    </div>
-
-                    <!-- Logo Toko -->
-                    <div class="col-12">
-                        <label class="form-label small fw-bold text-dark d-block">Logo / Foto Profil Toko</label>
-                        <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-4 border">
-                            <img id="store-logo-preview" src="<?= $baseUrl ?>/<?= htmlspecialchars($store['logo'] ?? 'assets/images/stores/default.jpg') ?>" alt="Preview Toko" class="rounded-circle border border-2 border-success shadow-xs" style="width: 65px; height: 65px; object-fit: cover;">
-                            <div class="flex-grow-1">
-                                <input type="file" name="store_logo" class="form-control rounded-3 form-control-sm" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewImage(this, 'store-logo-preview')">
-                                <small class="text-muted" style="font-size: 11px;">Logo ini akan tampil pada etalase toko pelanggan. Maks 2MB.</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label small fw-bold text-dark">Nama Toko / Resto</label>
-                        <input type="text" name="store_name" class="form-control rounded-3" value="<?= htmlspecialchars($store['name'] ?? '') ?>" required>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label small fw-bold text-dark">Telepon Toko</label>
-                        <input type="text" name="store_phone" class="form-control rounded-3" value="<?= htmlspecialchars($store['phone'] ?? '') ?>">
-                    </div>
-
-                    <div class="col-12">
-                        <label class="form-label small fw-bold text-dark">Alamat Lengkap Toko</label>
-                        <textarea name="store_address" class="form-control rounded-3" rows="2" required><?= htmlspecialchars($store['address'] ?? '') ?></textarea>
-                    </div>
-
-                    <!-- Section Ubah Kata Sandi -->
-                    <div class="col-12 mt-4 pt-3 border-top">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <h6 class="fw-bold text-dark m-0" style="font-size: 13px;">
-                                <i class="bi bi-key-fill text-danger me-1"></i> 3. Ubah Kata Sandi Akun Pemilik (Opsional)
-                            </h6>
-                            <span class="text-muted small" style="font-size: 11px;">Kosongkan jika tidak ingin mengubah</span>
-                        </div>
-
-                        <div class="alert alert-info border-0 rounded-3 p-2.5 mb-3 d-flex align-items-start gap-2" style="font-size: 11px;">
-                            <i class="bi bi-shield-lock-fill text-primary fs-6 mt-0.5"></i>
-                            <div>
-                                <strong>Verifikasi OTP Keamanan:</strong> Setiap perubahan kata sandi wajib dikonfirmasi dengan <strong>kode OTP 6-digit</strong> yang dikirim ke email akun pemilik toko.
-                            </div>
-                        </div>
-
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <label class="form-label small fw-bold text-muted">Kata Sandi Saat Ini</label>
-                                <div class="input-group">
-                                    <input type="password" name="current_password" id="vendor_current_password" class="form-control rounded-start-3" placeholder="Masukkan kata sandi lama">
-                                    <button class="btn btn-outline-secondary border rounded-end-3" type="button" onclick="togglePasswordVisibility('vendor_current_password', this)">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold text-muted">Kata Sandi Baru (Min. 6 Karakter)</label>
-                                <div class="input-group">
-                                    <input type="password" name="new_password" id="vendor_new_password" class="form-control rounded-start-3" placeholder="Kata sandi baru">
-                                    <button class="btn btn-outline-secondary border rounded-end-3" type="button" onclick="togglePasswordVisibility('vendor_new_password', this)">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold text-muted">Konfirmasi Kata Sandi Baru</label>
-                                <div class="input-group">
-                                    <input type="password" name="confirm_password" id="vendor_confirm_password" class="form-control rounded-start-3" placeholder="Ulangi kata sandi baru">
-                                    <button class="btn btn-outline-secondary border rounded-end-3" type="button" onclick="togglePasswordVisibility('vendor_confirm_password', this)">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-12 mt-4 text-end">
-                        <button type="submit" class="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm" style="background:#EE2737;">
-                            <i class="bi bi-floppy2-fill me-1"></i> Simpan Perubahan Profil & Toko
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
+    <div class="p-2.5 bg-light rounded-3 text-start small mt-2 border" style="font-size: 11.5px;">
+        <div class="mb-1 text-muted"><i class="bi bi-person-fill text-danger me-1.5"></i> <strong>Pemilik:</strong> <?= htmlspecialchars($user['name'] ?? '-') ?></div>
+        <div class="mb-1 text-muted"><i class="bi bi-envelope-fill text-danger me-1.5"></i> <strong>Email:</strong> <?= htmlspecialchars($user['email'] ?? '-') ?></div>
+        <div class="mb-1 text-muted"><i class="bi bi-phone-fill text-danger me-1.5"></i> <strong>No. HP:</strong> <?= htmlspecialchars($user['phone'] ?? '-') ?></div>
+        <div class="mb-0 text-muted"><i class="bi bi-geo-alt-fill text-danger me-1.5"></i> <strong>Alamat:</strong> <?= htmlspecialchars($store['address'] ?? '-') ?></div>
     </div>
 </div>
 
+<!-- Edit Settings Form -->
+<div class="card border-0 shadow-sm rounded-4 p-3.5 bg-white mb-4">
+    <div class="d-flex align-items-center justify-content-between border-bottom pb-2.5 mb-3">
+        <h6 class="fw-bold text-dark m-0" style="font-size: 13.5px;">
+            <i class="bi bi-sliders text-danger me-1"></i> Pengaturan Toko & Pemilik
+        </h6>
+        <span class="badge bg-light text-muted border px-2 py-0.5" style="font-size: 10px;">Mitra Merchant</span>
+    </div>
+
+    <form action="<?= $baseUrl ?>/vendor/profile/update" method="POST" enctype="multipart/form-data">
+        <!-- 1. Owner Profile -->
+        <h6 class="fw-bold text-dark mb-2 pb-1 border-bottom" style="font-size: 12.5px;">
+            <i class="bi bi-person-circle text-primary me-1"></i> 1. Informasi Akun Pemilik
+        </h6>
+
+        <!-- Foto Profil Pemilik -->
+        <div class="mb-3">
+            <label class="form-label small fw-bold text-dark">Foto Profil Pemilik</label>
+            <div class="d-flex align-items-center gap-2.5 p-2.5 bg-light rounded-3 border">
+                <img id="vendor-avatar-preview" src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/default.png') ?>" alt="Preview" class="rounded-circle border border-2 border-danger" style="width: 50px; height: 50px; object-fit: cover;">
+                <div class="flex-grow-1">
+                    <input type="file" name="avatar" class="form-control form-control-sm rounded-3" accept="image/*" onchange="previewImg(this, 'vendor-avatar-preview')">
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-2.5">
+            <label class="form-label small fw-bold text-dark">Nama Pemilik Toko <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($user['name'] ?? '') ?>" required>
+        </div>
+
+        <div class="mb-2.5">
+            <label class="form-label small fw-bold text-dark">No HP / WhatsApp Pemilik <span class="text-danger">*</span></label>
+            <input type="text" name="phone" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($user['phone'] ?? '') ?>" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label small fw-bold text-dark">Alamat Email <span class="text-danger">*</span></label>
+            <input type="email" name="email" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($user['email'] ?? '') ?>" required>
+            <div class="text-muted mt-1" style="font-size: 10px;">
+                <i class="bi bi-shield-check text-warning me-0.5"></i> Perubahan email memerlukan verifikasi OTP.
+            </div>
+        </div>
+
+        <!-- 2. Store Info -->
+        <h6 class="fw-bold text-dark mb-2 pb-1 border-bottom mt-3" style="font-size: 12.5px;">
+            <i class="bi bi-shop text-success me-1"></i> 2. Informasi Toko / Resto
+        </h6>
+
+        <!-- Logo Toko -->
+        <div class="mb-3">
+            <label class="form-label small fw-bold text-dark">Logo / Foto Profil Toko</label>
+            <div class="d-flex align-items-center gap-2.5 p-2.5 bg-light rounded-3 border">
+                <img id="store-logo-preview" src="<?= $baseUrl ?>/<?= htmlspecialchars($store['logo'] ?? 'assets/images/stores/default.jpg') ?>" alt="Preview" class="rounded-3 border border-2 border-danger" style="width: 50px; height: 50px; object-fit: cover;">
+                <div class="flex-grow-1">
+                    <input type="file" name="store_logo" class="form-control form-control-sm rounded-3" accept="image/*" onchange="previewImg(this, 'store-logo-preview')">
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-2.5">
+            <label class="form-label small fw-bold text-dark">Nama Toko / Resto</label>
+            <input type="text" name="store_name" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($store['name'] ?? '') ?>" required>
+        </div>
+
+        <div class="mb-2.5">
+            <label class="form-label small fw-bold text-dark">No HP / Kontak Toko</label>
+            <input type="text" name="store_phone" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($store['phone'] ?? '') ?>">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label small fw-bold text-dark">Alamat Lengkap Toko</label>
+            <textarea name="store_address" class="form-control form-control-sm rounded-3" rows="2"><?= htmlspecialchars($store['address'] ?? '') ?></textarea>
+        </div>
+
+        <!-- 3. GPS Pinpoint Picker (Leaflet Map) -->
+        <h6 class="fw-bold text-dark mb-2 pb-1 border-bottom mt-3" style="font-size: 12.5px;">
+            <i class="bi bi-geo-alt-fill text-danger me-1"></i> 3. Titik Koordinat GPS Toko
+        </h6>
+
+        <div class="mb-2">
+            <div class="d-flex align-items-center justify-content-between mb-1.5">
+                <span class="small text-muted" style="font-size: 11px;">Geser pin merah ke lokasi toko Anda:</span>
+                <button type="button" onclick="detectCurrentStoreGps()" class="btn btn-outline-danger btn-sm rounded-pill px-2.5 py-0.5" style="font-size: 10.5px;">
+                    <i class="bi bi-crosshair me-1"></i> Deteksi GPS Saya
+                </button>
+            </div>
+
+            <div id="profile-store-picker-map" style="width: 100%; height: 180px; border-radius: 12px; border: 1px solid #e2e8f0;"></div>
+
+            <div class="row g-2 mt-1">
+                <div class="col-6">
+                    <label class="form-label text-muted" style="font-size: 10px;">Latitude</label>
+                    <input type="text" id="storeLatInput" name="latitude" class="form-control form-control-sm rounded-3 bg-light" value="<?= (float)($store['latitude'] ?? -6.9835) ?>" readonly>
+                </div>
+                <div class="col-6">
+                    <label class="form-label text-muted" style="font-size: 10px;">Longitude</label>
+                    <input type="text" id="storeLngInput" name="longitude" class="form-control form-control-sm rounded-3 bg-light" value="<?= (float)($store['longitude'] ?? 107.8335) ?>" readonly>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Password (Optional) -->
+        <h6 class="fw-bold text-dark mb-2 pb-1 border-bottom mt-3" style="font-size: 12.5px;">
+            <i class="bi bi-key text-warning me-1"></i> 4. Ganti Kata Sandi (Opsional)
+        </h6>
+
+        <div class="mb-2">
+            <label class="form-label text-muted small" style="font-size: 11px;">Kata Sandi Saat Ini</label>
+            <input type="password" name="current_password" class="form-control form-control-sm rounded-3" placeholder="Masukkan jika ingin ganti password">
+        </div>
+
+        <div class="row g-2 mb-3">
+            <div class="col-6">
+                <label class="form-label text-muted small" style="font-size: 11px;">Password Baru</label>
+                <input type="password" name="new_password" class="form-control form-control-sm rounded-3" placeholder="Minimal 6 karakter">
+            </div>
+            <div class="col-6">
+                <label class="form-label text-muted small" style="font-size: 11px;">Ulangi Password</label>
+                <input type="password" name="confirm_password" class="form-control form-control-sm rounded-3" placeholder="Konfirmasi password">
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-danger w-100 py-2.5 rounded-pill fw-bold shadow-sm" style="background:#EE2737; font-size: 13.5px; border:none;">
+            <i class="bi bi-check2-circle me-1"></i> Simpan Perubahan Toko
+        </button>
+    </form>
+</div>
+
 <script>
-function previewImage(input, targetId) {
+let pickerMap, pickerMarker;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const initLat = parseFloat(document.getElementById('storeLatInput').value) || -6.9835;
+    const initLng = parseFloat(document.getElementById('storeLngInput').value) || 107.8335;
+
+    pickerMap = L.map('profile-store-picker-map', { zoomControl: true }).setView([initLat, initLng], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(pickerMap);
+
+    const redIcon = L.divIcon({
+        className: 'custom-pin',
+        html: '<div style="background:#EE2737;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.3);"><i class="bi bi-shop fs-6"></i></div>',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+    });
+
+    pickerMarker = L.marker([initLat, initLng], { icon: redIcon, draggable: true }).addTo(pickerMap);
+
+    pickerMarker.on('dragend', function(e) {
+        const pos = pickerMarker.getLatLng();
+        document.getElementById('storeLatInput').value = pos.lat.toFixed(8);
+        document.getElementById('storeLngInput').value = pos.lng.toFixed(8);
+    });
+
+    pickerMap.on('click', function(e) {
+        pickerMarker.setLatLng(e.latlng);
+        document.getElementById('storeLatInput').value = e.latlng.lat.toFixed(8);
+        document.getElementById('storeLngInput').value = e.latlng.lng.toFixed(8);
+    });
+});
+
+function detectCurrentStoreGps() {
+    if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            pickerMap.setView([lat, lng], 17);
+            pickerMarker.setLatLng([lat, lng]);
+            document.getElementById('storeLatInput').value = lat.toFixed(8);
+            document.getElementById('storeLngInput').value = lng.toFixed(8);
+            Swal.fire({
+                title: 'GPS Terdeteksi',
+                text: 'Titik koordinat toko Anda berhasil disesuaikan dengan GPS perangkat.',
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        }, (err) => {
+            Swal.fire('GPS Tidak Aktif', 'Pastikan izin lokasi GPS diaktifkan di browser HP Anda.', 'warning');
+        }, { enableHighAccuracy: true });
+    }
+}
+
+function previewImg(input, targetId) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
             document.getElementById(targetId).src = e.target.result;
         };
         reader.readAsDataURL(input.files[0]);
-    }
-}
-
-function togglePasswordVisibility(fieldId, btn) {
-    const field = document.getElementById(fieldId);
-    const icon = btn.querySelector('i');
-    if (field.type === 'password') {
-        field.type = 'text';
-        icon.classList.replace('bi-eye', 'bi-eye-slash');
-    } else {
-        field.type = 'password';
-        icon.classList.replace('bi-eye-slash', 'bi-eye');
     }
 }
 </script>

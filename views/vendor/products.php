@@ -1,77 +1,139 @@
-<div class="card border-0 shadow-sm rounded-4">
-    <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
-        <h6 class="fw-bold m-0"><i class="bi bi-egg-fried me-1 text-primary"></i> Daftar Menu & Produk Toko</h6>
-        <a href="<?= $baseUrl ?>/vendor/products/create" class="btn btn-primary btn-sm fw-bold">
-            <i class="bi bi-plus-lg me-1"></i> Tambah Menu Baru
+<!-- Product Catalog Header -->
+<div class="mb-3">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+        <div>
+            <h6 class="fw-bold m-0 text-dark" style="font-size: 15px;">
+                <i class="bi bi-egg-fried text-danger me-1"></i> Katalog Menu (<?= count($products) ?>)
+            </h6>
+            <span class="text-muted" style="font-size: 11px;">Kelola stok & menu etalase toko Anda</span>
+        </div>
+        <a href="<?= $baseUrl ?>/vendor/products/create" class="btn btn-danger btn-sm rounded-pill fw-bold px-3 py-1.5" style="background:#EE2737; font-size: 11.5px; border:none;">
+            <i class="bi bi-plus-lg me-1"></i> Tambah Menu
         </a>
     </div>
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th>Foto</th>
-                    <th>Nama Menu</th>
-                    <th>Kategori</th>
-                    <th>Harga Jual</th>
-                    <th>Diskon</th>
-                    <th>Stok</th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (empty($products)): ?>
-                    <tr>
-                        <td colspan="7" class="text-center text-muted py-4">Belum ada menu produk. Silakan tambah menu baru.</td>
-                    </tr>
-                <?php else: ?>
-                    <?php foreach ($products as $p): ?>
-                        <tr>
-                            <td>
-                                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($p['image'] ?? 'assets/images/products/default.jpg') ?>" class="rounded-3" style="width: 48px; height: 48px; object-fit: cover;">
-                            </td>
-                            <td>
-                                <div class="fw-bold small"><?= htmlspecialchars($p['name']) ?></div>
-                                <div class="text-muted small"><?= htmlspecialchars($p['description']) ?></div>
-                            </td>
-                            <td>
-                                <span class="badge bg-light text-dark border"><?= htmlspecialchars($p['category_name'] ?? 'Umum') ?></span>
-                            </td>
-                            <td class="fw-bold text-primary"><?= format_rupiah($p['final_price']) ?></td>
-                            <td>
-                                <?php if ((float)$p['discount'] > 0): ?>
-                                    <span class="badge bg-danger-subtle text-danger"><?= (int)$p['discount'] ?>%</span>
-                                <?php else: ?>
-                                    <span class="text-muted small">-</span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <span class="badge bg-success-subtle text-success"><?= $p['stock'] ?> <?= htmlspecialchars($p['unit']) ?></span>
-                            </td>
-                            <td>
-                                <div class="d-flex gap-2">
-                                    <a href="<?= $baseUrl ?>/vendor/products/edit/<?= $p['id'] ?>" class="btn btn-sm btn-outline-primary py-1 px-2" title="Edit">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <button onclick="deleteProduct(<?= $p['id'] ?>)" class="btn btn-sm btn-outline-danger py-1 px-2" title="Hapus">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
+
+    <!-- Product Search Bar -->
+    <div class="position-relative">
+        <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" style="font-size: 13px;"></i>
+        <input type="text" id="productSearchInput" onkeyup="searchProductCards()" placeholder="Cari nama menu..." class="form-control form-control-sm rounded-pill ps-5 bg-white border" style="font-size: 12.5px; padding-top: 8px; padding-bottom: 8px;">
     </div>
 </div>
 
+<!-- Product Cards List -->
+<?php if (empty($products)): ?>
+    <div class="text-center py-5 bg-white rounded-4 border p-4 shadow-xs">
+        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 54px; height: 54px;">
+            <i class="bi bi-egg-fried text-muted fs-3"></i>
+        </div>
+        <h6 class="fw-bold text-dark">Belum Ada Menu Terdaftar</h6>
+        <p class="small text-muted mb-3">Tambahkan menu pertama Anda agar pembeli bisa memesan di CicalengkaGO.</p>
+        <a href="<?= $baseUrl ?>/vendor/products/create" class="btn btn-danger btn-sm rounded-pill px-4 fw-bold" style="background:#EE2737;">
+            <i class="bi bi-plus-circle me-1"></i> Tambah Menu Sekarang
+        </a>
+    </div>
+<?php else: ?>
+    <div class="d-flex flex-column gap-2" id="productListContainer">
+        <?php foreach ($products as $p): 
+            $isOutOfStock = ((int)$p['stock'] <= 0);
+            $isActive = !empty($p['status']);
+        ?>
+            <div class="merchant-product-card product-node" data-name="<?= strtolower(htmlspecialchars($p['name'])) ?>">
+                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($p['image'] ?? 'assets/images/products/default.jpg') ?>" alt="<?= htmlspecialchars($p['name']) ?>" class="merchant-product-img">
+                
+                <div class="merchant-product-info">
+                    <div class="d-flex align-items-start justify-content-between gap-1">
+                        <div>
+                            <h6 class="fw-bold m-0 text-dark text-truncate" style="font-size: 13px; max-width: 170px;">
+                                <?= htmlspecialchars($p['name']) ?>
+                            </h6>
+                            <span class="badge bg-light text-muted border my-1" style="font-size: 9px;">
+                                <?= htmlspecialchars($p['category_name'] ?? 'Umum') ?>
+                            </span>
+                        </div>
+                        <div class="d-flex gap-1">
+                            <a href="<?= $baseUrl ?>/vendor/products/edit/<?= $p['id'] ?>" class="btn btn-light btn-sm rounded-circle p-0 d-flex align-items-center justify-content-center shadow-xs" style="width: 28px; height: 28px;" title="Edit">
+                                <i class="bi bi-pencil text-primary" style="font-size: 12px;"></i>
+                            </a>
+                            <button onclick="deleteProduct(<?= $p['id'] ?>)" class="btn btn-light btn-sm rounded-circle p-0 d-flex align-items-center justify-content-center shadow-xs" style="width: 28px; height: 28px;" title="Hapus">
+                                <i class="bi bi-trash text-danger" style="font-size: 12px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Price & Discount -->
+                    <div class="d-flex align-items-center gap-1.5 mt-0.5">
+                        <span class="fw-extrabold text-danger" style="font-size: 13px;">
+                            <?= format_rupiah($p['final_price']) ?>
+                        </span>
+                        <?php if ((float)$p['discount'] > 0): ?>
+                            <span class="text-muted text-decoration-line-through" style="font-size: 10px;"><?= format_rupiah($p['price']) ?></span>
+                            <span class="badge bg-danger-subtle text-danger" style="font-size: 8.5px;"><?= (int)$p['discount'] ?>% OFF</span>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Instant Stock Switch Bar -->
+                    <div class="d-flex align-items-center justify-content-between pt-1.5 mt-1 border-top" style="font-size: 11px;">
+                        <span class="fw-semibold <?= $isOutOfStock ? 'text-danger' : 'text-success' ?>">
+                            <i class="bi <?= $isOutOfStock ? 'bi-x-circle-fill' : 'bi-check-circle-fill' ?> me-0.5"></i>
+                            <?= $isOutOfStock ? 'Stok Habis' : 'Tersedia (' . $p['stock'] . ')' ?>
+                        </span>
+                        
+                        <div class="form-check form-switch m-0 d-flex align-items-center gap-1">
+                            <label class="form-check-label text-muted small" style="font-size: 10px;" for="stockSwitch<?= $p['id'] ?>">Stok</label>
+                            <input class="form-check-input" type="checkbox" role="switch" id="stockSwitch<?= $p['id'] ?>" <?= !$isOutOfStock ? 'checked' : '' ?> onchange="toggleStockStatus(<?= $p['id'] ?>)" style="cursor:pointer; width: 32px; height: 16px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
+
+<!-- Floating Action Button (+ Menu) -->
+<a href="<?= $baseUrl ?>/vendor/products/create" class="merchant-fab" title="Tambah Menu">
+    <i class="bi bi-plus-lg"></i>
+</a>
+
 <script>
+function searchProductCards() {
+    const q = document.getElementById('productSearchInput').value.toLowerCase();
+    const nodes = document.querySelectorAll('.product-node');
+    nodes.forEach(n => {
+        if (n.dataset.name.includes(q)) {
+            n.classList.remove('d-none');
+        } else {
+            n.classList.add('d-none');
+        }
+    });
+}
+
+async function toggleStockStatus(id) {
+    const fd = new FormData();
+    fd.append('id', id);
+    fd.append('field', 'stock');
+
+    try {
+        const res = await fetch(window.BASE_URL + '/vendor/products/toggle-status', {
+            method: 'POST',
+            body: fd
+        });
+        const data = await res.json();
+        if (!data.success) {
+            Swal.fire('Gagal', data.message || 'Gagal mengubah stok', 'warning');
+        }
+    } catch(e) {
+        console.error(e);
+    }
+}
+
 async function deleteProduct(id) {
     Swal.fire({
         title: 'Hapus Menu?',
         text: 'Menu ini akan dihapus dari etalase toko.',
         icon: 'warning',
         showCancelButton: true,
+        confirmButtonColor: '#EE2737',
+        cancelButtonColor: '#6c757d',
         confirmButtonText: 'Ya, Hapus',
         cancelButtonText: 'Batal'
     }).then(async (res) => {

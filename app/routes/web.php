@@ -95,12 +95,14 @@ Router::group(['prefix' => '/vendor', 'middleware' => ['VendorMiddleware']], fun
     Router::get('', [VendorController::class, 'dashboard']);
     Router::post('/toggle-status', [VendorController::class, 'toggleStoreStatus']);
     Router::get('/orders', [VendorController::class, 'orders']);
+    Router::get('/orders/check-new', [VendorController::class, 'checkNewOrders']);
     Router::post('/orders/update-status', [VendorController::class, 'updateOrderStatus']);
     Router::get('/products', [VendorController::class, 'products']);
     Router::get('/products/create', [VendorController::class, 'productForm']);
     Router::get('/products/edit/{id}', [VendorController::class, 'productForm']);
     Router::post('/products/save', [VendorController::class, 'saveProduct']);
     Router::post('/products/delete', [VendorController::class, 'deleteProduct']);
+    Router::post('/products/toggle-status', [VendorController::class, 'toggleProductStatus']);
     Router::get('/wallet', [VendorController::class, 'wallet']);
     Router::get('/profile', [VendorController::class, 'profile']);
     Router::post('/profile/update', [VendorController::class, 'updateProfile']);

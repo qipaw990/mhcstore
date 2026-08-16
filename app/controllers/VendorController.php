@@ -193,6 +193,52 @@ class VendorController extends Controller
         $this->successResponse('Produk berhasil dihapus.');
     }
 
+    public function toggleProductStatus(): void
+    {
+        $data = $this->getPost();
+        $id = (int)($data['id'] ?? 0);
+        $field = sanitize($data['field'] ?? 'status'); // 'status' or 'stock'
+
+        $product = $this->productModel->find($id);
+        if (!$product) {
+            $this->errorResponse('Produk tidak ditemukan.');
+            return;
+        }
+
+        if ($field === 'stock') {
+            $newVal = ((int)$product['stock'] > 0) ? 0 : 50;
+            $this->productModel->update($id, ['stock' => $newVal]);
+            $this->successResponse($newVal > 0 ? 'Stok produk diaktifkan kembali.' : 'Stok produk ditandai habis.', [
+                'stock' => $newVal
+            ]);
+        } else {
+            $newVal = $product['status'] ? 0 : 1;
+            $this->productModel->update($id, ['status' => $newVal]);
+            $this->successResponse($newVal ? 'Menu produk diaktifkan di etalase.' : 'Menu produk dinonaktifkan dari etalase.', [
+                'status' => $newVal
+            ]);
+        }
+    }
+
+    public function checkNewOrders(): void
+    {
+        $userId = auth_id();
+        $store = $this->storeModel->findByVendorId($userId);
+        if (!$store) {
+            $this->errorResponse('Toko tidak ditemukan.');
+            return;
+        }
+
+        $res = Database::fetchOne(
+            "SELECT COUNT(*) as pending_count FROM `orders` WHERE `store_id` = ? AND `order_status` IN ('pending', 'confirmed')",
+            [$store['id']]
+        );
+
+        $this->successResponse('Order check success', [
+            'pending_count' => (int)($res['pending_count'] ?? 0)
+        ]);
+    }
+
     public function wallet(): void
     {
         $userId = auth_id();
@@ -236,6 +282,8 @@ class VendorController extends Controller
         $storeName    = sanitize($data['store_name'] ?? '');
         $storeAddress = sanitize($data['store_address'] ?? '');
         $storePhone   = sanitize($data['store_phone'] ?? '');
+        $storeLat     = isset($data['latitude']) ? (float)$data['latitude'] : null;
+        $storeLng     = isset($data['longitude']) ? (float)$data['longitude'] : null;
 
         if (empty($name) || empty($email) || empty($phone)) {
             $_SESSION['error'] = 'Nama, email, dan nomor HP pemilik wajib diisi.';
@@ -258,6 +306,10 @@ class VendorController extends Controller
             if (!empty($storeName)) $storeUpdates['name'] = $storeName;
             if (!empty($storeAddress)) $storeUpdates['address'] = $storeAddress;
             if (!empty($storePhone)) $storeUpdates['phone'] = $storePhone;
+            if ($storeLat !== null && $storeLng !== null && $storeLat != 0 && $storeLng != 0) {
+                $storeUpdates['latitude'] = $storeLat;
+                $storeUpdates['longitude'] = $storeLng;
+            }
 
             // Handle Store Logo Upload
             if (isset($_FILES['store_logo']) && $_FILES['store_logo']['error'] === UPLOAD_ERR_OK) {
