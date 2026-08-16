@@ -2083,5 +2083,121 @@ input:checked + .driver-toggle-slider:before {
   border: 1px solid #ffffff !important;
 }
 
+/* =========================================================================
+ * Mobile Compact Alert Boxes & SweetAlert2 Custom Styling
+ * ========================================================================= */
+.swal2-popup {
+  width: 90% !important;
+  max-width: 330px !important;
+  border-radius: 18px !important;
+  padding: 16px 18px !important;
+  font-family: inherit !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25) !important;
+}
+
+.swal2-icon {
+  width: 46px !important;
+  height: 46px !important;
+  margin: 8px auto 12px !important;
+  transform: scale(0.85);
+}
+
+.swal2-title {
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.3px !important;
+  color: #0F172A !important;
+  padding: 0 !important;
+  margin-bottom: 6px !important;
+}
+
+.swal2-html-container {
+  font-size: 11.5px !important;
+  line-height: 1.45 !important;
+  color: #475569 !important;
+  margin: 4px 0 14px !important;
+}
+
+.swal2-actions {
+  gap: 8px !important;
+  margin-top: 10px !important;
+  width: 100% !important;
+}
+
+.swal2-confirm,
+.swal2-cancel {
+  border-radius: 9999px !important;
+  font-size: 11.5px !important;
+  font-weight: 800 !important;
+  padding: 8px 18px !important;
+  box-shadow: none !important;
+}
+
+.swal2-confirm {
+  background: linear-gradient(135deg, #EE2737, #C61524) !important;
+}
+
+/* Bootstrap Alert Component - Mobile Compact Styling */
+.alert {
+  border-radius: 14px !important;
+  padding: 10px 14px !important;
+  font-size: 11.5px !important;
+  line-height: 1.45 !important;
+  margin-bottom: 12px !important;
+  border-width: 1px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02) !important;
+}
+
+.alert .btn-close {
+  padding: 10px !important;
+  font-size: 10px !important;
+}
+
+/* =========================================================================
+ * Universal Card Content Overflow Protection & Tight Mobile Bounds
+ * ========================================================================= */
+.card,
+.gopay-super-card,
+.order-card-item,
+.gofood-product-card,
+.gofood-store-card,
+div[style*="border-radius: 16px"],
+div[style*="border-radius: 18px"],
+div[style*="border-radius: 14px"] {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.card *,
+.gopay-super-card *,
+.order-card-item *,
+.gofood-product-card *,
+.gofood-store-card * {
+  max-width: 100% !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+.card .d-flex,
+.gopay-super-card .d-flex,
+.order-card-item .d-flex,
+.gofood-product-card .d-flex,
+.gofood-store-card .d-flex,
+div[style*="border-radius: 16px"] .d-flex,
+div[style*="border-radius: 18px"] .d-flex {
+  min-width: 0 !important;
+}
+
+.gofood-product-card .fw-extrabold,
+.gofood-product-card .fw-bold,
+.order-card-item .fw-extrabold,
+.order-card-item .fw-bold {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+
 
 
