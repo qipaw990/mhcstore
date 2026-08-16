@@ -243,13 +243,33 @@ class VendorController extends Controller
             return;
         }
 
+        // Handle User Avatar Upload
+        if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+            $avatarPath = upload_image($_FILES['avatar'], 'profiles');
+            if ($avatarPath) {
+                (new \App\Models\User())->update($userId, ['avatar' => $avatarPath]);
+                $_SESSION['user']['avatar'] = $avatarPath;
+            }
+        }
+
         $store = $this->storeModel->findByVendorId($userId);
-        if ($store && (!empty($storeName) || !empty($storeAddress))) {
-            $this->storeModel->update($store['id'], [
-                'name'    => $storeName ?: $store['name'],
-                'address' => $storeAddress ?: $store['address'],
-                'phone'   => $storePhone ?: $store['phone']
-            ]);
+        if ($store) {
+            $storeUpdates = [];
+            if (!empty($storeName)) $storeUpdates['name'] = $storeName;
+            if (!empty($storeAddress)) $storeUpdates['address'] = $storeAddress;
+            if (!empty($storePhone)) $storeUpdates['phone'] = $storePhone;
+
+            // Handle Store Logo Upload
+            if (isset($_FILES['store_logo']) && $_FILES['store_logo']['error'] === UPLOAD_ERR_OK) {
+                $logoPath = upload_image($_FILES['store_logo'], 'stores');
+                if ($logoPath) {
+                    $storeUpdates['logo'] = $logoPath;
+                }
+            }
+
+            if (!empty($storeUpdates)) {
+                $this->storeModel->update($store['id'], $storeUpdates);
+            }
         }
 
         $currentUser = auth_user();

@@ -909,6 +909,15 @@ class AdminController extends Controller
             return;
         }
 
+        $avatarPath = null;
+        if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+            $avatarPath = upload_image($_FILES['avatar'], 'profiles');
+            if ($avatarPath) {
+                (new \App\Models\User())->update($userId, ['avatar' => $avatarPath]);
+                $_SESSION['user']['avatar'] = $avatarPath;
+            }
+        }
+
         $currentUser = auth_user();
 
         if (strtolower($email) !== strtolower($currentUser['email'] ?? '')) {

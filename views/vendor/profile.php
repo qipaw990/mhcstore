@@ -52,13 +52,26 @@
                 <?php unset($_SESSION['success']); ?>
             <?php endif; ?>
 
-            <form action="<?= $baseUrl ?>/vendor/profile/update" method="POST">
+            <form action="<?= $baseUrl ?>/vendor/profile/update" method="POST" enctype="multipart/form-data">
                 <div class="row g-3">
                     <div class="col-12">
                         <h6 class="fw-bold text-dark mb-2 pb-1 border-bottom" style="font-size: 13px;">
                             <i class="bi bi-person-circle text-primary me-1"></i> 1. Informasi Akun Pemilik Toko
                         </h6>
                     </div>
+
+                    <!-- Foto Profil Pemilik -->
+                    <div class="col-12">
+                        <label class="form-label small fw-bold text-dark d-block">Foto Profil Pemilik</label>
+                        <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-4 border">
+                            <img id="vendor-avatar-preview" src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/default.png') ?>" alt="Preview Pemilik" class="rounded-circle border border-2 border-danger shadow-xs" style="width: 65px; height: 65px; object-fit: cover;">
+                            <div class="flex-grow-1">
+                                <input type="file" name="avatar" class="form-control rounded-3 form-control-sm" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewImage(this, 'vendor-avatar-preview')">
+                                <small class="text-muted" style="font-size: 11px;">Format JPG, PNG, WEBP. Maks 2MB.</small>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="col-md-6">
                         <label class="form-label small fw-bold text-dark">Nama Pemilik Toko</label>
                         <input type="text" name="name" class="form-control rounded-3" value="<?= htmlspecialchars($user['name'] ?? '') ?>" required>
@@ -86,6 +99,18 @@
                         </h6>
                     </div>
 
+                    <!-- Logo Toko -->
+                    <div class="col-12">
+                        <label class="form-label small fw-bold text-dark d-block">Logo / Foto Profil Toko</label>
+                        <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-4 border">
+                            <img id="store-logo-preview" src="<?= $baseUrl ?>/<?= htmlspecialchars($store['logo'] ?? 'assets/images/stores/default.jpg') ?>" alt="Preview Toko" class="rounded-circle border border-2 border-success shadow-xs" style="width: 65px; height: 65px; object-fit: cover;">
+                            <div class="flex-grow-1">
+                                <input type="file" name="store_logo" class="form-control rounded-3 form-control-sm" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewImage(this, 'store-logo-preview')">
+                                <small class="text-muted" style="font-size: 11px;">Logo ini akan tampil pada etalase toko pelanggan. Maks 2MB.</small>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="col-md-6">
                         <label class="form-label small fw-bold text-dark">Nama Toko / Resto</label>
                         <input type="text" name="store_name" class="form-control rounded-3" value="<?= htmlspecialchars($store['name'] ?? '') ?>" required>
@@ -111,3 +136,15 @@
         </div>
     </div>
 </div>
+
+<script>
+function previewImage(input, targetId) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById(targetId).src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>

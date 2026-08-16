@@ -189,6 +189,15 @@ class DeliveryController extends Controller
             return;
         }
 
+        // Handle Driver Avatar Upload
+        if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+            $avatarPath = upload_image($_FILES['avatar'], 'profiles');
+            if ($avatarPath) {
+                (new \App\Models\User())->update($userId, ['avatar' => $avatarPath]);
+                $_SESSION['user']['avatar'] = $avatarPath;
+            }
+        }
+
         $dm = $this->dmModel->findByUserId($userId);
         if ($dm && (!empty($vehicleType) || !empty($vehicleNumber))) {
             $this->dmModel->update($dm['id'], [

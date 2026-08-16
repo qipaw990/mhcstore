@@ -52,8 +52,20 @@
                 <?php unset($_SESSION['success']); ?>
             <?php endif; ?>
 
-            <form action="<?= $baseUrl ?>/admin/profile/update" method="POST">
+            <form action="<?= $baseUrl ?>/admin/profile/update" method="POST" enctype="multipart/form-data">
                 <div class="row g-3">
+                    <!-- Foto Profil Avatar -->
+                    <div class="col-12">
+                        <label class="form-label small fw-bold text-dark d-block">Foto Profil Administrator</label>
+                        <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-4 border">
+                            <img id="avatar-preview" src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/default.png') ?>" alt="Preview" class="rounded-circle border border-2 border-danger shadow-xs" style="width: 70px; height: 70px; object-fit: cover;">
+                            <div class="flex-grow-1">
+                                <input type="file" name="avatar" id="avatar-input" class="form-control rounded-3 form-control-sm" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewImage(this, 'avatar-preview')">
+                                <small class="text-muted" style="font-size: 11px;">Format yang didukung: JPG, PNG, WEBP. Maks 2MB.</small>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="col-md-12">
                         <label class="form-label small fw-bold text-dark">Nama Administrator</label>
                         <input type="text" name="name" class="form-control rounded-3" value="<?= htmlspecialchars($user['name'] ?? '') ?>" required>
@@ -85,3 +97,15 @@
         </div>
     </div>
 </div>
+
+<script>
+function previewImage(input, targetId) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById(targetId).src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>

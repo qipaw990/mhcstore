@@ -110,8 +110,20 @@
                 </h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="<?= $baseUrl ?>/profile/update" method="POST">
+            <form action="<?= $baseUrl ?>/profile/update" method="POST" enctype="multipart/form-data">
                 <div class="modal-body py-3">
+                    <!-- Foto Profil Avatar -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark d-block">Foto Profil</label>
+                        <div class="d-flex align-items-center gap-3 p-2.5 bg-light rounded-4 border">
+                            <img id="customer-avatar-preview" src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/default.png') ?>" alt="Preview" class="rounded-circle border border-2 border-danger shadow-xs" style="width: 55px; height: 55px; object-fit: cover;">
+                            <div class="flex-grow-1">
+                                <input type="file" name="avatar" class="form-control rounded-3 form-control-sm" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewImage(this, 'customer-avatar-preview')">
+                                <small class="text-muted" style="font-size: 10px;">Format: JPG, PNG, WEBP. Maks 2MB.</small>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-dark">Nama Lengkap</label>
                         <input type="text" name="name" class="form-control rounded-3" value="<?= htmlspecialchars($user['name'] ?? '') ?>" required>
@@ -141,4 +153,16 @@
         </div>
     </div>
 </div>
+
+<script>
+function previewImage(input, targetId) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById(targetId).src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
 <?php endif; ?>
