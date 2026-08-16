@@ -45,20 +45,31 @@ class DeliveryController extends Controller
             $dm = $this->dmModel->find($dmId);
         }
 
-        // Active Order
+        // Active Order (Self-healing from both delivery_men and orders table)
         $activeOrder = null;
         if (!empty($dm['current_order_id'])) {
             $activeOrder = $this->orderModel->find($dm['current_order_id']);
-            if ($activeOrder && $activeOrder['order_status'] !== 'delivered' && $activeOrder['order_status'] !== 'canceled') {
-                $activeOrder = $this->orderModel->findByCode($activeOrder['order_code']);
+        }
+        if (!$activeOrder || in_array($activeOrder['order_status'], ['delivered', 'canceled'])) {
+            $assigned = Database::fetchOne(
+                "SELECT * FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` NOT IN ('delivered', 'canceled') ORDER BY `id` DESC LIMIT 1",
+                [$dm['id']]
+            );
+            if ($assigned) {
+                $activeOrder = $this->orderModel->findByCode($assigned['order_code']);
+                Database::update('delivery_men', ['current_order_id' => $assigned['id']], 'id = ?', [$dm['id']]);
             } else {
                 $activeOrder = null;
-                Database::update('delivery_men', ['current_order_id' => null], 'id = ?', [$dm['id']]);
+                if (!empty($dm['current_order_id'])) {
+                    Database::update('delivery_men', ['current_order_id' => null], 'id = ?', [$dm['id']]);
+                }
             }
+        } else {
+            $activeOrder = $this->orderModel->findByCode($activeOrder['order_code']);
         }
 
         // Available nearby orders in driver zone
-        $availableOrders = $this->orderModel->getAvailableForDelivery((int)$dm['zone_id']);
+        $availableOrders = $this->orderModel->getAvailableForDelivery((int)($dm['zone_id'] ?? 1));
 
         // Today's summary
         $wallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
@@ -83,22 +94,33 @@ class DeliveryController extends Controller
             return;
         }
 
-        // Active Order
+        // Active Order (Self-healing from both delivery_men and orders table)
         $activeOrder = null;
         if (!empty($dm['current_order_id'])) {
             $activeOrder = $this->orderModel->find($dm['current_order_id']);
-            if ($activeOrder && $activeOrder['order_status'] !== 'delivered' && $activeOrder['order_status'] !== 'canceled') {
-                $activeOrder = $this->orderModel->findByCode($activeOrder['order_code']);
+        }
+        if (!$activeOrder || in_array($activeOrder['order_status'], ['delivered', 'canceled'])) {
+            $assigned = Database::fetchOne(
+                "SELECT * FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` NOT IN ('delivered', 'canceled') ORDER BY `id` DESC LIMIT 1",
+                [$dm['id']]
+            );
+            if ($assigned) {
+                $activeOrder = $this->orderModel->findByCode($assigned['order_code']);
+                Database::update('delivery_men', ['current_order_id' => $assigned['id']], 'id = ?', [$dm['id']]);
             } else {
                 $activeOrder = null;
-                Database::update('delivery_men', ['current_order_id' => null], 'id = ?', [$dm['id']]);
+                if (!empty($dm['current_order_id'])) {
+                    Database::update('delivery_men', ['current_order_id' => null], 'id = ?', [$dm['id']]);
+                }
             }
+        } else {
+            $activeOrder = $this->orderModel->findByCode($activeOrder['order_code']);
         }
 
         // Available nearby orders in driver zone
         $availableOrders = [];
         if (empty($activeOrder) && $dm['is_online']) {
-            $availableOrders = $this->orderModel->getAvailableForDelivery((int)$dm['zone_id']);
+            $availableOrders = $this->orderModel->getAvailableForDelivery((int)($dm['zone_id'] ?? 1));
         }
 
         // Today's summary

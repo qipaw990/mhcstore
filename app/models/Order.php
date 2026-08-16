@@ -111,19 +111,26 @@ class Order extends Model
         return $orders;
     }
 
-    public function getAvailableForDelivery(int $zoneId): array
+    public function getAvailableForDelivery(int $zoneId = 0): array
     {
+        $whereZone = "";
+        $params = [];
+        if ($zoneId > 0) {
+            $whereZone = "AND (o.zone_id = ? OR o.zone_id IS NULL OR o.zone_id = 0)";
+            $params[] = $zoneId;
+        }
+
         $sql = "SELECT o.*, s.name as store_name, s.address as store_address, s.latitude as store_lat, s.longitude as store_lng,
                        u.name as customer_name, u.phone as customer_phone
                 FROM `orders` o
                 LEFT JOIN `stores` s ON o.store_id = s.id
-                JOIN `users` u ON o.customer_id = u.id
+                LEFT JOIN `users` u ON o.customer_id = u.id
                 WHERE o.delivery_man_id IS NULL
-                  AND o.zone_id = ?
+                  {$whereZone}
                   AND o.order_status IN ('confirmed', 'processing', 'handover')
-                  AND (o.payment_method = 'cod' OR o.payment_status = 'paid')
+                  AND (o.payment_method IN ('cod', 'wallet') OR o.payment_status = 'paid' OR o.order_status != 'pending')
                 ORDER BY o.id ASC";
-        $orders = Database::query($sql, [$zoneId]);
+        $orders = Database::query($sql, $params);
         foreach ($orders as &$o) {
             $o['items'] = Database::query("SELECT * FROM `order_items` WHERE `order_id` = ?", [$o['id']]);
             $o['delivery_address'] = json_decode($o['delivery_address_json'] ?? '{}', true) ?: [];
