@@ -846,12 +846,35 @@ class AdminController extends Controller
     public function saveSettings(): void
     {
         $data = $this->getPost();
+
+        // List of all boolean toggle switches in system settings
+        $booleanSwitches = [
+            'maintenance_mode',
+            'otp_delivery_verification',
+            'wallet_payment_status',
+            'single_active_order_driver',
+            'require_login_otp',
+            'require_customer_otp'
+        ];
+
+        // Explicitly set boolean switches: if unchecked (missing from POST), save as '0'; if checked, save as '1'
+        foreach ($booleanSwitches as $switchKey) {
+            $val = !empty($data[$switchKey]) ? '1' : '0';
+            BusinessSetting::set($switchKey, $val);
+            unset($data[$switchKey]);
+        }
+
+        // Save all other settings fields
         foreach ($data as $key => $val) {
             if ($key !== '_method') {
+                if (in_array($key, ['admin_commission_percent', 'tax_percent', 'delivery_charge_min', 'delivery_charge_per_km'])) {
+                    $val = str_replace(',', '.', trim($val));
+                }
                 BusinessSetting::set($key, sanitize($val));
             }
         }
 
+        $_SESSION['success'] = 'Semua konfigurasi sistem & pengaturan operasional berhasil disimpan!';
         $this->redirect('admin/settings');
     }
 

@@ -127,5 +127,31 @@ $user = auth_user();
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<?php if (!empty($_SESSION['success'])): ?>
+<script>
+    Swal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: '<?= addslashes($_SESSION['success']) ?>',
+        timer: 2500,
+        showConfirmButton: false
+    });
+</script>
+<?php unset($_SESSION['success']); ?>
+<?php endif; ?>
+
+<?php if (!empty($_SESSION['error'])): ?>
+<script>
+    Swal.fire({
+        icon: 'error',
+        title: 'Perhatian',
+        text: '<?= addslashes($_SESSION['error']) ?>',
+        confirmButtonColor: '#EE2737'
+    });
+</script>
+<?php unset($_SESSION['error']); ?>
+<?php endif; ?>
+
 </body>
 </html>

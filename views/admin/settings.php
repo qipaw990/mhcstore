@@ -178,12 +178,12 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold">Komisi Platform per Order (%)</label>
-                                <input type="number" step="0.1" name="admin_commission_percent" class="form-control rounded-3" value="<?= htmlspecialchars($settings['admin_commission_percent'] ?? '15') ?>" required>
+                                <input type="number" step="any" name="admin_commission_percent" class="form-control rounded-3" value="<?= (float)($settings['admin_commission_percent'] ?? 15) ?>" required>
                                 <small class="text-muted" style="font-size: 10px;">Potongan komisi platform dari ongkir driver.</small>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold">Pajak Resto / Toko (%)</label>
-                                <input type="number" step="0.1" name="tax_percent" class="form-control rounded-3" value="<?= htmlspecialchars($settings['tax_percent'] ?? '0') ?>">
+                                <input type="number" step="any" name="tax_percent" class="form-control rounded-3" value="<?= (float)($settings['tax_percent'] ?? 0) ?>">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold">Tarif Ongkir Minimal (Rp)</label>
@@ -249,7 +249,7 @@
                                         <small class="text-muted">Mencegah driver mengambil orderan baru sebelum pengantaran selesai.</small>
                                     </div>
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" name="single_active_order_driver" value="1" <?= (!empty($settings['single_active_order_driver']) || !isset($settings['single_active_order_driver'])) ? 'checked' : '' ?> style="width: 44px; height: 22px;">
+                                        <input class="form-check-input" type="checkbox" name="single_active_order_driver" value="1" <?= (!isset($settings['single_active_order_driver']) || $settings['single_active_order_driver'] == '1') ? 'checked' : '' ?> style="width: 44px; height: 22px;">
                                     </div>
                                 </div>
                             </div>
