@@ -254,7 +254,6 @@ async function syncDriverLiveDashboard() {
     prevActiveOrderStatus = currentActiveStatus;
 
     // 4. Sync Available Orders in Radar
-    const availableCount = data.available_count || 0;
     const badgeEl = document.getElementById('radarOrderCountBadge');
     if (badgeEl) {
       if (!data.has_active_order && data.is_online && availableCount > 0) {
