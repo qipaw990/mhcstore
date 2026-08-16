@@ -119,6 +119,55 @@ class Database
                   KEY `idx_wr_user` (`user_id`, `user_type`),
                   KEY `idx_wr_status` (`status`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+
+                // Auto-heal orphaned withdrawal transactions if any
+                $orphans = $this->pdo->query("
+                    SELECT wt.*, w.user_id, w.user_type, u.name as user_name
+                    FROM `wallet_transactions` wt
+                    JOIN `wallets` w ON wt.wallet_id = w.id
+                    LEFT JOIN `users` u ON w.user_id = u.id
+                    LEFT JOIN `withdraw_requests` wr ON (wr.withdraw_code = wt.reference_id OR (wr.user_id = w.user_id AND wr.amount = wt.amount))
+                    WHERE wt.category = 'withdrawal' AND wr.id IS NULL
+                ")->fetchAll(PDO::FETCH_ASSOC);
+
+                foreach ($orphans as $orphan) {
+                    $code = (!empty($orphan['reference_id']) && str_starts_with($orphan['reference_id'], 'WD-')) 
+                        ? $orphan['reference_id'] 
+                        : ('WD-' . date('Ymd', strtotime($orphan['created_at'])) . '-' . strtoupper(substr(uniqid(), -5)));
+                    
+                    $desc = $orphan['description'] ?? '';
+                    $bank = 'DANA';
+                    $acc = '083153444251';
+                    if (preg_match('/\((.+?)\s*-\s*(.+?)\)/', $desc, $matches)) {
+                        $bank = trim($matches[1]);
+                        $acc = trim($matches[2]);
+                    }
+                    $holder = $orphan['user_name'] ?: 'Mitra Driver';
+                    $userType = in_array($orphan['user_type'], ['vendor', 'delivery_man']) ? $orphan['user_type'] : 'delivery_man';
+
+                    $stmt = $this->pdo->prepare("
+                        INSERT INTO `withdraw_requests` 
+                        (`withdraw_code`, `user_id`, `user_type`, `amount`, `bank_name`, `account_number`, `account_holder`, `status`, `requested_at`)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+                    ");
+                    $stmt->execute([
+                        $code,
+                        $orphan['user_id'],
+                        $userType,
+                        $orphan['amount'],
+                        $bank,
+                        $acc,
+                        $holder,
+                        $orphan['created_at'] ?: date('Y-m-d H:i:s')
+                    ]);
+
+                    // Sync total_withdrawn in wallets
+                    $this->pdo->prepare("
+                        UPDATE `wallets` SET `total_withdrawn` = (
+                            SELECT COALESCE(SUM(amount), 0) FROM `withdraw_requests` WHERE `user_id` = ? AND `status` != 'rejected'
+                        ) WHERE `user_id` = ?
+                    ")->execute([$orphan['user_id'], $orphan['user_id']]);
+                }
             } catch (Exception $e) {}
 
         } catch (Exception $e) {
