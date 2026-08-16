@@ -178,10 +178,43 @@ function initParcelMap() {
     pickupMarker = L.marker([pLat, pLng], { icon: pickupIcon, draggable: true }).addTo(pMap).bindPopup('<b>Titik Jemput Barang (Pengirim)</b>').openPopup();
     destMarker = L.marker([dLat, dLng], { icon: destIcon, draggable: true }).addTo(pMap).bindPopup('<b>Titik Tujuan (Penerima)</b>');
 
+    let pickupGeocodeTimer = null;
+    let destGeocodeTimer = null;
+
+    function reverseGeocode(lat, lng, targetInputId, isPickup = true) {
+        let timer = isPickup ? pickupGeocodeTimer : destGeocodeTimer;
+        if (timer) clearTimeout(timer);
+
+        const newTimer = setTimeout(async () => {
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`, {
+                    headers: { 'Accept-Language': 'id-ID,id;q=0.9' }
+                });
+                const data = await res.json();
+                if (data && data.display_name) {
+                    const input = document.getElementById(targetInputId);
+                    if (input) {
+                        let cleanAddr = data.display_name
+                            .replace(/, Indonesia$/i, '')
+                            .replace(/, Jawa Barat$/i, '')
+                            .replace(/, Kabupaten Bandung$/i, '');
+                        input.value = cleanAddr;
+                    }
+                }
+            } catch (err) {
+                console.warn('[ReverseGeocode] Error:', err);
+            }
+        }, 400);
+
+        if (isPickup) pickupGeocodeTimer = newTimer;
+        else destGeocodeTimer = newTimer;
+    }
+
     pickupMarker.on('dragend', function (e) {
         const pos = e.target.getLatLng();
         document.getElementById('pickup_lat').value = pos.lat.toFixed(6);
         document.getElementById('pickup_lng').value = pos.lng.toFixed(6);
+        reverseGeocode(pos.lat, pos.lng, 'pickup_address', true);
         redrawParcelRoute();
     });
 
@@ -189,6 +222,7 @@ function initParcelMap() {
         const pos = e.target.getLatLng();
         document.getElementById('dest_lat').value = pos.lat.toFixed(6);
         document.getElementById('dest_lng').value = pos.lng.toFixed(6);
+        reverseGeocode(pos.lat, pos.lng, 'destination_address', false);
         redrawParcelRoute();
     });
 
@@ -258,6 +292,9 @@ function getParcelGps(isSilent = false) {
                     pickupMarker.setLatLng([lat, lng]);
                     document.getElementById('pickup_lat').value = lat.toFixed(6);
                     document.getElementById('pickup_lng').value = lng.toFixed(6);
+                    if (typeof reverseGeocode === 'function') {
+                        reverseGeocode(lat, lng, 'pickup_address', true);
+                    }
                     redrawParcelRoute();
                 }
                 if (!isSilent) {

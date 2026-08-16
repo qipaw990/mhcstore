@@ -198,10 +198,36 @@ function initCheckoutMap() {
     }, 500);
 }
 
+let geocodeTimer = null;
+function reverseGeocode(lat, lng, targetInputId) {
+    if (geocodeTimer) clearTimeout(geocodeTimer);
+    geocodeTimer = setTimeout(async () => {
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`, {
+                headers: { 'Accept-Language': 'id-ID,id;q=0.9' }
+            });
+            const data = await res.json();
+            if (data && data.display_name) {
+                const input = document.getElementById(targetInputId);
+                if (input) {
+                    let cleanAddr = data.display_name
+                        .replace(/, Indonesia$/i, '')
+                        .replace(/, Jawa Barat$/i, '')
+                        .replace(/, Kabupaten Bandung$/i, '');
+                    input.value = cleanAddr;
+                }
+            }
+        } catch (err) {
+            console.warn('[ReverseGeocode] Error:', err);
+        }
+    }, 400);
+}
+
 function updateLocationData(lat, lng) {
     document.getElementById('input-lat').value = lat.toFixed(6);
     document.getElementById('input-lng').value = lng.toFixed(6);
     updateRouteAndDistance(lat, lng);
+    reverseGeocode(lat, lng, 'input-address');
 }
 
 function updateRouteAndDistance(lat, lng) {
