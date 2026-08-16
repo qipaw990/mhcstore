@@ -44,6 +44,37 @@ class AuthService
 
     public function verifyOtp(string $inputOtp): array
     {
+        // Handle pending profile email update verification
+        if (!empty($_SESSION['pending_profile_update'])) {
+            $pending = $_SESSION['pending_profile_update'];
+
+            if (time() > $pending['expires_at']) {
+                throw new Exception("Kode OTP telah kedaluwarsa. Silakan minta kode baru.");
+            }
+
+            if (trim($inputOtp) !== (string)$pending['otp']) {
+                throw new Exception("Kode OTP yang Anda masukkan tidak cocok.");
+            }
+
+            $userId = $pending['user_id'];
+            $apiToken = bin2hex(random_bytes(32));
+
+            $this->userModel->update($userId, [
+                'name'              => $pending['name'],
+                'email'             => $pending['new_email'],
+                'phone'             => $pending['phone'],
+                'email_verified_at' => date('Y-m-d H:i:s'),
+                'api_token'         => $apiToken
+            ]);
+
+            $user = $this->userModel->find($userId);
+
+            unset($_SESSION['pending_profile_update'], $_SESSION['pending_otp']);
+            $_SESSION['user'] = $user;
+
+            return $user;
+        }
+
         if (empty($_SESSION['pending_otp'])) {
             throw new Exception("Sesi verifikasi tidak ditemukan atau telah kedaluwarsa. Silakan masuk kembali.");
         }
@@ -83,6 +114,23 @@ class AuthService
 
     public function resendOtp(): string
     {
+        if (!empty($_SESSION['pending_profile_update'])) {
+            $newOtp = sprintf("%06d", rand(100000, 999999));
+            $_SESSION['pending_profile_update']['otp'] = $newOtp;
+            $_SESSION['pending_profile_update']['expires_at'] = time() + 600;
+            if (isset($_SESSION['pending_otp'])) {
+                $_SESSION['pending_otp']['otp'] = $newOtp;
+            }
+
+            EmailService::sendOtpEmail(
+                $_SESSION['pending_profile_update']['new_email'],
+                $_SESSION['pending_profile_update']['name'],
+                $newOtp
+            );
+
+            return $newOtp;
+        }
+
         if (empty($_SESSION['pending_otp'])) {
             throw new Exception("Sesi verifikasi tidak ditemukan. Silakan masuk kembali.");
         }

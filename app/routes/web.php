@@ -33,6 +33,7 @@ Router::get('/search', [CustomerController::class, 'search']);
 Router::get('/stores/{id}', [CustomerController::class, 'storeDetail']);
 Router::get('/parcel', [CustomerController::class, 'parcel']);
 Router::get('/profile', [CustomerController::class, 'profile']);
+Router::post('/profile/update', [CustomerController::class, 'updateProfile'], ['AuthMiddleware']);
 Router::get('/wallet', [CustomerController::class, 'wallet'], ['AuthMiddleware']);
 Router::post('/wallet/topup-midtrans', [PaymentController::class, 'topupSnap'], ['AuthMiddleware']);
 Router::post('/payment/verify', [PaymentController::class, 'verifyClientCallback']);

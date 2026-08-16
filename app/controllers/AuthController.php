@@ -55,22 +55,23 @@ class AuthController extends Controller
 
     public function showVerifyOtp(): void
     {
-        if ($this->isAuth()) {
+        if ($this->isAuth() && empty($_SESSION['pending_profile_update'])) {
             $role = $_SESSION['user']['role'];
             $this->redirectToRoleDashboard($role);
             return;
         }
 
-        if (empty($_SESSION['pending_otp'])) {
+        if (empty($_SESSION['pending_otp']) && empty($_SESSION['pending_profile_update'])) {
             $_SESSION['error'] = 'Silakan masuk terlebih dahulu.';
             $this->redirect('login');
             return;
         }
 
-        $pending = $_SESSION['pending_otp'];
+        $pending = $_SESSION['pending_profile_update'] ?? $_SESSION['pending_otp'];
+        $email = $pending['new_email'] ?? $pending['email'];
         $this->view('auth.verify_otp', [
             'title'   => 'Verifikasi Email OTP - CicalengkaGO',
-            'email'   => $pending['email'],
+            'email'   => $email,
             'name'    => $pending['name'],
             'demoOtp' => $pending['otp']
         ], 'auth_layout');

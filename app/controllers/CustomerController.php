@@ -186,4 +186,75 @@ class CustomerController extends Controller
             'active_tab'    => 'profile'
         ], 'customer_layout');
     }
+
+    public function updateProfile(): void
+    {
+        $userId = auth_id();
+        if (!$userId) {
+            $this->redirect('login');
+            return;
+        }
+
+        $data = $this->getPost();
+        $name  = sanitize($data['name'] ?? '');
+        $email = sanitize($data['email'] ?? '');
+        $phone = sanitize($data['phone'] ?? '');
+
+        if (empty($name) || empty($email) || empty($phone)) {
+            $_SESSION['error'] = 'Nama, email, dan nomor HP wajib diisi.';
+            $this->redirect('profile');
+            return;
+        }
+
+        $currentUser = auth_user();
+
+        // Check if email is being updated
+        if (strtolower($email) !== strtolower($currentUser['email'] ?? '')) {
+            $existing = Database::fetchOne("SELECT id FROM users WHERE email = ? AND id != ? LIMIT 1", [$email, $userId]);
+            if ($existing) {
+                $_SESSION['error'] = 'Alamat email ini sudah terdaftar pada akun lain.';
+                $this->redirect('profile');
+                return;
+            }
+
+            // Generate 6-digit OTP code for new email verification
+            $otp = sprintf("%06d", rand(100000, 999999));
+
+            $_SESSION['pending_profile_update'] = [
+                'user_id'    => $userId,
+                'name'       => $name,
+                'phone'      => $phone,
+                'new_email'  => $email,
+                'otp'        => $otp,
+                'expires_at' => time() + 600
+            ];
+
+            $_SESSION['pending_otp'] = [
+                'user_id'    => $userId,
+                'name'       => $name,
+                'email'      => $email,
+                'role'       => $currentUser['role'],
+                'otp'        => $otp,
+                'expires_at' => time() + 600
+            ];
+
+            \App\Services\EmailService::sendOtpEmail($email, $name, $otp);
+
+            $_SESSION['info'] = "Kode verifikasi OTP dikirimkan ke email baru Anda ({$email}). Masukkan kode untuk konfirmasi perubahan profil.";
+            $this->redirect('verify-otp');
+            return;
+        }
+
+        // Email did not change, update directly
+        (new \App\Models\User())->update($userId, [
+            'name'  => $name,
+            'phone' => $phone
+        ]);
+
+        $_SESSION['user']['name'] = $name;
+        $_SESSION['user']['phone'] = $phone;
+
+        $_SESSION['success'] = 'Profil Anda berhasil diperbarui!';
+        $this->redirect('profile');
+    }
 }

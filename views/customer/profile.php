@@ -21,9 +21,9 @@
                     <div class="text-muted small" style="font-size: 11px;"><?= htmlspecialchars($user['email']) ?></div>
                 <?php endif; ?>
             </div>
-            <a href="<?= $baseUrl ?>/profile" class="btn btn-light btn-sm rounded-circle border">
-                <i class="bi bi-pencil-fill text-muted" style="font-size: 12px;"></i>
-            </a>
+            <button type="button" class="btn btn-light btn-sm rounded-circle border shadow-xs" data-bs-toggle="modal" data-bs-target="#editProfileModal" title="Edit Profil">
+                <i class="bi bi-pencil-fill text-danger" style="font-size: 12px;"></i>
+            </button>
         </div>
 
         <!-- CicalengkaPay Quick Card -->
@@ -98,3 +98,47 @@
         </div>
     <?php endif; ?>
 </div>
+
+<!-- Modal Edit Profil -->
+<?php if ($user): ?>
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h6 class="modal-title fw-bold text-dark" id="editProfileModalLabel">
+                    <i class="bi bi-person-gear me-1 text-danger"></i> Edit Profil Saya
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="<?= $baseUrl ?>/profile/update" method="POST">
+                <div class="modal-body py-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">Nama Lengkap</label>
+                        <input type="text" name="name" class="form-control rounded-3" value="<?= htmlspecialchars($user['name'] ?? '') ?>" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">Alamat Email (Gmail)</label>
+                        <input type="email" name="email" class="form-control rounded-3" value="<?= htmlspecialchars($user['email'] ?? '') ?>" required>
+                        <div class="alert alert-warning border-0 rounded-3 p-2 mt-2 mb-0 d-flex align-items-start gap-2" style="font-size: 11px;">
+                            <i class="bi bi-info-circle-fill text-warning fs-6 mt-0.5"></i>
+                            <div>
+                                Jika Anda mengubah alamat email, sistem akan mengirimkan <strong>kode OTP verifikasi</strong> ke email baru Anda sebelum perubahan diterapkan.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">Nomor Telepon / WhatsApp</label>
+                        <input type="text" name="phone" class="form-control rounded-3" value="<?= htmlspecialchars($user['phone'] ?? '') ?>" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill btn-sm px-3" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn text-white rounded-pill btn-sm px-4 fw-bold" style="background:#EE2737;">
+                        <i class="bi bi-floppy-fill me-1"></i> Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
