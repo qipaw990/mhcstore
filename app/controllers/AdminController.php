@@ -233,20 +233,29 @@ class AdminController extends Controller
         $data = $this->getPost();
         $id = !empty($data['id']) ? (int)$data['id'] : null;
 
+        $rawCoords = $data['coordinates_json'] ?? '[]';
+        // Validate and ensure proper JSON format
+        $decoded = json_decode($rawCoords, true);
+        if (!is_array($decoded)) {
+            $rawCoords = '[]';
+        }
+
         $zoneData = [
             'name'                   => sanitize($data['name'] ?? 'Zona Cicalengka'),
-            'coordinates_json'       => $data['coordinates_json'] ?? '[]',
+            'coordinates_json'       => $rawCoords,
             'min_delivery_charge'    => (float)($data['min_delivery_charge'] ?? 5000),
             'per_km_delivery_charge' => (float)($data['per_km_delivery_charge'] ?? 2500),
             'center_latitude'        => (float)($data['center_latitude'] ?? -6.9840),
             'center_longitude'       => (float)($data['center_longitude'] ?? 107.8340),
-            'status'                 => 1
+            'status'                 => isset($data['status']) ? (int)$data['status'] : 1
         ];
 
         if ($id) {
             (new Zone())->update($id, $zoneData);
+            $_SESSION['success'] = 'Cakupan wilayah dan tarif zona berhasil diperbarui!';
         } else {
             (new Zone())->create($zoneData);
+            $_SESSION['success'] = 'Zona pengantaran baru berhasil ditambahkan!';
         }
 
         $this->redirect('admin/zones');

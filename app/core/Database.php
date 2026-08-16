@@ -79,6 +79,14 @@ class Database
                     $sql = file_get_contents($seedersFile);
                     $this->pdo->exec($sql);
                 }
+            } else {
+                // Ensure orders table columns allow dynamic payment methods without truncation
+                try {
+                    $this->pdo->exec("ALTER TABLE `orders` MODIFY COLUMN `payment_method` VARCHAR(50) NOT NULL DEFAULT 'cod'");
+                    $this->pdo->exec("ALTER TABLE `orders` MODIFY COLUMN `payment_status` VARCHAR(30) NOT NULL DEFAULT 'unpaid'");
+                } catch (Exception $e) {
+                    // Ignore if already modified or restricted
+                }
             }
         } catch (Exception $e) {
             error_log("Auto Migration Error: " . $e->getMessage());
