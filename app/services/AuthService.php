@@ -24,15 +24,80 @@ class AuthService
             throw new Exception("Email/No. HP atau password salah.");
         }
 
-        // Generate or refresh API token
+        // Generate 6-digit OTP code for email verification
+        $otp = sprintf("%06d", rand(100000, 999999));
+
+        $_SESSION['pending_otp'] = [
+            'user_id'    => $user['id'],
+            'name'       => $user['name'],
+            'email'      => $user['email'],
+            'role'       => $user['role'],
+            'otp'        => $otp,
+            'expires_at' => time() + 600, // 10 minutes
+        ];
+
+        // Send OTP Email
+        EmailService::sendOtpEmail($user['email'], $user['name'], $otp);
+
+        return $user;
+    }
+
+    public function verifyOtp(string $inputOtp): array
+    {
+        if (empty($_SESSION['pending_otp'])) {
+            throw new Exception("Sesi verifikasi tidak ditemukan atau telah kedaluwarsa. Silakan masuk kembali.");
+        }
+
+        $pending = $_SESSION['pending_otp'];
+
+        if (time() > $pending['expires_at']) {
+            throw new Exception("Kode OTP telah kedaluwarsa. Silakan klik 'Kirim Ulang OTP'.");
+        }
+
+        if (trim($inputOtp) !== (string)$pending['otp']) {
+            throw new Exception("Kode OTP yang Anda masukkan tidak cocok.");
+        }
+
+        // Fetch fresh user data
+        $user = $this->userModel->find($pending['user_id']);
+        if (!$user) {
+            throw new Exception("Pengguna tidak ditemukan.");
+        }
+
+        // Mark email as verified & generate fresh API token
         $apiToken = bin2hex(random_bytes(32));
-        $this->userModel->update($user['id'], ['api_token' => $apiToken]);
+        $this->userModel->update($user['id'], [
+            'email_verified_at' => date('Y-m-d H:i:s'),
+            'api_token'         => $apiToken
+        ]);
+
+        $user['email_verified_at'] = date('Y-m-d H:i:s');
         $user['api_token'] = $apiToken;
 
-        // Set session
+        // Clear OTP state & set active session
+        unset($_SESSION['pending_otp']);
         $_SESSION['user'] = $user;
 
         return $user;
+    }
+
+    public function resendOtp(): string
+    {
+        if (empty($_SESSION['pending_otp'])) {
+            throw new Exception("Sesi verifikasi tidak ditemukan. Silakan masuk kembali.");
+        }
+
+        $newOtp = sprintf("%06d", rand(100000, 999999));
+        $_SESSION['pending_otp']['otp'] = $newOtp;
+        $_SESSION['pending_otp']['expires_at'] = time() + 600;
+
+        EmailService::sendOtpEmail(
+            $_SESSION['pending_otp']['email'],
+            $_SESSION['pending_otp']['name'],
+            $newOtp
+        );
+
+        return $newOtp;
     }
 
     public function registerCustomer(array $data): array
@@ -64,8 +129,21 @@ class AuthService
         ]);
 
         $user = $this->userModel->find($userId);
-        $_SESSION['user'] = $user;
+
+        // Initiate OTP for email verification
+        $otp = sprintf("%06d", rand(100000, 999999));
+        $_SESSION['pending_otp'] = [
+            'user_id'    => $user['id'],
+            'name'       => $user['name'],
+            'email'      => $user['email'],
+            'role'       => $user['role'],
+            'otp'        => $otp,
+            'expires_at' => time() + 600
+        ];
+
+        EmailService::sendOtpEmail($user['email'], $user['name'], $otp);
 
         return $user;
     }
 }
+

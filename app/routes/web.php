@@ -18,6 +18,9 @@ use App\Controllers\AdminController;
 // ==========================================
 Router::get('/login', [AuthController::class, 'showLogin']);
 Router::post('/login', [AuthController::class, 'handleLogin']);
+Router::get('/verify-otp', [AuthController::class, 'showVerifyOtp']);
+Router::post('/verify-otp', [AuthController::class, 'handleVerifyOtp']);
+Router::post('/resend-otp', [AuthController::class, 'handleResendOtp']);
 Router::get('/register', [AuthController::class, 'showRegister']);
 Router::post('/register', [AuthController::class, 'handleRegister']);
 Router::get('/logout', [AuthController::class, 'logout']);
