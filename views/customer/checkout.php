@@ -158,27 +158,29 @@ function initCheckoutMap() {
         attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // Store Marker (Red)
+    // Store Marker (Distinct Red Store Badge)
     const storeIcon = L.divIcon({
-        className: 'custom-pin',
-        html: '<div style="background:#EE2737;color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.3);"><i class="bi bi-shop"></i></div>',
-        iconSize: [30, 30],
-        iconAnchor: [15, 15]
-    });
-    storeMarker = L.marker([STORE_LAT, STORE_LNG], { icon: storeIcon }).addTo(map).bindPopup(`<b>${STORE_NAME}</b> (Titik Toko)`);
-
-    // Customer Marker (CicalengkaGO Red Draggable)
-    const custIcon = L.divIcon({
-        className: 'custom-pin',
-        html: '<div style="background:#EE2737;color:white;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 4px 10px rgba(238,39,55,0.4);"><i class="bi bi-geo-alt-fill"></i></div>',
+        className: 'custom-pin-store',
+        html: '<div style="background:#101820;color:#EE2737;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 3px 10px rgba(0,0,0,0.35);font-size:16px;"><i class="bi bi-shop"></i></div>',
         iconSize: [34, 34],
         iconAnchor: [17, 17]
+    });
+    storeMarker = L.marker([STORE_LAT, STORE_LNG], { icon: storeIcon })
+        .addTo(map)
+        .bindPopup(`<div style="font-size:12px;"><b>🏪 Resto / Toko:</b><br>${STORE_NAME}</div>`);
+
+    // Customer Marker (CicalengkaGO Red Draggable Pin)
+    const custIcon = L.divIcon({
+        className: 'custom-pin-customer',
+        html: '<div style="background:#EE2737;color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 4px 12px rgba(238,39,55,0.45);font-size:18px;"><i class="bi bi-geo-alt-fill"></i></div>',
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
     });
 
     customerMarker = L.marker([initialLat, initialLng], {
         icon: custIcon,
         draggable: true
-    }).addTo(map).bindPopup('<b>Lokasi Pengantaran Anda</b> (Geser untuk ubah)').openPopup();
+    }).addTo(map).bindPopup('<div style="font-size:12px;"><b>📍 Lokasi Pengantaran (Rumah Anda)</b><br><span style="color:#666;">Geser pin ini jika lokasi belum pas</span></div>').openPopup();
 
     customerMarker.on('dragend', function (e) {
         const pos = e.target.getLatLng();

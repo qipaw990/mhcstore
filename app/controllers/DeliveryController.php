@@ -130,11 +130,15 @@ class DeliveryController extends Controller
         $unreadChats = 0;
         if ($activeOrder) {
             $chatCount = Database::query(
-                "SELECT COUNT(*) as unread FROM `chats` WHERE order_id = ? AND sender_id != ? AND is_read = 0",
+                "SELECT COUNT(*) as unread FROM order_chats WHERE order_id = ? AND sender_id != ? AND is_read = 0",
                 [$activeOrder['id'], $userId]
             );
             $unreadChats = (int)($chatCount[0]['unread'] ?? 0);
         }
+
+        $latestDbOrders = Database::query(
+            "SELECT id, order_code, customer_id, store_id, delivery_man_id, order_status, payment_status, payment_method, created_at FROM `orders` ORDER BY `id` DESC LIMIT 5"
+        );
 
         $this->successResponse('Live dashboard sync', [
             'is_online'        => (int)$dm['is_online'],
@@ -145,6 +149,13 @@ class DeliveryController extends Controller
             'wallet_balance'   => (float)($wallet['balance'] ?? 0),
             'total_orders'     => (int)($dm['total_orders'] ?? 0),
             'unread_chats'     => $unreadChats,
+            'debug_db_orders'  => $latestDbOrders,
+            'debug_dm'         => [
+                'id'               => $dm['id'],
+                'user_id'          => $dm['user_id'],
+                'is_online'        => $dm['is_online'],
+                'current_order_id' => $dm['current_order_id']
+            ]
         ]);
     }
 

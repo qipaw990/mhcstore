@@ -19,6 +19,7 @@ class Cart extends Model
 
         $sql = "SELECT c.*, p.name as product_name, p.image as product_image, p.price as base_price,
                        s.name as store_name, s.logo as store_logo, s.delivery_fee, s.minimum_order,
+                       s.latitude as store_lat, s.longitude as store_lng, s.address as store_address,
                        pv.name as variation_name, pv.price as variation_price
                 FROM `carts` c
                 JOIN `products` p ON c.product_id = p.id
@@ -45,7 +46,10 @@ class Cart extends Model
                     'name' => $item['store_name'],
                     'logo' => $item['store_logo'],
                     'delivery_fee' => (float)$item['delivery_fee'],
-                    'minimum_order' => (float)$item['minimum_order']
+                    'minimum_order' => (float)$item['minimum_order'],
+                    'latitude' => !empty($item['store_lat']) ? (float)$item['store_lat'] : -6.9835,
+                    'longitude' => !empty($item['store_lng']) ? (float)$item['store_lng'] : 107.8335,
+                    'address' => $item['store_address'] ?? ''
                 ];
             }
         }
