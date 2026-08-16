@@ -79,11 +79,25 @@ class Database
                     $sql = file_get_contents($seedersFile);
                     $this->pdo->exec($sql);
                 }
-            } else {
                 // Ensure orders table columns allow dynamic payment methods without truncation
                 try {
                     $this->pdo->exec("ALTER TABLE `orders` MODIFY COLUMN `payment_method` VARCHAR(50) NOT NULL DEFAULT 'cod'");
                     $this->pdo->exec("ALTER TABLE `orders` MODIFY COLUMN `payment_status` VARCHAR(30) NOT NULL DEFAULT 'unpaid'");
+                    
+                    // Guarantee chats table existence
+                    $this->pdo->exec("CREATE TABLE IF NOT EXISTS `chats` (
+                      `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                      `order_id` bigint(20) unsigned NOT NULL,
+                      `sender_id` bigint(20) unsigned NOT NULL,
+                      `receiver_id` bigint(20) unsigned NOT NULL DEFAULT 0,
+                      `message` text NOT NULL,
+                      `file` varchar(255) DEFAULT NULL,
+                      `is_read` tinyint(1) NOT NULL DEFAULT 0,
+                      `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+                      PRIMARY KEY (`id`),
+                      KEY `idx_chat_order` (`order_id`),
+                      KEY `idx_chat_pair` (`sender_id`,`receiver_id`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
                 } catch (Exception $e) {
                     // Ignore if already modified or restricted
                 }

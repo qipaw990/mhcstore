@@ -17,11 +17,11 @@
             </div>
             <div>
                 <div class="fw-bold small text-dark">Customer Care CicalengkaGO</div>
-                <div class="text-muted" style="font-size: 11px;">Bantuan pesanan & driver 24/7</div>
+                <div class="text-muted" style="font-size: 11px;">Bantuan pesanan & kurir 24/7</div>
             </div>
         </div>
-        <a href="https://wa.me/6281234567890?text=Halo%20Admin%20CicalengkaGO,%20saya%20butuh%20bantuan" target="_blank" class="btn btn-sm rounded-pill fw-bold px-3 text-white" style="background:#25D366; font-size: 11px;">
-            <i class="bi bi-whatsapp me-1"></i> Chat
+        <a href="javascript:void(0)" onclick="Swal.fire({title:'Pusat Bantuan', text:'Tim Customer Care CicalengkaGO siap melayani bantuan pesanan Anda 24 jam.', icon:'info', confirmButtonColor:'#EE2737'})" class="btn btn-sm rounded-pill fw-bold px-3 text-white" style="background:#EE2737; font-size: 11px;">
+            <i class="bi bi-headset me-1"></i> Bantuan
         </a>
     </div>
 
@@ -31,7 +31,7 @@
             <h6 class="fw-bold mb-2.5" style="font-size: 13px; color: var(--gojek-charcoal);"><i class="bi bi-chat-dots-fill text-danger me-1"></i> Percakapan Aktif Driver</h6>
             <div class="d-flex flex-column gap-2">
                 <?php foreach ($active_chats as $chat): ?>
-                    <a href="<?= $baseUrl ?>/orders/<?= htmlspecialchars($chat['order_code']) ?>/tracking" class="p-3 bg-white rounded-4 border shadow-sm d-flex align-items-center justify-content-between text-decoration-none text-dark position-relative hover-shadow transition">
+                    <a href="<?= $baseUrl ?>/orders/<?= htmlspecialchars($chat['order_code']) ?>/tracking?open_chat=1" class="p-3 bg-white rounded-4 border shadow-sm d-flex align-items-center justify-content-between text-decoration-none text-dark position-relative hover-shadow transition">
                         <div class="d-flex align-items-center gap-3">
                             <div class="position-relative">
                                 <img src="<?= $baseUrl ?>/<?= htmlspecialchars($chat['dm_avatar'] ?? 'assets/images/users/driver.png') ?>" alt="Driver" class="rounded-circle border border-2 border-danger" style="width: 44px; height: 44px; object-fit: cover;">

@@ -44,7 +44,7 @@ class ChatController extends Controller
         }
 
         $isCustomer = ((int)$order['cust_user_id'] === $userId);
-        $isDriver   = (!empty($order['dm_user_id']) && (int)$order['dm_user_id'] === $userId);
+        $isDriver   = (!empty($order['dm_user_id']) && (int)$order['dm_user_id'] === $userId) || (auth_role() === 'delivery_man');
         $isAdmin    = (auth_user()['role'] ?? '') === 'admin';
 
         if (!$isCustomer && !$isDriver && !$isAdmin) {
@@ -73,9 +73,9 @@ class ChatController extends Controller
                 ];
             } else {
                 $partner = [
-                    'name'           => 'Belum ada Driver',
+                    'name'           => 'Mitra Kurir CicalengkaGO',
                     'role'           => 'driver',
-                    'role_label'     => 'Menunggu Driver',
+                    'role_label'     => 'Menunggu Konfirmasi Kurir',
                     'avatar'         => 'assets/images/users/driver.png',
                     'phone'          => '',
                     'vehicle_info'   => 'Mencari kurir terdekat...'
@@ -89,6 +89,15 @@ class ChatController extends Controller
                 'avatar'       => $order['customer_avatar'] ?? 'assets/images/users/customer.png',
                 'phone'        => $order['customer_phone'] ?? '',
                 'vehicle_info' => 'Tujuan Pengantaran'
+            ];
+        } else {
+            $partner = [
+                'name'         => $order['customer_name'] ?? 'Pelanggan',
+                'role'         => 'admin',
+                'role_label'   => 'Administrator',
+                'avatar'       => 'assets/images/users/customer.png',
+                'phone'        => '',
+                'vehicle_info' => 'Pesanan #' . $order['order_code']
             ];
         }
 
@@ -142,7 +151,7 @@ class ChatController extends Controller
         }
 
         $isCustomer = ((int)$order['cust_user_id'] === $userId);
-        $isDriver   = (!empty($order['dm_user_id']) && (int)$order['dm_user_id'] === $userId);
+        $isDriver   = (!empty($order['dm_user_id']) && (int)$order['dm_user_id'] === $userId) || (auth_role() === 'delivery_man');
         $isAdmin    = (auth_user()['role'] ?? '') === 'admin';
 
         if (!$isCustomer && !$isDriver && !$isAdmin) {
@@ -152,15 +161,10 @@ class ChatController extends Controller
 
         $receiverId = 0;
         if ($isCustomer) {
-            if (empty($order['dm_user_id'])) {
-                $this->errorResponse('Kurir belum mengambil pesanan ini. Chat akan aktif setelah kurir ditugaskan.');
-                return;
-            }
-            $receiverId = (int)$order['dm_user_id'];
+            $receiverId = !empty($order['dm_user_id']) ? (int)$order['dm_user_id'] : 0;
         } elseif ($isDriver) {
             $receiverId = (int)$order['cust_user_id'];
         } elseif ($isAdmin) {
-            // If admin, send to driver if available or customer
             $receiverId = !empty($order['dm_user_id']) ? (int)$order['dm_user_id'] : (int)$order['cust_user_id'];
         }
 

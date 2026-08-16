@@ -133,8 +133,8 @@
                                 <i class="bi bi-geo-alt-fill me-1"></i> LOKASI TOKO YANG HARUS DITUJU
                             </span>
                             <?php if (!empty($active_order['store_phone'])): ?>
-                                <a href="https://wa.me/<?= preg_replace('/^0/', '62', $active_order['store_phone']) ?>" target="_blank" class="btn btn-outline-success btn-sm rounded-pill px-2.5 py-0.5 fw-bold" style="font-size: 11px;">
-                                    <i class="bi bi-whatsapp me-1"></i> WA Toko
+                                <a href="tel:<?= htmlspecialchars($active_order['store_phone']) ?>" class="btn btn-outline-secondary btn-sm rounded-pill px-2.5 py-0.5 fw-bold" style="font-size: 11px;">
+                                    <i class="bi bi-telephone me-1"></i> Telp Toko
                                 </a>
                             <?php endif; ?>
                         </div>
@@ -195,13 +195,13 @@
                                 <i class="bi bi-geo-alt-fill me-1"></i> LOKASI ANTAR PELANGGAN
                             </span>
                             <div class="d-flex gap-1.5 align-items-center">
-                                <button type="button" onclick="openDriverChatModal('<?= htmlspecialchars($active_order['order_code']) ?>')" class="btn btn-danger btn-sm rounded-pill px-2.5 py-0.5 fw-bold text-white position-relative shadow-xs" style="background:#EE2737; font-size: 11px;">
-                                    <i class="bi bi-chat-dots-fill me-1"></i> Chat App
+                                <button type="button" onclick="openDriverChatModal('<?= htmlspecialchars($active_order['order_code']) ?>')" class="btn btn-danger btn-sm rounded-pill px-3 py-1 fw-bold text-white position-relative shadow-xs d-flex align-items-center gap-1" style="background:#EE2737; font-size: 11px;">
+                                    <i class="bi bi-chat-dots-fill"></i> Chat App
                                     <span id="driverChatUnreadDot2" class="ccg-unread-dot d-none"></span>
                                 </button>
                                 <?php if (!empty($active_order['customer_phone'])): ?>
-                                    <a href="https://wa.me/<?= preg_replace('/^0/', '62', $active_order['customer_phone']) ?>" target="_blank" class="btn btn-success btn-sm rounded-pill px-2.5 py-0.5 fw-bold" style="font-size: 11px;">
-                                        <i class="bi bi-whatsapp me-1"></i> WA
+                                    <a href="tel:<?= htmlspecialchars($active_order['customer_phone']) ?>" class="btn btn-outline-secondary btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 28px; height: 28px;" title="Telepon Pelanggan">
+                                        <i class="bi bi-telephone-fill" style="font-size: 11px;"></i>
                                     </a>
                                 <?php endif; ?>
                             </div>
@@ -654,11 +654,15 @@ async function handleSendDriverChat(e) {
 
     // Optimistic UI preview
     const chatBody = document.getElementById('dChatBody');
+    let tempBubbleEl = null;
     if (chatBody) {
         const now = new Date();
         const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-        const tempBubble = `
-            <div class="ccg-chat-row outgoing" style="opacity: 0.85;">
+        const emptyState = chatBody.querySelector('.text-center.py-5');
+        if (emptyState) emptyState.remove();
+
+        const tempBubbleHtml = `
+            <div class="ccg-chat-row outgoing ccg-temp-bubble" style="opacity: 0.85;">
                 <div class="ccg-chat-bubble">${escapeHtml(message)}</div>
                 <div class="ccg-chat-meta">
                     <span>${timeStr}</span>
@@ -666,7 +670,8 @@ async function handleSendDriverChat(e) {
                 </div>
             </div>
         `;
-        chatBody.insertAdjacentHTML('beforeend', tempBubble);
+        chatBody.insertAdjacentHTML('beforeend', tempBubbleHtml);
+        tempBubbleEl = chatBody.querySelector('.ccg-temp-bubble');
         chatBody.scrollTop = chatBody.scrollHeight;
     }
 
@@ -687,11 +692,25 @@ async function handleSendDriverChat(e) {
         if (result.success) {
             await fetchDriverChatMessages(true);
         } else {
-            Swal.fire('Gagal Mengirim', result.message || 'Tidak dapat mengirim pesan', 'warning');
+            if (tempBubbleEl) tempBubbleEl.remove();
+            input.value = message;
+            Swal.fire({
+                icon: 'warning',
+                title: 'Pesan Tidak Terkirim',
+                text: result.message || 'Tidak dapat mengirim pesan',
+                confirmButtonColor: '#EE2737'
+            });
         }
     } catch(err) {
         console.error('Driver send error:', err);
-        Swal.fire('Error', 'Gagal terhubung ke server', 'error');
+        if (tempBubbleEl) tempBubbleEl.remove();
+        input.value = message;
+        Swal.fire({
+            icon: 'error',
+            title: 'Koneksi Terputus',
+            text: 'Gagal terhubung ke server',
+            confirmButtonColor: '#EE2737'
+        });
     } finally {
         btn.disabled = false;
         input.focus();

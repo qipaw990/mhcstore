@@ -95,8 +95,8 @@
                         </div>
                         <div>
                             <div class="fw-bold small text-dark"><?= htmlspecialchars($ord['customer_name']) ?></div>
-                            <a href="https://wa.me/<?= preg_replace('/[^0-9]/', '', $ord['customer_phone']) ?>" target="_blank" class="text-success text-decoration-none fw-semibold" style="font-size: 11px;">
-                                <i class="bi bi-whatsapp me-0.5"></i> <?= htmlspecialchars($ord['customer_phone']) ?>
+                            <a href="tel:<?= preg_replace('/[^0-9]/', '', $ord['customer_phone']) ?>" class="text-secondary text-decoration-none fw-semibold" style="font-size: 11px;">
+                                <i class="bi bi-telephone me-0.5"></i> <?= htmlspecialchars($ord['customer_phone']) ?>
                             </a>
                         </div>
                     </div>
@@ -115,8 +115,8 @@
                         </span>
                     </div>
                     <?php if (!empty($ord['dm_phone'])): ?>
-                        <a href="https://wa.me/<?= preg_replace('/[^0-9]/', '', $ord['dm_phone']) ?>" target="_blank" class="btn btn-outline-success btn-sm rounded-pill px-2 py-0.5" style="font-size: 10px;">
-                            <i class="bi bi-whatsapp me-0.5"></i> Hubungi Kurir
+                        <a href="tel:<?= preg_replace('/[^0-9]/', '', $ord['dm_phone']) ?>" class="btn btn-outline-secondary btn-sm rounded-pill px-2 py-0.5" style="font-size: 10px;">
+                            <i class="bi bi-telephone me-0.5"></i> Telp Kurir
                         </a>
                     <?php endif; ?>
                 </div>

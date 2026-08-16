@@ -155,25 +155,33 @@ $isUnpaidOnline = ($order['payment_method'] === 'midtrans' && $order['payment_st
                     </div>
                 </div>
                 <div class="d-flex gap-2 align-items-center">
-                    <button type="button" onclick="openChatModal()" class="btn btn-danger btn-sm rounded-circle d-flex align-items-center justify-content-center shadow-xs position-relative" style="background:#EE2737; width: 38px; height: 38px; border:none;" title="Chat Langsung Driver">
+                    <button type="button" onclick="openChatModal()" class="btn btn-danger btn-sm rounded-pill px-3 py-1.5 d-flex align-items-center justify-content-center shadow-xs position-relative gap-1.5 fw-bold" style="background:#EE2737; border:none; font-size: 12px;" title="Chat Langsung Driver">
                         <i class="bi bi-chat-dots-fill text-white fs-6"></i>
+                        <span>Chat Kurir</span>
                         <span id="chatUnreadDot" class="ccg-unread-dot d-none"></span>
                     </button>
                     <?php if (!empty($order['dm_phone'])): ?>
-                        <a href="https://wa.me/<?= preg_replace('/^0/', '62', $order['dm_phone']) ?>?text=Halo%20Kurir%20CicalengkaGO%20Pesanan%20<?= $order['order_code'] ?>" target="_blank" class="btn btn-success btn-sm rounded-circle d-flex align-items-center justify-content-center shadow-xs" style="background:#25D366; width: 38px; height: 38px; border:none;" title="Chat WhatsApp">
-                            <i class="bi bi-whatsapp fs-6"></i>
-                        </a>
-                        <a href="tel:<?= htmlspecialchars($order['dm_phone']) ?>" class="btn btn-light btn-sm rounded-circle border d-flex align-items-center justify-content-center shadow-xs" style="width: 38px; height: 38px;" title="Telepon">
-                            <i class="bi bi-telephone text-dark fs-6"></i>
+                        <a href="tel:<?= htmlspecialchars($order['dm_phone']) ?>" class="btn btn-light btn-sm rounded-circle border d-flex align-items-center justify-content-center shadow-xs" style="width: 36px; height: 36px;" title="Telepon Kurir">
+                            <i class="bi bi-telephone-fill text-dark" style="font-size: 13px;"></i>
                         </a>
                     <?php endif; ?>
                 </div>
             </div>
         </div>
         <?php else: ?>
-        <div class="p-3 bg-warning-subtle text-warning-emphasis rounded-4 border border-warning mb-3 d-flex align-items-center gap-3">
-            <div class="spinner-border spinner-border-sm text-warning" role="status"></div>
-            <div class="small fw-semibold">Sistem sedang mencarikan mitra kurir terdekat di Cicalengka...</div>
+        <div class="p-3 bg-white rounded-4 border shadow-sm mb-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2.5">
+                    <div class="spinner-border spinner-border-sm text-danger" role="status"></div>
+                    <div>
+                        <div class="small fw-bold text-dark">Mencari Kurir Terdekat...</div>
+                        <div class="text-muted" style="font-size: 11px;">Sistem sedang menugaskan kurir untuk pesanan Anda</div>
+                    </div>
+                </div>
+                <button type="button" onclick="openChatModal()" class="btn btn-outline-danger btn-sm rounded-pill px-2.5 py-1 d-flex align-items-center gap-1 fw-bold" style="font-size: 11px;">
+                    <i class="bi bi-chat-dots"></i> Chat
+                </button>
+            </div>
         </div>
         <?php endif; ?>
 
@@ -604,11 +612,15 @@ async function handleSendChat(e) {
 
     // Optimistic UI preview
     const chatBody = document.getElementById('chatBody');
+    let tempBubbleEl = null;
     if (chatBody) {
         const now = new Date();
         const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-        const tempBubble = `
-            <div class="ccg-chat-row outgoing" style="opacity: 0.85;">
+        const emptyState = chatBody.querySelector('.text-center.py-5');
+        if (emptyState) emptyState.remove();
+
+        const tempBubbleHtml = `
+            <div class="ccg-chat-row outgoing ccg-temp-bubble" style="opacity: 0.85;">
                 <div class="ccg-chat-bubble">${escapeHtml(message)}</div>
                 <div class="ccg-chat-meta">
                     <span>${timeStr}</span>
@@ -616,7 +628,8 @@ async function handleSendChat(e) {
                 </div>
             </div>
         `;
-        chatBody.insertAdjacentHTML('beforeend', tempBubble);
+        chatBody.insertAdjacentHTML('beforeend', tempBubbleHtml);
+        tempBubbleEl = chatBody.querySelector('.ccg-temp-bubble');
         chatBody.scrollTop = chatBody.scrollHeight;
     }
 
@@ -637,11 +650,25 @@ async function handleSendChat(e) {
         if (result.success) {
             await fetchChatMessages(true);
         } else {
-            Swal.fire('Gagal Mengirim', result.message || 'Tidak dapat mengirim pesan', 'warning');
+            if (tempBubbleEl) tempBubbleEl.remove();
+            input.value = message;
+            Swal.fire({
+                icon: 'warning',
+                title: 'Pesan Tidak Terkirim',
+                text: result.message || 'Tidak dapat mengirim pesan',
+                confirmButtonColor: '#EE2737'
+            });
         }
     } catch(err) {
         console.error('Send error:', err);
-        Swal.fire('Error', 'Gagal terhubung ke server', 'error');
+        if (tempBubbleEl) tempBubbleEl.remove();
+        input.value = message;
+        Swal.fire({
+            icon: 'error',
+            title: 'Koneksi Terputus',
+            text: 'Gagal terhubung ke server',
+            confirmButtonColor: '#EE2737'
+        });
     } finally {
         btn.disabled = false;
         input.focus();
@@ -674,6 +701,14 @@ setInterval(async () => {
             if (unreadDot) unreadDot.classList.remove('d-none');
         }
     } catch(e){}
-}, 8000);
+}, 6000);
+
+// Auto open chat if URL contains ?open_chat=1 or hash #chat
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('open_chat') === '1' || window.location.hash === '#chat') {
+        setTimeout(openChatModal, 300);
+    }
+});
 </script>
 

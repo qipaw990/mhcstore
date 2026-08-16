@@ -22,12 +22,12 @@ class Chat extends Model
         }
 
         $sql = "SELECT c.*, 
-                       u.name as sender_name, 
-                       u.avatar as sender_avatar, 
-                       u.role as sender_role,
+                       COALESCE(u.name, 'Pengguna') as sender_name, 
+                       COALESCE(u.avatar, 'assets/images/users/default.png') as sender_avatar, 
+                       COALESCE(u.role, 'customer') as sender_role,
                        DATE_FORMAT(c.created_at, '%H:%i') as time_formatted
                 FROM `chats` c
-                JOIN `users` u ON c.sender_id = u.id
+                LEFT JOIN `users` u ON c.sender_id = u.id
                 WHERE c.order_id = ? {$sinceClause}
                 ORDER BY c.id ASC";
 
@@ -39,7 +39,7 @@ class Chat extends Model
      */
     public function saveMessage(int $orderId, int $senderId, int $receiverId, string $message, ?string $file = null): int
     {
-        return Database::insert($this->table, [
+        return (int)Database::insert($this->table, [
             'order_id'    => $orderId,
             'sender_id'   => $senderId,
             'receiver_id' => $receiverId,
@@ -79,30 +79,33 @@ class Chat extends Model
      */
     public function getOrderChatDetails(string $orderCode): ?array
     {
+        $cleanCode = trim($orderCode);
+        $numericId = is_numeric($cleanCode) ? (int)$cleanCode : 0;
+
         $sql = "SELECT o.id as order_id, 
                        o.order_code, 
                        o.order_status, 
                        o.payment_status,
                        o.order_type,
                        o.customer_id as cust_user_id,
-                       c.name as customer_name,
-                       c.phone as customer_phone,
-                       c.avatar as customer_avatar,
+                       COALESCE(c.name, 'Pelanggan') as customer_name,
+                       COALESCE(c.phone, '') as customer_phone,
+                       COALESCE(c.avatar, 'assets/images/users/customer.png') as customer_avatar,
                        dm.id as dm_id,
                        dm.user_id as dm_user_id,
-                       dmu.name as dm_name,
-                       dmu.phone as dm_phone,
-                       dmu.avatar as dm_avatar,
-                       dm.vehicle_type,
-                       dm.vehicle_number
+                       COALESCE(dmu.name, 'Mitra Driver Cicalengka') as dm_name,
+                       COALESCE(dmu.phone, '') as dm_phone,
+                       COALESCE(dmu.avatar, 'assets/images/users/driver.png') as dm_avatar,
+                       COALESCE(dm.vehicle_type, 'Motor') as vehicle_type,
+                       COALESCE(dm.vehicle_number, 'CCG') as vehicle_number
                 FROM `orders` o
-                JOIN `users` c ON o.customer_id = c.id
+                LEFT JOIN `users` c ON o.customer_id = c.id
                 LEFT JOIN `delivery_men` dm ON o.delivery_man_id = dm.id
                 LEFT JOIN `users` dmu ON dm.user_id = dmu.id
                 WHERE o.order_code = ? OR o.id = ?
                 LIMIT 1";
 
-        $res = Database::fetchOne($sql, [$orderCode, is_numeric($orderCode) ? (int)$orderCode : 0]);
+        $res = Database::fetchOne($sql, [$cleanCode, $numericId]);
         return $res ?: null;
     }
 }
