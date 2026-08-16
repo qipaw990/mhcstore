@@ -7,8 +7,9 @@ echo "======================================================="
 echo " 🚀 MEMULAI UPDATE CICALENGKAGO DARI GITHUB..."
 echo "======================================================="
 
-# Pull commit terbaru dari GitHub branch main
-git pull origin main
+# Pull commit terbaru dari GitHub branch main (auto-overwrite local conflicts)
+git fetch origin main
+git reset --hard origin/main
 
 # Pastikan folder uploads ada dan memiliki permission write
 mkdir -p public/uploads/profiles \
