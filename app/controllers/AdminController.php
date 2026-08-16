@@ -673,9 +673,24 @@ class AdminController extends Controller
         $data = $this->getPost();
         $userId = (int)($data['user_id'] ?? 0);
         $amount = (float)($data['amount'] ?? 0);
+        $notes = sanitize($data['notes'] ?? 'Top-up saldo kurir oleh Super Admin');
 
         if ($userId && $amount > 0) {
-            (new Wallet())->credit($userId, 'delivery_man', $amount, 'topup', 'Top-up saldo oleh Super Admin');
+            (new Wallet())->credit($userId, $amount, 'topup', $notes);
+
+            // Record in topup_logs
+            (new \App\Models\TopupLog())->create([
+                'topup_code'     => 'MANUAL-DM-' . $userId . '-' . time(),
+                'user_id'        => $userId,
+                'amount'         => $amount,
+                'payment_method' => 'manual_admin',
+                'payment_type'   => 'manual_admin',
+                'status'         => 'success',
+                'notes'          => $notes,
+                'created_at'     => date('Y-m-d H:i:s'),
+                'updated_at'     => date('Y-m-d H:i:s')
+            ]);
+
             $this->successResponse('Top-up saldo kurir berhasil.');
             return;
         }
@@ -744,10 +759,25 @@ class AdminController extends Controller
         $data = $this->getPost();
         $userId = (int)($data['user_id'] ?? 0);
         $amount = (float)($data['amount'] ?? 0);
+        $notes = sanitize($data['notes'] ?? 'Top-up saldo CicalengkaPay oleh Super Admin');
 
         if ($userId && $amount > 0) {
-            (new Wallet())->credit($userId, 'customer', $amount, 'topup', 'Top-up saldo CicagoPay oleh Admin');
-            $this->successResponse('Top-up CicagoPay berhasil ditambahkan.');
+            (new Wallet())->credit($userId, $amount, 'topup', $notes);
+
+            // Record in topup_logs
+            (new \App\Models\TopupLog())->create([
+                'topup_code'     => 'MANUAL-' . $userId . '-' . time(),
+                'user_id'        => $userId,
+                'amount'         => $amount,
+                'payment_method' => 'manual_admin',
+                'payment_type'   => 'manual_admin',
+                'status'         => 'success',
+                'notes'          => $notes,
+                'created_at'     => date('Y-m-d H:i:s'),
+                'updated_at'     => date('Y-m-d H:i:s')
+            ]);
+
+            $this->successResponse('Top-up saldo CicalengkaPay berhasil ditambahkan.');
             return;
         }
         $this->errorResponse('Nominal top-up tidak valid.');
@@ -1156,5 +1186,262 @@ class AdminController extends Controller
             $this->successResponse('Pengajuan penarikan berhasil ditolak dan saldo telah dikembalikan ke dompet mitra.');
             return;
         }
+    }
+
+    // =========================================================================
+    // 13. Midtrans Top-Up Management
+    // =========================================================================
+    public function topups(): void
+    {
+        $statusFilter = sanitize($_GET['status'] ?? 'all');
+        $search = sanitize($_GET['search'] ?? '');
+        $period = sanitize($_GET['period'] ?? 'all');
+
+        $where = ["1=1"];
+        $params = [];
+
+        if ($statusFilter !== 'all' && in_array($statusFilter, ['pending', 'success', 'failed', 'canceled'])) {
+            $where[] = "tl.status = ?";
+            $params[] = $statusFilter;
+        }
+
+        if (!empty($search)) {
+            $where[] = "(tl.topup_code LIKE ? OR u.name LIKE ? OR u.phone LIKE ? OR u.email LIKE ?)";
+            $searchTerm = "%{$search}%";
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+        }
+
+        if ($period === 'today') {
+            $where[] = "DATE(tl.created_at) = CURDATE()";
+        } elseif ($period === 'week') {
+            $where[] = "tl.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+        } elseif ($period === 'month') {
+            $where[] = "tl.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+        }
+
+        $whereClause = implode(' AND ', $where);
+
+        $topups = Database::query("
+            SELECT tl.*, u.name as user_name, u.email as user_email, u.phone as user_phone, u.role as user_role, u.avatar as user_avatar,
+                   COALESCE(w.balance, 0) as current_wallet_balance
+            FROM `topup_logs` tl
+            JOIN `users` u ON tl.user_id = u.id
+            LEFT JOIN `wallets` w ON w.user_id = u.id AND w.user_type = 'customer'
+            WHERE {$whereClause}
+            ORDER BY tl.id DESC
+        ", $params);
+
+        // Calculate KPI summaries
+        $statsSuccess = Database::fetchOne("
+            SELECT COALESCE(SUM(amount), 0) as total_amount, COUNT(*) as count 
+            FROM `topup_logs` 
+            WHERE status = 'success'
+        ");
+
+        $statsPending = Database::fetchOne("
+            SELECT COALESCE(SUM(amount), 0) as total_amount, COUNT(*) as count 
+            FROM `topup_logs` 
+            WHERE status = 'pending'
+        ");
+
+        $statsToday = Database::fetchOne("
+            SELECT COALESCE(SUM(amount), 0) as total_amount, COUNT(*) as count 
+            FROM `topup_logs` 
+            WHERE status = 'success' AND DATE(created_at) = CURDATE()
+        ");
+
+        $statsFailed = Database::fetchOne("
+            SELECT COUNT(*) as count 
+            FROM `topup_logs` 
+            WHERE status IN ('failed', 'canceled')
+        ");
+
+        $totalAll = (int)(Database::fetchOne("SELECT COUNT(*) as count FROM `topup_logs`")['count'] ?? 0);
+
+        // List of all active users for manual top-up modal dropdown
+        $usersList = Database::query("SELECT id, name, email, phone, role FROM `users` WHERE is_active = 1 ORDER BY name ASC");
+
+        $this->view('admin.topups', [
+            'title'                 => 'Manajemen Top-Up Saldo Midtrans - CicalengkaGO Admin',
+            'topups'                => $topups,
+            'total_success_amount'  => (float)($statsSuccess['total_amount'] ?? 0),
+            'total_success_count'   => (int)($statsSuccess['count'] ?? 0),
+            'total_pending_amount'  => (float)($statsPending['total_amount'] ?? 0),
+            'total_pending_count'   => (int)($statsPending['count'] ?? 0),
+            'today_success_amount'  => (float)($statsToday['total_amount'] ?? 0),
+            'today_success_count'   => (int)($statsToday['count'] ?? 0),
+            'total_failed_count'    => (int)($statsFailed['count'] ?? 0),
+            'total_all_count'       => $totalAll,
+            'current_status'        => $statusFilter,
+            'current_search'        => $search,
+            'current_period'        => $period,
+            'users_list'            => $usersList,
+            'active_tab'            => 'topups'
+        ], 'admin_layout');
+    }
+
+    public function topupDetail(string $id): void
+    {
+        $log = Database::fetchOne("
+            SELECT tl.*, u.name as user_name, u.email as user_email, u.phone as user_phone, u.role as user_role, u.avatar as user_avatar,
+                   COALESCE(w.balance, 0) as current_wallet_balance
+            FROM `topup_logs` tl
+            JOIN `users` u ON tl.user_id = u.id
+            LEFT JOIN `wallets` w ON w.user_id = u.id AND w.user_type = 'customer'
+            WHERE tl.id = ? OR tl.topup_code = ?
+            LIMIT 1
+        ", [(int)$id, $id]);
+
+        if (!$log) {
+            $this->errorResponse('Data log top up tidak ditemukan.', null, 404);
+            return;
+        }
+
+        // Check if there is a wallet_transaction for this topup_code
+        $walletTx = Database::fetchOne("
+            SELECT * FROM `wallet_transactions` 
+            WHERE `reference_id` = ? LIMIT 1
+        ", [$log['topup_code']]);
+
+        // Attempt to get live Midtrans status if connected
+        $midtransStatus = null;
+        try {
+            $midtransService = new \App\Services\MidtransService();
+            $midtransStatus = $midtransService->getTransactionStatus($log['topup_code']);
+        } catch (\Throwable $e) {
+            $midtransStatus = ['success' => false, 'message' => $e->getMessage()];
+        }
+
+        $this->json([
+            'success'         => true,
+            'data'            => $log,
+            'wallet_tx'       => $walletTx,
+            'midtrans_status' => $midtransStatus
+        ]);
+    }
+
+    public function syncTopupStatus(): void
+    {
+        $data = $this->getPost();
+        $topupCode = trim($data['topup_code'] ?? '');
+
+        if (empty($topupCode)) {
+            $this->errorResponse('Kode Top-Up tidak valid.');
+            return;
+        }
+
+        try {
+            $midtransService = new \App\Services\MidtransService();
+            $liveStatus = $midtransService->getTransactionStatus($topupCode);
+
+            if (empty($liveStatus['success']) || empty($liveStatus['data'])) {
+                $this->errorResponse($liveStatus['message'] ?? 'Data transaksi tidak ditemukan di server Midtrans.');
+                return;
+            }
+
+            $midtransData = $liveStatus['data'];
+            $result = $midtransService->processNotification($midtransData);
+
+            $updatedLog = Database::fetchOne("SELECT * FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1", [$topupCode]);
+
+            $this->successResponse('Sinkronisasi status Midtrans berhasil!', [
+                'process_result' => $result,
+                'updated_log'    => $updatedLog,
+                'midtrans_data'  => $midtransData
+            ]);
+        } catch (\Throwable $e) {
+            $this->errorResponse('Gagal menyinkronkan status Midtrans: ' . $e->getMessage());
+        }
+    }
+
+    public function manualApproveTopup(): void
+    {
+        $data = $this->getPost();
+        $id = (int)($data['id'] ?? 0);
+        $adminNotes = sanitize($data['admin_notes'] ?? 'Disetujui dan diselesaikan secara manual oleh Administrator');
+
+        if (!$id) {
+            $this->errorResponse('ID transaksi top up tidak valid.');
+            return;
+        }
+
+        $log = (new \App\Models\TopupLog())->find($id);
+        if (!$log) {
+            $this->errorResponse('Data top up tidak ditemukan.');
+            return;
+        }
+
+        if ($log['status'] === 'success') {
+            $this->errorResponse('Transaksi top up ini sudah berstatus Berhasil (Success).');
+            return;
+        }
+
+        $userId = (int)$log['user_id'];
+        $amount = (float)$log['amount'];
+        $topupCode = $log['topup_code'];
+        $paymentType = $log['payment_type'] ?: 'midtrans_manual_admin';
+
+        try {
+            Database::transaction(function () use ($userId, $amount, $topupCode, $paymentType, $adminNotes, $id) {
+                // Check if wallet was credited
+                $existingTx = Database::fetchOne("SELECT id FROM `wallet_transactions` WHERE `reference_id` = ? LIMIT 1", [$topupCode]);
+                if (!$existingTx && $amount > 0) {
+                    $walletModel = new \App\Models\Wallet();
+                    $walletModel->credit(
+                        $userId,
+                        $amount,
+                        'topup',
+                        "Top Up CicalengkaPay ({$paymentType}) - Disetujui Admin: {$adminNotes}",
+                        $topupCode
+                    );
+
+                    (new \App\Models\Notification())->createNotification(
+                        $userId,
+                        'Top Up Berhasil Dikonfirmasi! 🎉',
+                        "Saldo CicalengkaPay sebesar " . format_rupiah($amount) . " telah berhasil ditambahkan ke akun Anda.",
+                        'wallet'
+                    );
+                }
+
+                Database::update('topup_logs', [
+                    'status'       => 'success',
+                    'notes'        => $adminNotes,
+                    'updated_at'   => date('Y-m-d H:i:s')
+                ], 'id = ?', [$id]);
+            });
+
+            $this->successResponse("Top Up #{$topupCode} sebesar " . format_rupiah($amount) . " berhasil disetujui & saldo telah masuk ke akun pengguna.");
+        } catch (\Throwable $e) {
+            $this->errorResponse('Gagal menyetujui transaksi: ' . $e->getMessage());
+        }
+    }
+
+    public function manualCancelTopup(): void
+    {
+        $data = $this->getPost();
+        $id = (int)($data['id'] ?? 0);
+        $adminNotes = sanitize($data['admin_notes'] ?? 'Dibatalkan oleh Administrator');
+
+        if (!$id) {
+            $this->errorResponse('ID transaksi tidak valid.');
+            return;
+        }
+
+        $log = (new \App\Models\TopupLog())->find($id);
+        if (!$log) {
+            $this->errorResponse('Data transaksi tidak ditemukan.');
+            return;
+        }
+
+        if ($log['status'] === 'success') {
+            $this->errorResponse('Tidak dapat membatalkan transaksi yang sudah berhasil (Success).');
+            return;
+        }
+
+        (new \App\Models\TopupLog())->markFailed($log['topup_code'], $adminNotes);
+        $this->successResponse("Transaksi #{$log['topup_code']} berhasil dibatalkan.");
     }
 }

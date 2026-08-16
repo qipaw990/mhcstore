@@ -54,6 +54,8 @@ ob_start(); $admin->products(); echo "Admin products: OK (" . strlen(ob_get_clea
 ob_start(); $admin->deliveryMen(); echo "Admin delivery men: OK (" . strlen(ob_get_clean()) . " bytes)\n";
 ob_start(); $admin->customers(); echo "Admin customers: OK (" . strlen(ob_get_clean()) . " bytes)\n";
 ob_start(); $admin->banners(); echo "Admin banners: OK (" . strlen(ob_get_clean()) . " bytes)\n";
+ob_start(); $admin->withdrawals(); echo "Admin withdrawals: OK (" . strlen(ob_get_clean()) . " bytes)\n";
+ob_start(); $admin->topups(); echo "Admin topups (Midtrans Top-Up Management): OK (" . strlen(ob_get_clean()) . " bytes)\n";
 ob_start(); $admin->settings(); echo "Admin settings: OK (" . strlen(ob_get_clean()) . " bytes)\n";
 
 echo "\n--- 5. Testing Auth Views ---\n";

@@ -79,6 +79,12 @@ $user = auth_user();
                 </a>
             </li>
             <li>
+                <a href="<?= $baseUrl ?>/admin/topups" class="menu-link <?= ($active_tab ?? '') === 'topups' ? 'active' : '' ?>">
+                    <i class="bi bi-wallet2"></i>
+                    <span>Top-Up Saldo Midtrans</span>
+                </a>
+            </li>
+            <li>
                 <a href="<?= $baseUrl ?>/admin/customers" class="menu-link <?= ($active_tab ?? '') === 'customers' ? 'active' : '' ?>">
                     <i class="bi bi-people-fill"></i>
                     <span>Daftar Pelanggan</span>
