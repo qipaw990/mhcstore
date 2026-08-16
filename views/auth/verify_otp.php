@@ -53,9 +53,15 @@
     </button>
 </form>
 
+<?php
+$lastSent = $_SESSION['otp_last_sent'] ?? 0;
+$elapsed = time() - $lastSent;
+$cooldownRemaining = max(0, 60 - $elapsed);
+?>
+
 <div class="d-flex align-items-center justify-content-between text-muted small pt-2 border-top">
     <span>Tidak menerima kode?</span>
-    <form action="<?= $baseUrl ?>/resend-otp" method="POST" class="d-inline">
+    <form action="<?= $baseUrl ?>/resend-otp" method="POST" class="d-inline" id="resend-form">
         <button type="submit" class="btn btn-link p-0 small fw-bold text-danger text-decoration-none" id="btn-resend">
             <i class="bi bi-arrow-clockwise me-1"></i> Kirim Ulang OTP
         </button>
@@ -73,6 +79,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const inputs = document.querySelectorAll('.otp-input');
     const fullOtpInput = document.getElementById('full-otp');
     const form = document.getElementById('otp-form');
+    const btnResend = document.getElementById('btn-resend');
+
+    // Resend OTP Cooldown Timer (Anti-Spam)
+    let cooldown = <?= (int)$cooldownRemaining ?>;
+    function updateResendTimer() {
+        if (!btnResend) return;
+        if (cooldown > 0) {
+            btnResend.disabled = true;
+            btnResend.classList.add('opacity-50', 'pe-none');
+            btnResend.innerHTML = `<i class="bi bi-clock-history me-1"></i> Kirim Ulang (${cooldown}s)`;
+            cooldown--;
+            setTimeout(updateResendTimer, 1000);
+        } else {
+            btnResend.disabled = false;
+            btnResend.classList.remove('opacity-50', 'pe-none');
+            btnResend.innerHTML = `<i class="bi bi-arrow-clockwise me-1"></i> Kirim Ulang OTP`;
+        }
+    }
+    updateResendTimer();
 
     if (inputs.length > 0) {
         inputs[0].focus();

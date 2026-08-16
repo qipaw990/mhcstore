@@ -42,8 +42,11 @@ class AuthService
             return $user;
         }
 
+        $otpMode = BusinessSetting::get('otp_mode', 'real');
+        $isDemo = ($otpMode === 'demo');
+
         // Generate 6-digit OTP code for email verification
-        $otp = sprintf("%06d", rand(100000, 999999));
+        $otp = $isDemo ? '123456' : sprintf("%06d", rand(100000, 999999));
 
         $_SESSION['pending_otp'] = [
             'user_id'    => $user['id'],
@@ -53,9 +56,12 @@ class AuthService
             'otp'        => $otp,
             'expires_at' => time() + 600, // 10 minutes
         ];
+        $_SESSION['otp_last_sent'] = time();
 
-        // Send OTP Email
-        EmailService::sendOtpEmail($user['email'], $user['name'], $otp);
+        // Send OTP Email only in real mode
+        if (!$isDemo) {
+            EmailService::sendOtpEmail($user['email'], $user['name'], $otp);
+        }
 
         return $user;
     }
@@ -137,19 +143,32 @@ class AuthService
 
     public function resendOtp(): string
     {
+        // Rate limiting flood protection (60 detik cooldown)
+        if (!empty($_SESSION['otp_last_sent']) && (time() - $_SESSION['otp_last_sent']) < 60) {
+            $remaining = 60 - (time() - $_SESSION['otp_last_sent']);
+            throw new Exception("Harap tunggu {$remaining} detik sebelum meminta kirim ulang kode OTP.");
+        }
+
+        $otpMode = BusinessSetting::get('otp_mode', 'real');
+        $isDemo = ($otpMode === 'demo');
+
         if (!empty($_SESSION['pending_profile_update'])) {
-            $newOtp = sprintf("%06d", rand(100000, 999999));
+            $newOtp = $isDemo ? '123456' : sprintf("%06d", rand(100000, 999999));
             $_SESSION['pending_profile_update']['otp'] = $newOtp;
             $_SESSION['pending_profile_update']['expires_at'] = time() + 600;
             if (isset($_SESSION['pending_otp'])) {
                 $_SESSION['pending_otp']['otp'] = $newOtp;
             }
 
-            EmailService::sendOtpEmail(
-                $_SESSION['pending_profile_update']['new_email'],
-                $_SESSION['pending_profile_update']['name'],
-                $newOtp
-            );
+            $_SESSION['otp_last_sent'] = time();
+
+            if (!$isDemo) {
+                EmailService::sendOtpEmail(
+                    $_SESSION['pending_profile_update']['new_email'],
+                    $_SESSION['pending_profile_update']['name'],
+                    $newOtp
+                );
+            }
 
             return $newOtp;
         }
@@ -158,15 +177,19 @@ class AuthService
             throw new Exception("Sesi verifikasi tidak ditemukan. Silakan masuk kembali.");
         }
 
-        $newOtp = sprintf("%06d", rand(100000, 999999));
+        $newOtp = $isDemo ? '123456' : sprintf("%06d", rand(100000, 999999));
         $_SESSION['pending_otp']['otp'] = $newOtp;
         $_SESSION['pending_otp']['expires_at'] = time() + 600;
 
-        EmailService::sendOtpEmail(
-            $_SESSION['pending_otp']['email'],
-            $_SESSION['pending_otp']['name'],
-            $newOtp
-        );
+        $_SESSION['otp_last_sent'] = time();
+
+        if (!$isDemo) {
+            EmailService::sendOtpEmail(
+                $_SESSION['pending_otp']['email'],
+                $_SESSION['pending_otp']['name'],
+                $newOtp
+            );
+        }
 
         return $newOtp;
     }
@@ -202,7 +225,10 @@ class AuthService
         $user = $this->userModel->find($userId);
 
         // Initiate OTP for email verification
-        $otp = sprintf("%06d", rand(100000, 999999));
+        $otpMode = BusinessSetting::get('otp_mode', 'real');
+        $isDemo = ($otpMode === 'demo');
+
+        $otp = $isDemo ? '123456' : sprintf("%06d", rand(100000, 999999));
         $_SESSION['pending_otp'] = [
             'user_id'    => $user['id'],
             'name'       => $user['name'],
@@ -211,8 +237,11 @@ class AuthService
             'otp'        => $otp,
             'expires_at' => time() + 600
         ];
+        $_SESSION['otp_last_sent'] = time();
 
-        EmailService::sendOtpEmail($user['email'], $user['name'], $otp);
+        if (!$isDemo) {
+            EmailService::sendOtpEmail($user['email'], $user['name'], $otp);
+        }
 
         return $user;
     }
