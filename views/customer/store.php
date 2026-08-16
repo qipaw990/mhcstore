@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                         <div class="d-flex align-items-center gap-1.5">
                             <span class="fw-bold text-dark" style="font-size: 11.5px;"><?= format_rupiah($prod['final_price']) ?></span>
-                            <?php if ((float)$prod['discount'] > 0): ?>
+                            <?php if (!empty($prod['discount']) && (float)$prod['discount'] > 0 && (float)$prod['price'] > (float)$prod['final_price']): ?>
                                 <span class="text-muted text-decoration-line-through" style="font-size: 9px;"><?= format_rupiah($prod['price']) ?></span>
                                 <span class="badge bg-danger-subtle text-danger fw-bold" style="font-size: 8px; padding: 1px 3px;">-<?= $prod['discount_type'] === 'percent' ? (int)$prod['discount'] . '%' : format_rupiah($prod['discount']) ?></span>
                             <?php endif; ?>

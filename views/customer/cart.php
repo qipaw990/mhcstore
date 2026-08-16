@@ -1,10 +1,10 @@
-<div class="p-2 border-bottom bg-white d-flex align-items-center justify-content-between" style="padding: 8px 12px !important;">
-    <div class="d-flex align-items-center gap-1.5">
-        <a href="<?= $baseUrl ?>" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 12px;"><i class="bi bi-arrow-left"></i></a>
-        <h6 class="fw-bold m-0" style="color: var(--gojek-charcoal); font-size: 12.5px;">Keranjang Belanja</h6>
+<div class="border-bottom bg-white d-flex align-items-center justify-content-between sticky-top shadow-xs px-3 py-2">
+    <div class="d-flex align-items-center gap-2">
+        <a href="<?= $baseUrl ?>" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; border: 1px solid #E2E8F0; background: #F8FAFC;"><i class="bi bi-arrow-left text-dark"></i></a>
+        <h6 class="fw-bold m-0 text-dark" style="font-size: 13px;">Keranjang Belanja</h6>
     </div>
     <?php if (!empty($cart_summary['items'])): ?>
-        <button onclick="clearAllCart()" class="btn btn-link text-danger text-decoration-none p-0 fw-bold" style="font-size: 10.5px;">Kosongkan</button>
+        <button onclick="clearAllCart()" class="btn btn-link text-danger text-decoration-none p-0 fw-bold" style="font-size: 11px;">Kosongkan</button>
     <?php endif; ?>
 </div>
 

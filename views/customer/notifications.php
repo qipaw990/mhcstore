@@ -1,9 +1,9 @@
-<div class="p-2 border-bottom bg-white d-flex align-items-center justify-content-between sticky-top shadow-xs" style="padding: 8px 12px !important;">
-    <div class="d-flex align-items-center gap-1.5">
-        <a href="<?= $baseUrl ?>" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 12px;"><i class="bi bi-arrow-left"></i></a>
-        <h6 class="fw-bold m-0" style="color: var(--gojek-charcoal); font-size: 12px;">Chat & Notifikasi</h6>
+<div class="border-bottom bg-white d-flex align-items-center justify-content-between sticky-top shadow-xs px-3 py-2">
+    <div class="d-flex align-items-center gap-2">
+        <a href="<?= $baseUrl ?>" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; border: 1px solid #E2E8F0; background: #F8FAFC;"><i class="bi bi-arrow-left text-dark"></i></a>
+        <h6 class="fw-bold m-0 text-dark" style="font-size: 13px;">Chat & Notifikasi</h6>
     </div>
-    <span class="badge text-white px-2 py-0.5 rounded-pill" style="background:#EE2737; font-size: 9px;">
+    <span class="badge text-white px-2.5 py-1 rounded-pill" style="background:#EE2737; font-size: 10px;">
         <?= count($notifications) ?> Pesan
     </span>
 </div>

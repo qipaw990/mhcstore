@@ -617,74 +617,75 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 .gofood-products-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-  padding: 0 10px 8px;
+  gap: 8px;
+  padding: 0 10px 10px;
 }
 
 .gofood-product-card {
   background: #FFFFFF;
-  border-radius: var(--gojek-radius-sm);
-  border: 1px solid var(--gojek-border);
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
   overflow: hidden;
-  box-shadow: var(--gojek-shadow-xs);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
   position: relative;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.gofood-product-card:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--gojek-shadow-sm);
+.gofood-product-card:active {
+  transform: scale(0.98);
 }
 
 .gofood-prod-img {
   width: 100%;
-  height: 78px;
+  height: 88px;
   object-fit: cover;
   background: #F8FAFC;
 }
 
 .gofood-discount-tag {
   position: absolute;
-  top: 4px;
-  left: 4px;
-  background: var(--gofood-red);
+  top: 6px;
+  left: 6px;
+  background: linear-gradient(135deg, #EE2737, #C61524);
   color: #FFFFFF;
-  font-size: 8px;
+  font-size: 8.5px;
   font-weight: 800;
-  padding: 1px 4px;
-  border-radius: 4px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  box-shadow: 0 2px 5px rgba(238, 39, 55, 0.25);
+  letter-spacing: 0.2px;
 }
 
 .gofood-prod-body {
-  padding: 4px 6px 6px;
+  padding: 6px 8px 8px;
   display: flex;
   flex-direction: column;
   flex-grow: 1;
 }
 
 .gofood-prod-store {
-  font-size: 8.5px;
+  font-size: 9px;
   font-weight: 600;
-  color: var(--gojek-gray);
-  margin-bottom: 1px;
+  color: #64748B;
+  margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .gofood-prod-name {
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 700;
-  color: var(--gojek-charcoal);
-  margin-bottom: 3px;
+  color: #0F172A;
+  margin-bottom: 4px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  height: 25px;
-  line-height: 1.2;
+  min-height: 30px;
+  line-height: 1.3;
 }
 
 .gofood-price-row {
@@ -692,32 +693,35 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   align-items: center;
   justify-content: space-between;
   margin-top: auto;
+  padding-top: 2px;
 }
 
 .gofood-price {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 800;
-  color: var(--gojek-charcoal);
+  color: #0F172A;
+  line-height: 1.2;
 }
 
 .gofood-btn-add {
-  width: 22px;
-  height: 22px;
-  border-radius: var(--gojek-radius-pill);
-  background: var(--gojek-green);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #EE2737;
   color: #FFFFFF;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 13px;
   cursor: pointer;
-  box-shadow: 0 1px 4px var(--gojek-green-glow);
-  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(238, 39, 55, 0.3);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
 }
 
 .gofood-btn-add:active {
-  transform: scale(0.9);
+  transform: scale(0.88);
 }
 
 /* =========================================================================

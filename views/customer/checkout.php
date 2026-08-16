@@ -1,6 +1,6 @@
-<div class="p-2 border-bottom bg-white d-flex align-items-center gap-1.5" style="padding: 8px 12px !important;">
-    <a href="<?= $baseUrl ?>/cart" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 12px;"><i class="bi bi-arrow-left"></i></a>
-    <h6 class="fw-bold m-0" style="color: var(--gojek-charcoal); font-size: 12.5px;">Konfirmasi & Pembayaran</h6>
+<div class="border-bottom bg-white d-flex align-items-center gap-2 sticky-top shadow-xs px-3 py-2">
+    <a href="<?= $baseUrl ?>/cart" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; border: 1px solid #E2E8F0; background: #F8FAFC;"><i class="bi bi-arrow-left text-dark"></i></a>
+    <h6 class="fw-bold m-0 text-dark" style="font-size: 13px;">Konfirmasi & Pembayaran</h6>
 </div>
 
 <form id="checkoutForm" onsubmit="handlePlaceOrder(event)" class="p-2" style="padding: 8px 10px !important;">

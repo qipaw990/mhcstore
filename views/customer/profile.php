@@ -1,8 +1,8 @@
-<div class="p-2 border-bottom bg-white d-flex align-items-center justify-content-between" style="padding: 8px 12px !important;">
-    <h6 class="fw-bold m-0" style="color: var(--gojek-charcoal); font-size: 12.5px;">Akun Saya</h6>
+<div class="border-bottom bg-white d-flex align-items-center justify-content-between sticky-top shadow-xs px-3 py-2">
+    <h6 class="fw-bold m-0 text-dark" style="font-size: 13px;">Akun Saya</h6>
     <?php if ($user): ?>
-        <span class="badge text-white px-2 py-0.5 rounded-pill" style="background: #EE2737; font-size: 9px;">
-            <i class="bi bi-star-fill me-0.5 text-warning"></i> CicalengkaClub
+        <span class="badge text-white px-2.5 py-1 rounded-pill" style="background: #EE2737; font-size: 10px;">
+            <i class="bi bi-star-fill me-1 text-warning"></i> CicalengkaClub
         </span>
     <?php endif; ?>
 </div>

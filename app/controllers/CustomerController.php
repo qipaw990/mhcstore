@@ -84,7 +84,13 @@ class CustomerController extends Controller
         } else {
             // Data rekomendasi untuk halaman pencarian discovery
             $popularStores = Database::query("SELECT * FROM `stores` WHERE `status` = 1 ORDER BY `rating` DESC LIMIT 6");
-            $recommendProducts = Database::query("SELECT p.*, s.name as store_name FROM `products` p JOIN `stores` s ON p.store_id = s.id WHERE p.status = 1 ORDER BY p.id DESC LIMIT 8");
+            $recommendProducts = $this->productModel->getRecommended(10);
+            if (empty($recommendProducts)) {
+                $recommendProducts = Database::query("SELECT p.*, s.name as store_name, s.is_open as store_is_open FROM `products` p JOIN `stores` s ON p.store_id = s.id WHERE p.status = 1 ORDER BY p.id DESC LIMIT 10");
+                foreach ($recommendProducts as &$p) {
+                    $p['final_price'] = $this->productModel->calculateFinalPrice($p);
+                }
+            }
         }
 
         $this->view('customer.search', [

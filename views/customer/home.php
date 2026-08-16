@@ -196,8 +196,8 @@
                 <div class="gofood-price-row">
                     <div>
                         <div class="gofood-price"><?= format_rupiah($prod['final_price']) ?></div>
-                        <?php if ((float)$prod['discount'] > 0): ?>
-                            <span class="text-muted text-decoration-line-through small" style="font-size: 10px;"><?= format_rupiah($prod['price']) ?></span>
+                        <?php if (!empty($prod['discount']) && (float)$prod['discount'] > 0 && (float)$prod['price'] > (float)$prod['final_price']): ?>
+                            <span class="text-muted text-decoration-line-through" style="font-size: 9px;"><?= format_rupiah($prod['price']) ?></span>
                         <?php endif; ?>
                     </div>
                     <button type="button" class="gofood-btn-add" onclick="addToCart(<?= $prod['id'] ?>, 1)" title="Tambah ke Keranjang">
