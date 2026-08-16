@@ -11,7 +11,8 @@ services:
       - "8090:80"
     environment:
       - APP_ENV=production
-      - PUBLIC_URL=http://localhost:8090
+      - APP_URL=https://cicago.smkmuthiaharapanclk.com
+      - PUBLIC_URL=https://cicago.smkmuthiaharapanclk.com
       - DB_HOST=cicalengkago_db
       - DB_PORT=3306
       - DB_DATABASE=cicalengkago
