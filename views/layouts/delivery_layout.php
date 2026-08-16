@@ -67,19 +67,19 @@ $user = auth_user();
     <!-- Delivery Bottom Navigation -->
     <nav class="mobile-bottom-nav">
         <a href="<?= $baseUrl ?>/delivery" class="nav-tab-item <?= ($active_tab ?? '') === 'home' ? 'active' : '' ?>">
-            <i class="bi bi-radar" style="font-size: 20px;"></i>
+            <i class="bi bi-radar"></i>
             <span>Radar Order</span>
         </a>
         <a href="<?= $baseUrl ?>/delivery/earnings" class="nav-tab-item <?= ($active_tab ?? '') === 'earnings' ? 'active' : '' ?>">
-            <i class="bi bi-wallet2" style="font-size: 20px;"></i>
+            <i class="bi bi-wallet2"></i>
             <span>Pendapatan</span>
         </a>
         <a href="<?= $baseUrl ?>/delivery/profile" class="nav-tab-item <?= ($active_tab ?? '') === 'profile' ? 'active' : '' ?>">
-            <i class="bi bi-person-circle" style="font-size: 20px;"></i>
+            <i class="bi bi-person-circle"></i>
             <span>Profil Driver</span>
         </a>
         <a href="<?= $baseUrl ?>/logout" class="nav-tab-item text-danger">
-            <i class="bi bi-box-arrow-right" style="font-size: 20px;"></i>
+            <i class="bi bi-box-arrow-right"></i>
             <span>Keluar</span>
         </a>
     </nav>
