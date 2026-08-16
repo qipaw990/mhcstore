@@ -49,20 +49,22 @@ try {
 
     foreach ($tables as $table) {
         $rows = $pdo->query("SELECT * FROM `$table`")->fetchAll();
-        if (empty($rows)) continue;
+        $count = count($rows);
 
-        $out[] = "-- Table: $table (" . count($rows) . " rows)";
+        $out[] = "-- Table: $table ($count rows)";
         $out[] = "TRUNCATE TABLE `$table`;";
 
-        $cols = array_keys($rows[0]);
-        $colsSql = '`' . implode('`, `', $cols) . '`';
+        if (!empty($rows)) {
+            $cols = array_keys($rows[0]);
+            $colsSql = '`' . implode('`, `', $cols) . '`';
 
-        foreach ($rows as $row) {
-            $values = array_map(function($v) use ($pdo) {
-                if ($v === null) return 'NULL';
-                return $pdo->quote($v);
-            }, array_values($row));
-            $out[] = "INSERT INTO `$table` ($colsSql) VALUES (" . implode(', ', $values) . ");";
+            foreach ($rows as $row) {
+                $values = array_map(function($v) use ($pdo) {
+                    if ($v === null) return 'NULL';
+                    return $pdo->quote($v);
+                }, array_values($row));
+                $out[] = "INSERT INTO `$table` ($colsSql) VALUES (" . implode(', ', $values) . ");";
+            }
         }
         $out[] = "";
     }
