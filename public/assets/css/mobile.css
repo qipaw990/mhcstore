@@ -105,7 +105,7 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
-  padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px)) !important;
+  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
   box-sizing: border-box;
 }
 

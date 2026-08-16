@@ -38,10 +38,10 @@
     </div>
 </div>
 
-<div class="px-3 py-2.5">
+<div class="px-3 pt-3.5 pb-5" style="min-height: 85vh;">
     <?php if (empty($query)): ?>
         <!-- Trending & Popular Searches -->
-        <div class="mb-3">
+        <div class="mb-3.5">
             <h6 class="fw-bold mb-2 text-dark d-flex align-items-center gap-1" style="font-size: 12px;">
                 <i class="bi bi-fire text-danger"></i> Pencarian Populer
             </h6>

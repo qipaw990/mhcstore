@@ -3,9 +3,9 @@
     <h6 class="fw-bold m-0 text-dark" style="font-size: 13px;">Konfirmasi & Pembayaran</h6>
 </div>
 
-<form id="checkoutForm" onsubmit="handlePlaceOrder(event)" class="px-3 py-2.5">
+<form id="checkoutForm" onsubmit="handlePlaceOrder(event)" class="px-3 pt-3.5 pb-5" style="min-height: 85vh;">
     <!-- Map Location Picker Card -->
-    <div class="p-3 bg-white border shadow-xs mb-2.5" style="border-radius: 14px;">
+    <div class="p-3 bg-white border shadow-xs mb-3.5" style="border-radius: 14px;">
         <div class="d-flex align-items-center justify-content-between mb-2">
             <h6 class="fw-bold m-0 text-dark" style="font-size: 12px;"><i class="bi bi-geo-alt-fill text-danger me-1"></i> Titik Lokasi Antar</h6>
             <button type="button" onclick="getCurrentLocation()" class="btn btn-sm rounded-pill py-1 px-2.5 fw-bold text-white shadow-xs" style="background:#EE2737; font-size: 10px;">
@@ -27,7 +27,7 @@
     </div>
 
     <!-- Delivery Address Details -->
-    <div class="p-3 bg-white border shadow-xs mb-2.5" style="border-radius: 14px;">
+    <div class="p-3 bg-white border shadow-xs mb-3.5" style="border-radius: 14px;">
         <div class="mb-2">
             <label class="form-label text-muted mb-1" style="font-size: 10px; font-weight: 600;">Alamat Lengkap / Patokan Rumah</label>
             <textarea name="address" id="input-address" class="form-control form-control-sm bg-light" rows="2" style="font-size: 11px; border-radius: 8px;" required placeholder="Jl. Raya Cicalengka No. 45 (Dekat Stasiun / Rumah Cat Hijau)">Jl. Cicalengka Raya No. 45, RT 02/03</textarea>
@@ -45,10 +45,10 @@
     </div>
 
     <!-- Payment Method Selector -->
-    <div class="p-3 bg-white border shadow-xs mb-2.5" style="border-radius: 14px;">
+    <div class="p-3 bg-white border shadow-xs mb-3.5" style="border-radius: 14px;">
         <h6 class="fw-bold mb-2.5 text-dark" style="font-size: 12px;"><i class="bi bi-wallet2 text-danger me-1"></i> Metode Pembayaran</h6>
 
-        <div class="d-flex flex-column gap-2">
+        <div class="d-flex flex-column gap-2.5">
             <!-- CicalengkaPay Digital Wallet -->
             <label class="p-2.5 border rounded-3 d-flex align-items-center justify-content-between cursor-pointer payment-option <?= ((float)$wallet['balance'] >= (float)$cart_data['subtotal']) ? 'border-danger bg-danger-subtle' : 'opacity-75' ?>" style="cursor: pointer;">
                 <div class="d-flex align-items-center gap-2">
@@ -100,7 +100,7 @@
     </div>
 
     <!-- Voucher / Coupon Code -->
-    <div class="p-3 bg-white border shadow-xs mb-2.5" style="border-radius: 14px;">
+    <div class="p-3 bg-white border shadow-xs mb-3.5" style="border-radius: 14px;">
         <h6 class="fw-bold mb-2 text-dark" style="font-size: 11.5px;"><i class="bi bi-percent text-warning me-1"></i> Promo & Kupon</h6>
         <div class="input-group input-group-sm">
             <input type="text" name="coupon_code" id="coupon_code" class="form-control bg-light" style="font-size: 10.5px; border-radius: 8px 0 0 8px;" placeholder="Kode promo (Contoh: CCGHEMAT)">

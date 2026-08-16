@@ -8,7 +8,7 @@
     <?php endif; ?>
 </div>
 
-<div class="px-3 py-2.5">
+<div class="px-3 pt-3.5 pb-5" style="min-height: 85vh;">
     <?php if (empty($cart_summary['items'])): ?>
         <div class="text-center py-5">
             <div class="rounded-circle bg-light text-muted d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 54px; height: 54px; font-size: 22px;">
@@ -20,8 +20,8 @@
         </div>
     <?php else: ?>
         <!-- Store Name Header -->
-        <div class="p-3 bg-white border shadow-xs mb-2.5 d-flex align-items-center gap-2.5" style="border-radius: 14px;">
-            <div class="rounded-circle text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px; background: #EE2737; font-size: 13px;">
+        <div class="p-3 bg-white border shadow-xs mb-3.5 d-flex align-items-center gap-2.5" style="border-radius: 14px;">
+            <div class="rounded-circle text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; background: #EE2737; font-size: 14px;">
                 <i class="bi bi-shop"></i>
             </div>
             <div class="min-w-0">
@@ -31,7 +31,7 @@
         </div>
 
         <!-- Cart Items List -->
-        <div class="d-flex flex-column gap-2 mb-3">
+        <div class="d-flex flex-column gap-3 mb-3.5">
             <?php foreach ($cart_summary['items'] as $item): ?>
                 <div class="p-3 bg-white border shadow-xs d-flex align-items-center justify-content-between gap-3" style="border-radius: 14px;">
                     <img src="<?= $baseUrl ?>/<?= htmlspecialchars($item['product_image'] ?? 'assets/images/products/default.jpg') ?>" alt="Img" class="rounded-3 flex-shrink-0" style="width: 50px; height: 50px; object-fit: cover;">

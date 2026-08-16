@@ -3,11 +3,11 @@
     <h6 class="fw-bold m-0 text-dark" style="font-size: 13px;">Kirim Paket (CicalengkaSend)</h6>
 </div>
 
-<div class="px-3 py-2.5">
+<div class="px-3 pt-3.5 pb-5" style="min-height: 85vh;">
     <!-- CicalengkaSend Header Banner -->
-    <div class="p-3 mb-2.5 text-white shadow-xs" style="background: linear-gradient(135deg, #EE2737 0%, #C61524 100%); border-radius: 14px;">
+    <div class="p-3 mb-3.5 text-white shadow-xs" style="background: linear-gradient(135deg, #EE2737 0%, #C61524 100%); border-radius: 14px;">
         <div class="d-flex align-items-center gap-2.5">
-            <div class="rounded-3 bg-white text-danger d-flex align-items-center justify-content-center shadow-xs" style="width: 36px; height: 36px; font-size: 18px; flex-shrink: 0;">
+            <div class="rounded-3 bg-white text-danger d-flex align-items-center justify-content-center shadow-xs" style="width: 38px; height: 38px; font-size: 19px; flex-shrink: 0;">
                 <i class="bi bi-box-seam-fill" style="color: #EE2737;"></i>
             </div>
             <div>
@@ -19,7 +19,7 @@
 
     <form id="parcelForm" onsubmit="handlePlaceParcel(event)">
         <!-- Interactive Parcel Route Map -->
-        <div class="p-3 bg-white border shadow-xs mb-2.5" style="border-radius: 14px;">
+        <div class="p-3 bg-white border shadow-xs mb-3.5" style="border-radius: 14px;">
             <div class="d-flex align-items-center justify-content-between mb-2">
                 <h6 class="fw-bold m-0 text-dark" style="font-size: 12px;"><i class="bi bi-map-fill text-danger me-1"></i> Rute Antar Paket</h6>
                 <button type="button" onclick="getParcelGps()" class="btn btn-sm rounded-pill py-1 px-2.5 fw-bold text-white shadow-xs" style="background:#EE2737; font-size: 10px;">
@@ -43,7 +43,7 @@
         </div>
 
         <!-- Sender Information -->
-        <div class="p-3 bg-white border shadow-xs mb-2.5" style="border-radius: 14px;">
+        <div class="p-3 bg-white border shadow-xs mb-3.5" style="border-radius: 14px;">
             <h6 class="fw-bold mb-2 text-dark" style="font-size: 12px;"><i class="bi bi-geo-alt text-danger me-1"></i> Penjemputan (Pengirim)</h6>
             <div class="mb-2">
                 <input type="text" name="pickup_address" id="pickup_address" class="form-control form-control-sm bg-light" style="font-size: 10.5px; border-radius: 8px;" placeholder="Alamat penjemputan" required value="Jl. Dipati Ukur Cicalengka Kulon No. 12">
@@ -59,7 +59,7 @@
         </div>
 
         <!-- Destination Information -->
-        <div class="p-3 bg-white border shadow-xs mb-2.5" style="border-radius: 14px;">
+        <div class="p-3 bg-white border shadow-xs mb-3.5" style="border-radius: 14px;">
             <h6 class="fw-bold mb-2 text-dark" style="font-size: 12px;"><i class="bi bi-geo-alt-fill text-danger me-1"></i> Tujuan (Penerima)</h6>
             <div class="mb-2">
                 <input type="text" name="destination_address" id="destination_address" class="form-control form-control-sm bg-light" style="font-size: 10.5px; border-radius: 8px;" placeholder="Alamat tujuan" required value="Komplek Griya Cicalengka Asri Blok C4">
@@ -75,7 +75,7 @@
         </div>
 
         <!-- Parcel Details -->
-        <div class="p-3 bg-white border shadow-xs mb-2.5" style="border-radius: 14px;">
+        <div class="p-3 bg-white border shadow-xs mb-3.5" style="border-radius: 14px;">
             <h6 class="fw-bold mb-2 text-dark" style="font-size: 12px;"><i class="bi bi-box me-1 text-muted"></i> Detail Paket</h6>
             <div class="row g-2 mb-2">
                 <div class="col-7">
@@ -98,7 +98,7 @@
         </div>
 
         <!-- Payment Method -->
-        <div class="p-3 bg-white border shadow-xs mb-2.5" style="border-radius: 14px;">
+        <div class="p-3 bg-white border shadow-xs mb-3.5" style="border-radius: 14px;">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h6 class="fw-bold m-0 text-dark" style="font-size: 12px;"><i class="bi bi-wallet2 me-1 text-danger"></i> Pembayaran Ongkir</h6>
                 <span class="badge text-white px-2 py-0.5" style="background:#002B49; font-size: 8.5px; font-weight:700; border-radius: 4px;">MIDTRANS</span>
@@ -131,7 +131,7 @@
         </div>
 
         <!-- Estimated Fare Dynamic -->
-        <div class="p-3 bg-white border shadow-xs mb-3 d-flex align-items-center justify-content-between" style="border-radius: 14px;">
+        <div class="p-3 bg-white border shadow-xs mb-3.5 d-flex align-items-center justify-content-between" style="border-radius: 14px;">
             <div>
                 <div class="text-muted" style="font-size: 10px;">Tarif Instant (<span id="fare-dist-text">2.5 Km</span>)</div>
                 <div class="fw-bold" style="color: #EE2737; font-size: 15px;" id="parcel-fare-display">Rp 8.000</div>
@@ -139,7 +139,7 @@
             <span class="badge text-white px-2.5 py-1.5 rounded-pill fw-bold" style="background:#EE2737; font-size: 10px;">Instant Delivery</span>
         </div>
 
-        <button type="submit" id="btnParcelSubmit" class="btn btn-gojek-green w-100 mb-3" style="background:#EE2737 !important; color:#FFFFFF !important; border-radius:9999px; font-weight:700; padding:10px 16px; font-size:12px; box-shadow:0 3px 10px rgba(238,39,55,0.3); display:flex; align-items:center; justify-content:center; gap:8px;">
+        <button type="submit" id="btnParcelSubmit" class="btn btn-gojek-green w-100 mb-4" style="background:#EE2737 !important; color:#FFFFFF !important; border-radius:9999px; font-weight:700; padding:10px 16px; font-size:12px; box-shadow:0 3px 10px rgba(238,39,55,0.3); display:flex; align-items:center; justify-content:center; gap:8px;">
             <i class="bi bi-box-seam-fill"></i>
             <span>Panggil Kurir Sekarang</span>
         </button>

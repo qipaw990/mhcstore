@@ -46,7 +46,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
     <?php endif; ?>
 </div>
 
-<div class="px-3 py-2.5">
+<div class="px-3 pt-3.5 pb-5" style="min-height: 85vh;">
     <?php if ($isCanceled): ?>
         <!-- Canceled Card -->
         <div class="p-4 bg-white border shadow-xs text-center mb-3" style="border-radius: 14px;">

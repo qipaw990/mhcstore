@@ -7,16 +7,16 @@
     <?php endif; ?>
 </div>
 
-<div class="px-3 py-2.5">
+<div class="px-3 pt-3.5 pb-5" style="min-height: 85vh;">
     <?php if (!empty($_SESSION['error'])): ?>
-        <div class="alert alert-danger rounded-3 border-0 p-2.5 mb-2.5" style="font-size: 10.5px;">
+        <div class="alert alert-danger rounded-3 border-0 p-3 mb-3" style="font-size: 10.5px;">
             <i class="bi bi-exclamation-triangle-fill me-1"></i> <?= htmlspecialchars($_SESSION['error']) ?>
         </div>
         <?php unset($_SESSION['error']); ?>
     <?php endif; ?>
 
     <?php if (!empty($_SESSION['success'])): ?>
-        <div class="alert alert-success rounded-3 border-0 p-2.5 mb-2.5" style="font-size: 10.5px;">
+        <div class="alert alert-success rounded-3 border-0 p-3 mb-3" style="font-size: 10.5px;">
             <i class="bi bi-check-circle-fill me-1"></i> <?= htmlspecialchars($_SESSION['success']) ?>
         </div>
         <?php unset($_SESSION['success']); ?>
@@ -24,7 +24,7 @@
 
     <?php if ($user): ?>
         <!-- User Profile Header Card -->
-        <div class="p-3 bg-white border shadow-xs mb-2.5 d-flex align-items-center gap-3" style="border-radius: 14px;">
+        <div class="p-3 bg-white border shadow-xs mb-3.5 d-flex align-items-center gap-3" style="border-radius: 14px;">
             <div class="position-relative">
                 <img src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/default.png') ?>" alt="User" class="rounded-circle border border-2" style="width: 48px; height: 48px; object-fit: cover; border-color: #EE2737 !important;">
             </div>
@@ -41,23 +41,23 @@
         </div>
 
         <!-- CicalengkaPay Quick Card -->
-        <div class="p-3 bg-white border shadow-xs mb-2.5 d-flex align-items-center justify-content-between" style="border-radius: 14px;">
+        <div class="p-3 bg-white border shadow-xs mb-3.5 d-flex align-items-center justify-content-between" style="border-radius: 14px;">
             <div class="d-flex align-items-center gap-2.5">
-                <div class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 36px; height: 36px; font-size: 16px; background: linear-gradient(135deg, #EE2737, #C61524); box-shadow: 0 2px 6px rgba(238,39,55,0.25);">
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 38px; height: 38px; font-size: 17px; background: linear-gradient(135deg, #EE2737, #C61524); box-shadow: 0 2px 6px rgba(238,39,55,0.25);">
                     <i class="bi bi-wallet2"></i>
                 </div>
                 <div>
-                    <div class="fw-bold" style="color: #EE2737; font-size: 10px;">Cicalengka<span style="color:#C61524;">Pay</span></div>
-                    <div class="fw-extrabold text-dark" style="font-size: 13px;"><?= format_rupiah($wallet['balance'] ?? 0) ?></div>
+                    <div class="fw-bold" style="color: #EE2737; font-size: 10.5px;">Cicalengka<span style="color:#C61524;">Pay</span></div>
+                    <div class="fw-extrabold text-dark" style="font-size: 13.5px;"><?= format_rupiah($wallet['balance'] ?? 0) ?></div>
                 </div>
             </div>
-            <a href="<?= $baseUrl ?>/wallet" class="btn btn-sm rounded-pill fw-bold px-3 py-1 text-white shadow-xs" style="background:#EE2737; font-size: 10px;">
+            <a href="<?= $baseUrl ?>/wallet" class="btn btn-sm rounded-pill fw-bold px-3 py-1.5 text-white shadow-xs" style="background:#EE2737; font-size: 10.5px;">
                 Isi Saldo
             </a>
         </div>
 
         <!-- Menu Navigation List -->
-        <div class="bg-white border shadow-xs overflow-hidden mb-3" style="border-radius: 14px;">
+        <div class="bg-white border shadow-xs overflow-hidden mb-4" style="border-radius: 14px;">
             <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#editProfileModal" class="p-3 d-flex align-items-center justify-content-between text-decoration-none text-dark border-bottom hover-bg-light transition">
                 <div class="d-flex align-items-center gap-2.5">
                     <i class="bi bi-person-gear" style="color: #EE2737 !important; font-size: 16px;"></i>

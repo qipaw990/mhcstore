@@ -7,9 +7,9 @@
     <h6 class="fw-bold m-0 text-dark" style="font-size: 13px;">Dompet Digital CicalengkaPay</h6>
 </div>
 
-<div class="px-3 py-2.5">
+<div class="px-3 pt-3.5 pb-5" style="min-height: 85vh;">
     <!-- CicalengkaPay Card Banner -->
-    <div class="p-3.5 text-white shadow-xs mb-3 position-relative overflow-hidden" style="background: linear-gradient(135deg, #EE2737 0%, #991B1B 100%); border-radius: 16px;">
+    <div class="p-3.5 text-white shadow-xs mb-3.5 position-relative overflow-hidden" style="background: linear-gradient(135deg, #EE2737 0%, #991B1B 100%); border-radius: 16px;">
         <!-- Watermark Icon -->
         <div class="position-absolute" style="right: -8px; bottom: -12px; font-size: 85px; opacity: 0.08; line-height: 1; pointer-events: none;">
             <i class="bi bi-wallet-fill"></i>

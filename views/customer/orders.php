@@ -5,7 +5,7 @@
     </span>
 </div>
 
-<div class="px-3 py-2.5" id="orders-main-container">
+<div class="px-3 pt-3.5 pb-5" id="orders-main-container" style="min-height: 85vh;">
     <?php if (empty($orders)): ?>
         <div class="text-center py-5" id="empty-orders-view">
             <div class="rounded-circle bg-light text-muted d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 54px; height: 54px; font-size: 22px;">
@@ -16,7 +16,7 @@
             <a href="<?= $baseUrl ?>" class="btn btn-gojek-green px-4 py-2" style="background:#EE2737 !important; color:#FFFFFF !important; border-radius:9999px; width: auto; display: inline-flex; text-decoration:none; font-size: 11.5px; font-weight: 700;">Pesan Sekarang</a>
         </div>
     <?php else: ?>
-        <div class="d-flex flex-column gap-2.5" id="orders-list-wrapper">
+        <div class="d-flex flex-column gap-3.5 mb-4" id="orders-list-wrapper">
             <?php foreach ($orders as $order): ?>
                 <?php
                 $isCanceled = ($order['order_status'] === 'canceled');
