@@ -212,6 +212,15 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
         <div class="p-3 bg-white rounded-4 border shadow-sm mb-3">
             <h6 class="fw-bold small mb-3" style="color: var(--gojek-charcoal);">Status Pengantaran</h6>
             <div class="stepper-container p-0" id="order-stepper">
+                <?php
+                $isStep1Done = true;
+                $isStep2Done = in_array($order['order_status'], ['processing', 'handover', 'picked_up', 'on_the_way', 'delivered']);
+                $isStep2Active = ($order['order_status'] === 'confirmed');
+                $isStep3Done = in_array($order['order_status'], ['on_the_way', 'delivered']);
+                $isStep3Active = in_array($order['order_status'], ['processing', 'handover', 'picked_up']);
+                $isStep4Done = ($order['order_status'] === 'delivered');
+                $isStep4Active = ($order['order_status'] === 'on_the_way');
+                ?>
                 <div class="step-item step-1 completed">
                     <div class="step-dot"><i class="bi bi-check-lg"></i></div>
                     <div class="flex-grow-1">
@@ -219,22 +228,22 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
                         <div class="text-muted" style="font-size: 11px;">Resto/Mitra menerima pesanan Anda</div>
                     </div>
                 </div>
-                <div class="step-item step-2 <?= in_array($order['order_status'], ['processing', 'handover', 'picked_up', 'on_the_way', 'delivered']) ? 'completed' : ($order['order_status'] === 'confirmed' ? 'active' : '') ?>">
-                    <div class="step-dot"><i class="bi bi-egg-fried"></i></div>
+                <div class="step-item step-2 <?= $isStep2Done ? 'completed' : ($isStep2Active ? 'active' : '') ?>">
+                    <div class="step-dot"><i class="bi <?= $isStep2Done ? 'bi-check-lg' : 'bi-egg-fried' ?>"></i></div>
                     <div class="flex-grow-1">
                         <div class="fw-bold small text-dark">Diproses & Disiapkan</div>
                         <div class="text-muted" style="font-size: 11px;">Makanan sedang dimasak / barang dikemas</div>
                     </div>
                 </div>
-                <div class="step-item step-3 <?= in_array($order['order_status'], ['on_the_way', 'delivered']) ? 'completed' : (in_array($order['order_status'], ['handover', 'picked_up']) ? 'active' : '') ?>">
-                    <div class="step-dot"><i class="bi bi-bicycle"></i></div>
+                <div class="step-item step-3 <?= $isStep3Done ? 'completed' : ($isStep3Active ? 'active' : '') ?>">
+                    <div class="step-dot"><i class="bi <?= $isStep3Done ? 'bi-check-lg' : 'bi-bicycle' ?>"></i></div>
                     <div class="flex-grow-1">
                         <div class="fw-bold small text-dark">Kurir Menuju Lokasi Anda</div>
                         <div class="text-muted" style="font-size: 11px;">Kurir dalam perjalanan pengantaran</div>
                     </div>
                 </div>
-                <div class="step-item step-4 <?= $order['order_status'] === 'delivered' ? 'completed' : '' ?>">
-                    <div class="step-dot"><i class="bi bi-<?= $order['order_status'] === 'delivered' ? 'check-lg' : 'geo-alt-fill' ?>"></i></div>
+                <div class="step-item step-4 <?= $isStep4Done ? 'completed' : ($isStep4Active ? 'active' : '') ?>">
+                    <div class="step-dot"><i class="bi <?= $isStep4Done ? 'bi-check-lg' : 'bi-geo-alt-fill' ?>"></i></div>
                     <div class="flex-grow-1">
                         <div class="fw-bold small text-dark">Pesanan Selesai</div>
                         <div class="text-muted" style="font-size: 11px;">Barang sampai dengan aman</div>

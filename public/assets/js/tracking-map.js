@@ -115,11 +115,11 @@ function initOrderTrackingMap(orderCode, initialData) {
       .addTo(trackingMap);
   }
 
-  drawRoutePolylines(initialData);
-  fitAllMarkers();
-  updateLiveMetrics(initialData);
-  updateTrackingStatusUI(initialData.order_status, initialData);
-  updateDriverCardUI(initialData.driver);
+  try { updateTrackingStatusUI(initialData.order_status, initialData); } catch (e) { console.error('Initial status UI sync error:', e); }
+  try { updateLiveMetrics(initialData); } catch (e) { console.error('Initial metrics error:', e); }
+  try { updateDriverCardUI(initialData.driver); } catch (e) { console.error('Initial driver card error:', e); }
+  try { drawRoutePolylines(initialData); } catch (e) { console.error('Initial route polyline error:', e); }
+  try { fitAllMarkers(); } catch (e) { console.error('Initial fit bounds error:', e); }
 
   // Clear any existing poll
   if (pollTimer) clearInterval(pollTimer);
@@ -309,10 +309,11 @@ async function pollLiveTracking(orderCode) {
         }
       }
 
-      drawRoutePolylines(d);
-      updateLiveMetrics(d);
-      updateTrackingStatusUI(d.order_status, d);
-      updateDriverCardUI(d.driver);
+      // Update status and UI components reliably
+      try { updateTrackingStatusUI(d.order_status, d); } catch (e) { console.error('Status UI sync error:', e); }
+      try { updateLiveMetrics(d); } catch (e) { console.error('Live metrics error:', e); }
+      try { updateDriverCardUI(d.driver); } catch (e) { console.error('Driver card sync error:', e); }
+      try { drawRoutePolylines(d); } catch (e) { console.error('Polyline sync error:', e); }
     }
   } catch (err) {
     console.warn('Live tracking update failed:', err);
@@ -408,33 +409,32 @@ function updateTrackingStatusUI(status, data) {
   const s4 = document.querySelector('.stepper-container .step-4');
 
   if (s1 && s2 && s3 && s4) {
+    const icon1 = s1.querySelector('.step-dot i');
+    const icon2 = s2.querySelector('.step-dot i');
+    const icon3 = s3.querySelector('.step-dot i');
+    const icon4 = s4.querySelector('.step-dot i');
+
+    // Step 1: Confirmed
     s1.className = 'step-item step-1 completed';
+    if (icon1) icon1.className = 'bi bi-check-lg';
 
-    if (['processing', 'handover', 'picked_up', 'on_the_way', 'delivered'].includes(status)) {
-      s2.className = 'step-item step-2 completed';
-    } else if (status === 'confirmed') {
-      s2.className = 'step-item step-2 active';
-    } else {
-      s2.className = 'step-item step-2';
-    }
+    // Step 2: Processing & Prepared
+    const isStep2Done = ['processing', 'handover', 'picked_up', 'on_the_way', 'delivered'].includes(status);
+    const isStep2Active = (status === 'confirmed');
+    s2.className = `step-item step-2 ${isStep2Done ? 'completed' : (isStep2Active ? 'active' : '')}`;
+    if (icon2) icon2.className = isStep2Done ? 'bi bi-check-lg' : 'bi bi-egg-fried';
 
-    if (['on_the_way', 'delivered'].includes(status)) {
-      s3.className = 'step-item step-3 completed';
-    } else if (['handover', 'picked_up'].includes(status)) {
-      s3.className = 'step-item step-3 active';
-    } else {
-      s3.className = 'step-item step-3';
-    }
+    // Step 3: Courier on the way
+    const isStep3Done = ['on_the_way', 'delivered'].includes(status);
+    const isStep3Active = ['processing', 'handover', 'picked_up'].includes(status);
+    s3.className = `step-item step-3 ${isStep3Done ? 'completed' : (isStep3Active ? 'active' : '')}`;
+    if (icon3) icon3.className = isStep3Done ? 'bi bi-check-lg' : 'bi bi-bicycle';
 
-    if (status === 'delivered') {
-      s4.className = 'step-item step-4 completed';
-      const icon4 = s4.querySelector('.step-dot i');
-      if (icon4) icon4.className = 'bi bi-check-lg';
-    } else {
-      s4.className = 'step-item step-4';
-      const icon4 = s4.querySelector('.step-dot i');
-      if (icon4) icon4.className = 'bi bi-geo-alt-fill';
-    }
+    // Step 4: Delivered
+    const isStep4Done = (status === 'delivered');
+    const isStep4Active = (status === 'on_the_way');
+    s4.className = `step-item step-4 ${isStep4Done ? 'completed' : (isStep4Active ? 'active' : '')}`;
+    if (icon4) icon4.className = isStep4Done ? 'bi bi-check-lg' : 'bi bi-geo-alt-fill';
   }
 
   // OTP Card vs Celebration Card Auto-Sync
@@ -456,7 +456,6 @@ function updateTrackingStatusUI(status, data) {
 
   // Stop polling if delivered or canceled to conserve resources
   if ((status === 'delivered' || status === 'canceled') && pollTimer) {
-    // Keep running a slower poll (every 10s) just in case or stop
     clearInterval(pollTimer);
     pollTimer = null;
   }
