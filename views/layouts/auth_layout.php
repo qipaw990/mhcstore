@@ -59,6 +59,7 @@ $baseUrl = $appConfig['public_url'];
     </style>
 </head>
 <body>
+<?php require_once dirname(__DIR__) . '/partials/preloader.php'; ?>
 
 <div class="auth-card">
     <div class="text-center mb-4">

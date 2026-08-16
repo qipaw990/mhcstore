@@ -31,6 +31,7 @@ $unreadNotifs = $user ? (new \App\Models\Notification())->getUnreadCount($user['
     </script>
 </head>
 <body>
+<?php require_once dirname(__DIR__) . '/partials/preloader.php'; ?>
 
 <div class="mobile-app-wrapper">
     <!-- PWA Install Banner -->

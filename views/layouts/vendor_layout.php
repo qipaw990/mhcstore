@@ -44,6 +44,7 @@ if ($user) {
     </script>
 </head>
 <body class="merchant-pwa-body">
+<?php require_once dirname(__DIR__) . '/partials/preloader.php'; ?>
 
 <div class="merchant-app-wrapper">
     <!-- Merchant Sticky Top Header -->

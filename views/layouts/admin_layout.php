@@ -20,6 +20,7 @@ $user = auth_user();
     </script>
 </head>
 <body>
+<?php require_once dirname(__DIR__) . '/partials/preloader.php'; ?>
 
 <div class="dashboard-wrapper">
     <!-- Admin Sidebar -->

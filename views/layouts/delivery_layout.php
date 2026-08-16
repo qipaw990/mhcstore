@@ -26,6 +26,7 @@ $user = auth_user();
     </script>
 </head>
 <body style="background-color: #f1f5f9;">
+<?php require_once dirname(__DIR__) . '/partials/preloader.php'; ?>
 
 <div class="mobile-app-wrapper" style="background-color: #f8fafc;">
     <!-- Top Driver Header (CicalengkaGO Partner Bar) -->
