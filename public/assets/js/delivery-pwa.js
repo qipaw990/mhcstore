@@ -52,6 +52,8 @@ function playNewOrderChime() {
 function formatRupiahJs(number) {
   return 'Rp ' + Number(number).toLocaleString('id-ID');
 }
+window.formatRupiahJs = formatRupiahJs;
+window.playNewOrderChime = playNewOrderChime;
 
 // Toggle Driver Online Status
 async function toggleDriverStatus() {
@@ -169,6 +171,10 @@ async function updateDeliveryStep(orderId, status) {
     console.error(err);
   }
 }
+
+window.toggleDriverStatus = toggleDriverStatus;
+window.acceptDriverOrder = acceptDriverOrder;
+window.updateDeliveryStep = updateDeliveryStep;
 
 // Background GPS Broadcasting (every 8 seconds while online)
 function startDriverGpsTracking() {
