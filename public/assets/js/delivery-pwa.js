@@ -226,6 +226,10 @@ async function syncDriverLiveDashboard() {
       data.available_orders || []
     );
 
+    if (availableCount === 0 && data.debug_db_orders && data.debug_db_orders.length > 0) {
+      console.log('📋 [Database 5 Order Terakhir]:', data.debug_db_orders);
+    }
+
     window.HAS_ACTIVE_ORDER = !!data.has_active_order;
 
     // 1. Sync Wallet & Completed Orders
