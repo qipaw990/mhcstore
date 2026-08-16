@@ -271,6 +271,7 @@ class OrderController extends Controller
             'snap_token' => $snapToken,
             'client_key' => $clientKey,
             'snap_url'   => $snapUrl,
+            'is_sandbox' => $this->midtransService->isSandbox(),
             'active_tab' => 'orders'
         ], 'customer_layout');
     }

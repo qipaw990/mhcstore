@@ -360,13 +360,35 @@ async function handlePlaceParcel(e) {
                     },
                     onPending: function(result) {
                         Swal.fire({
-                            title: 'Menunggu Pembayaran ⏳',
-                            text: 'Silakan selesaikan pembayaran ongkir via QRIS / Virtual Account.',
+                            title: 'Menunggu Pembayaran (Sandbox) ⏳',
+                            text: 'Instruksi pembayaran telah dibuat. Ingin menyelesaikan ongkir sekarang (Berhasil)?',
                             icon: 'info',
-                            confirmButtonText: 'Lihat Status Pengiriman',
-                            confirmButtonColor: '#EE2737'
-                        }).then(() => {
-                            window.location.href = window.BASE_URL + '/' + data.data.redirect;
+                            showCancelButton: true,
+                            confirmButtonText: '⚡ Jadikan Berhasil (Lunas)',
+                            confirmButtonColor: '#10B981',
+                            cancelButtonText: 'Lihat Status Pengiriman'
+                        }).then(async (res) => {
+                            if (res.isConfirmed) {
+                                await fetch(window.BASE_URL + '/payment/simulate-sandbox-success', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        order_id: data.data.order_code,
+                                        payment_type: result?.payment_type || 'midtrans_sandbox'
+                                    })
+                                });
+                                Swal.fire({
+                                    title: 'Pembayaran Berhasil! 🎉',
+                                    text: 'Ongkir CicalengkaSend telah lunas. Kurir segera meluncur.',
+                                    icon: 'success',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    window.location.href = window.BASE_URL + '/' + data.data.redirect;
+                                });
+                            } else {
+                                window.location.href = window.BASE_URL + '/' + data.data.redirect;
+                            }
                         });
                     },
                     onError: function(result) {
@@ -376,19 +398,26 @@ async function handlePlaceParcel(e) {
                     },
                     onClose: function() {
                         Swal.fire({
-                            title: 'Pembayaran Belum Selesai',
-                            text: 'Order kirim paket Anda telah dicatat. Anda dapat memantau status di riwayat pesanan.',
-                            icon: 'warning',
+                            title: 'Pembayaran Ditutup',
+                            text: 'Order kirim paket #' + data.data.order_code + ' telah dicatat. Ingin menyelesaikan pembayaran sekarang (Sandbox)?',
+                            icon: 'question',
                             showCancelButton: true,
-                            confirmButtonText: 'Ke Lacak Pengiriman',
-                            confirmButtonColor: '#EE2737',
-                            cancelButtonText: 'Tutup'
-                        }).then((r) => {
+                            confirmButtonText: '⚡ Selesaikan (Lunas)',
+                            confirmButtonColor: '#10B981',
+                            cancelButtonText: 'Ke Lacak Pengiriman'
+                        }).then(async (r) => {
                             if (r.isConfirmed) {
+                                await fetch(window.BASE_URL + '/payment/simulate-sandbox-success', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        order_id: data.data.order_code,
+                                        payment_type: 'midtrans_sandbox_close'
+                                    })
+                                });
                                 window.location.href = window.BASE_URL + '/' + data.data.redirect;
                             } else {
-                                btn.disabled = false;
-                                btn.innerHTML = '<i class="bi bi-box-seam-fill"></i> <span>Panggil Kurir CicalengkaSend Sekarang</span>';
+                                window.location.href = window.BASE_URL + '/' + data.data.redirect;
                             }
                         });
                     }

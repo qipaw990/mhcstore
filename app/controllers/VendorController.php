@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Wallet;
+use App\Models\WithdrawRequest;
 use App\Core\Database;
 use Exception;
 
@@ -16,6 +17,7 @@ class VendorController extends Controller
     private Order $orderModel;
     private Product $productModel;
     private Wallet $walletModel;
+    private WithdrawRequest $withdrawModel;
 
     public function __construct()
     {
@@ -23,6 +25,7 @@ class VendorController extends Controller
         $this->orderModel = new Order();
         $this->productModel = new Product();
         $this->walletModel = new Wallet();
+        $this->withdrawModel = new WithdrawRequest();
     }
 
     public function dashboard(): void
@@ -244,13 +247,61 @@ class VendorController extends Controller
         $userId = auth_id();
         $wallet = $this->walletModel->getOrCreate($userId, 'vendor');
         $transactions = $this->walletModel->getTransactions($userId, 50);
+        $withdrawRequests = $this->withdrawModel->getByUser($userId, 'vendor', 50);
+        $totalWithdrawn = $this->withdrawModel->getTotalWithdrawn($userId, 'vendor');
+        $pendingWithdrawn = $this->withdrawModel->getPendingWithdrawn($userId, 'vendor');
 
         $this->view('vendor.wallet', [
-            'title'        => 'Dompet & Pendapatan Toko',
-            'wallet'       => $wallet,
-            'transactions' => $transactions,
-            'active_tab'   => 'wallet'
+            'title'             => 'Dompet & Pendapatan Toko',
+            'wallet'            => $wallet,
+            'transactions'      => $transactions,
+            'withdraw_requests' => $withdrawRequests,
+            'total_withdrawn'   => $totalWithdrawn,
+            'pending_withdrawn' => $pendingWithdrawn,
+            'active_tab'        => 'wallet'
         ], 'vendor_layout');
+    }
+
+    public function requestWithdraw(): void
+    {
+        $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Sesi tidak valid.');
+            return;
+        }
+
+        $data = $this->getPost();
+        $amount = (float)($data['amount'] ?? 0);
+        $bankName = sanitize($data['bank_name'] ?? '');
+        $accNumber = sanitize($data['account_number'] ?? '');
+        $accHolder = sanitize($data['account_holder'] ?? '');
+
+        if ($amount < 10000) {
+            $this->errorResponse('Minimal penarikan saldo adalah Rp 10.000.');
+            return;
+        }
+
+        if (empty($bankName) || empty($accNumber) || empty($accHolder)) {
+            $this->errorResponse('Harap lengkapi informasi tujuan pencairan, nomor rekening/e-wallet, dan nama pemilik rekening.');
+            return;
+        }
+
+        try {
+            $req = $this->withdrawModel->requestPayout(
+                $userId,
+                'vendor',
+                $amount,
+                $bankName,
+                $accNumber,
+                $accHolder
+            );
+
+            $this->successResponse('Pengajuan penarikan dana berhasil! Dana akan diproses oleh tim CicalengkaGO.', [
+                'withdraw' => $req
+            ]);
+        } catch (Exception $e) {
+            $this->errorResponse($e->getMessage());
+        }
     }
 
     public function profile(): void

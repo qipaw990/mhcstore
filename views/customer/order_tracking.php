@@ -82,9 +82,29 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
                 <i class="bi bi-exclamation-triangle-fill text-warning fs-5 flex-shrink-0"></i>
                 <div>
                     <b>Pesanan belum diproses oleh Resto/Mitra Kurir.</b><br>
-                    Silakan klik tombol <b>Bayar Sekarang</b> di bawah untuk membuka metode pembayaran online.
+                    Silakan klik tombol <b>Bayar Sekarang</b> di bawah untuk membuka popup pembayaran online Midtrans.
                 </div>
             </div>
+
+            <?php if (!empty($is_sandbox)): ?>
+            <!-- Sandbox Simulation Banner & Quick Action -->
+            <div class="p-3 mb-3 rounded-4 border border-warning text-start shadow-xs" style="background: #fffbeb;">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                    <div class="d-flex align-items-center gap-1.5">
+                        <span class="badge bg-warning text-dark fw-bold" style="font-size: 10px;">MIDTRANS SANDBOX</span>
+                        <span class="small fw-bold text-dark">Mode Uji Coba</span>
+                    </div>
+                    <span class="badge bg-white text-muted border" style="font-size: 10px;">Testing</span>
+                </div>
+                <div class="text-muted small mb-2.5" style="font-size: 11px; line-height: 1.4;">
+                    Saat membayar di Midtrans Sandbox, Anda dapat menyelesaikan pembayaran via Simulator atau langsung klik tombol di bawah untuk mengubah transaksi menjadi <b>Lunas & Berhasil</b> secara instan.
+                </div>
+                <button type="button" onclick="simulateSandboxPayment()" class="btn btn-warning btn-sm w-100 fw-bold rounded-pill text-dark shadow-xs d-flex align-items-center justify-content-center gap-2 py-2">
+                    <i class="bi bi-lightning-charge-fill text-dark"></i>
+                    <span>⚡ Simulasi Bayar Berhasil (Sandbox)</span>
+                </button>
+            </div>
+            <?php endif; ?>
 
             <!-- Action Buttons -->
             <button type="button" id="btnPayNow" onclick="payNow()" class="btn w-100 py-3 rounded-pill fw-bold text-white shadow-sm mb-2 d-flex align-items-center justify-content-center gap-2" style="background:#EE2737; font-size: 15px;">
@@ -762,5 +782,301 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(openChatModal, 300);
     }
 });
+
+// ========================================================
+// Midtrans Payment & Sandbox Simulation Handlers
+// ========================================================
+let snapToken = <?= json_encode($snap_token ?? null) ?>;
+const IS_SANDBOX = <?= !empty($is_sandbox) ? 'true' : 'false' ?>;
+
+async function payNow() {
+    const btn = document.getElementById('btnPayNow');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Menghubungkan Midtrans...';
+    }
+
+    try {
+        if (!snapToken) {
+            const res = await fetch(window.BASE_URL + '/orders/get-snap-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'order_code=' + encodeURIComponent(TRACKING_ORDER_CODE)
+            });
+            const data = await res.json();
+            if (data.success && data.data && data.data.snap_token) {
+                snapToken = data.data.snap_token;
+            } else {
+                throw new Error(data.message || 'Gagal memuat tiket pembayaran.');
+            }
+        }
+
+        if (typeof window.snap === 'undefined') {
+            throw new Error('Script Midtrans Snap belum termuat. Silakan refresh halaman.');
+        }
+
+        window.snap.pay(snapToken, {
+            onSuccess: function(result) {
+                handlePaymentSuccessCallback(result);
+            },
+            onPending: function(result) {
+                handlePaymentPendingCallback(result);
+            },
+            onError: function(result) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Pembayaran Gagal',
+                    text: 'Terjadi kendala dalam proses pembayaran online.',
+                    confirmButtonColor: '#EE2737'
+                });
+                resetPayButton();
+            },
+            onClose: function() {
+                if (IS_SANDBOX) {
+                    Swal.fire({
+                        icon: 'question',
+                        title: 'Pembayaran Belum Selesai',
+                        text: 'Anda menutup popup Midtrans. Apakah Anda ingin menyelesaikan transaksi ini sekarang (Mode Sandbox)?',
+                        showCancelButton: true,
+                        confirmButtonText: '⚡ Ya, Selesaikan (Lunas)',
+                        confirmButtonColor: '#10B981',
+                        cancelButtonText: 'Tutup'
+                    }).then((r) => {
+                        if (r.isConfirmed) {
+                            simulateSandboxPayment();
+                        } else {
+                            resetPayButton();
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Pembayaran Belum Selesai',
+                        text: 'Silakan klik Bayar Sekarang kapan saja untuk menyelesaikan pembayaran pesanan.',
+                        confirmButtonColor: '#EE2737'
+                    });
+                    resetPayButton();
+                }
+            }
+        });
+    } catch(err) {
+        console.error(err);
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal Membuka Pembayaran',
+            text: err.message || 'Terjadi kesalahan sistem.',
+            confirmButtonColor: '#EE2737'
+        });
+        resetPayButton();
+    }
+}
+
+function resetPayButton() {
+    const btn = document.getElementById('btnPayNow');
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-wallet2 fs-5"></i> <span>Bayar Sekarang (Buka Midtrans)</span>';
+    }
+}
+
+async function handlePaymentSuccessCallback(result) {
+    Swal.fire({
+        title: 'Memverifikasi Pembayaran...',
+        text: 'Mengonfirmasi transaksi ke server...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
+
+    try {
+        await fetch(window.BASE_URL + '/payment/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                order_id: TRACKING_ORDER_CODE,
+                transaction_status: result?.transaction_status || 'settlement',
+                payment_type: result?.payment_type || 'midtrans',
+                gross_amount: result?.gross_amount
+            })
+        });
+    } catch(e) {
+        console.warn('Verify callback err:', e);
+    }
+
+    Swal.fire({
+        icon: 'success',
+        title: 'Pembayaran Berhasil! 🎉',
+        text: 'Pesanan Anda telah lunas dan siap diantar.',
+        timer: 2000,
+        showConfirmButton: false
+    }).then(() => {
+        location.reload();
+    });
+}
+
+function handlePaymentPendingCallback(result) {
+    if (IS_SANDBOX) {
+        Swal.fire({
+            icon: 'info',
+            title: 'Instruksi Pembayaran Dibuat',
+            text: 'Kode transaksi / Virtual Account telah diterbitkan. Ingin mengubah status menjadi BERHASIL (Lunas) sekarang?',
+            showCancelButton: true,
+            confirmButtonText: '⚡ Jadikan Berhasil (Lunas)',
+            confirmButtonColor: '#10B981',
+            cancelButtonText: 'Nanti'
+        }).then((res) => {
+            if (res.isConfirmed) {
+                simulateSandboxPayment();
+            } else {
+                resetPayButton();
+            }
+        });
+    } else {
+        Swal.fire({
+            icon: 'info',
+            title: 'Menunggu Pembayaran ⏳',
+            text: 'Silakan selesaikan pembayaran sesuai instruksi Virtual Account / QRIS yang dipilih.',
+            confirmButtonColor: '#EE2737'
+        });
+        resetPayButton();
+    }
+}
+
+async function simulateSandboxPayment() {
+    Swal.fire({
+        title: 'Memproses Pembayaran Sandbox...',
+        text: 'Mengonfirmasi status lunas secara instan...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
+
+    try {
+        const res = await fetch(window.BASE_URL + '/payment/simulate-sandbox-success', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                order_id: TRACKING_ORDER_CODE,
+                payment_type: 'midtrans_sandbox_instant'
+            })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Pembayaran Berhasil! 🎉',
+                text: 'Status pesanan #' + TRACKING_ORDER_CODE + ' berhasil diubah menjadi LUNAS (Paid).',
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire('Gagal', data.message || 'Gagal memproses pembayaran sandbox.', 'error');
+            resetPayButton();
+        }
+    } catch(err) {
+        console.error(err);
+        Swal.fire('Error', 'Terjadi kesalahan sistem.', 'error');
+        resetPayButton();
+    }
+}
+
+async function checkPaymentStatus() {
+    const btn = document.getElementById('btnCheckStatus');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengecek...';
+    }
+
+    try {
+        const res = await fetch(window.BASE_URL + '/payment/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order_id: TRACKING_ORDER_CODE })
+        });
+        const data = await res.json();
+
+        if (data.success && (data.data?.status === 'settled' || data.data?.payment_status === 'paid')) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Pembayaran Terkonfirmasi! 🎉',
+                text: 'Pesanan telah lunas. Memperbarui status pesanan...',
+                timer: 1800,
+                showConfirmButton: false
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            if (IS_SANDBOX) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Status: Belum Terbayar',
+                    text: 'Belum ada pembayaran terkonfirmasi di Midtrans. Ingin mengubah status menjadi BERHASIL (Sandbox Test)?',
+                    showCancelButton: true,
+                    confirmButtonText: '⚡ Jadikan Berhasil (Lunas)',
+                    confirmButtonColor: '#10B981',
+                    cancelButtonText: 'Batal'
+                }).then((r) => {
+                    if (r.isConfirmed) {
+                        simulateSandboxPayment();
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Belum Terbayar',
+                    text: data.message || 'Pembayaran belum terdeteksi. Silakan selesaikan transaksi Anda.',
+                    confirmButtonColor: '#EE2737'
+                });
+            }
+        }
+    } catch(err) {
+        console.error(err);
+        Swal.fire('Error', 'Gagal memeriksa status pembayaran.', 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Cek Status Bayar';
+        }
+    }
+}
+
+async function cancelUnpaidOrder() {
+    const confirm = await Swal.fire({
+        title: 'Batalkan Pesanan?',
+        text: 'Pesanan yang belum dibayar ini akan dibatalkan permanen.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Batalkan',
+        confirmButtonColor: '#dc3545',
+        cancelButtonText: 'Kembali'
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+        const res = await fetch(window.BASE_URL + '/orders/cancel-unpaid', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'order_code=' + encodeURIComponent(TRACKING_ORDER_CODE)
+        });
+        const data = await res.json();
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Pesanan Dibatalkan',
+                text: 'Pesanan berhasil dibatalkan.',
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire('Gagal', data.message || 'Gagal membatalkan pesanan.', 'error');
+        }
+    } catch(err) {
+        Swal.fire('Error', 'Terjadi kesalahan sistem.', 'error');
+    }
+}
 </script>
 

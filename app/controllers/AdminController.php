@@ -1060,4 +1060,101 @@ class AdminController extends Controller
         $_SESSION['success'] = 'Profil Admin berhasil diperbarui!';
         $this->redirect('admin/profile');
     }
+
+    // =========================================================================
+    // 12. Payouts / Withdrawal Management
+    // =========================================================================
+    public function withdrawals(): void
+    {
+        $statusFilter = sanitize($_GET['status'] ?? 'all');
+        $whereSql = "1=1";
+        $params = [];
+
+        if ($statusFilter !== 'all' && in_array($statusFilter, ['pending', 'approved', 'rejected'])) {
+            $whereSql .= " AND wr.status = ?";
+            $params[] = $statusFilter;
+        }
+
+        $withdrawals = Database::query("
+            SELECT wr.*, u.name as user_name, u.email as user_email, u.phone as user_phone
+            FROM `withdraw_requests` wr
+            JOIN `users` u ON wr.user_id = u.id
+            WHERE {$whereSql}
+            ORDER BY wr.id DESC
+        ", $params);
+
+        $pendingCount = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM `withdraw_requests` WHERE status = 'pending'")['c'] ?? 0);
+        $totalPaid = (float)(Database::fetchOne("SELECT COALESCE(SUM(amount), 0) as s FROM `withdraw_requests` WHERE status = 'approved'")['s'] ?? 0);
+
+        $this->view('admin.withdrawals', [
+            'title'         => 'Pencairan Dana (Withdrawal) Mitra - CicalengkaGO Admin',
+            'withdrawals'   => $withdrawals,
+            'pending_count' => $pendingCount,
+            'total_paid'    => $totalPaid,
+            'current_filter'=> $statusFilter,
+            'active_tab'    => 'withdrawals'
+        ], 'admin_layout');
+    }
+
+    public function updateWithdrawStatus(): void
+    {
+        $data = $this->getPost();
+        $id = (int)($data['id'] ?? 0);
+        $status = sanitize($data['status'] ?? '');
+        $adminNotes = sanitize($data['admin_notes'] ?? '');
+
+        if (!$id || !in_array($status, ['approved', 'rejected'])) {
+            $this->errorResponse('Data penarikan atau status tidak valid.');
+            return;
+        }
+
+        $req = Database::fetchOne("SELECT * FROM `withdraw_requests` WHERE id = ?", [$id]);
+        if (!$req) {
+            $this->errorResponse('Data penarikan tidak ditemukan.');
+            return;
+        }
+
+        if ($req['status'] !== 'pending') {
+            $this->errorResponse("Pengajuan ini sudah berstatus {$req['status']}.");
+            return;
+        }
+
+        if ($status === 'approved') {
+            Database::update('withdraw_requests', [
+                'status'       => 'approved',
+                'admin_notes'  => $adminNotes ?: 'Transfer dana telah berhasil diproses oleh admin.',
+                'processed_at' => date('Y-m-d H:i:s')
+            ], 'id = ?', [$id]);
+
+            $this->successResponse('Status penarikan berhasil disetujui (Approved).');
+            return;
+        }
+
+        if ($status === 'rejected') {
+            Database::update('withdraw_requests', [
+                'status'       => 'rejected',
+                'admin_notes'  => $adminNotes ?: 'Penarikan ditolak oleh admin dan saldo telah dikembalikan.',
+                'processed_at' => date('Y-m-d H:i:s')
+            ], 'id = ?', [$id]);
+
+            // Refund balance to user wallet
+            $walletModel = new Wallet();
+            $walletModel->credit(
+                (int)$req['user_id'],
+                (float)$req['amount'],
+                'refund',
+                "Pengembalian dana penarikan ditolak ({$req['withdraw_code']})",
+                $req['withdraw_code']
+            );
+
+            // Revert total_withdrawn
+            Database::raw(
+                "UPDATE `wallets` SET `total_withdrawn` = GREATEST(0, `total_withdrawn` - ?) WHERE `user_id` = ?",
+                [(float)$req['amount'], (int)$req['user_id']]
+            );
+
+            $this->successResponse('Pengajuan penarikan berhasil ditolak dan saldo telah dikembalikan ke dompet mitra.');
+            return;
+        }
+    }
 }

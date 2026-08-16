@@ -74,6 +74,12 @@ $user = auth_user();
                 </a>
             </li>
             <li>
+                <a href="<?= $baseUrl ?>/admin/withdrawals" class="menu-link <?= ($active_tab ?? '') === 'withdrawals' ? 'active' : '' ?>">
+                    <i class="bi bi-cash-stack"></i>
+                    <span>Pencairan Dana Mitra</span>
+                </a>
+            </li>
+            <li>
                 <a href="<?= $baseUrl ?>/admin/customers" class="menu-link <?= ($active_tab ?? '') === 'customers' ? 'active' : '' ?>">
                     <i class="bi bi-people-fill"></i>
                     <span>Daftar Pelanggan</span>

@@ -157,11 +157,15 @@ class CustomerController extends Controller
 
         $wallet = $this->walletModel->getOrCreate($userId, 'customer');
         $transactions = $this->walletModel->getTransactions($userId, 30);
+        $midtransService = new \App\Services\MidtransService();
 
         $this->view('customer.wallet', [
-            'title'        => 'Dompet Digital CicagoPay',
+            'title'        => 'Dompet Digital CicalengkaPay',
             'wallet'       => $wallet,
             'transactions' => $transactions,
+            'client_key'   => $midtransService->getClientKey(),
+            'snap_url'     => $midtransService->getSnapUrl(),
+            'is_sandbox'   => $midtransService->isSandbox(),
             'active_tab'   => 'profile'
         ], 'customer_layout');
     }

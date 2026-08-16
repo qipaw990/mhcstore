@@ -46,6 +46,7 @@ Router::post('/profile/update', [CustomerController::class, 'updateProfile'], ['
 Router::get('/wallet', [CustomerController::class, 'wallet'], ['AuthMiddleware']);
 Router::post('/wallet/topup-midtrans', [PaymentController::class, 'topupSnap'], ['AuthMiddleware']);
 Router::post('/payment/verify', [PaymentController::class, 'verifyClientCallback']);
+Router::post('/payment/simulate-sandbox-success', [PaymentController::class, 'simulateSandboxSuccess']);
 Router::post('/payment/midtrans/notification', [PaymentController::class, 'notification']);
 Router::get('/notifications', [CustomerController::class, 'notifications'], ['AuthMiddleware']);
 
@@ -86,6 +87,7 @@ Router::group(['prefix' => '/delivery', 'middleware' => ['DeliveryMiddleware']],
     Router::post('/update-status', [DeliveryController::class, 'updateDeliveryStatus']);
     Router::post('/update-location', [DeliveryController::class, 'updateLocation']);
     Router::get('/earnings', [DeliveryController::class, 'earnings']);
+    Router::post('/withdraw', [DeliveryController::class, 'requestWithdraw']);
     Router::get('/profile', [DeliveryController::class, 'profile']);
     Router::post('/profile/update', [DeliveryController::class, 'updateProfile']);
 });
@@ -106,6 +108,7 @@ Router::group(['prefix' => '/vendor', 'middleware' => ['VendorMiddleware']], fun
     Router::post('/products/delete', [VendorController::class, 'deleteProduct']);
     Router::post('/products/toggle-status', [VendorController::class, 'toggleProductStatus']);
     Router::get('/wallet', [VendorController::class, 'wallet']);
+    Router::post('/wallet/withdraw', [VendorController::class, 'requestWithdraw']);
     Router::get('/profile', [VendorController::class, 'profile']);
     Router::post('/profile/update', [VendorController::class, 'updateProfile']);
 });
@@ -181,5 +184,9 @@ Router::group(['prefix' => '/admin', 'middleware' => ['AdminMiddleware']], funct
     Router::get('/midtrans/status/{code}', [AdminController::class, 'getMidtransStatus']);
     Router::post('/midtrans/test-connection', [AdminController::class, 'testMidtransApi']);
     Router::post('/email/test-send', [AdminController::class, 'testEmailGateway']);
+
+    // Payouts & Withdrawals
+    Router::get('/withdrawals', [AdminController::class, 'withdrawals']);
+    Router::post('/withdrawals/update-status', [AdminController::class, 'updateWithdrawStatus']);
 });
 

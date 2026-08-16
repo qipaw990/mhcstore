@@ -345,13 +345,35 @@ async function handlePlaceOrder(e) {
                     },
                     onPending: function(result) {
                         Swal.fire({
-                            title: 'Menunggu Pembayaran ⏳',
-                            text: 'Silakan selesaikan pembayaran Anda via QRIS / Virtual Account.',
+                            title: 'Menunggu Pembayaran (Sandbox) ⏳',
+                            text: 'Instruksi pembayaran virtual account / QRIS telah dibuat. Ingin mengubah status menjadi BERHASIL (Lunas)?',
                             icon: 'info',
-                            confirmButtonText: 'Lihat Status Pesanan',
-                            confirmButtonColor: '#EE2737'
-                        }).then(() => {
-                            window.location.href = window.BASE_URL + '/' + data.data.redirect;
+                            showCancelButton: true,
+                            confirmButtonText: '⚡ Jadikan Berhasil (Lunas)',
+                            confirmButtonColor: '#10B981',
+                            cancelButtonText: 'Lihat Status Pesanan'
+                        }).then(async (res) => {
+                            if (res.isConfirmed) {
+                                await fetch(window.BASE_URL + '/payment/simulate-sandbox-success', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        order_id: data.data.order_code,
+                                        payment_type: result?.payment_type || 'midtrans_sandbox'
+                                    })
+                                });
+                                Swal.fire({
+                                    title: 'Pembayaran Berhasil! 🎉',
+                                    text: 'Pesanan telah lunas dan siap diantar.',
+                                    icon: 'success',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    window.location.href = window.BASE_URL + '/' + data.data.redirect;
+                                });
+                            } else {
+                                window.location.href = window.BASE_URL + '/' + data.data.redirect;
+                            }
                         });
                     },
                     onError: function(result) {
@@ -361,19 +383,26 @@ async function handlePlaceOrder(e) {
                     },
                     onClose: function() {
                         Swal.fire({
-                            title: 'Pembayaran Belum Selesai',
-                            text: 'Pesanan Anda telah dicatat. Anda dapat memantau status pesanan di riwayat transaksi.',
-                            icon: 'warning',
+                            title: 'Pembayaran Ditutup',
+                            text: 'Pesanan #' + data.data.order_code + ' telah tersimpan. Ingin menyelesaikan pembayaran sekarang (Sandbox)?',
+                            icon: 'question',
                             showCancelButton: true,
-                            confirmButtonText: 'Ke Lacak Pesanan',
-                            confirmButtonColor: '#EE2737',
-                            cancelButtonText: 'Tutup'
-                        }).then((r) => {
+                            confirmButtonText: '⚡ Selesaikan (Lunas)',
+                            confirmButtonColor: '#10B981',
+                            cancelButtonText: 'Ke Lacak Pesanan'
+                        }).then(async (r) => {
                             if (r.isConfirmed) {
+                                await fetch(window.BASE_URL + '/payment/simulate-sandbox-success', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        order_id: data.data.order_code,
+                                        payment_type: 'midtrans_sandbox_close'
+                                    })
+                                });
                                 window.location.href = window.BASE_URL + '/' + data.data.redirect;
                             } else {
-                                btn.disabled = false;
-                                btn.innerHTML = '<i class="bi bi-shield-check"></i> <span>Pesan & Antar Sekarang</span>';
+                                window.location.href = window.BASE_URL + '/' + data.data.redirect;
                             }
                         });
                     }

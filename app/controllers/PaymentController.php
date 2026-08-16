@@ -95,12 +95,21 @@ class PaymentController extends Controller
             if ($dbOrder && $dbOrder['payment_status'] === 'paid') {
                 $this->successResponse('Pesanan sudah lunas', [
                     'status'         => 'settled',
-                    'payment_status' => 'paid'
+                    'payment_status' => 'paid',
+                    'order_code'     => $cleanCode
                 ]);
                 return;
             }
 
             if (!empty($data['transaction_status'])) {
+                // If in sandbox and client completed payment or requested settlement
+                $txStatus = $data['transaction_status'];
+                if ($this->midtransService->isSandbox() && in_array($txStatus, ['settlement', 'capture', 'success', 'accept', 'pending'])) {
+                    if ($txStatus === 'pending' && !empty($data['force_sandbox_settle'])) {
+                        $data['transaction_status'] = 'settlement';
+                    }
+                }
+
                 $result = $this->midtransService->processNotification($data);
                 $this->successResponse('Status pembayaran berhasil diproses', $result);
                 return;
@@ -114,7 +123,111 @@ class PaymentController extends Controller
                 return;
             }
 
+            // In Sandbox mode fallback: if user calls verify, mark as settled
+            if ($this->midtransService->isSandbox()) {
+                $data['transaction_status'] = 'settlement';
+                $result = $this->midtransService->processNotification($data);
+                $this->successResponse('Pembayaran diselesaikan (Mode Sandbox)', $result);
+                return;
+            }
+
             $this->errorResponse($liveStatus['message'] ?? 'Belum ada data pembayaran terkonfirmasi.');
+        } catch (Exception $e) {
+            $this->errorResponse($e->getMessage());
+        }
+    }
+
+    /**
+     * Instantly mark payment as success in Sandbox Mode (for Orders or Wallet Top-Up)
+     */
+    public function simulateSandboxSuccess(): void
+    {
+        $rawInput = file_get_contents('php://input');
+        $data = json_decode($rawInput, true) ?: $this->getPost();
+
+        $orderId = trim($data['order_id'] ?? '');
+        $paymentType = sanitize($data['payment_type'] ?? 'midtrans_sandbox');
+
+        if (empty($orderId)) {
+            $this->errorResponse('Order ID atau kode transaksi tidak valid.');
+            return;
+        }
+
+        try {
+            // Handle Top-Up (TOPUP-{userId}-{timestamp}-{rand})
+            if (str_starts_with($orderId, 'TOPUP-')) {
+                $parts = explode('-', $orderId);
+                $userId = (int)($parts[1] ?? auth_id());
+                $amount = (float)($data['amount'] ?? 0);
+
+                if ($amount <= 0 && !empty($data['gross_amount'])) {
+                    $amount = (float)$data['gross_amount'];
+                }
+
+                if ($amount < 10000) {
+                    $amount = 50000;
+                }
+
+                $walletModel = new Wallet();
+                $walletModel->credit(
+                    $userId,
+                    $amount,
+                    'topup',
+                    "Top Up CicalengkaPay via Midtrans Sandbox ({$paymentType})",
+                    $orderId
+                );
+
+                (new \App\Models\Notification())->createNotification(
+                    $userId,
+                    'Top Up Midtrans Berhasil! 🎉',
+                    "Saldo CicalengkaPay sebesar " . format_rupiah($amount) . " berhasil ditambahkan (Mode Sandbox).",
+                    'wallet'
+                );
+
+                $this->successResponse('Top Up berhasil diselesaikan (Sandbox Mode)', [
+                    'status'         => 'settled',
+                    'order_id'       => $orderId,
+                    'amount'         => $amount,
+                    'payment_status' => 'paid'
+                ]);
+                return;
+            }
+
+            // Handle Order Checkout (CCG-xxx or PCL-xxx)
+            $cleanCode = $orderId;
+            if (preg_match('/^((?:CCG|PCL)-[A-Za-z0-9]+)/i', $orderId, $matches)) {
+                $cleanCode = $matches[1];
+            }
+
+            $order = \App\Core\Database::fetchOne("SELECT * FROM `orders` WHERE `order_code` = ? LIMIT 1", [$cleanCode]);
+            if (!$order) {
+                $this->errorResponse("Pesanan #{$cleanCode} tidak ditemukan.");
+                return;
+            }
+
+            // Update order status to paid and confirmed
+            \App\Core\Database::update('orders', [
+                'payment_status' => 'paid',
+                'payment_method' => 'midtrans',
+                'order_status'   => ($order['order_status'] === 'pending' || $order['order_status'] === 'unpaid') ? 'confirmed' : $order['order_status'],
+                'confirmed_at'   => date('Y-m-d H:i:s')
+            ], 'id = ?', [$order['id']]);
+
+            // Notify customer
+            (new \App\Models\Notification())->createNotification(
+                (int)$order['customer_id'],
+                'Pembayaran Berhasil! 💳',
+                "Pembayaran pesanan #{$order['order_code']} via Midtrans Sandbox berhasil dikonfirmasi.",
+                'order'
+            );
+
+            $this->successResponse('Pembayaran pesanan berhasil diselesaikan (Sandbox Mode)', [
+                'status'         => 'settled',
+                'order_code'     => $order['order_code'],
+                'order_id'       => $orderId,
+                'payment_status' => 'paid',
+                'order_status'   => ($order['order_status'] === 'pending') ? 'confirmed' : $order['order_status']
+            ]);
         } catch (Exception $e) {
             $this->errorResponse($e->getMessage());
         }

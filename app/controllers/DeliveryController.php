@@ -5,6 +5,7 @@ use App\Core\Controller;
 use App\Models\DeliveryMan;
 use App\Models\Order;
 use App\Models\Wallet;
+use App\Models\WithdrawRequest;
 use App\Services\DeliveryService;
 use App\Core\Database;
 use Exception;
@@ -14,6 +15,7 @@ class DeliveryController extends Controller
     private DeliveryMan $dmModel;
     private Order $orderModel;
     private Wallet $walletModel;
+    private WithdrawRequest $withdrawModel;
     private DeliveryService $deliveryService;
 
     public function __construct()
@@ -21,6 +23,7 @@ class DeliveryController extends Controller
         $this->dmModel = new DeliveryMan();
         $this->orderModel = new Order();
         $this->walletModel = new Wallet();
+        $this->withdrawModel = new WithdrawRequest();
         $this->deliveryService = new DeliveryService();
     }
 
@@ -231,13 +234,61 @@ class DeliveryController extends Controller
         $userId = auth_id();
         $wallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
         $transactions = $this->walletModel->getTransactions($userId, 50);
+        $withdrawRequests = $this->withdrawModel->getByUser($userId, 'delivery_man', 50);
+        $totalWithdrawn = $this->withdrawModel->getTotalWithdrawn($userId, 'delivery_man');
+        $pendingWithdrawn = $this->withdrawModel->getPendingWithdrawn($userId, 'delivery_man');
 
         $this->view('delivery.earnings', [
-            'title'        => 'Pendapatan & Saldo Driver',
-            'wallet'       => $wallet,
-            'transactions' => $transactions,
-            'active_tab'   => 'earnings'
+            'title'             => 'Pendapatan & Saldo Driver',
+            'wallet'            => $wallet,
+            'transactions'      => $transactions,
+            'withdraw_requests' => $withdrawRequests,
+            'total_withdrawn'   => $totalWithdrawn,
+            'pending_withdrawn' => $pendingWithdrawn,
+            'active_tab'        => 'earnings'
         ], 'delivery_layout');
+    }
+
+    public function requestWithdraw(): void
+    {
+        $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Sesi tidak valid.');
+            return;
+        }
+
+        $data = $this->getPost();
+        $amount = (float)($data['amount'] ?? 0);
+        $bankName = sanitize($data['bank_name'] ?? '');
+        $accNumber = sanitize($data['account_number'] ?? '');
+        $accHolder = sanitize($data['account_holder'] ?? '');
+
+        if ($amount < 10000) {
+            $this->errorResponse('Minimal penarikan saldo adalah Rp 10.000.');
+            return;
+        }
+
+        if (empty($bankName) || empty($accNumber) || empty($accHolder)) {
+            $this->errorResponse('Harap lengkapi informasi tujuan pencairan, nomor rekening/e-wallet, dan nama pemilik akun.');
+            return;
+        }
+
+        try {
+            $req = $this->withdrawModel->requestPayout(
+                $userId,
+                'delivery_man',
+                $amount,
+                $bankName,
+                $accNumber,
+                $accHolder
+            );
+
+            $this->successResponse('Pengajuan penarikan dana berhasil! Dana akan segera ditransfer ke rekening Anda.', [
+                'withdraw' => $req
+            ]);
+        } catch (Exception $e) {
+            $this->errorResponse($e->getMessage());
+        }
     }
 
     public function profile(): void

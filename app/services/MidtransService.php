@@ -62,6 +62,16 @@ class MidtransService
         return $this->snapUrl;
     }
 
+    public function isProduction(): bool
+    {
+        return $this->isProduction;
+    }
+
+    public function isSandbox(): bool
+    {
+        return !$this->isProduction;
+    }
+
     /**
      * Create Snap Token for transactions (Order Checkout or Wallet Top-Up)
      */
