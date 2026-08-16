@@ -610,14 +610,17 @@ async function fetchChatMessages(isFirstLoad = false) {
 
         // Render messages
         let html = '';
+        const dmUserId = parseInt(data.dm_user_id) || 0;
         const currentUserId = parseInt(data.user_id) || 0;
-        const custUserId = parseInt(data.cust_user_id) || 0;
 
         messages.forEach(msg => {
             const msgSenderId = parseInt(msg.sender_id) || 0;
-            // Outgoing if sent by logged in user OR sent by customer of this order
-            const isOutgoing = (currentUserId > 0 && msgSenderId === currentUserId) ||
-                               (msgSenderId === custUserId && custUserId > 0);
+            // On customer tracking page: message is INCOMING only if sent by the assigned driver
+            // All other messages (sent by logged-in user or guest customer) are OUTGOING (red bubble on right)
+            let isOutgoing = true;
+            if (dmUserId > 0 && msgSenderId === dmUserId) {
+                isOutgoing = false;
+            }
 
             const rowClass = isOutgoing ? 'outgoing' : 'incoming';
             const checkIcon = isOutgoing ? `<i class="bi bi-check2-all ${msg.is_read ? 'text-primary' : ''}"></i>` : '';
@@ -635,7 +638,7 @@ async function fetchChatMessages(isFirstLoad = false) {
         });
 
         // Determine if scroll is needed
-        const shouldScroll = isFirstLoad || (chatBody.scrollTop + chatBody.clientHeight >= chatBody.scrollHeight - 120);
+        const shouldScroll = isFirstLoad || (chatBody.scrollTop + chatBody.clientHeight >= chatBody.scrollHeight - 140);
         chatBody.innerHTML = html;
 
         if (shouldScroll) {
@@ -686,13 +689,13 @@ async function handleSendChat(e) {
     btn.disabled = true;
 
     try {
+        const fd = new FormData();
+        fd.append('order_code', TRACKING_ORDER_CODE);
+        fd.append('message', message);
+
         const res = await fetch(window.BASE_URL + '/chats/send', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                order_code: TRACKING_ORDER_CODE,
-                message: message
-            })
+            body: fd
         });
 
         const result = await res.json();
