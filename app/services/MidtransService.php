@@ -19,11 +19,37 @@ class MidtransService
     public function __construct()
     {
         $this->config = require APP_PATH . '/config/midtrans.php';
-        $this->serverKey = $this->config['server_key'];
-        $this->clientKey = $this->config['client_key'];
-        $this->isProduction = (bool)$this->config['is_production'];
-        $this->apiUrl = $this->config['api_url'];
-        $this->snapUrl = $this->config['snap_url'];
+
+        // Priority: DB business_settings → ENV/config fallback
+        $dbServerKey    = $this->getSettingFromDb('midtrans_server_key');
+        $dbClientKey    = $this->getSettingFromDb('midtrans_client_key');
+        $dbMerchantId   = $this->getSettingFromDb('midtrans_merchant_id');
+        $dbEnvironment  = $this->getSettingFromDb('midtrans_environment');
+
+        $this->serverKey    = $dbServerKey ?: $this->config['server_key'];
+        $this->clientKey    = $dbClientKey ?: $this->config['client_key'];
+        $this->isProduction = $dbEnvironment ? ($dbEnvironment === 'production') : (bool)$this->config['is_production'];
+
+        if ($this->isProduction) {
+            $this->apiUrl       = 'https://app.midtrans.com/snap/v1/transactions';
+            $this->snapUrl      = 'https://app.midtrans.com/snap/snap.js';
+        } else {
+            $this->apiUrl       = 'https://app.sandbox.midtrans.com/snap/v1/transactions';
+            $this->snapUrl      = 'https://app.sandbox.midtrans.com/snap/snap.js';
+        }
+    }
+
+    private function getSettingFromDb(string $key): string
+    {
+        try {
+            $row = Database::fetchOne(
+                "SELECT value_text FROM business_settings WHERE key_name = ? LIMIT 1",
+                [$key]
+            );
+            return $row['value_text'] ?? '';
+        } catch (\Exception $e) {
+            return '';
+        }
     }
 
     public function getClientKey(): string
