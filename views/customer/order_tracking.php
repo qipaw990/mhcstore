@@ -610,24 +610,32 @@ async function fetchChatMessages(isFirstLoad = false) {
 
         // Render messages
         let html = '';
+        const currentUserId = parseInt(data.user_id) || 0;
+        const custUserId = parseInt(data.cust_user_id) || 0;
+
         messages.forEach(msg => {
-            const isOutgoing = (parseInt(msg.sender_id) === parseInt(data.user_id));
+            const msgSenderId = parseInt(msg.sender_id) || 0;
+            // Outgoing if sent by logged in user OR sent by customer of this order
+            const isOutgoing = (currentUserId > 0 && msgSenderId === currentUserId) ||
+                               (msgSenderId === custUserId && custUserId > 0);
+
             const rowClass = isOutgoing ? 'outgoing' : 'incoming';
             const checkIcon = isOutgoing ? `<i class="bi bi-check2-all ${msg.is_read ? 'text-primary' : ''}"></i>` : '';
             
             html += `
                 <div class="ccg-chat-row ${rowClass}">
-                    <div class="ccg-chat-bubble">${escapeHtml(msg.message)}</div>
-                    <div class="ccg-chat-meta">
-                        <span>${msg.time_formatted || ''}</span>
-                        ${checkIcon}
+                    <div class="ccg-chat-bubble">
+                        <span>${escapeHtml(msg.message)}</span>
+                        <span class="ccg-chat-time">
+                            ${msg.time_formatted || ''} ${checkIcon}
+                        </span>
                     </div>
                 </div>
             `;
         });
 
         // Determine if scroll is needed
-        const shouldScroll = isFirstLoad || (chatBody.scrollTop + chatBody.clientHeight >= chatBody.scrollHeight - 100);
+        const shouldScroll = isFirstLoad || (chatBody.scrollTop + chatBody.clientHeight >= chatBody.scrollHeight - 120);
         chatBody.innerHTML = html;
 
         if (shouldScroll) {
@@ -661,10 +669,11 @@ async function handleSendChat(e) {
 
         const tempBubbleHtml = `
             <div class="ccg-chat-row outgoing ccg-temp-bubble" style="opacity: 0.85;">
-                <div class="ccg-chat-bubble">${escapeHtml(message)}</div>
-                <div class="ccg-chat-meta">
-                    <span>${timeStr}</span>
-                    <i class="bi bi-clock"></i>
+                <div class="ccg-chat-bubble">
+                    <span>${escapeHtml(message)}</span>
+                    <span class="ccg-chat-time">
+                        ${timeStr} <i class="bi bi-clock"></i>
+                    </span>
                 </div>
             </div>
         `;

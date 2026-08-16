@@ -110,6 +110,8 @@ class ChatController extends Controller
             'order_code'   => $order['order_code'],
             'order_status' => $order['order_status'],
             'user_id'      => $userId,
+            'cust_user_id' => (int)$order['cust_user_id'],
+            'dm_user_id'   => (int)($order['dm_user_id'] ?? 0),
             'partner'      => $partner,
             'messages'     => $messages,
             'unread_count' => $unread
