@@ -22,15 +22,11 @@ class ChatController extends Controller
      */
     public function getMessages(): void
     {
-        $userId = auth_id();
-        if (!$userId) {
-            $this->errorResponse('Silakan login terlebih dahulu.', null, 401);
-            return;
-        }
+        $userId = auth_id() ?: 0;
 
         $orderCode = sanitize($_GET['order_code'] ?? '');
         $sinceId = (int)($_GET['since_id'] ?? 0);
-        $markRead = (bool)($_GET['mark_read'] ?? true);
+        $markRead = (bool)($_GET['mark_read'] ?? false);
 
         if (empty($orderCode)) {
             $this->errorResponse('Kode pesanan wajib diisi.');
@@ -43,17 +39,20 @@ class ChatController extends Controller
             return;
         }
 
-        $isCustomer = ((int)$order['cust_user_id'] === $userId);
-        $isDriver   = auth_role() === 'delivery_man';
-        $isAdmin    = (auth_user()['role'] ?? '') === 'admin';
+        $userRole   = auth_role();
+        $isCustomer = ($userId > 0 && (int)$order['cust_user_id'] === $userId);
+        $isDriver   = $userRole === 'delivery_man';
+        $isAdmin    = $userRole === 'admin';
+        // Guests with the order_code can read (public tracking page)
+        $isGuest    = ($userId === 0);
 
-        if (!$isCustomer && !$isDriver && !$isAdmin) {
+        if (!$isCustomer && !$isDriver && !$isAdmin && !$isGuest) {
             $this->errorResponse('Akses percakapan ditolak.', null, 403);
             return;
         }
 
-        // Mark incoming messages as read for this user
-        if ($markRead) {
+        // Only mark as read if authenticated
+        if ($markRead && $userId > 0) {
             $this->chatModel->markAsRead((int)$order['order_id'], $userId);
         }
 
@@ -61,7 +60,26 @@ class ChatController extends Controller
 
         // Define partner information based on viewer role
         $partner = null;
-        if ($isCustomer) {
+        if ($isDriver) {
+            $partner = [
+                'name'         => $order['customer_name'] ?? 'Pelanggan CicalengkaGO',
+                'role'         => 'customer',
+                'role_label'   => 'Pelanggan',
+                'avatar'       => $order['customer_avatar'] ?? 'assets/images/users/customer.png',
+                'phone'        => $order['customer_phone'] ?? '',
+                'vehicle_info' => 'Tujuan Pengantaran'
+            ];
+        } elseif ($isAdmin) {
+            $partner = [
+                'name'         => $order['customer_name'] ?? 'Pelanggan',
+                'role'         => 'admin',
+                'role_label'   => 'Administrator',
+                'avatar'       => 'assets/images/users/customer.png',
+                'phone'        => '',
+                'vehicle_info' => 'Pesanan #' . $order['order_code']
+            ];
+        } else {
+            // Customer or guest: show driver info
             if (!empty($order['dm_id'])) {
                 $partner = [
                     'name'           => $order['dm_name'] ?? 'Mitra Driver Cicalengka',
@@ -81,27 +99,11 @@ class ChatController extends Controller
                     'vehicle_info'   => 'Mencari kurir terdekat...'
                 ];
             }
-        } elseif ($isDriver) {
-            $partner = [
-                'name'         => $order['customer_name'] ?? 'Pelanggan CicalengkaGO',
-                'role'         => 'customer',
-                'role_label'   => 'Pelanggan',
-                'avatar'       => $order['customer_avatar'] ?? 'assets/images/users/customer.png',
-                'phone'        => $order['customer_phone'] ?? '',
-                'vehicle_info' => 'Tujuan Pengantaran'
-            ];
-        } else {
-            $partner = [
-                'name'         => $order['customer_name'] ?? 'Pelanggan',
-                'role'         => 'admin',
-                'role_label'   => 'Administrator',
-                'avatar'       => 'assets/images/users/customer.png',
-                'phone'        => '',
-                'vehicle_info' => 'Pesanan #' . $order['order_code']
-            ];
         }
 
-        $unread = $this->chatModel->getUnreadCountForOrder((int)$order['order_id'], $userId);
+        $unread = ($userId > 0)
+            ? $this->chatModel->getUnreadCountForOrder((int)$order['order_id'], $userId)
+            : 0;
 
         $this->successResponse('Pesan berhasil diambil', [
             'order_id'     => (int)$order['order_id'],

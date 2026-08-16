@@ -69,11 +69,11 @@ Router::post('/orders/get-snap-token', [OrderController::class, 'getSnapToken'],
 Router::post('/orders/cancel-unpaid', [OrderController::class, 'cancelUnpaid'], ['AuthMiddleware']);
 Router::get('/orders/{code}', [OrderController::class, 'showOrder']);
 
-// In-App Chat Routes
-Router::get('/chats/messages', [ChatController::class, 'getMessages'], ['AuthMiddleware']);
+// In-App Chat Routes (GET routes are public-friendly; send/read require login)
+Router::get('/chats/messages', [ChatController::class, 'getMessages']);
 Router::post('/chats/send', [ChatController::class, 'sendMessage'], ['AuthMiddleware']);
 Router::post('/chats/read', [ChatController::class, 'markAsRead'], ['AuthMiddleware']);
-Router::get('/chats/unread-count', [ChatController::class, 'unreadCount'], ['AuthMiddleware']);
+Router::get('/chats/unread-count', [ChatController::class, 'unreadCount']);
 
 // ==========================================
 // 3. Delivery Man PWA Routes
