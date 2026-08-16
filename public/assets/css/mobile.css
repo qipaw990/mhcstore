@@ -109,33 +109,37 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   box-sizing: border-box;
 }
 
-/* Compact Super App Header */
+/* =========================================================================
+ * Super App Top Header & Subpage Sticky Header Styling (Spacious & Modern)
+ * ========================================================================= */
 .gojek-header {
   position: sticky;
   top: 0;
   z-index: 1000;
   background: #FFFFFF;
   border-bottom: 1px solid var(--gojek-border);
-  padding: 6px 10px;
+  padding: 10px 14px 12px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
 }
 
 .gojek-top-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .gojek-location-btn {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   cursor: pointer;
   background: var(--gojek-gray-light);
-  padding: 3px 8px;
+  padding: 5px 12px;
   border-radius: var(--gojek-radius-pill);
   border: 1px solid var(--gojek-border);
   max-width: 78%;
+  height: 34px;
   transition: all 0.2s ease;
 }
 
@@ -145,11 +149,11 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 
 .gojek-location-icon {
   color: var(--gojek-green);
-  font-size: 11.5px;
+  font-size: 13px;
 }
 
 .gojek-location-text {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--gojek-charcoal);
   white-space: nowrap;
@@ -160,12 +164,12 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 .gojek-header-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .gojek-icon-btn {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: var(--gojek-gray-light);
   border: 1px solid var(--gojek-border);
@@ -173,27 +177,29 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   align-items: center;
   justify-content: center;
   color: var(--gojek-charcoal);
-  font-size: 13px;
+  font-size: 16px;
   text-decoration: none;
   position: relative;
   transition: all 0.2s ease;
 }
 
 .gojek-icon-btn:active {
-  transform: scale(0.9);
+  transform: scale(0.92);
 }
 
-/* Compact Search Bar */
+/* Modern Search Bar in Header */
 .gojek-search-box {
   display: flex;
   align-items: center;
   background: var(--gojek-gray-light);
   border: 1px solid var(--gojek-border);
   border-radius: var(--gojek-radius-pill);
-  padding: 5px 10px;
-  gap: 6px;
+  padding: 8px 14px;
+  gap: 8px;
+  height: 40px;
   cursor: pointer;
   transition: all 0.2s ease;
+  margin-top: 2px;
 }
 
 .gojek-search-box:hover, .gojek-search-box:focus-within {
@@ -206,7 +212,7 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   border: none;
   background: transparent;
   width: 100%;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 500;
   font-family: inherit;
   outline: none;
@@ -215,7 +221,52 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 
 .gojek-search-box i {
   color: var(--gojek-gray);
-  font-size: 13px;
+  font-size: 14px;
+}
+
+/* Sticky Subpage Header Bar (For Orders, Wallet, Cart, Profile, Notifications, etc.) */
+.sticky-top.bg-white,
+.sticky-top.border-bottom,
+.app-subpage-header {
+  padding: 12px 16px !important;
+  min-height: 56px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+  z-index: 1020 !important;
+}
+
+.sticky-top.bg-white h6,
+.sticky-top.border-bottom h6,
+.app-subpage-header h6 {
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  color: #0F172A !important;
+  letter-spacing: -0.3px !important;
+  margin: 0 !important;
+}
+
+.sticky-top.bg-white .badge,
+.sticky-top.border-bottom .badge,
+.app-subpage-header .badge {
+  font-size: 10.5px !important;
+  padding: 5px 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1px !important;
+}
+
+.sticky-top.bg-white .btn-light,
+.sticky-top.border-bottom .btn-light,
+.app-subpage-header .btn-light {
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 15px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 /* =========================================================================

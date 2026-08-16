@@ -2,9 +2,9 @@
 <script src="<?= $snap_url ?>" data-client-key="<?= $client_key ?? '' ?>"></script>
 <?php endif; ?>
 
-<div class="border-bottom bg-white d-flex align-items-center gap-2.5 sticky-top shadow-xs px-3 py-2.5">
-    <a href="<?= $baseUrl ?>" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 34px; height: 34px; border: 1px solid #E2E8F0; background: #F8FAFC;"><i class="bi bi-arrow-left text-dark" style="font-size: 14px;"></i></a>
-    <h6 class="fw-bold m-0 text-dark" style="font-size: 13.5px; letter-spacing: -0.2px;">Dompet Digital CicalengkaPay</h6>
+<div class="border-bottom bg-white d-flex align-items-center gap-2.5 sticky-top app-subpage-header px-3 py-3">
+    <a href="<?= $baseUrl ?>" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; border: 1px solid #E2E8F0; background: #F8FAFC;"><i class="bi bi-arrow-left text-dark" style="font-size: 15px;"></i></a>
+    <h6 class="fw-bold m-0 text-dark" style="font-size: 15px; letter-spacing: -0.3px;">Dompet Digital CicalengkaPay</h6>
 </div>
 
 <div class="px-3 py-3">

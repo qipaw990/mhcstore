@@ -36,14 +36,14 @@ $unreadNotifs = $user ? (new \App\Models\Notification())->getUnreadCount($user['
 
 <div class="mobile-app-wrapper">
     <!-- PWA Install Banner -->
-    <div id="pwa-install-banner" class="d-none bg-dark text-white p-2 px-3 d-flex align-items-center justify-content-between shadow-sm">
-        <div class="d-flex align-items-center gap-2">
-            <img src="<?= $baseUrl ?>/assets/images/logo-icon.svg" alt="CicalengkaGO" style="width: 24px; height: 24px; border-radius: 6px;">
-            <span class="small fw-semibold">Pasang Aplikasi CicalengkaGO di HP</span>
+    <div id="pwa-install-banner" class="d-none bg-dark text-white px-3.5 py-2.5 d-flex align-items-center justify-content-between shadow-sm" style="min-height: 48px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <div class="d-flex align-items-center gap-2.5">
+            <img src="<?= $baseUrl ?>/assets/images/logo-icon.svg" alt="CicalengkaGO" style="width: 28px; height: 28px; border-radius: 7px;">
+            <span class="fw-semibold" style="font-size: 11.5px;">Pasang Aplikasi CicalengkaGO di HP</span>
         </div>
-        <div class="d-flex gap-2">
-            <button onclick="triggerPwaInstall()" class="btn btn-danger btn-sm fw-bold px-3 py-1" style="background:#EE2737;font-size:11px;border:none;">Install</button>
-            <button onclick="dismissPwaInstall()" class="btn btn-outline-light btn-sm px-2 py-1" style="font-size: 11px;"><i class="bi bi-x"></i></button>
+        <div class="d-flex gap-2 align-items-center">
+            <button onclick="triggerPwaInstall()" class="btn btn-danger btn-sm rounded-pill fw-bold px-3.5 py-1.5" style="background:#EE2737; font-size: 11.5px; border:none;">Install</button>
+            <button onclick="dismissPwaInstall()" class="btn btn-outline-light btn-sm rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 26px; height: 26px; font-size: 14px;"><i class="bi bi-x"></i></button>
         </div>
     </div>
 
@@ -54,8 +54,8 @@ $unreadNotifs = $user ? (new \App\Models\Notification())->getUnreadCount($user['
             <div class="d-flex align-items-center gap-2">
                 <div class="d-flex align-items-center gap-2">
                     <a href="<?= $baseUrl ?>/" class="d-flex align-items-center gap-2 text-decoration-none">
-                        <img src="<?= $baseUrl ?>/assets/images/logo-icon.svg" alt="CicalengkaGO" style="width: 32px; height: 32px; border-radius: 9px; box-shadow: 0 2px 6px rgba(238,39,55,0.25);">
-                        <span class="fw-bold" style="font-size: 16px; color: var(--gojek-charcoal); letter-spacing: -0.4px;">Cicalengka<span style="color: #EE2737;">GO</span></span>
+                        <img src="<?= $baseUrl ?>/assets/images/logo-icon.svg" alt="CicalengkaGO" style="width: 36px; height: 36px; border-radius: 10px; box-shadow: 0 2px 6px rgba(238,39,55,0.25);">
+                        <span class="fw-bold" style="font-size: 17px; color: var(--gojek-charcoal); letter-spacing: -0.4px;">Cicalengka<span style="color: #EE2737;">GO</span></span>
                     </a>
                 </div>
                 <div class="gojek-location-btn" onclick="if (typeof locateCustomerHomeGps === 'function') { locateCustomerHomeGps(); } else { window.location.href='<?= $baseUrl ?>/profile'; }" title="Pilih Lokasi">

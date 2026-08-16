@@ -1,6 +1,6 @@
-<div class="border-bottom bg-white d-flex align-items-center justify-content-between sticky-top shadow-xs px-3 py-2.5">
-    <h6 class="fw-bold m-0 text-dark" style="font-size: 13.5px; letter-spacing: -0.2px;">Pesanan Saya</h6>
-    <span id="order-count-badge" class="badge text-white px-3 py-1.5 rounded-pill shadow-2xs" style="background: linear-gradient(135deg, #EE2737, #C61524); font-size: 10px;">
+<div class="border-bottom bg-white d-flex align-items-center justify-content-between sticky-top app-subpage-header px-3 py-3">
+    <h6 class="fw-bold m-0 text-dark" style="font-size: 15px; letter-spacing: -0.3px;">Pesanan Saya</h6>
+    <span id="order-count-badge" class="badge text-white px-3 py-1.5 rounded-pill shadow-2xs" style="background: linear-gradient(135deg, #EE2737, #C61524); font-size: 10.5px;">
         <?= count($orders) ?> Pesanan
     </span>
 </div>
