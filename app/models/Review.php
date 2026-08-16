@@ -196,12 +196,12 @@ class Review extends Model
     public function recalculateStoreRating(int $storeId): void
     {
         $stat = Database::fetchOne(
-            "SELECT COUNT(*) as count, COALESCE(AVG(rating), 5.00) as avg_rating FROM `reviews` WHERE `store_id` = ?",
+            "SELECT COUNT(*) as count, AVG(rating) as avg_rating FROM `reviews` WHERE `store_id` = ?",
             [$storeId]
         );
 
         $count = (int)($stat['count'] ?? 0);
-        $avg = ($count > 0) ? round((float)$stat['avg_rating'], 2) : 5.00;
+        $avg = ($count > 0) ? round((float)$stat['avg_rating'], 1) : 0.0;
 
         Database::update('stores', [
             'rating'        => $avg,
@@ -215,16 +215,32 @@ class Review extends Model
     public function recalculateDmRating(int $dmId): void
     {
         $stat = Database::fetchOne(
-            "SELECT COUNT(*) as count, COALESCE(AVG(rating), 5.00) as avg_rating FROM `reviews` WHERE `delivery_man_id` = ?",
+            "SELECT COUNT(*) as count, AVG(rating) as avg_rating FROM `reviews` WHERE `delivery_man_id` = ?",
             [$dmId]
         );
 
         $count = (int)($stat['count'] ?? 0);
-        $avg = ($count > 0) ? round((float)$stat['avg_rating'], 2) : 5.00;
+        $avg = ($count > 0) ? round((float)$stat['avg_rating'], 1) : 0.0;
 
         Database::update('delivery_men', [
             'rating'        => $avg,
             'reviews_count' => $count
         ], 'id = ?', [$dmId]);
+    }
+
+    /**
+     * Sync all store ratings across database
+     */
+    public static function syncAllRatings(): void
+    {
+        $stores = Database::query("SELECT id FROM `stores`");
+        $reviewInst = new self();
+        foreach ($stores as $s) {
+            $reviewInst->recalculateStoreRating((int)$s['id']);
+        }
+        $drivers = Database::query("SELECT id FROM `delivery_men`");
+        foreach ($drivers as $d) {
+            $reviewInst->recalculateDmRating((int)$d['id']);
+        }
     }
 }

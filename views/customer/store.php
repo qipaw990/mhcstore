@@ -22,8 +22,8 @@
                 
                 <div class="d-flex align-items-center gap-2 mt-1.5 flex-wrap" style="font-size: 10.5px;">
                     <span class="text-warning fw-bold d-flex align-items-center gap-1 flex-shrink-0">
-                        <i class="bi bi-star-fill"></i> <?= number_format($store['rating'] ?? 5.0, 1) ?> 
-                        <span class="text-muted fw-normal">(<?= $store['reviews_count'] ?? 0 ?> ulasan)</span>
+                        <i class="bi bi-star-fill"></i> <?= !empty($store['reviews_count']) && (int)$store['reviews_count'] > 0 ? number_format($store['rating'], 1) : '0.0' ?> 
+                        <span class="text-muted fw-normal">(<?= (int)($store['reviews_count'] ?? 0) ?> ulasan)</span>
                     </span>
                     <span class="text-muted">•</span>
                     <span class="text-muted flex-shrink-0"><i class="bi bi-clock me-1"></i><?= htmlspecialchars($store['delivery_time'] ?? '15-25 mnt') ?></span>
