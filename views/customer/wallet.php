@@ -56,11 +56,6 @@
                 <button onclick="customTopUpDialog()" class="btn btn-light btn-sm fw-bold px-3 py-2 rounded-pill shadow-xs flex-grow-1" style="color: #EE2737; font-size: 12.5px;">
                     <i class="bi bi-plus-circle-fill me-1"></i> Top Up Saldo
                 </button>
-                <?php if (!empty($is_sandbox)): ?>
-                <button onclick="instantSandboxTopUp(100000)" class="btn btn-warning btn-sm fw-bold px-3 py-2 rounded-pill text-dark shadow-xs border-0" style="font-size: 12.5px;">
-                    <i class="bi bi-lightning-charge-fill me-0.5 text-dark"></i> +100rb (Sandbox)
-                </button>
-                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -217,14 +212,9 @@
 
                                 <?php if ($status === 'pending'): ?>
                                     <div class="d-flex gap-1">
-                                        <?php if (!empty($is_sandbox)): ?>
-                                        <button type="button" onclick="instantSandboxTopUp(<?= (int)$log['amount'] ?>, '<?= htmlspecialchars($log['topup_code']) ?>')" class="btn btn-success btn-sm rounded-pill py-0.5 px-2 fw-bold" style="font-size: 10.5px;">
-                                            <i class="bi bi-lightning-fill"></i> Lunas (Sandbox)
-                                        </button>
-                                        <?php endif; ?>
                                         <?php if (!empty($log['snap_token'])): ?>
-                                        <button type="button" onclick="resumePendingSnap('<?= htmlspecialchars($log['snap_token']) ?>', '<?= htmlspecialchars($log['topup_code']) ?>', <?= (int)$log['amount'] ?>)" class="btn btn-danger btn-sm rounded-pill py-0.5 px-2 fw-bold" style="font-size: 10.5px;">
-                                            <i class="bi bi-credit-card-fill"></i> Bayar
+                                        <button type="button" onclick="resumePendingSnap('<?= htmlspecialchars($log['snap_token']) ?>', '<?= htmlspecialchars($log['topup_code']) ?>', <?= (int)$log['amount'] ?>)" class="btn btn-danger btn-sm rounded-pill py-0.5 px-2.5 fw-bold" style="font-size: 10.5px;">
+                                            <i class="bi bi-credit-card-fill me-0.5"></i> Bayar
                                         </button>
                                         <?php endif; ?>
                                     </div>
@@ -350,47 +340,6 @@ function customTopUpDialog() {
     });
 }
 
-async function instantSandboxTopUp(nominal, existingOrderId = null) {
-    Swal.fire({
-        title: 'Top Up Sandbox Instan ⚡',
-        text: nominal > 0 ? ('Menambahkan saldo simulasi Rp ' + Number(nominal).toLocaleString('id-ID') + ' ke akun Anda...') : 'Menyelesaikan pembayaran saldo simulasi ke akun Anda...',
-        allowOutsideClick: false,
-        didOpen: () => { Swal.showLoading(); }
-    });
-
-    try {
-        const orderId = existingOrderId || ('TOPUP-<?= auth_id() ?>-' + Date.now() + '-' + Math.floor(Math.random() * 900 + 100));
-        const res = await fetch(window.BASE_URL + '/payment/simulate-sandbox-success', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                order_id: orderId,
-                amount: nominal,
-                payment_type: 'midtrans_sandbox_quick'
-            })
-        });
-
-        const data = await res.json();
-        if (data.success) {
-            const finalNominal = data.data?.amount || nominal || 0;
-            Swal.fire({
-                icon: 'success',
-                title: 'Top Up Berhasil! 🎉',
-                text: 'Saldo CicalengkaPay sebesar Rp ' + Number(finalNominal).toLocaleString('id-ID') + ' berhasil ditambahkan.',
-                timer: 1800,
-                showConfirmButton: false
-            }).then(() => {
-                location.reload();
-            });
-        } else {
-            Swal.fire('Gagal', data.message || 'Gagal menambahkan saldo.', 'error');
-        }
-    } catch(e) {
-        console.error(e);
-        Swal.fire('Error', e.message || 'Terjadi kesalahan sistem.', 'error');
-    }
-}
-
 function resumePendingSnap(snapToken, orderId, nominal) {
     if (typeof window.snap === 'undefined') {
         Swal.fire('Error', 'Script Midtrans Snap belum termuat. Silakan muat ulang halaman.', 'error');
@@ -454,7 +403,7 @@ function openSnapPayment(snapToken, orderId, nominal) {
             }).finally(() => {
                 Swal.fire({
                     title: 'Top Up Berhasil! 🎉',
-                    text: 'Saldo CicalengkaPay sebesar Rp ' + nominal.toLocaleString('id-ID') + ' telah masuk ke dompet Anda.',
+                    text: 'Saldo CicalengkaPay sebesar Rp ' + Number(nominal).toLocaleString('id-ID') + ' telah masuk ke dompet Anda.',
                     icon: 'success',
                     confirmButtonColor: '#EE2737',
                     confirmButtonText: 'Selesai'
@@ -474,25 +423,7 @@ function openSnapPayment(snapToken, orderId, nominal) {
                     payment_type: result.payment_type || 'midtrans_va',
                     notes: 'Menunggu pembayaran di channel yang dipilih'
                 })
-            });
-
-            if (IS_SANDBOX) {
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Pembayaran Menunggu (Sandbox)',
-                    text: 'Kode virtual account/QRIS top up telah dibuat. Ingin langsung menyelesaikan top up (Berhasil)?',
-                    showCancelButton: true,
-                    confirmButtonText: '⚡ Jadikan Berhasil (Lunas)',
-                    confirmButtonColor: '#10B981',
-                    cancelButtonText: 'Tutup'
-                }).then(async (r) => {
-                    if (r.isConfirmed) {
-                        await instantSandboxTopUp(nominal, orderId);
-                    } else {
-                        location.reload();
-                    }
-                });
-            } else {
+            }).finally(() => {
                 Swal.fire({
                     title: 'Menunggu Pembayaran ⏳',
                     text: 'Silakan selesaikan pembayaran sesuai instruksi Virtual Account / QRIS yang dipilih.',
@@ -501,7 +432,7 @@ function openSnapPayment(snapToken, orderId, nominal) {
                 }).then(() => {
                     location.reload();
                 });
-            }
+            });
         },
         onError: function(result) {
             // Update log to failed
@@ -520,57 +451,14 @@ function openSnapPayment(snapToken, orderId, nominal) {
             });
         },
         onClose: function() {
-            if (IS_SANDBOX) {
-                Swal.fire({
-                    icon: 'question',
-                    title: 'Jendela Pembayaran Ditutup',
-                    text: 'Apakah Anda ingin menandai top up ini Berhasil (Mode Sandbox) atau Batalkan (Gagal)?',
-                    showDenyButton: true,
-                    showCancelButton: true,
-                    confirmButtonText: '⚡ Selesaikan (Berhasil)',
-                    denyButtonText: '❌ Batalkan (Gagal)',
-                    confirmButtonColor: '#10B981',
-                    denyButtonColor: '#EF4444',
-                    cancelButtonText: 'Biarkan Pending'
-                }).then(async (r) => {
-                    if (r.isConfirmed) {
-                        await instantSandboxTopUp(nominal, orderId);
-                    } else if (r.isDenied) {
-                        await fetch(window.BASE_URL + '/payment/topup-update-status', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                order_id: orderId,
-                                status: 'failed',
-                                notes: 'Jendela pembayaran ditutup oleh pengguna'
-                            })
-                        });
-                        location.reload();
-                    } else {
-                        location.reload();
-                    }
-                });
-            } else {
-                // Update log as failed if cancelled/closed without payment
-                fetch(window.BASE_URL + '/payment/topup-update-status', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        order_id: orderId,
-                        status: 'failed',
-                        notes: 'Jendela pembayaran ditutup sebelum transaksi diselesaikan'
-                    })
-                }).finally(() => {
-                    Swal.fire({
-                        title: 'Top Up Dibatalkan',
-                        text: 'Jendela pembayaran ditutup sebelum transaksi diselesaikan.',
-                        icon: 'warning',
-                        confirmButtonColor: '#EE2737'
-                    }).then(() => {
-                        location.reload();
-                    });
-                });
-            }
+            Swal.fire({
+                title: 'Jendela Pembayaran Ditutup',
+                text: 'Transaksi belum diselesaikan. Anda dapat melanjutkan pembayaran kapan saja dari riwayat transaksi.',
+                icon: 'info',
+                confirmButtonColor: '#EE2737'
+            }).then(() => {
+                location.reload();
+            });
         }
     });
 }
@@ -594,28 +482,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 confirmButtonColor: '#EE2737'
             });
         } else if (retStatusCode === '201' || retTxnStatus === 'pending') {
-            if (typeof IS_SANDBOX !== 'undefined' && IS_SANDBOX) {
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Pembayaran Menunggu (Sandbox)',
-                    text: 'Tiket Top Up #' + retOrderId + ' sedang dalam status menunggu. Di mode Sandbox, Anda dapat langsung menyelesaikannya secara instan.',
-                    showCancelButton: true,
-                    confirmButtonText: '⚡ Jadikan Berhasil (Lunas)',
-                    confirmButtonColor: '#10B981',
-                    cancelButtonText: 'Tutup'
-                }).then(async (r) => {
-                    if (r.isConfirmed) {
-                        await instantSandboxTopUp(0, retOrderId);
-                    }
-                });
-            } else {
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Menunggu Pembayaran ⏳',
-                    text: 'Instruksi pembayaran telah dibuat. Silakan selesaikan pembayaran di channel yang Anda pilih.',
-                    confirmButtonColor: '#EE2737'
-                });
-            }
+            Swal.fire({
+                icon: 'info',
+                title: 'Menunggu Pembayaran ⏳',
+                text: 'Instruksi pembayaran telah dibuat. Silakan selesaikan pembayaran di channel yang Anda pilih.',
+                confirmButtonColor: '#EE2737'
+            });
         }
     }
 });

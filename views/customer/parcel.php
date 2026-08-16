@@ -360,35 +360,13 @@ async function handlePlaceParcel(e) {
                     },
                     onPending: function(result) {
                         Swal.fire({
-                            title: 'Menunggu Pembayaran (Sandbox) ⏳',
-                            text: 'Instruksi pembayaran telah dibuat. Ingin menyelesaikan ongkir sekarang (Berhasil)?',
+                            title: 'Menunggu Pembayaran ⏳',
+                            text: 'Instruksi pembayaran ongkir telah dibuat. Silakan selesaikan pembayaran Anda.',
                             icon: 'info',
-                            showCancelButton: true,
-                            confirmButtonText: '⚡ Jadikan Berhasil (Lunas)',
-                            confirmButtonColor: '#10B981',
-                            cancelButtonText: 'Lihat Status Pengiriman'
-                        }).then(async (res) => {
-                            if (res.isConfirmed) {
-                                await fetch(window.BASE_URL + '/payment/simulate-sandbox-success', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        order_id: data.data.order_code,
-                                        payment_type: result?.payment_type || 'midtrans_sandbox'
-                                    })
-                                });
-                                Swal.fire({
-                                    title: 'Pembayaran Berhasil! 🎉',
-                                    text: 'Ongkir CicalengkaSend telah lunas. Kurir segera meluncur.',
-                                    icon: 'success',
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                }).then(() => {
-                                    window.location.href = window.BASE_URL + '/' + data.data.redirect;
-                                });
-                            } else {
-                                window.location.href = window.BASE_URL + '/' + data.data.redirect;
-                            }
+                            confirmButtonText: 'Lihat Status Pengiriman',
+                            confirmButtonColor: '#EE2737'
+                        }).then(() => {
+                            window.location.href = window.BASE_URL + '/' + data.data.redirect;
                         });
                     },
                     onError: function(result) {
@@ -397,29 +375,7 @@ async function handlePlaceParcel(e) {
                         btn.innerHTML = '<i class="bi bi-box-seam-fill"></i> <span>Coba Bayar Lagi</span>';
                     },
                     onClose: function() {
-                        Swal.fire({
-                            title: 'Pembayaran Ditutup',
-                            text: 'Order kirim paket #' + data.data.order_code + ' telah dicatat. Ingin menyelesaikan pembayaran sekarang (Sandbox)?',
-                            icon: 'question',
-                            showCancelButton: true,
-                            confirmButtonText: '⚡ Selesaikan (Lunas)',
-                            confirmButtonColor: '#10B981',
-                            cancelButtonText: 'Ke Lacak Pengiriman'
-                        }).then(async (r) => {
-                            if (r.isConfirmed) {
-                                await fetch(window.BASE_URL + '/payment/simulate-sandbox-success', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        order_id: data.data.order_code,
-                                        payment_type: 'midtrans_sandbox_close'
-                                    })
-                                });
-                                window.location.href = window.BASE_URL + '/' + data.data.redirect;
-                            } else {
-                                window.location.href = window.BASE_URL + '/' + data.data.redirect;
-                            }
-                        });
+                        window.location.href = window.BASE_URL + '/' + data.data.redirect;
                     }
                 });
                 return;
