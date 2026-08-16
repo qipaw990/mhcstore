@@ -1,16 +1,196 @@
 <?php
 namespace App\Services;
 
+use App\Core\Database;
+use Exception;
+
 class EmailService
 {
+    private static function getSetting(string $key, string $default = ''): string
+    {
+        try {
+            $row = Database::fetchOne("SELECT value_text FROM business_settings WHERE key_name = ? LIMIT 1", [$key]);
+            return $row['value_text'] ?? $default;
+        } catch (Exception $e) {
+            return $default;
+        }
+    }
+
     /**
      * Send Verification OTP Email
      */
     public static function sendOtpEmail(string $toEmail, string $userName, string $otpCode): bool
     {
         $subject = "Kode Verifikasi Login CicalengkaGO: {$otpCode}";
+        $htmlContent = self::buildOtpEmailHtml($userName, $otpCode);
+        return self::sendEmail($toEmail, $subject, $htmlContent);
+    }
 
-        $htmlContent = "
+    /**
+     * Generic Email Sender with SMTP & Native Fallback
+     */
+    public static function sendEmail(string $toEmail, string $subject, string $htmlBody): bool
+    {
+        $smtpHost   = self::getSetting('smtp_host', 'smtp.gmail.com');
+        $smtpPort   = (int)self::getSetting('smtp_port', '587');
+        $smtpEmail  = self::getSetting('smtp_email', 'no-reply@cicalengkago.id');
+        $smtpPass   = self::getSetting('smtp_password', '');
+        $smtpEnc    = strtolower(self::getSetting('smtp_encryption', 'tls'));
+        $senderName = self::getSetting('smtp_sender_name', 'CicalengkaGO Auth');
+
+        error_log("[EMAIL OUTBOUND] To: {$toEmail} | Subject: {$subject}");
+
+        // Attempt Socket SMTP sending if credentials exist
+        if (!empty($smtpHost) && !empty($smtpPass)) {
+            try {
+                return self::sendViaSmtpSocket($smtpHost, $smtpPort, $smtpEmail, $smtpPass, $smtpEnc, $senderName, $toEmail, $subject, $htmlBody);
+            } catch (Exception $e) {
+                error_log("[SMTP ERROR] " . $e->getMessage() . " -> Falling back to mail()");
+            }
+        }
+
+        // Native PHP mail() fallback
+        $headers = [
+            'MIME-Version: 1.0',
+            'Content-type: text/html; charset=UTF-8',
+            "From: {$senderName} <{$smtpEmail}>",
+            "Reply-To: {$smtpEmail}",
+            'X-Mailer: PHP/' . phpversion()
+        ];
+
+        return @mail($toEmail, $subject, $htmlBody, implode("\r\n", $headers));
+    }
+
+    /**
+     * Test SMTP Email Gateway Connection
+     */
+    public static function testEmailGateway(string $targetEmail): array
+    {
+        $smtpHost   = self::getSetting('smtp_host', 'smtp.gmail.com');
+        $smtpPort   = (int)self::getSetting('smtp_port', '587');
+        $smtpEmail  = self::getSetting('smtp_email', 'no-reply@cicalengkago.id');
+        $smtpPass   = self::getSetting('smtp_password', '');
+        $smtpEnc    = strtolower(self::getSetting('smtp_encryption', 'tls'));
+        $senderName = self::getSetting('smtp_sender_name', 'CicalengkaGO Auth');
+
+        if (empty($smtpHost) || empty($smtpEmail)) {
+            return ['success' => false, 'message' => 'Host SMTP dan Email Pengirim belum dikonfigurasi.'];
+        }
+
+        $testSubject = "Tes Koneksi Gateway Email CicalengkaGO - " . date('H:i:s');
+        $testBody = "
+        <div style='font-family:sans-serif; padding:20px; border:1px solid #e2e8f0; border-radius:12px;'>
+            <h3 style='color:#EE2737;'>Koneksi Email Gateway Berhasil! 🎉</h3>
+            <p>Email pengujian ini mengonfirmasi bahwa server SMTP <strong>{$smtpHost}:{$smtpPort}</strong> CicalengkaGO berfungsi dengan normal.</p>
+            <small style='color:#64748b;'>Waktu Pengujian: " . date('Y-m-d H:i:s') . "</small>
+        </div>";
+
+        try {
+            if (!empty($smtpPass)) {
+                $sent = self::sendViaSmtpSocket($smtpHost, $smtpPort, $smtpEmail, $smtpPass, $smtpEnc, $senderName, $targetEmail, $testSubject, $testBody);
+            } else {
+                $sent = self::sendEmail($targetEmail, $testSubject, $testBody);
+            }
+
+            if ($sent) {
+                return [
+                    'success' => true,
+                    'message' => "Email pengujian berhasil dikirim ke {$targetEmail} via {$smtpHost}:{$smtpPort} ({$smtpEnc})!"
+                ];
+            } else {
+                return ['success' => false, 'message' => 'Gagal mengirim email pengujian. Periksa log server.'];
+            }
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error SMTP: ' . $e->getMessage()];
+        }
+    }
+
+    private static function sendViaSmtpSocket(
+        string $host,
+        int $port,
+        string $username,
+        string $password,
+        string $encryption,
+        string $senderName,
+        string $toEmail,
+        string $subject,
+        string $htmlBody
+    ): bool {
+        $protocol = ($encryption === 'ssl') ? 'ssl://' : '';
+        $timeout = 10;
+        
+        $socket = @fsockopen($protocol . $host, $port, $errno, $errstr, $timeout);
+        if (!$socket) {
+            throw new Exception("Tidak dapat terhubung ke SMTP host {$host}:{$port} ({$errstr})");
+        }
+
+        $read = function() use ($socket) {
+            $response = '';
+            while ($str = fgets($socket, 512)) {
+                $response .= $str;
+                if (substr($str, 3, 1) == ' ') break;
+            }
+            return $response;
+        };
+
+        $write = function($cmd) use ($socket) {
+            fputs($socket, $cmd . "\r\n");
+        };
+
+        $read(); // Initial connection greeting
+
+        $write("EHLO " . gethostname());
+        $read();
+
+        if ($encryption === 'tls' && $port !== 465) {
+            $write("STARTTLS");
+            $res = $read();
+            if (strpos($res, '220') === false) {
+                throw new Exception("STARTTLS tidak didukung oleh server SMTP");
+            }
+            stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT);
+            $write("EHLO " . gethostname());
+            $read();
+        }
+
+        if (!empty($username) && !empty($password)) {
+            $write("AUTH LOGIN");
+            $read();
+            $write(base64_encode($username));
+            $read();
+            $write(base64_encode($password));
+            $res = $read();
+            if (strpos($res, '235') === false) {
+                throw new Exception("Otentikasi SMTP Gagal! Username atau password SMTP salah.");
+            }
+        }
+
+        $write("MAIL FROM: <{$username}>");
+        $read();
+        $write("RCPT TO: <{$toEmail}>");
+        $read();
+        $write("DATA");
+        $read();
+
+        $headers  = "MIME-Version: 1.0\r\n";
+        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $headers .= "From: {$senderName} <{$username}>\r\n";
+        $headers .= "To: <{$toEmail}>\r\n";
+        $headers .= "Subject: {$subject}\r\n";
+        $headers .= "Date: " . date('r') . "\r\n";
+
+        $write($headers . "\r\n" . $htmlBody . "\r\n.");
+        $res = $read();
+
+        $write("QUIT");
+        fclose($socket);
+
+        return (strpos($res, '250') !== false);
+    }
+
+    private static function buildOtpEmailHtml(string $userName, string $otpCode): string
+    {
+        return "
         <!DOCTYPE html>
         <html>
         <head>
@@ -47,23 +227,6 @@ class EmailService
                 </div>
             </div>
         </body>
-        </html>
-        ";
-
-        $headers = [
-            'MIME-Version: 1.0',
-            'Content-type: text/html; charset=UTF-8',
-            'From: CicalengkaGO Auth <no-reply@cicalengkago.id>',
-            'Reply-To: support@cicalengkago.id',
-            'X-Mailer: PHP/' . phpversion()
-        ];
-
-        // Send via PHP mail()
-        @mail($toEmail, $subject, $htmlContent, implode("\r\n", $headers));
-
-        // Log OTP locally for audit / dev debugging
-        error_log("[OTP VERIFICATION] Email: {$toEmail} | OTP Code: {$otpCode}");
-
-        return true;
+        </html>";
     }
 }

@@ -867,4 +867,16 @@ class AdminController extends Controller
             $this->errorResponse($e->getMessage());
         }
     }
+
+    public function testEmailGateway(): void
+    {
+        try {
+            $data = $this->getPost();
+            $targetEmail = sanitize($data['test_email'] ?? $_SESSION['user']['email'] ?? 'admin@cicalengkago.id');
+            $result = \App\Services\EmailService::testEmailGateway($targetEmail);
+            $this->json($result);
+        } catch (Exception $e) {
+            $this->errorResponse($e->getMessage());
+        }
+    }
 }

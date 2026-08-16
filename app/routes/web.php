@@ -145,8 +145,9 @@ Router::group(['prefix' => '/admin', 'middleware' => ['AdminMiddleware']], funct
     Router::get('/settings', [AdminController::class, 'settings']);
     Router::post('/settings/save', [AdminController::class, 'saveSettings']);
 
-    // Midtrans Diagnostics & Status
+    // Midtrans & Email Gateway Diagnostics
     Router::get('/midtrans/status/{code}', [AdminController::class, 'getMidtransStatus']);
     Router::post('/midtrans/test-connection', [AdminController::class, 'testMidtransApi']);
+    Router::post('/email/test-send', [AdminController::class, 'testEmailGateway']);
 });
 

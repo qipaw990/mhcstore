@@ -86,7 +86,52 @@
                     </div>
                 </div>
 
-                <!-- 3. IDENTITAS PROFIL APLIKASI & MAPS KEY -->
+                <!-- 3. SETUP INTEGRASI SMTP EMAIL GATEWAY (OTP & VERIFIKASI) -->
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 p-4">
+                        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                            <h6 class="fw-bold text-dark m-0"><i class="bi bi-envelope-at-fill me-2 text-primary"></i>Setup SMTP Email Gateway (OTP & Notifikasi)</h6>
+                            <span class="badge bg-primary-subtle text-primary rounded-pill px-2.5 py-1" style="font-size: 10px;">Email Gateway</span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label small fw-bold">SMTP Host</label>
+                                <input type="text" name="smtp_host" class="form-control rounded-3" value="<?= htmlspecialchars($settings['smtp_host'] ?? 'smtp.gmail.com') ?>" placeholder="smtp.gmail.com">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Port</label>
+                                <input type="number" name="smtp_port" class="form-control rounded-3" value="<?= htmlspecialchars($settings['smtp_port'] ?? '587') ?>" placeholder="587">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold">Email Pengirim (Sender Email)</label>
+                                <input type="email" name="smtp_email" class="form-control rounded-3" value="<?= htmlspecialchars($settings['smtp_email'] ?? 'no-reply@cicalengkago.id') ?>" placeholder="no-reply@cicalengkago.id">
+                            </div>
+                            <div class="col-md-7">
+                                <label class="form-label small fw-bold">Password SMTP / App Password</label>
+                                <input type="password" name="smtp_password" class="form-control rounded-3" value="<?= htmlspecialchars($settings['smtp_password'] ?? '') ?>" placeholder="••••••••••••••••">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label small fw-bold">Enkripsi</label>
+                                <select name="smtp_encryption" class="form-select rounded-3">
+                                    <option value="tls" <?= ($settings['smtp_encryption'] ?? 'tls') === 'tls' ? 'selected' : '' ?>>TLS (Port 587)</option>
+                                    <option value="ssl" <?= ($settings['smtp_encryption'] ?? '') === 'ssl' ? 'selected' : '' ?>>SSL (Port 465)</option>
+                                    <option value="none" <?= ($settings['smtp_encryption'] ?? '') === 'none' ? 'selected' : '' ?>>Tanpa Enkripsi (25)</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold">Nama Pengirim (Sender Name)</label>
+                                <input type="text" name="smtp_sender_name" class="form-control rounded-3" value="<?= htmlspecialchars($settings['smtp_sender_name'] ?? 'CicalengkaGO Auth') ?>" placeholder="CicalengkaGO Auth">
+                            </div>
+                            <div class="col-12 mt-2">
+                                <button type="button" onclick="testEmailConnection()" class="btn btn-outline-primary btn-sm rounded-pill w-100 fw-bold py-2" id="btn-test-email">
+                                    <i class="bi bi-send-check-fill me-1"></i> Tes Kirim Email OTP Pengujian
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. IDENTITAS PROFIL APLIKASI & MAPS KEY -->
                 <div class="col-lg-6">
                     <div class="card border-0 shadow-sm rounded-4 h-100 p-4">
                         <h6 class="fw-bold text-dark mb-3 border-bottom pb-2"><i class="bi bi-building me-2 text-danger"></i>Profil & Identitas Aplikasi</h6>
@@ -245,6 +290,56 @@ async function testMidtransConnection() {
         }
     } catch (err) {
         Swal.fire('Error', 'Terjadi kesalahan saat menguji koneksi API.', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
+async function testEmailConnection() {
+    const { value: email } = await Swal.fire({
+        title: 'Kirim Email OTP Test',
+        input: 'email',
+        inputLabel: 'Masukkan alamat email penerima pengujian:',
+        inputPlaceholder: 'admin@cicalengkago.id',
+        showCancelButton: true,
+        confirmButtonText: '<i class="bi bi-send-fill me-1"></i> Kirim Email',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#EE2737'
+    });
+
+    if (!email) return;
+
+    const btn = document.getElementById('btn-test-email');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Mengirim Email via Server SMTP...';
+
+    try {
+        const formData = new FormData();
+        formData.append('test_email', email);
+
+        const res = await fetch(window.BASE_URL + '/admin/email/test-send', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Email Pengujian Terkirim! 🎉',
+                text: data.message
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Pengiriman Email Gagal',
+                text: data.message || 'Gagal terhubung ke SMTP server.'
+            });
+        }
+    } catch (err) {
+        Swal.fire('Error', 'Terjadi kesalahan saat menguji gateway email.', 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = originalText;
