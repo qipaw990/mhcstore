@@ -93,9 +93,10 @@ class AuthController extends Controller
         }
 
         try {
+            $isProfileUpdate = !empty($_SESSION['pending_profile_update']);
             $user = $this->authService->verifyOtp($otp);
-            $_SESSION['success'] = 'Email berhasil diverifikasi! Selamat datang di CicalengkaGO.';
-            $this->redirectToRoleDashboard($user['role']);
+            $_SESSION['success'] = 'Email & profil berhasil diverifikasi!';
+            $this->redirectToRoleDashboard($user['role'], $isProfileUpdate);
         } catch (Exception $e) {
             $_SESSION['error'] = $e->getMessage();
             $this->redirect('verify-otp');
@@ -149,22 +150,29 @@ class AuthController extends Controller
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
-        unset($_SESSION['user'], $_SESSION['pending_otp']);
+        unset($_SESSION['user'], $_SESSION['pending_otp'], $_SESSION['pending_profile_update']);
         session_destroy();
         $appConfig = require APP_PATH . '/config/app.php';
-        $this->redirect($appConfig['url'] . '/login');
+        $this->redirect($appConfig['public_url'] . '/login');
     }
 
-    private function redirectToRoleDashboard(string $role): void
+    private function redirectToRoleDashboard(string $role, bool $isProfileUpdate = false): void
     {
-        $appConfig = require APP_PATH . '/config/app.php';
-        $base = $appConfig['url'];
+        if ($isProfileUpdate) {
+            match ($role) {
+                'admin'        => $this->redirect('admin/profile'),
+                'vendor'       => $this->redirect('vendor/profile'),
+                'delivery_man' => $this->redirect('delivery/profile'),
+                default        => $this->redirect('profile')
+            };
+            return;
+        }
 
         match ($role) {
-            'admin'        => $this->redirect($base . '/admin'),
-            'vendor'       => $this->redirect($base . '/vendor'),
-            'delivery_man' => $this->redirect($base . '/delivery'),
-            default        => $this->redirect($base . '/')
+            'admin'        => $this->redirect('admin'),
+            'vendor'       => $this->redirect('vendor'),
+            'delivery_man' => $this->redirect('delivery'),
+            default        => $this->redirect('')
         };
     }
 }
