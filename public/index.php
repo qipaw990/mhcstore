@@ -9,6 +9,11 @@ define('BASE_PATH', dirname(__DIR__));
 define('APP_PATH', BASE_PATH . '/app');
 define('PUBLIC_PATH', __DIR__);
 
+// Security & Content-Security-Policy Header
+if (!headers_sent()) {
+    header("Content-Security-Policy: default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' blob: https: http:; style-src * 'unsafe-inline' https: http:; img-src * data: blob: https: http:; connect-src * https: http: ws: wss:; font-src * data: https: http:; frame-src *;");
+}
+
 // Start Session
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
