@@ -1,5 +1,5 @@
 <!-- CicalengkaPay Wallet Card -->
-<div class="gopay-super-card shadow-sm overflow-hidden" style="border-radius: 18px; margin: 12px 14px; padding: 14px 16px !important;">
+<div class="gopay-super-card shadow-sm overflow-hidden mb-3.5" style="border-radius: 18px; margin: 12px 14px 18px !important; padding: 14px 16px !important;">
     <div class="gopay-left min-w-0">
         <div class="gopay-logo-badge flex-shrink-0">
             <i class="bi bi-wallet2 fs-5 text-white"></i>
@@ -38,9 +38,9 @@
 </div>
 
 <!-- Kategori Pilihan & Layanan CicalengkaGO -->
-<div class="gojek-services-section px-3 py-1">
-    <div class="d-flex align-items-center justify-content-between mb-2.5 px-0.5">
-        <h6 class="fw-bold m-0" style="font-size: 13px; color: var(--gojek-charcoal); letter-spacing: -0.3px;">
+<div class="gojek-services-section px-3 pt-1 pb-3 mb-2">
+    <div class="d-flex align-items-center justify-content-between mb-3 px-0.5">
+        <h6 class="fw-bold m-0" style="font-size: 13.5px; color: var(--gojek-charcoal); letter-spacing: -0.3px;">
             <i class="bi bi-grid-1x2-fill me-1.5" style="color: var(--gojek-green);"></i> Kategori Pilihan
         </h6>
         <a href="<?= $baseUrl ?>/search" class="text-decoration-none fw-bold" style="font-size: 11px; color: var(--gojek-green);">
@@ -117,7 +117,7 @@
 
 <!-- Gojek Promo Banners Carousel -->
 <?php if (!empty($banners)): ?>
-<div class="gojek-promo-section px-3 py-1.5">
+<div class="gojek-promo-section px-3 py-2 mb-2.5">
     <div id="gojekBannerCarousel" class="carousel slide gojek-carousel-container shadow-2xs overflow-hidden" data-bs-ride="carousel" style="border-radius: 16px;">
         <div class="carousel-inner overflow-hidden">
             <?php foreach ($banners as $index => $banner): ?>
@@ -138,7 +138,7 @@
 <?php endif; ?>
 
 <!-- GoFood Pilihan Terlaris Hari Ini -->
-<div class="gojek-section-header px-3 pt-2 pb-1">
+<div class="gojek-section-header px-3 pt-3 pb-1.5">
     <div>
         <h2 class="gojek-section-title" style="font-size: 13.5px; letter-spacing: -0.3px;">Paling Laris di Cicalengka</h2>
         <div class="gojek-section-subtitle" style="font-size: 10px;">Diskon & resto favorit pilihan warga Cicalengka</div>
@@ -146,7 +146,7 @@
     <a href="<?= $baseUrl ?>/search?module_id=<?= $selected_module_id ?>" class="gojek-section-link" style="font-size: 11px;">Lihat Semua</a>
 </div>
 
-<div class="gofood-stores-scroll px-3 pb-2">
+<div class="gofood-stores-scroll px-3 pb-3 mb-2">
     <?php if (empty($popular_stores)): ?>
         <div class="text-muted small p-3">Belum ada resto pada kategori ini.</div>
     <?php else: ?>
@@ -174,14 +174,14 @@
 </div>
 
 <!-- GoFood & GoMart Rekomendasi Menu & Produk -->
-<div class="gojek-section-header px-3 pt-2 pb-1">
+<div class="gojek-section-header px-3 pt-3 pb-1.5">
     <div>
         <h2 class="gojek-section-title" style="font-size: 13.5px; letter-spacing: -0.3px;">Rekomendasi Menu Favorit</h2>
         <div class="gojek-section-subtitle" style="font-size: 10px;">Paling sering dipesan dengan pengantaran cepat</div>
     </div>
 </div>
 
-<div class="gofood-products-grid px-3 pb-3">
+<div class="gofood-products-grid px-3 pb-4">
     <?php foreach ($recommended_products as $prod): ?>
         <div class="gofood-product-card shadow-2xs overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important;">
             <div class="position-relative overflow-hidden">
