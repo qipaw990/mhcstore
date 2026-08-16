@@ -182,13 +182,14 @@ class CustomerController extends Controller
 
         $activeChats = Database::query("
             SELECT o.id, o.order_code, o.order_status, o.order_type, o.delivery_man_id,
-                   dm.name as dm_name, dm.phone as dm_phone, dm.image as dm_avatar,
+                   dmu.name as dm_name, dmu.phone as dm_phone, dmu.avatar as dm_avatar,
                    (SELECT message FROM chats WHERE order_id = o.id ORDER BY id DESC LIMIT 1) as last_message,
                    (SELECT created_at FROM chats WHERE order_id = o.id ORDER BY id DESC LIMIT 1) as last_chat_time,
                    (SELECT COUNT(*) FROM chats WHERE order_id = o.id AND sender_id != ? AND is_read = 0) as unread_chat_count
             FROM `orders` o
             LEFT JOIN `delivery_men` dm ON o.delivery_man_id = dm.id
-            WHERE o.customer_id = ? AND o.order_status IN ('confirmed', 'processing', 'handover', 'picked_up')
+            LEFT JOIN `users` dmu ON dm.user_id = dmu.id
+            WHERE o.customer_id = ? AND o.order_status IN ('confirmed', 'processing', 'handover', 'picked_up', 'on_the_way')
             ORDER BY o.id DESC
         ", [$userId, $userId]);
 
