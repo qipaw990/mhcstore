@@ -232,7 +232,10 @@ class PaymentController extends Controller
                     $amount = (float)$data['gross_amount'];
                 }
 
-                if ($amount < 10000) {
+                $topupLog = Database::fetchOne("SELECT amount FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1", [$orderId]);
+                if ($topupLog && (float)$topupLog['amount'] > 0) {
+                    $amount = (float)$topupLog['amount'];
+                } elseif ($amount < 10000) {
                     $amount = 50000;
                 }
 

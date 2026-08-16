@@ -572,4 +572,50 @@ function openSnapPayment(snapToken, orderId, nominal) {
         }
     });
 }
+
+// Check if returning from Midtrans redirect
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const retOrderId = urlParams.get('order_id');
+    const retStatusCode = urlParams.get('status_code');
+    const retTxnStatus = urlParams.get('transaction_status') || urlParams.get('status');
+
+    if (retOrderId && retOrderId.startsWith('TOPUP-')) {
+        // Clean URL query params cleanly without page reload
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+        if (retStatusCode === '200' || retTxnStatus === 'settlement' || retTxnStatus === 'capture') {
+            Swal.fire({
+                icon: 'success',
+                title: 'Top Up Berhasil! 🎉',
+                text: 'Pembayaran telah dikonfirmasi dan saldo CicalengkaPay Anda telah bertambah.',
+                confirmButtonColor: '#EE2737'
+            });
+        } else if (retStatusCode === '201' || retTxnStatus === 'pending') {
+            if (typeof IS_SANDBOX !== 'undefined' && IS_SANDBOX) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Pembayaran Menunggu (Sandbox)',
+                    text: 'Tiket Top Up #' + retOrderId + ' sedang dalam status menunggu. Di mode Sandbox, Anda dapat langsung menyelesaikannya secara instan.',
+                    showCancelButton: true,
+                    confirmButtonText: '⚡ Jadikan Berhasil (Lunas)',
+                    confirmButtonColor: '#10B981',
+                    cancelButtonText: 'Tutup'
+                }).then(async (r) => {
+                    if (r.isConfirmed) {
+                        await instantSandboxTopUp(0, retOrderId);
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Menunggu Pembayaran ⏳',
+                    text: 'Instruksi pembayaran telah dibuat. Silakan selesaikan pembayaran di channel yang Anda pilih.',
+                    confirmButtonColor: '#EE2737'
+                });
+            }
+        }
+    }
+});
 </script>
+
