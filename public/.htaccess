@@ -12,9 +12,28 @@
 
 <IfModule mod_headers.c>
     Header set Content-Security-Policy "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' blob: https: http:; style-src * 'unsafe-inline' https: http:; img-src * data: blob: https: http:; connect-src * https: http: ws: wss:; font-src * data: https: http:; frame-src *;"
-    # Allow service-worker.js to control the entire site scope
+
+    # Local JS and CSS: always revalidate with server (no hard refresh needed)
+    <FilesMatch "\.(js|css)$">
+        Header set Cache-Control "no-cache, must-revalidate"
+        Header set Pragma "no-cache"
+    </FilesMatch>
+
+    # HTML pages: never cache
+    <FilesMatch "\.(php|html)$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate"
+        Header set Pragma "no-cache"
+    </FilesMatch>
+
+    # Service Worker: always fetch fresh
     <FilesMatch "service-worker\.js$">
         Header set Service-Worker-Allowed "/"
-        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Cache-Control "no-store, no-cache, must-revalidate"
+        Header set Pragma "no-cache"
+    </FilesMatch>
+
+    # Images & fonts: cache for 7 days (static, rarely change)
+    <FilesMatch "\.(png|jpg|jpeg|gif|ico|webp|svg|woff2?|ttf|eot)$">
+        Header set Cache-Control "public, max-age=604800"
     </FilesMatch>
 </IfModule>
