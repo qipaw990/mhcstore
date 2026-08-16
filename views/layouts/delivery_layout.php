@@ -73,6 +73,10 @@ $user = auth_user();
             <i class="bi bi-wallet2" style="font-size: 20px;"></i>
             <span>Pendapatan</span>
         </a>
+        <a href="<?= $baseUrl ?>/delivery/profile" class="nav-tab-item <?= ($active_tab ?? '') === 'profile' ? 'active' : '' ?>">
+            <i class="bi bi-person-circle" style="font-size: 20px;"></i>
+            <span>Profil Driver</span>
+        </a>
         <a href="<?= $baseUrl ?>/logout" class="nav-tab-item text-danger">
             <i class="bi bi-box-arrow-right" style="font-size: 20px;"></i>
             <span>Keluar</span>

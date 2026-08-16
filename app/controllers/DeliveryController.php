@@ -153,4 +153,96 @@ class DeliveryController extends Controller
             'active_tab'   => 'earnings'
         ], 'delivery_layout');
     }
+
+    public function profile(): void
+    {
+        $userId = auth_id();
+        $user = auth_user();
+        $dm = $this->dmModel->findByUserId($userId);
+
+        $this->view('delivery.profile', [
+            'title'      => 'Profil Mitra Driver',
+            'user'       => $user,
+            'driver'     => $dm,
+            'active_tab' => 'profile'
+        ], 'delivery_layout');
+    }
+
+    public function updateProfile(): void
+    {
+        $userId = auth_id();
+        if (!$userId) {
+            $this->redirect('login');
+            return;
+        }
+
+        $data = $this->getPost();
+        $name          = sanitize($data['name'] ?? '');
+        $email         = sanitize($data['email'] ?? '');
+        $phone         = sanitize($data['phone'] ?? '');
+        $vehicleType   = sanitize($data['vehicle_type'] ?? '');
+        $vehicleNumber = sanitize($data['vehicle_number'] ?? '');
+
+        if (empty($name) || empty($email) || empty($phone)) {
+            $_SESSION['error'] = 'Nama, email, dan nomor HP driver wajib diisi.';
+            $this->redirect('delivery/profile');
+            return;
+        }
+
+        $dm = $this->dmModel->findByUserId($userId);
+        if ($dm && (!empty($vehicleType) || !empty($vehicleNumber))) {
+            $this->dmModel->update($dm['id'], [
+                'vehicle_type'   => $vehicleType ?: $dm['vehicle_type'],
+                'vehicle_number' => $vehicleNumber ?: $dm['vehicle_number']
+            ]);
+        }
+
+        $currentUser = auth_user();
+
+        if (strtolower($email) !== strtolower($currentUser['email'] ?? '')) {
+            $existing = Database::fetchOne("SELECT id FROM users WHERE email = ? AND id != ? LIMIT 1", [$email, $userId]);
+            if ($existing) {
+                $_SESSION['error'] = 'Alamat email ini sudah terdaftar pada akun lain.';
+                $this->redirect('delivery/profile');
+                return;
+            }
+
+            $otp = sprintf("%06d", rand(100000, 999999));
+
+            $_SESSION['pending_profile_update'] = [
+                'user_id'    => $userId,
+                'name'       => $name,
+                'phone'      => $phone,
+                'new_email'  => $email,
+                'otp'        => $otp,
+                'expires_at' => time() + 600
+            ];
+
+            $_SESSION['pending_otp'] = [
+                'user_id'    => $userId,
+                'name'       => $name,
+                'email'      => $email,
+                'role'       => $currentUser['role'],
+                'otp'        => $otp,
+                'expires_at' => time() + 600
+            ];
+
+            \App\Services\EmailService::sendOtpEmail($email, $name, $otp);
+
+            $_SESSION['info'] = "Kode verifikasi OTP dikirimkan ke email baru Anda ({$email}). Masukkan kode untuk konfirmasi perubahan profil.";
+            $this->redirect('verify-otp');
+            return;
+        }
+
+        (new \App\Models\User())->update($userId, [
+            'name'  => $name,
+            'phone' => $phone
+        ]);
+
+        $_SESSION['user']['name'] = $name;
+        $_SESSION['user']['phone'] = $phone;
+
+        $_SESSION['success'] = 'Profil Mitra Driver berhasil diperbarui!';
+        $this->redirect('delivery/profile');
+    }
 }

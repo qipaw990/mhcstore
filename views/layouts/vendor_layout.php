@@ -54,6 +54,12 @@ $user = auth_user();
                     <span>Dompet & Penarikan</span>
                 </a>
             </li>
+            <li>
+                <a href="<?= $baseUrl ?>/vendor/profile" class="menu-link <?= ($active_tab ?? '') === 'profile' ? 'active' : '' ?>">
+                    <i class="bi bi-person-gear"></i>
+                    <span>Profil & Pengaturan Toko</span>
+                </a>
+            </li>
             <li class="mt-4">
                 <a href="<?= $baseUrl ?>/logout" class="menu-link text-danger">
                     <i class="bi bi-box-arrow-right"></i>

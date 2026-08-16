@@ -84,6 +84,12 @@ $user = auth_user();
                 </a>
             </li>
             <li>
+                <a href="<?= $baseUrl ?>/admin/profile" class="menu-link <?= ($active_tab ?? '') === 'profile' ? 'active' : '' ?>">
+                    <i class="bi bi-person-circle"></i>
+                    <span>Profil Admin</span>
+                </a>
+            </li>
+            <li>
                 <a href="<?= $baseUrl ?>/admin/settings" class="menu-link <?= ($active_tab ?? '') === 'settings' ? 'active' : '' ?>">
                     <i class="bi bi-gear-fill"></i>
                     <span>Pengaturan Sistem</span>

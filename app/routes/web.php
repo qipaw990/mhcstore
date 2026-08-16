@@ -66,6 +66,8 @@ Router::group(['prefix' => '/delivery', 'middleware' => ['DeliveryMiddleware']],
     Router::post('/update-status', [DeliveryController::class, 'updateDeliveryStatus']);
     Router::post('/update-location', [DeliveryController::class, 'updateLocation']);
     Router::get('/earnings', [DeliveryController::class, 'earnings']);
+    Router::get('/profile', [DeliveryController::class, 'profile']);
+    Router::post('/profile/update', [DeliveryController::class, 'updateProfile']);
 });
 
 // ==========================================
@@ -82,6 +84,8 @@ Router::group(['prefix' => '/vendor', 'middleware' => ['VendorMiddleware']], fun
     Router::post('/products/save', [VendorController::class, 'saveProduct']);
     Router::post('/products/delete', [VendorController::class, 'deleteProduct']);
     Router::get('/wallet', [VendorController::class, 'wallet']);
+    Router::get('/profile', [VendorController::class, 'profile']);
+    Router::post('/profile/update', [VendorController::class, 'updateProfile']);
 });
 
 // ==========================================
@@ -142,7 +146,9 @@ Router::group(['prefix' => '/admin', 'middleware' => ['AdminMiddleware']], funct
     Router::post('/banners/save', [AdminController::class, 'saveBanner']);
     Router::post('/banners/delete', [AdminController::class, 'deleteBanner']);
 
-    // Settings
+    // Settings & Profile
+    Router::get('/profile', [AdminController::class, 'profile']);
+    Router::post('/profile/update', [AdminController::class, 'updateProfile']);
     Router::get('/settings', [AdminController::class, 'settings']);
     Router::post('/settings/save', [AdminController::class, 'saveSettings']);
 
