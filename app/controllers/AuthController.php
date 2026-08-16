@@ -78,11 +78,16 @@ class AuthController extends Controller
 
         $pending = $_SESSION['pending_profile_update'] ?? $_SESSION['pending_otp'];
         $email = $pending['new_email'] ?? $pending['email'];
+        
+        $otpMode = \App\Models\BusinessSetting::get('otp_mode', 'real');
+        $demoOtp = ($otpMode === 'demo') ? ($pending['otp'] ?? '123456') : null;
+
         $this->view('auth.verify_otp', [
             'title'   => 'Verifikasi Email OTP - CicalengkaGO',
             'email'   => $email,
             'name'    => $pending['name'],
-            'demoOtp' => $pending['otp']
+            'demoOtp' => $demoOtp,
+            'otpMode' => $otpMode
         ], 'auth_layout');
     }
 

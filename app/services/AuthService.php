@@ -62,6 +62,9 @@ class AuthService
 
     public function verifyOtp(string $inputOtp): array
     {
+        $otpMode = BusinessSetting::get('otp_mode', 'real');
+        $isDemo = ($otpMode === 'demo');
+
         // Handle pending profile email update verification
         if (!empty($_SESSION['pending_profile_update'])) {
             $pending = $_SESSION['pending_profile_update'];
@@ -70,7 +73,8 @@ class AuthService
                 throw new Exception("Kode OTP telah kedaluwarsa. Silakan minta kode baru.");
             }
 
-            if (trim($inputOtp) !== (string)$pending['otp']) {
+            $isValid = (trim($inputOtp) === (string)$pending['otp']) || ($isDemo && trim($inputOtp) === '123456');
+            if (!$isValid) {
                 throw new Exception("Kode OTP yang Anda masukkan tidak cocok.");
             }
 
@@ -103,7 +107,8 @@ class AuthService
             throw new Exception("Kode OTP telah kedaluwarsa. Silakan klik 'Kirim Ulang OTP'.");
         }
 
-        if (trim($inputOtp) !== (string)$pending['otp']) {
+        $isValid = (trim($inputOtp) === (string)$pending['otp']) || ($isDemo && trim($inputOtp) === '123456');
+        if (!$isValid) {
             throw new Exception("Kode OTP yang Anda masukkan tidak cocok.");
         }
 

@@ -94,6 +94,16 @@
                             <span class="badge bg-primary-subtle text-primary rounded-pill px-2.5 py-1" style="font-size: 10px;">Email Gateway</span>
                         </div>
                         <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label small fw-bold">Mode Pengiriman OTP Verifikasi</label>
+                                <select name="otp_mode" class="form-select rounded-3 border-2 <?= ($settings['otp_mode'] ?? 'real') === 'real' ? 'border-success' : 'border-warning' ?>">
+                                    <option value="real" <?= ($settings['otp_mode'] ?? 'real') === 'real' ? 'selected' : '' ?>>🟢 REAL MODE: Kirim OTP Nyata via SMTP Gmail (Sembunyikan Demo OTP)</option>
+                                    <option value="demo" <?= ($settings['otp_mode'] ?? '') === 'demo' ? 'selected' : '' ?>>🟡 DEMO MODE: Tampilkan Kode OTP di Layar & Tombol Isi Otomatis (Untuk Testing)</option>
+                                </select>
+                                <small class="text-muted" style="font-size: 10px;">
+                                    Gunakan <strong>REAL MODE</strong> untuk keamanan akun pengguna, atau <strong>DEMO MODE</strong> untuk kemudahan pengujian cepat tanpa membuka email.
+                                </small>
+                            </div>
                             <div class="col-md-8">
                                 <label class="form-label small fw-bold">SMTP Host</label>
                                 <input type="text" name="smtp_host" class="form-control rounded-3" value="<?= htmlspecialchars($settings['smtp_host'] ?? 'smtp.gmail.com') ?>" placeholder="smtp.gmail.com">

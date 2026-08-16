@@ -9,7 +9,7 @@
     </p>
 </div>
 
-<!-- DEMO MODE OTP BANNER FOR EASY TESTING -->
+<!-- DEMO / REAL MODE OTP BANNER -->
 <?php if (!empty($demoOtp)): ?>
 <div class="alert alert-warning border-0 rounded-4 shadow-xs p-3 mb-4 d-flex align-items-center justify-content-between">
     <div>
@@ -19,6 +19,13 @@
     <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1.5 fw-bold text-nowrap" onclick="fillOtp('<?= htmlspecialchars($demoOtp) ?>')">
         <i class="bi bi-magic me-1"></i> Isi Otomatis
     </button>
+</div>
+<?php else: ?>
+<div class="alert alert-info border-0 rounded-4 shadow-xs p-3 mb-4 d-flex align-items-center gap-3" style="background:#eef6ff;">
+    <i class="bi bi-shield-check text-primary fs-3 flex-shrink-0"></i>
+    <small class="text-dark">
+        <strong>Mode Real Aktif:</strong> Silakan buka kotak masuk (inbox) atau folder spam pada email Anda untuk melihat 6 digit kode OTP rahasia.
+    </small>
 </div>
 <?php endif; ?>
 
