@@ -163,19 +163,25 @@ class CustomerController extends Controller
 
         $midtransService = new \App\Services\MidtransService();
 
-        // Auto-settle if redirected back from Midtrans payment finish
+        // Auto-settle or update log if redirected back from Midtrans payment finish
         $orderId = $_GET['order_id'] ?? '';
         $txnStatus = $_GET['transaction_status'] ?? $_GET['status'] ?? '';
         $statusCode = (string)($_GET['status_code'] ?? '');
-        if (!empty($orderId) && str_starts_with($orderId, 'TOPUP-') && ($txnStatus === 'settlement' || $txnStatus === 'capture' || $statusCode === '200')) {
-            try {
-                $midtransService->processNotification([
-                    'order_id'           => $orderId,
-                    'transaction_status' => 'settlement',
-                    'fraud_status'       => 'accept',
-                    'payment_type'       => $_GET['payment_type'] ?? 'midtrans_redirect'
-                ]);
-            } catch (\Exception $e) {}
+        if (!empty($orderId) && str_starts_with($orderId, 'TOPUP-')) {
+            if ($txnStatus === 'settlement' || $txnStatus === 'capture' || $statusCode === '200') {
+                try {
+                    $midtransService->processNotification([
+                        'order_id'           => $orderId,
+                        'transaction_status' => 'settlement',
+                        'fraud_status'       => 'accept',
+                        'payment_type'       => $_GET['payment_type'] ?? 'midtrans_redirect'
+                    ]);
+                } catch (\Exception $e) {}
+            } elseif ($txnStatus === 'pending' || $statusCode === '201') {
+                try {
+                    (new \App\Models\TopupLog())->updateStatusByCode($orderId, 'pending');
+                } catch (\Exception $e) {}
+            }
         }
 
         $wallet = $this->walletModel->getOrCreate($userId, 'customer');
