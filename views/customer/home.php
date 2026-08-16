@@ -160,7 +160,7 @@
                         <span class="gofood-closed-tag" style="border-radius: 6px;"><i class="bi bi-door-closed-fill me-1"></i> Tutup</span>
                     <?php endif; ?>
                 </div>
-                <div class="gofood-store-body p-2.5">
+                <div class="gofood-store-body">
                     <div class="gofood-store-name" style="font-size: 12px; letter-spacing: -0.2px;"><?= htmlspecialchars($store['name']) ?></div>
                     <div class="gofood-store-meta" style="font-size: 10px;">
                         <span class="gofood-rating"><i class="bi bi-star-fill"></i> <?= number_format($store['rating'] ?? 5.0, 1) ?></span>
@@ -190,7 +190,7 @@
                     <span class="gofood-discount-tag" style="border-radius: 6px;">Diskon <?= $prod['discount_type'] === 'percent' ? (int)$prod['discount'] . '%' : format_rupiah($prod['discount']) ?></span>
                 <?php endif; ?>
             </div>
-            <div class="gofood-prod-body p-2.5">
+            <div class="gofood-prod-body">
                 <div class="gofood-prod-store" style="font-size: 10px;"><?= htmlspecialchars($prod['store_name'] ?? 'Mitra GoFood') ?></div>
                 <div class="gofood-prod-name" style="font-size: 12px; letter-spacing: -0.2px;"><?= htmlspecialchars($prod['name']) ?></div>
                 <div class="gofood-price-row mt-1">

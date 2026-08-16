@@ -899,11 +899,15 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 .payment-option,
 .gofood-store-card,
 .gofood-product-card,
+.gopay-super-card,
 [class*="shadow-2xs"],
+[class*="shadow-xs"],
 div[style*="border-radius: 16px"],
 div[style*="border-radius: 18px"],
-div[style*="border-radius: 14px"] {
+div[style*="border-radius: 14px"],
+div[style*="border-radius: 12px"] {
   box-sizing: border-box !important;
+  overflow: hidden !important;
 }
 
 .card, 
@@ -921,18 +925,39 @@ div[style*="border-radius: 14px"] {
   padding: 14px 16px !important;
 }
 
+.card-header {
+  padding: 12px 16px !important;
+  background: transparent !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+}
+
+.card-footer {
+  padding: 12px 16px !important;
+  background: transparent !important;
+  border-top: 1px solid #E2E8F0 !important;
+}
+
 .gofood-store-body {
-  padding: 10px 12px 12px !important;
+  padding: 12px 14px 14px !important;
 }
 
 .gofood-prod-body {
-  padding: 12px 12px 12px !important;
+  padding: 12px 14px 14px !important;
 }
 
 .order-card-item {
   padding: 14px 16px !important;
   border-radius: 16px !important;
   border: 1px solid #E2E8F0 !important;
+}
+
+/* Enforce min-width 0 on card flex rows to prevent text bleeding outside card borders */
+.card > .d-flex,
+.merchant-card > .d-flex,
+.driver-card > .d-flex,
+.order-card-item,
+div[style*="border-radius: 16px"] > .d-flex {
+  min-width: 0 !important;
 }
 
 /* Compact Aesthetic Input Controls Inside Cards */

@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <?php else: ?>
         <div class="d-flex flex-column gap-2.5 mb-3">
             <?php foreach ($products as $prod): ?>
-                <div class="p-3.5 bg-white border shadow-2xs d-flex align-items-center justify-content-between gap-3" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+                <div class="p-3.5 bg-white border shadow-2xs d-flex align-items-center justify-content-between gap-3 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important;">
                     <div class="flex-grow-1 min-w-0">
                         <div class="fw-bold mb-1 text-truncate text-dark" style="font-size: 12.5px; letter-spacing: -0.2px;"><?= htmlspecialchars($prod['name']) ?></div>
                         <div class="text-muted" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 10.5px; line-height: 1.35; margin-bottom: 6px;">
