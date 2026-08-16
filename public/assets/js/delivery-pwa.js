@@ -186,31 +186,32 @@ function startDriverGpsTracking() {
       const now = Date.now();
 
       // Update in-memory driver coordinates for map
-      if (typeof window.myDriverMarker !== 'undefined' && window.myDriverMarker) {
-        window.myDriverMarker.setLatLng([lat, lng]);
-      }
-      if (typeof window.driverLat !== 'undefined') {
+      if (typeof window.updateDriverLiveLocation === 'function') {
+        window.updateDriverLiveLocation(lat, lng, false);
+      } else {
+        if (window.myDriverMarker) {
+          window.myDriverMarker.setLatLng([lat, lng]);
+        }
         window.driverLat = lat;
         window.driverLng = lng;
+
+        // Throttle server HTTP post to at most once per 8 seconds
+        if (now - lastGpsSentTime >= 8000) {
+          lastGpsSentTime = now;
+          const fd = new FormData();
+          fd.append('lat', lat);
+          fd.append('lng', lng);
+          fetch(API_BASE + '/delivery/update-location', {
+            method: 'POST',
+            body: fd
+          }).catch(() => {});
+        }
       }
-
-      // Throttle server HTTP post to at most once per 12 seconds
-      if (now - lastGpsSentTime < 12000) return;
-      lastGpsSentTime = now;
-
-      const fd = new FormData();
-      fd.append('lat', lat);
-      fd.append('lng', lng);
-
-      fetch(API_BASE + '/delivery/update-location', {
-        method: 'POST',
-        body: fd
-      }).catch(() => {});
     }, (err) => {
       console.warn('Geolocation watch error:', err);
     }, {
       enableHighAccuracy: true,
-      maximumAge: 15000,
+      maximumAge: 10000,
       timeout: 8000
     });
   }

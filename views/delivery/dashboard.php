@@ -332,21 +332,73 @@
 
 <script>
 window.HAS_ACTIVE_ORDER = <?= !empty($active_order) ? 'true' : 'false' ?>;
-let dRadarMap, myDriverMarker;
-let driverLat = <?= (float)($driver['latitude'] ?? -6.9840) ?>;
-let driverLng = <?= (float)($driver['longitude'] ?? 107.8340) ?>;
+window.dRadarMap = null;
+window.myDriverMarker = null;
+window.activeRouteLine = null;
+window.actStoreMarker = null;
+window.actCustMarker = null;
+
+window.actStoreLat = <?= (float)($active_order['store_lat'] ?? -6.9835) ?>;
+window.actStoreLng = <?= (float)($active_order['store_lng'] ?? 107.8335) ?>;
+window.actDestLat = <?= (float)($active_order['delivery_address']['lat'] ?? -6.9855) ?>;
+window.actDestLng = <?= (float)($active_order['delivery_address']['lng'] ?? 107.8350) ?>;
+window.isPickedUp = <?= (!empty($active_order) && in_array($active_order['order_status'], ['picked_up', 'on_the_way', 'delivered'])) ? 'true' : 'false' ?>;
+
+window.driverLat = <?= (float)($driver['current_latitude'] ?? $driver['latitude'] ?? -6.9840) ?>;
+window.driverLng = <?= (float)($driver['current_longitude'] ?? $driver['longitude'] ?? 107.8340) ?>;
+
+window.updateDriverLiveLocation = function(lat, lng, recenter = false) {
+    window.driverLat = lat;
+    window.driverLng = lng;
+
+    if (window.myDriverMarker) {
+        window.myDriverMarker.setLatLng([lat, lng]);
+    }
+
+    if (window.HAS_ACTIVE_ORDER && window.dRadarMap) {
+        const targetLat = window.isPickedUp ? window.actDestLat : window.actStoreLat;
+        const targetLng = window.isPickedUp ? window.actDestLng : window.actStoreLng;
+
+        if (targetLat && targetLng && targetLat !== 0 && targetLng !== 0) {
+            if (window.activeRouteLine) {
+                window.activeRouteLine.setLatLngs([[lat, lng], [targetLat, targetLng]]);
+            } else {
+                window.activeRouteLine = L.polyline([[lat, lng], [targetLat, targetLng]], {
+                    color: window.isPickedUp ? '#10b981' : '#EE2737',
+                    weight: 5,
+                    dashArray: '6, 8'
+                }).addTo(window.dRadarMap);
+            }
+            if (recenter) {
+                const bounds = L.latLngBounds([[lat, lng], [targetLat, targetLng]]);
+                window.dRadarMap.fitBounds(bounds, { padding: [40, 40] });
+            }
+        }
+    } else if (recenter && window.dRadarMap) {
+        window.dRadarMap.setView([lat, lng], 15);
+    }
+
+    // Persist to server
+    const fd = new FormData();
+    fd.append('lat', lat);
+    fd.append('lng', lng);
+    fetch((window.BASE_URL || '') + '/delivery/update-location', {
+        method: 'POST',
+        body: fd
+    }).catch(() => {});
+};
 
 function initDriverRadarMap() {
     if (!document.getElementById('driver-radar-map')) return;
 
-    dRadarMap = L.map('driver-radar-map', { 
+    window.dRadarMap = L.map('driver-radar-map', { 
         zoomControl: false,
         attributionControl: false
-    }).setView([driverLat, driverLng], 14);
+    }).setView([window.driverLat, window.driverLng], 14);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19
-    }).addTo(dRadarMap);
+    }).addTo(window.dRadarMap);
 
     // Modern Driver Animated Marker Icon (CicalengkaGO Red)
     const myIcon = L.divIcon({
@@ -363,17 +415,17 @@ function initDriverRadarMap() {
         popupAnchor: [0, -20]
     });
 
-    myDriverMarker = L.marker([driverLat, driverLng], { icon: myIcon })
+    window.myDriverMarker = L.marker([window.driverLat, window.driverLng], { icon: myIcon })
         .bindPopup('<div class="text-center"><b>Lokasi Anda (Driver CicalengkaGO)</b><br><span class="badge bg-success-subtle text-success rounded-pill px-2 py-0.5 mt-1" style="font-size:10px;"><i class="bi bi-broadcast me-1"></i>GPS Aktif</span></div>')
-        .addTo(dRadarMap);
+        .addTo(window.dRadarMap);
 
     <?php if (!empty($active_order)): ?>
         // Plot Active Order Details (Step-by-step)
-        const isPickedUp = <?= $isPickedUp ? 'true' : 'false' ?>;
-        const actStoreLat = <?= (float)($active_order['store_lat'] ?? -6.9835) ?>;
-        const actStoreLng = <?= (float)($active_order['store_lng'] ?? 107.8335) ?>;
-        const actDestLat = <?= (float)($active_order['delivery_address']['lat'] ?? -6.9855) ?>;
-        const actDestLng = <?= (float)($active_order['delivery_address']['lng'] ?? 107.8350) ?>;
+        const isPickedUp = window.isPickedUp;
+        const actStoreLat = window.actStoreLat;
+        const actStoreLng = window.actStoreLng;
+        const actDestLat = window.actDestLat;
+        const actDestLng = window.actDestLng;
 
         const storeIcon = L.divIcon({
             className: 'custom-pin',
@@ -391,32 +443,32 @@ function initDriverRadarMap() {
             popupAnchor: [0, -17]
         });
 
-        const sMarker = L.marker([actStoreLat, actStoreLng], { icon: storeIcon })
-            .addTo(dRadarMap)
+        window.actStoreMarker = L.marker([actStoreLat, actStoreLng], { icon: storeIcon })
+            .addTo(window.dRadarMap)
             .bindPopup("<b><?= htmlspecialchars($active_order['store_name'] ?? 'Penjemputan') ?></b><br><small class='text-muted'>Titik Ambil Barang</small><br><a href='<?= $storeGmapsUrl ?>' target='_blank' class='btn btn-danger btn-sm text-white w-100 mt-2 py-0.5 rounded-pill' style='font-size:10px;'>Google Maps Toko</a>");
 
-        const cMarker = L.marker([actDestLat, actDestLng], { icon: custIcon })
-            .addTo(dRadarMap)
+        window.actCustMarker = L.marker([actDestLat, actDestLng], { icon: custIcon })
+            .addTo(window.dRadarMap)
             .bindPopup("<b><?= htmlspecialchars($active_order['customer_name'] ?? 'Tujuan') ?></b><br><small class='text-muted'>Titik Antar Pelanggan</small><br><a href='<?= $custGmapsUrl ?>' target='_blank' class='btn btn-success btn-sm text-white w-100 mt-2 py-0.5 rounded-pill' style='font-size:10px;'>Google Maps Pelanggan</a>");
 
         if (!isPickedUp) {
             // Tahap 1: Driver -> Toko
-            const routeToStore = L.polyline([[driverLat, driverLng], [actStoreLat, actStoreLng]], {
+            window.activeRouteLine = L.polyline([[window.driverLat, window.driverLng], [actStoreLat, actStoreLng]], {
                 color: '#EE2737',
                 weight: 5,
                 dashArray: '6, 8'
-            }).addTo(dRadarMap);
-            dRadarMap.fitBounds(routeToStore.getBounds(), { padding: [40, 40] });
-            sMarker.openPopup();
+            }).addTo(window.dRadarMap);
+            window.dRadarMap.fitBounds(window.activeRouteLine.getBounds(), { padding: [40, 40] });
+            window.actStoreMarker.openPopup();
         } else {
             // Tahap 2: Driver -> Customer
-            const routeToCust = L.polyline([[driverLat, driverLng], [actDestLat, actDestLng]], {
+            window.activeRouteLine = L.polyline([[window.driverLat, window.driverLng], [actDestLat, actDestLng]], {
                 color: '#10b981',
                 weight: 5,
                 dashArray: '6, 8'
-            }).addTo(dRadarMap);
-            dRadarMap.fitBounds(routeToCust.getBounds(), { padding: [40, 40] });
-            cMarker.openPopup();
+            }).addTo(window.dRadarMap);
+            window.dRadarMap.fitBounds(window.activeRouteLine.getBounds(), { padding: [40, 40] });
+            window.actCustMarker.openPopup();
         }
     <?php else: ?>
         // Plot Available Incoming Orders
@@ -438,18 +490,46 @@ function initDriverRadarMap() {
                 });
 
                 L.marker([<?= $sLat ?>, <?= $sLng ?>], { icon: oIcon })
-                    .addTo(dRadarMap)
+                    .addTo(window.dRadarMap)
                     .bindPopup(`<b><?= $sName ?></b><br><small class="text-muted">Antar ke: <?= $dAddr ?></small><br><button onclick="acceptDriverOrder(<?= $oId ?>)" class="btn btn-sm w-100 mt-2 py-1 fw-bold rounded-pill text-white" style="background:#EE2737;">Ambil Order Ini</button>`);
             })();
         <?php endforeach; ?>
     <?php endif; ?>
+
+    // Immediately fetch device physical GPS
+    if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            window.updateDriverLiveLocation(lat, lng, true);
+        }, (err) => {
+            console.warn('Initial driver GPS error:', err);
+        }, {
+            enableHighAccuracy: true,
+            timeout: 6000
+        });
+    }
 }
 
 function centerDriverMap() {
-    if (dRadarMap) {
-        dRadarMap.setView([driverLat, driverLng], 15);
-        if (myDriverMarker) {
-            myDriverMarker.openPopup();
+    if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            window.updateDriverLiveLocation(lat, lng, true);
+            if (window.myDriverMarker) {
+                window.myDriverMarker.openPopup();
+            }
+        }, () => {
+            if (window.dRadarMap) {
+                window.dRadarMap.setView([window.driverLat, window.driverLng], 15);
+                if (window.myDriverMarker) window.myDriverMarker.openPopup();
+            }
+        }, { enableHighAccuracy: true });
+    } else if (window.dRadarMap) {
+        window.dRadarMap.setView([window.driverLat, window.driverLng], 15);
+        if (window.myDriverMarker) {
+            window.myDriverMarker.openPopup();
         }
     }
 }
