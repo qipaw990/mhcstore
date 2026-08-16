@@ -126,6 +126,46 @@
                         <textarea name="store_address" class="form-control rounded-3" rows="2" required><?= htmlspecialchars($store['address'] ?? '') ?></textarea>
                     </div>
 
+                    <!-- Section Ubah Kata Sandi -->
+                    <div class="col-12 mt-4 pt-3 border-top">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h6 class="fw-bold text-dark m-0" style="font-size: 13px;">
+                                <i class="bi bi-key-fill text-danger me-1"></i> 3. Ubah Kata Sandi Akun Pemilik (Opsional)
+                            </h6>
+                            <span class="text-muted small" style="font-size: 11px;">Kosongkan jika tidak ingin mengubah</span>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-muted">Kata Sandi Saat Ini</label>
+                                <div class="input-group">
+                                    <input type="password" name="current_password" id="vendor_current_password" class="form-control rounded-start-3" placeholder="Masukkan kata sandi lama">
+                                    <button class="btn btn-outline-secondary border rounded-end-3" type="button" onclick="togglePasswordVisibility('vendor_current_password', this)">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Kata Sandi Baru (Min. 6 Karakter)</label>
+                                <div class="input-group">
+                                    <input type="password" name="new_password" id="vendor_new_password" class="form-control rounded-start-3" placeholder="Kata sandi baru">
+                                    <button class="btn btn-outline-secondary border rounded-end-3" type="button" onclick="togglePasswordVisibility('vendor_new_password', this)">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Konfirmasi Kata Sandi Baru</label>
+                                <div class="input-group">
+                                    <input type="password" name="confirm_password" id="vendor_confirm_password" class="form-control rounded-start-3" placeholder="Ulangi kata sandi baru">
+                                    <button class="btn btn-outline-secondary border rounded-end-3" type="button" onclick="togglePasswordVisibility('vendor_confirm_password', this)">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="col-12 mt-4 text-end">
                         <button type="submit" class="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm" style="background:#EE2737;">
                             <i class="bi bi-floppy2-fill me-1"></i> Simpan Perubahan Profil & Toko
@@ -145,6 +185,18 @@ function previewImage(input, targetId) {
             document.getElementById(targetId).src = e.target.result;
         };
         reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function togglePasswordVisibility(fieldId, btn) {
+    const field = document.getElementById(fieldId);
+    const icon = btn.querySelector('i');
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.replace('bi-eye', 'bi-eye-slash');
+    } else {
+        field.type = 'password';
+        icon.classList.replace('bi-eye-slash', 'bi-eye');
     }
 }
 </script>

@@ -918,6 +918,42 @@ class AdminController extends Controller
             }
         }
 
+        $currentPassword = $data['current_password'] ?? '';
+        $newPassword     = $data['new_password'] ?? '';
+        $confirmPassword = $data['confirm_password'] ?? '';
+
+        $passwordUpdate = null;
+        if (!empty($newPassword) || !empty($currentPassword)) {
+            $userModel = new \App\Models\User();
+            $dbUser = $userModel->find($userId);
+
+            if (empty($currentPassword)) {
+                $_SESSION['error'] = 'Harap masukkan Kata Sandi Saat Ini untuk memverifikasi perubahan kata sandi.';
+                $this->redirect('admin/profile');
+                return;
+            }
+
+            if (!password_verify($currentPassword, $dbUser['password'] ?? '')) {
+                $_SESSION['error'] = 'Kata Sandi Saat Ini yang Anda masukkan salah.';
+                $this->redirect('admin/profile');
+                return;
+            }
+
+            if (strlen($newPassword) < 6) {
+                $_SESSION['error'] = 'Kata Sandi Baru harus memiliki minimal 6 karakter.';
+                $this->redirect('admin/profile');
+                return;
+            }
+
+            if ($newPassword !== $confirmPassword) {
+                $_SESSION['error'] = 'Konfirmasi Kata Sandi Baru tidak cocok.';
+                $this->redirect('admin/profile');
+                return;
+            }
+
+            $passwordUpdate = password_hash($newPassword, PASSWORD_BCRYPT);
+        }
+
         $currentUser = auth_user();
 
         if (strtolower($email) !== strtolower($currentUser['email'] ?? '')) {
@@ -935,6 +971,7 @@ class AdminController extends Controller
                 'name'       => $name,
                 'phone'      => $phone,
                 'new_email'  => $email,
+                'password'   => $passwordUpdate,
                 'otp'        => $otp,
                 'expires_at' => time() + 600
             ];
@@ -955,15 +992,22 @@ class AdminController extends Controller
             return;
         }
 
-        (new \App\Models\User())->update($userId, [
+        $updateFields = [
             'name'  => $name,
             'phone' => $phone
-        ]);
+        ];
+        if ($passwordUpdate) {
+            $updateFields['password'] = $passwordUpdate;
+        }
+
+        (new \App\Models\User())->update($userId, $updateFields);
 
         $_SESSION['user']['name'] = $name;
         $_SESSION['user']['phone'] = $phone;
 
-        $_SESSION['success'] = 'Profil Admin berhasil diperbarui!';
+        $_SESSION['success'] = $passwordUpdate 
+            ? 'Profil dan Kata Sandi Administrator berhasil diperbarui!' 
+            : 'Profil Admin berhasil diperbarui!';
         $this->redirect('admin/profile');
     }
 }

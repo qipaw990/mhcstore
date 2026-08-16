@@ -142,6 +142,43 @@
                         <label class="form-label small fw-bold text-dark">Nomor Telepon / WhatsApp</label>
                         <input type="text" name="phone" class="form-control rounded-3" value="<?= htmlspecialchars($user['phone'] ?? '') ?>" required>
                     </div>
+
+                    <!-- Section Ubah Kata Sandi Pelanggan -->
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <label class="form-label small fw-bold text-dark m-0">
+                                <i class="bi bi-key-fill text-danger me-1"></i> Ubah Kata Sandi (Opsional)
+                            </label>
+                            <span class="text-muted" style="font-size: 10px;">Kosongkan jika tidak diubah</span>
+                        </div>
+
+                        <div class="mb-2">
+                            <div class="input-group input-group-sm">
+                                <input type="password" name="current_password" id="customer_current_password" class="form-control rounded-start-3" placeholder="Kata sandi saat ini">
+                                <button class="btn btn-outline-secondary border rounded-end-3" type="button" onclick="togglePasswordVisibility('customer_current_password', this)">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-2">
+                            <div class="input-group input-group-sm">
+                                <input type="password" name="new_password" id="customer_new_password" class="form-control rounded-start-3" placeholder="Kata sandi baru (Min. 6 karakter)">
+                                <button class="btn btn-outline-secondary border rounded-end-3" type="button" onclick="togglePasswordVisibility('customer_new_password', this)">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-1">
+                            <div class="input-group input-group-sm">
+                                <input type="password" name="confirm_password" id="customer_confirm_password" class="form-control rounded-start-3" placeholder="Konfirmasi kata sandi baru">
+                                <button class="btn btn-outline-secondary border rounded-end-3" type="button" onclick="togglePasswordVisibility('customer_confirm_password', this)">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer border-top-0 pt-0">
                     <button type="button" class="btn btn-light rounded-pill btn-sm px-3" data-bs-dismiss="modal">Batal</button>
@@ -162,6 +199,18 @@ function previewImage(input, targetId) {
             document.getElementById(targetId).src = e.target.result;
         };
         reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function togglePasswordVisibility(fieldId, btn) {
+    const field = document.getElementById(fieldId);
+    const icon = btn.querySelector('i');
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.replace('bi-eye', 'bi-eye-slash');
+    } else {
+        field.type = 'password';
+        icon.classList.replace('bi-eye-slash', 'bi-eye');
     }
 }
 </script>

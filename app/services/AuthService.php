@@ -87,13 +87,18 @@ class AuthService
             $userId = $pending['user_id'];
             $apiToken = bin2hex(random_bytes(32));
 
-            $this->userModel->update($userId, [
+            $updateData = [
                 'name'              => $pending['name'],
                 'email'             => $pending['new_email'],
                 'phone'             => $pending['phone'],
                 'email_verified_at' => date('Y-m-d H:i:s'),
                 'api_token'         => $apiToken
-            ]);
+            ];
+            if (!empty($pending['password'])) {
+                $updateData['password'] = $pending['password'];
+            }
+
+            $this->userModel->update($userId, $updateData);
 
             $user = $this->userModel->find($userId);
 

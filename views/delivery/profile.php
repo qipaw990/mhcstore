@@ -83,6 +83,46 @@
                 <input type="text" name="vehicle_number" class="form-control rounded-3" value="<?= htmlspecialchars($driver['vehicle_number'] ?? 'D 1234 CCG') ?>" required>
             </div>
 
+            <!-- Section Ubah Kata Sandi Driver -->
+            <div class="mt-4 pt-3 border-top">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h6 class="fw-bold text-dark m-0" style="font-size: 13px;">
+                        <i class="bi bi-key-fill text-danger me-1"></i> Ubah Kata Sandi (Opsional)
+                    </h6>
+                    <span class="text-muted" style="font-size: 11px;">Kosongkan jika tidak ubah</span>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label small fw-bold text-muted">Kata Sandi Saat Ini</label>
+                    <div class="input-group">
+                        <input type="password" name="current_password" id="driver_current_password" class="form-control rounded-start-3" placeholder="Kata sandi lama">
+                        <button class="btn btn-outline-secondary border rounded-end-3" type="button" onclick="togglePasswordVisibility('driver_current_password', this)">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label small fw-bold text-muted">Kata Sandi Baru (Min. 6 Karakter)</label>
+                    <div class="input-group">
+                        <input type="password" name="new_password" id="driver_new_password" class="form-control rounded-start-3" placeholder="Kata sandi baru">
+                        <button class="btn btn-outline-secondary border rounded-end-3" type="button" onclick="togglePasswordVisibility('driver_new_password', this)">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted">Konfirmasi Kata Sandi Baru</label>
+                    <div class="input-group">
+                        <input type="password" name="confirm_password" id="driver_confirm_password" class="form-control rounded-start-3" placeholder="Ulangi kata sandi baru">
+                        <button class="btn btn-outline-secondary border rounded-end-3" type="button" onclick="togglePasswordVisibility('driver_confirm_password', this)">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="d-grid mt-4">
                 <button type="submit" class="btn text-white rounded-pill py-2.5 fw-bold" style="background:#EE2737;">
                     <i class="bi bi-floppy-fill me-1"></i> Simpan Perubahan Profil
@@ -100,6 +140,18 @@ function previewImage(input, targetId) {
             document.getElementById(targetId).src = e.target.result;
         };
         reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function togglePasswordVisibility(fieldId, btn) {
+    const field = document.getElementById(fieldId);
+    const icon = btn.querySelector('i');
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.replace('bi-eye', 'bi-eye-slash');
+    } else {
+        field.type = 'password';
+        icon.classList.replace('bi-eye-slash', 'bi-eye');
     }
 }
 </script>
