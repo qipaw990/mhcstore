@@ -164,7 +164,7 @@
                                     </td>
                                     <td class="text-end">
                                         <div class="d-flex justify-content-end gap-1">
-                                            <button class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 fw-bold" onclick='openEditZoneModal(<?= json_encode($z) ?>)'>
+                                            <button class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 fw-bold" onclick="openEditZoneModal(<?= htmlspecialchars(json_encode($z, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8') ?>)">
                                                 <i class="bi bi-pencil-square me-1"></i> Edit Cakupan
                                             </button>
                                             <button class="btn btn-light btn-sm rounded-circle text-danger" style="width:34px;height:34px;" onclick="deleteZone(<?= $z['id'] ?>, '<?= addslashes($z['name']) ?>')" title="Hapus Zona">
@@ -510,7 +510,7 @@ function initZoneEditorMap(centerLat, centerLng, initialCoords) {
     if (Array.isArray(initialCoords) && initialCoords.length >= 3) {
         initialCoords.forEach(pt => {
             if (Array.isArray(pt)) {
-                currentPolygonCoords.push([(float)pt[0], (float)pt[1]]);
+                currentPolygonCoords.push([parseFloat(pt[0]), parseFloat(pt[1])]);
             } else if (pt && typeof pt === 'object' && pt.lat && pt.lng) {
                 currentPolygonCoords.push([parseFloat(pt.lat), parseFloat(pt.lng)]);
             }
