@@ -1,6 +1,18 @@
 <?php
 $isCanceled = ($order['order_status'] === 'canceled');
 $isUnpaidOnline = ($order['payment_method'] === 'midtrans' && $order['payment_status'] !== 'paid' && !$isCanceled);
+
+$statusLabels = [
+    'pending'     => ['label' => 'Menunggu Pembayaran', 'class' => 'bg-warning text-dark'],
+    'confirmed'   => ['label' => 'Pesanan Dikonfirmasi', 'class' => 'bg-info text-dark'],
+    'processing'  => ['label' => 'Sedang Disiapkan Resto', 'class' => 'bg-warning text-dark'],
+    'handover'    => ['label' => 'Diserahkan ke Kurir', 'class' => 'bg-primary text-white'],
+    'picked_up'   => ['label' => 'Pesanan Diambil Kurir', 'class' => 'bg-primary text-white'],
+    'on_the_way'  => ['label' => 'Kurir Menuju Lokasi Anda', 'class' => 'bg-primary text-white'],
+    'delivered'   => ['label' => 'Pesanan Selesai', 'class' => 'bg-success text-white'],
+    'canceled'    => ['label' => 'Pesanan Dibatalkan', 'class' => 'bg-danger text-white']
+];
+$currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper($order['order_status']), 'class' => 'bg-secondary text-white'];
 ?>
 
 <?php if ($isUnpaidOnline && !empty($snap_url)): ?>
@@ -20,16 +32,16 @@ $isUnpaidOnline = ($order['payment_method'] === 'midtrans' && $order['payment_st
     </div>
     
     <?php if ($isCanceled): ?>
-        <span class="badge px-3 py-1 text-uppercase text-white fw-bold bg-danger" style="font-size: 11px;">
+        <span id="order-status-badge" class="badge px-3 py-1 text-uppercase text-white fw-bold bg-danger" style="font-size: 11px;">
             DIBATALKAN
         </span>
     <?php elseif ($isUnpaidOnline): ?>
-        <span class="badge px-3 py-1 text-uppercase bg-warning text-dark fw-bold border border-warning d-flex align-items-center gap-1" style="font-size: 10px;">
+        <span id="order-status-badge" class="badge px-3 py-1 text-uppercase bg-warning text-dark fw-bold border border-warning d-flex align-items-center gap-1" style="font-size: 10px;">
             <i class="bi bi-clock-history"></i> MENUNGGU BAYAR
         </span>
     <?php else: ?>
-        <span id="order-status-badge" class="badge px-3 py-1 text-uppercase text-white fw-bold" style="background: #EE2737; font-size: 11px;">
-            <?= strtoupper($order['order_status']) ?>
+        <span id="order-status-badge" class="badge px-3 py-1 text-uppercase fw-bold <?= $currentBadge['class'] ?>" style="font-size: 11px;">
+            <?= $currentBadge['label'] ?>
         </span>
     <?php endif; ?>
 </div>
@@ -129,89 +141,100 @@ $isUnpaidOnline = ($order['payment_method'] === 'midtrans' && $order['payment_st
             </div>
         </div>
 
-        <!-- OTP Code Banner Card -->
-        <?php if ($order['order_status'] !== 'delivered' && $order['order_status'] !== 'canceled'): ?>
-        <div class="p-3 mb-3 text-white rounded-4 shadow-sm text-center" style="background: linear-gradient(135deg, #101820 0%, #1e293b 100%); border-left: 4px solid #EE2737;">
+        <!-- Order Delivered Success Celebration Card (Auto-Synced) -->
+        <div id="order-completed-card" class="p-3 mb-3 text-white rounded-4 shadow-sm <?= $order['order_status'] === 'delivered' ? '' : 'd-none' ?>" style="background: linear-gradient(135deg, #10B981 0%, #047857 100%); border-left: 4px solid #059669;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 44px; height: 44px; font-size: 22px;">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold m-0 text-white">Pesanan Selesai Diantar! 🎉</h6>
+                    <div class="text-white-50 small" style="font-size: 11px; line-height: 1.3;">Terima kasih telah memesan melalui CicalengkaGO. Semoga menikmati pesanan Anda.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OTP Code Banner Card (Auto-Synced) -->
+        <div id="otp-banner-card" class="p-3 mb-3 text-white rounded-4 shadow-sm text-center <?= ($order['order_status'] === 'delivered' || $order['order_status'] === 'canceled') ? 'd-none' : '' ?>" style="background: linear-gradient(135deg, #101820 0%, #1e293b 100%); border-left: 4px solid #EE2737;">
             <div class="small text-white-50 mb-1" style="font-size: 11px; font-weight: 600; letter-spacing: 0.5px;">KODE OTP KONFIRMASI PENERIMAAN</div>
             <div class="display-6 fw-bold" style="letter-spacing: 6px; color: #EE2737;"><?= htmlspecialchars($order['otp']) ?></div>
             <div class="small text-white-50 mt-1" style="font-size: 10px;">Berikan kode 4-digit ini kepada kurir saat pesanan tiba di lokasi Anda.</div>
         </div>
-        <?php endif; ?>
 
-        <!-- Driver Info Card (If Assigned) -->
-        <?php if (!empty($order['delivery_man_id'])): ?>
-        <div class="p-3 bg-white rounded-4 border shadow-sm mb-3">
-            <div class="d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center gap-3">
-                    <img src="<?= $baseUrl ?>/<?= htmlspecialchars($order['dm_avatar'] ?? 'assets/images/users/driver.png') ?>" alt="Driver" class="rounded-circle border border-2 border-danger" style="width: 48px; height: 48px; object-fit: cover;">
-                    <div>
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="fw-bold small"><?= htmlspecialchars($order['dm_name'] ?? 'Mitra Kurir Cicalengka') ?></span>
-                            <span class="badge bg-danger-subtle text-danger" style="font-size: 9px;"><i class="bi bi-patch-check-fill me-1"></i>Mitra Driver CCG</span>
-                        </div>
-                        <div class="text-muted" style="font-size: 11px;">
-                            <i class="bi bi-bicycle me-1 text-danger"></i><?= htmlspecialchars($order['vehicle_type'] ?? 'Motor') ?> • <b><?= htmlspecialchars($order['vehicle_number'] ?? 'D 1234 CCG') ?></b>
+        <!-- Driver Info Card (Dynamic Auto-Sync) -->
+        <div id="driver-card-container">
+            <!-- Assigned Driver Card -->
+            <div id="driver-assigned-card" class="p-3 bg-white rounded-4 border shadow-sm mb-3 <?= empty($order['delivery_man_id']) ? 'd-none' : '' ?>">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <img id="driver-avatar-img" src="<?= $baseUrl ?>/<?= htmlspecialchars($order['dm_avatar'] ?? 'assets/images/users/driver.png') ?>" alt="Driver" class="rounded-circle border border-2 border-danger" style="width: 48px; height: 48px; object-fit: cover;">
+                        <div>
+                            <div class="d-flex align-items-center gap-1">
+                                <span id="driver-name-text" class="fw-bold small"><?= htmlspecialchars($order['dm_name'] ?? 'Mitra Kurir Cicalengka') ?></span>
+                                <span class="badge bg-danger-subtle text-danger" style="font-size: 9px;"><i class="bi bi-patch-check-fill me-1"></i>Mitra Driver CCG</span>
+                            </div>
+                            <div id="driver-vehicle-text" class="text-muted" style="font-size: 11px;">
+                                <i class="bi bi-bicycle me-1 text-danger"></i><?= htmlspecialchars($order['vehicle_type'] ?? 'Motor') ?> • <b><?= htmlspecialchars($order['vehicle_number'] ?? 'D 1234 CCG') ?></b>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="d-flex gap-2 align-items-center">
-                    <button type="button" onclick="openChatModal()" class="btn btn-danger btn-sm rounded-pill px-3 py-1.5 d-flex align-items-center justify-content-center shadow-xs position-relative gap-1.5 fw-bold" style="background:#EE2737; border:none; font-size: 12px;" title="Chat Langsung Driver">
-                        <i class="bi bi-chat-dots-fill text-white fs-6"></i>
-                        <span>Chat Kurir</span>
-                        <span id="chatUnreadDot" class="ccg-unread-dot d-none"></span>
-                    </button>
-                    <?php if (!empty($order['dm_phone'])): ?>
-                        <a href="tel:<?= htmlspecialchars($order['dm_phone']) ?>" class="btn btn-light btn-sm rounded-circle border d-flex align-items-center justify-content-center shadow-xs" style="width: 36px; height: 36px;" title="Telepon Kurir">
+                    <div class="d-flex gap-2 align-items-center">
+                        <button type="button" onclick="openChatModal()" class="btn btn-danger btn-sm rounded-pill px-3 py-1.5 d-flex align-items-center justify-content-center shadow-xs position-relative gap-1.5 fw-bold" style="background:#EE2737; border:none; font-size: 12px;" title="Chat Langsung Driver">
+                            <i class="bi bi-chat-dots-fill text-white fs-6"></i>
+                            <span>Chat</span>
+                            <span id="chatUnreadDot" class="ccg-unread-dot d-none"></span>
+                        </button>
+                        <a id="driver-call-btn" href="tel:<?= htmlspecialchars($order['dm_phone'] ?? '') ?>" class="btn btn-light btn-sm rounded-circle border d-flex align-items-center justify-content-center shadow-xs <?= empty($order['dm_phone']) ? 'd-none' : '' ?>" style="width: 36px; height: 36px;" title="Telepon Kurir">
                             <i class="bi bi-telephone-fill text-dark" style="font-size: 13px;"></i>
                         </a>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-        <?php else: ?>
-        <div class="p-3 bg-white rounded-4 border shadow-sm mb-3">
-            <div class="d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center gap-2.5">
-                    <div class="spinner-border spinner-border-sm text-danger" role="status"></div>
-                    <div>
-                        <div class="small fw-bold text-dark">Mencari Kurir Terdekat...</div>
-                        <div class="text-muted" style="font-size: 11px;">Sistem sedang menugaskan kurir untuk pesanan Anda</div>
                     </div>
                 </div>
-                <button type="button" onclick="openChatModal()" class="btn btn-outline-danger btn-sm rounded-pill px-2.5 py-1 d-flex align-items-center gap-1 fw-bold" style="font-size: 11px;">
-                    <i class="bi bi-chat-dots"></i> Chat
-                </button>
+            </div>
+
+            <!-- Searching Driver Card -->
+            <div id="driver-searching-card" class="p-3 bg-white rounded-4 border shadow-sm mb-3 <?= !empty($order['delivery_man_id']) ? 'd-none' : '' ?>">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2.5">
+                        <div class="spinner-border spinner-border-sm text-danger" role="status"></div>
+                        <div>
+                            <div class="small fw-bold text-dark">Mencari Kurir Terdekat...</div>
+                            <div class="text-muted" style="font-size: 11px;">Sistem sedang menugaskan kurir terdekat untuk pesanan Anda</div>
+                        </div>
+                    </div>
+                    <button type="button" onclick="openChatModal()" class="btn btn-outline-danger btn-sm rounded-pill px-2.5 py-1 d-flex align-items-center gap-1 fw-bold" style="font-size: 11px;">
+                        <i class="bi bi-chat-dots"></i> Chat
+                    </button>
+                </div>
             </div>
         </div>
-        <?php endif; ?>
 
-        <!-- Delivery Stepper Progress -->
+        <!-- Delivery Stepper Progress (Dynamic Auto-Sync) -->
         <div class="p-3 bg-white rounded-4 border shadow-sm mb-3">
             <h6 class="fw-bold small mb-3" style="color: var(--gojek-charcoal);">Status Pengantaran</h6>
-            <div class="stepper-container p-0">
-                <div class="step-item completed">
+            <div class="stepper-container p-0" id="order-stepper">
+                <div class="step-item step-1 completed">
                     <div class="step-dot"><i class="bi bi-check-lg"></i></div>
                     <div class="flex-grow-1">
                         <div class="fw-bold small text-dark">Pesanan Dikonfirmasi</div>
                         <div class="text-muted" style="font-size: 11px;">Resto/Mitra menerima pesanan Anda</div>
                     </div>
                 </div>
-                <div class="step-item <?= in_array($order['order_status'], ['processing', 'handover', 'on_the_way', 'delivered']) ? 'completed' : '' ?>">
+                <div class="step-item step-2 <?= in_array($order['order_status'], ['processing', 'handover', 'picked_up', 'on_the_way', 'delivered']) ? 'completed' : ($order['order_status'] === 'confirmed' ? 'active' : '') ?>">
                     <div class="step-dot"><i class="bi bi-egg-fried"></i></div>
                     <div class="flex-grow-1">
                         <div class="fw-bold small text-dark">Diproses & Disiapkan</div>
                         <div class="text-muted" style="font-size: 11px;">Makanan sedang dimasak / barang dikemas</div>
                     </div>
                 </div>
-                <div class="step-item <?= in_array($order['order_status'], ['on_the_way', 'delivered']) ? 'completed' : (in_array($order['order_status'], ['processing', 'handover']) ? 'active' : '') ?>">
+                <div class="step-item step-3 <?= in_array($order['order_status'], ['on_the_way', 'delivered']) ? 'completed' : (in_array($order['order_status'], ['handover', 'picked_up']) ? 'active' : '') ?>">
                     <div class="step-dot"><i class="bi bi-bicycle"></i></div>
                     <div class="flex-grow-1">
                         <div class="fw-bold small text-dark">Kurir Menuju Lokasi Anda</div>
                         <div class="text-muted" style="font-size: 11px;">Kurir dalam perjalanan pengantaran</div>
                     </div>
                 </div>
-                <div class="step-item <?= $order['order_status'] === 'delivered' ? 'completed' : '' ?>">
-                    <div class="step-dot"><i class="bi bi-geo-alt-fill"></i></div>
+                <div class="step-item step-4 <?= $order['order_status'] === 'delivered' ? 'completed' : '' ?>">
+                    <div class="step-dot"><i class="bi bi-<?= $order['order_status'] === 'delivered' ? 'check-lg' : 'geo-alt-fill' ?>"></i></div>
                     <div class="flex-grow-1">
                         <div class="fw-bold small text-dark">Pesanan Selesai</div>
                         <div class="text-muted" style="font-size: 11px;">Barang sampai dengan aman</div>
@@ -253,8 +276,8 @@ $isUnpaidOnline = ($order['payment_method'] === 'midtrans' && $order['payment_st
         </div>
         <div class="d-flex justify-content-between small text-muted mt-1">
             <span>Status Pembayaran</span>
-            <span class="fw-bold <?= $order['payment_status'] === 'paid' ? 'text-success' : 'text-warning' ?>">
-                <?= $order['payment_status'] === 'paid' ? 'LUNAS' : ($order['payment_method'] === 'cod' ? 'BAYAR DI TEMPAT (COD)' : 'BELUM LUNAS') ?>
+            <span id="payment-status-text" class="fw-bold <?= ($order['payment_status'] === 'paid' || $order['order_status'] === 'delivered') ? 'text-success' : ($order['payment_method'] === 'cod' ? 'text-warning' : 'text-danger') ?>">
+                <?= ($order['payment_status'] === 'paid' || $order['order_status'] === 'delivered') ? 'LUNAS' : ($order['payment_method'] === 'cod' ? 'BAYAR DI TEMPAT (COD)' : 'BELUM LUNAS') ?>
             </span>
         </div>
     </div>
@@ -265,7 +288,10 @@ $isUnpaidOnline = ($order['payment_method'] === 'midtrans' && $order['payment_st
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const initialData = {
+        order_code: "<?= $order['order_code'] ?>",
         order_status: "<?= $order['order_status'] ?>",
+        payment_status: "<?= $order['payment_status'] ?>",
+        payment_method: "<?= $order['payment_method'] ?>",
         store: {
             name: "<?= htmlspecialchars($order['store_name'] ?? 'Penjemputan') ?>",
             lat: <?= (float)($order['store_lat'] ?? -6.9835) ?>,
@@ -277,7 +303,12 @@ document.addEventListener('DOMContentLoaded', () => {
             lng: <?= (float)($order['delivery_address']['lng'] ?? 107.8350) ?>
         },
         driver: {
+            assigned: <?= !empty($order['delivery_man_id']) ? 'true' : 'false' ?>,
             name: "<?= htmlspecialchars($order['dm_name'] ?? '') ?>",
+            phone: "<?= htmlspecialchars($order['dm_phone'] ?? '') ?>",
+            avatar: "<?= htmlspecialchars($order['dm_avatar'] ?? 'assets/images/users/driver.png') ?>",
+            vehicle: "<?= htmlspecialchars($order['vehicle_type'] ?? 'Motor') ?>",
+            plate: "<?= htmlspecialchars($order['vehicle_number'] ?? '') ?>",
             lat: <?= (float)($order['dm_lat'] ?? -6.9840) ?>,
             lng: <?= (float)($order['dm_lng'] ?? 107.8340) ?>
         }
@@ -487,13 +518,13 @@ function cancelUnpaidOrder() {
 <script>
 const TRACKING_ORDER_CODE = "<?= $order['order_code'] ?>";
 let chatPollingTimer = null;
-let isChatModalOpen = false;
+window.isChatModalOpen = false;
 
 function openChatModal() {
     const modal = document.getElementById('chatModal');
     if (!modal) return;
     modal.classList.add('show');
-    isChatModalOpen = true;
+    window.isChatModalOpen = true;
     document.body.style.overflow = 'hidden';
     
     // Hide unread dot
@@ -518,7 +549,7 @@ function closeChatModal() {
     const modal = document.getElementById('chatModal');
     if (!modal) return;
     modal.classList.remove('show');
-    isChatModalOpen = false;
+    window.isChatModalOpen = false;
     document.body.style.overflow = '';
     
     if (chatPollingTimer) {

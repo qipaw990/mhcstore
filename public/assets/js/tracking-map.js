@@ -1,6 +1,7 @@
 /**
  * Live GPS Order Tracking Engine (Leaflet + OpenStreetMap)
  * Realtime Fleet & Order Monitoring for CicalengkaGO
+ * Provides instant reactive synchronization for Order Status, Driver Location & Stepper UI
  */
 
 let trackingMap = null;
@@ -11,12 +12,13 @@ let routePolyline = null;
 let currentTrackingData = null;
 let pollTimer = null;
 let animationFrameId = null;
+let lastDeliveredNotified = false;
 
-// Target position and start position for smooth interpolation
+// Smooth marker interpolation state
 let animStartPos = null;
 let animTargetPos = null;
 let animStartTime = null;
-const ANIMATION_DURATION = 2000; // 2 seconds smooth easing
+const ANIMATION_DURATION = 1800; // 1.8 seconds smooth easing
 
 function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // Earth radius in km
@@ -29,39 +31,8 @@ function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
   return R * c; // Distance in km
 }
 
-function initOrderTrackingMap(orderCode, initialData) {
-  currentTrackingData = initialData;
-
-  const defaultCenter = [
-    initialData.driver?.lat || initialData.store?.lat || -6.9840,
-    initialData.driver?.lng || initialData.store?.lng || 107.8340
-  ];
-
-  if (trackingMap) {
-    trackingMap.remove();
-  }
-
-  trackingMap = L.map('tracking-map', {
-    zoomControl: true,
-    attributionControl: false
-  }).setView(defaultCenter, 15);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19
-  }).addTo(trackingMap);
-
-  // Store Icon (Red Gradient with shop pin)
-  const storeIcon = L.divIcon({
-    className: 'custom-map-icon',
-    html: `<div style="background:linear-gradient(135deg, #ef4444, #b91c1c);color:white;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 6px 16px rgba(239,68,68,0.4);">
-             <i class="bi bi-shop" style="font-size:18px;"></i>
-           </div>`,
-    iconSize: [38, 38],
-    iconAnchor: [19, 19]
-  });
-
-  // Driver Icon with Multi-ring Pulsating Radar Wave
-  const driverIcon = L.divIcon({
+function createDriverIcon() {
+  return L.divIcon({
     className: 'custom-map-icon driver-pulse-container',
     html: `<div style="position:relative;width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
              <div class="pulse-ring-outer" style="position:absolute;width:100%;height:100%;border-radius:50%;background:rgba(13,110,253,0.25);animation:radar-pulse 2s infinite ease-out;"></div>
@@ -73,8 +44,47 @@ function initOrderTrackingMap(orderCode, initialData) {
     iconSize: [52, 52],
     iconAnchor: [26, 26]
   });
+}
 
-  // Customer Destination Icon (Green with home pin)
+function initOrderTrackingMap(orderCode, initialData) {
+  currentTrackingData = initialData;
+  if (initialData.order_status === 'delivered') {
+    lastDeliveredNotified = true;
+  }
+
+  const defaultCenter = [
+    initialData.destination?.lat || initialData.store?.lat || -6.9840,
+    initialData.destination?.lng || initialData.store?.lng || 107.8340
+  ];
+
+  if (trackingMap) {
+    trackingMap.remove();
+    trackingMap = null;
+  }
+
+  const mapContainer = document.getElementById('tracking-map');
+  if (!mapContainer) return;
+
+  trackingMap = L.map('tracking-map', {
+    zoomControl: true,
+    attributionControl: false
+  }).setView(defaultCenter, 15);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+  }).addTo(trackingMap);
+
+  // Store Marker
+  const storeIcon = L.divIcon({
+    className: 'custom-map-icon',
+    html: `<div style="background:linear-gradient(135deg, #ef4444, #b91c1c);color:white;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 6px 16px rgba(239,68,68,0.4);">
+             <i class="bi bi-shop" style="font-size:18px;"></i>
+           </div>`,
+    iconSize: [38, 38],
+    iconAnchor: [19, 19]
+  });
+
+  // Customer Destination Marker (Always strictly locked from checkout coordinates)
   const customerIcon = L.divIcon({
     className: 'custom-map-icon',
     html: `<div style="background:linear-gradient(135deg, #10b981, #047857);color:white;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 6px 16px rgba(16,185,129,0.4);">
@@ -87,39 +97,57 @@ function initOrderTrackingMap(orderCode, initialData) {
   // Place Store Marker
   if (initialData.store && initialData.store.lat) {
     storeMarker = L.marker([initialData.store.lat, initialData.store.lng], { icon: storeIcon })
-      .bindPopup(`<div class="p-1"><b>${initialData.store.name}</b><br><span class="badge bg-danger-subtle text-danger small mt-1">Titik Penjemputan</span></div>`)
+      .bindPopup(`<div class="p-1"><b>${escapeHtml(initialData.store.name)}</b><br><span class="badge bg-danger-subtle text-danger small mt-1">Titik Penjemputan</span></div>`)
       .addTo(trackingMap);
   }
 
-  // Place Destination Marker
+  // Place Customer Destination Marker
   if (initialData.destination && initialData.destination.lat) {
     customerMarker = L.marker([initialData.destination.lat, initialData.destination.lng], { icon: customerIcon })
-      .bindPopup(`<div class="p-1"><b>Tujuan Pengantaran</b><br><small class="text-muted">${initialData.destination.address || 'Cicalengka'}</small></div>`)
+      .bindPopup(`<div class="p-1"><b>Tujuan Pengantaran</b><br><small class="text-muted">${escapeHtml(initialData.destination.address || 'Cicalengka')}</small></div>`)
       .addTo(trackingMap);
   }
 
-  // Place Driver Marker
-  if (initialData.driver && initialData.driver.lat) {
-    driverMarker = L.marker([initialData.driver.lat, initialData.driver.lng], { icon: driverIcon })
-      .bindPopup(`<div class="p-1"><b>Kurir: ${initialData.driver.name}</b><br><span class="badge bg-primary-subtle text-primary small mt-1"><i class="bi bi-broadcast me-1"></i> Live GPS Aktif</span></div>`)
+  // Place Driver Marker if driver is assigned
+  if (initialData.driver && initialData.driver.assigned && initialData.driver.lat) {
+    driverMarker = L.marker([initialData.driver.lat, initialData.driver.lng], { icon: createDriverIcon() })
+      .bindPopup(`<div class="p-1"><b>Kurir: ${escapeHtml(initialData.driver.name)}</b><br><span class="badge bg-primary-subtle text-primary small mt-1"><i class="bi bi-broadcast me-1"></i> Live GPS Aktif</span></div>`)
       .addTo(trackingMap);
   }
 
   drawRoutePolylines(initialData);
   fitAllMarkers();
   updateLiveMetrics(initialData);
+  updateTrackingStatusUI(initialData.order_status, initialData);
+  updateDriverCardUI(initialData.driver);
 
   // Clear any existing poll
   if (pollTimer) clearInterval(pollTimer);
 
-  // Poll real-time live location every 3 seconds
+  // Poll real-time live location & reactive order status every 2.5 seconds
   pollTimer = setInterval(() => {
     pollLiveTracking(orderCode);
-  }, 3000);
+  }, 2500);
 }
 
 function updateLiveMetrics(data) {
   if (!data) return;
+
+  if (data.order_status === 'delivered') {
+    const distBadge = document.getElementById('live-distance-text');
+    if (distBadge) {
+      distBadge.innerHTML = `<i class="bi bi-check-circle-fill text-success me-1"></i> Pesanan Sampai di Tujuan`;
+    }
+    const etaBadge = document.getElementById('live-eta-text');
+    if (etaBadge) {
+      etaBadge.innerHTML = `<i class="bi bi-shield-check text-white me-1"></i> Selesai`;
+    }
+    const radarStatus = document.getElementById('live-radar-status');
+    if (radarStatus) {
+      radarStatus.innerHTML = `<span class="live-dot me-1" style="background:#10B981;"></span> Pengantaran Selesai`;
+    }
+    return;
+  }
 
   const dLat = data.driver?.lat;
   const dLng = data.driver?.lng;
@@ -153,7 +181,7 @@ function updateLiveMetrics(data) {
 
     const etaBadge = document.getElementById('live-eta-text');
     if (etaBadge) {
-      etaBadge.innerHTML = `<i class="bi bi-stopwatch-fill text-primary me-1"></i> Tiba dalam ±${etaMinutes} Menit`;
+      etaBadge.innerHTML = `<i class="bi bi-stopwatch-fill text-white me-1"></i> Estimasi ±${etaMinutes} Menit`;
     }
 
     const radarStatus = document.getElementById('live-radar-status');
@@ -166,7 +194,10 @@ function updateLiveMetrics(data) {
 function drawRoutePolylines(data) {
   if (routePolyline && trackingMap) {
     trackingMap.removeLayer(routePolyline);
+    routePolyline = null;
   }
+
+  if (!trackingMap) return;
 
   const sLat = data.store?.lat;
   const sLng = data.store?.lng;
@@ -187,11 +218,11 @@ function drawRoutePolylines(data) {
     }
   }
 
-  if (points.length >= 2 && trackingMap) {
+  if (points.length >= 2) {
     routePolyline = L.polyline(points, {
-      color: '#0d6efd',
-      weight: 5,
-      dashArray: '8, 10',
+      color: '#EE2737',
+      weight: 4,
+      dashArray: '6, 8',
       opacity: 0.85,
       lineCap: 'round',
       lineJoin: 'round'
@@ -203,7 +234,7 @@ function smoothMoveMarker(targetLat, targetLng) {
   if (!driverMarker) return;
 
   const currentLatLng = driverMarker.getLatLng();
-  if (currentLatLng.lat === targetLat && currentLatLng.lng === targetLng) return;
+  if (Math.abs(currentLatLng.lat - targetLat) < 0.000001 && Math.abs(currentLatLng.lng - targetLng) < 0.000001) return;
 
   animStartPos = [currentLatLng.lat, currentLatLng.lng];
   animTargetPos = [targetLat, targetLng];
@@ -241,32 +272,47 @@ async function pollLiveTracking(orderCode) {
 
     if (json.success && json.data) {
       const d = json.data;
+      const prevStatus = currentTrackingData ? currentTrackingData.order_status : null;
       currentTrackingData = d;
 
+      // Celebrate when transitioning to delivered state
+      if (d.order_status === 'delivered' && !lastDeliveredNotified && prevStatus !== 'delivered') {
+        lastDeliveredNotified = true;
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            title: 'Pesanan Selesai Diantar! 🎉',
+            text: 'Pesanan Anda telah berhasil diterima. Terima kasih telah menggunakan CicalengkaGO!',
+            icon: 'success',
+            confirmButtonColor: '#EE2737'
+          });
+        }
+      }
+
       // Update Driver Marker smoothly
-      if (d.driver && d.driver.lat && d.driver.lng) {
+      if (d.driver && d.driver.assigned && d.driver.lat && d.driver.lng) {
         if (driverMarker) {
           smoothMoveMarker(d.driver.lat, d.driver.lng);
-        } else {
-          const driverIcon = L.divIcon({
-            className: 'custom-map-icon driver-pulse-container',
-            html: `<div style="position:relative;width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
-                     <div class="pulse-ring-outer" style="position:absolute;width:100%;height:100%;border-radius:50%;background:rgba(13,110,253,0.25);animation:radar-pulse 2s infinite ease-out;"></div>
-                     <div class="pulse-ring-inner" style="position:absolute;width:75%;height:75%;border-radius:50%;background:rgba(13,110,253,0.35);animation:radar-pulse 2s infinite ease-out 0.5s;"></div>
-                     <div style="background:linear-gradient(135deg, #0d6efd, #1e40af);color:white;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 6px 18px rgba(13,110,253,0.6);z-index:3;">
-                       <i class="bi bi-bicycle" style="font-size:20px;"></i>
-                     </div>
-                   </div>`,
-            iconSize: [52, 52],
-            iconAnchor: [26, 26]
-          });
-          driverMarker = L.marker([d.driver.lat, d.driver.lng], { icon: driverIcon }).addTo(trackingMap);
+        } else if (trackingMap) {
+          driverMarker = L.marker([d.driver.lat, d.driver.lng], { icon: createDriverIcon() })
+            .bindPopup(`<div class="p-1"><b>Kurir: ${escapeHtml(d.driver.name)}</b><br><span class="badge bg-primary-subtle text-primary small mt-1"><i class="bi bi-broadcast me-1"></i> Live GPS Aktif</span></div>`)
+            .addTo(trackingMap);
+        }
+      }
+
+      // Auto-sync Chat Unread Dot
+      const unreadDot = document.getElementById('chatUnreadDot');
+      if (unreadDot) {
+        if (d.unread_chats > 0 && typeof isChatModalOpen !== 'undefined' && !isChatModalOpen) {
+          unreadDot.classList.remove('d-none');
+        } else if (d.unread_chats === 0) {
+          unreadDot.classList.add('d-none');
         }
       }
 
       drawRoutePolylines(d);
       updateLiveMetrics(d);
       updateTrackingStatusUI(d.order_status, d);
+      updateDriverCardUI(d.driver);
     }
   } catch (err) {
     console.warn('Live tracking update failed:', err);
@@ -296,33 +342,121 @@ function centerOnDriver() {
   }
 }
 
+function updateDriverCardUI(driver) {
+  const assignedCard = document.getElementById('driver-assigned-card');
+  const searchingCard = document.getElementById('driver-searching-card');
+
+  if (driver && driver.assigned) {
+    if (assignedCard) assignedCard.classList.remove('d-none');
+    if (searchingCard) searchingCard.classList.add('d-none');
+
+    const avatarImg = document.getElementById('driver-avatar-img');
+    const nameText = document.getElementById('driver-name-text');
+    const vehicleText = document.getElementById('driver-vehicle-text');
+    const callBtn = document.getElementById('driver-call-btn');
+
+    if (avatarImg) {
+      const avatarSrc = driver.avatar ? (driver.avatar.startsWith('http') ? driver.avatar : window.BASE_URL + '/' + driver.avatar) : (window.BASE_URL + '/assets/images/users/driver.png');
+      avatarImg.src = avatarSrc;
+    }
+
+    if (nameText) {
+      nameText.textContent = driver.name || 'Mitra Kurir Cicalengka';
+    }
+
+    if (vehicleText) {
+      vehicleText.innerHTML = `<i class="bi bi-bicycle me-1 text-danger"></i>${escapeHtml(driver.vehicle || 'Motor')} • <b>${escapeHtml(driver.plate || 'D 1234 CCG')}</b>`;
+    }
+
+    if (callBtn) {
+      if (driver.phone) {
+        callBtn.href = 'tel:' + driver.phone;
+        callBtn.classList.remove('d-none');
+      } else {
+        callBtn.classList.add('d-none');
+      }
+    }
+  } else {
+    if (assignedCard) assignedCard.classList.add('d-none');
+    if (searchingCard) searchingCard.classList.remove('d-none');
+  }
+}
+
 function updateTrackingStatusUI(status, data) {
+  // Top Badge Auto-Sync
   const badge = document.getElementById('order-status-badge');
   if (badge) {
-    let label = status;
-    let bg = 'bg-primary';
-    if (status === 'pending') { label = 'Menunggu Konfirmasi'; bg = 'bg-secondary'; }
-    if (status === 'confirmed') { label = 'Pesanan Dikonfirmasi'; bg = 'bg-info text-dark'; }
-    if (status === 'processing') { label = 'Sedang Disiapkan Resto'; bg = 'bg-warning text-dark'; }
-    if (status === 'handover') { label = 'Diserahkan ke Kurir'; bg = 'bg-primary'; }
-    if (status === 'on_the_way') { label = 'Kurir Menuju Lokasi Anda'; bg = 'bg-primary'; }
-    if (status === 'delivered') { label = 'Pesanan Selesai'; bg = 'bg-success'; }
-    if (status === 'canceled') { label = 'Dibatalkan'; bg = 'bg-danger'; }
-    badge.className = `badge ${bg} px-2 py-1`;
-    badge.textContent = label;
+    const statusMap = {
+      'pending': { label: 'Menunggu Pembayaran', class: 'bg-warning text-dark' },
+      'confirmed': { label: 'Pesanan Dikonfirmasi', class: 'bg-info text-dark' },
+      'processing': { label: 'Sedang Disiapkan Resto', class: 'bg-warning text-dark' },
+      'handover': { label: 'Diserahkan ke Kurir', class: 'bg-primary text-white' },
+      'picked_up': { label: 'Pesanan Diambil Kurir', class: 'bg-primary text-white' },
+      'on_the_way': { label: 'Kurir Menuju Lokasi Anda', class: 'bg-primary text-white' },
+      'delivered': { label: 'Pesanan Selesai', class: 'bg-success text-white' },
+      'canceled': { label: 'Pesanan Dibatalkan', class: 'bg-danger text-white' }
+    };
+    const s = statusMap[status] || { label: status.toUpperCase(), class: 'bg-secondary text-white' };
+    badge.className = `badge px-3 py-1 text-uppercase fw-bold ${s.class}`;
+    badge.textContent = s.label;
   }
 
-  // Update Stepper visually
-  const steps = document.querySelectorAll('.stepper-container .step-item');
-  if (steps.length >= 4) {
-    steps[0].className = 'step-item completed';
-    steps[1].className = `step-item ${['processing', 'handover', 'on_the_way', 'delivered'].includes(status) ? 'completed' : ''}`;
-    steps[2].className = `step-item ${['on_the_way', 'delivered'].includes(status) ? 'completed' : (['processing', 'handover'].includes(status) ? 'active' : '')}`;
-    steps[3].className = `step-item ${status === 'delivered' ? 'completed' : ''}`;
+  // Stepper Auto-Sync
+  const s1 = document.querySelector('.stepper-container .step-1');
+  const s2 = document.querySelector('.stepper-container .step-2');
+  const s3 = document.querySelector('.stepper-container .step-3');
+  const s4 = document.querySelector('.stepper-container .step-4');
+
+  if (s1 && s2 && s3 && s4) {
+    s1.className = 'step-item step-1 completed';
+
+    if (['processing', 'handover', 'picked_up', 'on_the_way', 'delivered'].includes(status)) {
+      s2.className = 'step-item step-2 completed';
+    } else if (status === 'confirmed') {
+      s2.className = 'step-item step-2 active';
+    } else {
+      s2.className = 'step-item step-2';
+    }
+
+    if (['on_the_way', 'delivered'].includes(status)) {
+      s3.className = 'step-item step-3 completed';
+    } else if (['handover', 'picked_up'].includes(status)) {
+      s3.className = 'step-item step-3 active';
+    } else {
+      s3.className = 'step-item step-3';
+    }
+
+    if (status === 'delivered') {
+      s4.className = 'step-item step-4 completed';
+      const icon4 = s4.querySelector('.step-dot i');
+      if (icon4) icon4.className = 'bi bi-check-lg';
+    } else {
+      s4.className = 'step-item step-4';
+      const icon4 = s4.querySelector('.step-dot i');
+      if (icon4) icon4.className = 'bi bi-geo-alt-fill';
+    }
   }
 
-  // If delivered, stop polling and show celebration
-  if (status === 'delivered' && pollTimer) {
+  // OTP Card vs Celebration Card Auto-Sync
+  const otpCard = document.getElementById('otp-banner-card');
+  const completedCard = document.getElementById('order-completed-card');
+  const paymentBadge = document.getElementById('payment-status-text');
+
+  if (status === 'delivered') {
+    if (otpCard) otpCard.classList.add('d-none');
+    if (completedCard) completedCard.classList.remove('d-none');
+    if (paymentBadge) {
+      paymentBadge.textContent = 'LUNAS';
+      paymentBadge.className = 'fw-bold text-success';
+    }
+  } else if (status !== 'canceled') {
+    if (otpCard) otpCard.classList.remove('d-none');
+    if (completedCard) completedCard.classList.add('d-none');
+  }
+
+  // Stop polling if delivered or canceled to conserve resources
+  if ((status === 'delivered' || status === 'canceled') && pollTimer) {
+    // Keep running a slower poll (every 10s) just in case or stop
     clearInterval(pollTimer);
     pollTimer = null;
   }
@@ -340,8 +474,7 @@ function openGoogleMapsNav() {
 }
 
 /**
- * Developer / Interactive GPS Simulation Tool
- * Simulates driver movement along the route step-by-step for live testing!
+ * Interactive Driver GPS Simulator for Testing
  */
 let simInterval = null;
 let simStep = 0;
@@ -349,7 +482,9 @@ function toggleDriverSimulation(orderCode) {
   if (simInterval) {
     clearInterval(simInterval);
     simInterval = null;
-    alert('Simulasi GPS Kurir Dihentikan.');
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({ icon: 'info', title: 'Simulasi Dihentikan', timer: 1500, showConfirmButton: false });
+    }
     return;
   }
 
@@ -363,7 +498,15 @@ function toggleDriverSimulation(orderCode) {
   const totalSteps = 20;
   simStep = 0;
 
-  alert('🚀 Simulasi GPS Kurir Aktif! Kurir akan bergerak live menuju lokasi tujuan.');
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      icon: 'success',
+      title: 'Simulasi GPS Aktif! 🚀',
+      text: 'Kurir sedang bergerak live menuju titik tujuan.',
+      timer: 2000,
+      showConfirmButton: false
+    });
+  }
 
   simInterval = setInterval(async () => {
     simStep++;
@@ -387,8 +530,10 @@ function toggleDriverSimulation(orderCode) {
     if (currentTrackingData.driver) {
       currentTrackingData.driver.lat = currentLat;
       currentTrackingData.driver.lng = currentLng;
+      currentTrackingData.driver.assigned = true;
     }
     updateLiveMetrics(currentTrackingData);
+    drawRoutePolylines(currentTrackingData);
 
     if (simStep >= totalSteps) {
       clearInterval(simInterval);

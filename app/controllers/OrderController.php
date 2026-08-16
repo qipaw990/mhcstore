@@ -395,34 +395,54 @@ class OrderController extends Controller
         $storeLat = (float)($order['store_lat'] ?? -6.9835);
         $storeLng = (float)($order['store_lng'] ?? 107.8335);
 
-        // Customer coordinates
+        // Customer coordinates strictly locked from checkout
         $destLat = (float)($order['delivery_address']['lat'] ?? -6.9855);
         $destLng = (float)($order['delivery_address']['lng'] ?? 107.8350);
+
+        $userId = auth_id();
+        $unreadChatCount = 0;
+        if ($userId) {
+            $unreadChat = Database::fetchOne(
+                "SELECT COUNT(*) as cnt FROM `chats` WHERE `order_id` = ? AND `sender_id` != ? AND `is_read` = 0",
+                [$order['id'], $userId]
+            );
+            $unreadChatCount = (int)($unreadChat['cnt'] ?? 0);
+        }
 
         $this->json([
             'success' => true,
             'data'    => [
+                'order_code'     => $order['order_code'],
                 'order_status'   => $order['order_status'],
                 'payment_status' => $order['payment_status'],
+                'payment_method' => $order['payment_method'],
                 'otp'            => $order['otp'],
+                'unread_chats'   => $unreadChatCount,
                 'driver'         => [
                     'assigned' => !empty($order['delivery_man_id']),
                     'name'     => $order['dm_name'] ?? 'Mencari Kurir...',
                     'phone'    => $order['dm_phone'] ?? '',
+                    'avatar'   => $order['dm_avatar'] ?? 'assets/images/users/driver.png',
                     'vehicle'  => $order['vehicle_type'] ?? 'Motor',
                     'plate'    => $order['vehicle_number'] ?? '',
                     'lat'      => $driverLat,
                     'lng'      => $driverLng
                 ],
                 'store'          => [
-                    'name' => $order['store_name'] ?? 'Titik Penjemputan',
-                    'lat'  => $storeLat,
-                    'lng'  => $storeLng
+                    'name'    => $order['store_name'] ?? 'Titik Penjemputan',
+                    'address' => $order['store_address'] ?? 'Cicalengka, Bandung',
+                    'lat'     => $storeLat,
+                    'lng'     => $storeLng
                 ],
                 'destination'    => [
                     'address' => $order['delivery_address']['address'] ?? '',
                     'lat'     => $destLat,
                     'lng'     => $destLng
+                ],
+                'timestamps'     => [
+                    'created_at'   => $order['created_at'] ?? null,
+                    'confirmed_at' => $order['confirmed_at'] ?? null,
+                    'delivered_at' => $order['delivered_at'] ?? null
                 ]
             ]
         ]);
