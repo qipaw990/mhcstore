@@ -10,7 +10,6 @@ $unreadNotifs = $user ? (new \App\Models\Notification())->getUnreadCount($user['
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' blob: https: http:; style-src * 'unsafe-inline' https: http:; img-src * data: blob: https: http:; connect-src * https: http: ws: wss:; font-src * data: https: http:; frame-src *;">
     <title><?= $title ?? 'CicalengkaGO - Delivery Platform' ?></title>
     
     <!-- PWA Manifest & Theme -->
@@ -213,8 +212,13 @@ $unreadNotifs = $user ? (new \App\Models\Notification())->getUnreadCount($user['
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<!-- Midtrans Snap JS (Sandbox) -->
-<script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="Mid-client-fa_UX3R3BzD4wXXl"></script>
+<!-- Midtrans Snap JS -->
+<?php
+$midtransServiceInst = new \App\Services\MidtransService();
+$resolvedSnapKey = $client_key ?? $midtransServiceInst->getClientKey() ?? 'Mid-client-fa_UX3R3BzD4wXXl';
+$resolvedSnapUrl = $snap_url ?? $midtransServiceInst->getSnapUrl() ?? 'https://app.sandbox.midtrans.com/snap/snap.js';
+?>
+<script type="text/javascript" src="<?= $resolvedSnapUrl ?>" data-client-key="<?= htmlspecialchars($resolvedSnapKey) ?>"></script>
 <script src="<?= $baseUrl ?>/assets/js/pwa-install.js"></script>
 <script src="<?= $baseUrl ?>/assets/js/customer-pwa.js?v=<?= time() ?>"></script>
 

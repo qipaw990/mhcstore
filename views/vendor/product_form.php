@@ -17,11 +17,11 @@
 
         <!-- Image Upload Box -->
         <div class="mb-3">
-            <label class="form-label small fw-bold text-dark">Foto Menu / Produk</label>
+            <label class="form-label small fw-bold text-dark" for="inpImage">Foto Menu / Produk</label>
             <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-4 border">
                 <img id="product-preview" src="<?= $baseUrl ?>/<?= htmlspecialchars($product['image'] ?? 'assets/images/products/default.jpg') ?>" alt="Preview" class="rounded-3 border shadow-xs" style="width: 70px; height: 70px; object-fit: cover;">
                 <div class="flex-grow-1">
-                    <input type="file" name="image" class="form-control form-control-sm rounded-3" accept="image/*" onchange="previewProductImg(this)">
+                    <input type="file" name="image" id="inpImage" class="form-control form-control-sm rounded-3" accept="image/*" onchange="previewProductImg(this)">
                     <small class="text-muted" style="font-size: 10.5px;">Foto makanan menarik meningkatkan minat beli.</small>
                 </div>
             </div>
@@ -29,15 +29,15 @@
 
         <!-- Product Name -->
         <div class="mb-3">
-            <label class="form-label small fw-bold text-dark">Nama Menu / Produk <span class="text-danger">*</span></label>
-            <input type="text" name="name" class="form-control rounded-3" value="<?= htmlspecialchars($product['name'] ?? '') ?>" required placeholder="Contoh: Ayam Geprek Sambal Korek">
+            <label class="form-label small fw-bold text-dark" for="inpName">Nama Menu / Produk <span class="text-danger">*</span></label>
+            <input type="text" name="name" id="inpName" class="form-control rounded-3" value="<?= htmlspecialchars($product['name'] ?? '') ?>" required placeholder="Contoh: Ayam Geprek Sambal Korek">
         </div>
 
         <!-- Category & Unit -->
         <div class="row g-2 mb-3">
             <div class="col-7">
-                <label class="form-label small fw-bold text-dark">Kategori</label>
-                <select name="category_id" class="form-select form-select-sm rounded-3">
+                <label class="form-label small fw-bold text-dark" for="inpCategory">Kategori</label>
+                <select name="category_id" id="inpCategory" class="form-select form-select-sm rounded-3">
                     <?php foreach ($categories as $cat): ?>
                         <option value="<?= $cat['id'] ?>" <?= (!empty($product) && $product['category_id'] == $cat['id']) ? 'selected' : '' ?>>
                             <?= htmlspecialchars($cat['name']) ?>
@@ -46,19 +46,19 @@
                 </select>
             </div>
             <div class="col-5">
-                <label class="form-label small fw-bold text-dark">Satuan</label>
-                <input type="text" name="unit" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($product['unit'] ?? 'porsi') ?>" placeholder="porsi/pcs/box">
+                <label class="form-label small fw-bold text-dark" for="inpUnit">Satuan</label>
+                <input type="text" name="unit" id="inpUnit" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($product['unit'] ?? 'porsi') ?>" placeholder="porsi/pcs/box">
             </div>
         </div>
 
         <!-- Price & Discount -->
         <div class="row g-2 mb-3">
             <div class="col-7">
-                <label class="form-label small fw-bold text-dark">Harga Normal (Rp) <span class="text-danger">*</span></label>
+                <label class="form-label small fw-bold text-dark" for="inpPrice">Harga Normal (Rp) <span class="text-danger">*</span></label>
                 <input type="number" id="inpPrice" name="price" class="form-control rounded-3" value="<?= (int)($product['price'] ?? 15000) ?>" required oninput="calculateFinalPrice()">
             </div>
             <div class="col-5">
-                <label class="form-label small fw-bold text-dark">Diskon Promo (%)</label>
+                <label class="form-label small fw-bold text-dark" for="inpDiscount">Diskon Promo (%)</label>
                 <input type="number" id="inpDiscount" name="discount" class="form-control rounded-3" value="<?= (int)($product['discount'] ?? 0) ?>" min="0" max="100" oninput="calculateFinalPrice()">
             </div>
         </div>
@@ -73,14 +73,14 @@
 
         <!-- Stock -->
         <div class="mb-3">
-            <label class="form-label small fw-bold text-dark">Jumlah Stok Awal</label>
-            <input type="number" name="stock" class="form-control rounded-3" value="<?= (int)($product['stock'] ?? 100) ?>" min="0">
+            <label class="form-label small fw-bold text-dark" for="inpStock">Jumlah Stok Awal</label>
+            <input type="number" name="stock" id="inpStock" class="form-control rounded-3" value="<?= (int)($product['stock'] ?? 100) ?>" min="0">
         </div>
 
         <!-- Description -->
         <div class="mb-3">
-            <label class="form-label small fw-bold text-dark">Deskripsi Singkat Menu</label>
-            <textarea name="description" class="form-control rounded-3" rows="3" placeholder="Jelaskan rasa, tingkat kepedasan, atau bahan menu..."><?= htmlspecialchars($product['description'] ?? '') ?></textarea>
+            <label class="form-label small fw-bold text-dark" for="inpDescription">Deskripsi Singkat Menu</label>
+            <textarea name="description" id="inpDescription" class="form-control rounded-3" rows="3" placeholder="Jelaskan rasa, tingkat kepedasan, atau bahan menu..."><?= htmlspecialchars($product['description'] ?? '') ?></textarea>
         </div>
 
         <!-- Recommended Toggle -->

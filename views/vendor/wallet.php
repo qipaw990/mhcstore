@@ -230,8 +230,8 @@ function openVendorWithdrawModal() {
                 </div>
 
                 <div class="mb-2.5">
-                    <label class="form-label fw-bold small text-dark mb-1">Tujuan Pencairan Dana:</label>
-                    <select id="swal-vendor-bank" class="form-select form-select-sm rounded-3 py-2">
+                    <label class="form-label fw-bold small text-dark mb-1" for="swal-vendor-bank">Tujuan Pencairan Dana:</label>
+                    <select id="swal-vendor-bank" name="vendor_bank" class="form-select form-select-sm rounded-3 py-2">
                         <option value="BCA">BCA - Bank Central Asia</option>
                         <option value="BRI">BRI - Bank Rakyat Indonesia</option>
                         <option value="Mandiri">Bank Mandiri</option>
@@ -246,21 +246,21 @@ function openVendorWithdrawModal() {
                 </div>
 
                 <div class="mb-2.5">
-                    <label class="form-label fw-bold small text-dark mb-1">Nomor Rekening / No. HP E-Wallet:</label>
-                    <input id="swal-vendor-acc" type="text" class="form-control form-control-sm rounded-3 py-2" placeholder="Contoh: 1234567890">
+                    <label class="form-label fw-bold small text-dark mb-1" for="swal-vendor-acc">Nomor Rekening / No. HP E-Wallet:</label>
+                    <input id="swal-vendor-acc" name="vendor_account_no" type="text" class="form-control form-control-sm rounded-3 py-2" placeholder="Contoh: 1234567890">
                 </div>
 
                 <div class="mb-2.5">
-                    <label class="form-label fw-bold small text-dark mb-1">Nama Pemilik Rekening / Akun:</label>
-                    <input id="swal-vendor-holder" type="text" class="form-control form-control-sm rounded-3 py-2" placeholder="Contoh: Budi Santoso">
+                    <label class="form-label fw-bold small text-dark mb-1" for="swal-vendor-holder">Nama Pemilik Rekening / Akun:</label>
+                    <input id="swal-vendor-holder" name="vendor_account_holder" type="text" class="form-control form-control-sm rounded-3 py-2" placeholder="Contoh: Budi Santoso">
                 </div>
 
                 <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-1">
-                        <label class="form-label fw-bold small text-dark mb-0">Nominal Penarikan (Rp):</label>
+                        <label class="form-label fw-bold small text-dark mb-0" for="swal-vendor-amount">Nominal Penarikan (Rp):</label>
                         <button type="button" onclick="setVendorWdAmount(${window.VENDOR_CURRENT_BALANCE})" class="btn btn-link text-danger p-0 text-decoration-none fw-bold" style="font-size: 11px;">Tarik Semua</button>
                     </div>
-                    <input id="swal-vendor-amount" type="number" min="10000" max="${window.VENDOR_CURRENT_BALANCE}" class="form-control form-control-sm rounded-3 py-2 fw-bold" placeholder="Minimal Rp 10.000">
+                    <input id="swal-vendor-amount" name="vendor_withdraw_amount" type="number" min="10000" max="${window.VENDOR_CURRENT_BALANCE}" class="form-control form-control-sm rounded-3 py-2 fw-bold" placeholder="Minimal Rp 10.000">
                     <div class="d-flex gap-1.5 mt-2 flex-wrap">
                         <button type="button" onclick="setVendorWdAmount(50000)" class="btn btn-outline-secondary btn-sm py-0.5 px-2 rounded-pill" style="font-size: 11px;">50 Rb</button>
                         <button type="button" onclick="setVendorWdAmount(100000)" class="btn btn-outline-secondary btn-sm py-0.5 px-2 rounded-pill" style="font-size: 11px;">100 Rb</button>

@@ -34,12 +34,12 @@
         </div>
         <div class="row g-2">
             <div class="col-6">
-                <label class="form-label text-muted" style="font-size: 11px;">Nama Penerima</label>
-                <input type="text" name="contact_name" class="form-control form-control-sm bg-light" value="<?= htmlspecialchars($_SESSION['user']['name'] ?? '') ?>" required>
+                <label class="form-label text-muted" for="contact_name" style="font-size: 11px;">Nama Penerima</label>
+                <input type="text" name="contact_name" id="contact_name" class="form-control form-control-sm bg-light" value="<?= htmlspecialchars($_SESSION['user']['name'] ?? '') ?>" required>
             </div>
             <div class="col-6">
-                <label class="form-label text-muted" style="font-size: 11px;">No. WhatsApp</label>
-                <input type="text" name="contact_phone" class="form-control form-control-sm bg-light" value="<?= htmlspecialchars($_SESSION['user']['phone'] ?? '') ?>" required>
+                <label class="form-label text-muted" for="contact_phone" style="font-size: 11px;">No. WhatsApp</label>
+                <input type="text" name="contact_phone" id="contact_phone" class="form-control form-control-sm bg-light" value="<?= htmlspecialchars($_SESSION['user']['phone'] ?? '') ?>" required>
             </div>
         </div>
     </div>
@@ -52,7 +52,7 @@
             <!-- CicalengkaPay Digital Wallet -->
             <label class="p-3 border rounded-4 d-flex align-items-center justify-content-between cursor-pointer payment-option <?= ((float)$wallet['balance'] >= (float)$cart_data['subtotal']) ? 'border-danger bg-danger-subtle' : 'opacity-75' ?>" style="cursor: pointer;">
                 <div class="d-flex align-items-center gap-3">
-                    <input type="radio" name="payment_method" value="wallet" <?= ((float)$wallet['balance'] >= (float)$cart_data['subtotal']) ? 'checked' : 'disabled' ?>>
+                    <input type="radio" name="payment_method" id="pay_wallet" value="wallet" <?= ((float)$wallet['balance'] >= (float)$cart_data['subtotal']) ? 'checked' : 'disabled' ?>>
                     <div>
                         <div class="fw-bold small d-flex align-items-center gap-1">
                             <span style="color:#EE2737;font-weight:800;">CicalengkaPay</span>
@@ -71,7 +71,7 @@
             <!-- Midtrans Online Payment (QRIS / VA / E-Wallet) -->
             <label class="p-3 border rounded-4 d-flex align-items-center justify-content-between cursor-pointer payment-option" style="cursor: pointer;">
                 <div class="d-flex align-items-center gap-3">
-                    <input type="radio" name="payment_method" value="midtrans">
+                    <input type="radio" name="payment_method" id="pay_midtrans" value="midtrans">
                     <div>
                         <div class="fw-bold small d-flex align-items-center gap-1 text-dark">
                             <span>Bayar Online (Midtrans)</span>
@@ -88,7 +88,7 @@
             <!-- COD (Cash on Delivery) -->
             <label class="p-3 border rounded-4 d-flex align-items-center justify-content-between cursor-pointer payment-option" style="cursor: pointer;">
                 <div class="d-flex align-items-center gap-3">
-                    <input type="radio" name="payment_method" value="cod" <?= ((float)$wallet['balance'] < (float)$cart_data['subtotal']) ? 'checked' : '' ?>>
+                    <input type="radio" name="payment_method" id="pay_cod" value="cod" <?= ((float)$wallet['balance'] < (float)$cart_data['subtotal']) ? 'checked' : '' ?>>
                     <div>
                         <div class="fw-bold small text-dark">Tunai saat Pesanan Tiba (COD)</div>
                         <div class="text-muted" style="font-size: 11px;">Bayar langsung ke kurir motor</div>
@@ -110,8 +110,8 @@
 
     <!-- Order Notes -->
     <div class="p-3 bg-white rounded-4 border shadow-sm mb-3">
-        <h6 class="fw-bold small mb-2"><i class="bi bi-chat-left-text me-1 text-muted"></i> Catatan untuk Resto & Driver</h6>
-        <input type="text" name="order_notes" class="form-control form-control-sm bg-light" placeholder="Contoh: Sambal dipisah, jangan pakai bawang goreng">
+        <label class="form-label fw-bold small mb-2 d-block" for="order_notes"><i class="bi bi-chat-left-text me-1 text-muted"></i> Catatan untuk Resto & Driver</label>
+        <input type="text" name="order_notes" id="order_notes" class="form-control form-control-sm bg-light" placeholder="Contoh: Sambal dipisah, jangan pakai bawang goreng">
     </div>
 
     <!-- Order Breakdown Card -->

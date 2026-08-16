@@ -345,7 +345,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
                             <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="5" onclick="setTrackingStoreStar(5)"></i>
                         </div>
                         <div class="text-center small fw-bold text-warning-emphasis mb-2" id="tracking-store-text">Sangat Puas (5 Bintang)</div>
-                        <textarea id="tracking-store-comment" class="form-control form-control-sm rounded-3" rows="2" placeholder="Bagaimana rasa makanan atau pelayanan toko?"></textarea>
+                        <textarea id="tracking-store-comment" name="store_comment" class="form-control form-control-sm rounded-3" rows="2" placeholder="Bagaimana rasa makanan atau pelayanan toko?"></textarea>
                     </div>
 
                     <?php if (!empty($order['delivery_man_id'])): ?>
@@ -359,7 +359,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
                                 <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="5" onclick="setTrackingDmStar(5)"></i>
                             </div>
                             <div class="text-center small fw-bold text-warning-emphasis mb-2" id="tracking-dm-text">Pengantaran Cepat & Ramah (5 Bintang)</div>
-                            <textarea id="tracking-dm-comment" class="form-control form-control-sm rounded-3" rows="2" placeholder="Tuliskan ulasan untuk kurir (opsional)..."></textarea>
+                            <textarea id="tracking-dm-comment" name="dm_comment" class="form-control form-control-sm rounded-3" rows="2" placeholder="Tuliskan ulasan untuk kurir (opsional)..."></textarea>
                         </div>
                     <?php endif; ?>
 
@@ -634,7 +634,7 @@ function cancelUnpaidOrder() {
 
         <!-- Chat Input Bar -->
         <form id="chatForm" class="ccg-chat-input-bar no-preloader" onsubmit="handleSendChat(event)">
-            <input type="text" id="chatInput" class="ccg-chat-input" placeholder="Ketik pesan untuk kurir..." autocomplete="off" maxlength="500">
+            <input type="text" id="chatInput" name="message" class="ccg-chat-input" placeholder="Ketik pesan untuk kurir..." autocomplete="off" maxlength="500">
             <button type="submit" id="btnSendChat" class="ccg-chat-send-btn" title="Kirim">
                 <i class="bi bi-send-fill"></i>
             </button>
@@ -1074,7 +1074,7 @@ async function simulateSandboxPayment() {
         }
     } catch(err) {
         console.error(err);
-        Swal.fire('Error', 'Terjadi kesalahan sistem.', 'error');
+        Swal.fire('Error', err.message || 'Terjadi kesalahan sistem.', 'error');
         resetPayButton();
     }
 }

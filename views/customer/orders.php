@@ -141,7 +141,7 @@ function openOrderReviewModal(orderId, orderCode, storeName, hasDriver) {
                     <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="5" onclick="setStoreStar(5)"></i>
                 </div>
                 <div class="text-center small fw-bold text-warning-emphasis mb-2" id="store-star-text">Sangat Puas (5 Bintang)</div>
-                <textarea id="store-review-comment" class="form-control form-control-sm rounded-3" rows="2" placeholder="Bagaimana rasa makanan / kualitas pesanan toko ini?"></textarea>
+                <textarea id="store-review-comment" name="store_comment" class="form-control form-control-sm rounded-3" rows="2" placeholder="Bagaimana rasa makanan / kualitas pesanan toko ini?"></textarea>
             </div>
 
             ${hasDriver ? `
@@ -155,7 +155,7 @@ function openOrderReviewModal(orderId, orderCode, storeName, hasDriver) {
                     <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="5" onclick="setDriverStar(5)"></i>
                 </div>
                 <div class="text-center small fw-bold text-warning-emphasis mb-2" id="driver-star-text">Pengantaran Cepat & Ramah (5 Bintang)</div>
-                <textarea id="driver-review-comment" class="form-control form-control-sm rounded-3" rows="2" placeholder="Tuliskan ulasan untuk kurir (opsional)..."></textarea>
+                <textarea id="driver-review-comment" name="driver_comment" class="form-control form-control-sm rounded-3" rows="2" placeholder="Tuliskan ulasan untuk kurir (opsional)..."></textarea>
             </div>
             ` : ''}
         </div>

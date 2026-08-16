@@ -2,8 +2,11 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\Database;
 use App\Services\MidtransService;
 use App\Models\Wallet;
+use App\Models\TopupLog;
+use App\Models\Notification;
 use Exception;
 
 class PaymentController extends Controller
@@ -84,7 +87,7 @@ class PaymentController extends Controller
                 'client_key'   => $snapResult['client_key'],
                 'redirect_url' => $snapResult['redirect_url']
             ]);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             $this->errorResponse($e->getMessage());
         }
     }
@@ -144,7 +147,7 @@ class PaymentController extends Controller
                 (new \App\Models\TopupLog())->markSuccess($orderId, $data['payment_type'] ?? 'midtrans', 'Pembayaran terkonfirmasi');
                 $this->successResponse('Top Up berhasil diverifikasi', $result);
                 return;
-            } catch (Exception $e) {
+            } catch (\Throwable $e) {
                 (new \App\Models\TopupLog())->markFailed($orderId, $e->getMessage());
                 $this->errorResponse($e->getMessage());
                 return;
@@ -200,7 +203,7 @@ class PaymentController extends Controller
             }
 
             $this->errorResponse($liveStatus['message'] ?? 'Belum ada data pembayaran terkonfirmasi.');
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             $this->errorResponse($e->getMessage());
         }
     }
@@ -304,7 +307,7 @@ class PaymentController extends Controller
                 'payment_status' => 'paid',
                 'order_status'   => ($order['order_status'] === 'pending') ? 'confirmed' : $order['order_status']
             ]);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             $this->errorResponse($e->getMessage());
         }
     }
@@ -328,7 +331,7 @@ class PaymentController extends Controller
             http_response_code(200);
             header('Content-Type: application/json');
             echo json_encode(['status' => 'success', 'result' => $result]);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             http_response_code(500);
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);

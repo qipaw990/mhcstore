@@ -18,7 +18,7 @@
             </div>
         </div>
         <label class="driver-toggle-switch m-0">
-            <input type="checkbox" id="onlineSwitch" <?= $driver['is_online'] ? 'checked' : '' ?> onchange="toggleDriverStatus()">
+            <input type="checkbox" id="onlineSwitch" name="online_status" <?= $driver['is_online'] ? 'checked' : '' ?> onchange="toggleDriverStatus()">
             <span class="driver-toggle-slider"></span>
         </label>
     </div>
@@ -629,7 +629,7 @@ document.addEventListener('DOMContentLoaded', initDriverRadarMap);
 
         <!-- Chat Input Bar -->
         <form id="dChatForm" class="ccg-chat-input-bar no-preloader" onsubmit="handleSendDriverChat(event)">
-            <input type="text" id="dChatInput" class="ccg-chat-input" placeholder="Ketik pesan untuk pelanggan..." autocomplete="off" maxlength="500">
+            <input type="text" id="dChatInput" name="message" class="ccg-chat-input" placeholder="Ketik pesan untuk pelanggan..." autocomplete="off" maxlength="500">
             <button type="submit" id="btnSendDriverChat" class="ccg-chat-send-btn" title="Kirim">
                 <i class="bi bi-send-fill"></i>
             </button>

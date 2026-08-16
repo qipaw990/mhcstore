@@ -143,19 +143,19 @@
                         <div class="d-flex align-items-center gap-3 p-2.5 bg-light rounded-4 border">
                             <img id="customer-avatar-preview" src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/default.png') ?>" alt="Preview" class="rounded-circle border border-2 border-danger shadow-xs" style="width: 55px; height: 55px; object-fit: cover;">
                             <div class="flex-grow-1">
-                                <input type="file" name="avatar" class="form-control rounded-3 form-control-sm" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewImage(this, 'customer-avatar-preview')">
+                                <input type="file" name="avatar" id="customer_avatar" class="form-control rounded-3 form-control-sm" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewImage(this, 'customer-avatar-preview')">
                                 <small class="text-muted" style="font-size: 10px;">Format: JPG, PNG, WEBP. Maks 2MB.</small>
                             </div>
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-dark">Nama Lengkap</label>
-                        <input type="text" name="name" class="form-control rounded-3" value="<?= htmlspecialchars($user['name'] ?? '') ?>" required>
+                        <label class="form-label small fw-bold text-dark" for="customer_name">Nama Lengkap</label>
+                        <input type="text" name="name" id="customer_name" class="form-control rounded-3" value="<?= htmlspecialchars($user['name'] ?? '') ?>" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-dark">Alamat Email (Gmail)</label>
-                        <input type="email" name="email" class="form-control rounded-3" value="<?= htmlspecialchars($user['email'] ?? '') ?>" required>
+                        <label class="form-label small fw-bold text-dark" for="customer_email">Alamat Email (Gmail)</label>
+                        <input type="email" name="email" id="customer_email" class="form-control rounded-3" value="<?= htmlspecialchars($user['email'] ?? '') ?>" required>
                         <div class="alert alert-warning border-0 rounded-3 p-2 mt-2 mb-0 d-flex align-items-start gap-2" style="font-size: 11px;">
                             <i class="bi bi-info-circle-fill text-warning fs-6 mt-0.5"></i>
                             <div>
@@ -164,8 +164,8 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-dark">Nomor Telepon / WhatsApp</label>
-                        <input type="text" name="phone" class="form-control rounded-3" value="<?= htmlspecialchars($user['phone'] ?? '') ?>" required>
+                        <label class="form-label small fw-bold text-dark" for="customer_phone">Nomor Telepon / WhatsApp</label>
+                        <input type="text" name="phone" id="customer_phone" class="form-control rounded-3" value="<?= htmlspecialchars($user['phone'] ?? '') ?>" required>
                     </div>
 
                     <!-- Section Ubah Kata Sandi Pelanggan -->

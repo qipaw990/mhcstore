@@ -250,8 +250,8 @@ function openDriverWithdrawModal() {
                 </div>
 
                 <div class="mb-2.5">
-                    <label class="form-label fw-bold small text-dark mb-1">Tujuan Rekening / E-Wallet:</label>
-                    <select id="swal-driver-bank" class="form-select form-select-sm rounded-3 py-2">
+                    <label class="form-label fw-bold small text-dark mb-1" for="swal-driver-bank">Tujuan Rekening / E-Wallet:</label>
+                    <select id="swal-driver-bank" name="driver_bank" class="form-select form-select-sm rounded-3 py-2">
                         <option value="GoPay Driver">GoPay Mitra Driver</option>
                         <option value="DANA">DANA Dompet Digital</option>
                         <option value="OVO">OVO Payment</option>
@@ -265,21 +265,21 @@ function openDriverWithdrawModal() {
                 </div>
 
                 <div class="mb-2.5">
-                    <label class="form-label fw-bold small text-dark mb-1">Nomor Rekening / No. HP Akun:</label>
-                    <input id="swal-driver-acc" type="text" class="form-control form-control-sm rounded-3 py-2" placeholder="Contoh: 081234567890">
+                    <label class="form-label fw-bold small text-dark mb-1" for="swal-driver-acc">Nomor Rekening / No. HP Akun:</label>
+                    <input id="swal-driver-acc" name="driver_account_no" type="text" class="form-control form-control-sm rounded-3 py-2" placeholder="Contoh: 081234567890">
                 </div>
 
                 <div class="mb-2.5">
-                    <label class="form-label fw-bold small text-dark mb-1">Nama Pemilik Akun / Rekening:</label>
-                    <input id="swal-driver-holder" type="text" class="form-control form-control-sm rounded-3 py-2" placeholder="Contoh: Asep Saepudin">
+                    <label class="form-label fw-bold small text-dark mb-1" for="swal-driver-holder">Nama Pemilik Akun / Rekening:</label>
+                    <input id="swal-driver-holder" name="driver_account_holder" type="text" class="form-control form-control-sm rounded-3 py-2" placeholder="Contoh: Asep Saepudin">
                 </div>
 
                 <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-1">
-                        <label class="form-label fw-bold small text-dark mb-0">Nominal Penarikan (Rp):</label>
+                        <label class="form-label fw-bold small text-dark mb-0" for="swal-driver-amount">Nominal Penarikan (Rp):</label>
                         <button type="button" onclick="setDriverWdAmount(${window.DRIVER_CURRENT_BALANCE})" class="btn btn-link text-danger p-0 text-decoration-none fw-bold" style="font-size: 11px;">Tarik Semua</button>
                     </div>
-                    <input id="swal-driver-amount" type="number" min="10000" max="${window.DRIVER_CURRENT_BALANCE}" class="form-control form-control-sm rounded-3 py-2 fw-bold" placeholder="Minimal Rp 10.000">
+                    <input id="swal-driver-amount" name="driver_withdraw_amount" type="number" min="10000" max="${window.DRIVER_CURRENT_BALANCE}" class="form-control form-control-sm rounded-3 py-2 fw-bold" placeholder="Minimal Rp 10.000">
                     <div class="d-flex gap-1.5 mt-2 flex-wrap">
                         <button type="button" onclick="setDriverWdAmount(20000)" class="btn btn-outline-secondary btn-sm py-0.5 px-2 rounded-pill" style="font-size: 11px;">20 Rb</button>
                         <button type="button" onclick="setDriverWdAmount(50000)" class="btn btn-outline-secondary btn-sm py-0.5 px-2 rounded-pill" style="font-size: 11px;">50 Rb</button>

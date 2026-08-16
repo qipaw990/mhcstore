@@ -1,33 +1,33 @@
 <form action="<?= $baseUrl ?>/register" method="POST">
     <div class="mb-3">
-        <label class="form-label small fw-bold">Nama Lengkap</label>
+        <label class="form-label small fw-bold" for="reg_name">Nama Lengkap</label>
         <div class="input-group">
             <span class="input-group-text bg-light border-end-0"><i class="bi bi-person text-muted"></i></span>
-            <input type="text" name="name" class="form-control bg-light border-start-0" placeholder="Budi Santoso" required>
+            <input type="text" name="name" id="reg_name" class="form-control bg-light border-start-0" placeholder="Budi Santoso" required>
         </div>
     </div>
 
     <div class="mb-3">
-        <label class="form-label small fw-bold">Nomor WhatsApp / HP</label>
+        <label class="form-label small fw-bold" for="reg_phone">Nomor WhatsApp / HP</label>
         <div class="input-group">
             <span class="input-group-text bg-light border-end-0"><i class="bi bi-whatsapp text-muted"></i></span>
-            <input type="text" name="phone" class="form-control bg-light border-start-0" placeholder="08xxxxxxxxxx" required>
+            <input type="text" name="phone" id="reg_phone" class="form-control bg-light border-start-0" placeholder="08xxxxxxxxxx" required>
         </div>
     </div>
 
     <div class="mb-3">
-        <label class="form-label small fw-bold">Email</label>
+        <label class="form-label small fw-bold" for="reg_email">Email</label>
         <div class="input-group">
             <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope text-muted"></i></span>
-            <input type="email" name="email" class="form-control bg-light border-start-0" placeholder="nama@email.com" required>
+            <input type="email" name="email" id="reg_email" class="form-control bg-light border-start-0" placeholder="nama@email.com" required>
         </div>
     </div>
 
     <div class="mb-3">
-        <label class="form-label small fw-bold">Kata Sandi</label>
+        <label class="form-label small fw-bold" for="reg_password">Kata Sandi</label>
         <div class="input-group">
             <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-muted"></i></span>
-            <input type="password" name="password" class="form-control bg-light border-start-0" placeholder="Minimal 6 karakter" required>
+            <input type="password" name="password" id="reg_password" class="form-control bg-light border-start-0" placeholder="Minimal 6 karakter" required>
         </div>
     </div>
 

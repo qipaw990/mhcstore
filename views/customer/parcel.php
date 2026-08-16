@@ -50,10 +50,10 @@
             </div>
             <div class="row g-2">
                 <div class="col-6">
-                    <input type="text" name="sender_name" class="form-control form-control-sm bg-light" placeholder="Nama Pengirim" value="<?= htmlspecialchars($_SESSION['user']['name'] ?? '') ?>" required>
+                    <input type="text" name="sender_name" id="sender_name" class="form-control form-control-sm bg-light" placeholder="Nama Pengirim" value="<?= htmlspecialchars($_SESSION['user']['name'] ?? '') ?>" required>
                 </div>
                 <div class="col-6">
-                    <input type="text" name="sender_phone" class="form-control form-control-sm bg-light" placeholder="No HP Pengirim" value="<?= htmlspecialchars($_SESSION['user']['phone'] ?? '') ?>" required>
+                    <input type="text" name="sender_phone" id="sender_phone" class="form-control form-control-sm bg-light" placeholder="No HP Pengirim" value="<?= htmlspecialchars($_SESSION['user']['phone'] ?? '') ?>" required>
                 </div>
             </div>
         </div>
@@ -66,10 +66,10 @@
             </div>
             <div class="row g-2">
                 <div class="col-6">
-                    <input type="text" name="recipient_name" class="form-control form-control-sm bg-light" placeholder="Nama Penerima" required value="Pak Agus">
+                    <input type="text" name="recipient_name" id="recipient_name" class="form-control form-control-sm bg-light" placeholder="Nama Penerima" required value="Pak Agus">
                 </div>
                 <div class="col-6">
-                    <input type="text" name="recipient_phone" class="form-control form-control-sm bg-light" placeholder="No HP Penerima" required value="082199887766">
+                    <input type="text" name="recipient_phone" id="recipient_phone" class="form-control form-control-sm bg-light" placeholder="No HP Penerima" required value="082199887766">
                 </div>
             </div>
         </div>
@@ -79,7 +79,7 @@
             <h6 class="fw-bold small mb-2" style="color: var(--gojek-charcoal);"><i class="bi bi-box me-1 text-muted"></i> Detail Paket</h6>
             <div class="row g-2 mb-2">
                 <div class="col-7">
-                    <select name="item_category" class="form-select form-select-sm bg-light">
+                    <select name="item_category" id="item_category" class="form-select form-select-sm bg-light">
                         <option value="Dokumen / Surat">Dokumen / Surat</option>
                         <option value="Makanan / Kue">Makanan / Kue</option>
                         <option value="Pakaian / Laundry">Pakaian / Laundry</option>
@@ -94,7 +94,7 @@
                     </div>
                 </div>
             </div>
-            <input type="text" name="parcel_notes" class="form-control form-control-sm bg-light" placeholder="Instruksi tambahan untuk kurir...">
+            <input type="text" name="parcel_notes" id="parcel_notes" class="form-control form-control-sm bg-light" placeholder="Instruksi tambahan untuk kurir...">
         </div>
 
         <!-- Payment Method -->

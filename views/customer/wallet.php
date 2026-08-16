@@ -353,7 +353,7 @@ function customTopUpDialog() {
 async function instantSandboxTopUp(nominal, existingOrderId = null) {
     Swal.fire({
         title: 'Top Up Sandbox Instan ⚡',
-        text: 'Menambahkan saldo simulasi Rp ' + nominal.toLocaleString('id-ID') + ' ke akun Anda...',
+        text: nominal > 0 ? ('Menambahkan saldo simulasi Rp ' + Number(nominal).toLocaleString('id-ID') + ' ke akun Anda...') : 'Menyelesaikan pembayaran saldo simulasi ke akun Anda...',
         allowOutsideClick: false,
         didOpen: () => { Swal.showLoading(); }
     });
@@ -372,10 +372,11 @@ async function instantSandboxTopUp(nominal, existingOrderId = null) {
 
         const data = await res.json();
         if (data.success) {
+            const finalNominal = data.data?.amount || nominal || 0;
             Swal.fire({
                 icon: 'success',
                 title: 'Top Up Berhasil! 🎉',
-                text: 'Saldo CicalengkaPay sebesar Rp ' + nominal.toLocaleString('id-ID') + ' berhasil ditambahkan.',
+                text: 'Saldo CicalengkaPay sebesar Rp ' + Number(finalNominal).toLocaleString('id-ID') + ' berhasil ditambahkan.',
                 timer: 1800,
                 showConfirmButton: false
             }).then(() => {
@@ -385,7 +386,8 @@ async function instantSandboxTopUp(nominal, existingOrderId = null) {
             Swal.fire('Gagal', data.message || 'Gagal menambahkan saldo.', 'error');
         }
     } catch(e) {
-        Swal.fire('Error', 'Terjadi kesalahan sistem.', 'error');
+        console.error(e);
+        Swal.fire('Error', e.message || 'Terjadi kesalahan sistem.', 'error');
     }
 }
 

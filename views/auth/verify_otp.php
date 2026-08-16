@@ -35,6 +35,7 @@
         <?php for ($i = 0; $i < 6; $i++): ?>
             <input type="text" 
                    name="otp_digit[]" 
+                   id="otp_digit_<?= $i ?>"
                    class="form-control text-center fw-bold fs-3 rounded-3 py-2 border-2 otp-input" 
                    maxlength="1" 
                    pattern="[0-9]" 

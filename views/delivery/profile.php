@@ -42,24 +42,24 @@
         <form action="<?= $baseUrl ?>/delivery/profile/update" method="POST" enctype="multipart/form-data">
             <!-- Foto Profil Driver -->
             <div class="mb-3">
-                <label class="form-label small fw-bold text-dark d-block">Foto Profil Driver</label>
+                <label class="form-label small fw-bold text-dark d-block" for="driver_avatar">Foto Profil Driver</label>
                 <div class="d-flex align-items-center gap-3 p-2.5 bg-light rounded-4 border">
                     <img id="driver-avatar-preview" src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/driver.png') ?>" alt="Preview Driver" class="rounded-circle border border-2 border-danger shadow-xs" style="width: 60px; height: 60px; object-fit: cover;">
                     <div class="flex-grow-1">
-                        <input type="file" name="avatar" class="form-control rounded-3 form-control-sm" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewImage(this, 'driver-avatar-preview')">
+                        <input type="file" name="avatar" id="driver_avatar" class="form-control rounded-3 form-control-sm" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewImage(this, 'driver-avatar-preview')">
                         <small class="text-muted" style="font-size: 10px;">Format: JPG, PNG, WEBP. Maks 2MB.</small>
                     </div>
                 </div>
             </div>
 
             <div class="mb-3">
-                <label class="form-label small fw-bold text-dark">Nama Lengkap Driver</label>
-                <input type="text" name="name" class="form-control rounded-3" value="<?= htmlspecialchars($user['name'] ?? '') ?>" required>
+                <label class="form-label small fw-bold text-dark" for="driver_name">Nama Lengkap Driver</label>
+                <input type="text" name="name" id="driver_name" class="form-control rounded-3" value="<?= htmlspecialchars($user['name'] ?? '') ?>" required>
             </div>
 
             <div class="mb-3">
-                <label class="form-label small fw-bold text-dark">Alamat Email (Gmail)</label>
-                <input type="email" name="email" class="form-control rounded-3" value="<?= htmlspecialchars($user['email'] ?? '') ?>" required>
+                <label class="form-label small fw-bold text-dark" for="driver_email">Alamat Email (Gmail)</label>
+                <input type="email" name="email" id="driver_email" class="form-control rounded-3" value="<?= htmlspecialchars($user['email'] ?? '') ?>" required>
                 <div class="alert alert-warning border-0 rounded-3 p-2 mt-2 mb-0 d-flex align-items-start gap-2" style="font-size: 11px;">
                     <i class="bi bi-shield-exclamation text-warning fs-6 mt-0.5"></i>
                     <div>
@@ -69,18 +69,18 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label small fw-bold text-dark">Nomor Telepon / WA</label>
-                <input type="text" name="phone" class="form-control rounded-3" value="<?= htmlspecialchars($user['phone'] ?? '') ?>" required>
+                <label class="form-label small fw-bold text-dark" for="driver_phone">Nomor Telepon / WA</label>
+                <input type="text" name="phone" id="driver_phone" class="form-control rounded-3" value="<?= htmlspecialchars($user['phone'] ?? '') ?>" required>
             </div>
 
             <div class="mb-3">
-                <label class="form-label small fw-bold text-dark">Tipe Kendaraan Operasional</label>
-                <input type="text" name="vehicle_type" class="form-control rounded-3" value="<?= htmlspecialchars($driver['vehicle_type'] ?? 'Motor Honda Beat') ?>" required>
+                <label class="form-label small fw-bold text-dark" for="driver_vehicle_type">Tipe Kendaraan Operasional</label>
+                <input type="text" name="vehicle_type" id="driver_vehicle_type" class="form-control rounded-3" value="<?= htmlspecialchars($driver['vehicle_type'] ?? 'Motor Honda Beat') ?>" required>
             </div>
 
             <div class="mb-3">
-                <label class="form-label small fw-bold text-dark">Nomor Polisi Kendaraan (Plat Nomor)</label>
-                <input type="text" name="vehicle_number" class="form-control rounded-3" value="<?= htmlspecialchars($driver['vehicle_number'] ?? 'D 1234 CCG') ?>" required>
+                <label class="form-label small fw-bold text-dark" for="driver_vehicle_number">Nomor Polisi Kendaraan (Plat Nomor)</label>
+                <input type="text" name="vehicle_number" id="driver_vehicle_number" class="form-control rounded-3" value="<?= htmlspecialchars($driver['vehicle_number'] ?? 'D 1234 CCG') ?>" required>
             </div>
 
             <!-- Section Ubah Kata Sandi Driver -->

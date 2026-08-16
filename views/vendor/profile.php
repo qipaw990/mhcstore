@@ -43,13 +43,13 @@
 
         <!-- Foto Profil Pemilik -->
         <div class="mb-3">
-            <label class="form-label small fw-bold text-dark mb-1" style="font-size: 11.5px;">Foto Profil Pemilik</label>
+            <label class="form-label small fw-bold text-dark mb-1" for="vendor_avatar" style="font-size: 11.5px;">Foto Profil Pemilik</label>
             <div class="d-flex align-items-center gap-3 p-2.5 bg-light rounded-3 border">
                 <img id="vendor-avatar-preview" src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/default.png') ?>" alt="Preview" class="rounded-circle border border-2 border-danger shadow-xs" style="width: 52px; height: 52px; object-fit: cover; flex-shrink: 0;">
                 <div class="flex-grow-1">
                     <label class="btn btn-outline-dark btn-sm rounded-pill fw-semibold mb-1" style="font-size: 11px; cursor: pointer;">
                         <i class="bi bi-camera-fill me-1"></i> Pilih Foto Profil
-                        <input type="file" name="avatar" class="d-none" accept="image/*" onchange="previewImg(this, 'vendor-avatar-preview')">
+                        <input type="file" name="avatar" id="vendor_avatar" class="d-none" accept="image/*" onchange="previewImg(this, 'vendor-avatar-preview')">
                     </label>
                     <div class="text-muted" style="font-size: 10px;">Format JPG, PNG maksimal 2MB</div>
                 </div>
@@ -57,18 +57,18 @@
         </div>
 
         <div class="mb-2.5">
-            <label class="form-label small fw-bold text-dark mb-1" style="font-size: 11.5px;">Nama Pemilik Toko <span class="text-danger">*</span></label>
-            <input type="text" name="name" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($user['name'] ?? '') ?>" required style="padding: 8px 12px; font-size: 12.5px;">
+            <label class="form-label small fw-bold text-dark mb-1" for="vendor_name" style="font-size: 11.5px;">Nama Pemilik Toko <span class="text-danger">*</span></label>
+            <input type="text" name="name" id="vendor_name" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($user['name'] ?? '') ?>" required style="padding: 8px 12px; font-size: 12.5px;">
         </div>
 
         <div class="mb-2.5">
-            <label class="form-label small fw-bold text-dark mb-1" style="font-size: 11.5px;">No HP / WhatsApp Pemilik <span class="text-danger">*</span></label>
-            <input type="text" name="phone" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($user['phone'] ?? '') ?>" required style="padding: 8px 12px; font-size: 12.5px;">
+            <label class="form-label small fw-bold text-dark mb-1" for="vendor_phone" style="font-size: 11.5px;">No HP / WhatsApp Pemilik <span class="text-danger">*</span></label>
+            <input type="text" name="phone" id="vendor_phone" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($user['phone'] ?? '') ?>" required style="padding: 8px 12px; font-size: 12.5px;">
         </div>
 
         <div class="mb-3">
-            <label class="form-label small fw-bold text-dark mb-1" style="font-size: 11.5px;">Alamat Email <span class="text-danger">*</span></label>
-            <input type="email" name="email" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($user['email'] ?? '') ?>" required style="padding: 8px 12px; font-size: 12.5px;">
+            <label class="form-label small fw-bold text-dark mb-1" for="vendor_email" style="font-size: 11.5px;">Alamat Email <span class="text-danger">*</span></label>
+            <input type="email" name="email" id="vendor_email" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($user['email'] ?? '') ?>" required style="padding: 8px 12px; font-size: 12.5px;">
             <div class="text-muted mt-1" style="font-size: 10px;">
                 <i class="bi bi-shield-check text-warning me-0.5"></i> Perubahan email memerlukan verifikasi OTP.
             </div>
@@ -81,13 +81,13 @@
 
         <!-- Logo Toko -->
         <div class="mb-3">
-            <label class="form-label small fw-bold text-dark mb-1" style="font-size: 11.5px;">Logo / Foto Profil Toko</label>
+            <label class="form-label small fw-bold text-dark mb-1" for="store_logo" style="font-size: 11.5px;">Logo / Foto Profil Toko</label>
             <div class="d-flex align-items-center gap-3 p-2.5 bg-light rounded-3 border">
                 <img id="store-logo-preview" src="<?= $baseUrl ?>/<?= htmlspecialchars($store['logo'] ?? 'assets/images/stores/default.jpg') ?>" alt="Preview" class="rounded-3 border border-2 border-danger shadow-xs" style="width: 52px; height: 52px; object-fit: cover; flex-shrink: 0;">
                 <div class="flex-grow-1">
                     <label class="btn btn-outline-danger btn-sm rounded-pill fw-semibold mb-1" style="font-size: 11px; cursor: pointer;">
                         <i class="bi bi-image-fill me-1"></i> Pilih Logo Toko
-                        <input type="file" name="store_logo" class="d-none" accept="image/*" onchange="previewImg(this, 'store-logo-preview')">
+                        <input type="file" name="store_logo" id="store_logo" class="d-none" accept="image/*" onchange="previewImg(this, 'store-logo-preview')">
                     </label>
                     <div class="text-muted" style="font-size: 10px;">Foto logo restoran / banner etalase</div>
                 </div>
@@ -95,18 +95,18 @@
         </div>
 
         <div class="mb-2.5">
-            <label class="form-label small fw-bold text-dark mb-1" style="font-size: 11.5px;">Nama Toko / Resto <span class="text-danger">*</span></label>
-            <input type="text" name="store_name" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($store['name'] ?? '') ?>" required style="padding: 8px 12px; font-size: 12.5px;">
+            <label class="form-label small fw-bold text-dark mb-1" for="store_name" style="font-size: 11.5px;">Nama Toko / Resto <span class="text-danger">*</span></label>
+            <input type="text" name="store_name" id="store_name" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($store['name'] ?? '') ?>" required style="padding: 8px 12px; font-size: 12.5px;">
         </div>
 
         <div class="mb-2.5">
-            <label class="form-label small fw-bold text-dark mb-1" style="font-size: 11.5px;">No HP / Kontak Toko</label>
-            <input type="text" name="store_phone" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($store['phone'] ?? '') ?>" style="padding: 8px 12px; font-size: 12.5px;">
+            <label class="form-label small fw-bold text-dark mb-1" for="store_phone" style="font-size: 11.5px;">No HP / Kontak Toko</label>
+            <input type="text" name="store_phone" id="store_phone" class="form-control form-control-sm rounded-3" value="<?= htmlspecialchars($store['phone'] ?? '') ?>" style="padding: 8px 12px; font-size: 12.5px;">
         </div>
 
         <div class="mb-3">
-            <label class="form-label small fw-bold text-dark mb-1" style="font-size: 11.5px;">Alamat Lengkap Toko</label>
-            <textarea name="store_address" class="form-control form-control-sm rounded-3" rows="2" style="padding: 8px 12px; font-size: 12.5px;"><?= htmlspecialchars($store['address'] ?? '') ?></textarea>
+            <label class="form-label small fw-bold text-dark mb-1" for="store_address" style="font-size: 11.5px;">Alamat Lengkap Toko</label>
+            <textarea name="store_address" id="store_address" class="form-control form-control-sm rounded-3" rows="2" style="padding: 8px 12px; font-size: 12.5px;"><?= htmlspecialchars($store['address'] ?? '') ?></textarea>
         </div>
 
         <!-- 3. GPS Pinpoint Picker (Leaflet Map) -->
