@@ -960,6 +960,15 @@ div[style*="border-radius: 16px"] > .d-flex {
   min-width: 0 !important;
 }
 
+/* Custom Fractional Spacing Utilities for Ultra-Precise Card Padding */
+.p-1.5 { padding: 6px !important; }
+.p-2.5 { padding: 10px 12px !important; }
+.p-3.5 { padding: 14px 16px !important; }
+.px-3.5 { padding-left: 14px !important; padding-right: 14px !important; }
+.py-3.5 { padding-top: 14px !important; padding-bottom: 14px !important; }
+.mb-3.5 { margin-bottom: 14px !important; }
+.mt-3.5 { margin-top: 14px !important; }
+
 /* Compact Aesthetic Input Controls Inside Cards */
 .form-control,
 .form-select {

@@ -22,7 +22,7 @@
         </div>
     <?php else: ?>
         <!-- Store Name Header Card -->
-        <div class="p-3 bg-white border shadow-2xs mb-3 d-flex align-items-center gap-2.5 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+        <div class="p-3 bg-white border shadow-2xs mb-3 d-flex align-items-center gap-2.5 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important;">
             <div class="rounded-circle text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background: linear-gradient(135deg, #EE2737, #C61524); font-size: 15px; box-shadow: 0 2px 6px rgba(238,39,55,0.25);">
                 <i class="bi bi-shop"></i>
             </div>
@@ -38,7 +38,7 @@
         <!-- Cart Items List -->
         <div class="d-flex flex-column gap-2.5 mb-3">
             <?php foreach ($cart_summary['items'] as $item): ?>
-                <div class="p-2.5 px-3 bg-white border shadow-2xs d-flex align-items-center justify-content-between gap-2.5 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+                <div class="p-3 bg-white border shadow-2xs d-flex align-items-center justify-content-between gap-2.5 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 12px 14px !important;">
                     <img src="<?= $baseUrl ?>/<?= htmlspecialchars($item['product_image'] ?? 'assets/images/products/default.jpg') ?>" alt="Img" class="rounded-3 flex-shrink-0" style="width: 52px; height: 52px; object-fit: cover;">
                     
                     <div class="flex-grow-1 min-w-0 me-1">
@@ -61,7 +61,7 @@
         </div>
 
         <!-- Summary Calculation Card -->
-        <div class="p-3.5 bg-white border shadow-2xs mb-3.5 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+        <div class="p-3 bg-white border shadow-2xs mb-3 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 16px !important;">
             <h6 class="fw-bold mb-3 text-dark d-flex align-items-center justify-content-between gap-2" style="font-size: 12.5px;">
                 <span class="text-truncate"><i class="bi bi-receipt me-1.5 text-danger"></i> Ringkasan Pembayaran</span>
                 <span class="badge bg-light text-muted fw-normal px-2 py-1 rounded-pill flex-shrink-0" style="font-size: 9.5px;"><?= $cart_summary['count'] ?> Item</span>
