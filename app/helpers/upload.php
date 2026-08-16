@@ -1,6 +1,7 @@
 <?php
 /**
  * Safe File Upload Helper
+ * CicalengkaGO Multi-Vendor Delivery Platform
  */
 
 function upload_image(array $file, string $folder = 'general'): ?string
@@ -9,9 +10,21 @@ function upload_image(array $file, string $folder = 'general'): ?string
         return null;
     }
 
-    $targetDir = PUBLIC_PATH . '/uploads/' . trim($folder, '/');
+    $folder = trim($folder, '/\\');
+    $targetDir = PUBLIC_PATH . '/uploads/' . $folder;
+
     if (!is_dir($targetDir)) {
-        mkdir($targetDir, 0755, true);
+        @mkdir($targetDir, 0777, true);
+        @chmod($targetDir, 0777);
+    }
+
+    if (!is_dir($targetDir) || !is_writable($targetDir)) {
+        @chmod($targetDir, 0777);
+        // If still not writable, try parent directory permissions
+        $parentDir = PUBLIC_PATH . '/uploads';
+        if (is_dir($parentDir) && !is_writable($parentDir)) {
+            @chmod($parentDir, 0777);
+        }
     }
 
     $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -34,8 +47,9 @@ function upload_image(array $file, string $folder = 'general'): ?string
     $filename = uniqid('img_', true) . '.' . $ext;
     $destination = $targetDir . '/' . $filename;
 
-    if (move_uploaded_file($file['tmp_name'], $destination)) {
-        return 'uploads/' . trim($folder, '/') . '/' . $filename;
+    if (@move_uploaded_file($file['tmp_name'], $destination)) {
+        @chmod($destination, 0664);
+        return 'uploads/' . $folder . '/' . $filename;
     }
 
     return null;
