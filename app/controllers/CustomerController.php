@@ -155,9 +155,25 @@ class CustomerController extends Controller
             return;
         }
 
+        $midtransService = new \App\Services\MidtransService();
+
+        // Auto-settle if redirected back from Midtrans payment finish
+        $orderId = $_GET['order_id'] ?? '';
+        $txnStatus = $_GET['transaction_status'] ?? $_GET['status'] ?? '';
+        $statusCode = (string)($_GET['status_code'] ?? '');
+        if (!empty($orderId) && str_starts_with($orderId, 'TOPUP-') && ($txnStatus === 'settlement' || $txnStatus === 'capture' || $statusCode === '200')) {
+            try {
+                $midtransService->processNotification([
+                    'order_id'           => $orderId,
+                    'transaction_status' => 'settlement',
+                    'fraud_status'       => 'accept',
+                    'payment_type'       => $_GET['payment_type'] ?? 'midtrans_redirect'
+                ]);
+            } catch (\Exception $e) {}
+        }
+
         $wallet = $this->walletModel->getOrCreate($userId, 'customer');
         $transactions = $this->walletModel->getTransactions($userId, 30);
-        $midtransService = new \App\Services\MidtransService();
 
         $this->view('customer.wallet', [
             'title'        => 'Dompet Digital CicalengkaPay',

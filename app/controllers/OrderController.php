@@ -117,6 +117,11 @@ class OrderController extends Controller
                             'quantity' => 1,
                             'name'     => 'Pesanan CicalengkaGO #' . $result['order_code']
                         ]
+                    ],
+                    'callbacks' => [
+                        'finish'   => $publicUrl . '/orders/' . $result['order_code'] . '/tracking',
+                        'error'    => $publicUrl . '/orders/' . $result['order_code'] . '/tracking',
+                        'unfinish' => $publicUrl . '/orders/' . $result['order_code'] . '/tracking'
                     ]
                 ];
 
@@ -174,6 +179,11 @@ class OrderController extends Controller
                             'quantity' => 1,
                             'name'     => 'Ongkir CicalengkaSend #' . $result['order_code']
                         ]
+                    ],
+                    'callbacks' => [
+                        'finish'   => $publicUrl . '/orders/' . $result['order_code'] . '/tracking',
+                        'error'    => $publicUrl . '/orders/' . $result['order_code'] . '/tracking',
+                        'unfinish' => $publicUrl . '/orders/' . $result['order_code'] . '/tracking'
                     ]
                 ];
 
@@ -229,6 +239,21 @@ class OrderController extends Controller
             return;
         }
 
+        // Auto-settle if redirected back from Midtrans payment finish
+        $txnStatus = $_GET['transaction_status'] ?? $_GET['status'] ?? '';
+        $statusCode = (string)($_GET['status_code'] ?? '');
+        if (($txnStatus === 'settlement' || $txnStatus === 'capture' || $statusCode === '200') && $order['payment_status'] !== 'paid') {
+            try {
+                $this->midtransService->processNotification([
+                    'order_id'           => $order['order_code'],
+                    'transaction_status' => 'settlement',
+                    'fraud_status'       => 'accept',
+                    'payment_type'       => $_GET['payment_type'] ?? 'midtrans_redirect'
+                ]);
+                $order = $this->orderModel->findByIdOrCode($code);
+            } catch (\Exception $e) {}
+        }
+
         $snapToken = null;
         $clientKey = $this->midtransService->getClientKey();
         $snapUrl   = $this->midtransService->getSnapUrl();
@@ -236,6 +261,8 @@ class OrderController extends Controller
         if ($order['payment_method'] === 'midtrans' && $order['payment_status'] !== 'paid' && $order['order_status'] !== 'canceled') {
             try {
                 $user = auth_user() ?: ['name' => 'Pelanggan', 'email' => 'customer@cicalengkago.id', 'phone' => '081234567890'];
+                $appConfig = require APP_PATH . '/config/app.php';
+                $publicUrl = rtrim($appConfig['public_url'] ?? '', '/');
                 $snapOrderId = $order['order_code'] . '-' . time() . '-' . rand(100, 999);
                 $snapParams = [
                     'transaction_details' => [
@@ -254,6 +281,11 @@ class OrderController extends Controller
                             'quantity' => 1,
                             'name'     => 'Pesanan CicalengkaGO #' . $order['order_code']
                         ]
+                    ],
+                    'callbacks' => [
+                        'finish'   => $publicUrl . '/orders/' . $order['order_code'] . '/tracking',
+                        'error'    => $publicUrl . '/orders/' . $order['order_code'] . '/tracking',
+                        'unfinish' => $publicUrl . '/orders/' . $order['order_code'] . '/tracking'
                     ]
                 ];
                 $snapRes = $this->midtransService->createSnapToken($snapParams);
@@ -305,6 +337,8 @@ class OrderController extends Controller
 
         try {
             $user = auth_user();
+            $appConfig = require APP_PATH . '/config/app.php';
+            $publicUrl = rtrim($appConfig['public_url'] ?? '', '/');
             $snapOrderId = $order['order_code'] . '-' . time() . '-' . rand(100, 999);
             $snapParams = [
                 'transaction_details' => [
@@ -323,6 +357,11 @@ class OrderController extends Controller
                         'quantity' => 1,
                         'name'     => 'Pesanan CicalengkaGO #' . $order['order_code']
                     ]
+                ],
+                'callbacks' => [
+                    'finish'   => $publicUrl . '/orders/' . $order['order_code'] . '/tracking',
+                    'error'    => $publicUrl . '/orders/' . $order['order_code'] . '/tracking',
+                    'unfinish' => $publicUrl . '/orders/' . $order['order_code'] . '/tracking'
                 ]
             ];
 

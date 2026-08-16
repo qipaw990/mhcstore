@@ -38,6 +38,9 @@ class PaymentController extends Controller
         $orderId = 'TOPUP-' . $userId . '-' . time() . '-' . rand(100, 999);
 
         try {
+            $appConfig = require APP_PATH . '/config/app.php';
+            $publicUrl = rtrim($appConfig['public_url'] ?? '', '/');
+
             $params = [
                 'transaction_details' => [
                     'order_id'     => $orderId,
@@ -55,6 +58,11 @@ class PaymentController extends Controller
                         'quantity' => 1,
                         'name'     => 'Top Up Saldo CicalengkaPay'
                     ]
+                ],
+                'callbacks' => [
+                    'finish'   => $publicUrl . '/wallet',
+                    'error'    => $publicUrl . '/wallet',
+                    'unfinish' => $publicUrl . '/wallet'
                 ]
             ];
 

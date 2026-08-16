@@ -84,6 +84,17 @@ class MidtransService
         // Ensure gross_amount is integer (Midtrans requires integer in IDR)
         $params['transaction_details']['gross_amount'] = (int)round((float)$params['transaction_details']['gross_amount']);
 
+        // Auto-configure Snap callbacks redirect URLs to prevent Midtrans default redirecting to example.com
+        $appConfig = require APP_PATH . '/config/app.php';
+        $publicUrl = rtrim($appConfig['public_url'] ?? '', '/');
+        if (empty($params['callbacks']) && !empty($publicUrl)) {
+            $params['callbacks'] = [
+                'finish'   => $publicUrl . '/orders',
+                'error'    => $publicUrl . '/orders',
+                'unfinish' => $publicUrl . '/orders'
+            ];
+        }
+
         $payloadJson = json_encode($params);
         $authHeader = 'Basic ' . base64_encode($this->serverKey . ':');
 
