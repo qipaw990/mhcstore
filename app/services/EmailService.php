@@ -172,12 +172,18 @@ class EmailService
         $write("DATA");
         $read();
 
+        $domain = substr(strrchr($username, "@"), 1) ?: 'cicalengkago.id';
+        $messageId = "<otp." . time() . "." . bin2hex(random_bytes(4)) . "@" . $domain . ">";
+
         $headers  = "MIME-Version: 1.0\r\n";
         $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
         $headers .= "From: {$senderName} <{$username}>\r\n";
         $headers .= "To: <{$toEmail}>\r\n";
         $headers .= "Subject: {$subject}\r\n";
         $headers .= "Date: " . date('r') . "\r\n";
+        $headers .= "Message-ID: {$messageId}\r\n";
+        $headers .= "Auto-Submitted: auto-generated\r\n";
+        $headers .= "X-Auto-Response-Suppress: All\r\n";
 
         $write($headers . "\r\n" . $htmlBody . "\r\n.");
         $res = $read();
