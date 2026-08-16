@@ -138,35 +138,67 @@
 (function() {
     const preloader = document.getElementById('cicago-preloader');
     const msgEl = document.getElementById('preloader-message');
+    let safetyTimeout = null;
 
     window.hidePreloader = function() {
         if (!preloader) return;
+        if (safetyTimeout) {
+            clearTimeout(safetyTimeout);
+            safetyTimeout = null;
+        }
         preloader.classList.add('fade-out');
         setTimeout(() => {
-            preloader.style.display = 'none';
-        }, 400);
+            if (preloader.classList.contains('fade-out')) {
+                preloader.style.display = 'none';
+            }
+        }, 300);
     };
 
     window.showPreloader = function(msg) {
         if (!preloader) return;
         if (msg && msgEl) msgEl.textContent = msg;
         preloader.style.display = 'flex';
-        // Force reflow
-        void preloader.offsetWidth;
+        void preloader.offsetWidth; // force reflow
         preloader.classList.remove('fade-out');
+
+        // Safety fallback: auto-hide after 2.5s to prevent stuck spinner if navigation is cancelled/delayed
+        if (safetyTimeout) clearTimeout(safetyTimeout);
+        safetyTimeout = setTimeout(window.hidePreloader, 2500);
     };
 
-    // Auto hide on window load
+    // 1. Auto-hide on initial load / DOM ready
     if (document.readyState === 'complete') {
-        setTimeout(window.hidePreloader, 150);
+        setTimeout(window.hidePreloader, 100);
     } else {
         window.addEventListener('load', function() {
-            setTimeout(window.hidePreloader, 200);
+            setTimeout(window.hidePreloader, 100);
         });
     }
 
-    // Safety fallback: auto-hide after 3.5 seconds if slow network assets
-    setTimeout(window.hidePreloader, 3500);
+    // 2. CRITICAL FOR MOBILE SWIPE-BACK & BFCache (Back-Forward Cache)
+    window.addEventListener('pageshow', function(event) {
+        window.hidePreloader();
+    });
+
+    // 3. Browser Back/Forward navigation (popstate)
+    window.addEventListener('popstate', function() {
+        window.hidePreloader();
+    });
+
+    // 4. Mobile tab / visibility change (e.g. user switches back to app)
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') {
+            window.hidePreloader();
+        }
+    });
+
+    // 5. Window focus event
+    window.addEventListener('focus', function() {
+        window.hidePreloader();
+    });
+
+    // Safety fallback on page initial load
+    setTimeout(window.hidePreloader, 2000);
 
     // Auto-show preloader on internal navigation clicks
     document.addEventListener('click', function(e) {
@@ -176,11 +208,14 @@
         const href = link.getAttribute('href');
         const target = link.getAttribute('target');
         const isDownload = link.hasAttribute('download');
+        const hasModal = link.hasAttribute('data-bs-toggle') || link.hasAttribute('data-bs-target');
+        const hasOnClick = link.hasAttribute('onclick');
 
-        if (!href || href.startsWith('#') || href.startsWith('javascript:') || 
+        if (!href || href === '#' || href.startsWith('#') || href.startsWith('javascript:') || 
             href.startsWith('tel:') || href.startsWith('mailto:') || 
             href.includes('wa.me') || href.includes('api.whatsapp.com') ||
-            target === '_blank' || isDownload || e.ctrlKey || e.metaKey) {
+            target === '_blank' || isDownload || hasModal || hasOnClick ||
+            link.classList.contains('no-preloader') || e.ctrlKey || e.metaKey) {
             return;
         }
 
