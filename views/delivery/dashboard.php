@@ -156,12 +156,20 @@
                         </a>
 
                         <!-- Secondary Info: Tujuan Pengantaran Selanjutnya (Pelanggan) -->
-                        <div class="p-2.5 rounded-3 bg-light border d-flex align-items-start gap-2" style="font-size: 11px;">
-                            <i class="bi bi-arrow-right-circle text-primary" style="font-size: 15px; margin-top: 1px;"></i>
-                            <div>
-                                <span class="text-muted fw-semibold">Tujuan Antar Berikutnya (Setelah Ambil):</span>
-                                <div class="fw-bold text-dark mt-0.5"><?= htmlspecialchars($active_order['customer_name'] ?? 'Pelanggan') ?></div>
-                                <div class="text-muted"><?= htmlspecialchars($active_order['delivery_address']['address'] ?? 'Cicalengka') ?></div>
+                        <div class="p-2.5 rounded-3 bg-light border d-flex flex-column gap-2 mb-3" style="font-size: 11px;">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-arrow-right-circle text-primary" style="font-size: 15px; margin-top: 1px;"></i>
+                                <div class="flex-grow-1">
+                                    <span class="text-muted fw-semibold">Tujuan Antar Berikutnya (Setelah Ambil):</span>
+                                    <div class="fw-bold text-dark mt-0.5"><?= htmlspecialchars($active_order['customer_name'] ?? 'Pelanggan') ?></div>
+                                    <div class="text-muted"><?= htmlspecialchars($active_order['delivery_address']['address'] ?? 'Cicalengka') ?></div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end pt-1 border-top">
+                                <button type="button" onclick="openDriverChatModal('<?= htmlspecialchars($active_order['order_code']) ?>')" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-1 fw-bold position-relative d-flex align-items-center gap-1" style="font-size: 11px;">
+                                    <i class="bi bi-chat-dots-fill"></i> Chat Pelanggan
+                                    <span id="driverChatUnreadDot1" class="ccg-unread-dot d-none"></span>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -186,11 +194,17 @@
                             <span class="badge rounded-pill bg-success-subtle text-success px-2.5 py-1 fw-bold" style="font-size: 10px;">
                                 <i class="bi bi-geo-alt-fill me-1"></i> LOKASI ANTAR PELANGGAN
                             </span>
-                            <?php if (!empty($active_order['customer_phone'])): ?>
-                                <a href="https://wa.me/<?= preg_replace('/^0/', '62', $active_order['customer_phone']) ?>" target="_blank" class="btn btn-success btn-sm rounded-pill px-2.5 py-0.5 fw-bold" style="font-size: 11px;">
-                                    <i class="bi bi-whatsapp me-1"></i> Chat WA Pelanggan
-                                </a>
-                            <?php endif; ?>
+                            <div class="d-flex gap-1.5 align-items-center">
+                                <button type="button" onclick="openDriverChatModal('<?= htmlspecialchars($active_order['order_code']) ?>')" class="btn btn-danger btn-sm rounded-pill px-2.5 py-0.5 fw-bold text-white position-relative shadow-xs" style="background:#EE2737; font-size: 11px;">
+                                    <i class="bi bi-chat-dots-fill me-1"></i> Chat App
+                                    <span id="driverChatUnreadDot2" class="ccg-unread-dot d-none"></span>
+                                </button>
+                                <?php if (!empty($active_order['customer_phone'])): ?>
+                                    <a href="https://wa.me/<?= preg_replace('/^0/', '62', $active_order['customer_phone']) ?>" target="_blank" class="btn btn-success btn-sm rounded-pill px-2.5 py-0.5 fw-bold" style="font-size: 11px;">
+                                        <i class="bi bi-whatsapp me-1"></i> WA
+                                    </a>
+                                <?php endif; ?>
+                            </div>
                         </div>
 
                         <div class="d-flex align-items-start gap-2.5 mb-2">
@@ -466,3 +480,224 @@ function centerDriverMap() {
 
 document.addEventListener('DOMContentLoaded', initDriverRadarMap);
 </script>
+
+<!-- CicalengkaGO In-App Chat Modal (Driver) -->
+<div id="driverChatModal" class="ccg-chat-modal" onclick="handleDriverChatBackdrop(event)">
+    <div class="ccg-chat-card" onclick="event.stopPropagation()">
+        <!-- Chat Header -->
+        <div class="ccg-chat-header">
+            <div class="d-flex align-items-center gap-2.5">
+                <img id="dChatPartnerAvatar" src="<?= $baseUrl ?>/assets/images/users/customer.png" alt="Customer" class="ccg-chat-avatar" style="border-color: #10B981;">
+                <div>
+                    <div class="d-flex align-items-center gap-1.5">
+                        <h6 id="dChatPartnerName" class="fw-bold m-0 text-dark small">Pelanggan</h6>
+                        <span class="badge bg-success-subtle text-success" style="font-size: 9px;"><i class="bi bi-person-fill me-1"></i>Pelanggan</span>
+                    </div>
+                    <div id="dChatPartnerSub" class="text-muted" style="font-size: 11px;">
+                        Tujuan Pengantaran
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn-close" onclick="closeDriverChatModal()" aria-label="Close"></button>
+        </div>
+
+        <!-- Chat Message Stream -->
+        <div id="dChatBody" class="ccg-chat-body">
+            <div class="text-center py-4 text-muted small" id="dChatLoading">
+                <div class="spinner-border spinner-border-sm text-danger me-2" role="status"></div> Memuat obrolan...
+            </div>
+        </div>
+
+        <!-- Quick Reply Chips for Driver -->
+        <div class="ccg-chat-quick-chips">
+            <button type="button" class="ccg-chip-btn" onclick="sendDriverQuickReply('Halo kak, saya sedang menuju resto/toko ya 👍')">🛵 Menuju resto</button>
+            <button type="button" class="ccg-chip-btn" onclick="sendDriverQuickReply('Pesanan sudah saya ambil, otw ke lokasi kakak 💨')">📦 Pesanan diambil, otw</button>
+            <button type="button" class="ccg-chip-btn" onclick="sendDriverQuickReply('Saya sudah sampai di depan ya kak/bu/pak 📍')">🏠 Sudah sampai di depan</button>
+            <button type="button" class="ccg-chip-btn" onclick="sendDriverQuickReply('Boleh minta patokan atau warna pagar rumahnya kak? 🙏')">🔍 Minta patokan rumah</button>
+        </div>
+
+        <!-- Chat Input Bar -->
+        <form id="dChatForm" class="ccg-chat-input-bar" onsubmit="handleSendDriverChat(event)">
+            <input type="text" id="dChatInput" class="ccg-chat-input" placeholder="Ketik pesan untuk pelanggan..." autocomplete="off" maxlength="500">
+            <button type="submit" id="btnSendDriverChat" class="ccg-chat-send-btn" title="Kirim">
+                <i class="bi bi-send-fill"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+let currentDriverChatOrderCode = '<?= !empty($active_order) ? htmlspecialchars($active_order['order_code']) : '' ?>';
+let driverChatPollingTimer = null;
+let isDriverChatOpen = false;
+
+function openDriverChatModal(orderCode) {
+    if (orderCode) currentDriverChatOrderCode = orderCode;
+    if (!currentDriverChatOrderCode) {
+        Swal.fire('Info', 'Tidak ada pesanan aktif saat ini.', 'info');
+        return;
+    }
+
+    const modal = document.getElementById('driverChatModal');
+    if (!modal) return;
+    modal.classList.add('show');
+    isDriverChatOpen = true;
+    document.body.style.overflow = 'hidden';
+
+    // Hide unread dots
+    const d1 = document.getElementById('driverChatUnreadDot1');
+    const d2 = document.getElementById('driverChatUnreadDot2');
+    if (d1) d1.classList.add('d-none');
+    if (d2) d2.classList.add('d-none');
+
+    // Focus input
+    setTimeout(() => {
+        const inp = document.getElementById('dChatInput');
+        if (inp) inp.focus();
+    }, 300);
+
+    fetchDriverChatMessages(true);
+
+    if (driverChatPollingTimer) clearInterval(driverChatPollingTimer);
+    driverChatPollingTimer = setInterval(() => fetchDriverChatMessages(false), 2500);
+}
+
+function closeDriverChatModal() {
+    const modal = document.getElementById('driverChatModal');
+    if (!modal) return;
+    modal.classList.remove('show');
+    isDriverChatOpen = false;
+    document.body.style.overflow = '';
+
+    if (driverChatPollingTimer) {
+        clearInterval(driverChatPollingTimer);
+        driverChatPollingTimer = null;
+    }
+}
+
+function handleDriverChatBackdrop(e) {
+    if (e.target.id === 'driverChatModal') {
+        closeDriverChatModal();
+    }
+}
+
+async function fetchDriverChatMessages(isFirstLoad = false) {
+    if (!currentDriverChatOrderCode) return;
+    try {
+        const res = await fetch(window.BASE_URL + `/chats/messages?order_code=${currentDriverChatOrderCode}&since_id=0&mark_read=1`);
+        const result = await res.json();
+        if (!result.success) return;
+
+        const data = result.data;
+        const chatBody = document.getElementById('dChatBody');
+        if (!chatBody) return;
+
+        if (data.partner) {
+            const pName = document.getElementById('dChatPartnerName');
+            const pAvatar = document.getElementById('dChatPartnerAvatar');
+            if (pName && data.partner.name) pName.textContent = data.partner.name;
+            if (pAvatar && data.partner.avatar) pAvatar.src = window.BASE_URL + '/' + data.partner.avatar;
+        }
+
+        const messages = data.messages || [];
+        if (messages.length === 0) {
+            chatBody.innerHTML = `
+                <div class="text-center py-5 text-muted small">
+                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 48px; height: 48px;">
+                        <i class="bi bi-chat-heart text-danger fs-4"></i>
+                    </div>
+                    <div class="fw-bold text-dark">Obrolan Pelanggan</div>
+                    <div>Gunakan tombol pesan cepat di bawah atau ketik pesan untuk memberi kabar ke pelanggan.</div>
+                </div>`;
+            return;
+        }
+
+        let html = '';
+        messages.forEach(msg => {
+            const isOutgoing = (parseInt(msg.sender_id) === parseInt(data.user_id));
+            const rowClass = isOutgoing ? 'outgoing' : 'incoming';
+            const checkIcon = isOutgoing ? `<i class="bi bi-check2-all ${msg.is_read ? 'text-primary' : ''}"></i>` : '';
+
+            html += `
+                <div class="ccg-chat-row ${rowClass}">
+                    <div class="ccg-chat-bubble">${escapeHtml(msg.message)}</div>
+                    <div class="ccg-chat-meta">
+                        <span>${msg.time_formatted || ''}</span>
+                        ${checkIcon}
+                    </div>
+                </div>
+            `;
+        });
+
+        const shouldScroll = isFirstLoad || (chatBody.scrollTop + chatBody.clientHeight >= chatBody.scrollHeight - 100);
+        chatBody.innerHTML = html;
+
+        if (shouldScroll) {
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+    } catch(err) {
+        console.warn('Driver chat fetch error:', err);
+    }
+}
+
+async function handleSendDriverChat(e) {
+    if (e) e.preventDefault();
+    const input = document.getElementById('dChatInput');
+    const btn = document.getElementById('btnSendDriverChat');
+    const message = input.value.trim();
+    if (!message || !currentDriverChatOrderCode) return;
+
+    input.value = '';
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(window.BASE_URL + '/chats/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                order_code: currentDriverChatOrderCode,
+                message: message
+            })
+        });
+
+        const result = await res.json();
+        if (result.success) {
+            await fetchDriverChatMessages(true);
+        } else {
+            Swal.fire('Gagal Mengirim', result.message || 'Tidak dapat mengirim pesan', 'warning');
+        }
+    } catch(err) {
+        console.error('Driver send error:', err);
+        Swal.fire('Error', 'Gagal terhubung ke server', 'error');
+    } finally {
+        btn.disabled = false;
+        input.focus();
+    }
+}
+
+function sendDriverQuickReply(text) {
+    const input = document.getElementById('dChatInput');
+    if (input) {
+        input.value = text;
+        handleSendDriverChat(null);
+    }
+}
+
+// Background driver unread polling
+<?php if (!empty($active_order)): ?>
+setInterval(async () => {
+    if (isDriverChatOpen) return;
+    try {
+        const res = await fetch(window.BASE_URL + `/chats/unread-count?order_code=<?= htmlspecialchars($active_order['order_code']) ?>`);
+        const result = await res.json();
+        if (result.success && result.data && result.data.unread_count > 0) {
+            const d1 = document.getElementById('driverChatUnreadDot1');
+            const d2 = document.getElementById('driverChatUnreadDot2');
+            if (d1) d1.classList.remove('d-none');
+            if (d2) d2.classList.remove('d-none');
+        }
+    } catch(e){}
+}, 8000);
+<?php endif; ?>
+</script>
+

@@ -12,6 +12,7 @@ use App\Controllers\PaymentController;
 use App\Controllers\DeliveryController;
 use App\Controllers\VendorController;
 use App\Controllers\AdminController;
+use App\Controllers\ChatController;
 
 // ==========================================
 // 1. Auth Routes
@@ -66,6 +67,12 @@ Router::get('/orders/{code}/live-tracking', [OrderController::class, 'getLiveTra
 Router::post('/orders/get-snap-token', [OrderController::class, 'getSnapToken'], ['AuthMiddleware']);
 Router::post('/orders/cancel-unpaid', [OrderController::class, 'cancelUnpaid'], ['AuthMiddleware']);
 Router::get('/orders/{code}', [OrderController::class, 'showOrder']);
+
+// In-App Chat Routes
+Router::get('/chats/messages', [ChatController::class, 'getMessages'], ['AuthMiddleware']);
+Router::post('/chats/send', [ChatController::class, 'sendMessage'], ['AuthMiddleware']);
+Router::post('/chats/read', [ChatController::class, 'markAsRead'], ['AuthMiddleware']);
+Router::get('/chats/unread-count', [ChatController::class, 'unreadCount'], ['AuthMiddleware']);
 
 // ==========================================
 // 3. Delivery Man PWA Routes

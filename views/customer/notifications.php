@@ -25,6 +25,43 @@
         </a>
     </div>
 
+    <!-- Active Chats with Courier -->
+    <?php if (!empty($active_chats)): ?>
+        <div class="mb-4">
+            <h6 class="fw-bold mb-2.5" style="font-size: 13px; color: var(--gojek-charcoal);"><i class="bi bi-chat-dots-fill text-danger me-1"></i> Percakapan Aktif Driver</h6>
+            <div class="d-flex flex-column gap-2">
+                <?php foreach ($active_chats as $chat): ?>
+                    <a href="<?= $baseUrl ?>/orders/<?= htmlspecialchars($chat['order_code']) ?>/tracking" class="p-3 bg-white rounded-4 border shadow-sm d-flex align-items-center justify-content-between text-decoration-none text-dark position-relative hover-shadow transition">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="position-relative">
+                                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($chat['dm_avatar'] ?? 'assets/images/users/driver.png') ?>" alt="Driver" class="rounded-circle border border-2 border-danger" style="width: 44px; height: 44px; object-fit: cover;">
+                                <?php if (!empty($chat['unread_chat_count']) && $chat['unread_chat_count'] > 0): ?>
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 9px;">
+                                        <?= $chat['unread_chat_count'] ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                            <div>
+                                <div class="fw-bold small text-dark"><?= htmlspecialchars($chat['dm_name'] ?? 'Mitra Driver Cicalengka') ?></div>
+                                <div class="text-muted text-truncate" style="font-size: 11.5px; max-width: 190px;">
+                                    <?= !empty($chat['last_message']) ? htmlspecialchars($chat['last_message']) : 'Pesanan #' . htmlspecialchars($chat['order_code']) ?>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-column align-items-end gap-1">
+                            <span class="badge bg-danger text-white rounded-pill px-2.5 py-1" style="font-size: 10px;">
+                                <i class="bi bi-chat-fill me-1"></i> Buka Chat
+                            </span>
+                            <?php if (!empty($chat['last_chat_time'])): ?>
+                                <span class="text-muted" style="font-size: 9.5px;"><?= date('H:i', strtotime($chat['last_chat_time'])) ?></span>
+                            <?php endif; ?>
+                        </div>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <h6 class="fw-bold mb-3" style="font-size: 13px; color: var(--gojek-charcoal);"><i class="bi bi-bell-fill text-warning me-1"></i> Pesan & Pemberitahuan Masuk</h6>
 
     <?php if (empty($notifications)): ?>

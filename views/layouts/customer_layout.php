@@ -130,7 +130,7 @@ $unreadNotifs = $user ? (new \App\Models\Notification())->getUnreadCount($user['
             <span>Pesanan</span>
         </a>
         <a href="<?= $baseUrl ?>/notifications" class="gojek-nav-item <?= ($active_tab ?? '') === 'chat' ? 'active' : '' ?>">
-            <i class="bi bi-chat-dots"></i>
+            <i class="bi bi-chat-dots<?= ($active_tab ?? '') === 'chat' ? '-fill' : '' ?>"></i>
             <span>Chat</span>
         </a>
         <a href="<?= $baseUrl ?>/profile" class="gojek-nav-item <?= ($active_tab ?? '') === 'profile' ? 'active' : '' ?>">

@@ -154,7 +154,11 @@ $isUnpaidOnline = ($order['payment_method'] === 'midtrans' && $order['payment_st
                         </div>
                     </div>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 align-items-center">
+                    <button type="button" onclick="openChatModal()" class="btn btn-danger btn-sm rounded-circle d-flex align-items-center justify-content-center shadow-xs position-relative" style="background:#EE2737; width: 38px; height: 38px; border:none;" title="Chat Langsung Driver">
+                        <i class="bi bi-chat-dots-fill text-white fs-6"></i>
+                        <span id="chatUnreadDot" class="ccg-unread-dot d-none"></span>
+                    </button>
                     <?php if (!empty($order['dm_phone'])): ?>
                         <a href="https://wa.me/<?= preg_replace('/^0/', '62', $order['dm_phone']) ?>?text=Halo%20Kurir%20CicalengkaGO%20Pesanan%20<?= $order['order_code'] ?>" target="_blank" class="btn btn-success btn-sm rounded-circle d-flex align-items-center justify-content-center shadow-xs" style="background:#25D366; width: 38px; height: 38px; border:none;" title="Chat WhatsApp">
                             <i class="bi bi-whatsapp fs-6"></i>
@@ -426,3 +430,226 @@ function cancelUnpaidOrder() {
 }
 </script>
 <?php endif; ?>
+
+<!-- CicalengkaGO In-App Chat Modal (Customer) -->
+<div id="chatModal" class="ccg-chat-modal" onclick="handleChatModalBackdrop(event)">
+    <div class="ccg-chat-card" onclick="event.stopPropagation()">
+        <!-- Chat Header -->
+        <div class="ccg-chat-header">
+            <div class="d-flex align-items-center gap-2.5">
+                <img id="chatPartnerAvatar" src="<?= $baseUrl ?>/<?= htmlspecialchars($order['dm_avatar'] ?? 'assets/images/users/driver.png') ?>" alt="Driver" class="ccg-chat-avatar">
+                <div>
+                    <div class="d-flex align-items-center gap-1.5">
+                        <h6 id="chatPartnerName" class="fw-bold m-0 text-dark small"><?= htmlspecialchars($order['dm_name'] ?? 'Mitra Kurir Cicalengka') ?></h6>
+                        <span class="badge bg-danger-subtle text-danger" style="font-size: 9px;"><i class="bi bi-patch-check-fill me-1"></i>Kurir CCG</span>
+                    </div>
+                    <div id="chatPartnerSub" class="text-muted" style="font-size: 11px;">
+                        <?= htmlspecialchars($order['vehicle_type'] ?? 'Motor') ?> • <?= htmlspecialchars($order['vehicle_number'] ?? 'D 1234 CCG') ?>
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn-close" onclick="closeChatModal()" aria-label="Close"></button>
+        </div>
+
+        <!-- Chat Message Stream -->
+        <div id="chatBody" class="ccg-chat-body">
+            <div class="text-center py-4 text-muted small" id="chatLoading">
+                <div class="spinner-border spinner-border-sm text-danger me-2" role="status"></div> Memuat percakapan...
+            </div>
+        </div>
+
+        <!-- Quick Reply Chips for Customer -->
+        <div class="ccg-chat-quick-chips">
+            <button type="button" class="ccg-chip-btn" onclick="sendQuickReply('Saya sudah di titik lokasi ya pak 👍')">📍 Sudah di titik lokasi</button>
+            <button type="button" class="ccg-chip-btn" onclick="sendQuickReply('Tolong titipkan di pagar / teras ya pak 🙏')">🏠 Titip di teras/satpam</button>
+            <button type="button" class="ccg-chip-btn" onclick="sendQuickReply('Hati-hati di jalan ya pak!')">🛵 Hati-hati di jalan</button>
+            <button type="button" class="ccg-chip-btn" onclick="sendQuickReply('Kabari kalau sudah sampai di depan ya')">🔔 Kabari jika sampai</button>
+        </div>
+
+        <!-- Chat Input Bar -->
+        <form id="chatForm" class="ccg-chat-input-bar" onsubmit="handleSendChat(event)">
+            <input type="text" id="chatInput" class="ccg-chat-input" placeholder="Ketik pesan untuk kurir..." autocomplete="off" maxlength="500">
+            <button type="submit" id="btnSendChat" class="ccg-chat-send-btn" title="Kirim">
+                <i class="bi bi-send-fill"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+const TRACKING_ORDER_CODE = "<?= $order['order_code'] ?>";
+let chatPollingTimer = null;
+let isChatModalOpen = false;
+
+function openChatModal() {
+    const modal = document.getElementById('chatModal');
+    if (!modal) return;
+    modal.classList.add('show');
+    isChatModalOpen = true;
+    document.body.style.overflow = 'hidden';
+    
+    // Hide unread dot
+    const unreadDot = document.getElementById('chatUnreadDot');
+    if (unreadDot) unreadDot.classList.add('d-none');
+
+    // Focus input
+    setTimeout(() => {
+        const inp = document.getElementById('chatInput');
+        if (inp) inp.focus();
+    }, 300);
+
+    // Initial load
+    fetchChatMessages(true);
+    
+    // Start fast polling
+    if (chatPollingTimer) clearInterval(chatPollingTimer);
+    chatPollingTimer = setInterval(() => fetchChatMessages(false), 2500);
+}
+
+function closeChatModal() {
+    const modal = document.getElementById('chatModal');
+    if (!modal) return;
+    modal.classList.remove('show');
+    isChatModalOpen = false;
+    document.body.style.overflow = '';
+    
+    if (chatPollingTimer) {
+        clearInterval(chatPollingTimer);
+        chatPollingTimer = null;
+    }
+}
+
+function handleChatModalBackdrop(e) {
+    if (e.target.id === 'chatModal') {
+        closeChatModal();
+    }
+}
+
+async function fetchChatMessages(isFirstLoad = false) {
+    try {
+        const res = await fetch(window.BASE_URL + `/chats/messages?order_code=${TRACKING_ORDER_CODE}&since_id=0&mark_read=1`);
+        const result = await res.json();
+        
+        if (!result.success) return;
+        
+        const data = result.data;
+        const chatBody = document.getElementById('chatBody');
+        if (!chatBody) return;
+
+        // Update partner header if info available
+        if (data.partner) {
+            const pName = document.getElementById('chatPartnerName');
+            const pAvatar = document.getElementById('chatPartnerAvatar');
+            const pSub = document.getElementById('chatPartnerSub');
+            if (pName && data.partner.name) pName.textContent = data.partner.name;
+            if (pAvatar && data.partner.avatar) pAvatar.src = window.BASE_URL + '/' + data.partner.avatar;
+            if (pSub && data.partner.vehicle_info) pSub.textContent = data.partner.vehicle_info;
+        }
+
+        const messages = data.messages || [];
+        
+        if (messages.length === 0) {
+            chatBody.innerHTML = `
+                <div class="text-center py-5 text-muted small">
+                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 48px; height: 48px;">
+                        <i class="bi bi-chat-heart text-danger fs-4"></i>
+                    </div>
+                    <div class="fw-bold text-dark">Mulai Obrolan</div>
+                    <div>Kirim pesan atau gunakan pilihan pesan cepat di bawah untuk berkomunikasi dengan kurir.</div>
+                </div>`;
+            return;
+        }
+
+        // Render messages
+        let html = '';
+        messages.forEach(msg => {
+            const isOutgoing = (parseInt(msg.sender_id) === parseInt(data.user_id));
+            const rowClass = isOutgoing ? 'outgoing' : 'incoming';
+            const checkIcon = isOutgoing ? `<i class="bi bi-check2-all ${msg.is_read ? 'text-primary' : ''}"></i>` : '';
+            
+            html += `
+                <div class="ccg-chat-row ${rowClass}">
+                    <div class="ccg-chat-bubble">${escapeHtml(msg.message)}</div>
+                    <div class="ccg-chat-meta">
+                        <span>${msg.time_formatted || ''}</span>
+                        ${checkIcon}
+                    </div>
+                </div>
+            `;
+        });
+
+        // Determine if scroll is needed
+        const shouldScroll = isFirstLoad || (chatBody.scrollTop + chatBody.clientHeight >= chatBody.scrollHeight - 100);
+        chatBody.innerHTML = html;
+
+        if (shouldScroll) {
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+    } catch(err) {
+        console.warn('Chat fetch error:', err);
+    }
+}
+
+async function handleSendChat(e) {
+    if (e) e.preventDefault();
+    const input = document.getElementById('chatInput');
+    const btn = document.getElementById('btnSendChat');
+    const message = input.value.trim();
+    if (!message) return;
+
+    input.value = '';
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(window.BASE_URL + '/chats/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                order_code: TRACKING_ORDER_CODE,
+                message: message
+            })
+        });
+
+        const result = await res.json();
+        if (result.success) {
+            await fetchChatMessages(true);
+        } else {
+            Swal.fire('Gagal Mengirim', result.message || 'Tidak dapat mengirim pesan', 'warning');
+        }
+    } catch(err) {
+        console.error('Send error:', err);
+        Swal.fire('Error', 'Gagal terhubung ke server', 'error');
+    } finally {
+        btn.disabled = false;
+        input.focus();
+    }
+}
+
+function sendQuickReply(text) {
+    const input = document.getElementById('chatInput');
+    if (input) {
+        input.value = text;
+        handleSendChat(null);
+    }
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// Background unread polling when modal is closed
+setInterval(async () => {
+    if (isChatModalOpen) return;
+    try {
+        const res = await fetch(window.BASE_URL + `/chats/unread-count?order_code=${TRACKING_ORDER_CODE}`);
+        const result = await res.json();
+        if (result.success && result.data && result.data.unread_count > 0) {
+            const unreadDot = document.getElementById('chatUnreadDot');
+            if (unreadDot) unreadDot.classList.remove('d-none');
+        }
+    } catch(e){}
+}, 8000);
+</script>
+
