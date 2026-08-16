@@ -126,7 +126,7 @@
                     <?php foreach ($ord['items'] as $it): ?>
                         <div class="merchant-order-item-row">
                             <span class="fw-bold text-dark"><?= $it['quantity'] ?>x <?= htmlspecialchars($it['product_name']) ?></span>
-                            <span class="text-muted small"><?= format_rupiah($it['unit_price'] * $it['quantity']) ?></span>
+                            <span class="text-muted small"><?= format_rupiah($it['total_price'] ?? (($it['price'] ?? 0) * $it['quantity'])) ?></span>
                         </div>
                     <?php endforeach; ?>
                 </div>
