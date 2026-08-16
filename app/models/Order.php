@@ -113,24 +113,25 @@ class Order extends Model
 
     public function getAvailableForDelivery(int $zoneId = 0): array
     {
-        $whereZone = "";
-        $params = [];
-        if ($zoneId > 0) {
-            $whereZone = "AND (o.zone_id = ? OR o.zone_id IS NULL OR o.zone_id = 0)";
-            $params[] = $zoneId;
-        }
-
-        $sql = "SELECT o.*, s.name as store_name, s.address as store_address, s.latitude as store_lat, s.longitude as store_lng,
-                       u.name as customer_name, u.phone as customer_phone
+        $sql = "SELECT o.*, 
+                       COALESCE(s.name, 'Resto Cicalengka') as store_name, 
+                       COALESCE(s.address, 'Cicalengka, Jawa Barat') as store_address, 
+                       s.latitude as store_lat, 
+                       s.longitude as store_lng,
+                       COALESCE(u.name, 'Pelanggan') as customer_name, 
+                       COALESCE(u.phone, '-') as customer_phone
                 FROM `orders` o
                 LEFT JOIN `stores` s ON o.store_id = s.id
                 LEFT JOIN `users` u ON o.customer_id = u.id
-                WHERE o.delivery_man_id IS NULL
-                  {$whereZone}
-                  AND o.order_status IN ('confirmed', 'processing', 'handover')
-                  AND (o.payment_method IN ('cod', 'wallet') OR o.payment_status = 'paid' OR o.order_status != 'pending')
-                ORDER BY o.id ASC";
-        $orders = Database::query($sql, $params);
+                WHERE (o.delivery_man_id IS NULL OR o.delivery_man_id = 0)
+                  AND o.order_status NOT IN ('delivered', 'canceled', 'refunded', 'failed')
+                  AND (
+                      o.payment_method IN ('cod', 'cash', 'wallet')
+                      OR o.payment_status = 'paid'
+                      OR o.order_status IN ('confirmed', 'processing', 'handover', 'pending')
+                  )
+                ORDER BY o.id DESC";
+        $orders = Database::query($sql);
         foreach ($orders as &$o) {
             $o['items'] = Database::query("SELECT * FROM `order_items` WHERE `order_id` = ?", [$o['id']]);
             $o['delivery_address'] = json_decode($o['delivery_address_json'] ?? '{}', true) ?: [];
