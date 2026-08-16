@@ -108,8 +108,17 @@ class AuthController extends Controller
 
         try {
             $isProfileUpdate = !empty($_SESSION['pending_profile_update']);
+            $isPasswordUpdate = !empty($_SESSION['pending_profile_update']['password']);
             $user = $this->authService->verifyOtp($otp);
-            $_SESSION['success'] = 'Email & profil berhasil diverifikasi!';
+
+            if ($isPasswordUpdate) {
+                $_SESSION['success'] = 'Kata sandi dan profil berhasil diverifikasi & diperbarui!';
+            } elseif ($isProfileUpdate) {
+                $_SESSION['success'] = 'Alamat email & profil berhasil diverifikasi!';
+            } else {
+                $_SESSION['success'] = 'Verifikasi OTP berhasil!';
+            }
+
             $this->redirectToRoleDashboard($user['role'], $isProfileUpdate);
         } catch (Exception $e) {
             $_SESSION['error'] = $e->getMessage();

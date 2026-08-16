@@ -252,18 +252,22 @@ class CustomerController extends Controller
         }
 
         $currentUser = auth_user();
+        $isEmailChanged = (strtolower($email) !== strtolower($currentUser['email'] ?? ''));
+        $isPasswordChanged = !empty($passwordUpdate);
 
-        // Check if email is being updated
-        if (strtolower($email) !== strtolower($currentUser['email'] ?? '')) {
-            $existing = Database::fetchOne("SELECT id FROM users WHERE email = ? AND id != ? LIMIT 1", [$email, $userId]);
-            if ($existing) {
-                $_SESSION['error'] = 'Alamat email ini sudah terdaftar pada akun lain.';
-                $this->redirect('profile');
-                return;
+        if ($isEmailChanged || $isPasswordChanged) {
+            if ($isEmailChanged) {
+                $existing = Database::fetchOne("SELECT id FROM users WHERE email = ? AND id != ? LIMIT 1", [$email, $userId]);
+                if ($existing) {
+                    $_SESSION['error'] = 'Alamat email ini sudah terdaftar pada akun lain.';
+                    $this->redirect('profile');
+                    return;
+                }
             }
 
-            // Generate 6-digit OTP code for new email verification
-            $otp = sprintf("%06d", rand(100000, 999999));
+            $otpMode = \App\Models\BusinessSetting::get('otp_mode', 'real');
+            $isDemo = ($otpMode === 'demo');
+            $otp = $isDemo ? '123456' : sprintf("%06d", rand(100000, 999999));
 
             $_SESSION['pending_profile_update'] = [
                 'user_id'    => $userId,
@@ -283,31 +287,31 @@ class CustomerController extends Controller
                 'otp'        => $otp,
                 'expires_at' => time() + 600
             ];
+            $_SESSION['otp_last_sent'] = time();
 
-            \App\Services\EmailService::sendOtpEmail($email, $name, $otp);
+            if (!$isDemo) {
+                \App\Services\EmailService::sendOtpEmail($email, $name, $otp);
+            }
 
-            $_SESSION['info'] = "Kode verifikasi OTP dikirimkan ke email baru Anda ({$email}). Masukkan kode untuk konfirmasi perubahan profil.";
+            $reason = ($isPasswordChanged && $isEmailChanged)
+                ? 'perubahan email dan kata sandi'
+                : ($isPasswordChanged ? 'perubahan kata sandi akun' : 'perubahan alamat email');
+
+            $_SESSION['info'] = "Kode verifikasi OTP telah dikirimkan ke email ({$email}). Masukkan kode 6-digit untuk mengonfirmasi {$reason}.";
             $this->redirect('verify-otp');
             return;
         }
 
-        // Email did not change, update directly
-        $updateFields = [
+        // Only name / phone changed without password or email changes
+        (new \App\Models\User())->update($userId, [
             'name'  => $name,
             'phone' => $phone
-        ];
-        if ($passwordUpdate) {
-            $updateFields['password'] = $passwordUpdate;
-        }
-
-        (new \App\Models\User())->update($userId, $updateFields);
+        ]);
 
         $_SESSION['user']['name'] = $name;
         $_SESSION['user']['phone'] = $phone;
 
-        $_SESSION['success'] = $passwordUpdate 
-            ? 'Profil dan Kata Sandi Anda berhasil diperbarui!' 
-            : 'Profil Anda berhasil diperbarui!';
+        $_SESSION['success'] = 'Profil Anda berhasil diperbarui!';
         $this->redirect('profile');
     }
 }

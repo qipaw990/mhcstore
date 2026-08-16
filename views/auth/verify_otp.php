@@ -49,7 +49,7 @@
     <input type="hidden" name="otp" id="full-otp">
 
     <button type="submit" class="btn text-white w-100 py-3 fw-bold rounded-4 shadow-sm mb-3" style="background:#EE2737;">
-        <i class="bi bi-check-circle-fill me-1"></i> Verifikasi & Masuk
+        <i class="bi bi-shield-check me-1"></i> Konfirmasi & Verifikasi OTP
     </button>
 </form>
 

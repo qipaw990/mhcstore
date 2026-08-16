@@ -89,11 +89,18 @@
 
                     <!-- Section Ubah Kata Sandi -->
                     <div class="col-12 mt-4 pt-3 border-top">
-                        <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
                             <h6 class="fw-bold text-dark m-0" style="font-size: 13px;">
                                 <i class="bi bi-key-fill text-danger me-1"></i> Ubah Kata Sandi (Opsional)
                             </h6>
                             <span class="text-muted small" style="font-size: 11px;">Kosongkan jika tidak ingin mengubah</span>
+                        </div>
+
+                        <div class="alert alert-info border-0 rounded-3 p-2.5 mb-3 d-flex align-items-start gap-2" style="font-size: 11px;">
+                            <i class="bi bi-shield-lock-fill text-primary fs-6 mt-0.5"></i>
+                            <div>
+                                <strong>Verifikasi OTP Keamanan:</strong> Setiap perubahan kata sandi wajib dikonfirmasi dengan <strong>kode OTP 6-digit</strong> yang dikirim ke email akun Anda.
+                            </div>
                         </div>
 
                         <div class="row g-3">

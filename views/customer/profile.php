@@ -177,6 +177,13 @@
                             <span class="text-muted" style="font-size: 10px;">Kosongkan jika tidak diubah</span>
                         </div>
 
+                        <div class="alert alert-info border-0 rounded-3 p-2 mb-2 d-flex align-items-start gap-2" style="font-size: 10px;">
+                            <i class="bi bi-shield-lock-fill text-primary fs-6 mt-0.5"></i>
+                            <div>
+                                <strong>Keamanan OTP:</strong> Perubahan kata sandi memerlukan verifikasi <strong>kode OTP 6-digit</strong> ke email Anda.
+                            </div>
+                        </div>
+
                         <div class="mb-2">
                             <div class="input-group input-group-sm">
                                 <input type="password" name="current_password" id="customer_current_password" class="form-control rounded-start-3" placeholder="Kata sandi saat ini">
