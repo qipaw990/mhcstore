@@ -176,12 +176,27 @@ window.toggleDriverStatus = toggleDriverStatus;
 window.acceptDriverOrder = acceptDriverOrder;
 window.updateDeliveryStep = updateDeliveryStep;
 
-// Background GPS Broadcasting (every 8 seconds while online)
+// Background GPS Broadcasting with smart 12-second throttle
+let lastGpsSentTime = 0;
 function startDriverGpsTracking() {
   if ('geolocation' in navigator) {
     navigator.geolocation.watchPosition((pos) => {
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
+      const now = Date.now();
+
+      // Update in-memory driver coordinates for map
+      if (typeof window.myDriverMarker !== 'undefined' && window.myDriverMarker) {
+        window.myDriverMarker.setLatLng([lat, lng]);
+      }
+      if (typeof window.driverLat !== 'undefined') {
+        window.driverLat = lat;
+        window.driverLng = lng;
+      }
+
+      // Throttle server HTTP post to at most once per 12 seconds
+      if (now - lastGpsSentTime < 12000) return;
+      lastGpsSentTime = now;
 
       const fd = new FormData();
       fd.append('lat', lat);
@@ -195,8 +210,8 @@ function startDriverGpsTracking() {
       console.warn('Geolocation watch error:', err);
     }, {
       enableHighAccuracy: true,
-      maximumAge: 10000,
-      timeout: 5000
+      maximumAge: 15000,
+      timeout: 8000
     });
   }
 }

@@ -443,33 +443,6 @@ function initDriverRadarMap() {
             })();
         <?php endforeach; ?>
     <?php endif; ?>
-
-    // Send GPS update to server
-    async function syncDriverLocation(lat, lng) {
-        try {
-            const fd = new FormData();
-            fd.append('lat', lat);
-            fd.append('lng', lng);
-            await fetch(window.BASE_URL + '/delivery/update-location', {
-                method: 'POST',
-                body: fd
-            });
-        } catch (e) {
-            console.warn('GPS sync error:', e);
-        }
-    }
-
-    // Update GPS live via HTML5 Geolocation API
-    if ('geolocation' in navigator) {
-        navigator.geolocation.watchPosition((pos) => {
-            driverLat = pos.coords.latitude;
-            driverLng = pos.coords.longitude;
-            if (myDriverMarker) {
-                myDriverMarker.setLatLng([driverLat, driverLng]);
-            }
-            syncDriverLocation(driverLat, driverLng);
-        }, null, { enableHighAccuracy: true, maximumAge: 3000 });
-    }
 }
 
 function centerDriverMap() {
@@ -479,6 +452,61 @@ function centerDriverMap() {
             myDriverMarker.openPopup();
         }
     }
+}
+
+if (typeof window.acceptDriverOrder === 'undefined') {
+    window.acceptDriverOrder = async function(orderId) {
+        if (typeof Swal !== 'undefined') {
+            const confirmRes = await Swal.fire({
+                title: 'Ambil Pesanan Ini?',
+                text: 'Anda akan ditugaskan mengantar pesanan ini ke pelanggan.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#EE2737',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Ambil Sekarang!',
+                cancelButtonText: 'Batal'
+            });
+            if (!confirmRes.isConfirmed) return;
+        } else {
+            if (!confirm('Ambil pesanan ini untuk diantar sekarang?')) return;
+        }
+
+        try {
+            const fd = new FormData();
+            fd.append('order_id', orderId);
+            const res = await fetch(window.BASE_URL + '/delivery/accept-order', {
+                method: 'POST',
+                body: fd
+            });
+            const json = await res.json();
+            if (json.success) {
+                if (typeof Swal !== 'undefined') {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Order Diambil!',
+                        text: json.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                }
+                window.location.reload();
+            } else {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: json.message || 'Tidak dapat mengambil pesanan.',
+                        confirmButtonColor: '#EE2737'
+                    });
+                } else {
+                    alert(json.message || 'Gagal mengambil order');
+                }
+            }
+        } catch (e) {
+            console.error('Accept order error:', e);
+        }
+    };
 }
 
 document.addEventListener('DOMContentLoaded', initDriverRadarMap);
