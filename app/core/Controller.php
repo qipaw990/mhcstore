@@ -14,8 +14,16 @@ abstract class Controller
 
     protected function json(array $data, int $statusCode = 200): void
     {
+        // Release session lock before responding to enable concurrent, non-blocking polling
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+
         http_response_code($statusCode);
         header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('Pragma: no-cache');
+        header('Expires: 0');
         echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         exit;
     }
