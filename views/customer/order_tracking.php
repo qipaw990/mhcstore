@@ -46,56 +46,56 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
     <?php endif; ?>
 </div>
 
-<div class="p-2" style="padding: 8px 10px !important;">
+<div class="px-3 py-2.5">
     <?php if ($isCanceled): ?>
         <!-- Canceled Card -->
-        <div class="p-3 bg-white rounded-3 border shadow-xs text-center mb-2">
-            <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 44px; height: 44px; font-size: 20px;">
+        <div class="p-4 bg-white border shadow-xs text-center mb-3" style="border-radius: 14px;">
+            <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center mx-auto mb-2.5" style="width: 48px; height: 48px; font-size: 22px;">
                 <i class="bi bi-x-circle-fill"></i>
             </div>
-            <h6 class="fw-bold text-dark mb-1" style="font-size: 12px;">Pesanan Telah Dibatalkan</h6>
-            <p class="text-muted mb-2" style="font-size: 10px;">Pesanan ini tidak lagi diproses.</p>
-            <a href="<?= $baseUrl ?>" class="btn btn-sm rounded-pill px-3 py-1 fw-bold text-white shadow-xs" style="background:#EE2737; font-size: 10.5px;">Pesan Kembali</a>
+            <h6 class="fw-bold text-dark mb-1" style="font-size: 13px;">Pesanan Telah Dibatalkan</h6>
+            <p class="text-muted mb-3" style="font-size: 10.5px;">Pesanan ini tidak lagi diproses.</p>
+            <a href="<?= $baseUrl ?>" class="btn btn-sm rounded-pill px-4 py-1.5 fw-bold text-white shadow-xs" style="background:#EE2737; font-size: 11px;">Pesan Kembali</a>
         </div>
 
     <?php elseif ($isUnpaidOnline): ?>
         <!-- Unpaid Online Order Screen -->
-        <div class="p-3 bg-white rounded-3 border shadow-xs mb-2 text-center">
-            <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 48px; height: 48px; font-size: 22px;">
+        <div class="p-3.5 bg-white border shadow-xs mb-3 text-center" style="border-radius: 14px;">
+            <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center mx-auto mb-2.5" style="width: 52px; height: 52px; font-size: 24px;">
                 <i class="bi bi-credit-card-2-front-fill text-danger"></i>
             </div>
-            <div class="badge bg-warning-subtle text-warning-emphasis border border-warning px-2 py-0.5 rounded-pill fw-bold mb-1.5" style="font-size: 9px;">
+            <div class="badge bg-warning-subtle text-warning-emphasis border border-warning px-2.5 py-1 rounded-pill fw-bold mb-2" style="font-size: 9.5px;">
                 <i class="bi bi-hourglass-split me-0.5"></i> Menunggu Pembayaran
             </div>
-            <h6 class="fw-bold text-dark mb-0.5" style="font-size: 12.5px;">Selesaikan Pembayaran</h6>
-            <div class="text-muted mb-2" style="font-size: 10px;">Total tagihan:</div>
+            <h6 class="fw-bold text-dark mb-0.5" style="font-size: 13px;">Selesaikan Pembayaran</h6>
+            <div class="text-muted mb-2.5" style="font-size: 10.5px;">Total tagihan:</div>
             
-            <div class="p-2 bg-light rounded-3 border mb-2">
-                <div class="text-muted" style="font-size: 9px;">TOTAL NOMINAL</div>
-                <div class="fw-bold text-danger my-0.5" style="font-size: 18px;"><?= format_rupiah($order['total_amount']) ?></div>
-                <div class="badge bg-white text-dark border px-1.5 py-0.5" style="font-size: 9px;">
+            <div class="p-2.5 bg-light rounded-3 border mb-2.5">
+                <div class="text-muted" style="font-size: 9.5px;">TOTAL NOMINAL</div>
+                <div class="fw-bold text-danger my-1" style="font-size: 20px;"><?= format_rupiah($order['total_amount']) ?></div>
+                <div class="badge bg-white text-dark border px-2 py-1" style="font-size: 9.5px;">
                     <i class="bi bi-shield-check text-success me-0.5"></i> Midtrans QRIS / VA / E-Wallet
                 </div>
             </div>
 
-            <div class="alert alert-warning border-0 rounded-3 text-start p-2 mb-2 d-flex align-items-start gap-1.5" style="font-size: 9.5px;">
-                <i class="bi bi-exclamation-triangle-fill text-warning flex-shrink-0 mt-0.5" style="font-size: 11px;"></i>
+            <div class="alert alert-warning border-0 rounded-3 text-start p-2.5 mb-2.5 d-flex align-items-start gap-2" style="font-size: 10px;">
+                <i class="bi bi-exclamation-triangle-fill text-warning flex-shrink-0 mt-0.5" style="font-size: 12px;"></i>
                 <div>
                     <b>Pesanan belum diproses.</b> Silakan klik tombol <b>Bayar Sekarang</b> di bawah.
                 </div>
             </div>
 
             <!-- Action Buttons -->
-            <button type="button" id="btnPayNow" onclick="payNow()" class="btn w-100 py-2 rounded-pill fw-bold text-white shadow-xs mb-1.5 d-flex align-items-center justify-content-center gap-1.5" style="background:#EE2737; font-size: 12px;">
+            <button type="button" id="btnPayNow" onclick="payNow()" class="btn w-100 py-2.5 rounded-pill fw-bold text-white shadow-xs mb-2 d-flex align-items-center justify-content-center gap-2" style="background:#EE2737; font-size: 12.5px;">
                 <i class="bi bi-wallet2"></i>
                 <span>Bayar Sekarang (Midtrans)</span>
             </button>
 
-            <div class="d-flex gap-1.5">
-                <button type="button" id="btnCheckStatus" onclick="checkPaymentStatus()" class="btn btn-light border rounded-pill flex-grow-1 py-1 fw-semibold text-dark" style="font-size: 10px;">
+            <div class="d-flex gap-2">
+                <button type="button" id="btnCheckStatus" onclick="checkPaymentStatus()" class="btn btn-light border rounded-pill flex-grow-1 py-1.5 fw-semibold text-dark" style="font-size: 10.5px;">
                     <i class="bi bi-arrow-repeat me-0.5"></i> Cek Status Bayar
                 </button>
-                <button type="button" onclick="cancelUnpaidOrder()" class="btn btn-outline-danger rounded-pill px-2.5 py-1 fw-semibold" style="font-size: 10px;">
+                <button type="button" onclick="cancelUnpaidOrder()" class="btn btn-outline-danger rounded-pill px-3 py-1.5 fw-semibold" style="font-size: 10.5px;">
                     <i class="bi bi-x-circle me-0.5"></i> Batalkan
                 </button>
             </div>
@@ -104,36 +104,36 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
     <?php else: ?>
         <!-- Active Tracking Screen (COD or Paid) -->
         <!-- Live Map Container with Floating HUD -->
-        <div class="position-relative mb-2 rounded-3 overflow-hidden shadow-xs border">
+        <div class="position-relative mb-2.5 overflow-hidden shadow-xs border" style="border-radius: 14px;">
             <!-- Live Floating HUD (Top) -->
-            <div class="position-absolute top-0 start-0 end-0 p-1.5 z-3 d-flex align-items-center justify-content-between pointer-events-none">
-                <div class="badge bg-dark bg-opacity-75 backdrop-blur text-white px-2 py-0.5 fw-semibold rounded-pill d-flex align-items-center gap-1 shadow-xs" id="live-radar-status" style="font-size: 9px;">
+            <div class="position-absolute top-0 start-0 end-0 p-2 z-3 d-flex align-items-center justify-content-between pointer-events-none">
+                <div class="badge bg-dark bg-opacity-75 backdrop-blur text-white px-2.5 py-1 fw-semibold rounded-pill d-flex align-items-center gap-1 shadow-xs" id="live-radar-status" style="font-size: 9.5px;">
                     <span class="live-dot me-0.5"></span> Live GPS Radar
                 </div>
-                <button onclick="toggleDriverSimulation('<?= $order['order_code'] ?>')" class="btn btn-warning btn-sm fw-bold shadow-xs rounded-pill py-0 px-2 pointer-events-auto text-dark" style="font-size: 9px;">
+                <button onclick="toggleDriverSimulation('<?= $order['order_code'] ?>')" class="btn btn-warning btn-sm fw-bold shadow-xs rounded-pill py-0.5 px-2.5 pointer-events-auto text-dark" style="font-size: 9.5px;">
                     <i class="bi bi-play-circle-fill me-0.5"></i> Demo Kurir
                 </button>
             </div>
 
-            <div id="tracking-map" style="width: 100%; height: 210px;"></div>
+            <div id="tracking-map" style="width: 100%; height: 220px;"></div>
 
             <!-- Floating Telemetry HUD (Bottom) -->
-            <div class="position-absolute bottom-0 start-0 end-0 p-1.5 z-3 d-flex flex-column gap-1 pointer-events-none">
-                <div class="d-flex align-items-center justify-content-between gap-1 pointer-events-auto">
-                    <div class="bg-white bg-opacity-90 backdrop-blur border rounded-pill px-2 py-0.5 shadow-xs fw-bold text-dark d-flex align-items-center" id="live-distance-text" style="font-size: 9.5px;">
-                        <i class="bi bi-pin-map-fill text-danger me-0.5"></i> Menghitung jarak...
+            <div class="position-absolute bottom-0 start-0 end-0 p-2 z-3 d-flex flex-column gap-1.5 pointer-events-none">
+                <div class="d-flex align-items-center justify-content-between gap-1.5 pointer-events-auto">
+                    <div class="bg-white bg-opacity-90 backdrop-blur border rounded-pill px-2.5 py-1 shadow-xs fw-bold text-dark d-flex align-items-center" id="live-distance-text" style="font-size: 10px;">
+                        <i class="bi bi-pin-map-fill text-danger me-1"></i> Menghitung jarak...
                     </div>
-                    <div class="text-white rounded-pill px-2 py-0.5 shadow-xs fw-bold d-flex align-items-center" style="background:#EE2737; font-size: 9.5px;" id="live-eta-text">
-                        <i class="bi bi-stopwatch-fill me-0.5"></i> Est. Tiba
+                    <div class="text-white rounded-pill px-2.5 py-1 shadow-xs fw-bold d-flex align-items-center" style="background:#EE2737; font-size: 10px;" id="live-eta-text">
+                        <i class="bi bi-stopwatch-fill me-1"></i> Est. Tiba
                     </div>
                 </div>
 
                 <!-- Quick Action Floating Buttons -->
                 <div class="d-flex justify-content-end gap-1.5 mt-0.5 pointer-events-auto">
-                    <button onclick="centerOnDriver()" class="btn btn-white btn-sm bg-white shadow-xs rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 9.5px;">
+                    <button onclick="centerOnDriver()" class="btn btn-white btn-sm bg-white shadow-xs rounded-pill px-2.5 py-1 fw-semibold" style="font-size: 10px;">
                         <i class="bi bi-crosshair me-0.5" style="color: #EE2737;"></i> Fokus Kurir
                     </button>
-                    <button onclick="openGoogleMapsNav()" class="btn btn-sm shadow-xs rounded-pill px-2 py-0.5 fw-semibold text-white" style="background: #EE2737; font-size: 9.5px;">
+                    <button onclick="openGoogleMapsNav()" class="btn btn-sm shadow-xs rounded-pill px-2.5 py-1 fw-semibold text-white" style="background: #EE2737; font-size: 10px;">
                         <i class="bi bi-compass me-0.5"></i> Maps
                     </button>
                 </div>
@@ -141,66 +141,66 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
         </div>
 
         <!-- Order Delivered Success Celebration Card (Auto-Synced) -->
-        <div id="order-completed-card" class="p-2 mb-2 text-white rounded-3 shadow-xs <?= $order['order_status'] === 'delivered' ? '' : 'd-none' ?>" style="background: linear-gradient(135deg, #10B981 0%, #047857 100%); border-left: 3px solid #059669;">
-            <div class="d-flex align-items-center gap-2">
-                <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center flex-shrink-0 shadow-xs" style="width: 32px; height: 32px; font-size: 16px;">
+        <div id="order-completed-card" class="p-3 mb-2.5 text-white shadow-xs <?= $order['order_status'] === 'delivered' ? '' : 'd-none' ?>" style="background: linear-gradient(135deg, #10B981 0%, #047857 100%); border-left: 4px solid #059669; border-radius: 14px;">
+            <div class="d-flex align-items-center gap-2.5">
+                <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center flex-shrink-0 shadow-xs" style="width: 36px; height: 36px; font-size: 18px;">
                     <i class="bi bi-check-circle-fill"></i>
                 </div>
                 <div>
-                    <h6 class="fw-bold m-0 text-white" style="font-size: 11.5px;">Pesanan Selesai Diantar! 🎉</h6>
-                    <div class="text-white-50" style="font-size: 9.5px; line-height: 1.2;">Terima kasih telah memesan melalui CicalengkaGO.</div>
+                    <h6 class="fw-bold m-0 text-white" style="font-size: 12px;">Pesanan Selesai Diantar! 🎉</h6>
+                    <div class="text-white-50" style="font-size: 10px; line-height: 1.3;">Terima kasih telah memesan melalui CicalengkaGO.</div>
                 </div>
             </div>
         </div>
 
         <!-- OTP Code Banner Card (Auto-Synced) -->
-        <div id="otp-banner-card" class="p-2 mb-2 text-white rounded-3 shadow-xs text-center <?= ($order['order_status'] === 'delivered' || $order['order_status'] === 'canceled') ? 'd-none' : '' ?>" style="background: linear-gradient(135deg, #101820 0%, #1e293b 100%); border-left: 3px solid #EE2737;">
-            <div class="text-white-50 mb-0.5" style="font-size: 9px; font-weight: 600; letter-spacing: 0.5px;">KODE OTP PENERIMAAN</div>
-            <div class="fw-bold" style="letter-spacing: 4px; color: #EE2737; font-size: 20px;"><?= htmlspecialchars($order['otp']) ?></div>
-            <div class="text-white-50 mt-0.5" style="font-size: 8.5px;">Berikan kode 4-digit ini kepada kurir saat pesanan tiba.</div>
+        <div id="otp-banner-card" class="p-3 mb-2.5 text-white shadow-xs text-center <?= ($order['order_status'] === 'delivered' || $order['order_status'] === 'canceled') ? 'd-none' : '' ?>" style="background: linear-gradient(135deg, #101820 0%, #1e293b 100%); border-left: 4px solid #EE2737; border-radius: 14px;">
+            <div class="text-white-50 mb-0.5" style="font-size: 9.5px; font-weight: 600; letter-spacing: 0.5px;">KODE OTP PENERIMAAN</div>
+            <div class="fw-bold my-1" style="letter-spacing: 4px; color: #EE2737; font-size: 22px;"><?= htmlspecialchars($order['otp']) ?></div>
+            <div class="text-white-50 mt-0.5" style="font-size: 9px;">Berikan kode 4-digit ini kepada kurir saat pesanan tiba.</div>
         </div>
 
         <!-- Driver Info Card (Dynamic Auto-Sync) -->
         <div id="driver-card-container">
             <!-- Assigned Driver Card -->
-            <div id="driver-assigned-card" class="p-2.5 bg-white rounded-3 border shadow-xs mb-2 <?= empty($order['delivery_man_id']) ? 'd-none' : '' ?>">
+            <div id="driver-assigned-card" class="p-3 bg-white border shadow-xs mb-2.5 <?= empty($order['delivery_man_id']) ? 'd-none' : '' ?>" style="border-radius: 14px;">
                 <div class="d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center gap-2">
-                        <img id="driver-avatar-img" src="<?= $baseUrl ?>/<?= htmlspecialchars($order['dm_avatar'] ?? 'assets/images/users/driver.png') ?>" alt="Driver" class="rounded-circle border border-2 border-danger" style="width: 36px; height: 36px; object-fit: cover;">
+                    <div class="d-flex align-items-center gap-2.5">
+                        <img id="driver-avatar-img" src="<?= $baseUrl ?>/<?= htmlspecialchars($order['dm_avatar'] ?? 'assets/images/users/driver.png') ?>" alt="Driver" class="rounded-circle border border-2 border-danger" style="width: 40px; height: 40px; object-fit: cover;">
                         <div>
-                            <div class="d-flex align-items-center gap-1">
-                                <span id="driver-name-text" class="fw-bold" style="font-size: 11px;"><?= htmlspecialchars($order['dm_name'] ?? 'Mitra Kurir Cicalengka') ?></span>
-                                <span class="badge bg-danger-subtle text-danger" style="font-size: 8px;"><i class="bi bi-patch-check-fill me-0.5"></i>Driver</span>
+                            <div class="d-flex align-items-center gap-1.5">
+                                <span id="driver-name-text" class="fw-bold text-dark" style="font-size: 11.5px;"><?= htmlspecialchars($order['dm_name'] ?? 'Mitra Kurir Cicalengka') ?></span>
+                                <span class="badge bg-danger-subtle text-danger" style="font-size: 8.5px;"><i class="bi bi-patch-check-fill me-0.5"></i>Driver</span>
                             </div>
-                            <div id="driver-vehicle-text" class="text-muted" style="font-size: 9.5px;">
-                                <i class="bi bi-bicycle me-0.5 text-danger"></i><?= htmlspecialchars($order['vehicle_type'] ?? 'Motor') ?> • <b><?= htmlspecialchars($order['vehicle_number'] ?? 'D 1234 CCG') ?></b>
+                            <div id="driver-vehicle-text" class="text-muted" style="font-size: 10px;">
+                                <i class="bi bi-bicycle me-1 text-danger"></i><?= htmlspecialchars($order['vehicle_type'] ?? 'Motor') ?> • <b><?= htmlspecialchars($order['vehicle_number'] ?? 'D 1234 CCG') ?></b>
                             </div>
                         </div>
                     </div>
-                    <div class="d-flex gap-1.5 align-items-center">
-                        <button type="button" onclick="openChatModal()" class="btn btn-danger btn-sm rounded-pill px-2.5 py-1 d-flex align-items-center justify-content-center shadow-xs position-relative gap-1 fw-bold" style="background:#EE2737; border:none; font-size: 10px;" title="Chat Driver">
-                            <i class="bi bi-chat-dots-fill text-white" style="font-size: 11px;"></i>
+                    <div class="d-flex gap-2 align-items-center">
+                        <button type="button" onclick="openChatModal()" class="btn btn-danger btn-sm rounded-pill px-3 py-1.5 d-flex align-items-center justify-content-center shadow-xs position-relative gap-1.5 fw-bold" style="background:#EE2737; border:none; font-size: 10.5px;" title="Chat Driver">
+                            <i class="bi bi-chat-dots-fill text-white" style="font-size: 12px;"></i>
                             <span>Chat</span>
                             <span id="chatUnreadDot" class="ccg-unread-dot d-none"></span>
                         </button>
-                        <a id="driver-call-btn" href="tel:<?= htmlspecialchars($order['dm_phone'] ?? '') ?>" class="btn btn-light btn-sm rounded-circle border d-flex align-items-center justify-content-center shadow-xs <?= empty($order['dm_phone']) ? 'd-none' : '' ?>" style="width: 28px; height: 28px;" title="Telepon Kurir">
-                            <i class="bi bi-telephone-fill text-dark" style="font-size: 10px;"></i>
+                        <a id="driver-call-btn" href="tel:<?= htmlspecialchars($order['dm_phone'] ?? '') ?>" class="btn btn-light btn-sm rounded-circle border d-flex align-items-center justify-content-center shadow-xs <?= empty($order['dm_phone']) ? 'd-none' : '' ?>" style="width: 32px; height: 32px;" title="Telepon Kurir">
+                            <i class="bi bi-telephone-fill text-dark" style="font-size: 11px;"></i>
                         </a>
                     </div>
                 </div>
             </div>
 
             <!-- Searching Driver Card -->
-            <div id="driver-searching-card" class="p-2.5 bg-white rounded-3 border shadow-xs mb-2 <?= !empty($order['delivery_man_id']) ? 'd-none' : '' ?>">
+            <div id="driver-searching-card" class="p-3 bg-white border shadow-xs mb-2.5 <?= !empty($order['delivery_man_id']) ? 'd-none' : '' ?>" style="border-radius: 14px;">
                 <div class="d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="spinner-border spinner-border-sm text-danger" style="width: 14px; height: 14px;" role="status"></div>
+                    <div class="d-flex align-items-center gap-2.5">
+                        <div class="spinner-border spinner-border-sm text-danger" style="width: 16px; height: 16px;" role="status"></div>
                         <div>
-                            <div class="fw-bold text-dark" style="font-size: 11px;">Mencari Kurir Terdekat...</div>
-                            <div class="text-muted" style="font-size: 9px;">Sistem sedang menugaskan kurir untuk pesanan Anda</div>
+                            <div class="fw-bold text-dark" style="font-size: 11.5px;">Mencari Kurir Terdekat...</div>
+                            <div class="text-muted" style="font-size: 9.5px;">Sistem sedang menugaskan kurir untuk pesanan Anda</div>
                         </div>
                     </div>
-                    <button type="button" onclick="openChatModal()" class="btn btn-outline-danger btn-sm rounded-pill px-2 py-0.5 d-flex align-items-center gap-1 fw-bold" style="font-size: 10px;">
+                    <button type="button" onclick="openChatModal()" class="btn btn-outline-danger btn-sm rounded-pill px-2.5 py-1 d-flex align-items-center gap-1 fw-bold" style="font-size: 10.5px;">
                         <i class="bi bi-chat-dots"></i> Chat
                     </button>
                 </div>
@@ -208,8 +208,8 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
         </div>
 
         <!-- Delivery Stepper Progress (Dynamic Auto-Sync) -->
-        <div class="p-2.5 bg-white rounded-3 border shadow-xs mb-2">
-            <h6 class="fw-bold mb-2" style="color: var(--gojek-charcoal); font-size: 11px;">Status Pengantaran</h6>
+        <div class="p-3 bg-white border shadow-xs mb-2.5" style="border-radius: 14px;">
+            <h6 class="fw-bold mb-2.5 text-dark" style="font-size: 12px;">Status Pengantaran</h6>
             <div class="stepper-container p-0" id="order-stepper">
                 <?php
                 $isStep1Done = true;
@@ -223,29 +223,29 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
                 <div class="step-item step-1 completed">
                     <div class="step-dot"><i class="bi bi-check-lg"></i></div>
                     <div class="flex-grow-1">
-                        <div class="fw-bold text-dark" style="font-size: 10.5px;">Pesanan Dikonfirmasi</div>
-                        <div class="text-muted" style="font-size: 9px;">Resto/Mitra menerima pesanan Anda</div>
+                        <div class="fw-bold text-dark" style="font-size: 11px;">Pesanan Dikonfirmasi</div>
+                        <div class="text-muted" style="font-size: 9.5px;">Resto/Mitra menerima pesanan Anda</div>
                     </div>
                 </div>
                 <div class="step-item step-2 <?= $isStep2Done ? 'completed' : ($isStep2Active ? 'active' : '') ?>">
                     <div class="step-dot"><i class="bi <?= $isStep2Done ? 'bi-check-lg' : 'bi-egg-fried' ?>"></i></div>
                     <div class="flex-grow-1">
-                        <div class="fw-bold text-dark" style="font-size: 10.5px;">Diproses & Disiapkan</div>
-                        <div class="text-muted" style="font-size: 9px;">Makanan sedang dimasak / dikemas</div>
+                        <div class="fw-bold text-dark" style="font-size: 11px;">Diproses & Disiapkan</div>
+                        <div class="text-muted" style="font-size: 9.5px;">Makanan sedang dimasak / dikemas</div>
                     </div>
                 </div>
                 <div class="step-item step-3 <?= $isStep3Done ? 'completed' : ($isStep3Active ? 'active' : '') ?>">
                     <div class="step-dot"><i class="bi <?= $isStep3Done ? 'bi-check-lg' : 'bi-bicycle' ?>"></i></div>
                     <div class="flex-grow-1">
-                        <div class="fw-bold text-dark" style="font-size: 10.5px;">Kurir Menuju Lokasi Anda</div>
-                        <div class="text-muted" style="font-size: 9px;">Kurir dalam perjalanan pengantaran</div>
+                        <div class="fw-bold text-dark" style="font-size: 11px;">Kurir Menuju Lokasi Anda</div>
+                        <div class="text-muted" style="font-size: 9.5px;">Kurir dalam perjalanan pengantaran</div>
                     </div>
                 </div>
                 <div class="step-item step-4 <?= $isStep4Done ? 'completed' : ($isStep4Active ? 'active' : '') ?>">
                     <div class="step-dot"><i class="bi <?= $isStep4Done ? 'bi-check-lg' : 'bi-geo-alt-fill' ?>"></i></div>
                     <div class="flex-grow-1">
-                        <div class="fw-bold text-dark" style="font-size: 10.5px;">Pesanan Selesai</div>
-                        <div class="text-muted" style="font-size: 9px;">Barang sampai dengan aman</div>
+                        <div class="fw-bold text-dark" style="font-size: 11px;">Pesanan Selesai</div>
+                        <div class="text-muted" style="font-size: 9.5px;">Barang sampai dengan aman</div>
                     </div>
                 </div>
             </div>
@@ -254,19 +254,19 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
 
     <?php if ($order['order_status'] === 'delivered'): ?>
         <?php $hasReviewed = !empty($order['review_info']['has_reviewed']); ?>
-        <div class="p-2.5 bg-white rounded-3 border shadow-xs mb-2" id="order-review-section">
-            <div class="d-flex align-items-center justify-content-between mb-1.5">
-                <div class="d-flex align-items-center gap-1.5">
-                    <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 13px;">
+        <div class="p-3 bg-white border shadow-xs mb-2.5" id="order-review-section" style="border-radius: 14px;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; font-size: 14px;">
                         <i class="bi bi-star-fill"></i>
                     </div>
                     <div>
-                        <h6 class="fw-bold text-dark m-0" style="font-size: 11.5px;">Ulasan & Rating</h6>
-                        <div class="text-muted" style="font-size: 9px;">Penilaian Anda sangat berharga bagi mitra kami</div>
+                        <h6 class="fw-bold text-dark m-0" style="font-size: 12px;">Ulasan & Rating</h6>
+                        <div class="text-muted" style="font-size: 9.5px;">Penilaian Anda sangat berharga bagi mitra kami</div>
                     </div>
                 </div>
                 <?php if ($hasReviewed): ?>
-                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 rounded-pill" style="font-size: 8.5px; font-weight: 700;">
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 rounded-pill" style="font-size: 9px; font-weight: 700;">
                         <i class="bi bi-check-circle-fill me-0.5"></i> Sudah Diulas
                     </span>
                 <?php endif; ?>
@@ -274,75 +274,75 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
 
             <?php if ($hasReviewed): ?>
                 <!-- Display Submitted Review -->
-                <div class="p-2 bg-light rounded-3 border mt-1.5">
+                <div class="p-2.5 bg-light rounded-3 border mt-2">
                     <?php if (!empty($order['review_info']['store_review'])): ?>
                         <?php $sr = $order['review_info']['store_review']; ?>
-                        <div class="mb-1.5">
+                        <div class="mb-2">
                             <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-bold text-dark" style="font-size: 10.5px;"><i class="bi bi-shop text-danger me-0.5"></i> <?= htmlspecialchars($order['store_name'] ?? 'Toko') ?></span>
-                                <div class="text-warning fw-bold" style="font-size: 9.5px;">
+                                <span class="fw-bold text-dark" style="font-size: 11px;"><i class="bi bi-shop text-danger me-1"></i> <?= htmlspecialchars($order['store_name'] ?? 'Toko') ?></span>
+                                <div class="text-warning fw-bold" style="font-size: 10px;">
                                     <?php for ($s = 1; $s <= 5; $s++): ?>
                                         <i class="bi <?= $s <= (int)$sr['rating'] ? 'bi-star-fill' : 'bi-star' ?>"></i>
                                     <?php endfor; ?>
-                                    <span class="ms-0.5 text-dark"><?= (int)$sr['rating'] ?>/5</span>
+                                    <span class="ms-1 text-dark"><?= (int)$sr['rating'] ?>/5</span>
                                 </div>
                             </div>
                             <?php if (!empty($sr['comment'])): ?>
-                                <div class="text-muted mt-0.5 ps-1 fst-italic" style="font-size: 9px;">"<?= htmlspecialchars($sr['comment']) ?>"</div>
+                                <div class="text-muted mt-1 ps-1 fst-italic" style="font-size: 9.5px;">"<?= htmlspecialchars($sr['comment']) ?>"</div>
                             <?php endif; ?>
                         </div>
                     <?php endif; ?>
 
                     <?php if (!empty($order['review_info']['dm_review'])): ?>
                         <?php $dr = $order['review_info']['dm_review']; ?>
-                        <div class="pt-1.5 border-top">
+                        <div class="pt-2 border-top">
                             <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-bold text-dark" style="font-size: 10.5px;"><i class="bi bi-bicycle text-primary me-0.5"></i> <?= htmlspecialchars($order['dm_name'] ?? 'Kurir Driver') ?></span>
-                                <div class="text-warning fw-bold" style="font-size: 9.5px;">
+                                <span class="fw-bold text-dark" style="font-size: 11px;"><i class="bi bi-bicycle text-primary me-1"></i> <?= htmlspecialchars($order['dm_name'] ?? 'Kurir Driver') ?></span>
+                                <div class="text-warning fw-bold" style="font-size: 10px;">
                                     <?php for ($s = 1; $s <= 5; $s++): ?>
                                         <i class="bi <?= $s <= (int)$dr['rating'] ? 'bi-star-fill' : 'bi-star' ?>"></i>
                                     <?php endfor; ?>
-                                    <span class="ms-0.5 text-dark"><?= (int)$dr['rating'] ?>/5</span>
+                                    <span class="ms-1 text-dark"><?= (int)$dr['rating'] ?>/5</span>
                                 </div>
                             </div>
                             <?php if (!empty($dr['comment'])): ?>
-                                <div class="text-muted mt-0.5 ps-1 fst-italic" style="font-size: 9px;">"<?= htmlspecialchars($dr['comment']) ?>"</div>
+                                <div class="text-muted mt-1 ps-1 fst-italic" style="font-size: 9.5px;">"<?= htmlspecialchars($dr['comment']) ?>"</div>
                             <?php endif; ?>
                         </div>
                     <?php endif; ?>
                 </div>
             <?php else: ?>
                 <!-- Rating Input Widget Form -->
-                <div class="p-2 bg-light rounded-3 border mt-1.5">
-                    <div class="mb-2">
-                        <label class="fw-bold text-dark d-block mb-0.5" style="font-size: 10px;"><i class="bi bi-shop text-danger me-0.5"></i> Rating Toko / Makanan</label>
-                        <div class="d-flex justify-content-center gap-2 py-0.5" id="tracking-store-stars">
-                            <i class="bi bi-star-fill text-warning fs-5 cursor-pointer" data-val="1" onclick="setTrackingStoreStar(1)"></i>
-                            <i class="bi bi-star-fill text-warning fs-5 cursor-pointer" data-val="2" onclick="setTrackingStoreStar(2)"></i>
-                            <i class="bi bi-star-fill text-warning fs-5 cursor-pointer" data-val="3" onclick="setTrackingStoreStar(3)"></i>
-                            <i class="bi bi-star-fill text-warning fs-5 cursor-pointer" data-val="4" onclick="setTrackingStoreStar(4)"></i>
-                            <i class="bi bi-star-fill text-warning fs-5 cursor-pointer" data-val="5" onclick="setTrackingStoreStar(5)"></i>
+                <div class="p-2.5 bg-light rounded-3 border mt-2">
+                    <div class="mb-2.5">
+                        <label class="fw-bold text-dark d-block mb-1" style="font-size: 10.5px;"><i class="bi bi-shop text-danger me-1"></i> Rating Toko / Makanan</label>
+                        <div class="d-flex justify-content-center gap-2.5 py-1" id="tracking-store-stars">
+                            <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="1" onclick="setTrackingStoreStar(1)"></i>
+                            <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="2" onclick="setTrackingStoreStar(2)"></i>
+                            <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="3" onclick="setTrackingStoreStar(3)"></i>
+                            <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="4" onclick="setTrackingStoreStar(4)"></i>
+                            <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="5" onclick="setTrackingStoreStar(5)"></i>
                         </div>
-                        <div class="text-center fw-bold text-warning-emphasis mb-1" id="tracking-store-text" style="font-size: 9.5px;">Sangat Puas (5 Bintang)</div>
-                        <textarea id="tracking-store-comment" name="store_comment" class="form-control form-control-sm rounded-2" rows="2" style="font-size: 9.5px;" placeholder="Bagaimana rasa makanan atau pelayanan toko?"></textarea>
+                        <div class="text-center fw-bold text-warning-emphasis mb-1.5" id="tracking-store-text" style="font-size: 10px;">Sangat Puas (5 Bintang)</div>
+                        <textarea id="tracking-store-comment" name="store_comment" class="form-control form-control-sm rounded-2" rows="2" style="font-size: 10px;" placeholder="Bagaimana rasa makanan atau pelayanan toko?"></textarea>
                     </div>
 
                     <?php if (!empty($order['delivery_man_id'])): ?>
-                        <div class="mb-2 pt-1.5 border-top">
-                            <label class="fw-bold text-dark d-block mb-0.5" style="font-size: 10px;"><i class="bi bi-bicycle text-primary me-0.5"></i> Rating Pengantaran Kurir</label>
-                            <div class="d-flex justify-content-center gap-2 py-0.5" id="tracking-dm-stars">
-                                <i class="bi bi-star-fill text-warning fs-5 cursor-pointer" data-val="1" onclick="setTrackingDmStar(1)"></i>
-                                <i class="bi bi-star-fill text-warning fs-5 cursor-pointer" data-val="2" onclick="setTrackingDmStar(2)"></i>
-                                <i class="bi bi-star-fill text-warning fs-5 cursor-pointer" data-val="3" onclick="setTrackingDmStar(3)"></i>
-                                <i class="bi bi-star-fill text-warning fs-5 cursor-pointer" data-val="4" onclick="setTrackingDmStar(4)"></i>
-                                <i class="bi bi-star-fill text-warning fs-5 cursor-pointer" data-val="5" onclick="setTrackingDmStar(5)"></i>
+                        <div class="mb-2.5 pt-2 border-top">
+                            <label class="fw-bold text-dark d-block mb-1" style="font-size: 10.5px;"><i class="bi bi-bicycle text-primary me-1"></i> Rating Pengantaran Kurir</label>
+                            <div class="d-flex justify-content-center gap-2.5 py-1" id="tracking-dm-stars">
+                                <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="1" onclick="setTrackingDmStar(1)"></i>
+                                <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="2" onclick="setTrackingDmStar(2)"></i>
+                                <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="3" onclick="setTrackingDmStar(3)"></i>
+                                <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="4" onclick="setTrackingDmStar(4)"></i>
+                                <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="5" onclick="setTrackingDmStar(5)"></i>
                             </div>
-                            <div class="text-center fw-bold text-warning-emphasis mb-1" id="tracking-dm-text" style="font-size: 9.5px;">Pengantaran Cepat & Ramah (5 Bintang)</div>
-                            <textarea id="tracking-dm-comment" name="dm_comment" class="form-control form-control-sm rounded-2" rows="2" style="font-size: 9.5px;" placeholder="Tuliskan ulasan untuk kurir (opsional)..."></textarea>
+                            <div class="text-center fw-bold text-warning-emphasis mb-1.5" id="tracking-dm-text" style="font-size: 10px;">Pengantaran Cepat & Ramah (5 Bintang)</div>
+                            <textarea id="tracking-dm-comment" name="dm_comment" class="form-control form-control-sm rounded-2" rows="2" style="font-size: 10px;" placeholder="Tuliskan ulasan untuk kurir (opsional)..."></textarea>
                         </div>
                     <?php endif; ?>
 
-                    <button type="button" id="btnSubmitTrackingReview" onclick="submitTrackingReview(<?= (int)$order['id'] ?>, <?= !empty($order['delivery_man_id']) ? 'true' : 'false' ?>)" class="btn btn-danger w-100 rounded-pill fw-bold py-1.5 shadow-xs" style="background:#EE2737; border:none; font-size: 11px;">
+                    <button type="button" id="btnSubmitTrackingReview" onclick="submitTrackingReview(<?= (int)$order['id'] ?>, <?= !empty($order['delivery_man_id']) ? 'true' : 'false' ?>)" class="btn btn-danger w-100 rounded-pill fw-bold py-2 shadow-xs" style="background:#EE2737; border:none; font-size: 11.5px;">
                         <i class="bi bi-send-fill me-1"></i> Kirim Ulasan & Rating
                     </button>
                 </div>
@@ -351,16 +351,16 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
     <?php endif; ?>
 
     <!-- Order Items & Address Summary (Always Visible) -->
-    <div class="p-2.5 bg-white rounded-3 border shadow-xs mb-2">
-        <h6 class="fw-bold mb-1" style="font-size: 10.5px;"><i class="bi bi-shop text-danger me-1"></i> Titik Penjemputan</h6>
-        <p class="text-dark fw-semibold mb-0.5" style="font-size: 10px;"><?= htmlspecialchars($order['store_name'] ?? 'Penjemputan Parcel') ?></p>
-        <p class="text-muted mb-2" style="font-size: 9px;"><?= htmlspecialchars($order['store_address'] ?? 'Cicalengka, Bandung') ?></p>
+    <div class="p-3 bg-white border shadow-xs mb-3" style="border-radius: 14px;">
+        <h6 class="fw-bold mb-1.5 text-dark" style="font-size: 11.5px;"><i class="bi bi-shop text-danger me-1"></i> Titik Penjemputan</h6>
+        <p class="text-dark fw-semibold mb-0.5" style="font-size: 10.5px;"><?= htmlspecialchars($order['store_name'] ?? 'Penjemputan Parcel') ?></p>
+        <p class="text-muted mb-2.5" style="font-size: 9.5px;"><?= htmlspecialchars($order['store_address'] ?? 'Cicalengka, Bandung') ?></p>
 
-        <h6 class="fw-bold mb-1" style="font-size: 10.5px;"><i class="bi bi-geo-alt-fill text-success me-1"></i> Alamat Tujuan Pengantaran</h6>
-        <p class="text-muted mb-2" style="font-size: 9.5px;"><?= htmlspecialchars($order['delivery_address']['address'] ?? 'Cicalengka') ?></p>
+        <h6 class="fw-bold mb-1.5 text-dark" style="font-size: 11.5px;"><i class="bi bi-geo-alt-fill text-success me-1"></i> Alamat Tujuan Pengantaran</h6>
+        <p class="text-muted mb-2.5" style="font-size: 10px;"><?= htmlspecialchars($order['delivery_address']['address'] ?? 'Cicalengka') ?></p>
 
-        <h6 class="fw-bold mb-1" style="font-size: 10.5px;"><i class="bi bi-bag-check-fill text-primary me-1"></i> Rincian Menu / Paket</h6>
-        <div class="d-flex flex-column gap-1 text-muted mb-2" style="font-size: 9.5px;">
+        <h6 class="fw-bold mb-1.5 text-dark" style="font-size: 11.5px;"><i class="bi bi-bag-check-fill text-primary me-1"></i> Rincian Menu / Paket</h6>
+        <div class="d-flex flex-column gap-1.5 text-muted mb-2.5" style="font-size: 10px;">
             <?php if (!empty($order['items'])): ?>
                 <?php foreach ($order['items'] as $item): ?>
                     <div class="d-flex justify-content-between">
@@ -375,12 +375,12 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
                 </div>
             <?php endif; ?>
         </div>
-        <hr class="my-1.5">
-        <div class="d-flex justify-content-between fw-bold" style="font-size: 11px;">
+        <hr class="my-2">
+        <div class="d-flex justify-content-between fw-bold" style="font-size: 11.5px;">
             <span>Total Tagihan (<?= strtoupper($order['payment_method']) ?>)</span>
-            <span class="text-danger" style="font-size: 12px;"><?= format_rupiah($order['total_amount']) ?></span>
+            <span class="text-danger" style="font-size: 13px;"><?= format_rupiah($order['total_amount']) ?></span>
         </div>
-        <div class="d-flex justify-content-between text-muted mt-1" style="font-size: 9px;">
+        <div class="d-flex justify-content-between text-muted mt-1.5" style="font-size: 9.5px;">
             <span>Status Pembayaran</span>
             <span id="payment-status-text" class="fw-bold <?= ($order['payment_status'] === 'paid' || $order['order_status'] === 'delivered') ? 'text-success' : ($order['payment_method'] === 'cod' ? 'text-warning' : 'text-danger') ?>">
                 <?= ($order['payment_status'] === 'paid' || $order['order_status'] === 'delivered') ? 'LUNAS' : ($order['payment_method'] === 'cod' ? 'BAYAR DI TEMPAT (COD)' : 'BELUM LUNAS') ?>
