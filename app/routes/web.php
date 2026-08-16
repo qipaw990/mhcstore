@@ -69,10 +69,10 @@ Router::post('/orders/get-snap-token', [OrderController::class, 'getSnapToken'],
 Router::post('/orders/cancel-unpaid', [OrderController::class, 'cancelUnpaid'], ['AuthMiddleware']);
 Router::get('/orders/{code}', [OrderController::class, 'showOrder']);
 
-// In-App Chat Routes (GET routes are public-friendly; send/read require login)
+// In-App Chat Routes — no middleware, auth handled inside controller via order_code
 Router::get('/chats/messages', [ChatController::class, 'getMessages']);
-Router::post('/chats/send', [ChatController::class, 'sendMessage'], ['AuthMiddleware']);
-Router::post('/chats/read', [ChatController::class, 'markAsRead'], ['AuthMiddleware']);
+Router::post('/chats/send', [ChatController::class, 'sendMessage']);
+Router::post('/chats/read', [ChatController::class, 'markAsRead']);
 Router::get('/chats/unread-count', [ChatController::class, 'unreadCount']);
 
 // ==========================================

@@ -121,16 +121,13 @@ class ChatController extends Controller
      */
     public function sendMessage(): void
     {
-        $userId = auth_id();
-        if (!$userId) {
-            $this->errorResponse('Silakan login terlebih dahulu.', null, 401);
-            return;
-        }
+        $userId   = auth_id() ?: 0;
+        $userRole = auth_role();
 
         // Accept both application/json and multipart/form-data
         $data = $this->getPost();
         if (empty($data['order_code']) && empty($data['message'])) {
-            $raw = file_get_contents('php://input');
+            $raw     = file_get_contents('php://input');
             $decoded = json_decode($raw, true);
             if (!empty($decoded)) $data = $decoded;
         }
@@ -150,38 +147,49 @@ class ChatController extends Controller
 
         $order = $this->chatModel->getOrderChatDetails($orderCode);
         if (!$order) {
-            $this->errorResponse('Pesanan tidak ditemukan. Kode: ' . $orderCode);
+            $this->errorResponse('Pesanan tidak ditemukan.');
             return;
         }
 
-        $userRole   = auth_role();
-        $isCustomer = ((int)$order['cust_user_id'] === $userId);
-        // Driver check: either their user_id matches order's dm_user_id, OR they have the delivery_man role
         $isDriver   = $userRole === 'delivery_man';
         $isAdmin    = $userRole === 'admin';
+        // Customer: either logged-in owner OR guest accessing by order_code (order is their own page)
+        $isLoggedInCustomer = ($userId > 0 && (int)$order['cust_user_id'] === $userId);
+        // Guest customer identified by order_code (no session) — allow send on their own order
+        $isGuestCustomer    = ($userId === 0 && !$isDriver && !$isAdmin);
 
-        if (!$isCustomer && !$isDriver && !$isAdmin) {
+        if (!$isLoggedInCustomer && !$isGuestCustomer && !$isDriver && !$isAdmin) {
             $this->errorResponse('Akses pengiriman pesan ditolak.', null, 403);
             return;
         }
 
         $receiverId = 0;
-        if ($isCustomer) {
-            // Customer sends to driver
-            $receiverId = !empty($order['dm_user_id']) ? (int)$order['dm_user_id'] : 0;
-        } elseif ($isDriver) {
-            // Driver always sends to customer
+        $senderId   = $userId;
+
+        if ($isDriver) {
+            // Driver sends to customer
             $receiverId = (int)$order['cust_user_id'];
+            if ($senderId === 0) {
+                $this->errorResponse('Driver harus login untuk mengirim pesan.', null, 401);
+                return;
+            }
         } elseif ($isAdmin) {
             $receiverId = !empty($order['dm_user_id']) ? (int)$order['dm_user_id'] : (int)$order['cust_user_id'];
+        } else {
+            // Customer (logged-in or guest) sends to driver
+            $receiverId = !empty($order['dm_user_id']) ? (int)$order['dm_user_id'] : 0;
+            // For guest, use customer_id from order as sender
+            if ($senderId === 0) {
+                $senderId = (int)$order['cust_user_id'];
+            }
         }
 
-        $msgId = $this->chatModel->saveMessage((int)$order['order_id'], $userId, $receiverId, $message);
+        $msgId = $this->chatModel->saveMessage((int)$order['order_id'], $senderId, $receiverId, $message);
 
         $this->successResponse('Pesan berhasil dikirim', [
             'id'             => $msgId,
             'order_id'       => (int)$order['order_id'],
-            'sender_id'      => $userId,
+            'sender_id'      => $senderId,
             'receiver_id'    => $receiverId,
             'message'        => $message,
             'time_formatted' => date('H:i'),
