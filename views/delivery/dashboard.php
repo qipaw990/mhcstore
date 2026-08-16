@@ -517,7 +517,7 @@ document.addEventListener('DOMContentLoaded', initDriverRadarMap);
         </div>
 
         <!-- Chat Input Bar -->
-        <form id="dChatForm" class="ccg-chat-input-bar" onsubmit="handleSendDriverChat(event)">
+        <form id="dChatForm" class="ccg-chat-input-bar no-preloader" onsubmit="handleSendDriverChat(event)">
             <input type="text" id="dChatInput" class="ccg-chat-input" placeholder="Ketik pesan untuk pelanggan..." autocomplete="off" maxlength="500">
             <button type="submit" id="btnSendDriverChat" class="ccg-chat-send-btn" title="Kirim">
                 <i class="bi bi-send-fill"></i>
@@ -641,11 +641,34 @@ async function fetchDriverChatMessages(isFirstLoad = false) {
 }
 
 async function handleSendDriverChat(e) {
-    if (e) e.preventDefault();
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    if (window.hidePreloader) window.hidePreloader();
+
     const input = document.getElementById('dChatInput');
     const btn = document.getElementById('btnSendDriverChat');
     const message = input.value.trim();
     if (!message || !currentDriverChatOrderCode) return;
+
+    // Optimistic UI preview
+    const chatBody = document.getElementById('dChatBody');
+    if (chatBody) {
+        const now = new Date();
+        const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+        const tempBubble = `
+            <div class="ccg-chat-row outgoing" style="opacity: 0.85;">
+                <div class="ccg-chat-bubble">${escapeHtml(message)}</div>
+                <div class="ccg-chat-meta">
+                    <span>${timeStr}</span>
+                    <i class="bi bi-clock"></i>
+                </div>
+            </div>
+        `;
+        chatBody.insertAdjacentHTML('beforeend', tempBubble);
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
 
     input.value = '';
     btn.disabled = true;

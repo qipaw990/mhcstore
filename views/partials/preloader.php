@@ -188,10 +188,18 @@
         window.showPreloader('Memuat halaman...');
     });
 
-    // Auto-show preloader on form submissions
+    // Auto-show preloader on form submissions (excluding AJAX, chat, or no-preloader forms)
     document.addEventListener('submit', function(e) {
+        if (e.defaultPrevented) return;
         const form = e.target;
-        if (form.classList.contains('no-preloader')) return;
+        if (!form || !form.tagName || form.tagName.toLowerCase() !== 'form') return;
+        if (form.classList.contains('no-preloader') || 
+            form.classList.contains('ccg-chat-input-bar') ||
+            form.closest('.ccg-chat-modal') ||
+            form.closest('.modal') ||
+            form.getAttribute('data-ajax') === 'true') {
+            return;
+        }
         window.showPreloader('Memproses data...');
     });
 })();

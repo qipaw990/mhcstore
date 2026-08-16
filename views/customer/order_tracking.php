@@ -467,7 +467,7 @@ function cancelUnpaidOrder() {
         </div>
 
         <!-- Chat Input Bar -->
-        <form id="chatForm" class="ccg-chat-input-bar" onsubmit="handleSendChat(event)">
+        <form id="chatForm" class="ccg-chat-input-bar no-preloader" onsubmit="handleSendChat(event)">
             <input type="text" id="chatInput" class="ccg-chat-input" placeholder="Ketik pesan untuk kurir..." autocomplete="off" maxlength="500">
             <button type="submit" id="btnSendChat" class="ccg-chat-send-btn" title="Kirim">
                 <i class="bi bi-send-fill"></i>
@@ -591,11 +591,34 @@ async function fetchChatMessages(isFirstLoad = false) {
 }
 
 async function handleSendChat(e) {
-    if (e) e.preventDefault();
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    if (window.hidePreloader) window.hidePreloader();
+
     const input = document.getElementById('chatInput');
     const btn = document.getElementById('btnSendChat');
     const message = input.value.trim();
     if (!message) return;
+
+    // Optimistic UI preview
+    const chatBody = document.getElementById('chatBody');
+    if (chatBody) {
+        const now = new Date();
+        const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+        const tempBubble = `
+            <div class="ccg-chat-row outgoing" style="opacity: 0.85;">
+                <div class="ccg-chat-bubble">${escapeHtml(message)}</div>
+                <div class="ccg-chat-meta">
+                    <span>${timeStr}</span>
+                    <i class="bi bi-clock"></i>
+                </div>
+            </div>
+        `;
+        chatBody.insertAdjacentHTML('beforeend', tempBubble);
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
 
     input.value = '';
     btn.disabled = true;
