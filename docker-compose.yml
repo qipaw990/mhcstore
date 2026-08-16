@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  cicalengkago_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cicalengkago_app
+    restart: always
+    ports:
+      - "8090:80"
+    environment:
+      - APP_ENV=production
+      - PUBLIC_URL=http://localhost:8090
+      - DB_HOST=172.17.0.1
+      - DB_PORT=3306
+      - DB_NAME=cicalengkago
+      - DB_USER=root
+      - DB_PASS=root
+    volumes:
+      - .:/var/www/html
