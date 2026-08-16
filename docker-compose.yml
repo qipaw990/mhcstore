@@ -12,10 +12,32 @@ services:
     environment:
       - APP_ENV=production
       - PUBLIC_URL=http://localhost:8090
-      - DB_HOST=172.17.0.1
+      - DB_HOST=cicalengkago_db
       - DB_PORT=3306
+      - DB_DATABASE=cicalengkago
+      - DB_USERNAME=cicalengka_user
+      - DB_PASSWORD=cicalengka_pass
       - DB_NAME=cicalengkago
-      - DB_USER=root
-      - DB_PASS=root
+      - DB_USER=cicalengka_user
+      - DB_PASS=cicalengka_pass
+    depends_on:
+      - cicalengkago_db
     volumes:
       - .:/var/www/html
+
+  cicalengkago_db:
+    image: mariadb:10.11
+    container_name: cicalengkago_db
+    restart: always
+    environment:
+      MARIADB_DATABASE: cicalengkago
+      MARIADB_USER: cicalengka_user
+      MARIADB_PASSWORD: cicalengka_pass
+      MARIADB_ROOT_PASSWORD: rootpassword
+    volumes:
+      - cicalengkago_db_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./database/seeders.sql:/docker-entrypoint-initdb.d/02_seeders.sql:ro
+
+volumes:
+  cicalengkago_db_data:

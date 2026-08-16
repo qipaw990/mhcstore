@@ -4,13 +4,23 @@
  * CicalengkaGO Multi-Vendor Delivery Platform
  */
 
+$getEnvVar = function($keys, $default = '') {
+    foreach ((array)$keys as $k) {
+        $val = getenv($k);
+        if ($val !== false && $val !== '') return $val;
+        if (!empty($_ENV[$k])) return $_ENV[$k];
+        if (!empty($_SERVER[$k])) return $_SERVER[$k];
+    }
+    return $default;
+};
+
 return [
     'driver'    => 'mysql',
-    'host'      => $_ENV['DB_HOST'] ?? '127.0.0.1',
-    'port'      => $_ENV['DB_PORT'] ?? '3306',
-    'database'  => $_ENV['DB_DATABASE'] ?? 'cicalengkago_db',
-    'username'  => $_ENV['DB_USERNAME'] ?? 'root',
-    'password'  => $_ENV['DB_PASSWORD'] ?? '',
+    'host'      => $getEnvVar(['DB_HOST'], '127.0.0.1'),
+    'port'      => $getEnvVar(['DB_PORT'], '3306'),
+    'database'  => $getEnvVar(['DB_DATABASE', 'DB_NAME'], 'cicalengkago'),
+    'username'  => $getEnvVar(['DB_USERNAME', 'DB_USER'], 'root'),
+    'password'  => $getEnvVar(['DB_PASSWORD', 'DB_PASS'], ''),
     'charset'   => 'utf8mb4',
     'collation' => 'utf8mb4_unicode_ci',
     'options'   => [
