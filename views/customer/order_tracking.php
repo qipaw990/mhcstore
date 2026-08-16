@@ -287,31 +287,29 @@ async function payNow() {
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Membuka Pembayaran...';
 
     try {
-        if (!currentSnapToken) {
-            const res = await fetch(window.BASE_URL + '/orders/get-snap-token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ order_code: orderCode })
-            });
-            const data = await res.json();
-            if (data.success && data.data.snap_token) {
-                currentSnapToken = data.data.snap_token;
-            } else {
-                throw new Error(data.message || 'Gagal memuat token pembayaran');
-            }
+        const res = await fetch(window.BASE_URL + '/orders/get-snap-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ order_code: orderCode })
+        });
+        const data = await res.json();
+        if (!data.success || !data.data.snap_token) {
+            throw new Error(data.message || 'Gagal memuat token pembayaran');
         }
+
+        const token = data.data.snap_token;
 
         if (typeof window.snap === 'undefined') {
             throw new Error('Midtrans Snap script belum termuat. Silakan refresh halaman.');
         }
 
-        window.snap.pay(currentSnapToken, {
+        window.snap.pay(token, {
             onSuccess: function(result) {
                 fetch(window.BASE_URL + '/payment/verify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        order_id: orderCode,
+                        order_id: result.order_id || orderCode,
                         transaction_status: result.transaction_status || 'settlement',
                         payment_type: result.payment_type || 'midtrans',
                         gross_amount: result.gross_amount

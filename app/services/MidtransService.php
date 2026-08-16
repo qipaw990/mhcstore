@@ -206,19 +206,30 @@ class MidtransService
         return ['success' => true, 'status' => 'failed', 'message' => 'Top Up gagal atau dibatalkan'];
     }
 
-    private function handleOrderPayment(string $orderCode, string $paymentType, bool $isSettled, bool $isPending, bool $isFailed): array
+    private function handleOrderPayment(string $orderId, string $paymentType, bool $isSettled, bool $isPending, bool $isFailed): array
     {
-        $order = Database::fetchOne("SELECT * FROM `orders` WHERE `order_code` = ? LIMIT 1", [$orderCode]);
+        $order = Database::fetchOne("SELECT * FROM `orders` WHERE `order_code` = ? LIMIT 1", [$orderId]);
+        if (!$order) {
+            // Extract base code e.g. CCG-A1B2C3 from CCG-A1B2C3-1723829100
+            if (preg_match('/^((?:CCG|PCL)-[A-Za-z0-9]+)/i', $orderId, $matches)) {
+                $baseCode = $matches[1];
+                $order = Database::fetchOne("SELECT * FROM `orders` WHERE `order_code` = ? LIMIT 1", [$baseCode]);
+            }
+        }
+
         if (!$order) {
             return ['success' => false, 'message' => 'Pesanan tidak ditemukan'];
         }
+
+        $orderCode = $order['order_code'];
 
         if ($isSettled) {
             if ($order['payment_status'] !== 'paid') {
                 Database::update('orders', [
                     'payment_status' => 'paid',
                     'payment_method' => 'midtrans',
-                    'order_status'   => ($order['order_status'] === 'pending') ? 'confirmed' : $order['order_status']
+                    'order_status'   => ($order['order_status'] === 'pending') ? 'confirmed' : $order['order_status'],
+                    'confirmed_at'   => ($order['order_status'] === 'pending') ? date('Y-m-d H:i:s') : ($order['confirmed_at'] ?? date('Y-m-d H:i:s'))
                 ], 'id = ?', [$order['id']]);
 
                 // Create customer notification

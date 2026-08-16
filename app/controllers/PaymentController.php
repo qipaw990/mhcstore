@@ -71,9 +71,6 @@ class PaymentController extends Controller
         }
     }
 
-    /**
-     * Client-side Callback Handler (called by PWA after Snap popup completes)
-     */
     public function verifyClientCallback(): void
     {
         $rawInput = file_get_contents('php://input');
@@ -84,9 +81,40 @@ class PaymentController extends Controller
             return;
         }
 
+        $orderId = $data['order_id'];
+
+        // Extract base order code
+        $cleanCode = $orderId;
+        if (preg_match('/^((?:CCG|PCL)-[A-Za-z0-9]+)/i', $orderId, $matches)) {
+            $cleanCode = $matches[1];
+        }
+
         try {
-            $result = $this->midtransService->processNotification($data);
-            $this->successResponse('Status pembayaran berhasil diproses', $result);
+            // Check if already paid in DB
+            $dbOrder = \App\Core\Database::fetchOne("SELECT * FROM `orders` WHERE `order_code` = ? LIMIT 1", [$cleanCode]);
+            if ($dbOrder && $dbOrder['payment_status'] === 'paid') {
+                $this->successResponse('Pesanan sudah lunas', [
+                    'status'         => 'settled',
+                    'payment_status' => 'paid'
+                ]);
+                return;
+            }
+
+            if (!empty($data['transaction_status'])) {
+                $result = $this->midtransService->processNotification($data);
+                $this->successResponse('Status pembayaran berhasil diproses', $result);
+                return;
+            }
+
+            // Fallback: check live Midtrans status API
+            $liveStatus = $this->midtransService->getTransactionStatus($orderId);
+            if (!empty($liveStatus['success']) && !empty($liveStatus['data'])) {
+                $result = $this->midtransService->processNotification($liveStatus['data']);
+                $this->successResponse('Status pembayaran berhasil diproses', $result);
+                return;
+            }
+
+            $this->errorResponse($liveStatus['message'] ?? 'Belum ada data pembayaran terkonfirmasi.');
         } catch (Exception $e) {
             $this->errorResponse($e->getMessage());
         }

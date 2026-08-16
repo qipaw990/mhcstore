@@ -99,9 +99,10 @@ class OrderController extends Controller
             // If online payment via Midtrans Snap
             if ($paymentMethod === 'midtrans') {
                 $user = auth_user();
+                $snapOrderId = $result['order_code'] . '-' . time() . '-' . rand(100, 999);
                 $snapParams = [
                     'transaction_details' => [
-                        'order_id'     => $result['order_code'],
+                        'order_id'     => $snapOrderId,
                         'gross_amount' => (int)round($result['total'])
                     ],
                     'customer_details' => [
@@ -143,27 +144,7 @@ class OrderController extends Controller
         $paymentMethod = $data['payment_method'] ?? 'cod';
 
         try {
-            $result = $this->orderService->createParcelOrder($userId, [
-                'destination_address' => [
-                    'recipient_name'  => sanitize($data['recipient_name'] ?? ''),
-                    'recipient_phone' => sanitize($data['recipient_phone'] ?? ''),
-                    'address'         => sanitize($data['destination_address'] ?? ''),
-                    'lat'             => (float)($data['dest_lat'] ?? -6.9840),
-                    'lng'             => (float)($data['dest_lng'] ?? 107.8340)
-                ],
-                'parcel_details' => [
-                    'sender_name'     => sanitize($data['sender_name'] ?? $_SESSION['user']['name']),
-                    'sender_phone'    => sanitize($data['sender_phone'] ?? $_SESSION['user']['phone']),
-                    'pickup_address'  => sanitize($data['pickup_address'] ?? ''),
-                    'pickup_lat'      => (float)($data['pickup_lat'] ?? -6.9840),
-                    'pickup_lng'      => (float)($data['pickup_lng'] ?? 107.8340),
-                    'item_category'   => sanitize($data['item_category'] ?? 'Dokumen / Barang'),
-                    'weight_kg'       => (float)($data['weight_kg'] ?? 1.0)
-                ],
-                'payment_method' => $paymentMethod,
-                'parcel_notes'   => sanitize($data['parcel_notes'] ?? 'Titip kirim paket kilat Cicalengka'),
-                'distance_km'    => (float)($data['distance_km'] ?? 2.5)
-            ]);
+            $result = $this->orderService->createParcelOrder($userId, $data);
 
             $responseData = [
                 'order_code'     => $result['order_code'],
@@ -175,9 +156,10 @@ class OrderController extends Controller
             // If online payment via Midtrans Snap
             if ($paymentMethod === 'midtrans') {
                 $user = auth_user();
+                $snapOrderId = $result['order_code'] . '-' . time() . '-' . rand(100, 999);
                 $snapParams = [
                     'transaction_details' => [
-                        'order_id'     => $result['order_code'],
+                        'order_id'     => $snapOrderId,
                         'gross_amount' => (int)round($result['total'])
                     ],
                     'customer_details' => [
@@ -239,9 +221,10 @@ class OrderController extends Controller
         if ($order['payment_method'] === 'midtrans' && $order['payment_status'] !== 'paid' && $order['order_status'] !== 'canceled') {
             try {
                 $user = auth_user() ?: ['name' => 'Pelanggan', 'email' => 'customer@cicalengkago.id', 'phone' => '081234567890'];
+                $snapOrderId = $order['order_code'] . '-' . time() . '-' . rand(100, 999);
                 $snapParams = [
                     'transaction_details' => [
-                        'order_id'     => $order['order_code'],
+                        'order_id'     => $snapOrderId,
                         'gross_amount' => (int)round((float)$order['total_amount'])
                     ],
                     'customer_details' => [
@@ -306,9 +289,10 @@ class OrderController extends Controller
 
         try {
             $user = auth_user();
+            $snapOrderId = $order['order_code'] . '-' . time() . '-' . rand(100, 999);
             $snapParams = [
                 'transaction_details' => [
-                    'order_id'     => $order['order_code'],
+                    'order_id'     => $snapOrderId,
                     'gross_amount' => (int)round((float)$order['total_amount'])
                 ],
                 'customer_details' => [
