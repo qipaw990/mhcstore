@@ -97,6 +97,26 @@ class TopupLog extends Model
         return true;
     }
 
+    public function updateStatusByCode(string $topupCode, string $status, ?string $notes = null): bool
+    {
+        $log = Database::fetchOne("SELECT * FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1", [$topupCode]);
+        if (!$log) {
+            return false;
+        }
+
+        if ($log['status'] === 'success' && $status !== 'success') {
+            return false; // Cannot downgrade a completed top up
+        }
+
+        Database::update('topup_logs', [
+            'status'     => $status,
+            'notes'      => $notes ?: $log['notes'],
+            'updated_at' => date('Y-m-d H:i:s')
+        ], 'id = ?', [$log['id']]);
+
+        return true;
+    }
+
     public function getByUser(int $userId, ?string $status = null, int $limit = 50): array
     {
         if ($status) {
