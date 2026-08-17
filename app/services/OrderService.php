@@ -28,6 +28,18 @@ class OrderService
     public function createOrderFromCart(int $customerId, array $data): array
     {
         return Database::transaction(function () use ($customerId, $data) {
+            // Auto cancel any unclaimed orders older than 60 seconds
+            \App\Models\Order::autoCancelUnclaimedOrders();
+
+            // Restrict 1 active order per customer
+            $activeOrder = Database::fetchOne(
+                "SELECT id, order_code FROM `orders` WHERE `customer_id` = ? AND `order_status` NOT IN ('delivered', 'canceled') LIMIT 1",
+                [$customerId]
+            );
+            if ($activeOrder) {
+                throw new Exception("Anda masih memiliki pesanan aktif (#{$activeOrder['order_code']}) yang sedang berlangsung. Harap selesaikan atau tunggu pesanan sebelumnya selesai sebelum membuat pesanan baru.");
+            }
+
             $cartData = $this->cartModel->getUserCart($customerId);
             if (empty($cartData['items'])) {
                 throw new Exception("Keranjang belanja kosong.");
@@ -163,6 +175,18 @@ class OrderService
     public function createParcelOrder(int $customerId, array $data): array
     {
         return Database::transaction(function () use ($customerId, $data) {
+            // Auto cancel any unclaimed orders older than 60 seconds
+            \App\Models\Order::autoCancelUnclaimedOrders();
+
+            // Restrict 1 active order per customer
+            $activeOrder = Database::fetchOne(
+                "SELECT id, order_code FROM `orders` WHERE `customer_id` = ? AND `order_status` NOT IN ('delivered', 'canceled') LIMIT 1",
+                [$customerId]
+            );
+            if ($activeOrder) {
+                throw new Exception("Anda masih memiliki pesanan aktif (#{$activeOrder['order_code']}) yang sedang berlangsung. Harap selesaikan atau tunggu pesanan sebelumnya selesai sebelum membuat pesanan baru.");
+            }
+
             $destLat = (float)($data['destination_address']['lat'] ?? -6.9840);
             $destLng = (float)($data['destination_address']['lng'] ?? 107.8340);
             $pickupLat = (float)($data['parcel_details']['pickup_lat'] ?? -6.9840);

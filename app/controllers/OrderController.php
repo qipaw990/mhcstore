@@ -233,9 +233,12 @@ class OrderController extends Controller
 
     public function tracking(string $code): void
     {
+        // Auto cancel any unclaimed orders older than 60 seconds
+        Order::autoCancelUnclaimedOrders();
+
         $order = $this->orderModel->findByIdOrCode($code);
         if (!$order) {
-            $this->redirect('orders');
+            $this->notFound("Pesanan #{$code} tidak ditemukan.");
             return;
         }
 

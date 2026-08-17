@@ -29,6 +29,9 @@ class DeliveryController extends Controller
 
     public function dashboard(): void
     {
+        // Auto cancel any unclaimed orders older than 60 seconds
+        \App\Models\Order::autoCancelUnclaimedOrders();
+
         $userId = auth_id();
         $dm = $this->dmModel->findByUserId($userId);
 
@@ -96,6 +99,9 @@ class DeliveryController extends Controller
 
     public function getLiveDashboard(): void
     {
+        // Auto cancel any unclaimed orders older than 60 seconds
+        \App\Models\Order::autoCancelUnclaimedOrders();
+
         $userId = auth_id();
         $dm = $this->dmModel->findByUserId($userId);
 
@@ -103,6 +109,10 @@ class DeliveryController extends Controller
             $this->errorResponse('Driver tidak ditemukan');
             return;
         }
+
+        // Recalculate rating
+        (new \App\Models\Review())->recalculateDmRating((int)$dm['id']);
+        $dm = $this->dmModel->find($dm['id']);
 
         // Active Order (Self-healing from both delivery_men and orders table)
         $activeOrder = null;
@@ -158,6 +168,8 @@ class DeliveryController extends Controller
             'available_count'  => count($availableOrders),
             'wallet_balance'   => (float)($wallet['balance'] ?? 0),
             'total_orders'     => (int)($dm['total_orders'] ?? 0),
+            'rating'           => (float)($dm['rating'] ?? 5.0),
+            'reviews_count'    => (int)($dm['reviews_count'] ?? 0),
             'unread_chats'     => $unreadChats,
             'debug_db_orders'  => $latestDbOrders,
             'debug_dm'         => [

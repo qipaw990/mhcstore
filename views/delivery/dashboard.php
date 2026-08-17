@@ -23,6 +23,31 @@
         </label>
     </div>
 
+    <!-- Prominent Driver Rating & Feedback Card -->
+    <div class="p-3 bg-white rounded-4 border shadow-2xs mb-3">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2.5">
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: rgba(245, 158, 11, 0.15); color: #F59E0B; font-size: 20px; flex-shrink:0;">
+                    <i class="bi bi-star-fill"></i>
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-1.5">
+                        <span class="fw-bold text-dark" style="font-size: 13px;">Rating Driver Anda</span>
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2.5 py-0.5" style="font-size: 11px; font-weight: 800;">
+                            ⭐ <span id="driverRatingValueHeader"><?= !empty($driver['reviews_count']) && (int)$driver['reviews_count'] > 0 ? number_format($driver['rating'], 1) : '5.0' ?></span> / 5.0
+                        </span>
+                    </div>
+                    <div class="text-muted" style="font-size: 10.5px; margin-top: 2px;">
+                        Total <b id="driverReviewsCountHeader" class="text-dark"><?= (int)($driver['reviews_count'] ?? count($reviews ?? [])) ?></b> ulasan kepuasan pengantaran
+                    </div>
+                </div>
+            </div>
+            <a href="<?= $baseUrl ?>/delivery/profile" class="btn btn-outline-warning btn-sm rounded-pill px-3 py-1 fw-bold text-dark shadow-2xs" style="font-size: 10.5px; border-color: #FBBF24; background: #FFFBEB;">
+                Rincian <i class="bi bi-chevron-right ms-0.5"></i>
+            </a>
+        </div>
+    </div>
+
     <!-- Quick Stats Metric Cards -->
     <div class="row g-2 mb-3">
         <div class="col-4">

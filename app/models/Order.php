@@ -163,4 +163,51 @@ class Order extends Model
 
         return $this->update($id, $data);
     }
+
+    public static function autoCancelUnclaimedOrders(): void
+    {
+        try {
+            // Find active orders without driver where created_at is older than 60 seconds (1 minute)
+            $expiredOrders = Database::query(
+                "SELECT id, order_code, customer_id, payment_method, payment_status, total_amount, created_at 
+                 FROM `orders` 
+                 WHERE `delivery_man_id` IS NULL 
+                   AND `order_status` NOT IN ('delivered', 'canceled', 'refunded', 'failed')
+                   AND `created_at` <= TIMESTAMPADD(SECOND, -60, NOW())"
+            );
+
+            foreach ($expiredOrders as $ord) {
+                // Cancel order
+                Database::update('orders', [
+                    'order_status'        => 'canceled',
+                    'cancellation_reason' => 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 1 menit',
+                    'canceled_at'          => date('Y-m-d H:i:s')
+                ], 'id = ?', [$ord['id']]);
+
+                // Refund if paid via wallet
+                if ($ord['payment_status'] === 'paid' && $ord['payment_method'] === 'wallet') {
+                    $walletModel = new \App\Models\Wallet();
+                    $walletModel->credit(
+                        (int)$ord['customer_id'],
+                        (float)$ord['total_amount'],
+                        'order_refund',
+                        "Pengembalian saldo untuk pesanan #{$ord['order_code']} (tidak ada driver)",
+                        (string)$ord['id']
+                    );
+                    Database::update('orders', ['payment_status' => 'refunded'], 'id = ?', [$ord['id']]);
+                }
+
+                // Send notification
+                Database::insert('notifications', [
+                    'user_id'   => (int)$ord['customer_id'],
+                    'title'     => 'Pesanan Dibatalkan Otomatis ⚠️',
+                    'message'   => "Pesanan #{$ord['order_code']} dibatalkan otomatis karena tidak ada driver dalam waktu 1 menit.",
+                    'type'      => 'order',
+                    'data_json' => json_encode(['order_code' => $ord['order_code'], 'order_id' => $ord['id']])
+                ]);
+            }
+        } catch (\Exception $e) {
+            error_log("autoCancelUnclaimedOrders Error: " . $e->getMessage());
+        }
+    }
 }
