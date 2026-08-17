@@ -94,8 +94,8 @@
             <!-- Dark Header & Order Stepper Bar -->
             <div class="active-task-header">
                 <div class="d-flex align-items-center justify-content-between mb-3">
-                    <span class="badge rounded-pill bg-white bg-opacity-20 text-white px-2.5 py-1" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">
-                        <i class="bi bi-bicycle me-1"></i> ORDER BERLANGSUNG
+                    <span class="badge rounded-pill px-2.5 py-1 text-white" style="background: rgba(255, 255, 255, 0.15); font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">
+                        <i class="bi bi-bicycle me-1 text-warning"></i> ORDER BERLANGSUNG
                     </span>
                     <span class="fw-extrabold text-warning" style="font-size: 13.5px; letter-spacing: 0.5px;">#<?= htmlspecialchars($active_order['order_code']) ?></span>
                 </div>
