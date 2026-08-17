@@ -175,6 +175,10 @@ class CustomerController extends Controller
             return;
         }
 
+        // Auto-cancel unclaimed orders & auto-heal any unrefunded canceled orders for this customer
+        \App\Models\Order::autoCancelUnclaimedOrders();
+        \App\Models\Order::processPendingRefundsForCustomer($userId);
+
         $midtransService = new \App\Services\MidtransService();
 
         // Auto-settle or update log if redirected back from Midtrans payment finish

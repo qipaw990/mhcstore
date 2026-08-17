@@ -155,6 +155,10 @@ class VendorController extends Controller
             $updateData['processing_at'] = date('Y-m-d H:i:s');
         } elseif ($status === 'handover') {
             $updateData['handover_at'] = date('Y-m-d H:i:s');
+        } elseif ($status === 'canceled') {
+            $updateData['cancellation_reason'] = 'Dibatalkan oleh Mitra Toko';
+            $updateData['canceled_at'] = date('Y-m-d H:i:s');
+            Order::refundOrderIfPaid($order, 'Dibatalkan oleh Mitra Toko');
         }
 
         Database::update('orders', $updateData, 'id = ?', [$orderId]);

@@ -213,6 +213,7 @@ class Order extends Model
                 ], 'id = ?', [$ord['id']]);
 
                 // Perform robust refund to CicalengkaPay wallet
+                self::refundOrderIfPaid($ord, 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 1 menit');
             }
         } catch (\Exception $e) {
             error_log("autoCancelUnclaimedOrders error: " . $e->getMessage());
@@ -231,8 +232,8 @@ class Order extends Model
         $customerId = (int)$ord['customer_id'];
         $amount = (float)$ord['total_amount'];
         $orderCode = $ord['order_code'];
-        $paymentStatus = $ord['payment_status'] ?? 'unpaid';
-        $paymentMethod = $ord['payment_method'] ?? 'wallet';
+        $paymentStatus = strtolower($ord['payment_status'] ?? 'unpaid');
+        $paymentMethod = strtolower($ord['payment_method'] ?? 'wallet');
 
         // Jika sudah di-refund sebelumnya, lewati
         if ($paymentStatus === 'refunded') {
@@ -245,7 +246,10 @@ class Order extends Model
             [(string)$orderId]
         );
 
-        if (!$existing && $amount > 0 && ($paymentStatus === 'paid' || in_array($paymentMethod, ['wallet', 'midtrans', 'online', 'qris', 'va', 'credit_card']))) {
+        $validPaidMethods = ['wallet', 'cicalengkapay', 'cicago_pay', 'saldo', 'balance', 'midtrans', 'online', 'qris', 'va', 'credit_card'];
+        $isEligible = ($paymentStatus === 'paid' || in_array($paymentMethod, $validPaidMethods));
+
+        if (!$existing && $amount > 0 && $isEligible) {
             $walletModel = new Wallet();
             $desc = "Refund pengembalian dana untuk pesanan #{$orderCode}";
             if (!empty($reason)) {
@@ -277,5 +281,32 @@ class Order extends Model
         }
 
         return false;
+    }
+
+    /**
+     * Auto-heal & backfill: Periksa seluruh pesanan batal milik customer yang saldonya belum ter-refund
+     */
+    public static function processPendingRefundsForCustomer(int $customerId): int
+    {
+        if (!$customerId) return 0;
+
+        $unrefundedOrders = Database::query(
+            "SELECT * FROM `orders` 
+             WHERE `customer_id` = ? 
+               AND `order_status` = 'canceled' 
+               AND `payment_status` != 'refunded'
+               AND (`payment_status` = 'paid' OR `payment_method` IN ('wallet', 'cicalengkapay', 'cicago_pay', 'saldo', 'balance', 'midtrans', 'qris', 'va', 'online', 'credit_card'))",
+            [$customerId]
+        );
+
+        $refundedCount = 0;
+        foreach ($unrefundedOrders as $ord) {
+            $reason = !empty($ord['cancellation_reason']) ? $ord['cancellation_reason'] : 'Pesanan Dibatalkan';
+            if (self::refundOrderIfPaid($ord, $reason)) {
+                $refundedCount++;
+            }
+        }
+
+        return $refundedCount;
     }
 }
