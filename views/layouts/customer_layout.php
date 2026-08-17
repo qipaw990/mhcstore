@@ -229,14 +229,156 @@ $resolvedSnapUrl = $snap_url ?? $midtransServiceInst->getSnapUrl() ?? 'https://a
 <script src="<?= $baseUrl ?>/assets/js/pwa-install.js"></script>
 <script src="<?= $baseUrl ?>/assets/js/customer-pwa.js?v=<?= time() ?>"></script>
 
+
+<!-- Native Mobile App Bottom Sheet Alert & Toast Components -->
+<div id="mobile-app-sheet-backdrop" class="mobile-app-sheet-backdrop" onclick="AppAlert.closeSheet()"></div>
+<div id="mobile-app-sheet" class="mobile-app-sheet">
+    <div class="mobile-sheet-drag-handle"></div>
+    <div class="mobile-sheet-icon-box info" id="mobile-sheet-icon-box">
+        <i class="bi bi-info-circle-fill" id="mobile-sheet-icon"></i>
+    </div>
+    <h5 class="mobile-sheet-title" id="mobile-sheet-title">Judul Informasi</h5>
+    <p class="mobile-sheet-message" id="mobile-sheet-message">Pesan penjelasan aplikasi tampil di sini.</p>
+    <div class="mobile-sheet-actions" id="mobile-sheet-actions">
+        <button type="button" class="btn-mobile-sheet-primary" id="mobile-sheet-btn-confirm" onclick="AppAlert.closeSheet()">Mengerti</button>
+        <button type="button" class="btn-mobile-sheet-secondary" id="mobile-sheet-btn-cancel" onclick="AppAlert.cancelSheet()" style="display: none;">Batal</button>
+    </div>
+</div>
+
+<div id="mobile-app-toast" class="mobile-app-toast">
+    <i class="bi bi-check-circle-fill me-1 text-success" id="mobile-toast-icon"></i>
+    <span id="mobile-toast-message">Pesan tersimpan</span>
+</div>
+
+<script>
+const AppAlert = {
+    confirmCb: null,
+    cancelCb: null,
+
+    show(options) {
+        const type = options.type || options.icon || 'info';
+        const title = options.title || 'Informasi';
+        const message = options.text || options.message || '';
+        const confirmText = options.confirmButtonText || 'Mengerti';
+        const cancelText = options.cancelButtonText || 'Batal';
+        const showCancel = options.showCancelButton || false;
+
+        const iconBox = document.getElementById('mobile-sheet-icon-box');
+        const icon = document.getElementById('mobile-sheet-icon');
+        const titleEl = document.getElementById('mobile-sheet-title');
+        const msgEl = document.getElementById('mobile-sheet-message');
+        const btnConfirm = document.getElementById('mobile-sheet-btn-confirm');
+        const btnCancel = document.getElementById('mobile-sheet-btn-cancel');
+
+        if (!iconBox || !icon || !titleEl || !msgEl) return;
+
+        const safeType = type === 'error' ? 'danger' : type;
+        iconBox.className = 'mobile-sheet-icon-box ' + safeType;
+        
+        let iconClass = 'bi-info-circle-fill';
+        if (type === 'success') iconClass = 'bi-check-circle-fill';
+        if (type === 'warning') iconClass = 'bi-exclamation-triangle-fill';
+        if (type === 'error' || type === 'danger') iconClass = 'bi-x-circle-fill';
+        icon.className = 'bi ' + iconClass;
+
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+        btnConfirm.textContent = confirmText;
+        btnCancel.textContent = cancelText;
+        btnCancel.style.display = showCancel ? 'block' : 'none';
+
+        this.confirmCb = options.onConfirm || options.confirmCallback || null;
+        this.cancelCb = options.onCancel || options.cancelCallback || null;
+
+        document.getElementById('mobile-app-sheet-backdrop').classList.add('active');
+        document.getElementById('mobile-app-sheet').classList.add('active');
+    },
+
+    confirm(title, message, onConfirm, confirmText = 'Ya, Lanjutkan') {
+        this.show({
+            type: 'warning',
+            title: title,
+            message: message,
+            showCancelButton: true,
+            confirmButtonText: confirmText,
+            cancelButtonText: 'Batal',
+            onConfirm: onConfirm
+        });
+    },
+
+    toast(message, type = 'success') {
+        const toastEl = document.getElementById('mobile-app-toast');
+        const iconEl = document.getElementById('mobile-toast-icon');
+        const msgEl = document.getElementById('mobile-toast-message');
+
+        if (!toastEl || !iconEl || !msgEl) return;
+
+        let iconClass = 'bi-check-circle-fill text-success';
+        if (type === 'danger' || type === 'error') iconClass = 'bi-x-circle-fill text-danger';
+        if (type === 'warning') iconClass = 'bi-exclamation-triangle-fill text-warning';
+        if (type === 'info') iconClass = 'bi-info-circle-fill text-info';
+
+        iconEl.className = 'bi me-1 ' + iconClass;
+        msgEl.textContent = message;
+
+        toastEl.classList.add('active');
+        setTimeout(() => {
+            toastEl.classList.remove('active');
+        }, 2600);
+    },
+
+    closeSheet() {
+        const backdrop = document.getElementById('mobile-app-sheet-backdrop');
+        const sheet = document.getElementById('mobile-app-sheet');
+        if (backdrop) backdrop.classList.remove('active');
+        if (sheet) sheet.classList.remove('active');
+        if (this.confirmCb) {
+            const cb = this.confirmCb;
+            this.confirmCb = null;
+            cb();
+        }
+    },
+
+    cancelSheet() {
+        const backdrop = document.getElementById('mobile-app-sheet-backdrop');
+        const sheet = document.getElementById('mobile-app-sheet');
+        if (backdrop) backdrop.classList.remove('active');
+        if (sheet) sheet.classList.remove('active');
+        if (this.cancelCb) {
+            const cb = this.cancelCb;
+            this.cancelCb = null;
+            cb();
+        }
+    }
+};
+
+// Global Swal override to route all SweetAlert calls to AppAlert Mobile Bottom Sheet
+window.Swal = {
+    fire: function(arg1, arg2, arg3) {
+        return new Promise((resolve) => {
+            let opts = {};
+            if (typeof arg1 === 'object') {
+                opts = arg1;
+            } else {
+                opts = { title: arg1 || 'Informasi', text: arg2 || '', type: arg3 || 'info' };
+            }
+            
+            opts.onConfirm = () => resolve({ isConfirmed: true, value: true });
+            opts.onCancel = () => resolve({ isConfirmed: false, isDismissed: true });
+
+            AppAlert.show(opts);
+        });
+    },
+    toast: function(msg, type) {
+        AppAlert.toast(msg, type);
+    }
+};
+</script>
+
 <?php if (!empty($_SESSION['success'])): ?>
     <script>
-        Swal.fire({
-            icon: 'success',
-            title: 'Berhasil',
-            text: '<?= addslashes($_SESSION['success']) ?>',
-            timer: 3000,
-            showConfirmButton: false
+        document.addEventListener('DOMContentLoaded', () => {
+            AppAlert.toast('<?= addslashes($_SESSION['success']) ?>', 'success');
         });
     </script>
     <?php unset($_SESSION['success']); ?>
@@ -244,10 +386,12 @@ $resolvedSnapUrl = $snap_url ?? $midtransServiceInst->getSnapUrl() ?? 'https://a
 
 <?php if (!empty($_SESSION['error'])): ?>
     <script>
-        Swal.fire({
-            icon: 'error',
-            title: 'Perhatian',
-            text: '<?= addslashes($_SESSION['error']) ?>'
+        document.addEventListener('DOMContentLoaded', () => {
+            AppAlert.show({
+                type: 'error',
+                title: 'Perhatian',
+                text: '<?= addslashes($_SESSION['error']) ?>'
+            });
         });
     </script>
     <?php unset($_SESSION['error']); ?>
@@ -255,3 +399,4 @@ $resolvedSnapUrl = $snap_url ?? $midtransServiceInst->getSnapUrl() ?? 'https://a
 
 </body>
 </html>
+
