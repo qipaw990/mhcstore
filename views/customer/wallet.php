@@ -62,39 +62,42 @@
         </div>
     </div>
 
-    <!-- Quick Top Up Amount Grid -->
-    <div class="p-3.5 mb-3.5 bg-white border" style="border-radius: 18px; border-color: #E2E8F0 !important; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+    <!-- Quick Top Up Amount Selector (ShopeePay / Dana Style) -->
+    <div class="p-3.5 mb-3.5 bg-white border" style="border-radius: 20px; border-color: #E2E8F0 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.03);">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="d-flex align-items-center gap-1.5">
-                <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; font-size: 13px;">
-                    <i class="bi bi-lightning-charge-fill"></i>
+            <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px; font-size: 14px; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);">
+                    <i class="bi bi-lightning-fill"></i>
                 </div>
-                <h6 class="fw-bold m-0 text-dark" style="font-size: 13px; letter-spacing: -0.2px;">Isi Saldo Instan</h6>
+                <div>
+                    <h6 class="fw-bold m-0 text-dark" style="font-size: 13px; letter-spacing: -0.2px;">Isi Saldo Instan</h6>
+                    <div class="text-muted" style="font-size: 9.5px;">Bebas Biaya Admin • Langsung Masuk</div>
+                </div>
             </div>
-            <span class="badge text-white px-2.5 py-1" style="background: #0F172A; font-size: 8.5px; font-weight: 700; border-radius: 8px;">
-                QRIS / VA / E-WALLET
+            <span class="badge text-white px-2.5 py-1.5" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); font-size: 8.5px; font-weight: 700; border-radius: 8px;">
+                QRIS & E-WALLET
             </span>
         </div>
 
         <div class="row g-2.5">
             <?php
             $quickNominals = [
-                ['amount' => 20000,  'label' => 'Rp 20.000',  'tag' => 'Hemat'],
-                ['amount' => 50000,  'label' => 'Rp 50.000',  'tag' => 'Populer'],
-                ['amount' => 100000, 'label' => 'Rp 100.000', 'tag' => 'Sering Dipakai'],
-                ['amount' => 200000, 'label' => 'Rp 200.000', 'tag' => 'Bebas Reot']
+                ['amount' => 20000,  'label' => '20.000',  'tag' => 'Hemat'],
+                ['amount' => 50000,  'label' => '50.000',  'tag' => 'Populer'],
+                ['amount' => 100000, 'label' => '100.000', 'tag' => 'Favorit'],
+                ['amount' => 200000, 'label' => '200.000', 'tag' => 'SULTAN']
             ];
             foreach ($quickNominals as $item):
             ?>
             <div class="col-6">
                 <button type="button" onclick="quickTopUp(<?= $item['amount'] ?>)" 
-                        class="btn w-100 py-2.5 px-3 border text-start d-flex flex-column justify-content-between transition-all" 
-                        style="border-radius: 14px !important; background: #F8FAFC; border-color: #E2E8F0 !important; min-height: 58px;">
-                    <div class="d-flex justify-content-between align-items-center w-100 mb-0.5">
-                        <span class="text-muted" style="font-size: 9px; font-weight: 600;">PILIHAN</span>
-                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 7.5px; padding: 2px 5px; font-weight: 700; border-radius: 4px;"><?= $item['tag'] ?></span>
+                        class="btn w-100 p-2.5 border text-start position-relative overflow-hidden transition-all hover-card-glow" 
+                        style="border-radius: 14px !important; background: #FFFFFF; border: 1.5px solid #E2E8F0 !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted" style="font-size: 10px; font-weight: 600;">Rp</span>
+                        <span class="badge bg-danger-subtle text-danger fw-bold" style="font-size: 8px; padding: 2px 6px; border-radius: 6px;"><?= $item['tag'] ?></span>
                     </div>
-                    <div class="fw-extrabold text-dark" style="font-size: 13.5px; letter-spacing: -0.3px; color: #0F172A !important;">
+                    <div class="fw-extrabold text-dark" style="font-size: 16px; letter-spacing: -0.5px; color: #0F172A !important;">
                         <?= $item['label'] ?>
                     </div>
                 </button>
@@ -102,29 +105,33 @@
             <?php endforeach; ?>
         </div>
 
-        <div class="mt-3">
-            <button onclick="customTopUpDialog()" class="btn btn-outline-danger w-100 py-2.5 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-1.5" style="font-size: 11.5px; border-width: 1.5px;">
-                <i class="bi bi-pencil-square"></i>
+        <div class="mt-2.5">
+            <button type="button" onclick="customTopUpDialog()" class="btn btn-light border w-100 py-2.5 rounded-pill fw-bold text-danger d-flex align-items-center justify-content-center gap-2" style="font-size: 12px; background: #FFF5F5; border-color: #FECDD3 !important;">
+                <i class="bi bi-pencil-square fs-6"></i>
                 <span>Masukkan Nominal Lainnya</span>
             </button>
         </div>
     </div>
 
-    <!-- Navigation Tabs (Default ke Mutasi Saldo & Refund) -->
-    <div class="bg-light p-1 rounded-4 border mb-3 d-flex" style="background: #F1F5F9 !important; border-color: #E2E8F0 !important;">
-        <button class="btn w-50 active fw-bold py-2 rounded-3 text-truncate d-flex align-items-center justify-content-center gap-1.5 transition-all" 
-                id="mutation-tab" data-bs-toggle="tab" data-bs-target="#mutation-pane" type="button" role="tab" style="font-size: 11.5px;">
-            <i class="bi bi-receipt-cutoff text-danger fs-6"></i>
-            <span>Mutasi Saldo & Refund</span>
-            <span class="badge bg-danger text-white rounded-pill px-1.5" style="font-size: 9px;"><?= count($transactions ?? []) ?></span>
-        </button>
-        <button class="btn w-50 fw-bold py-2 rounded-3 text-truncate d-flex align-items-center justify-content-center gap-1.5 transition-all text-secondary" 
-                id="topup-tab" data-bs-toggle="tab" data-bs-target="#topup-pane" type="button" role="tab" style="font-size: 11.5px;">
-            <i class="bi bi-journal-check fs-6"></i>
-            <span>Tiket Top Up Midtrans</span>
-            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-1.5" style="font-size: 9px;"><?= count($topup_logs ?? []) ?></span>
-        </button>
-    </div>
+    <!-- Navigation Tabs (Standard Bootstrap 5 HTML to prevent selector-engine error) -->
+    <ul class="nav nav-pills nav-fill bg-light p-1 border mb-3 rounded-4" id="walletTabs" role="tablist" style="background: #F1F5F9 !important; border-color: #E2E8F0 !important;">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold py-2.5 px-2 d-flex align-items-center justify-content-center gap-1.5" 
+                    id="mutation-tab" data-bs-toggle="tab" data-bs-target="#mutation-pane" type="button" role="tab" aria-controls="mutation-pane" aria-selected="true" style="font-size: 11.5px; border-radius: 12px !important;">
+                <i class="bi bi-receipt-cutoff text-danger fs-6"></i>
+                <span>Mutasi Saldo & Refund</span>
+                <span class="badge bg-danger text-white rounded-pill px-1.5" style="font-size: 9px;"><?= count($transactions ?? []) ?></span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold py-2.5 px-2 d-flex align-items-center justify-content-center gap-1.5 text-secondary" 
+                    id="topup-tab" data-bs-toggle="tab" data-bs-target="#topup-pane" type="button" role="tab" aria-controls="topup-pane" aria-selected="false" style="font-size: 11.5px; border-radius: 12px !important;">
+                <i class="bi bi-journal-check fs-6"></i>
+                <span>Tiket Top Up Midtrans</span>
+                <span class="badge bg-secondary-subtle text-secondary rounded-pill px-1.5" style="font-size: 9px;"><?= count($topup_logs ?? []) ?></span>
+            </button>
+        </li>
+    </ul>
 
     <!-- Tab Contents -->
     <div class="tab-content" id="walletTabContent">
