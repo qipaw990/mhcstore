@@ -5,7 +5,7 @@
     </span>
 </div>
 
-<div class="p-3">
+<div class="p-3 driver-page-container">
     <!-- Driver Info Header Card -->
     <div class="p-3.5 bg-white border shadow-2xs mb-3 text-center" style="border-radius: 16px; border-color: #E2E8F0 !important;">
         <div class="position-relative d-inline-block mx-auto mb-2">

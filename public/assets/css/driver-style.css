@@ -1,8 +1,10 @@
 /* ==========================================================================
-   CicalengkaGO - Driver Dedicated Modern Styling & Leaflet Map Fixes
+   CicalengkaGO - Driver Dedicated Modern Styling System & Leaflet Map Fixes
    ========================================================================== */
 
-/* 1. Complete Leaflet Distortion Safeguards */
+/* --------------------------------------------------------------------------
+   1. Complete Leaflet Distortion Safeguards & Map Fixes
+   -------------------------------------------------------------------------- */
 #driver-radar-map .leaflet-pane img,
 #driver-radar-map .leaflet-tile,
 #driver-radar-map .leaflet-marker-icon,
@@ -24,7 +26,6 @@
     height: 0 !important;
 }
 
-/* Clear all default browser / bootstrap interference on Leaflet icons */
 #driver-radar-map .leaflet-marker-icon {
     background: transparent !important;
     border: none !important;
@@ -35,7 +36,7 @@
     justify-content: center !important;
 }
 
-/* 2. Driver Custom Pin Base */
+/* Custom Pin Badge Marker */
 .ccg-driver-pin {
     display: flex !important;
     align-items: center !important;
@@ -54,49 +55,55 @@
     align-items: center;
     justify-content: center;
     border: 3px solid #FFFFFF;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
     font-size: 17px;
     color: #FFFFFF;
     box-sizing: border-box;
     flex-shrink: 0;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ccg-driver-pin-body:hover {
+    transform: scale(1.12);
 }
 
 .ccg-driver-pin-body.driver-me {
     background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
     color: #EE2737;
     border-color: #FFFFFF;
-    box-shadow: 0 4px 16px rgba(238, 39, 55, 0.4);
+    box-shadow: 0 6px 18px rgba(238, 39, 55, 0.45);
 }
 
 .ccg-driver-pin-body.store {
     background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
     color: #FFFFFF;
-    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.45);
 }
 
 .ccg-driver-pin-body.customer {
     background: linear-gradient(135deg, #10B981 0%, #059669 100%);
     color: #FFFFFF;
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.45);
 }
 
-/* 3. Driver Map Card Container */
+/* --------------------------------------------------------------------------
+   2. Map Card Container
+   -------------------------------------------------------------------------- */
 .driver-map-card {
     border-radius: 20px !important;
     overflow: hidden !important;
     border: 1px solid #E2E8F0 !important;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06) !important;
+    box-shadow: 0 8px 26px rgba(15, 23, 42, 0.06) !important;
     background: #FFFFFF;
 }
 
 #driver-radar-map {
     width: 100%;
-    height: 260px;
+    height: 250px;
     background: #F1F5F9;
     z-index: 1;
 }
 
-/* 4. Leaflet Popup Clean Styling */
 .leaflet-popup-content-wrapper {
     border-radius: 14px !important;
     padding: 4px 8px !important;
@@ -116,7 +123,98 @@
     box-shadow: none !important;
 }
 
-/* 5. Driver Dashboard Spacing Fix */
+/* --------------------------------------------------------------------------
+   3. Modern Card & Widget Enhancements
+   -------------------------------------------------------------------------- */
+.driver-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 18px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+    transition: all 0.2s ease;
+}
+
+.driver-card-primary {
+    background: linear-gradient(135deg, #101820 0%, #1E293B 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #FFFFFF;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(16, 24, 32, 0.25);
+}
+
+.driver-card-active-order {
+    background: linear-gradient(135deg, #EE2737 0%, #B91C1C 100%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    color: #FFFFFF;
+    box-shadow: 0 12px 32px rgba(238, 39, 55, 0.32);
+}
+
+.driver-stat-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.driver-stat-icon.red {
+    background: rgba(238, 39, 55, 0.12);
+    color: #EE2737;
+}
+
+.driver-stat-icon.green {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10B981;
+}
+
+.driver-stat-icon.blue {
+    background: rgba(59, 130, 246, 0.12);
+    color: #3B82F6;
+}
+
+/* --------------------------------------------------------------------------
+   4. Incoming Radar Order Card
+   -------------------------------------------------------------------------- */
+.order-incoming-card {
+    background: #FFFFFF;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 18px;
+    padding: 16px;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.order-incoming-card:hover {
+    border-color: #EE2737;
+    transform: translateY(-2px);
+}
+
+/* --------------------------------------------------------------------------
+   5. Driver Header & Bottom Nav Bar Polish
+   -------------------------------------------------------------------------- */
+.driver-header {
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+    border-bottom: 2.5px solid #EE2737;
+    padding: 12px 16px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+}
+
+.driver-avatar-ring {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #EE2737;
+    box-shadow: 0 2px 8px rgba(238, 39, 55, 0.4);
+}
+
+/* --------------------------------------------------------------------------
+   6. Global Driver Page Padding Fix
+   -------------------------------------------------------------------------- */
 .driver-page-container {
-    padding-bottom: 90px !important;
+    padding-bottom: 95px !important;
 }

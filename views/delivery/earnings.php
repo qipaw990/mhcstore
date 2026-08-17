@@ -1,4 +1,4 @@
-<div class="p-3">
+<div class="p-3 driver-page-container">
     <!-- Driver Balance Card (CicalengkaGO Pay / Dompet Mitra Kurir) -->
     <div class="p-3.5 text-white shadow-2xs mb-3 position-relative overflow-hidden" style="background: linear-gradient(135deg, #EE2737 0%, #991B1B 100%); border-radius: 16px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 8px 24px rgba(238, 39, 55, 0.35) !important;">
         <!-- Background decorative ambient circle -->

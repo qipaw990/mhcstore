@@ -32,11 +32,11 @@ $user = auth_user();
 
 <div class="mobile-app-wrapper" style="background-color: #f8fafc;">
     <!-- Top Driver Header (CicalengkaGO Partner Bar) -->
-    <header class="mobile-header d-flex align-items-center justify-content-between px-3 py-2.5" style="background: linear-gradient(135deg, #101820 0%, #1e293b 100%); border-bottom: 2px solid #EE2737; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
-        <div class="d-flex align-items-center gap-2.5">
-            <div class="driver-avatar-box position-relative">
-                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/driver.png') ?>" alt="Driver" class="rounded-circle" style="width: 42px; height: 42px; object-fit: cover; border: 2px solid #EE2737;">
-                <span class="driver-status-dot online"></span>
+    <header class="driver-header d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-3">
+            <div class="position-relative">
+                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/driver.png') ?>" alt="Driver" class="driver-avatar-ring">
+                <span class="position-absolute bottom-0 end-0 bg-success border border-2 border-white rounded-circle" style="width: 12px; height: 12px;"></span>
             </div>
             <div>
                 <div class="d-flex align-items-center gap-2">
@@ -46,13 +46,13 @@ $user = auth_user();
                     </span>
                 </div>
                 <div class="d-flex align-items-center gap-1 mt-0.5" style="font-size: 11px; color: #94a3b8;">
-                    <img src="<?= $baseUrl ?>/assets/images/logo-icon.svg" alt="CicalengkaGO" style="width: 13px; height: 13px; border-radius: 3px;">
-                    <span class="fw-semibold text-white-50">Mitra Kurir Cicalengka<span style="color: #EE2737;">GO</span></span>
+                    <i class="bi bi-shield-check text-danger" style="font-size: 12px;"></i>
+                    <span class="fw-medium text-slate-300">Mitra Kurir Cicalengka<span style="color: #EE2737;">GO</span></span>
                 </div>
             </div>
         </div>
         <div class="d-flex align-items-center gap-2">
-            <button onclick="if(typeof centerDriverMap==='function'){centerDriverMap();}" class="btn btn-dark btn-sm rounded-circle p-0 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);" title="Pusatkan GPS">
+            <button onclick="if(typeof centerDriverMap==='function'){centerDriverMap();}" class="btn btn-dark btn-sm rounded-circle p-0 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);" title="Pusatkan GPS">
                 <i class="bi bi-crosshair text-danger" style="font-size: 16px;"></i>
             </button>
             <a href="<?= $baseUrl ?>/logout" class="btn btn-outline-danger btn-sm rounded-circle p-0 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; border-color: rgba(238, 39, 55, 0.5);" title="Keluar">
