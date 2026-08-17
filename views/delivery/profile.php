@@ -7,9 +7,9 @@
 
 <div class="p-3 driver-page-container">
     <!-- Driver Info Header Card -->
-    <div class="p-3.5 bg-white border shadow-2xs mb-3 text-center" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+    <div class="ccg-card mb-3 text-center">
         <div class="position-relative d-inline-block mx-auto mb-2">
-            <img src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/driver.png') ?>" alt="Driver" class="rounded-circle border border-3 border-danger shadow-2xs" style="width: 76px; height: 76px; object-fit: cover;">
+            <img src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/driver.png') ?>" alt="Driver" class="rounded-circle border border-3 border-danger shadow-xs" style="width: 76px; height: 76px; object-fit: cover;">
             <span class="position-absolute bottom-0 end-0 bg-success border border-2 border-white rounded-circle p-1.5" title="Status Online"></span>
         </div>
         <h6 class="fw-bold text-dark mb-0" style="font-size: 14px;"><?= htmlspecialchars($user['name'] ?? 'Mitra Driver') ?></h6>
@@ -20,7 +20,7 @@
     </div>
 
     <!-- Edit Profile Form Card -->
-    <div class="p-3.5 bg-white border shadow-2xs mb-3" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+    <div class="ccg-card mb-3">
         <h6 class="fw-bold text-dark mb-3 border-bottom pb-2" style="font-size: 13px;">
             <i class="bi bi-pencil-square text-danger me-1"></i> Form Edit Profil Driver
         </h6>
@@ -42,24 +42,24 @@
         <form action="<?= $baseUrl ?>/delivery/profile/update" method="POST" enctype="multipart/form-data">
             <!-- Foto Profil Driver -->
             <div class="mb-3">
-                <label class="form-label small fw-bold text-dark d-block" for="driver_avatar" style="font-size: 11px;">Foto Profil Driver</label>
-                <div class="d-flex align-items-center gap-3 p-2.5 bg-light rounded-3 border" style="border-radius: 12px !important; border-color: #E2E8F0 !important;">
-                    <img id="driver-avatar-preview" src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/driver.png') ?>" alt="Preview Driver" class="rounded-circle border border-2 border-danger shadow-2xs" style="width: 56px; height: 56px; object-fit: cover;">
+                <label class="form-label small fw-bold text-dark d-block mb-1" for="driver_avatar" style="font-size: 11px;">Foto Profil Driver</label>
+                <div class="d-flex align-items-center gap-3 p-2.5 bg-light rounded-3 border" style="border-color: #E2E8F0 !important;">
+                    <img id="driver-avatar-preview" src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/driver.png') ?>" alt="Preview Driver" class="rounded-circle border border-2 border-danger shadow-xs" style="width: 52px; height: 52px; object-fit: cover;">
                     <div class="flex-grow-1">
-                        <input type="file" name="avatar" id="driver_avatar" class="form-control rounded-3 form-control-sm" style="font-size: 11px; border-radius: 8px;" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewImage(this, 'driver-avatar-preview')">
-                        <small class="text-muted" style="font-size: 10px;">Format: JPG, PNG, WEBP. Maks 2MB.</small>
+                        <input type="file" name="avatar" id="driver_avatar" class="form-control form-control-sm driver-input" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewImage(this, 'driver-avatar-preview')">
+                        <small class="text-muted d-block mt-1" style="font-size: 10px;">Format: JPG, PNG, WEBP. Maks 2MB.</small>
                     </div>
                 </div>
             </div>
 
             <div class="mb-2.5">
                 <label class="form-label fw-bold text-dark mb-1" for="driver_name" style="font-size: 11px;">Nama Lengkap Driver</label>
-                <input type="text" name="name" id="driver_name" class="form-control form-control-sm bg-light" style="font-size: 11.5px; border-radius: 10px; border-color: #E2E8F0;" value="<?= htmlspecialchars($user['name'] ?? '') ?>" required>
+                <input type="text" name="name" id="driver_name" class="form-control form-control-sm driver-input" value="<?= htmlspecialchars($user['name'] ?? '') ?>" required>
             </div>
 
             <div class="mb-2.5">
                 <label class="form-label fw-bold text-dark mb-1" for="driver_email" style="font-size: 11px;">Alamat Email (Gmail)</label>
-                <input type="email" name="email" id="driver_email" class="form-control form-control-sm bg-light" style="font-size: 11.5px; border-radius: 10px; border-color: #E2E8F0;" value="<?= htmlspecialchars($user['email'] ?? '') ?>" required>
+                <input type="email" name="email" id="driver_email" class="form-control form-control-sm driver-input" value="<?= htmlspecialchars($user['email'] ?? '') ?>" required>
                 <div class="alert alert-warning border-0 rounded-3 p-2 mt-2 mb-0 d-flex align-items-start gap-2" style="font-size: 10.5px;">
                     <i class="bi bi-shield-exclamation text-warning fs-6 mt-0.5"></i>
                     <div>
@@ -70,17 +70,17 @@
 
             <div class="mb-2.5">
                 <label class="form-label fw-bold text-dark mb-1" for="driver_phone" style="font-size: 11px;">Nomor Telepon / WA</label>
-                <input type="text" name="phone" id="driver_phone" class="form-control form-control-sm bg-light" style="font-size: 11.5px; border-radius: 10px; border-color: #E2E8F0;" value="<?= htmlspecialchars($user['phone'] ?? '') ?>" required>
+                <input type="text" name="phone" id="driver_phone" class="form-control form-control-sm driver-input" value="<?= htmlspecialchars($user['phone'] ?? '') ?>" required>
             </div>
 
             <div class="mb-2.5">
                 <label class="form-label fw-bold text-dark mb-1" for="driver_vehicle_type" style="font-size: 11px;">Tipe Kendaraan Operasional</label>
-                <input type="text" name="vehicle_type" id="driver_vehicle_type" class="form-control form-control-sm bg-light" style="font-size: 11.5px; border-radius: 10px; border-color: #E2E8F0;" value="<?= htmlspecialchars($driver['vehicle_type'] ?? 'Motor Honda Beat') ?>" required>
+                <input type="text" name="vehicle_type" id="driver_vehicle_type" class="form-control form-control-sm driver-input" value="<?= htmlspecialchars($driver['vehicle_type'] ?? 'Motor Honda Beat') ?>" required>
             </div>
 
             <div class="mb-3">
                 <label class="form-label fw-bold text-dark mb-1" for="driver_vehicle_number" style="font-size: 11px;">Nomor Polisi Kendaraan (Plat Nomor)</label>
-                <input type="text" name="vehicle_number" id="driver_vehicle_number" class="form-control form-control-sm bg-light" style="font-size: 11.5px; border-radius: 10px; border-color: #E2E8F0;" value="<?= htmlspecialchars($driver['vehicle_number'] ?? 'D 1234 CCG') ?>" required>
+                <input type="text" name="vehicle_number" id="driver_vehicle_number" class="form-control form-control-sm driver-input" value="<?= htmlspecialchars($driver['vehicle_number'] ?? 'D 1234 CCG') ?>" required>
             </div>
 
             <!-- Section Ubah Kata Sandi Driver -->
@@ -102,8 +102,8 @@
                 <div class="mb-2">
                     <label class="form-label fw-bold text-muted mb-1" style="font-size: 11px;">Kata Sandi Saat Ini</label>
                     <div class="input-group input-group-sm">
-                        <input type="password" name="current_password" id="driver_current_password" class="form-control bg-light" style="font-size: 11.5px; border-radius: 10px 0 0 10px; border-color: #E2E8F0;" placeholder="Kata sandi lama">
-                        <button class="btn btn-outline-secondary border" type="button" style="border-radius: 0 10px 10px 0; border-color: #E2E8F0;" onclick="togglePasswordVisibility('driver_current_password', this)">
+                        <input type="password" name="current_password" id="driver_current_password" class="form-control driver-input" style="border-radius: 10px 0 0 10px !important;" placeholder="Kata sandi lama">
+                        <button class="btn btn-outline-secondary border-start-0" type="button" style="border-color: #E2E8F0; border-radius: 0 10px 10px 0;" onclick="togglePasswordVisibility('driver_current_password', this)">
                             <i class="bi bi-eye"></i>
                         </button>
                     </div>
@@ -112,8 +112,8 @@
                 <div class="mb-2">
                     <label class="form-label fw-bold text-muted mb-1" style="font-size: 11px;">Kata Sandi Baru (Min. 6 Karakter)</label>
                     <div class="input-group input-group-sm">
-                        <input type="password" name="new_password" id="driver_new_password" class="form-control bg-light" style="font-size: 11.5px; border-radius: 10px 0 0 10px; border-color: #E2E8F0;" placeholder="Kata sandi baru">
-                        <button class="btn btn-outline-secondary border" type="button" style="border-radius: 0 10px 10px 0; border-color: #E2E8F0;" onclick="togglePasswordVisibility('driver_new_password', this)">
+                        <input type="password" name="new_password" id="driver_new_password" class="form-control driver-input" style="border-radius: 10px 0 0 10px !important;" placeholder="Kata sandi baru">
+                        <button class="btn btn-outline-secondary border-start-0" type="button" style="border-color: #E2E8F0; border-radius: 0 10px 10px 0;" onclick="togglePasswordVisibility('driver_new_password', this)">
                             <i class="bi bi-eye"></i>
                         </button>
                     </div>
@@ -122,8 +122,8 @@
                 <div class="mb-3">
                     <label class="form-label fw-bold text-muted mb-1" style="font-size: 11px;">Konfirmasi Kata Sandi Baru</label>
                     <div class="input-group input-group-sm">
-                        <input type="password" name="confirm_password" id="driver_confirm_password" class="form-control bg-light" style="font-size: 11.5px; border-radius: 10px 0 0 10px; border-color: #E2E8F0;" placeholder="Ulangi kata sandi baru">
-                        <button class="btn btn-outline-secondary border" type="button" style="border-radius: 0 10px 10px 0; border-color: #E2E8F0;" onclick="togglePasswordVisibility('driver_confirm_password', this)">
+                        <input type="password" name="confirm_password" id="driver_confirm_password" class="form-control driver-input" style="border-radius: 10px 0 0 10px !important;" placeholder="Ulangi kata sandi baru">
+                        <button class="btn btn-outline-secondary border-start-0" type="button" style="border-color: #E2E8F0; border-radius: 0 10px 10px 0;" onclick="togglePasswordVisibility('driver_confirm_password', this)">
                             <i class="bi bi-eye"></i>
                         </button>
                     </div>
@@ -131,7 +131,7 @@
             </div>
 
             <div class="d-grid mt-4">
-                <button type="submit" class="btn text-white shadow-2xs py-2.5 fw-bold" style="background: linear-gradient(135deg, #EE2737, #C61524); border-radius: 9999px; font-size: 12.5px;">
+                <button type="submit" class="btn text-white shadow-xs py-2.5 fw-bold" style="background: linear-gradient(135deg, #EE2737 0%, #DC2626 100%); border-radius: 9999px; font-size: 12.5px;">
                     <i class="bi bi-floppy-fill me-1"></i> Simpan Perubahan Profil
                 </button>
             </div>
