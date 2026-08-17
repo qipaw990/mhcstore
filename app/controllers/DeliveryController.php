@@ -78,14 +78,15 @@ class DeliveryController extends Controller
         $availableOrders = $this->orderModel->getAvailableForDelivery((int)($dm['zone_id'] ?? 1));
 
         // Auto-credit driver commission for delivered orders that haven't been credited yet
+        $driverWallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
         $deliveredDriverOrders = Database::query(
             "SELECT id, order_code, delivery_charge FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` = 'delivered'",
             [$dm['id']]
         );
         foreach ($deliveredDriverOrders as $dOrder) {
             $alreadyCredited = Database::fetchOne(
-                "SELECT id FROM `wallet_transactions` WHERE `user_id` = ? AND `category` = 'delivery_earning' AND `reference_id` = ? LIMIT 1",
-                [$userId, (string)$dOrder['id']]
+                "SELECT id FROM `wallet_transactions` WHERE `wallet_id` = ? AND `category` = 'delivery_earning' AND `reference_id` = ? LIMIT 1",
+                [$driverWallet['id'], (string)$dOrder['id']]
             );
             if (!$alreadyCredited) {
                 $driverEarning = (float)$dOrder['delivery_charge'] * 0.85;

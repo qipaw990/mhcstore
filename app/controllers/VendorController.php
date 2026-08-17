@@ -40,6 +40,9 @@ class VendorController extends Controller
 
         $storeId = (int)$store['id'];
 
+        // Pre-fetch vendor wallet so we can use wallet_id for duplicate check
+        $vendorWallet = $this->walletModel->getOrCreate($userId, 'vendor');
+
         // Auto-heal vendor wallet credit for any delivered orders that haven't been credited yet
         $deliveredOrders = Database::query(
             "SELECT id, order_code, order_amount FROM `orders` WHERE `store_id` = ? AND `order_status` = 'delivered'",
@@ -47,8 +50,8 @@ class VendorController extends Controller
         );
         foreach ($deliveredOrders as $dOrder) {
             $alreadyCredited = Database::fetchOne(
-                "SELECT id FROM `wallet_transactions` WHERE `user_id` = ? AND `category` = 'order_earning' AND `reference_id` = ? LIMIT 1",
-                [$userId, (string)$dOrder['id']]
+                "SELECT id FROM `wallet_transactions` WHERE `wallet_id` = ? AND `category` = 'order_earning' AND `reference_id` = ? LIMIT 1",
+                [$vendorWallet['id'], (string)$dOrder['id']]
             );
             if (!$alreadyCredited) {
                 $vendorEarning = (float)$dOrder['order_amount'] * 0.90;
