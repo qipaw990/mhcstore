@@ -7,24 +7,24 @@
     <h6 class="fw-bold m-0 text-dark" style="font-size: 15px; letter-spacing: -0.3px;">Dompet Digital CicalengkaPay</h6>
 </div>
 
-<div class="px-3 py-3">
+<div class="px-3 py-3.5">
     <!-- CicalengkaPay Premium Banner Card -->
-    <div class="p-4 text-white mb-3.5 position-relative overflow-hidden" 
-         style="background: linear-gradient(135deg, #EE2737 0%, #B91C1C 100%); border-radius: 20px; box-shadow: 0 8px 24px rgba(238, 39, 55, 0.22);">
+    <div class="p-4 text-white mb-4 position-relative overflow-hidden" 
+         style="background: linear-gradient(135deg, #EE2737 0%, #B91C1C 100%); border-radius: 22px; box-shadow: 0 10px 28px rgba(238, 39, 55, 0.22);">
         <!-- Watermark Pattern Background -->
         <div class="position-absolute" style="right: -15px; bottom: -20px; font-size: 110px; opacity: 0.09; line-height: 1; pointer-events: none;">
             <i class="bi bi-wallet2"></i>
         </div>
 
         <div class="position-relative z-1">
-            <div class="d-flex justify-content-between align-items-start mb-2">
+            <div class="d-flex justify-content-between align-items-start mb-3">
                 <div>
-                    <div class="d-flex align-items-center gap-2 mb-1">
+                    <div class="d-flex align-items-center gap-2 mb-1.5">
                         <span style="font-weight: 900; font-size: 18px; letter-spacing: -0.3px;">Cicalengka<span style="color: #FFE4E6;">Pay</span></span>
                         <span class="badge bg-white text-danger px-2.5 py-1 rounded-pill fw-bold" style="font-size: 8.5px; letter-spacing: 0.5px;">E-WALLET</span>
                     </div>
-                    <div class="text-white-50" style="font-size: 10px; font-weight: 500;">SALDO UTAMA AKTIF</div>
-                    <div class="fw-extrabold my-1 text-white" style="font-size: 28px; letter-spacing: -0.8px; font-family: system-ui, -apple-system, sans-serif;">
+                    <div class="text-white-50" style="font-size: 10px; font-weight: 600; letter-spacing: 0.3px;">SALDO UTAMA AKTIF</div>
+                    <div class="fw-extrabold my-1.5 text-white" style="font-size: 29px; letter-spacing: -0.8px; font-family: system-ui, -apple-system, sans-serif;">
                         <?= format_rupiah($wallet['balance'] ?? 0) ?>
                     </div>
                 </div>
@@ -34,28 +34,28 @@
             </div>
 
             <!-- Ringkasan Aktivitas Saldo -->
-            <div class="row g-2 mt-2 mb-3">
+            <div class="row g-2.5 my-3.5">
                 <div class="col-4">
-                    <div class="p-2 rounded-3 text-center" style="background: rgba(255,255,255,0.14); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2);">
-                        <div class="text-white-50" style="font-size: 9px;">Topup Berhasil</div>
-                        <div class="fw-bold text-white mt-0.5" style="font-size: 12px;"><?= $topup_stats['success_count'] ?? 0 ?>x</div>
+                    <div class="p-2.5 rounded-3 text-center" style="background: rgba(255,255,255,0.14); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2);">
+                        <div class="text-white-50" style="font-size: 9.5px;">Topup Berhasil</div>
+                        <div class="fw-bold text-white mt-1" style="font-size: 12.5px;"><?= $topup_stats['success_count'] ?? 0 ?>x</div>
                     </div>
                 </div>
                 <div class="col-4">
-                    <div class="p-2 rounded-3 text-center" style="background: rgba(255,255,255,0.14); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2);">
-                        <div class="text-white-50" style="font-size: 9px;">Menunggu</div>
-                        <div class="fw-bold text-warning mt-0.5" style="font-size: 12px;"><?= $topup_stats['pending_count'] ?? 0 ?>x</div>
+                    <div class="p-2.5 rounded-3 text-center" style="background: rgba(255,255,255,0.14); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2);">
+                        <div class="text-white-50" style="font-size: 9.5px;">Menunggu</div>
+                        <div class="fw-bold text-warning mt-1" style="font-size: 12.5px;"><?= $topup_stats['pending_count'] ?? 0 ?>x</div>
                     </div>
                 </div>
                 <div class="col-4">
-                    <div class="p-2 rounded-3 text-center" style="background: rgba(255,255,255,0.14); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2);">
-                        <div class="text-white-50" style="font-size: 9px;">Refund Masuk</div>
-                        <div class="fw-bold text-info mt-0.5" style="font-size: 12px;"><?= count(array_filter($transactions ?? [], fn($t) => ($t['category'] ?? '') === 'order_refund')) ?>x</div>
+                    <div class="p-2.5 rounded-3 text-center" style="background: rgba(255,255,255,0.14); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2);">
+                        <div class="text-white-50" style="font-size: 9.5px;">Refund Masuk</div>
+                        <div class="fw-bold text-info mt-1" style="font-size: 12.5px;"><?= count(array_filter($transactions ?? [], fn($t) => ($t['category'] ?? '') === 'order_refund')) ?>x</div>
                     </div>
                 </div>
             </div>
 
-            <button onclick="customTopUpDialog()" class="btn btn-white w-100 fw-extrabold py-2.5 rounded-pill shadow-xs d-flex align-items-center justify-content-center gap-2" style="color: #EE2737; font-size: 12px; background: #FFFFFF;">
+            <button onclick="customTopUpDialog()" class="btn btn-white w-100 fw-extrabold py-3 rounded-pill shadow-xs d-flex align-items-center justify-content-center gap-2 mt-3.5" style="color: #EE2737; font-size: 12.5px; background: #FFFFFF;">
                 <i class="bi bi-plus-circle-fill fs-6"></i>
                 <span>Isi Saldo CicalengkaPay Baru</span>
             </button>
@@ -63,15 +63,15 @@
     </div>
 
     <!-- Quick Top Up Amount Selector (ShopeePay / Dana Style) -->
-    <div class="p-3.5 mb-3.5 bg-white border" style="border-radius: 20px; border-color: #E2E8F0 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.03);">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="d-flex align-items-center gap-2">
-                <div class="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px; font-size: 14px; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);">
+    <div class="p-4 mb-4 bg-white border" style="border-radius: 22px; border-color: #E2E8F0 !important; box-shadow: 0 4px 18px rgba(0,0,0,0.03);">
+        <div class="d-flex justify-content-between align-items-center mb-3.5">
+            <div class="d-flex align-items-center gap-2.5">
+                <div class="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; font-size: 15px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);">
                     <i class="bi bi-lightning-fill"></i>
                 </div>
                 <div>
-                    <h6 class="fw-bold m-0 text-dark" style="font-size: 13px; letter-spacing: -0.2px;">Isi Saldo Instan</h6>
-                    <div class="text-muted" style="font-size: 9.5px;">Bebas Biaya Admin • Langsung Masuk</div>
+                    <h6 class="fw-bold m-0 text-dark" style="font-size: 13.5px; letter-spacing: -0.2px;">Isi Saldo Instan</h6>
+                    <div class="text-muted" style="font-size: 9.5px; margin-top: 1px;">Bebas Biaya Admin • Langsung Masuk</div>
                 </div>
             </div>
             <span class="badge text-white px-2.5 py-1.5" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); font-size: 8.5px; font-weight: 700; border-radius: 8px;">
@@ -79,7 +79,7 @@
             </span>
         </div>
 
-        <div class="row g-2.5">
+        <div class="row g-3">
             <?php
             $quickNominals = [
                 ['amount' => 20000,  'label' => '20.000',  'tag' => 'Hemat'],
@@ -91,13 +91,13 @@
             ?>
             <div class="col-6">
                 <button type="button" onclick="quickTopUp(<?= $item['amount'] ?>)" 
-                        class="btn w-100 p-2.5 border text-start position-relative overflow-hidden transition-all hover-card-glow" 
-                        style="border-radius: 14px !important; background: #FFFFFF; border: 1.5px solid #E2E8F0 !important;">
+                        class="btn w-100 p-3 border text-start position-relative overflow-hidden transition-all hover-card-glow" 
+                        style="border-radius: 16px !important; background: #FFFFFF; border: 1.5px solid #E2E8F0 !important; min-height: 64px;">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <span class="text-muted" style="font-size: 10px; font-weight: 600;">Rp</span>
-                        <span class="badge bg-danger-subtle text-danger fw-bold" style="font-size: 8px; padding: 2px 6px; border-radius: 6px;"><?= $item['tag'] ?></span>
+                        <span class="badge bg-danger-subtle text-danger fw-bold" style="font-size: 8px; padding: 2.5px 7px; border-radius: 6px;"><?= $item['tag'] ?></span>
                     </div>
-                    <div class="fw-extrabold text-dark" style="font-size: 16px; letter-spacing: -0.5px; color: #0F172A !important;">
+                    <div class="fw-extrabold text-dark" style="font-size: 16.5px; letter-spacing: -0.5px; color: #0F172A !important;">
                         <?= $item['label'] ?>
                     </div>
                 </button>
@@ -105,8 +105,8 @@
             <?php endforeach; ?>
         </div>
 
-        <div class="mt-2.5">
-            <button type="button" onclick="customTopUpDialog()" class="btn btn-light border w-100 py-2.5 rounded-pill fw-bold text-danger d-flex align-items-center justify-content-center gap-2" style="font-size: 12px; background: #FFF5F5; border-color: #FECDD3 !important;">
+        <div class="mt-3.5">
+            <button type="button" onclick="customTopUpDialog()" class="btn btn-light border w-100 py-3 rounded-pill fw-bold text-danger d-flex align-items-center justify-content-center gap-2" style="font-size: 12px; background: #FFF5F5; border-color: #FECDD3 !important;">
                 <i class="bi bi-pencil-square fs-6"></i>
                 <span>Masukkan Nominal Lainnya</span>
             </button>
@@ -114,21 +114,21 @@
     </div>
 
     <!-- Navigation Tabs (Standard Bootstrap 5 HTML to prevent selector-engine error) -->
-    <ul class="nav nav-pills nav-fill bg-light p-1 border mb-3 rounded-4" id="walletTabs" role="tablist" style="background: #F1F5F9 !important; border-color: #E2E8F0 !important;">
+    <ul class="nav nav-pills nav-fill bg-light p-1.5 border mb-3.5 rounded-4" id="walletTabs" role="tablist" style="background: #F1F5F9 !important; border-color: #E2E8F0 !important;">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active fw-bold py-2.5 px-2 d-flex align-items-center justify-content-center gap-1.5" 
-                    id="mutation-tab" data-bs-toggle="tab" data-bs-target="#mutation-pane" type="button" role="tab" aria-controls="mutation-pane" aria-selected="true" style="font-size: 11.5px; border-radius: 12px !important;">
+            <button class="nav-link active fw-bold py-2.5 px-3 d-flex align-items-center justify-content-center gap-1.5" 
+                    id="mutation-tab" data-bs-toggle="tab" data-bs-target="#mutation-pane" type="button" role="tab" aria-controls="mutation-pane" aria-selected="true" style="font-size: 12px; border-radius: 12px !important;">
                 <i class="bi bi-receipt-cutoff text-danger fs-6"></i>
                 <span>Mutasi Saldo & Refund</span>
-                <span class="badge bg-danger text-white rounded-pill px-1.5" style="font-size: 9px;"><?= count($transactions ?? []) ?></span>
+                <span class="badge bg-danger text-white rounded-pill px-1.5" style="font-size: 9.5px;"><?= count($transactions ?? []) ?></span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link fw-bold py-2.5 px-2 d-flex align-items-center justify-content-center gap-1.5 text-secondary" 
-                    id="topup-tab" data-bs-toggle="tab" data-bs-target="#topup-pane" type="button" role="tab" aria-controls="topup-pane" aria-selected="false" style="font-size: 11.5px; border-radius: 12px !important;">
+            <button class="nav-link fw-bold py-2.5 px-3 d-flex align-items-center justify-content-center gap-1.5 text-secondary" 
+                    id="topup-tab" data-bs-toggle="tab" data-bs-target="#topup-pane" type="button" role="tab" aria-controls="topup-pane" aria-selected="false" style="font-size: 12px; border-radius: 12px !important;">
                 <i class="bi bi-journal-check fs-6"></i>
                 <span>Tiket Top Up Midtrans</span>
-                <span class="badge bg-secondary-subtle text-secondary rounded-pill px-1.5" style="font-size: 9px;"><?= count($topup_logs ?? []) ?></span>
+                <span class="badge bg-secondary-subtle text-secondary rounded-pill px-1.5" style="font-size: 9.5px;"><?= count($topup_logs ?? []) ?></span>
             </button>
         </li>
     </ul>
@@ -150,23 +150,23 @@
             ?>
 
             <!-- Filter Pills -->
-            <div class="d-flex gap-1.5 mb-3 overflow-auto pb-1" style="scrollbar-width: none;">
-                <button type="button" onclick="filterMutationList('all')" class="btn btn-sm btn-dark rounded-pill px-3 py-1.5 fw-bold mutation-filter-btn active" data-mfilter="all" style="font-size: 10.5px;">
+            <div class="d-flex gap-2 mb-3.5 overflow-auto pb-1" style="scrollbar-width: none;">
+                <button type="button" onclick="filterMutationList('all')" class="btn btn-sm btn-dark rounded-pill px-3.5 py-2 fw-bold mutation-filter-btn active" data-mfilter="all" style="font-size: 11px;">
                     Semua (<?= count($transactions) ?>)
                 </button>
-                <button type="button" onclick="filterMutationList('order_refund')" class="btn btn-sm btn-light border rounded-pill px-3 py-1.5 fw-bold mutation-filter-btn text-primary" data-mfilter="order_refund" style="font-size: 10.5px;">
+                <button type="button" onclick="filterMutationList('order_refund')" class="btn btn-sm btn-light border rounded-pill px-3.5 py-2 fw-bold mutation-filter-btn text-primary" data-mfilter="order_refund" style="font-size: 11px;">
                     <i class="bi bi-arrow-counterclockwise me-1"></i> Refund (<?= $refundCount ?>)
                 </button>
-                <button type="button" onclick="filterMutationList('topup')" class="btn btn-sm btn-light border rounded-pill px-3 py-1.5 fw-bold mutation-filter-btn text-success" data-mfilter="topup" style="font-size: 10.5px;">
+                <button type="button" onclick="filterMutationList('topup')" class="btn btn-sm btn-light border rounded-pill px-3.5 py-2 fw-bold mutation-filter-btn text-success" data-mfilter="topup" style="font-size: 11px;">
                     <i class="bi bi-plus-circle-fill me-1"></i> Top Up (<?= $topupCount ?>)
                 </button>
-                <button type="button" onclick="filterMutationList('order_payment')" class="btn btn-sm btn-light border rounded-pill px-3 py-1.5 fw-bold mutation-filter-btn text-danger" data-mfilter="order_payment" style="font-size: 10.5px;">
+                <button type="button" onclick="filterMutationList('order_payment')" class="btn btn-sm btn-light border rounded-pill px-3.5 py-2 fw-bold mutation-filter-btn text-danger" data-mfilter="order_payment" style="font-size: 11px;">
                     <i class="bi bi-bag-check-fill me-1"></i> Belanja (<?= $orderCount ?>)
                 </button>
             </div>
 
             <?php if (empty($transactions)): ?>
-                <div class="p-4 bg-white border text-center text-muted" style="font-size: 11px; border-radius: 16px;">
+                <div class="p-4 bg-white border text-center text-muted" style="font-size: 11px; border-radius: 18px;">
                     <div class="rounded-circle bg-light text-secondary d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 48px; height: 48px; font-size: 20px;">
                         <i class="bi bi-receipt-cutoff"></i>
                     </div>
@@ -176,7 +176,7 @@
                     </div>
                 </div>
             <?php else: ?>
-                <div class="d-flex flex-column gap-2" id="mutationContainer">
+                <div class="d-flex flex-column gap-3" id="mutationContainer">
                     <?php foreach ($transactions as $tx):
                         $txCat = $tx['category'] ?? $tx['type'] ?? 'credit';
                         $isCredit = ($tx['type'] === 'credit');
@@ -216,35 +216,35 @@
                             $badgeText = $isCredit ? 'Masuk' : 'Keluar';
                         }
                     ?>
-                        <div class="mutation-item-card bg-white border shadow-2xs px-3 py-2.5" 
-                             style="border-radius: 14px; border-color: #E2E8F0 !important; <?= ($txCat === 'order_refund') ? 'border-left: 4px solid #2563EB !important;' : '' ?>" 
+                        <div class="mutation-item-card bg-white border shadow-2xs p-3.5" 
+                             style="border-radius: 16px; border-color: #E2E8F0 !important; <?= ($txCat === 'order_refund') ? 'border-left: 4px solid #2563EB !important;' : '' ?>" 
                              data-cat="<?= htmlspecialchars($txCat) ?>">
-                            <div class="d-flex align-items-center justify-content-between gap-2">
+                            <div class="d-flex align-items-center justify-content-between gap-3">
                                 <!-- Left Icon + Title Info -->
-                                <div class="d-flex align-items-center gap-2.5 min-w-0" style="flex: 1 1 auto;">
+                                <div class="d-flex align-items-center gap-3 min-w-0" style="flex: 1 1 auto;">
                                     <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" 
-                                         style="width: 36px; height: 36px; background: <?= $bgColor ?>;">
-                                        <i class="bi <?= $icon ?>" style="font-size: 15px; color: <?= $color ?>;"></i>
+                                         style="width: 42px; height: 42px; background: <?= $bgColor ?>;">
+                                        <i class="bi <?= $icon ?>" style="font-size: 17px; color: <?= $color ?>;"></i>
                                     </div>
-                                    <div class="min-w-0" style="line-height: 1.25;">
-                                        <div class="fw-bold text-dark text-truncate" style="font-size: 11.5px; letter-spacing: -0.2px;">
+                                    <div class="min-w-0" style="line-height: 1.3;">
+                                        <div class="fw-bold text-dark text-truncate" style="font-size: 12.5px; letter-spacing: -0.2px;">
                                             <?= $title ?>
                                         </div>
-                                        <div class="text-muted text-truncate mt-0.5" style="font-size: 9.5px; max-width: 190px;">
+                                        <div class="text-muted text-truncate mt-0.5" style="font-size: 10px; max-width: 200px;">
                                             <?= htmlspecialchars($tx['description'] ?? 'Transaksi Dompet') ?>
                                         </div>
-                                        <div class="text-muted mt-1" style="font-size: 8.5px;">
-                                            <i class="bi bi-clock me-0.5"></i><?= date('d M Y, H:i', strtotime($tx['created_at'])) ?>
+                                        <div class="text-muted mt-1" style="font-size: 9px;">
+                                            <i class="bi bi-clock me-1"></i><?= date('d M Y, H:i', strtotime($tx['created_at'])) ?>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Right Amount -->
-                                <div class="text-end flex-shrink-0" style="min-width: 80px;">
-                                    <div class="fw-extrabold" style="font-size: 12.5px; color: <?= $color ?>; letter-spacing: -0.3px;">
+                                <div class="text-end flex-shrink-0" style="min-width: 85px;">
+                                    <div class="fw-extrabold" style="font-size: 13.5px; color: <?= $color ?>; letter-spacing: -0.3px;">
                                         <?= $sign ?><?= format_rupiah($tx['amount']) ?>
                                     </div>
-                                    <span class="badge rounded-pill px-2 py-0.5 mt-0.5" style="font-size: 8px; font-weight: 700; background: <?= $bgColor ?>; color: <?= $color ?>; border: 1px solid <?= $color ?>20;">
+                                    <span class="badge rounded-pill px-2.5 py-1 mt-1" style="font-size: 8.5px; font-weight: 700; background: <?= $bgColor ?>; color: <?= $color ?>; border: 1px solid <?= $color ?>20;">
                                         <?= $badgeText ?>
                                     </span>
                                 </div>
