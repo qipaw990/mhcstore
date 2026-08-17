@@ -217,25 +217,69 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
                 </div>
             </div>
 
-            <!-- Order Canceled Alert Card -->
-            <div id="order-canceled-card" class="p-3.5 bg-danger-subtle border border-danger-subtle shadow-xs mb-3 <?= ($order['order_status'] === 'canceled') ? '' : 'd-none' ?>" style="border-radius: 16px; padding: 14px 16px !important; background-color: #FEF2F2 !important; border-color: #FCA5A5 !important;">
-                <div class="d-flex align-items-start gap-3">
-                    <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; font-size: 16px;">
-                        <i class="bi bi-x-lg"></i>
+            <!-- Order Canceled Alert Card (Premium) -->
+            <?php
+                $isRefundable = in_array($order['payment_method'] ?? '', ['wallet', 'midtrans', 'online', 'qris', 'va', 'credit_card']) && ($order['payment_status'] ?? '') === 'refunded';
+            ?>
+            <div id="order-canceled-card" class="mb-3 <?= ($order['order_status'] === 'canceled') ? '' : 'd-none' ?>" style="border-radius: 18px; overflow: hidden; box-shadow: 0 4px 20px rgba(238,39,55,0.12);">
+                <!-- Red Header Banner -->
+                <div class="p-3.5 text-white" style="background: linear-gradient(135deg, #EE2737 0%, #9B1C1C 100%); padding: 14px 16px !important;">
+                    <div class="d-flex align-items-center gap-2.5 mb-2">
+                        <div class="rounded-circle bg-white bg-opacity-25 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 34px; height: 34px; font-size: 16px;">
+                            <i class="bi bi-x-circle-fill text-white"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-white" style="font-size: 13px; letter-spacing: -0.2px;">Pesanan Dibatalkan Otomatis</div>
+                            <div class="text-white-50" style="font-size: 9.5px;">Tidak mendapatkan kurir dalam waktu 1 menit</div>
+                        </div>
                     </div>
-                    <div class="flex-grow-1 min-w-0">
-                        <h6 class="fw-bold text-danger m-0" style="font-size: 12.5px;">Pesanan Dibatalkan Otomatis</h6>
-                        <div class="text-muted mt-1" id="canceled-reason-text" style="font-size: 10px; line-height: 1.4;">
-                            <?= !empty($order['cancellation_reason']) ? htmlspecialchars($order['cancellation_reason']) : 'Pesanan otomatis dibatalkan karena tidak mendapatkan kurir dalam waktu 1 menit. Saldo / pembayaran Anda telah otomatis dikembalikan.' ?>
+                    <div id="canceled-reason-text" class="px-2 py-1.5 rounded-3 text-white-50" style="background: rgba(0,0,0,0.2); font-size: 9.5px; line-height: 1.5;">
+                        <?= !empty($order['cancellation_reason']) ? htmlspecialchars($order['cancellation_reason']) : 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 1 menit' ?>
+                    </div>
+                </div>
+
+                <!-- Refund Status Body -->
+                <div class="bg-white border border-top-0 p-3.5" style="border-bottom-left-radius: 18px; border-bottom-right-radius: 18px; border-color: #FECACA !important; padding: 14px 16px !important;">
+                    <?php if ($isRefundable): ?>
+                    <!-- Refund Success Banner -->
+                    <div class="d-flex align-items-center gap-2.5 p-2.5 rounded-3 mb-3" style="background: linear-gradient(135deg, #F0FDF4, #DCFCE7); border: 1px solid #BBF7D0;">
+                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; font-size: 14px;">
+                            <i class="bi bi-wallet2"></i>
                         </div>
-                        <div class="mt-2.5 d-flex gap-2">
-                            <a href="<?= $baseUrl ?>/search" class="btn btn-danger btn-sm rounded-pill fw-bold px-3 py-1" style="font-size: 10.5px; background: #EE2737; border: none;">
-                                <i class="bi bi-arrow-repeat me-1"></i> Pesan Lagi
-                            </a>
-                            <a href="<?= $baseUrl ?>/orders" class="btn btn-outline-secondary btn-sm rounded-pill fw-semibold px-3 py-1" style="font-size: 10.5px;">
-                                Riwayat Pesanan
-                            </a>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold text-success" style="font-size: 11px;">Dana Berhasil Dikembalikan 💚</div>
+                            <div class="text-muted" style="font-size: 9.5px;">
+                                <strong class="text-success"><?= format_rupiah($order['total_amount']) ?></strong> telah masuk ke CicalengkaPay Anda
+                            </div>
                         </div>
+                        <a href="<?= $baseUrl ?>/wallet" class="btn btn-success btn-sm rounded-pill fw-bold px-2.5 py-1 flex-shrink-0" style="font-size: 9.5px; white-space: nowrap;">
+                            <i class="bi bi-receipt me-1"></i>Lihat Mutasi
+                        </a>
+                    </div>
+                    <?php else: ?>
+                    <!-- No Refund (COD / Unpaid) -->
+                    <div class="d-flex align-items-center gap-2 p-2.5 rounded-3 mb-3" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
+                        <i class="bi bi-info-circle text-secondary" style="font-size: 13px;"></i>
+                        <div class="text-muted" style="font-size: 9.5px;">
+                            <?= ($order['payment_method'] ?? '') === 'cod' ? 'Metode COD: tidak ada dana yang telah keluar.' : 'Pesanan belum dibayar. Tidak ada dana yang dipotong.' ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Transaction Info Row -->
+                    <div class="d-flex justify-content-between align-items-center text-muted mb-3" style="font-size: 9.5px;">
+                        <div><i class="bi bi-receipt-cutoff me-1"></i><?= htmlspecialchars($order['order_code']) ?></div>
+                        <div><i class="bi bi-clock me-1"></i><?= !empty($order['canceled_at']) ? date('d M Y, H:i', strtotime($order['canceled_at'])) : date('d M Y, H:i', strtotime($order['created_at'])) ?></div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-2">
+                        <a href="<?= $baseUrl ?>/search" class="btn btn-danger fw-bold rounded-pill flex-grow-1 py-2" style="font-size: 11px; background: #EE2737; border: none;">
+                            <i class="bi bi-arrow-repeat me-1"></i> Pesan Lagi
+                        </a>
+                        <a href="<?= $baseUrl ?>/orders" class="btn btn-outline-secondary rounded-pill fw-semibold px-3 py-2" style="font-size: 11px;">
+                            <i class="bi bi-clock-history me-1"></i> Riwayat
+                        </a>
                     </div>
                 </div>
             </div>

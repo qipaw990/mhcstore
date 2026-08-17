@@ -240,7 +240,6 @@
             <?php endif; ?>
         </div>
 
-        <!-- PANE 2: Semua Mutasi Dompet -->
         <div class="tab-pane fade" id="mutation-pane" role="tabpanel">
             <div class="d-flex justify-content-between align-items-center mb-2.5">
                 <h6 class="fw-bold m-0 text-dark" style="font-size: 12px;">Riwayat Mutasi Saldo</h6>
@@ -254,20 +253,52 @@
                 </div>
             <?php else: ?>
                 <div class="d-flex flex-column gap-2">
-                    <?php foreach ($transactions as $tx): ?>
-                        <div class="p-3 bg-white border shadow-xs d-flex justify-content-between align-items-center" style="border-radius: 14px;">
+                    <?php foreach ($transactions as $tx):
+                        $txCat = $tx['category'] ?? $tx['type'] ?? 'credit';
+                        $isCredit = ($tx['type'] === 'credit');
+
+                        // Map category to icon, label, color
+                        $catMap = [
+                            'topup'            => ['icon' => 'bi-plus-circle-fill',       'label' => 'Top Up CicalengkaPay', 'color' => '#10B981', 'bg' => '#D1FAE5'],
+                            'order_refund'     => ['icon' => 'bi-arrow-counterclockwise',  'label' => 'Refund Pembayaran',    'color' => '#3B82F6', 'bg' => '#DBEAFE'],
+                            'order_payment'    => ['icon' => 'bi-bag-check-fill',          'label' => 'Pembayaran Pesanan',   'color' => '#EE2737', 'bg' => '#FEE2E2'],
+                            'delivery_earning' => ['icon' => 'bi-bicycle',                 'label' => 'Komisi Pengantaran',   'color' => '#8B5CF6', 'bg' => '#EDE9FE'],
+                            'withdraw'         => ['icon' => 'bi-bank',                    'label' => 'Penarikan Dana',       'color' => '#F59E0B', 'bg' => '#FEF3C7'],
+                            'admin_credit'     => ['icon' => 'bi-shield-check',            'label' => 'Kredit Admin',         'color' => '#10B981', 'bg' => '#D1FAE5'],
+                            'admin_debit'      => ['icon' => 'bi-shield-exclamation',      'label' => 'Debit Admin',          'color' => '#6B7280', 'bg' => '#F3F4F6'],
+                        ];
+                        $catInfo = $catMap[$txCat] ?? ($isCredit
+                            ? ['icon' => 'bi-arrow-down-left-circle-fill', 'label' => 'Saldo Masuk',  'color' => '#10B981', 'bg' => '#D1FAE5']
+                            : ['icon' => 'bi-arrow-up-right-circle-fill',  'label' => 'Saldo Keluar', 'color' => '#EE2737', 'bg' => '#FEE2E2']
+                        );
+                    ?>
+                        <div class="p-3 bg-white border shadow-xs" style="border-radius: 14px;">
                             <div class="d-flex align-items-center gap-2.5">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center <?= $tx['type'] === 'credit' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger' ?>" style="width: 32px; height: 32px; flex-shrink: 0;">
-                                    <i class="bi <?= $tx['type'] === 'credit' ? 'bi-arrow-down-left' : 'bi-arrow-up-right' ?>" style="font-size: 14px;"></i>
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background: <?= $catInfo['bg'] ?>;">
+                                    <i class="bi <?= $catInfo['icon'] ?>" style="font-size: 15px; color: <?= $catInfo['color'] ?>;"></i>
                                 </div>
-                                <div>
-                                    <div class="fw-semibold text-dark" style="font-size: 11.5px;"><?= htmlspecialchars($tx['description'] ?? 'Transaksi Dompet') ?></div>
-                                    <div class="text-muted" style="font-size: 9.5px;"><?= date('d M Y, H:i', strtotime($tx['created_at'])) ?></div>
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="fw-semibold text-dark" style="font-size: 11.5px;"><?= $catInfo['label'] ?></div>
+                                    <div class="text-muted text-truncate" style="font-size: 9.5px; max-width: 180px;"><?= htmlspecialchars($tx['description'] ?? 'Transaksi Dompet') ?></div>
+                                    <div class="text-muted" style="font-size: 9px;"><i class="bi bi-clock me-0.5"></i><?= date('d M Y, H:i', strtotime($tx['created_at'])) ?></div>
+                                </div>
+                                <div class="text-end flex-shrink-0">
+                                    <div class="fw-bold" style="font-size: 12.5px; color: <?= $catInfo['color'] ?>;">
+                                        <?= $isCredit ? '+' : '-' ?><?= format_rupiah($tx['amount']) ?>
+                                    </div>
+                                    <span class="badge rounded-pill px-2 py-0.5" style="font-size: 8px; font-weight: 700; background: <?= $catInfo['bg'] ?>; color: <?= $catInfo['color'] ?>;">
+                                        <?= $isCredit ? 'Masuk' : 'Keluar' ?>
+                                    </span>
                                 </div>
                             </div>
-                            <div class="fw-bold text-end <?= $tx['type'] === 'credit' ? 'text-success' : 'text-danger' ?>" style="font-size: 12px;">
-                                <?= $tx['type'] === 'credit' ? '+' : '-' ?><?= format_rupiah($tx['amount']) ?>
+                            <?php if ($txCat === 'order_refund' && !empty($tx['reference_id'])): ?>
+                            <div class="mt-2 pt-2 border-top d-flex align-items-center gap-1.5" style="font-size: 9px;">
+                                <i class="bi bi-arrow-counterclockwise text-primary"></i>
+                                <span class="text-muted">Refund dari pesanan</span>
+                                <span class="fw-semibold text-primary" style="font-family: monospace;">Order #<?= htmlspecialchars($tx['reference_id']) ?></span>
+                                <span class="ms-auto badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5 rounded-pill" style="font-size: 8px;">✓ Refund Otomatis</span>
                             </div>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </div>
