@@ -7,10 +7,10 @@
     <h6 class="fw-bold m-0 text-dark" style="font-size: 14px; letter-spacing: -0.2px;">Dompet Digital CicalengkaPay</h6>
 </div>
 
-<div class="px-2.5 py-2.5">
+<div class="px-3 py-3 pb-5">
     <!-- CicalengkaPay Compact Premium Banner Card -->
-    <div class="p-3 text-white mb-2.5 position-relative overflow-hidden" 
-         style="background: linear-gradient(135deg, #EE2737 0%, #B91C1C 100%); border-radius: 16px; box-shadow: 0 4px 16px rgba(238, 39, 55, 0.18);">
+    <div class="p-3.5 text-white mb-3 position-relative overflow-hidden" 
+         style="background: linear-gradient(135deg, #EE2737 0%, #B91C1C 100%); border-radius: 18px; box-shadow: 0 4px 18px rgba(238, 39, 55, 0.18);">
         <!-- Watermark Pattern Background -->
         <div class="position-absolute" style="right: -10px; bottom: -15px; font-size: 80px; opacity: 0.08; line-height: 1; pointer-events: none;">
             <i class="bi bi-wallet2"></i>
@@ -63,7 +63,7 @@
     </div>
 
     <!-- Quick Top Up Amount Selector (Compact ShopeePay Style) -->
-    <div class="p-3 mb-2.5 bg-white border" style="border-radius: 16px; border-color: #E2E8F0 !important; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+    <div class="p-3 mb-3 bg-white border" style="border-radius: 18px; border-color: #E2E8F0 !important; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
         <div class="d-flex justify-content-between align-items-center mb-2">
             <div class="d-flex align-items-center gap-2">
                 <div class="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center flex-shrink-0" style="width: 24px; height: 24px; font-size: 12px; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.25);">
@@ -114,7 +114,7 @@
     </div>
 
     <!-- Navigation Tabs (Compact Bootstrap 5 HTML) -->
-    <ul class="nav nav-pills nav-fill bg-light p-1 border mb-2.5 rounded-3" id="walletTabs" role="tablist" style="background: #F1F5F9 !important; border-color: #E2E8F0 !important;">
+    <ul class="nav nav-pills nav-fill bg-light p-1 border mb-3 rounded-3" id="walletTabs" role="tablist" style="background: #F1F5F9 !important; border-color: #E2E8F0 !important;">
         <li class="nav-item" role="presentation">
             <button class="nav-link active fw-bold py-1.5 px-2 d-flex align-items-center justify-content-center gap-1" 
                     id="mutation-tab" data-bs-toggle="tab" data-bs-target="#mutation-pane" type="button" role="tab" aria-controls="mutation-pane" aria-selected="true" style="font-size: 10.5px; border-radius: 8px !important;">
@@ -150,7 +150,7 @@
             ?>
 
             <!-- Filter Pills (Compact) -->
-            <div class="d-flex gap-1 mb-2.5 overflow-auto pb-0.5" style="scrollbar-width: none;">
+            <div class="d-flex gap-1.5 mb-3 overflow-auto pb-0.5 px-0.5" style="scrollbar-width: none;">
                 <button type="button" onclick="filterMutationList('all')" class="btn btn-sm btn-dark rounded-pill px-2.5 py-1 fw-bold mutation-filter-btn active" data-mfilter="all" style="font-size: 9.5px;">
                     Semua (<?= count($transactions) ?>)
                 </button>
