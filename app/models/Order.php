@@ -215,43 +215,50 @@ class Order extends Model
                 // ===== REFUND LOGIC PER PAYMENT METHOD =====
 
                 if ($ord['payment_status'] === 'paid') {
+                    $walletModel = new \App\Models\Wallet();
+
                     if ($ord['payment_method'] === 'wallet') {
                         // CicalengkaPay / Wallet → kembalikan saldo otomatis
-                        $walletModel = new \App\Models\Wallet();
                         $walletModel->credit(
                             (int)$ord['customer_id'],
                             (float)$ord['total_amount'],
                             'order_refund',
-                            "Pengembalian saldo untuk pesanan #{$ord['order_code']} (tidak ada driver)",
+                            "Pengembalian saldo CicalengkaPay untuk pesanan #{$ord['order_code']} (tidak ada driver)",
                             (string)$ord['id']
                         );
                         Database::update('orders', ['payment_status' => 'refunded'], 'id = ?', [$ord['id']]);
 
                     } elseif (in_array($ord['payment_method'], ['midtrans', 'online', 'qris', 'va', 'credit_card'])) {
-                        // Midtrans / Online → tandai sebagai pending_refund (harus diproses manual oleh admin via Midtrans Dashboard)
-                        // Refund otomatis via Midtrans Refund API memerlukan integrasi tambahan
-                        Database::update('orders', ['payment_status' => 'pending_refund'], 'id = ?', [$ord['id']]);
-
-                        // Notifikasi admin untuk proses refund manual
-                        $adminNotif = Database::fetchOne("SELECT id FROM `users` WHERE `role` = 'admin' LIMIT 1");
-                        if ($adminNotif) {
-                            Database::insert('notifications', [
-                                'user_id' => (int)$adminNotif['id'],
-                                'title'   => 'Refund Midtrans Diperlukan ⚠️',
-                                'message' => "Pesanan #{$ord['order_code']} dibatalkan otomatis (tidak ada driver). Dana Midtrans Rp " . number_format((float)$ord['total_amount'], 0, ',', '.') . " perlu direfund manual via dashboard Midtrans.",
-                                'type'    => 'order',
-                                'data_json' => json_encode(['order_code' => $ord['order_code'], 'order_id' => $ord['id'], 'refund_amount' => $ord['total_amount']])
-                            ]);
+                        // Midtrans / Online → refund otomatis ke CicalengkaPay wallet
+                        // Lebih cepat & mudah dibanding proses refund ke rekening bank (1-7 hari kerja)
+                        $existing = Database::fetchOne(
+                            "SELECT id FROM `wallet_transactions` WHERE `reference_id` = ? AND `type` = 'order_refund' LIMIT 1",
+                            [(string)$ord['id']]
+                        );
+                        if (!$existing) {
+                            $walletModel->credit(
+                                (int)$ord['customer_id'],
+                                (float)$ord['total_amount'],
+                                'order_refund',
+                                "Refund Midtrans → CicalengkaPay untuk pesanan #{$ord['order_code']} (tidak ada driver tersedia)",
+                                (string)$ord['id']
+                            );
                         }
+                        Database::update('orders', ['payment_status' => 'refunded'], 'id = ?', [$ord['id']]);
                     }
                     // COD: tidak ada uang yang keluar, tidak perlu refund
                 }
 
-                // Send notification
+                // Send notification to customer
+                $isRefunded = in_array($ord['payment_method'], ['wallet', 'midtrans', 'online', 'qris', 'va', 'credit_card']) && $ord['payment_status'] === 'paid';
+                $notifMsg = $isRefunded
+                    ? "Pesanan #{$ord['order_code']} dibatalkan otomatis (tidak ada driver). Dana Rp " . number_format((float)$ord['total_amount'], 0, ',', '.') . " telah dikembalikan ke CicalengkaPay Anda."
+                    : "Pesanan #{$ord['order_code']} dibatalkan otomatis karena tidak ada driver dalam waktu 1 menit.";
+
                 Database::insert('notifications', [
                     'user_id'   => (int)$ord['customer_id'],
-                    'title'     => 'Pesanan Dibatalkan Otomatis ⚠️',
-                    'message'   => "Pesanan #{$ord['order_code']} dibatalkan otomatis karena tidak ada driver dalam waktu 1 menit.",
+                    'title'     => $isRefunded ? 'Pesanan Dibatalkan & Dana Dikembalikan 💚' : 'Pesanan Dibatalkan Otomatis ⚠️',
+                    'message'   => $notifMsg,
                     'type'      => 'order',
                     'data_json' => json_encode(['order_code' => $ord['order_code'], 'order_id' => $ord['id']])
                 ]);
