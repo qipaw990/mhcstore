@@ -8,55 +8,55 @@
 </div>
 
 <div class="px-3 py-3 pb-5">
-    <!-- CicalengkaPay Compact Premium Banner Card -->
-    <div class="p-3.5 text-white mb-3 position-relative overflow-hidden" 
-         style="background: linear-gradient(135deg, #EE2737 0%, #B91C1C 100%); border-radius: 18px; box-shadow: 0 4px 18px rgba(238, 39, 55, 0.18);">
+    <!-- CicalengkaPay Ultra-Premium Red Banner Card -->
+    <div class="text-white mb-3 position-relative overflow-hidden" 
+         style="background: linear-gradient(135deg, #EE2737 0%, #B91C1C 100%); border-radius: 20px; box-shadow: 0 6px 20px rgba(238, 39, 55, 0.22); padding: 18px 18px 16px 18px;">
         <!-- Watermark Pattern Background -->
-        <div class="position-absolute" style="right: -10px; bottom: -15px; font-size: 80px; opacity: 0.08; line-height: 1; pointer-events: none;">
+        <div class="position-absolute" style="right: -10px; bottom: -20px; font-size: 90px; opacity: 0.08; line-height: 1; pointer-events: none;">
             <i class="bi bi-wallet2"></i>
         </div>
 
         <div class="position-relative z-1">
             <div class="d-flex justify-content-between align-items-start mb-2">
-                <div>
-                    <div class="d-flex align-items-center gap-1.5 mb-1">
-                        <span style="font-weight: 900; font-size: 15px; letter-spacing: -0.3px;">Cicalengka<span style="color: #FFE4E6;">Pay</span></span>
-                        <span class="badge bg-white text-danger px-2 py-0.5 rounded-pill fw-bold" style="font-size: 7.5px; letter-spacing: 0.3px;">E-WALLET</span>
+                <div class="pe-2">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span style="font-weight: 900; font-size: 16px; letter-spacing: -0.3px;">Cicalengka<span style="color: #FFE4E6;">Pay</span></span>
+                        <span class="badge bg-white text-danger px-2 py-0.5 rounded-pill fw-bold shadow-xs" style="font-size: 8px; letter-spacing: 0.4px;">E-WALLET</span>
                     </div>
-                    <div class="text-white-50" style="font-size: 8.5px; font-weight: 600; letter-spacing: 0.3px;">SALDO UTAMA AKTIF</div>
-                    <div class="fw-extrabold text-white my-0.5" style="font-size: 22px; letter-spacing: -0.6px; font-family: system-ui, -apple-system, sans-serif;">
+                    <div class="text-white-50 mt-1" style="font-size: 9px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">SALDO UTAMA AKTIF</div>
+                    <div class="fw-extrabold text-white my-1" style="font-size: 24px; letter-spacing: -0.6px; font-family: system-ui, -apple-system, sans-serif;">
                         <?= format_rupiah($wallet['balance'] ?? 0) ?>
                     </div>
                 </div>
-                <div class="rounded-circle bg-white text-danger d-flex align-items-center justify-content-center flex-shrink-0" style="width: 34px; height: 34px; box-shadow: 0 2px 8px rgba(0,0,0,0.12);">
-                    <i class="bi bi-shield-check" style="font-size: 18px; color: #EE2737;"></i>
+                <div class="rounded-circle bg-white text-danger d-flex align-items-center justify-content-center flex-shrink-0 ms-2" style="width: 38px; height: 38px; box-shadow: 0 3px 10px rgba(0,0,0,0.15);">
+                    <i class="bi bi-shield-check" style="font-size: 20px; color: #EE2737;"></i>
                 </div>
             </div>
 
-            <!-- Ringkasan Aktivitas Saldo (Compact) -->
-            <div class="row g-1.5 my-2">
+            <!-- Ringkasan Aktivitas Saldo (Compact & Super Crisp) -->
+            <div class="row g-2 my-2.5">
                 <div class="col-4">
-                    <div class="p-1.5 rounded-2 text-center" style="background: rgba(255,255,255,0.14); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2);">
-                        <div class="text-white-50" style="font-size: 8px;">Topup</div>
-                        <div class="fw-bold text-white mt-0.5" style="font-size: 11px;"><?= $topup_stats['success_count'] ?? 0 ?>x</div>
+                    <div class="py-1.5 px-1 rounded-3 text-center" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.22);">
+                        <div class="text-white-50" style="font-size: 8.5px; font-weight: 600;">Topup</div>
+                        <div class="fw-bold text-white mt-0.5" style="font-size: 12px;"><?= $topup_stats['success_count'] ?? 0 ?>x</div>
                     </div>
                 </div>
                 <div class="col-4">
-                    <div class="p-1.5 rounded-2 text-center" style="background: rgba(255,255,255,0.14); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2);">
-                        <div class="text-white-50" style="font-size: 8px;">Menunggu</div>
-                        <div class="fw-bold text-warning mt-0.5" style="font-size: 11px;"><?= $topup_stats['pending_count'] ?? 0 ?>x</div>
+                    <div class="py-1.5 px-1 rounded-3 text-center" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.22);">
+                        <div class="text-white-50" style="font-size: 8.5px; font-weight: 600;">Menunggu</div>
+                        <div class="fw-bold text-warning mt-0.5" style="font-size: 12px;"><?= $topup_stats['pending_count'] ?? 0 ?>x</div>
                     </div>
                 </div>
                 <div class="col-4">
-                    <div class="p-1.5 rounded-2 text-center" style="background: rgba(255,255,255,0.14); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2);">
-                        <div class="text-white-50" style="font-size: 8px;">Refund</div>
-                        <div class="fw-bold text-info mt-0.5" style="font-size: 11px;"><?= count(array_filter($transactions ?? [], fn($t) => ($t['category'] ?? '') === 'order_refund')) ?>x</div>
+                    <div class="py-1.5 px-1 rounded-3 text-center" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.22);">
+                        <div class="text-white-50" style="font-size: 8.5px; font-weight: 600;">Refund</div>
+                        <div class="fw-bold text-info mt-0.5" style="font-size: 12px;"><?= count(array_filter($transactions ?? [], fn($t) => ($t['category'] ?? '') === 'order_refund')) ?>x</div>
                     </div>
                 </div>
             </div>
 
-            <button onclick="customTopUpDialog()" class="btn btn-white w-100 fw-extrabold py-2 rounded-pill shadow-xs d-flex align-items-center justify-content-center gap-1.5 mt-2" style="color: #EE2737; font-size: 11px; background: #FFFFFF;">
-                <i class="bi bi-plus-circle-fill" style="font-size: 12px;"></i>
+            <button type="button" onclick="customTopUpDialog()" class="btn btn-white w-100 fw-extrabold py-2.5 rounded-pill shadow-sm d-flex align-items-center justify-content-center gap-2 mt-3 transition-all" style="color: #EE2737; font-size: 12px; background: #FFFFFF; border: none; letter-spacing: -0.1px;">
+                <i class="bi bi-plus-circle-fill" style="font-size: 14px; color: #EE2737;"></i>
                 <span>Isi Saldo CicalengkaPay Baru</span>
             </button>
         </div>
