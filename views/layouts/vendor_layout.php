@@ -37,6 +37,7 @@ if ($user) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="<?= $baseUrl ?>/assets/css/mobile.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="<?= $baseUrl ?>/assets/css/vendor-style.css?v=<?= time() ?>">
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
@@ -51,12 +52,12 @@ if ($user) {
     <!-- Merchant Sticky Top Header -->
     <header class="merchant-top-header d-flex align-items-center justify-content-between">
         <div class="d-flex align-items-center gap-2.5">
-            <a href="<?= $baseUrl ?>/vendor/profile" class="position-relative text-decoration-none">
-                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($store['logo'] ?? 'assets/images/stores/default.jpg') ?>" alt="Store Logo" class="merchant-avatar-ring">
+            <a href="<?= $baseUrl ?>/vendor/profile" class="position-relative text-decoration-none flex-shrink-0" style="width: 38px; height: 38px; display: block;">
+                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($store['logo'] ?? 'assets/images/stores/default.jpg') ?>" alt="Store Logo" class="merchant-avatar-ring" style="width:38px;height:38px;max-width:38px;max-height:38px;object-fit:cover;border-radius:50%;">
                 <?php if ($store && $store['is_open']): ?>
-                    <span class="position-absolute bottom-0 end-0 bg-success border border-2 border-white rounded-circle p-1" style="width: 12px; height: 12px;" title="Toko Buka"></span>
+                    <span class="position-absolute bottom-0 end-0 bg-success border border-2 border-white rounded-circle" style="width:11px;height:11px;" title="Toko Buka"></span>
                 <?php else: ?>
-                    <span class="position-absolute bottom-0 end-0 bg-danger border border-2 border-white rounded-circle p-1" style="width: 12px; height: 12px;" title="Toko Tutup"></span>
+                    <span class="position-absolute bottom-0 end-0 bg-danger border border-2 border-white rounded-circle" style="width:11px;height:11px;" title="Toko Tutup"></span>
                 <?php endif; ?>
             </a>
             <div>
@@ -92,7 +93,7 @@ if ($user) {
     </header>
 
     <!-- Main Content Dynamic Container -->
-    <main class="flex-grow-1 p-3">
+    <main class="flex-grow-1 p-3 vendor-page-container">
         <?= $content ?>
     </main>
 
@@ -122,6 +123,22 @@ if ($user) {
             <span>Toko</span>
         </a>
     </nav>
+
+    <!-- ===== CCG Vendor Toast Notification Stack ===== -->
+    <div id="ccgVendorToastStack" style="
+        position: fixed;
+        top: 60px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 280px;
+        max-width: calc(100vw - 24px);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        pointer-events: none;
+    "></div>
 </div>
 
 <!-- Scripts -->
@@ -226,29 +243,60 @@ setInterval(async () => {
 <?php endif; ?>
 </script>
 
+<script>
+function showVendorToast(message, type = 'info', duration = 4000) {
+    const stack = document.getElementById('ccgVendorToastStack');
+    if (!stack) return;
+    const configs = {
+        success: { icon: 'bi-check-circle-fill', bg: 'linear-gradient(135deg,#10B981,#059669)', shadow: 'rgba(16,185,129,.35)', label: 'Berhasil' },
+        error:   { icon: 'bi-x-circle-fill',     bg: 'linear-gradient(135deg,#EE2737,#DC2626)', shadow: 'rgba(238,39,55,.35)',   label: 'Perhatian' },
+        info:    { icon: 'bi-info-circle-fill',   bg: 'linear-gradient(135deg,#3B82F6,#2563EB)', shadow: 'rgba(59,130,246,.35)', label: 'Info' },
+        warning: { icon: 'bi-exclamation-triangle-fill', bg: 'linear-gradient(135deg,#F59E0B,#D97706)', shadow: 'rgba(245,158,11,.35)', label: 'Peringatan' }
+    };
+    const cfg = configs[type] || configs.info;
+    const id = 'vt_' + Date.now();
+    const toast = document.createElement('div');
+    toast.id = id;
+    toast.style.cssText = `display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:12px;background:#FFFFFF;border:1px solid #E2E8F0;box-shadow:0 6px 18px rgba(15,23,42,.13);pointer-events:all;transform:translateY(-20px);transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .2s ease;opacity:0;overflow:hidden;position:relative;width:100%;`;
+    toast.innerHTML = `
+        <div style="width:28px;height:28px;border-radius:8px;background:${cfg.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 8px ${cfg.shadow};">
+            <i class="bi ${cfg.icon}" style="color:#FFF;font-size:13px;"></i>
+        </div>
+        <div style="flex:1;min-width:0;">
+            <div style="font-size:10.5px;font-weight:700;color:#0F172A;line-height:1.2;">${cfg.label}</div>
+            <div style="font-size:10px;color:#64748B;line-height:1.35;margin-top:1px;">${message}</div>
+        </div>
+        <button onclick="dismissVendorToast('${id}')" style="background:none;border:none;padding:0;width:18px;height:18px;display:flex;align-items:center;justify-content:center;color:#CBD5E1;cursor:pointer;flex-shrink:0;">
+            <i class="bi bi-x" style="font-size:14px;"></i>
+        </button>
+        <div style="position:absolute;bottom:0;left:0;height:2px;border-radius:0 0 12px 12px;background:${cfg.bg};width:100%;animation:ccgVndToastProgress ${duration}ms linear forwards;"></div>
+    `;
+    stack.appendChild(toast);
+    requestAnimationFrame(() => requestAnimationFrame(() => { toast.style.transform='translateY(0)'; toast.style.opacity='1'; }));
+    setTimeout(() => dismissVendorToast(id), duration);
+}
+function dismissVendorToast(id) {
+    const t = document.getElementById(id);
+    if (!t) return;
+    t.style.transform = 'translateY(-16px)';
+    t.style.opacity = '0';
+    setTimeout(() => { if (t.parentNode) t.parentNode.removeChild(t); }, 250);
+}
+</script>
+
 <?php if (!empty($_SESSION['success'])): ?>
-    <script>
-        Swal.fire({
-            icon: 'success',
-            title: 'Berhasil',
-            text: '<?= addslashes($_SESSION['success']) ?>',
-            timer: 3000,
-            showConfirmButton: false
-        });
-    </script>
+    <script>document.addEventListener('DOMContentLoaded', () => showVendorToast('<?= addslashes($_SESSION['success']) ?>', 'success'));</script>
     <?php unset($_SESSION['success']); ?>
 <?php endif; ?>
 
 <?php if (!empty($_SESSION['error'])): ?>
-    <script>
-        Swal.fire({
-            icon: 'error',
-            title: 'Perhatian',
-            text: '<?= addslashes($_SESSION['error']) ?>',
-            confirmButtonColor: '#EE2737'
-        });
-    </script>
+    <script>document.addEventListener('DOMContentLoaded', () => showVendorToast('<?= addslashes($_SESSION['error']) ?>', 'error', 6000));</script>
     <?php unset($_SESSION['error']); ?>
+<?php endif; ?>
+
+<?php if (!empty($_SESSION['info'])): ?>
+    <script>document.addEventListener('DOMContentLoaded', () => showVendorToast('<?= addslashes($_SESSION['info']) ?>', 'info'));</script>
+    <?php unset($_SESSION['info']); ?>
 <?php endif; ?>
 
 </body>

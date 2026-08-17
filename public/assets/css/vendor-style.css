@@ -1,0 +1,333 @@
+/* ==========================================================================
+   CicalengkaGO - GoBiz Vendor Modern UI System
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Design Tokens
+   -------------------------------------------------------------------------- */
+:root {
+    --vnd-red: #EE2737;
+    --vnd-dark: #0F172A;
+    --vnd-slate: #1E293B;
+    --vnd-bg: #F1F5F9;
+    --vnd-card-bg: #FFFFFF;
+    --vnd-border: #E2E8F0;
+    --vnd-text: #0F172A;
+    --vnd-muted: #64748B;
+}
+
+/* --------------------------------------------------------------------------
+   2. Layout & Page Container
+   -------------------------------------------------------------------------- */
+.vendor-page-container {
+    padding-bottom: 90px !important;
+    background-color: var(--vnd-bg);
+    min-height: 100dvh;
+}
+
+/* --------------------------------------------------------------------------
+   3. Header Override - Clean & Compact
+   -------------------------------------------------------------------------- */
+.merchant-top-header {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+    border-bottom: 2.5px solid var(--vnd-red);
+    padding: 10px 14px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.merchant-avatar-ring {
+    width: 38px !important;
+    height: 38px !important;
+    max-width: 38px !important;
+    max-height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    border: 2px solid var(--vnd-red) !important;
+    flex-shrink: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. Vendor Card System
+   -------------------------------------------------------------------------- */
+.vnd-card {
+    background: var(--vnd-card-bg);
+    border: 1px solid var(--vnd-border);
+    border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+.vnd-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--vnd-border);
+}
+
+.vnd-card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--vnd-text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* --------------------------------------------------------------------------
+   5. Stat / Metric Cards
+   -------------------------------------------------------------------------- */
+.vnd-stat-card {
+    background: var(--vnd-card-bg);
+    border: 1px solid var(--vnd-border);
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    text-decoration: none;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.vnd-stat-card:hover {
+    box-shadow: 0 6px 18px rgba(238, 39, 55, 0.12);
+    transform: translateY(-1px);
+}
+
+.vnd-stat-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    flex-shrink: 0;
+}
+
+.vnd-stat-icon.green  { background: rgba(16, 185, 129, 0.1); color: #10B981; }
+.vnd-stat-icon.red    { background: rgba(238, 39, 55, 0.08); color: #EE2737; }
+.vnd-stat-icon.blue   { background: rgba(59, 130, 246, 0.1); color: #3B82F6; }
+.vnd-stat-icon.amber  { background: rgba(245, 158, 11, 0.1); color: #F59E0B; }
+
+.vnd-stat-value {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--vnd-text);
+    letter-spacing: -0.4px;
+    margin-top: 8px;
+    line-height: 1.1;
+}
+
+.vnd-stat-label {
+    font-size: 10.5px;
+    color: var(--vnd-muted);
+    margin-top: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   6. Status Toggle Card (Store Open/Close)
+   -------------------------------------------------------------------------- */
+.vnd-status-card {
+    background: var(--vnd-card-bg);
+    border: 1px solid var(--vnd-border);
+    border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.vnd-status-card.is-open {
+    border-left: 4px solid #10B981;
+}
+
+.vnd-status-card.is-closed {
+    border-left: 4px solid #EF4444;
+}
+
+/* --------------------------------------------------------------------------
+   7. Order Pipeline Status Chips
+   -------------------------------------------------------------------------- */
+.vnd-pipeline-chip {
+    border-radius: 12px;
+    padding: 8px 6px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+
+.vnd-pipeline-chip .chip-num {
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.vnd-pipeline-chip .chip-label {
+    font-size: 9.5px;
+    font-weight: 700;
+}
+
+.vnd-pipeline-chip.pending  { background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; }
+.vnd-pipeline-chip.cooking  { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
+.vnd-pipeline-chip.delivery { background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; }
+.vnd-pipeline-chip.done     { background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0; }
+
+/* --------------------------------------------------------------------------
+   8. Quick Action Buttons
+   -------------------------------------------------------------------------- */
+.vnd-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    flex: 1;
+    text-decoration: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.vnd-action-btn:hover { transform: translateY(-1px); }
+
+.vnd-action-btn.red {
+    background: linear-gradient(135deg, #EE2737 0%, #DC2626 100%);
+    color: #FFFFFF;
+    box-shadow: 0 4px 12px rgba(238, 39, 55, 0.3);
+}
+
+.vnd-action-btn.light {
+    background: #FFFFFF;
+    color: var(--vnd-text);
+    border: 1px solid var(--vnd-border);
+}
+
+.vnd-action-btn.dark {
+    background: var(--vnd-dark);
+    color: #FFFFFF;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);
+}
+
+/* --------------------------------------------------------------------------
+   9. Order Card in Dashboard
+   -------------------------------------------------------------------------- */
+.vnd-order-card {
+    background: var(--vnd-card-bg);
+    border: 1px solid var(--vnd-border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+.vnd-order-header {
+    background: linear-gradient(135deg, var(--vnd-dark) 0%, var(--vnd-slate) 100%);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--vnd-red);
+}
+
+.vnd-order-body {
+    padding: 12px 14px;
+}
+
+.vnd-order-items {
+    background: #F8FAFC;
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin: 8px 0;
+    border: 1px solid var(--vnd-border);
+}
+
+.vnd-order-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11.5px;
+    padding: 3px 0;
+    border-bottom: 1px solid #F1F5F9;
+}
+
+.vnd-order-item-row:last-child { border-bottom: none; }
+
+/* --------------------------------------------------------------------------
+   10. Section Headers
+   -------------------------------------------------------------------------- */
+.vnd-section-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: var(--vnd-text);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   11. Toast System for Vendor
+   -------------------------------------------------------------------------- */
+#ccgVendorToastStack {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 280px;
+    max-width: calc(100vw - 24px);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   12. Bottom Nav Active State Override
+   -------------------------------------------------------------------------- */
+.merchant-nav-item.active {
+    color: var(--vnd-red) !important;
+}
+
+.merchant-nav-item.active i {
+    color: var(--vnd-red) !important;
+}
+
+/* --------------------------------------------------------------------------
+   13. Form Inputs
+   -------------------------------------------------------------------------- */
+.vnd-input {
+    background-color: #F8FAFC !important;
+    border: 1px solid var(--vnd-border) !important;
+    border-radius: 10px !important;
+    font-size: 13px !important;
+    padding: 9px 12px !important;
+    color: var(--vnd-text) !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vnd-input:focus {
+    background-color: #FFFFFF !important;
+    border-color: var(--vnd-red) !important;
+    box-shadow: 0 0 0 3px rgba(238, 39, 55, 0.10) !important;
+}
+
+@keyframes ccgVndToastProgress {
+    from { width: 100%; }
+    to   { width: 0%; }
+}
