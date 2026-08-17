@@ -1,4 +1,4 @@
-<div class="p-3">
+<div class="p-3 driver-page-container">
     <!-- Status Driver Online / Offline Switch Card -->
     <div class="p-3.5 bg-white border shadow-2xs mb-3 d-flex align-items-center justify-content-between" style="border-radius: 16px; border-color: #E2E8F0 !important;">
         <div class="d-flex align-items-center gap-3">
