@@ -251,6 +251,13 @@ class Database
         return $result ?: null;
     }
 
+    public static function fetchColumn(string $sql, array $params = [], int $column = 0): mixed
+    {
+        $stmt = self::getPdo()->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchColumn($column);
+    }
+
     public static function execute(string $sql, array $params = []): bool
     {
         $stmt = self::getPdo()->prepare($sql);
