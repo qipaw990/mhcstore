@@ -123,33 +123,33 @@
                                 }
                             ?>
                                 <div class="list-group-item py-3 px-3 border-bottom">
-                                    <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                                    <div class="d-flex align-items-start justify-content-between gap-2 mb-2.5">
                                         <div class="d-flex align-items-center gap-2.5">
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-danger-subtle text-danger" style="width: 40px; height: 40px; font-size: 17px;">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-danger-subtle text-danger" style="width: 42px; height: 42px; font-size: 18px;">
                                                 <i class="bi bi-bank"></i>
                                             </div>
                                             <div>
-                                                <div class="fw-bold text-dark d-flex align-items-center gap-1.5" style="font-size: 13px;">
+                                                <div class="fw-bold text-dark d-flex align-items-center gap-1.5" style="font-size: 13.5px;">
                                                     <span><?= htmlspecialchars($wd['bank_name']) ?></span>
                                                     <span class="badge bg-light text-muted border fw-semibold" style="font-size: 9px;"><?= htmlspecialchars($wd['withdraw_code']) ?></span>
                                                 </div>
-                                                <div class="text-dark small mt-0.5" style="font-size: 11px;">
+                                                <div class="text-dark small mt-0.5" style="font-size: 11.5px;">
                                                     <span class="fw-bold"><?= htmlspecialchars($wd['account_number']) ?></span> 
-                                                    <span class="text-muted">(a.n. <?= htmlspecialchars($wd['account_holder']) ?>)</span>
+                                                    <span class="text-muted" style="font-size: 10.5px;">(a.n. <?= htmlspecialchars($wd['account_holder']) ?>)</span>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="text-end">
-                                            <div class="fw-extrabold text-danger" style="font-size: 14px;">
+                                            <div class="fw-extrabold text-danger" style="font-size: 14.5px; letter-spacing: -0.3px;">
                                                 -<?= format_rupiah($wd['amount']) ?>
                                             </div>
-                                            <span class="badge <?= $badgeClass ?> rounded-pill px-2 py-0.5 mt-1" style="font-size: 9.5px; font-weight: 700;">
+                                            <span class="badge <?= $badgeClass ?> rounded-pill px-2.5 py-0.5 mt-1" style="font-size: 9.5px; font-weight: 700;">
                                                 <i class="bi <?= $badgeIcon ?> me-1"></i><?= $badgeLabel ?>
                                             </span>
                                         </div>
                                     </div>
                                     
-                                    <div class="d-flex align-items-center justify-content-between pt-2 border-top border-light-subtle text-muted" style="font-size: 10.5px;">
+                                    <div class="d-flex align-items-center justify-content-between pt-2 border-top text-muted" style="font-size: 10.5px; border-color: #F1F5F9 !important;">
                                         <div>
                                             <i class="bi bi-calendar3 me-1"></i> Diajukan: <?= date('d M Y, H:i', strtotime($wd['requested_at'])) ?> WIB
                                         </div>
@@ -161,8 +161,12 @@
                                     </div>
 
                                     <?php if (!empty($wd['admin_notes'])): ?>
-                                        <div class="mt-2.5 p-2.5 ps-3 rounded-3 small" style="font-size: 11px; background: #FFF1F2; color: #991B1B; border-left: 3.5px solid #EE2737;">
-                                            <strong style="color: #991B1B;">Catatan Admin:</strong> <?= htmlspecialchars($wd['admin_notes']) ?>
+                                        <div class="mt-2.5 p-2.5 rounded-3 d-flex align-items-start gap-2" style="background: #FEF2F2; border: 1px solid #FECDD3;">
+                                            <i class="bi bi-exclamation-circle-fill text-danger flex-shrink-0 mt-0.5" style="font-size: 13px;"></i>
+                                            <div style="font-size: 11px; color: #991B1B; line-height: 1.4;">
+                                                <strong class="d-inline-block me-1" style="color: #991B1B;">Catatan Admin:</strong>
+                                                <span><?= htmlspecialchars($wd['admin_notes']) ?></span>
+                                            </div>
                                         </div>
                                     <?php endif; ?>
                                 </div>
