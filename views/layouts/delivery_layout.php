@@ -34,8 +34,8 @@ $user = auth_user();
     <!-- Top Driver Header (CicalengkaGO Partner Bar) -->
     <header class="driver-header d-flex align-items-center justify-content-between">
         <div class="d-flex align-items-center gap-3">
-            <div class="position-relative">
-                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/driver.png') ?>" alt="Driver" class="driver-avatar-ring">
+            <div class="driver-avatar-box position-relative flex-shrink-0" style="width: 42px; height: 42px;">
+                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/driver.png') ?>" alt="Driver" class="driver-avatar-ring" style="width: 42px; height: 42px; max-width: 42px; max-height: 42px; min-width: 42px; min-height: 42px; object-fit: cover; border-radius: 50%;">
                 <span class="position-absolute bottom-0 end-0 bg-success border border-2 border-white rounded-circle" style="width: 12px; height: 12px;"></span>
             </div>
             <div>

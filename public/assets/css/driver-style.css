@@ -330,3 +330,34 @@
 .driver-page-container {
     padding-bottom: 95px !important;
 }
+
+/* --------------------------------------------------------------------------
+   7. Header Driver Avatar Safeguards
+   -------------------------------------------------------------------------- */
+.driver-header {
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+    border-bottom: 2.5px solid #EE2737;
+    padding: 12px 16px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+}
+
+.driver-avatar-ring {
+    width: 42px !important;
+    height: 42px !important;
+    max-width: 42px !important;
+    max-height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    border: 2px solid #EE2737 !important;
+    box-shadow: 0 2px 8px rgba(238, 39, 55, 0.4) !important;
+    flex-shrink: 0 !important;
+    display: block !important;
+}
+
+.driver-avatar-box {
+    width: 42px !important;
+    height: 42px !important;
+    flex-shrink: 0 !important;
+}
