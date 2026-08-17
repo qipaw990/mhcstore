@@ -89,13 +89,15 @@ $user = auth_user();
     <!-- ===== CCG Driver Toast Notification Stack ===== -->
     <div id="ccgDriverToastStack" style="
         position: fixed;
-        top: 72px;
-        right: 12px;
-        left: 12px;
+        top: 60px;
+        right: 10px;
+        left: auto;
+        width: 270px;
+        max-width: calc(100vw - 20px);
         z-index: 9999;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
         pointer-events: none;
     "></div>
 </div>
@@ -155,48 +157,48 @@ function showDriverToast(message, type = 'info', duration = 4000) {
     toast.id = id;
     toast.style.cssText = `
         display: flex;
-        align-items: flex-start;
-        gap: 10px;
-        padding: 12px 14px;
-        border-radius: 14px;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 10px;
+        border-radius: 12px;
         background: #FFFFFF;
         border: 1px solid #E2E8F0;
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.13);
         pointer-events: all;
         transform: translateX(110%);
-        transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
         opacity: 0;
         overflow: hidden;
         position: relative;
-        max-width: 100%;
+        width: 100%;
     `;
 
     toast.innerHTML = `
         <div style="
-            width: 36px; height: 36px;
-            border-radius: 10px;
+            width: 28px; height: 28px;
+            border-radius: 8px;
             background: ${cfg.bg};
             display: flex; align-items: center; justify-content: center;
             flex-shrink: 0;
-            box-shadow: 0 4px 10px ${cfg.shadow};
+            box-shadow: 0 3px 8px ${cfg.shadow};
         ">
-            <i class="bi ${cfg.icon}" style="color: #FFFFFF; font-size: 16px;"></i>
+            <i class="bi ${cfg.icon}" style="color: #FFFFFF; font-size: 13px;"></i>
         </div>
         <div style="flex: 1; min-width: 0;">
-            <div style="font-size: 11.5px; font-weight: 700; color: #0F172A; margin-bottom: 2px;">${cfg.label}</div>
-            <div style="font-size: 11px; color: #475569; line-height: 1.45;">${message}</div>
+            <div style="font-size: 10.5px; font-weight: 700; color: #0F172A; line-height: 1.2;">${cfg.label}</div>
+            <div style="font-size: 10px; color: #64748B; line-height: 1.35; margin-top: 1px;">${message}</div>
         </div>
         <button onclick="dismissDriverToast('${id}')" style="
             background: none; border: none; padding: 0;
-            width: 20px; height: 20px;
+            width: 18px; height: 18px;
             display: flex; align-items: center; justify-content: center;
-            color: #94A3B8; cursor: pointer; flex-shrink: 0; margin-top: 1px;
+            color: #CBD5E1; cursor: pointer; flex-shrink: 0;
         ">
-            <i class="bi bi-x" style="font-size: 16px;"></i>
+            <i class="bi bi-x" style="font-size: 14px;"></i>
         </button>
         <div style="
-            position: absolute; bottom: 0; left: 0; height: 3px;
-            border-radius: 0 0 14px 14px;
+            position: absolute; bottom: 0; left: 0; height: 2px;
+            border-radius: 0 0 12px 12px;
             background: ${cfg.bg};
             width: 100%;
             animation: ccgToastProgress ${duration}ms linear forwards;
