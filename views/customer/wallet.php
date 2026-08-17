@@ -385,6 +385,52 @@
                 </div>
             <?php endif; ?>
         </div>
+</div>
+
+<!-- Modal Custom Top Up Nominal (Sangat Jelas & Responsif) -->
+<div class="modal fade" id="customTopUpModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm px-3">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 24px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center" style="width: 34px; height: 34px;">
+                        <i class="bi bi-wallet2 fs-6"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark fs-6 m-0">Isi Saldo CicalengkaPay</h5>
+                        <div class="text-muted" style="font-size: 9.5px;">Midtrans Payment Gateway</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <label class="form-label text-dark fw-bold mb-2" style="font-size: 11.5px;">Masukkan Nominal Top Up (Min. Rp 10.000):</label>
+                
+                <div class="input-group mb-3" style="border-radius: 16px; overflow: hidden; border: 2px solid #EE2737; background: #FFFFFF;">
+                    <span class="input-group-text bg-danger text-white border-0 fw-extrabold px-3" style="font-size: 16px;">Rp</span>
+                    <input type="number" id="customTopUpAmountInput" class="form-control border-0 fw-extrabold text-dark py-2.5 px-3 m-0" 
+                           placeholder="50000" min="10000" step="5000" style="font-size: 20px; letter-spacing: -0.5px; box-shadow: none;">
+                </div>
+
+                <!-- Chips Nominal Cepat -->
+                <div class="d-flex gap-1.5 mb-3">
+                    <button type="button" onclick="setNominalInput(20000)" class="btn btn-sm btn-light border rounded-pill flex-fill fw-bold py-1.5" style="font-size: 10px;">20rb</button>
+                    <button type="button" onclick="setNominalInput(50000)" class="btn btn-sm btn-light border rounded-pill flex-fill fw-bold py-1.5" style="font-size: 10px;">50rb</button>
+                    <button type="button" onclick="setNominalInput(100000)" class="btn btn-sm btn-light border rounded-pill flex-fill fw-bold py-1.5" style="font-size: 10px;">100rb</button>
+                    <button type="button" onclick="setNominalInput(200000)" class="btn btn-sm btn-light border rounded-pill flex-fill fw-bold py-1.5" style="font-size: 10px;">200rb</button>
+                </div>
+
+                <div class="p-2.5 rounded-3 bg-light text-muted mb-3 d-flex align-items-center gap-2" style="font-size: 10px;">
+                    <i class="bi bi-shield-check text-success fs-6 flex-shrink-0"></i>
+                    <span>Pembayaran instan & otomatis via QRIS, Virtual Account, & E-Wallet Midtrans.</span>
+                </div>
+
+                <button type="button" onclick="submitCustomTopUp()" class="btn btn-danger w-100 py-3 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm" style="font-size: 13px; background: linear-gradient(135deg, #EE2737 0%, #B91C1C 100%);">
+                    <span>Lanjut Bayar</span>
+                    <i class="bi bi-arrow-right-short fs-5"></i>
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -413,7 +459,6 @@ function filterMutationList(category) {
 }
 
 function filterTopupList(status) {
-    // Update active filter button style
     document.querySelectorAll('.topup-filter-btn').forEach(btn => {
         if (btn.dataset.filter === status) {
             btn.classList.remove('btn-light', 'border');
@@ -424,7 +469,6 @@ function filterTopupList(status) {
         }
     });
 
-    // Filter items
     const items = document.querySelectorAll('.topup-item-card');
     items.forEach(card => {
         if (status === 'all' || card.dataset.status === status) {
@@ -435,42 +479,41 @@ function filterTopupList(status) {
     });
 }
 
-async function quickTopUp(nominal) {
-    Swal.fire({
-        title: 'Top Up CicalengkaPay',
-        text: 'Lanjutkan pengisian saldo Rp ' + nominal.toLocaleString('id-ID') + ' via Midtrans (QRIS / VA / E-Wallet)?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: '<i class="bi bi-credit-card-fill me-1"></i> Bayar Sekarang',
-        confirmButtonColor: '#EE2737',
-        cancelButtonText: 'Batal'
-    }).then(async (res) => {
-        if (res.isConfirmed) {
-            executeMidtransTopUp(nominal);
-        }
-    });
+function quickTopUp(nominal) {
+    executeMidtransTopUp(nominal);
 }
 
 function customTopUpDialog() {
-    Swal.fire({
-        title: 'Isi Saldo CicalengkaPay',
-        input: 'number',
-        inputLabel: 'Masukkan nominal saldo yang diinginkan (Min. Rp 10.000)',
-        inputPlaceholder: 'Contoh: 50000',
-        showCancelButton: true,
-        confirmButtonText: 'Lanjut Bayar',
-        confirmButtonColor: '#EE2737',
-        cancelButtonText: 'Batal',
-        inputValidator: (value) => {
-            if (!value || parseInt(value) < 10000) {
-                return 'Nominal minimal top up adalah Rp 10.000!';
-            }
-        }
-    }).then((res) => {
-        if (res.isConfirmed && res.value) {
-            executeMidtransTopUp(parseInt(res.value));
-        }
-    });
+    const modalEl = document.getElementById('customTopUpModal');
+    const bsModal = new bootstrap.Modal(modalEl);
+    document.getElementById('customTopUpAmountInput').value = '';
+    bsModal.show();
+}
+
+function setNominalInput(val) {
+    document.getElementById('customTopUpAmountInput').value = val;
+}
+
+function submitCustomTopUp() {
+    const input = document.getElementById('customTopUpAmountInput');
+    const amount = parseInt(input.value);
+    if (!amount || amount < 10000) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Nominal Kurang',
+            text: 'Nominal minimal top up adalah Rp 10.000',
+            confirmButtonColor: '#EE2737'
+        });
+        return;
+    }
+
+    const modalEl = document.getElementById('customTopUpModal');
+    const bsModal = bootstrap.Modal.getInstance(modalEl);
+    if (bsModal) {
+        bsModal.hide();
+    }
+
+    executeMidtransTopUp(amount);
 }
 
 function resumePendingSnap(snapToken, orderId, nominal) {
@@ -484,7 +527,7 @@ function resumePendingSnap(snapToken, orderId, nominal) {
 async function executeMidtransTopUp(nominal) {
     Swal.fire({
         title: 'Menyiapkan Pembayaran...',
-        text: 'Menghubungkan ke gateway Midtrans...',
+        text: 'Menghubungkan ke gateway Midtrans untuk nominal Rp ' + Number(nominal).toLocaleString('id-ID') + '...',
         allowOutsideClick: false,
         didOpen: () => {
             Swal.showLoading();
@@ -523,7 +566,6 @@ async function executeMidtransTopUp(nominal) {
 function openSnapPayment(snapToken, orderId, nominal) {
     window.snap.pay(snapToken, {
         onSuccess: function(result) {
-            // Auto verify payment on backend
             fetch(window.BASE_URL + '/payment/verify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -546,7 +588,6 @@ function openSnapPayment(snapToken, orderId, nominal) {
             });
         },
         onPending: function(result) {
-            // Update log to pending
             fetch(window.BASE_URL + '/payment/topup-update-status', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -568,7 +609,6 @@ function openSnapPayment(snapToken, orderId, nominal) {
             });
         },
         onError: function(result) {
-            // Update log to failed
             fetch(window.BASE_URL + '/payment/topup-update-status', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -596,7 +636,6 @@ function openSnapPayment(snapToken, orderId, nominal) {
     });
 }
 
-// Check if returning from Midtrans redirect
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const retOrderId = urlParams.get('order_id');
@@ -604,7 +643,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const retTxnStatus = urlParams.get('transaction_status') || urlParams.get('status');
 
     if (retOrderId && retOrderId.startsWith('TOPUP-')) {
-        // Clean URL query params cleanly without page reload
         window.history.replaceState({}, document.title, window.location.pathname);
 
         if (retStatusCode === '200' || retTxnStatus === 'settlement' || retTxnStatus === 'capture') {
