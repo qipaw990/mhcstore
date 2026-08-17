@@ -298,7 +298,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   12. Bottom Nav Active State Override
+   12. Bottom Nav & Tab Active State Override
    -------------------------------------------------------------------------- */
 .merchant-nav-item.active {
     color: var(--vnd-red) !important;
@@ -306,6 +306,39 @@
 
 .merchant-nav-item.active i {
     color: var(--vnd-red) !important;
+}
+
+.vnd-tab-nav {
+    background: #FFFFFF;
+    border-radius: 14px;
+    border: 1px solid var(--vnd-border);
+    padding: 4px;
+}
+
+.vnd-tab-nav .nav-link {
+    border-radius: 10px !important;
+    color: var(--vnd-muted);
+    font-weight: 700;
+    font-size: 11.5px;
+    padding: 8px 12px;
+    border: none !important;
+    transition: all 0.2s ease;
+}
+
+.vnd-tab-nav .nav-link.active {
+    background: var(--vnd-red) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 12px rgba(238, 39, 55, 0.25);
+}
+
+.vnd-tab-nav .nav-link.active i,
+.vnd-tab-nav .nav-link.active span {
+    color: #FFFFFF !important;
+}
+
+.vnd-tab-nav .nav-link.active .badge {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #FFFFFF !important;
 }
 
 /* --------------------------------------------------------------------------

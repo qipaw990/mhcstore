@@ -38,8 +38,8 @@
             </div>
 
             <div>
-                <button type="button" onclick="openVendorWithdrawModal()" class="btn btn-danger w-100 rounded-pill fw-bold py-2.5 d-flex align-items-center justify-content-center gap-2 shadow-2xs" style="background: linear-gradient(135deg, #EE2737, #C61524); font-size: 12.5px; border: none;">
-                    <i class="bi bi-arrow-up-right-circle-fill fs-6"></i>
+                <button type="button" onclick="openVendorWithdrawModal()" class="vnd-action-btn red w-100 py-2.5" style="font-size: 12.5px; border-radius: 12px;">
+                    <i class="bi bi-arrow-up-right-circle-fill" style="font-size: 16px;"></i>
                     <span>Ajukan Penarikan Dana (Payout)</span>
                 </button>
             </div>
@@ -47,17 +47,17 @@
     </div>
 
     <!-- Navigation Tabs for History -->
-    <ul class="nav nav-pills nav-fill bg-white p-1 shadow-2xs border mb-3" id="walletTab" role="tablist" style="border-radius: 14px; border-color: #E2E8F0 !important;">
+    <ul class="nav nav-pills nav-fill vnd-tab-nav mb-3" id="walletTab" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active fw-bold py-2 px-3 small d-flex align-items-center justify-content-center gap-1.5" id="withdraw-tab" data-bs-toggle="tab" data-bs-target="#withdraw-pane" type="button" role="tab" style="font-size: 11.5px; border-radius: 10px;">
-                <i class="bi bi-cash-stack text-danger"></i>
+            <button class="nav-link active d-flex align-items-center justify-content-center gap-1.5" id="withdraw-tab" data-bs-toggle="tab" data-bs-target="#withdraw-pane" type="button" role="tab">
+                <i class="bi bi-cash-stack"></i>
                 <span>Riwayat Penarikan</span>
                 <span class="badge bg-danger-subtle text-danger rounded-pill px-1.5 ms-1" style="font-size: 9.5px;"><?= count($withdraw_requests ?? []) ?></span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link fw-bold py-2 px-3 small d-flex align-items-center justify-content-center gap-1.5" id="mutation-tab" data-bs-toggle="tab" data-bs-target="#mutation-pane" type="button" role="tab" style="font-size: 11.5px; border-radius: 10px;">
-                <i class="bi bi-receipt text-secondary"></i>
+            <button class="nav-link d-flex align-items-center justify-content-center gap-1.5" id="mutation-tab" data-bs-toggle="tab" data-bs-target="#mutation-pane" type="button" role="tab">
+                <i class="bi bi-receipt"></i>
                 <span>Mutasi Transaksi</span>
                 <span class="badge bg-secondary-subtle text-secondary rounded-pill px-1.5 ms-1" style="font-size: 9.5px;"><?= count($transactions ?? []) ?></span>
             </button>
@@ -68,8 +68,8 @@
     <div class="tab-content" id="walletTabContent">
         <!-- PANE 1: Riwayat Penarikan Dana -->
         <div class="tab-pane fade show active" id="withdraw-pane" role="tabpanel" tabindex="0">
-            <div class="card border-0 shadow-2xs bg-white overflow-hidden" style="border-radius: 16px; border: 1px solid #E2E8F0 !important;">
-                <div class="card-header bg-white border-0 py-3 px-3 d-flex align-items-center justify-content-between">
+            <div class="vnd-card p-0 overflow-hidden">
+                <div class="p-3 bg-white d-flex align-items-center justify-content-between border-bottom">
                     <h6 class="fw-bold m-0 text-dark" style="font-size: 13.5px;">
                         <i class="bi bi-clock-history text-danger me-1.5"></i> Riwayat Penarikan Saldo Toko
                     </h6>
@@ -78,7 +78,7 @@
                     </span>
                 </div>
 
-                <div class="card-body p-0">
+                <div>
                     <?php if (empty($withdraw_requests)): ?>
                         <div class="p-4 text-center text-muted small">
                             <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 48px; height: 48px; font-size: 22px;">
@@ -93,16 +93,16 @@
                         <div class="list-group list-group-flush">
                             <?php foreach ($withdraw_requests as $wd): 
                                 $status = $wd['status'] ?? 'pending';
-                                $badgeClass = 'bg-warning-subtle text-warning-emphasis';
+                                $badgeClass = 'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
                                 $badgeLabel = 'Menunggu Transfer';
                                 $badgeIcon = 'bi-hourglass-split';
 
                                 if ($status === 'approved') {
-                                    $badgeClass = 'bg-success-subtle text-success';
+                                    $badgeClass = 'bg-success-subtle text-success border border-success-subtle';
                                     $badgeLabel = 'Berhasil Ditransfer';
                                     $badgeIcon = 'bi-check-circle-fill';
                                 } elseif ($status === 'rejected') {
-                                    $badgeClass = 'bg-danger-subtle text-danger';
+                                    $badgeClass = 'bg-danger-subtle text-danger border border-danger-subtle';
                                     $badgeLabel = 'Ditolak';
                                     $badgeIcon = 'bi-x-circle-fill';
                                 }
@@ -110,7 +110,7 @@
                                 <div class="list-group-item py-3 px-3 border-bottom">
                                     <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
                                         <div class="d-flex align-items-center gap-2.5">
-                                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-danger-subtle text-danger" style="width: 40px; height: 40px; font-size: 18px;">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px; font-size: 18px; background: #FEF2F2; color: #EE2737;">
                                                 <i class="bi bi-bank"></i>
                                             </div>
                                             <div>
@@ -125,29 +125,32 @@
                                             </div>
                                         </div>
                                         <div class="text-end">
-                                            <div class="fw-extrabold text-danger" style="font-size: 14px;">
+                                            <div class="fw-extrabold text-danger" style="font-size: 14.5px;">
                                                 -<?= format_rupiah($wd['amount']) ?>
                                             </div>
-                                            <span class="badge <?= $badgeClass ?> rounded-pill px-2 py-0.5 mt-1" style="font-size: 10px;">
+                                            <span class="badge <?= $badgeClass ?> rounded-pill px-2.5 py-1 mt-1" style="font-size: 9.5px; font-weight: 700;">
                                                 <i class="bi <?= $badgeIcon ?> me-1"></i><?= $badgeLabel ?>
                                             </span>
                                         </div>
                                     </div>
                                     
-                                    <div class="d-flex align-items-center justify-content-between pt-2 border-top border-light-subtle text-muted" style="font-size: 11px;">
+                                    <div class="d-flex align-items-center justify-content-between pt-2 border-top text-muted" style="font-size: 11px; border-color: #F1F5F9 !important;">
                                         <div>
                                             <i class="bi bi-calendar3 me-1"></i> Diajukan: <?= date('d M Y, H:i', strtotime($wd['requested_at'])) ?> WIB
                                         </div>
                                         <?php if (!empty($wd['processed_at'])): ?>
-                                            <div class="text-success">
+                                            <div class="text-success fw-semibold">
                                                 <i class="bi bi-check-all me-1"></i> Selesai: <?= date('d M Y, H:i', strtotime($wd['processed_at'])) ?> WIB
                                             </div>
                                         <?php endif; ?>
                                     </div>
 
                                     <?php if (!empty($wd['admin_notes'])): ?>
-                                        <div class="mt-2 p-2 rounded-3 bg-light text-muted small" style="font-size: 11px; border-left: 3px solid #EE2737;">
-                                            <strong>Catatan Admin:</strong> <?= htmlspecialchars($wd['admin_notes']) ?>
+                                        <div class="mt-2.5 p-2.5 rounded-3 d-flex align-items-start gap-2" style="background: #FEF2F2; border: 1px solid #FECDD3;">
+                                            <i class="bi bi-exclamation-circle-fill text-danger flex-shrink-0 mt-0.5" style="font-size: 13px;"></i>
+                                            <div style="font-size: 11px; color: #991B1B; line-height: 1.4;">
+                                                <strong>Catatan Admin:</strong> <?= htmlspecialchars($wd['admin_notes']) ?>
+                                            </div>
                                         </div>
                                     <?php endif; ?>
                                 </div>
@@ -160,15 +163,15 @@
 
         <!-- PANE 2: Mutasi Transaksi Toko -->
         <div class="tab-pane fade" id="mutation-pane" role="tabpanel" tabindex="0">
-            <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
-                <div class="card-header bg-white border-0 py-3 px-3 d-flex align-items-center justify-content-between">
+            <div class="vnd-card p-0 overflow-hidden">
+                <div class="p-3 bg-white d-flex align-items-center justify-content-between border-bottom">
                     <h6 class="fw-bold m-0 text-dark" style="font-size: 13.5px;">
                         <i class="bi bi-list-ul text-secondary me-1.5"></i> Semua Mutasi Transaksi
                     </h6>
                     <span class="badge bg-light text-muted border px-2 py-1 rounded-pill" style="font-size: 10.5px;"><?= count($transactions ?? []) ?> Transaksi</span>
                 </div>
 
-                <div class="card-body p-0">
+                <div>
                     <?php if (empty($transactions)): ?>
                         <div class="p-4 text-center text-muted small">
                             <i class="bi bi-receipt display-6 text-muted opacity-50 d-block mb-1.5"></i>
@@ -191,7 +194,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="fw-extrabold <?= $isCredit ? 'text-success' : 'text-danger' ?>" style="font-size: 13px;">
+                                    <div class="fw-extrabold <?= $isCredit ? 'text-success' : 'text-danger' ?>" style="font-size: 13.5px;">
                                         <?= $isCredit ? '+' : '-' ?><?= format_rupiah($tx['amount']) ?>
                                     </div>
                                 </div>
@@ -209,12 +212,7 @@ window.VENDOR_CURRENT_BALANCE = <?= (float)($wallet['balance'] ?? 0) ?>;
 
 function openVendorWithdrawModal() {
     if (window.VENDOR_CURRENT_BALANCE < 10000) {
-        Swal.fire({
-            title: 'Saldo Belum Mencukupi',
-            text: 'Minimal saldo untuk pengajuan penarikan dana adalah Rp 10.000. Saldo toko Anda saat ini: ' + 'Rp ' + Number(window.VENDOR_CURRENT_BALANCE).toLocaleString('id-ID'),
-            icon: 'warning',
-            confirmButtonColor: '#EE2737'
-        });
+        showVendorToast('Saldo belum mencukupi. Minimal penarikan Rp 10.000.', 'warning');
         return;
     }
 
@@ -334,29 +332,14 @@ function openVendorWithdrawModal() {
                 }
 
                 if (data.success) {
-                    await Swal.fire({
-                        title: 'Pengajuan Berhasil!',
-                        text: data.message || 'Penarikan saldo berhasil diajukan dan sedang diproses.',
-                        icon: 'success',
-                        confirmButtonColor: '#EE2737'
-                    });
-                    location.reload();
+                    showVendorToast(data.message || 'Penarikan saldo berhasil diajukan.', 'success');
+                    setTimeout(() => location.reload(), 1200);
                 } else {
-                    Swal.fire({
-                        title: 'Gagal',
-                        text: data.message || 'Terjadi kesalahan saat mengajukan penarikan.',
-                        icon: 'error',
-                        confirmButtonColor: '#EE2737'
-                    });
+                    showVendorToast(data.message || 'Terjadi kesalahan saat mengajukan penarikan.', 'error');
                 }
             } catch (err) {
                 console.error(err);
-                Swal.fire({
-                    title: 'Kesalahan Sistem',
-                    text: err.message || 'Gagal menghubungkan ke server.',
-                    icon: 'error',
-                    confirmButtonColor: '#EE2737'
-                });
+                showVendorToast(err.message || 'Gagal menghubungkan ke server.', 'error');
             }
         }
     });
