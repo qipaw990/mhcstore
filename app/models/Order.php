@@ -212,17 +212,39 @@ class Order extends Model
                     'canceled_at'          => date('Y-m-d H:i:s')
                 ], 'id = ?', [$ord['id']]);
 
-                // Refund if paid via wallet
-                if ($ord['payment_status'] === 'paid' && $ord['payment_method'] === 'wallet') {
-                    $walletModel = new \App\Models\Wallet();
-                    $walletModel->credit(
-                        (int)$ord['customer_id'],
-                        (float)$ord['total_amount'],
-                        'order_refund',
-                        "Pengembalian saldo untuk pesanan #{$ord['order_code']} (tidak ada driver)",
-                        (string)$ord['id']
-                    );
-                    Database::update('orders', ['payment_status' => 'refunded'], 'id = ?', [$ord['id']]);
+                // ===== REFUND LOGIC PER PAYMENT METHOD =====
+
+                if ($ord['payment_status'] === 'paid') {
+                    if ($ord['payment_method'] === 'wallet') {
+                        // CicalengkaPay / Wallet → kembalikan saldo otomatis
+                        $walletModel = new \App\Models\Wallet();
+                        $walletModel->credit(
+                            (int)$ord['customer_id'],
+                            (float)$ord['total_amount'],
+                            'order_refund',
+                            "Pengembalian saldo untuk pesanan #{$ord['order_code']} (tidak ada driver)",
+                            (string)$ord['id']
+                        );
+                        Database::update('orders', ['payment_status' => 'refunded'], 'id = ?', [$ord['id']]);
+
+                    } elseif (in_array($ord['payment_method'], ['midtrans', 'online', 'qris', 'va', 'credit_card'])) {
+                        // Midtrans / Online → tandai sebagai pending_refund (harus diproses manual oleh admin via Midtrans Dashboard)
+                        // Refund otomatis via Midtrans Refund API memerlukan integrasi tambahan
+                        Database::update('orders', ['payment_status' => 'pending_refund'], 'id = ?', [$ord['id']]);
+
+                        // Notifikasi admin untuk proses refund manual
+                        $adminNotif = Database::fetchOne("SELECT id FROM `users` WHERE `role` = 'admin' LIMIT 1");
+                        if ($adminNotif) {
+                            Database::insert('notifications', [
+                                'user_id' => (int)$adminNotif['id'],
+                                'title'   => 'Refund Midtrans Diperlukan ⚠️',
+                                'message' => "Pesanan #{$ord['order_code']} dibatalkan otomatis (tidak ada driver). Dana Midtrans Rp " . number_format((float)$ord['total_amount'], 0, ',', '.') . " perlu direfund manual via dashboard Midtrans.",
+                                'type'    => 'order',
+                                'data_json' => json_encode(['order_code' => $ord['order_code'], 'order_id' => $ord['id'], 'refund_amount' => $ord['total_amount']])
+                            ]);
+                        }
+                    }
+                    // COD: tidak ada uang yang keluar, tidak perlu refund
                 }
 
                 // Send notification
