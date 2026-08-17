@@ -44,55 +44,55 @@
         </div>
     </div>
 
-    <!-- Payment Method Selector -->
-    <div class="p-3.5 bg-white border shadow-2xs mb-3.5 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important;">
-        <h6 class="fw-bold mb-3 text-dark d-flex align-items-center justify-content-between" style="font-size: 13px;">
-            <span><i class="bi bi-wallet2 text-danger me-1.5"></i> Metode Pembayaran</span>
+    <!-- Payment Method Selector Card -->
+    <div class="p-3.5 bg-white border shadow-2xs mb-3.5 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important; margin-bottom: 16px !important;">
+        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom" style="border-color: #F1F5F9 !important;">
+            <h6 class="fw-bold m-0 text-dark" style="font-size: 13px;"><i class="bi bi-wallet2 text-danger me-2"></i>Metode Pembayaran</h6>
             <span class="text-muted fw-normal" style="font-size: 10.5px;">Pilih salah satu</span>
-        </h6>
+        </div>
 
         <div class="payment-option-list">
             <!-- CicalengkaPay Digital Wallet -->
             <label class="payment-option <?= ((float)$wallet['balance'] >= (float)$cart_data['subtotal']) ? 'border-danger bg-danger-subtle active' : 'opacity-75' ?>" id="label_pay_wallet">
-                <div class="d-flex align-items-center min-w-0">
+                <div class="d-flex align-items-center min-w-0 flex-grow-1">
                     <input type="radio" name="payment_method" id="pay_wallet" value="wallet" onchange="updatePaymentCardStyles()" <?= ((float)$wallet['balance'] >= (float)$cart_data['subtotal']) ? 'checked' : 'disabled' ?>>
-                    <div class="min-w-0">
-                        <div class="fw-bold text-dark text-truncate d-flex align-items-center gap-1.5" style="font-size: 12px;">
+                    <div class="min-w-0 flex-grow-1">
+                        <div class="fw-bold text-dark text-truncate" style="font-size: 12px;">
                             <span style="color:#EE2737; font-weight:800;">CicalengkaPay</span>
-                            <span class="text-muted fw-normal" style="font-size: 10.5px;">(Saldo Digital)</span>
+                            <span class="text-muted fw-normal ms-1" style="font-size: 10.5px;">(Saldo Digital)</span>
                         </div>
                         <div class="text-muted mt-0.5 text-truncate" style="font-size: 10.5px;">Saldo: <?= format_rupiah($wallet['balance'] ?? 0) ?></div>
                     </div>
                 </div>
                 <?php if ((float)$wallet['balance'] < (float)$cart_data['subtotal']): ?>
-                    <span class="badge bg-warning text-dark flex-shrink-0">Kurang</span>
+                    <span class="badge bg-warning text-dark flex-shrink-0 ms-2">Kurang</span>
                 <?php else: ?>
-                    <span class="badge text-white flex-shrink-0" style="background:#EE2737 !important;">Tersedia</span>
+                    <span class="badge text-white flex-shrink-0 ms-2" style="background:#EE2737 !important;">Tersedia</span>
                 <?php endif; ?>
             </label>
 
             <!-- Midtrans Online Payment (QRIS / VA / E-Wallet) -->
             <label class="payment-option" id="label_pay_midtrans">
-                <div class="d-flex align-items-center min-w-0">
+                <div class="d-flex align-items-center min-w-0 flex-grow-1">
                     <input type="radio" name="payment_method" id="pay_midtrans" value="midtrans" onchange="updatePaymentCardStyles()">
-                    <div class="min-w-0">
+                    <div class="min-w-0 flex-grow-1">
                         <div class="fw-bold text-dark text-truncate d-flex align-items-center gap-1.5" style="font-size: 12px;">
                             <span>Bayar Online (Midtrans)</span>
-                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 9px; padding: 2px 7px;">Otomatis</span>
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 9px; padding: 2px 6px;">Otomatis</span>
                         </div>
                         <div class="text-muted mt-0.5 text-truncate" style="font-size: 10.5px;">QRIS, GoPay, ShopeePay, VA Bank</div>
                     </div>
                 </div>
-                <div class="d-flex align-items-center flex-shrink-0">
+                <div class="d-flex align-items-center flex-shrink-0 ms-2">
                     <span class="badge text-white px-2.5 py-1" style="background: #002B49; font-size: 9.5px; font-weight: 700; border-radius: 6px;">MIDTRANS</span>
                 </div>
             </label>
 
             <!-- COD (Cash on Delivery) -->
             <label class="payment-option <?= ((float)$wallet['balance'] < (float)$cart_data['subtotal']) ? 'border-danger bg-danger-subtle active' : '' ?>" id="label_pay_cod">
-                <div class="d-flex align-items-center min-w-0">
+                <div class="d-flex align-items-center min-w-0 flex-grow-1">
                     <input type="radio" name="payment_method" id="pay_cod" value="cod" onchange="updatePaymentCardStyles()" <?= ((float)$wallet['balance'] < (float)$cart_data['subtotal']) ? 'checked' : '' ?>>
-                    <div class="min-w-0">
+                    <div class="min-w-0 flex-grow-1">
                         <div class="fw-bold text-dark text-truncate" style="font-size: 12px;">Tunai saat Tiba (COD)</div>
                         <div class="text-muted mt-0.5 text-truncate" style="font-size: 10.5px;">Bayar langsung ke kurir motor</div>
                     </div>
@@ -103,8 +103,8 @@
     </div>
 
     <!-- Voucher / Coupon Code -->
-    <div class="p-3 bg-white border shadow-2xs mb-3 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important;">
-        <h6 class="fw-bold mb-2 text-dark" style="font-size: 12px;"><i class="bi bi-percent text-warning me-1.5"></i> Promo & Kupon</h6>
+    <div class="p-3 bg-white border shadow-2xs mb-3.5 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important; margin-bottom: 16px !important;">
+        <h6 class="fw-bold mb-2.5 text-dark d-flex align-items-center" style="font-size: 12px;"><i class="bi bi-percent text-warning me-2"></i>Promo & Kupon</h6>
         <div class="input-group input-group-sm">
             <input type="text" name="coupon_code" id="coupon_code" class="form-control bg-light" style="font-size: 11px; border-radius: 10px 0 0 10px; border-color: #E2E8F0;" placeholder="Kode promo (Contoh: CCGHEMAT)">
             <button type="button" class="btn text-white fw-bold px-3.5" style="background:#EE2737; font-size: 11px; border-radius: 0 10px 10px 0;" onclick="applyCouponPreview()">Pakai</button>
@@ -112,15 +112,15 @@
     </div>
 
     <!-- Order Notes -->
-    <div class="p-3 bg-white border shadow-2xs mb-3 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important;">
-        <label class="form-label fw-bold mb-1.5 d-block text-dark" for="order_notes" style="font-size: 12px;"><i class="bi bi-chat-left-text me-1.5 text-muted"></i> Catatan Pesanan</label>
+    <div class="p-3 bg-white border shadow-2xs mb-3.5 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important; margin-bottom: 16px !important;">
+        <label class="form-label fw-bold mb-1.5 d-block text-dark" for="order_notes" style="font-size: 12px;"><i class="bi bi-chat-left-text me-2 text-muted"></i>Catatan Pesanan</label>
         <input type="text" name="order_notes" id="order_notes" class="form-control form-control-sm bg-light" style="font-size: 11px; border-radius: 10px; border-color: #E2E8F0;" placeholder="Contoh: Sambal dipisah, jangan pakai bawang goreng">
     </div>
 
     <!-- Order Breakdown Card -->
-    <div class="p-3 bg-white border shadow-2xs mb-3.5 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 16px !important;">
+    <div class="p-3 bg-white border shadow-2xs mb-3.5 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 16px !important; margin-bottom: 16px !important;">
         <h6 class="fw-bold mb-3 text-dark d-flex align-items-center justify-content-between gap-2" style="font-size: 12.5px;">
-            <span class="text-truncate"><i class="bi bi-receipt me-1.5 text-danger"></i> Rincian Tagihan</span>
+            <span class="text-truncate"><i class="bi bi-receipt me-2 text-danger"></i>Rincian Tagihan</span>
             <span class="badge bg-light text-muted fw-normal px-2 py-1 rounded-pill flex-shrink-0" style="font-size: 9.5px;">Super Fast Delivery</span>
         </h6>
         <div class="d-flex justify-content-between text-muted mb-2 gap-2" style="font-size: 11px;">

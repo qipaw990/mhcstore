@@ -2253,27 +2253,24 @@ div[style*="border-radius: 18px"] .d-flex {
 .payment-option-list {
   display: flex !important;
   flex-direction: column !important;
-  gap: 12px !important;
+  gap: 10px !important;
+  margin-top: 4px !important;
 }
 
 .payment-option {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding: 14px 16px !important;
-  margin-bottom: 12px !important;
-  border-radius: 14px !important;
+  padding: 12px 14px !important;
+  margin-bottom: 0 !important;
+  border-radius: 12px !important;
   border: 1.5px solid #E2E8F0 !important;
   background-color: #FFFFFF !important;
   cursor: pointer !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: all 0.18s ease !important;
   position: relative !important;
   overflow: hidden !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
-}
-
-.payment-option:last-child {
-  margin-bottom: 0 !important;
+  box-shadow: none !important;
 }
 
 .payment-option:hover {
@@ -2285,23 +2282,23 @@ div[style*="border-radius: 18px"] .d-flex {
 .payment-option.selected,
 .payment-option.border-danger {
   border-color: #EE2737 !important;
-  background-color: #FEF2F2 !important;
-  box-shadow: 0 4px 14px rgba(238, 39, 55, 0.12) !important;
+  background-color: #FFF5F5 !important;
+  box-shadow: 0 2px 8px rgba(238, 39, 55, 0.08) !important;
 }
 
 .payment-option input[type="radio"] {
-  width: 19px !important;
-  height: 19px !important;
+  width: 18px !important;
+  height: 18px !important;
   accent-color: #EE2737 !important;
   cursor: pointer !important;
   flex-shrink: 0 !important;
-  margin: 0 12px 0 0 !important;
+  margin: 0 10px 0 0 !important;
 }
 
 .payment-option .badge {
   font-size: 9.5px !important;
   font-weight: 700 !important;
-  padding: 4px 10px !important;
+  padding: 3px 8px !important;
   border-radius: 999px !important;
 }
 
