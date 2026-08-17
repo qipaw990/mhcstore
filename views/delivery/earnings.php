@@ -39,8 +39,8 @@
                 <i class="bi bi-arrow-up-right-circle-fill" style="color: #EE2737; font-size: 14px;"></i>
                 <span>Tarik Dana Komisi</span>
             </button>
-            <span class="badge rounded-pill bg-white bg-opacity-20 text-white px-2.5 py-1" style="font-size: 10px; font-weight: 600;">
-                <i class="bi bi-shield-lock-fill me-1"></i> Pencairan Cepat
+            <span class="badge rounded-pill px-2.5 py-1 text-white" style="background: rgba(255, 255, 255, 0.15); font-size: 10px; font-weight: 700; letter-spacing: 0.3px;">
+                <i class="bi bi-shield-lock-fill me-1 text-warning"></i> Pencairan Cepat
             </span>
         </div>
     </div>
@@ -161,8 +161,8 @@
                                     </div>
 
                                     <?php if (!empty($wd['admin_notes'])): ?>
-                                        <div class="mt-2.5 p-2.5 rounded-3 bg-danger-subtle text-danger small" style="font-size: 11px; border-left: 3.5px solid #EE2737;">
-                                            <strong>Catatan Admin:</strong> <?= htmlspecialchars($wd['admin_notes']) ?>
+                                        <div class="mt-2.5 p-2.5 ps-3 rounded-3 small" style="font-size: 11px; background: #FFF1F2; color: #991B1B; border-left: 3.5px solid #EE2737;">
+                                            <strong style="color: #991B1B;">Catatan Admin:</strong> <?= htmlspecialchars($wd['admin_notes']) ?>
                                         </div>
                                     <?php endif; ?>
                                 </div>

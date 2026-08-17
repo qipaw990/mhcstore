@@ -297,8 +297,13 @@
     transition: all 0.2s ease;
 }
 
-#driverWalletTab .nav-link.active {
+#driverWalletTab .nav-link.active,
+#driverWalletTab .nav-link.active i,
+#driverWalletTab .nav-link.active span {
     color: #FFFFFF !important;
+}
+
+#driverWalletTab .nav-link.active {
     background: #EE2737 !important;
     box-shadow: 0 4px 12px rgba(238, 39, 55, 0.35) !important;
 }
@@ -306,6 +311,10 @@
 #driverWalletTab .nav-link.active .badge {
     background: rgba(255, 255, 255, 0.25) !important;
     color: #FFFFFF !important;
+}
+
+#driverWalletTab .nav-link:not(.active) i {
+    color: #EE2737 !important;
 }
 
 /* --------------------------------------------------------------------------
