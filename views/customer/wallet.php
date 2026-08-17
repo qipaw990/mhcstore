@@ -162,68 +162,88 @@
                     </div>
                 </div>
             <?php else: ?>
-                <div class="d-flex flex-column gap-2.5" id="mutationContainer">
+                <div class="d-flex flex-column gap-2" id="mutationContainer">
                     <?php foreach ($transactions as $tx):
                         $txCat = $tx['category'] ?? $tx['type'] ?? 'credit';
                         $isCredit = ($tx['type'] === 'credit');
 
-                        // Clean mapping category to icon, title, color & background
-                        $catMap = [
-                            'order_refund'     => ['icon' => 'bi-arrow-counterclockwise',  'label' => 'Refund Pengembalian Dana', 'color' => '#2563EB', 'bg' => '#EFF6FF', 'badge' => 'Refund Saldo'],
-                            'topup'            => ['icon' => 'bi-plus-circle-fill',       'label' => 'Top Up CicalengkaPay',     'color' => '#16A34A', 'bg' => '#F0FDF4', 'badge' => 'Isi Saldo'],
-                            'order_payment'    => ['icon' => 'bi-bag-check-fill',          'label' => 'Pembayaran Pesanan',       'color' => '#DC2626', 'bg' => '#FEF2F2', 'badge' => 'Pembayaran'],
-                            'delivery_earning' => ['icon' => 'bi-bicycle',                 'label' => 'Komisi Pengantaran',       'color' => '#7C3AED', 'bg' => '#F5F3FF', 'badge' => 'Komisi Driver'],
-                            'withdraw'         => ['icon' => 'bi-bank',                    'label' => 'Penarikan Dana',           'color' => '#D97706', 'bg' => '#FFFBEB', 'badge' => 'Penarikan'],
-                            'admin_credit'     => ['icon' => 'bi-shield-check',            'label' => 'Kredit Admin',             'color' => '#16A34A', 'bg' => '#F0FDF4', 'badge' => 'Kredit'],
-                            'admin_debit'      => ['icon' => 'bi-shield-exclamation',      'label' => 'Debit Admin',              'color' => '#4B5563', 'bg' => '#F9FAFB', 'badge' => 'Debit'],
-                        ];
-                        $catInfo = $catMap[$txCat] ?? ($isCredit
-                            ? ['icon' => 'bi-arrow-down-left-circle-fill', 'label' => 'Saldo Masuk',  'color' => '#16A34A', 'bg' => '#F0FDF4', 'badge' => 'Masuk']
-                            : ['icon' => 'bi-arrow-up-right-circle-fill',  'label' => 'Saldo Keluar', 'color' => '#DC2626', 'bg' => '#FEF2F2', 'badge' => 'Keluar']
-                        );
+                        // Clean mapping for mobile layout
+                        if ($txCat === 'order_refund') {
+                            $icon = 'bi-arrow-counterclockwise';
+                            $title = 'Refund Pengembalian Dana';
+                            $color = '#2563EB'; // Blue
+                            $bgColor = '#EFF6FF';
+                            $borderColor = '#2563EB';
+                            $sign = '+';
+                            $badgeText = 'Refund';
+                        } elseif ($txCat === 'topup') {
+                            $icon = 'bi-wallet2';
+                            $title = 'Top Up CicalengkaPay';
+                            $color = '#10B981'; // Green
+                            $bgColor = '#ECFDF5';
+                            $borderColor = '#10B981';
+                            $sign = '+';
+                            $badgeText = 'Top Up';
+                        } elseif ($txCat === 'order_payment') {
+                            $icon = 'bi-bag-dash-fill';
+                            $title = 'Pembayaran Pesanan';
+                            $color = '#E11D48'; // Red
+                            $bgColor = '#FFF1F2';
+                            $borderColor = '#E11D48';
+                            $sign = '-';
+                            $badgeText = 'Keluar';
+                        } else {
+                            $icon = $isCredit ? 'bi-arrow-down-left-circle' : 'bi-arrow-up-right-circle';
+                            $title = $isCredit ? 'Saldo Masuk' : 'Saldo Keluar';
+                            $color = $isCredit ? '#10B981' : '#E11D48';
+                            $bgColor = $isCredit ? '#ECFDF5' : '#FFF1F2';
+                            $borderColor = $color;
+                            $sign = $isCredit ? '+' : '-';
+                            $badgeText = $isCredit ? 'Masuk' : 'Keluar';
+                        }
                     ?>
-                        <div class="mutation-item-card p-3.5 bg-white border shadow-xs" style="border-radius: 16px; border-color: #E2E8F0 !important;" data-cat="<?= htmlspecialchars($txCat) ?>">
-                            <div class="d-flex align-items-center gap-3">
-                                <!-- Round Icon Wrapper -->
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px; background: <?= $catInfo['bg'] ?>; border: 1px solid <?= $catInfo['color'] ?>20;">
-                                    <i class="bi <?= $catInfo['icon'] ?>" style="font-size: 17px; color: <?= $catInfo['color'] ?>;"></i>
-                                </div>
-
-                                <!-- Transaction Title & Time -->
-                                <div class="flex-grow-1 min-w-0">
-                                    <div class="d-flex align-items-center gap-1.5 mb-0.5">
-                                        <div class="fw-bold text-dark text-truncate" style="font-size: 12px; letter-spacing: -0.2px;">
-                                            <?= $catInfo['label'] ?>
+                        <div class="mutation-item-card bg-white border shadow-2xs px-3 py-2.5" 
+                             style="border-radius: 14px; border-color: #E2E8F0 !important; <?= ($txCat === 'order_refund') ? 'border-left: 4px solid #2563EB !important;' : '' ?>" 
+                             data-cat="<?= htmlspecialchars($txCat) ?>">
+                            <div class="d-flex align-items-center justify-content-between gap-2">
+                                <!-- Left Icon + Title Info -->
+                                <div class="d-flex align-items-center gap-2.5 min-w-0" style="flex: 1 1 auto;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" 
+                                         style="width: 36px; height: 36px; background: <?= $bgColor ?>;">
+                                        <i class="bi <?= $icon ?>" style="font-size: 15px; color: <?= $color ?>;"></i>
+                                    </div>
+                                    <div class="min-w-0" style="line-height: 1.25;">
+                                        <div class="fw-bold text-dark text-truncate" style="font-size: 11.5px; letter-spacing: -0.2px;">
+                                            <?= $title ?>
+                                        </div>
+                                        <div class="text-muted text-truncate mt-0.5" style="font-size: 9.5px; max-width: 190px;">
+                                            <?= htmlspecialchars($tx['description'] ?? 'Transaksi Dompet') ?>
+                                        </div>
+                                        <div class="text-muted mt-1" style="font-size: 8.5px;">
+                                            <i class="bi bi-clock me-0.5"></i><?= date('d M Y, H:i', strtotime($tx['created_at'])) ?>
                                         </div>
                                     </div>
-                                    <div class="text-muted text-truncate" style="font-size: 10px; line-height: 1.3;">
-                                        <?= htmlspecialchars($tx['description'] ?? 'Transaksi Dompet') ?>
-                                    </div>
-                                    <div class="text-muted mt-1" style="font-size: 9px;">
-                                        <i class="bi bi-clock me-1"></i><?= date('d M Y, H:i', strtotime($tx['created_at'])) ?>
-                                    </div>
                                 </div>
 
-                                <!-- Amount & Category Badge -->
-                                <div class="text-end flex-shrink-0">
-                                    <div class="fw-extrabold" style="font-size: 13px; color: <?= $catInfo['color'] ?>; letter-spacing: -0.3px;">
-                                        <?= $isCredit ? '+' : '-' ?><?= format_rupiah($tx['amount']) ?>
+                                <!-- Right Amount -->
+                                <div class="text-end flex-shrink-0" style="min-width: 80px;">
+                                    <div class="fw-extrabold" style="font-size: 12.5px; color: <?= $color ?>; letter-spacing: -0.3px;">
+                                        <?= $sign ?><?= format_rupiah($tx['amount']) ?>
                                     </div>
-                                    <span class="badge rounded-pill px-2.5 py-1 mt-1 d-inline-block" style="font-size: 8.5px; font-weight: 700; background: <?= $catInfo['bg'] ?>; color: <?= $catInfo['color'] ?>; border: 1px solid <?= $catInfo['color'] ?>30;">
-                                        <?= $catInfo['badge'] ?>
+                                    <span class="badge rounded-pill px-2 py-0.5 mt-0.5" style="font-size: 8px; font-weight: 700; background: <?= $bgColor ?>; color: <?= $color ?>; border: 1px solid <?= $color ?>20;">
+                                        <?= $badgeText ?>
                                     </span>
                                 </div>
                             </div>
 
-                            <!-- Extra Order Refund Banner Box -->
+                            <!-- Refund Info Strip -->
                             <?php if ($txCat === 'order_refund'): ?>
-                            <div class="mt-2.5 p-2 rounded-3 d-flex align-items-center justify-content-between" style="background: #F0F9FF; border: 1px dashed #BAE6FD; font-size: 9.5px;">
-                                <div class="d-flex align-items-center gap-1.5 text-primary">
-                                    <i class="bi bi-info-circle-fill"></i>
-                                    <span>Pengembalian dana otomatis (Tidak ada driver)</span>
-                                </div>
+                            <div class="mt-2 pt-1.5 border-top d-flex align-items-center justify-content-between" style="font-size: 9px; border-color: #F1F5F9 !important;">
+                                <span class="text-primary fw-semibold"><i class="bi bi-shield-check me-1"></i>Dana dikembalikan otomatis (Tidak ada driver)</span>
                                 <?php if (!empty($tx['reference_id'])): ?>
-                                <span class="fw-bold text-primary" style="font-family: monospace;">Order #<?= htmlspecialchars($tx['reference_id']) ?></span>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-1.5 py-0.5 rounded" style="font-family: monospace; font-size: 8px;">
+                                    #<?= htmlspecialchars($tx['reference_id']) ?>
+                                </span>
                                 <?php endif; ?>
                             </div>
                             <?php endif; ?>
