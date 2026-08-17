@@ -2879,11 +2879,23 @@ div[style*="border-radius: 18px"] .d-flex {
   box-shadow: 0 4px 12px rgba(238, 39, 55, 0.4);
 }
 
+/* Sembunyikan default Leaflet shadow png yang terdistorsi menjadi elips vertikal */
+.leaflet-shadow-pane,
+.leaflet-marker-shadow,
+.leaflet-pane > .leaflet-shadow-pane {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 .leaflet-marker-icon,
 .custom-pin,
 .driver-radar-marker {
   background: transparent !important;
   border: none !important;
+  box-shadow: none !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
