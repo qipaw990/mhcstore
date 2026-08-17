@@ -32,6 +32,19 @@ class Order extends Model
 
         $order = Database::fetchOne($sql, [$orderCode]);
         if ($order) {
+            // Strict Driver Visibility Rules:
+            // If order is canceled OR hasn't been accepted by a driver yet, hide driver info
+            if ($order['order_status'] === 'canceled' || !in_array($order['order_status'], ['processing', 'handover', 'on_the_way', 'delivered'])) {
+                $order['delivery_man_id'] = null;
+                $order['dm_name'] = null;
+                $order['dm_phone'] = null;
+                $order['dm_avatar'] = null;
+                $order['vehicle_type'] = null;
+                $order['vehicle_number'] = null;
+                $order['dm_lat'] = null;
+                $order['dm_lng'] = null;
+            }
+
             $order['items'] = Database::query("SELECT * FROM `order_items` WHERE `order_id` = ?", [$order['id']]);
             $order['delivery_address'] = json_decode($order['delivery_address_json'] ?? '{}', true) ?: [];
             $order['parcel_details'] = json_decode($order['parcel_details_json'] ?? '{}', true) ?: [];
@@ -167,18 +180,24 @@ class Order extends Model
     public static function autoCancelUnclaimedOrders(): void
     {
         try {
-            // Find active orders without driver where created_at is older than 60 seconds (1 minute)
+            // Find active orders without driver (or unclaimed) where created_at is older than 60 seconds (1 minute)
             $expiredOrders = Database::query(
-                "SELECT id, order_code, customer_id, payment_method, payment_status, total_amount, created_at 
+                "SELECT id, order_code, customer_id, delivery_man_id, payment_method, payment_status, total_amount, created_at 
                  FROM `orders` 
-                 WHERE `delivery_man_id` IS NULL 
-                   AND `order_status` NOT IN ('delivered', 'canceled', 'refunded', 'failed')
+                 WHERE (`delivery_man_id` IS NULL OR `order_status` IN ('pending', 'confirmed'))
+                   AND `order_status` NOT IN ('processing', 'handover', 'on_the_way', 'delivered', 'canceled', 'refunded', 'failed')
                    AND `created_at` <= TIMESTAMPADD(SECOND, -60, NOW())"
             );
 
             foreach ($expiredOrders as $ord) {
-                // Cancel order
+                // Clear active order link from delivery_men if any
+                if (!empty($ord['delivery_man_id'])) {
+                    Database::update('delivery_men', ['current_order_id' => null], 'id = ?', [$ord['delivery_man_id']]);
+                }
+
+                // Cancel order & ensure delivery_man_id is NULL
                 Database::update('orders', [
+                    'delivery_man_id'     => null,
                     'order_status'        => 'canceled',
                     'cancellation_reason' => 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 1 menit',
                     'canceled_at'          => date('Y-m-d H:i:s')

@@ -467,25 +467,27 @@ class OrderController extends Controller
             $unreadChatCount = (int)($unreadChat['cnt'] ?? 0);
         }
 
-        $this->json([
-            'success' => true,
-            'data'    => [
-                'order_code'     => $order['order_code'],
-                'order_status'   => $order['order_status'],
-                'payment_status' => $order['payment_status'],
-                'payment_method' => $order['payment_method'],
-                'otp'            => $order['otp'],
-                'unread_chats'   => $unreadChatCount,
-                'driver'         => [
-                    'assigned' => !empty($order['delivery_man_id']),
-                    'name'     => $order['dm_name'] ?? 'Mencari Kurir...',
-                    'phone'    => $order['dm_phone'] ?? '',
-                    'avatar'   => $order['dm_avatar'] ?? 'assets/images/users/driver.png',
-                    'vehicle'  => $order['vehicle_type'] ?? 'Motor',
-                    'plate'    => $order['vehicle_number'] ?? '',
-                    'lat'      => $driverLat,
-                    'lng'      => $driverLng
-                ],
+                $isDriverAssigned = !empty($order['delivery_man_id']) && $order['order_status'] !== 'canceled' && in_array($order['order_status'], ['processing', 'handover', 'on_the_way', 'delivered']);
+
+                $this->json([
+                    'success' => true,
+                    'data'    => [
+                        'order_code'     => $order['order_code'],
+                        'order_status'   => $order['order_status'],
+                        'payment_status' => $order['payment_status'],
+                        'payment_method' => $order['payment_method'],
+                        'otp'            => $order['otp'],
+                        'unread_chats'   => $unreadChatCount,
+                        'driver'         => [
+                            'assigned' => $isDriverAssigned,
+                            'name'     => $isDriverAssigned ? ($order['dm_name'] ?? 'Mitra Kurir Cicalengka') : 'Mencari Kurir...',
+                            'phone'    => $isDriverAssigned ? ($order['dm_phone'] ?? '') : '',
+                            'avatar'   => $isDriverAssigned ? ($order['dm_avatar'] ?? 'assets/images/users/driver.png') : 'assets/images/users/driver.png',
+                            'vehicle'  => $isDriverAssigned ? ($order['vehicle_type'] ?? 'Motor') : 'Motor',
+                            'plate'    => $isDriverAssigned ? ($order['vehicle_number'] ?? '') : '',
+                            'lat'      => $isDriverAssigned ? $driverLat : null,
+                            'lng'      => $isDriverAssigned ? $driverLng : null
+                        ],
                 'store'          => [
                     'name'    => $order['store_name'] ?? 'Titik Penjemputan',
                     'address' => $order['store_address'] ?? 'Cicalengka, Bandung',

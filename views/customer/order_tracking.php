@@ -160,10 +160,13 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
             <div class="text-white-50 mt-0.5" style="font-size: 9px;">Berikan kode 4-digit ini kepada kurir saat pesanan tiba.</div>
         </div>
 
+        <?php 
+        $isDriverValid = !empty($order['delivery_man_id']) && $order['order_status'] !== 'canceled' && in_array($order['order_status'], ['processing', 'handover', 'on_the_way', 'delivered']);
+        ?>
         <!-- Driver Info Card (Dynamic Auto-Sync) -->
         <div id="driver-card-container">
             <!-- Assigned Driver Card -->
-            <div id="driver-assigned-card" class="p-3.5 bg-white border shadow-xs <?= empty($order['delivery_man_id']) ? 'd-none' : '' ?>" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important;">
+            <div id="driver-assigned-card" class="p-3.5 bg-white border shadow-xs <?= !$isDriverValid ? 'd-none' : '' ?>" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important;">
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center gap-2.5">
                         <img id="driver-avatar-img" src="<?= $baseUrl ?>/<?= htmlspecialchars($order['dm_avatar'] ?? 'assets/images/users/driver.png') ?>" alt="Driver" class="rounded-circle border border-2 border-danger" style="width: 40px; height: 40px; object-fit: cover;">
@@ -191,7 +194,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
             </div>
 
             <!-- Searching Driver Card -->
-            <div id="driver-searching-card" class="p-3.5 bg-white border shadow-xs <?= !empty($order['delivery_man_id']) ? 'd-none' : '' ?>" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important;">
+            <div id="driver-searching-card" class="p-3.5 bg-white border shadow-xs <?= ($isDriverValid || $order['order_status'] === 'canceled' || $order['order_status'] === 'delivered') ? 'd-none' : '' ?>" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important;">
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center gap-2.5">
                         <div class="spinner-border spinner-border-sm text-danger" style="width: 16px; height: 16px;" role="status"></div>
