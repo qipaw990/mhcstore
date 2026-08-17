@@ -90,13 +90,14 @@ $user = auth_user();
     <div id="ccgDriverToastStack" style="
         position: fixed;
         top: 60px;
-        right: 10px;
-        left: auto;
-        width: 270px;
-        max-width: calc(100vw - 20px);
+        left: 50%;
+        transform: translateX(-50%);
+        width: 280px;
+        max-width: calc(100vw - 24px);
         z-index: 9999;
         display: flex;
         flex-direction: column;
+        align-items: center;
         gap: 6px;
         pointer-events: none;
     "></div>
@@ -165,7 +166,7 @@ function showDriverToast(message, type = 'info', duration = 4000) {
         border: 1px solid #E2E8F0;
         box-shadow: 0 6px 18px rgba(15, 23, 42, 0.13);
         pointer-events: all;
-        transform: translateX(110%);
+        transform: translateY(-20px);
         transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
         opacity: 0;
         overflow: hidden;
@@ -207,10 +208,10 @@ function showDriverToast(message, type = 'info', duration = 4000) {
 
     stack.appendChild(toast);
 
-    // Trigger slide-in animation
+    // Trigger drop-down animation
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-            toast.style.transform = 'translateX(0)';
+            toast.style.transform = 'translateY(0)';
             toast.style.opacity = '1';
         });
     });
@@ -222,9 +223,9 @@ function showDriverToast(message, type = 'info', duration = 4000) {
 function dismissDriverToast(id) {
     const toast = document.getElementById(id);
     if (!toast) return;
-    toast.style.transform = 'translateX(110%)';
+    toast.style.transform = 'translateY(-16px)';
     toast.style.opacity = '0';
-    setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
+    setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 250);
 }
 </script>
 
