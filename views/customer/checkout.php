@@ -45,56 +45,59 @@
     </div>
 
     <!-- Payment Method Selector -->
-    <div class="p-3 bg-white border shadow-2xs mb-3 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important;">
-        <h6 class="fw-bold mb-3 text-dark" style="font-size: 12.5px;"><i class="bi bi-wallet2 text-danger me-1.5"></i> Metode Pembayaran</h6>
+    <div class="p-3.5 bg-white border shadow-2xs mb-3.5 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+        <h6 class="fw-bold mb-3 text-dark d-flex align-items-center justify-content-between" style="font-size: 13px;">
+            <span><i class="bi bi-wallet2 text-danger me-1.5"></i> Metode Pembayaran</span>
+            <span class="text-muted fw-normal" style="font-size: 10.5px;">Pilih salah satu</span>
+        </h6>
 
-        <div class="d-flex flex-column gap-2.5">
+        <div class="payment-option-list">
             <!-- CicalengkaPay Digital Wallet -->
-            <label class="p-2.5 px-3 border rounded-3 d-flex align-items-center justify-content-between cursor-pointer payment-option overflow-hidden <?= ((float)$wallet['balance'] >= (float)$cart_data['subtotal']) ? 'border-danger bg-danger-subtle' : 'opacity-75' ?>" style="cursor: pointer; border-radius: 12px !important; padding: 12px 14px !important;">
-                <div class="d-flex align-items-center gap-2.5 min-w-0">
-                    <input type="radio" name="payment_method" id="pay_wallet" value="wallet" class="flex-shrink-0" <?= ((float)$wallet['balance'] >= (float)$cart_data['subtotal']) ? 'checked' : 'disabled' ?>>
+            <label class="payment-option <?= ((float)$wallet['balance'] >= (float)$cart_data['subtotal']) ? 'border-danger bg-danger-subtle active' : 'opacity-75' ?>" id="label_pay_wallet">
+                <div class="d-flex align-items-center min-w-0">
+                    <input type="radio" name="payment_method" id="pay_wallet" value="wallet" onchange="updatePaymentCardStyles()" <?= ((float)$wallet['balance'] >= (float)$cart_data['subtotal']) ? 'checked' : 'disabled' ?>>
                     <div class="min-w-0">
-                        <div class="fw-bold d-flex align-items-center gap-1.5 text-truncate" style="font-size: 11.5px;">
-                            <span style="color:#EE2737;font-weight:800;">CicalengkaPay</span>
-                            <span class="text-muted text-truncate" style="font-size: 10px;">(Saldo Digital)</span>
+                        <div class="fw-bold text-dark text-truncate d-flex align-items-center gap-1.5" style="font-size: 12px;">
+                            <span style="color:#EE2737; font-weight:800;">CicalengkaPay</span>
+                            <span class="text-muted fw-normal" style="font-size: 10.5px;">(Saldo Digital)</span>
                         </div>
-                        <div class="text-muted text-truncate" style="font-size: 10px;">Saldo: <?= format_rupiah($wallet['balance'] ?? 0) ?></div>
+                        <div class="text-muted mt-0.5 text-truncate" style="font-size: 10.5px;">Saldo: <?= format_rupiah($wallet['balance'] ?? 0) ?></div>
                     </div>
                 </div>
                 <?php if ((float)$wallet['balance'] < (float)$cart_data['subtotal']): ?>
-                    <span class="badge bg-warning text-dark py-1 px-2.5 rounded-pill flex-shrink-0" style="font-size: 9px;">Kurang</span>
+                    <span class="badge bg-warning text-dark flex-shrink-0">Kurang</span>
                 <?php else: ?>
-                    <span class="badge py-1 px-2.5 rounded-pill text-white flex-shrink-0" style="background:#EE2737 !important; font-size: 9px;">Tersedia</span>
+                    <span class="badge text-white flex-shrink-0" style="background:#EE2737 !important;">Tersedia</span>
                 <?php endif; ?>
             </label>
 
             <!-- Midtrans Online Payment (QRIS / VA / E-Wallet) -->
-            <label class="p-2.5 px-3 border rounded-3 d-flex align-items-center justify-content-between cursor-pointer payment-option overflow-hidden" style="cursor: pointer; border-radius: 12px !important; padding: 12px 14px !important;">
-                <div class="d-flex align-items-center gap-2.5 min-w-0">
-                    <input type="radio" name="payment_method" id="pay_midtrans" value="midtrans" class="flex-shrink-0">
+            <label class="payment-option" id="label_pay_midtrans">
+                <div class="d-flex align-items-center min-w-0">
+                    <input type="radio" name="payment_method" id="pay_midtrans" value="midtrans" onchange="updatePaymentCardStyles()">
                     <div class="min-w-0">
-                        <div class="fw-bold d-flex align-items-center gap-1.5 text-dark text-truncate" style="font-size: 11.5px;">
-                            <span class="text-truncate">Bayar Online (Midtrans)</span>
-                            <span class="badge bg-danger-subtle text-danger py-0.5 px-2 flex-shrink-0" style="font-size: 9px; font-weight: 700;">Otomatis</span>
+                        <div class="fw-bold text-dark text-truncate d-flex align-items-center gap-1.5" style="font-size: 12px;">
+                            <span>Bayar Online (Midtrans)</span>
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 9px; padding: 2px 7px;">Otomatis</span>
                         </div>
-                        <div class="text-muted text-truncate" style="font-size: 10px;">QRIS, GoPay, ShopeePay, VA Bank</div>
+                        <div class="text-muted mt-0.5 text-truncate" style="font-size: 10.5px;">QRIS, GoPay, ShopeePay, VA Bank</div>
                     </div>
                 </div>
                 <div class="d-flex align-items-center flex-shrink-0">
-                    <span class="badge text-white px-2.5 py-1" style="background: #002B49; font-size: 9px; font-weight: 700; border-radius: 6px;">MIDTRANS</span>
+                    <span class="badge text-white px-2.5 py-1" style="background: #002B49; font-size: 9.5px; font-weight: 700; border-radius: 6px;">MIDTRANS</span>
                 </div>
             </label>
 
             <!-- COD (Cash on Delivery) -->
-            <label class="p-2.5 px-3 border rounded-3 d-flex align-items-center justify-content-between cursor-pointer payment-option overflow-hidden" style="cursor: pointer; border-radius: 12px !important; padding: 12px 14px !important;">
-                <div class="d-flex align-items-center gap-2.5 min-w-0">
-                    <input type="radio" name="payment_method" id="pay_cod" value="cod" class="flex-shrink-0" <?= ((float)$wallet['balance'] < (float)$cart_data['subtotal']) ? 'checked' : '' ?>>
+            <label class="payment-option <?= ((float)$wallet['balance'] < (float)$cart_data['subtotal']) ? 'border-danger bg-danger-subtle active' : '' ?>" id="label_pay_cod">
+                <div class="d-flex align-items-center min-w-0">
+                    <input type="radio" name="payment_method" id="pay_cod" value="cod" onchange="updatePaymentCardStyles()" <?= ((float)$wallet['balance'] < (float)$cart_data['subtotal']) ? 'checked' : '' ?>>
                     <div class="min-w-0">
-                        <div class="fw-bold text-dark text-truncate" style="font-size: 11.5px;">Tunai saat Tiba (COD)</div>
-                        <div class="text-muted text-truncate" style="font-size: 10px;">Bayar langsung ke kurir motor</div>
+                        <div class="fw-bold text-dark text-truncate" style="font-size: 12px;">Tunai saat Tiba (COD)</div>
+                        <div class="text-muted mt-0.5 text-truncate" style="font-size: 10.5px;">Bayar langsung ke kurir motor</div>
                     </div>
                 </div>
-                <i class="bi bi-cash-coin text-success fs-5 flex-shrink-0"></i>
+                <i class="bi bi-cash-coin text-success fs-5 flex-shrink-0 ms-2"></i>
             </label>
         </div>
     </div>
@@ -143,6 +146,20 @@
 </form>
 
 <script>
+function updatePaymentCardStyles() {
+    document.querySelectorAll('.payment-option').forEach(label => {
+        const radio = label.querySelector('input[type="radio"]');
+        if (radio && radio.checked) {
+            label.classList.add('border-danger', 'bg-danger-subtle', 'active');
+        } else {
+            label.classList.remove('border-danger', 'bg-danger-subtle', 'active');
+        }
+    });
+}
+document.addEventListener('DOMContentLoaded', () => {
+    updatePaymentCardStyles();
+});
+
 const STORE_LAT = <?= (float)($cart_data['store']['latitude'] ?? -6.9835) ?>;
 const STORE_LNG = <?= (float)($cart_data['store']['longitude'] ?? 107.8335) ?>;
 const STORE_NAME = "<?= htmlspecialchars($cart_data['store']['name'] ?? 'Resto') ?>";
