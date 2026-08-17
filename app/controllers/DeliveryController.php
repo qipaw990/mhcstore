@@ -77,6 +77,35 @@ class DeliveryController extends Controller
         // Available nearby orders in driver zone
         $availableOrders = $this->orderModel->getAvailableForDelivery((int)($dm['zone_id'] ?? 1));
 
+        // Auto-credit driver commission for delivered orders that haven't been credited yet
+        $deliveredDriverOrders = Database::query(
+            "SELECT id, order_code, delivery_charge FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` = 'delivered'",
+            [$dm['id']]
+        );
+        foreach ($deliveredDriverOrders as $dOrder) {
+            $alreadyCredited = Database::fetchOne(
+                "SELECT id FROM `wallet_transactions` WHERE `user_id` = ? AND `category` = 'delivery_earning' AND `reference_id` = ? LIMIT 1",
+                [$userId, (string)$dOrder['id']]
+            );
+            if (!$alreadyCredited) {
+                $driverEarning = (float)$dOrder['delivery_charge'] * 0.85;
+                $this->walletModel->credit(
+                    $userId,
+                    $driverEarning,
+                    'delivery_earning',
+                    "Komisi pengantaran pesanan #{$dOrder['order_code']}",
+                    (string)$dOrder['id']
+                );
+            }
+        }
+
+        // Calculate REAL delivered orders count strictly from orders table
+        $realDeliveredCount = (int)Database::fetchColumn(
+            "SELECT COUNT(*) FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` = 'delivered'",
+            [$dm['id']]
+        );
+        Database::update('delivery_men', ['total_orders' => $realDeliveredCount], 'id = ?', [$dm['id']]);
+
         // Today's summary
         $wallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
 
@@ -84,6 +113,7 @@ class DeliveryController extends Controller
         $reviewModel = new \App\Models\Review();
         $reviewModel->recalculateDmRating((int)$dm['id']);
         $dm = $this->dmModel->find($dm['id']);
+        $dm['total_orders'] = $realDeliveredCount;
         $reviews = $reviewModel->getDmReviews((int)$dm['id'], 15);
 
         $this->view('delivery.dashboard', [
@@ -143,6 +173,13 @@ class DeliveryController extends Controller
             $availableOrders = $this->orderModel->getAvailableForDelivery((int)($dm['zone_id'] ?? 1));
         }
 
+        // Recalculate REAL delivered count strictly from orders table
+        $realDeliveredCount = (int)Database::fetchColumn(
+            "SELECT COUNT(*) FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` = 'delivered'",
+            [$dm['id']]
+        );
+        Database::update('delivery_men', ['total_orders' => $realDeliveredCount], 'id = ?', [$dm['id']]);
+
         // Today's summary
         $wallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
 
@@ -167,7 +204,7 @@ class DeliveryController extends Controller
             'available_orders' => $availableOrders,
             'available_count'  => count($availableOrders),
             'wallet_balance'   => (float)($wallet['balance'] ?? 0),
-            'total_orders'     => (int)($dm['total_orders'] ?? 0),
+            'total_orders'     => $realDeliveredCount,
             'rating'           => (float)($dm['rating'] ?? 5.0),
             'reviews_count'    => (int)($dm['reviews_count'] ?? 0),
             'unread_chats'     => $unreadChats,
