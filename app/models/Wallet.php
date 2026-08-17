@@ -28,6 +28,11 @@ class Wallet extends Model
 
     public function credit(int $userId, float $amount, string $category, string $description, ?string $refId = null): bool
     {
+        // Safe mapping to match MySQL ENUM column
+        if ($category === 'order_refund') {
+            $category = 'refund';
+        }
+
         $wallet = $this->getOrCreate($userId, 'customer');
         $newBalance = (float)$wallet['balance'] + $amount;
         $newEarned = (float)$wallet['total_earned'] + $amount;
@@ -51,6 +56,11 @@ class Wallet extends Model
 
     public function debit(int $userId, float $amount, string $category, string $description, ?string $refId = null): bool
     {
+        // Safe mapping to match MySQL ENUM column
+        if ($category === 'order_refund') {
+            $category = 'refund';
+        }
+
         $wallet = $this->getOrCreate($userId, 'customer');
         if ((float)$wallet['balance'] < $amount) {
             throw new Exception("Saldo dompet tidak mencukupi.");

@@ -242,7 +242,7 @@ class Order extends Model
 
         // Cek apakah pernah ada catatan refund di wallet_transactions
         $existing = Database::fetchOne(
-            "SELECT id FROM `wallet_transactions` WHERE `reference_id` = ? AND `category` = 'order_refund' LIMIT 1",
+            "SELECT id FROM `wallet_transactions` WHERE `reference_id` = ? AND `category` IN ('refund', 'order_refund') LIMIT 1",
             [(string)$orderId]
         );
 
@@ -260,7 +260,7 @@ class Order extends Model
             $walletModel->credit(
                 $customerId,
                 $amount,
-                'order_refund',
+                'refund',
                 $desc,
                 (string)$orderId
             );

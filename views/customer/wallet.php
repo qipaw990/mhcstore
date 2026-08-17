@@ -50,7 +50,7 @@
                 <div class="col-4">
                     <div class="py-1.5 px-1 rounded-3 text-center" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.22);">
                         <div class="text-white-50" style="font-size: 8.5px; font-weight: 600;">Refund</div>
-                        <div class="fw-bold text-info mt-0.5" style="font-size: 12px;"><?= count(array_filter($transactions ?? [], fn($t) => ($t['category'] ?? '') === 'order_refund')) ?>x</div>
+                        <div class="fw-bold text-info mt-0.5" style="font-size: 12px;"><?= count(array_filter($transactions ?? [], fn($t) => in_array($t['category'] ?? '', ['refund', 'order_refund']))) ?>x</div>
                     </div>
                 </div>
             </div>
@@ -143,7 +143,7 @@
                 $orderCount = 0;
                 foreach ($transactions as $t) {
                     $cat = $t['category'] ?? '';
-                    if ($cat === 'order_refund') $refundCount++;
+                    if (in_array($cat, ['refund', 'order_refund'])) $refundCount++;
                     elseif ($cat === 'topup') $topupCount++;
                     elseif ($cat === 'order_payment') $orderCount++;
                 }
@@ -154,7 +154,7 @@
                 <button type="button" onclick="filterMutationList('all')" class="btn btn-sm btn-dark rounded-pill px-2.5 py-1 fw-bold mutation-filter-btn active" data-mfilter="all" style="font-size: 9.5px;">
                     Semua (<?= count($transactions) ?>)
                 </button>
-                <button type="button" onclick="filterMutationList('order_refund')" class="btn btn-sm btn-light border rounded-pill px-2.5 py-1 fw-bold mutation-filter-btn text-primary" data-mfilter="order_refund" style="font-size: 9.5px;">
+                <button type="button" onclick="filterMutationList('refund')" class="btn btn-sm btn-light border rounded-pill px-2.5 py-1 fw-bold mutation-filter-btn text-primary" data-mfilter="refund" style="font-size: 9.5px;">
                     <i class="bi bi-arrow-counterclockwise me-0.5"></i> Refund (<?= $refundCount ?>)
                 </button>
                 <button type="button" onclick="filterMutationList('topup')" class="btn btn-sm btn-light border rounded-pill px-2.5 py-1 fw-bold mutation-filter-btn text-success" data-mfilter="topup" style="font-size: 9.5px;">
@@ -182,7 +182,15 @@
                         $isCredit = ($tx['type'] === 'credit');
 
                         // Custom clean mapping for transaction cards
-                        if ($txCat === 'order_refund') {
+                        if (in_array($txCat, ['refund', 'order_refund'])) {
+                            $icon = 'bi-arrow-counterclockwise';
+                            $title = 'Refund Pengembalian Dana';
+                            $color = '#2563EB'; // Blue
+                            $bgColor = '#EFF6FF';
+                            $badgeBg = '#DBEAFE';
+                            $sign = '+';
+                            $badgeText = 'Refund';
+                        } elseif ($txCat === 'topup') {
                             $icon = 'bi-arrow-counterclockwise';
                             $title = 'Refund Pengembalian Dana';
                             $color = '#2563EB'; // Blue
@@ -447,7 +455,8 @@ function filterMutationList(category) {
 
     const items = document.querySelectorAll('.mutation-item-card');
     items.forEach(card => {
-        if (category === 'all' || card.dataset.cat === category) {
+        const itemCat = card.dataset.cat;
+        if (category === 'all' || itemCat === category || (category === 'refund' && (itemCat === 'refund' || itemCat === 'order_refund'))) {
             card.style.display = 'block';
         } else {
             card.style.display = 'none';
