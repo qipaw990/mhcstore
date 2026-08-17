@@ -85,7 +85,7 @@ class DeliveryController extends Controller
         );
         foreach ($deliveredDriverOrders as $dOrder) {
             $alreadyCredited = Database::fetchOne(
-                "SELECT id FROM `wallet_transactions` WHERE `wallet_id` = ? AND `category` = 'delivery_earning' AND `reference_id` = ? LIMIT 1",
+                "SELECT id FROM `wallet_transactions` WHERE `wallet_id` = ? AND `category` = 'order_earning' AND `reference_id` = ? LIMIT 1",
                 [$driverWallet['id'], (string)$dOrder['id']]
             );
             if (!$alreadyCredited) {
@@ -93,7 +93,7 @@ class DeliveryController extends Controller
                 $this->walletModel->credit(
                     $userId,
                     $driverEarning,
-                    'delivery_earning',
+                    'order_earning',
                     "Komisi pengantaran pesanan #{$dOrder['order_code']}",
                     (string)$dOrder['id']
                 );

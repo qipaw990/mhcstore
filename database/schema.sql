@@ -272,7 +272,7 @@ CREATE TABLE `wallet_transactions` (
   `wallet_id` bigint(20) unsigned NOT NULL,
   `amount` decimal(14,2) NOT NULL,
   `type` enum('credit','debit') NOT NULL,
-  `category` enum('order_payment','topup','order_earning','withdrawal','refund','bonus','cashback') NOT NULL,
+  `category` enum('order_payment','topup','order_earning','withdrawal','refund','bonus','cashback') NOT NULL COMMENT 'order_earning dipakai vendor dan driver',
   `reference_id` varchar(100) DEFAULT NULL,
   `description` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
