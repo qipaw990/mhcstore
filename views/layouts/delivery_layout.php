@@ -2,6 +2,22 @@
 $appConfig = require APP_PATH . '/config/app.php';
 $baseUrl = $appConfig['public_url'];
 $user = auth_user();
+
+// Dynamic Driver Rating
+if (!isset($driverRating)) {
+    if (isset($driver['rating'])) {
+        $driverRating = (float)$driver['rating'];
+    } elseif ($user) {
+        $dmRecord = (new \App\Models\DeliveryMan())->findByUserId((int)$user['id']);
+        if ($dmRecord) {
+            (new \App\Models\Review())->recalculateDmRating((int)$dmRecord['id']);
+            $dmRecord = (new \App\Models\DeliveryMan())->find($dmRecord['id']);
+        }
+        $driverRating = (float)($dmRecord['rating'] ?? 5.0);
+    } else {
+        $driverRating = 5.0;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -42,7 +58,7 @@ $user = auth_user();
                 <div class="d-flex align-items-center gap-2">
                     <span class="fw-bold text-white small"><?= htmlspecialchars($user['name'] ?? 'Mitra Driver') ?></span>
                     <span class="badge rounded-pill text-dark px-2" style="background: #F7A800; font-size: 10px; font-weight: 800;">
-                        <i class="bi bi-star-fill me-0.5"></i> 4.9
+                        <i class="bi bi-star-fill me-0.5"></i> <span id="headerDriverRatingText"><?= number_format($driverRating, 1) ?></span>
                     </span>
                 </div>
                 <div class="d-flex align-items-center gap-1 mt-0.5" style="font-size: 11px; color: #94a3b8;">

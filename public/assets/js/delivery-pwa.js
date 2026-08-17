@@ -248,7 +248,7 @@ async function syncDriverLiveDashboard() {
 
     window.HAS_ACTIVE_ORDER = !!data.has_active_order;
 
-    // 1. Sync Wallet & Completed Orders
+    // 1. Sync Wallet & Completed Orders & Driver Rating
     const walletEl = document.getElementById('driverWalletBalanceText');
     if (walletEl) {
       walletEl.textContent = formatRupiahJs(data.wallet_balance || 0);
@@ -256,6 +256,18 @@ async function syncDriverLiveDashboard() {
     const ordersCountEl = document.getElementById('driverTotalOrdersText');
     if (ordersCountEl) {
       ordersCountEl.textContent = data.total_orders || 0;
+    }
+    const headerRatingEl = document.getElementById('headerDriverRatingText');
+    if (headerRatingEl && data.rating !== undefined) {
+      headerRatingEl.textContent = Number(data.rating).toFixed(1);
+    }
+    const cardRatingEl = document.getElementById('driverRatingValueHeader');
+    if (cardRatingEl && data.rating !== undefined) {
+      cardRatingEl.textContent = Number(data.rating).toFixed(1);
+    }
+    const cardReviewsEl = document.getElementById('driverReviewsCountHeader');
+    if (cardReviewsEl && data.reviews_count !== undefined) {
+      cardReviewsEl.textContent = data.reviews_count;
     }
 
     // 2. Sync Chat unread dot
