@@ -2,7 +2,7 @@
 <script src="<?= $snap_url ?>" data-client-key="<?= $client_key ?? '' ?>"></script>
 <?php endif; ?>
 
-<<div class="border-bottom bg-white d-flex align-items-center gap-2 sticky-top app-subpage-header px-3 py-2.5">
+<div class="border-bottom bg-white d-flex align-items-center gap-2 sticky-top app-subpage-header px-3 py-2.5">
     <a href="<?= $baseUrl ?>" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; border: 1px solid #E2E8F0; background: #F8FAFC;"><i class="bi bi-arrow-left text-dark" style="font-size: 14px;"></i></a>
     <h6 class="fw-bold m-0 text-dark" style="font-size: 14px; letter-spacing: -0.2px;">Dompet Digital CicalengkaPay</h6>
 </div>
@@ -176,18 +176,18 @@
                     </div>
                 </div>
             <?php else: ?>
-                <div class="d-flex flex-column gap-1.5" id="mutationContainer">
+                <div class="d-flex flex-column gap-2" id="mutationContainer">
                     <?php foreach ($transactions as $tx):
                         $txCat = $tx['category'] ?? $tx['type'] ?? 'credit';
                         $isCredit = ($tx['type'] === 'credit');
 
-                        // Clean mapping for compact mobile layout
+                        // Custom clean mapping for transaction cards
                         if ($txCat === 'order_refund') {
                             $icon = 'bi-arrow-counterclockwise';
                             $title = 'Refund Pengembalian Dana';
                             $color = '#2563EB'; // Blue
                             $bgColor = '#EFF6FF';
-                            $borderColor = '#2563EB';
+                            $badgeBg = '#DBEAFE';
                             $sign = '+';
                             $badgeText = 'Refund';
                         } elseif ($txCat === 'topup') {
@@ -195,7 +195,7 @@
                             $title = 'Top Up CicalengkaPay';
                             $color = '#10B981'; // Green
                             $bgColor = '#ECFDF5';
-                            $borderColor = '#10B981';
+                            $badgeBg = '#D1FAE5';
                             $sign = '+';
                             $badgeText = 'Top Up';
                         } elseif ($txCat === 'order_payment') {
@@ -203,7 +203,7 @@
                             $title = 'Pembayaran Pesanan';
                             $color = '#E11D48'; // Red
                             $bgColor = '#FFF1F2';
-                            $borderColor = '#E11D48';
+                            $badgeBg = '#FFE4E6';
                             $sign = '-';
                             $badgeText = 'Keluar';
                         } else {
@@ -211,40 +211,42 @@
                             $title = $isCredit ? 'Saldo Masuk' : 'Saldo Keluar';
                             $color = $isCredit ? '#10B981' : '#E11D48';
                             $bgColor = $isCredit ? '#ECFDF5' : '#FFF1F2';
-                            $borderColor = $color;
+                            $badgeBg = $isCredit ? '#D1FAE5' : '#FFE4E6';
                             $sign = $isCredit ? '+' : '-';
                             $badgeText = $isCredit ? 'Masuk' : 'Keluar';
                         }
                     ?>
-                        <div class="mutation-item-card bg-white border px-2.5 py-2" 
-                             style="border-radius: 10px; border-color: #E2E8F0 !important; <?= ($txCat === 'order_refund') ? 'border-left: 3px solid #2563EB !important;' : '' ?>" 
+                        <!-- Beautiful Transaction Card -->
+                        <div class="mutation-item-card bg-white p-3 border shadow-xs" 
+                             style="border-radius: 14px; border-color: #F1F5F9 !important; <?= ($txCat === 'order_refund') ? 'border-left: 4px solid #2563EB !important;' : '' ?>" 
                              data-cat="<?= htmlspecialchars($txCat) ?>">
-                            <div class="d-flex align-items-center justify-content-between gap-2">
-                                <!-- Left Icon + Title Info -->
-                                <div class="d-flex align-items-center gap-2 min-w-0" style="flex: 1 1 auto;">
+                            <div class="d-flex align-items-center justify-content-between gap-2.5">
+                                <!-- Left Icon & Title Info -->
+                                <div class="d-flex align-items-center gap-2.5 min-w-0" style="flex: 1 1 auto;">
                                     <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" 
-                                         style="width: 30px; height: 30px; background: <?= $bgColor ?>;">
-                                        <i class="bi <?= $icon ?>" style="font-size: 13px; color: <?= $color ?>;"></i>
+                                         style="width: 38px; height: 38px; background: <?= $bgColor ?>; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+                                        <i class="bi <?= $icon ?>" style="font-size: 16px; color: <?= $color ?>;"></i>
                                     </div>
-                                    <div class="min-w-0" style="line-height: 1.2;">
-                                        <div class="fw-bold text-dark text-truncate" style="font-size: 10.5px; letter-spacing: -0.2px;">
+                                    <div class="min-w-0">
+                                        <div class="fw-bold text-dark text-truncate" style="font-size: 11.5px; letter-spacing: -0.2px; line-height: 1.2;">
                                             <?= $title ?>
                                         </div>
-                                        <div class="text-muted text-truncate" style="font-size: 8.5px; max-width: 180px;">
+                                        <div class="text-muted text-truncate mt-0.5" style="font-size: 9.5px; max-width: 190px;">
                                             <?= htmlspecialchars($tx['description'] ?? 'Transaksi Dompet') ?>
                                         </div>
-                                        <div class="text-muted" style="font-size: 8px; margin-top: 1px;">
-                                            <i class="bi bi-clock me-0.5"></i><?= date('d M Y, H:i', strtotime($tx['created_at'])) ?>
+                                        <div class="text-secondary mt-1 d-flex align-items-center gap-1" style="font-size: 8.5px;">
+                                            <i class="bi bi-clock" style="font-size: 9px;"></i>
+                                            <span><?= date('d M Y, H:i', strtotime($tx['created_at'])) ?></span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Right Amount -->
-                                <div class="text-end flex-shrink-0" style="min-width: 75px;">
-                                    <div class="fw-extrabold" style="font-size: 11.5px; color: <?= $color ?>; letter-spacing: -0.2px;">
+                                <!-- Right Amount & Badge -->
+                                <div class="text-end flex-shrink-0">
+                                    <div class="fw-extrabold" style="font-size: 12.5px; color: <?= $color ?>; letter-spacing: -0.3px;">
                                         <?= $sign ?><?= format_rupiah($tx['amount']) ?>
                                     </div>
-                                    <span class="badge rounded-pill px-1.5 py-0.5 mt-0.5" style="font-size: 7.5px; font-weight: 700; background: <?= $bgColor ?>; color: <?= $color ?>; border: 1px solid <?= $color ?>20;">
+                                    <span class="badge mt-1 rounded-pill px-2 py-0.5 fw-bold" style="font-size: 8px; background: <?= $badgeBg ?>; color: <?= $color ?>;">
                                         <?= $badgeText ?>
                                     </span>
                                 </div>
@@ -252,10 +254,10 @@
 
                             <!-- Refund Info Strip -->
                             <?php if ($txCat === 'order_refund'): ?>
-                            <div class="mt-1 pt-1 border-top d-flex align-items-center justify-content-between" style="font-size: 8px; border-color: #F1F5F9 !important;">
-                                <span class="text-primary fw-semibold"><i class="bi bi-shield-check me-0.5"></i>Refund otomatis (Tidak ada driver)</span>
+                            <div class="mt-2 pt-2 border-top d-flex align-items-center justify-content-between text-primary" style="font-size: 8.5px; border-color: #F1F5F9 !important;">
+                                <span class="fw-semibold"><i class="bi bi-shield-check me-1"></i>Dana dikembalikan otomatis (Tidak ada driver)</span>
                                 <?php if (!empty($tx['reference_id'])): ?>
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-1 py-0.5 rounded" style="font-family: monospace; font-size: 7.5px;">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-1.5 py-0.5 rounded-2" style="font-family: monospace; font-size: 8px;">
                                     #<?= htmlspecialchars($tx['reference_id']) ?>
                                 </span>
                                 <?php endif; ?>
@@ -296,7 +298,7 @@
                     </div>
                 </div>
             <?php else: ?>
-                <div class="d-flex flex-column gap-1.5" id="topupLogsContainer">
+                <div class="d-flex flex-column gap-2" id="topupLogsContainer">
                     <?php foreach ($topup_logs as $log): 
                         $status = $log['status'] ?? 'pending';
                         $statusClass = 'pending';
@@ -325,32 +327,32 @@
                             $mainIcon = 'bi-x-circle-fill';
                         }
                     ?>
-                        <div class="topup-item-card p-2.5 bg-white border" style="border-radius: 10px;" data-status="<?= $statusClass ?>">
-                            <div class="d-flex justify-content-between align-items-start mb-1.5">
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center <?= $iconClass ?>" style="width: 28px; height: 28px; font-size: 13px; flex-shrink: 0;">
+                        <div class="topup-item-card p-3 bg-white border shadow-xs" style="border-radius: 14px;" data-status="<?= $statusClass ?>">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="d-flex align-items-center gap-2.5">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center <?= $iconClass ?>" style="width: 32px; height: 32px; font-size: 14px; flex-shrink: 0;">
                                         <i class="bi <?= $mainIcon ?>"></i>
                                     </div>
                                     <div>
-                                        <div class="fw-bold text-dark" style="font-size: 10.5px;">
+                                        <div class="fw-bold text-dark" style="font-size: 11px;">
                                             Top Up CicalengkaPay
                                         </div>
-                                        <div class="text-muted" style="font-size: 8.5px; font-family: monospace;">
+                                        <div class="text-muted" style="font-size: 9px; font-family: monospace;">
                                             <?= htmlspecialchars($log['topup_code']) ?>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="text-end">
-                                    <div class="fw-extrabold <?= $amountClass ?>" style="font-size: 11.5px;">
+                                    <div class="fw-extrabold <?= $amountClass ?>" style="font-size: 12px;">
                                         <?= $status === 'success' ? '+' : '' ?><?= format_rupiah($log['amount']) ?>
                                     </div>
-                                    <span class="badge <?= $badgeClass ?> border px-1.5 py-0.5 rounded-pill" style="font-size: 7.5px; font-weight: 700;">
+                                    <span class="badge <?= $badgeClass ?> border px-2 py-0.5 rounded-pill mt-0.5" style="font-size: 8px; font-weight: 700;">
                                         <i class="bi <?= $badgeIcon ?> me-0.5"></i> <?= $badgeText ?>
                                     </span>
                                 </div>
                             </div>
 
-                            <div class="pt-1.5 border-top d-flex justify-content-between align-items-center text-muted" style="font-size: 8.5px;">
+                            <div class="pt-2 border-top d-flex justify-content-between align-items-center text-muted" style="font-size: 9px;">
                                 <div class="d-flex align-items-center gap-1.5">
                                     <span><i class="bi bi-clock me-0.5"></i><?= date('d M Y, H:i', strtotime($log['created_at'])) ?></span>
                                     <span class="text-secondary">• <?= htmlspecialchars($log['payment_type'] ?? 'Midtrans') ?></span>
@@ -359,17 +361,17 @@
                                 <?php if ($status === 'pending'): ?>
                                     <div class="d-flex gap-1">
                                         <?php if (!empty($log['snap_token'])): ?>
-                                        <button type="button" onclick="resumePendingSnap('<?= htmlspecialchars($log['snap_token']) ?>', '<?= htmlspecialchars($log['topup_code']) ?>', <?= (int)$log['amount'] ?>)" class="btn btn-danger btn-sm rounded-pill py-0.5 px-2 fw-bold" style="font-size: 8.5px;">
+                                        <button type="button" onclick="resumePendingSnap('<?= htmlspecialchars($log['snap_token']) ?>', '<?= htmlspecialchars($log['topup_code']) ?>', <?= (int)$log['amount'] ?>)" class="btn btn-danger btn-sm rounded-pill py-1 px-2.5 fw-bold" style="font-size: 9px;">
                                             <i class="bi bi-credit-card-fill me-0.5"></i> Bayar
                                         </button>
                                         <?php endif; ?>
                                     </div>
                                 <?php elseif ($status === 'failed' || $status === 'canceled'): ?>
-                                    <button type="button" onclick="quickTopUp(<?= (int)$log['amount'] ?>)" class="btn btn-outline-danger btn-sm rounded-pill py-0.5 px-1.5 fw-semibold" style="font-size: 8.5px;">
+                                    <button type="button" onclick="quickTopUp(<?= (int)$log['amount'] ?>)" class="btn btn-outline-danger btn-sm rounded-pill py-1 px-2 fw-semibold" style="font-size: 9px;">
                                         <i class="bi bi-arrow-repeat"></i> Ulang
                                     </button>
                                 <?php else: ?>
-                                    <span class="text-success fw-semibold" style="font-size: 8.5px;">
+                                    <span class="text-success fw-semibold" style="font-size: 9px;">
                                         <i class="bi bi-check2-all me-0.5"></i> Masuk
                                     </span>
                                 <?php endif; ?>
