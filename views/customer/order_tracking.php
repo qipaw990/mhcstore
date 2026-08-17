@@ -852,12 +852,22 @@ setInterval(async () => {
     } catch(e){}
 }, 6000);
 
-// Auto open chat if URL contains ?open_chat=1 or hash #chat
+// Auto open chat if URL contains ?open_chat=1 or hash #chat, or scroll to review if delivered & unreviewed
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('open_chat') === '1' || window.location.hash === '#chat') {
         setTimeout(openChatModal, 300);
     }
+    
+    <?php if ($order['order_status'] === 'delivered' && empty($order['review_info']['has_reviewed'])): ?>
+    setTimeout(() => {
+        const reviewEl = document.getElementById('order-review-section');
+        if (reviewEl) {
+            reviewEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            reviewEl.classList.add('border-warning');
+        }
+    }, 600);
+    <?php endif; ?>
 });
 
 // ========================================================

@@ -24,35 +24,53 @@
     </div>
 
     <!-- Quick Stats Metric Cards -->
-    <div class="row g-2.5 mb-3">
-        <div class="col-6">
-            <div class="driver-metric-card">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="text-muted fw-semibold" style="font-size: 11px;">Dompet Driver</span>
-                    <div class="driver-metric-icon red">
+    <div class="row g-2 mb-3">
+        <div class="col-4">
+            <div class="driver-metric-card p-2.5">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                    <span class="text-muted fw-semibold" style="font-size: 10px;">Dompet</span>
+                    <div class="driver-metric-icon red" style="width: 24px; height: 24px; font-size: 11px;">
                         <i class="bi bi-wallet2"></i>
                     </div>
                 </div>
                 <div>
-                    <div id="driverWalletBalanceText" class="fw-bold text-danger" style="font-size: 17px; letter-spacing: -0.3px;"><?= format_rupiah($wallet['balance'] ?? 0) ?></div>
-                    <a href="<?= $baseUrl ?>/delivery/earnings" class="text-decoration-none text-muted d-inline-flex align-items-center gap-1 mt-1" style="font-size: 10.5px; font-weight: 600;">
-                        <span>Rincian Saldo</span> <i class="bi bi-chevron-right text-danger" style="font-size: 9px;"></i>
+                    <div id="driverWalletBalanceText" class="fw-bold text-danger text-truncate" style="font-size: 14px; letter-spacing: -0.3px;"><?= format_rupiah($wallet['balance'] ?? 0) ?></div>
+                    <a href="<?= $baseUrl ?>/delivery/earnings" class="text-decoration-none text-muted d-inline-flex align-items-center gap-0.5 mt-0.5" style="font-size: 9.5px; font-weight: 600;">
+                        <span>Saldo</span> <i class="bi bi-chevron-right text-danger" style="font-size: 8px;"></i>
                     </a>
                 </div>
             </div>
         </div>
-        <div class="col-6">
-            <div class="driver-metric-card">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="text-muted fw-semibold" style="font-size: 11px;">Pesanan Selesai</span>
-                    <div class="driver-metric-icon green">
+        <div class="col-4">
+            <div class="driver-metric-card p-2.5">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                    <span class="text-muted fw-semibold" style="font-size: 10px;">Selesai</span>
+                    <div class="driver-metric-icon green" style="width: 24px; height: 24px; font-size: 11px;">
                         <i class="bi bi-check2-circle"></i>
                     </div>
                 </div>
                 <div>
-                    <div class="fw-bold text-dark" style="font-size: 17px;"><span id="driverTotalOrdersText"><?= $driver['total_orders'] ?? 0 ?></span> <span class="fw-normal text-muted" style="font-size: 11px;">Order</span></div>
-                    <span class="badge bg-success-subtle text-success rounded-pill px-2 py-0.5 mt-1" style="font-size: 9.5px; font-weight: 700;">
-                        Performa 100%
+                    <div class="fw-bold text-dark" style="font-size: 14px;"><span id="driverTotalOrdersText"><?= $driver['total_orders'] ?? 0 ?></span> <span class="fw-normal text-muted" style="font-size: 9.5px;">Order</span></div>
+                    <span class="badge bg-success-subtle text-success rounded-pill px-1.5 py-0.5 mt-0.5" style="font-size: 8.5px; font-weight: 700;">
+                        100%
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="driver-metric-card p-2.5">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                    <span class="text-muted fw-semibold" style="font-size: 10px;">Rating</span>
+                    <div class="driver-metric-icon amber" style="width: 24px; height: 24px; font-size: 11px; background: rgba(245, 158, 11, 0.15); color: #F59E0B;">
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="fw-bold text-dark" style="font-size: 14px;">
+                        <?= !empty($driver['reviews_count']) && (int)$driver['reviews_count'] > 0 ? number_format($driver['rating'], 1) : '5.0' ?> <span style="font-size: 11px; color: #F59E0B;">★</span>
+                    </div>
+                    <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-1.5 py-0.5 mt-0.5" style="font-size: 8.5px; font-weight: 700;">
+                        <?= $driver['reviews_count'] ?? count($reviews ?? []) ?> Ulasan
                     </span>
                 </div>
             </div>
@@ -324,6 +342,61 @@
         </div>
     <?php endif; ?>
     </div>
+</div>
+
+<!-- Driver Rating & Customer Feedback Card -->
+<div class="bg-white rounded-4 border p-3 mb-3 shadow-2xs">
+    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+        <div class="d-flex align-items-center gap-2">
+            <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 15px;">
+                <i class="bi bi-star-fill"></i>
+            </div>
+            <div>
+                <h6 class="fw-bold small m-0 text-dark">Rating Saya & Ulasan Pelanggan</h6>
+                <span class="text-muted" style="font-size: 10px;">Penilaian pengantaran dari pelanggan</span>
+            </div>
+        </div>
+        <div class="text-end">
+            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2.5 py-1 fw-bold" style="font-size: 11px;">
+                ⭐ <?= !empty($driver['reviews_count']) && (int)$driver['reviews_count'] > 0 ? number_format($driver['rating'], 1) : '5.0' ?> / 5.0
+            </span>
+        </div>
+    </div>
+
+    <?php if (empty($reviews)): ?>
+        <div class="text-center py-3 text-muted">
+            <i class="bi bi-chat-heart text-warning fs-3 mb-1 d-block opacity-75"></i>
+            <div class="fw-semibold text-dark" style="font-size: 11.5px;">Belum Ada Ulasan Driver</div>
+            <div style="font-size: 10px;">Penilaian dari pelanggan yang Anda antar orderannya akan muncul di sini.</div>
+        </div>
+    <?php else: ?>
+        <div class="d-flex flex-column gap-2">
+            <?php foreach ($reviews as $rev): ?>
+                <div class="p-2.5 rounded-3 bg-light border">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <div class="d-flex align-items-center gap-2">
+                            <img src="<?= $baseUrl ?>/<?= htmlspecialchars($rev['customer_avatar'] ?? 'assets/images/users/customer.png') ?>" alt="User" class="rounded-circle border" style="width: 26px; height: 26px; object-fit: cover;">
+                            <div>
+                                <div class="fw-bold text-dark" style="font-size: 11px;"><?= htmlspecialchars($rev['customer_name'] ?? 'Pelanggan') ?></div>
+                                <div class="text-muted" style="font-size: 9px;">#<?= htmlspecialchars($rev['order_code'] ?? '-') ?> • <?= date('d M Y', strtotime($rev['created_at'])) ?></div>
+                            </div>
+                        </div>
+                        <div class="text-warning fw-bold" style="font-size: 10px;">
+                            <?php for ($s = 1; $s <= 5; $s++): ?>
+                                <i class="bi <?= $s <= (int)$rev['rating'] ? 'bi-star-fill' : 'bi-star text-muted opacity-50' ?>"></i>
+                            <?php endfor; ?>
+                        </div>
+                    </div>
+                    <?php if (!empty($rev['comment'])): ?>
+                        <div class="p-2 bg-white rounded-2 text-dark mt-1 border" style="font-size: 10.5px; line-height: 1.35;">
+                            "<?= htmlspecialchars($rev['comment']) ?>"
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+</div>
 </div>
 </div>
 

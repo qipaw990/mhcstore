@@ -304,6 +304,60 @@
     <?php endif; ?>
 </div>
 
+<!-- Customer Ratings & Review History Card -->
+<div class="vnd-card mb-3" id="customer-reviews-section">
+    <div class="vnd-card-header d-flex align-items-center justify-content-between">
+        <h6 class="vnd-card-title">
+            <i class="bi bi-star-fill text-warning"></i> Rating & Ulasan Pelanggan Toko
+        </h6>
+        <div class="d-flex align-items-center gap-1.5 bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1 rounded-pill" style="font-size: 11px; font-weight: 700;">
+            <span style="font-size: 13px;">⭐ <?= !empty($store['reviews_count']) && (int)$store['reviews_count'] > 0 ? number_format($store['rating'], 1) : '5.0' ?></span>
+            <span class="text-muted fw-normal" style="font-size: 10px;">(<?= $store['reviews_count'] ?? count($reviews ?? []) ?> Ulasan)</span>
+        </div>
+    </div>
+
+    <div class="vnd-card-body p-0">
+        <?php if (empty($reviews)): ?>
+            <div class="text-center py-4 px-3">
+                <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 44px; height: 44px; font-size: 20px;">
+                    <i class="bi bi-star"></i>
+                </div>
+                <h6 class="fw-bold text-dark mb-1" style="font-size: 12px;">Belum Ada Ulasan Toko</h6>
+                <p class="text-muted mb-0" style="font-size: 10.5px; max-width: 280px; margin: 0 auto;">
+                    Ulasan dan penilaian bintang dari pelanggan setelah pesanan selesai akan otomatis ditampilkan di sini.
+                </p>
+            </div>
+        <?php else: ?>
+            <div class="d-flex flex-column divide-y">
+                <?php foreach ($reviews as $rev): ?>
+                    <div class="p-3 border-bottom">
+                        <div class="d-flex align-items-center justify-content-between mb-1.5">
+                            <div class="d-flex align-items-center gap-2">
+                                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($rev['customer_avatar'] ?? 'assets/images/users/customer.png') ?>" alt="Customer" class="rounded-circle border" style="width: 32px; height: 32px; object-fit: cover;">
+                                <div>
+                                    <div class="fw-bold text-dark" style="font-size: 11.5px;"><?= htmlspecialchars($rev['customer_name'] ?? 'Pelanggan CicalengkaGO') ?></div>
+                                    <div class="text-muted" style="font-size: 9.5px;">Order #<?= htmlspecialchars($rev['order_code'] ?? '-') ?> • <?= date('d M Y, H:i', strtotime($rev['created_at'])) ?></div>
+                                </div>
+                            </div>
+                            <div class="text-warning fw-bold d-flex align-items-center gap-1" style="font-size: 11px;">
+                                <?php for ($s = 1; $s <= 5; $s++): ?>
+                                    <i class="bi <?= $s <= (int)$rev['rating'] ? 'bi-star-fill' : 'bi-star text-muted opacity-50' ?>"></i>
+                                <?php endfor; ?>
+                                <span class="ms-1 text-dark fw-extrabold" style="font-size: 11px;"><?= (int)$rev['rating'] ?>.0</span>
+                            </div>
+                        </div>
+                        <?php if (!empty($rev['comment'])): ?>
+                            <div class="p-2.5 bg-light rounded-3 text-dark mt-2 border" style="font-size: 11px; line-height: 1.4;">
+                                <i class="bi bi-chat-quote-fill text-muted me-1"></i> "<?= htmlspecialchars($rev['comment']) ?>"
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
+
 <!-- Store Location GPS & Mini Map Card -->
 <div class="vnd-card overflow-hidden p-0 mb-3">
     <div class="p-3 bg-white d-flex align-items-center justify-content-between border-bottom">

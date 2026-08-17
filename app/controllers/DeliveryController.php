@@ -77,12 +77,19 @@ class DeliveryController extends Controller
         // Today's summary
         $wallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
 
+        // Recalculate driver rating & fetch driver reviews
+        $reviewModel = new \App\Models\Review();
+        $reviewModel->recalculateDmRating((int)$dm['id']);
+        $dm = $this->dmModel->find($dm['id']);
+        $reviews = $reviewModel->getDmReviews((int)$dm['id'], 15);
+
         $this->view('delivery.dashboard', [
             'title'            => 'Kurir Dashboard - CicalengkaGO',
             'driver'           => $dm,
             'active_order'     => $activeOrder,
             'available_orders' => $availableOrders,
             'wallet'           => $wallet,
+            'reviews'          => $reviews,
             'active_tab'       => 'home'
         ], 'delivery_layout');
     }
@@ -297,10 +304,19 @@ class DeliveryController extends Controller
         $user = auth_user();
         $dm = $this->dmModel->findByUserId($userId);
 
+        $reviews = [];
+        if ($dm) {
+            $reviewModel = new \App\Models\Review();
+            $reviewModel->recalculateDmRating((int)$dm['id']);
+            $dm = $this->dmModel->find($dm['id']);
+            $reviews = $reviewModel->getDmReviews((int)$dm['id'], 20);
+        }
+
         $this->view('delivery.profile', [
             'title'      => 'Profil Mitra Driver',
             'user'       => $user,
             'driver'     => $dm,
+            'reviews'    => $reviews,
             'active_tab' => 'profile'
         ], 'delivery_layout');
     }

@@ -17,6 +17,56 @@
         <div class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1 mt-2 fw-bold" style="font-size: 11px;">
             <i class="bi bi-bicycle me-1"></i> <?= htmlspecialchars($driver['vehicle_type'] ?? 'Motor') ?> (<?= htmlspecialchars($driver['vehicle_number'] ?? '-') ?>)
         </div>
+    <!-- Driver Performance Rating Card -->
+    <div class="ccg-card mb-3">
+        <div class="d-flex align-items-center justify-content-between pb-2 border-bottom mb-2.5">
+            <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 15px;">
+                    <i class="bi bi-star-fill"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold small m-0 text-dark">Rating & Performa Driver</h6>
+                    <span class="text-muted" style="font-size: 10px;">Akumulasi penilaian pelanggan CicalengkaGO</span>
+                </div>
+            </div>
+            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-3 py-1 fw-extrabold" style="font-size: 12px;">
+                ⭐ <?= !empty($driver['reviews_count']) && (int)$driver['reviews_count'] > 0 ? number_format($driver['rating'], 1) : '5.0' ?>
+            </span>
+        </div>
+
+        <?php if (empty($reviews)): ?>
+            <div class="text-center py-3 text-muted">
+                <i class="bi bi-chat-left-heart text-warning fs-3 mb-1 d-block opacity-75"></i>
+                <div class="fw-semibold text-dark" style="font-size: 11.5px;">Belum Ada Ulasan Driver</div>
+                <div style="font-size: 10px;">Ulasan bintang dari pelanggan akan tersimpan di sini.</div>
+            </div>
+        <?php else: ?>
+            <div class="d-flex flex-column gap-2" style="max-height: 280px; overflow-y: auto;">
+                <?php foreach ($reviews as $rev): ?>
+                    <div class="p-2.5 rounded-3 bg-light border">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <div class="d-flex align-items-center gap-2">
+                                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($rev['customer_avatar'] ?? 'assets/images/users/customer.png') ?>" alt="Customer" class="rounded-circle border" style="width: 26px; height: 26px; object-fit: cover;">
+                                <div>
+                                    <div class="fw-bold text-dark" style="font-size: 11px;"><?= htmlspecialchars($rev['customer_name'] ?? 'Pelanggan') ?></div>
+                                    <div class="text-muted" style="font-size: 9px;">Order #<?= htmlspecialchars($rev['order_code'] ?? '-') ?> • <?= date('d M Y', strtotime($rev['created_at'])) ?></div>
+                                </div>
+                            </div>
+                            <div class="text-warning fw-bold" style="font-size: 10px;">
+                                <?php for ($s = 1; $s <= 5; $s++): ?>
+                                    <i class="bi <?= $s <= (int)$rev['rating'] ? 'bi-star-fill' : 'bi-star text-muted opacity-50' ?>"></i>
+                                <?php endfor; ?>
+                            </div>
+                        </div>
+                        <?php if (!empty($rev['comment'])): ?>
+                            <div class="p-2 bg-white rounded-2 text-dark mt-1 border" style="font-size: 10.5px; line-height: 1.35;">
+                                "<?= htmlspecialchars($rev['comment']) ?>"
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     </div>
 
     <!-- Edit Profile Form Card -->

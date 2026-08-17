@@ -96,15 +96,6 @@
                                 <a href="<?= $baseUrl ?>/orders/<?= $order['order_code'] ?>/tracking" class="btn btn-sm rounded-pill fw-semibold px-3 py-1.5 btn-light border" style="font-size: 11px;">
                                     <i class="bi bi-receipt me-1"></i> Rincian
                                 </a>
-                                <?php if (!empty($order['is_reviewed'])): ?>
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle py-1.5 px-3 rounded-pill" style="font-size: 10px; font-weight: 700;">
-                                        <i class="bi bi-star-fill text-warning me-1"></i> Diulas
-                                    </span>
-                                <?php else: ?>
-                                    <button type="button" onclick="openOrderReviewModal(<?= (int)$order['id'] ?>, '<?= htmlspecialchars($order['order_code']) ?>', '<?= htmlspecialchars(addslashes($order['store_name'] ?? 'Toko')) ?>', <?= !empty($order['delivery_man_id']) ? 'true' : 'false' ?>)" class="btn btn-sm rounded-pill fw-bold px-3 py-1.5 text-dark shadow-2xs" style="background: #FBBF24; font-size: 11px; border:none;">
-                                        <i class="bi bi-star-fill me-1 text-dark"></i> Beri Ulasan
-                                    </button>
-                                <?php endif; ?>
                             <?php else: ?>
                                 <a href="<?= $baseUrl ?>/orders/<?= $order['order_code'] ?>/tracking" class="btn btn-sm rounded-pill fw-bold px-3.5 py-1.5 text-white shadow-2xs" style="background: linear-gradient(135deg, #EE2737, #C61524); font-size: 11px;">
                                     <i class="bi bi-geo-alt-fill me-1"></i> Lacak Live
@@ -126,36 +117,42 @@ function openOrderReviewModal(orderId, orderCode, storeName, hasDriver) {
 
     const html = `
         <div class="text-start" style="font-size: 13px;">
-            <div class="mb-3 text-center">
-                <div class="text-muted small mb-1">Pesanan #${orderCode}</div>
+            <div class="p-2.5 bg-danger-subtle rounded-3 border border-danger-subtle mb-3 text-center">
+                <div class="text-muted small mb-0.5">Pesanan #${orderCode}</div>
                 <div class="fw-bold text-dark fs-6">${storeName}</div>
             </div>
 
-            <div class="mb-3 p-3 bg-light rounded-4 border">
-                <label class="fw-bold text-dark d-block mb-1.5">Rating untuk Toko / Makanan</label>
-                <div class="d-flex justify-content-center gap-2 mb-2" id="store-star-rating">
-                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="1" onclick="setStoreStar(1)"></i>
-                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="2" onclick="setStoreStar(2)"></i>
-                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="3" onclick="setStoreStar(3)"></i>
-                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="4" onclick="setStoreStar(4)"></i>
-                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="5" onclick="setStoreStar(5)"></i>
+            <div class="mb-3 p-3 bg-light rounded-4 border shadow-2xs">
+                <label class="fw-bold text-dark d-flex align-items-center gap-1.5 mb-2">
+                    <i class="bi bi-shop text-danger fs-5"></i>
+                    <span>Rating Toko & Kualitas Makanan</span>
+                </label>
+                <div class="d-flex justify-content-center gap-2 py-1" id="store-star-rating">
+                    <i class="bi bi-star-fill text-warning fs-2 cursor-pointer transition-all" data-val="1" onclick="setStoreStar(1)"></i>
+                    <i class="bi bi-star-fill text-warning fs-2 cursor-pointer transition-all" data-val="2" onclick="setStoreStar(2)"></i>
+                    <i class="bi bi-star-fill text-warning fs-2 cursor-pointer transition-all" data-val="3" onclick="setStoreStar(3)"></i>
+                    <i class="bi bi-star-fill text-warning fs-2 cursor-pointer transition-all" data-val="4" onclick="setStoreStar(4)"></i>
+                    <i class="bi bi-star-fill text-warning fs-2 cursor-pointer transition-all" data-val="5" onclick="setStoreStar(5)"></i>
                 </div>
-                <div class="text-center small fw-bold text-warning-emphasis mb-2" id="store-star-text">Sangat Puas (5 Bintang)</div>
-                <textarea id="store-review-comment" name="store_comment" class="form-control form-control-sm rounded-3" rows="2" placeholder="Bagaimana rasa makanan / kualitas pesanan toko ini?"></textarea>
+                <div class="text-center small fw-bold text-warning-emphasis mb-2" id="store-star-text">Sangat Puas ⭐⭐⭐⭐⭐</div>
+                <textarea id="store-review-comment" name="store_comment" class="form-control form-control-sm rounded-3 border-secondary-subtle" rows="2" placeholder="Tulis ulasan mengenai rasa makanan / layanan toko..."></textarea>
             </div>
 
             ${hasDriver ? `
-            <div class="mb-2 p-3 bg-light rounded-4 border">
-                <label class="fw-bold text-dark d-block mb-1.5">Rating Pelayanan Kurir Driver</label>
-                <div class="d-flex justify-content-center gap-2 mb-2" id="driver-star-rating">
-                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="1" onclick="setDriverStar(1)"></i>
-                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="2" onclick="setDriverStar(2)"></i>
-                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="3" onclick="setDriverStar(3)"></i>
-                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="4" onclick="setDriverStar(4)"></i>
-                    <i class="bi bi-star-fill text-warning fs-3 cursor-pointer" data-val="5" onclick="setDriverStar(5)"></i>
+            <div class="mb-2 p-3 bg-light rounded-4 border shadow-2xs">
+                <label class="fw-bold text-dark d-flex align-items-center gap-1.5 mb-2">
+                    <i class="bi bi-bicycle text-primary fs-5"></i>
+                    <span>Rating Kurir & Pengantaran</span>
+                </label>
+                <div class="d-flex justify-content-center gap-2 py-1" id="driver-star-rating">
+                    <i class="bi bi-star-fill text-warning fs-2 cursor-pointer transition-all" data-val="1" onclick="setDriverStar(1)"></i>
+                    <i class="bi bi-star-fill text-warning fs-2 cursor-pointer transition-all" data-val="2" onclick="setDriverStar(2)"></i>
+                    <i class="bi bi-star-fill text-warning fs-2 cursor-pointer transition-all" data-val="3" onclick="setDriverStar(3)"></i>
+                    <i class="bi bi-star-fill text-warning fs-2 cursor-pointer transition-all" data-val="4" onclick="setDriverStar(4)"></i>
+                    <i class="bi bi-star-fill text-warning fs-2 cursor-pointer transition-all" data-val="5" onclick="setDriverStar(5)"></i>
                 </div>
-                <div class="text-center small fw-bold text-warning-emphasis mb-2" id="driver-star-text">Pengantaran Cepat & Ramah (5 Bintang)</div>
-                <textarea id="driver-review-comment" name="driver_comment" class="form-control form-control-sm rounded-3" rows="2" placeholder="Tuliskan ulasan untuk kurir (opsional)..."></textarea>
+                <div class="text-center small fw-bold text-warning-emphasis mb-2" id="driver-star-text">Pengantaran Cepat & Ramah ⭐⭐⭐⭐⭐</div>
+                <textarea id="driver-review-comment" name="driver_comment" class="form-control form-control-sm rounded-3 border-secondary-subtle" rows="2" placeholder="Tuliskan ulasan untuk kurir (opsional)..."></textarea>
             </div>
             ` : ''}
         </div>
@@ -165,9 +162,10 @@ function openOrderReviewModal(orderId, orderCode, storeName, hasDriver) {
         title: 'Beri Rating & Ulasan ⭐',
         html: html,
         showCancelButton: true,
-        confirmButtonText: 'Kirim Ulasan',
+        confirmButtonText: '<i class="bi bi-send-fill me-1"></i> Kirim Penilaian',
         confirmButtonColor: '#EE2737',
         cancelButtonText: 'Nanti Saja',
+        cancelButtonColor: '#6C757D',
         focusConfirm: false,
         didOpen: () => {
             window.setStoreStar = function(val) {
@@ -175,12 +173,12 @@ function openOrderReviewModal(orderId, orderCode, storeName, hasDriver) {
                 const stars = document.querySelectorAll('#store-star-rating i');
                 stars.forEach((s, idx) => {
                     if (idx < val) {
-                        s.className = 'bi bi-star-fill text-warning fs-3 cursor-pointer';
+                        s.className = 'bi bi-star-fill text-warning fs-2 cursor-pointer transition-all';
                     } else {
-                        s.className = 'bi bi-star text-muted fs-3 cursor-pointer';
+                        s.className = 'bi bi-star text-muted fs-2 cursor-pointer transition-all';
                     }
                 });
-                const texts = ['', 'Kecewa (1 Bintang)', 'Kurang Puas (2 Bintang)', 'Cukup Baik (3 Bintang)', 'Puas (4 Bintang)', 'Sangat Puas (5 Bintang)'];
+                const texts = ['', 'Kecewa (1 Bintang)', 'Kurang Puas (2 Bintang)', 'Cukup Baik (3 Bintang)', 'Puas (4 Bintang)', 'Sangat Puas ⭐⭐⭐⭐⭐'];
                 document.getElementById('store-star-text').textContent = texts[val] || '';
             };
 
@@ -189,12 +187,12 @@ function openOrderReviewModal(orderId, orderCode, storeName, hasDriver) {
                 const stars = document.querySelectorAll('#driver-star-rating i');
                 stars.forEach((s, idx) => {
                     if (idx < val) {
-                        s.className = 'bi bi-star-fill text-warning fs-3 cursor-pointer';
+                        s.className = 'bi bi-star-fill text-warning fs-2 cursor-pointer transition-all';
                     } else {
-                        s.className = 'bi bi-star text-muted fs-3 cursor-pointer';
+                        s.className = 'bi bi-star text-muted fs-2 cursor-pointer transition-all';
                     }
                 });
-                const texts = ['', 'Kurang Baik (1 Bintang)', 'Biasa Saja (2 Bintang)', 'Cukup Ramah (3 Bintang)', 'Pengantaran Baik (4 Bintang)', 'Pengantaran Cepat & Ramah (5 Bintang)'];
+                const texts = ['', 'Kurang Baik (1 Bintang)', 'Biasa Saja (2 Bintang)', 'Cukup Ramah (3 Bintang)', 'Pengantaran Baik (4 Bintang)', 'Pengantaran Cepat & Ramah ⭐⭐⭐⭐⭐'];
                 const txtEl = document.getElementById('driver-star-text');
                 if (txtEl) txtEl.textContent = texts[val] || '';
             };
