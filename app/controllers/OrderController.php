@@ -439,14 +439,18 @@ class OrderController extends Controller
 
     public function getLiveTracking(string $code): void
     {
-        // Run auto-cancel for unclaimed orders older than 60 seconds
-        \App\Models\Order::autoCancelUnclaimedOrders();
-
+        // Fetch order first, THEN run auto-cancel so we can still show 'canceled' state
         $order = $this->orderModel->findByIdOrCode($code);
         if (!$order) {
             $this->errorResponse('Pesanan tidak ditemukan.', null, 404);
             return;
         }
+
+        // Run auto-cancel for unclaimed orders older than 60 seconds
+        \App\Models\Order::autoCancelUnclaimedOrders();
+
+        // Reload the order to get the latest status after auto-cancel
+        $order = $this->orderModel->findByIdOrCode($code) ?? $order;
 
         // Driver coordinates
         $driverLat = (float)($order['dm_lat'] ?? -6.9840);
@@ -472,8 +476,14 @@ class OrderController extends Controller
 
         $isDriverAssigned = !empty($order['delivery_man_id']) && $order['order_status'] !== 'canceled' && in_array($order['order_status'], ['processing', 'handover', 'on_the_way', 'delivered']);
 
-        $createdAtTime = strtotime($order['created_at']);
-        $elapsedSeconds = max(0, time() - $createdAtTime);
+        // Use MySQL server time for precision — avoids PHP/MySQL timezone mismatch
+        $timingRow = Database::fetchOne(
+            "SELECT UNIX_TIMESTAMP(created_at) AS created_ts, UNIX_TIMESTAMP(NOW()) AS now_ts FROM `orders` WHERE id = ?",
+            [$order['id']]
+        );
+        $createdAtTime  = (int)($timingRow['created_ts'] ?? strtotime($order['created_at']));
+        $serverNow      = (int)($timingRow['now_ts'] ?? time());
+        $elapsedSeconds = max(0, $serverNow - $createdAtTime);
         $remainingSeconds = max(0, 60 - $elapsedSeconds);
 
         $this->json([
@@ -485,7 +495,7 @@ class OrderController extends Controller
                 'payment_status'      => $order['payment_status'],
                 'payment_method'      => $order['payment_method'],
                 'created_at_time'     => $createdAtTime,
-                'server_time'         => time(),
+                'server_time'         => $serverNow,
                 'remaining_seconds'   => $remainingSeconds,
                 'otp'                 => $order['otp'],
                 'unread_chats'        => $unreadChatCount,

@@ -432,8 +432,16 @@ document.addEventListener('DOMContentLoaded', () => {
         cancellation_reason: "<?= htmlspecialchars($order['cancellation_reason'] ?? '') ?>",
         payment_status: "<?= $order['payment_status'] ?>",
         payment_method: "<?= $order['payment_method'] ?>",
-        created_at_time: <?= strtotime($order['created_at']) ?>,
-        remaining_seconds: <?= max(0, 60 - max(0, time() - strtotime($order['created_at']))) ?>,
+        created_at_time: <?php
+            $timingRow2 = \App\Core\Database::fetchOne(
+                "SELECT UNIX_TIMESTAMP(created_at) AS ts, UNIX_TIMESTAMP(NOW()) AS now_ts FROM `orders` WHERE id = ?",
+                [$order['id']]
+            );
+            $createdTs = (int)($timingRow2['ts'] ?? strtotime($order['created_at']));
+            $serverNowTs = (int)($timingRow2['now_ts'] ?? time());
+            echo $createdTs;
+        ?>,
+        remaining_seconds: <?= max(0, 60 - max(0, $serverNowTs - $createdTs)) ?>,
         store: {
             name: "<?= htmlspecialchars($order['store_name'] ?? 'Penjemputan') ?>",
             lat: <?= (float)($order['store_lat'] ?? -6.9835) ?>,
