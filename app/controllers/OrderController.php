@@ -472,6 +472,10 @@ class OrderController extends Controller
 
         $isDriverAssigned = !empty($order['delivery_man_id']) && $order['order_status'] !== 'canceled' && in_array($order['order_status'], ['processing', 'handover', 'on_the_way', 'delivered']);
 
+        $createdAtTime = strtotime($order['created_at']);
+        $elapsedSeconds = max(0, time() - $createdAtTime);
+        $remainingSeconds = max(0, 60 - $elapsedSeconds);
+
         $this->json([
             'success' => true,
             'data'    => [
@@ -480,8 +484,9 @@ class OrderController extends Controller
                 'cancellation_reason' => $order['cancellation_reason'] ?? '',
                 'payment_status'      => $order['payment_status'],
                 'payment_method'      => $order['payment_method'],
-                'created_at_time'     => strtotime($order['created_at']),
+                'created_at_time'     => $createdAtTime,
                 'server_time'         => time(),
+                'remaining_seconds'   => $remainingSeconds,
                 'otp'                 => $order['otp'],
                 'unread_chats'        => $unreadChatCount,
                         'driver'         => [

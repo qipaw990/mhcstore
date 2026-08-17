@@ -122,7 +122,8 @@ function initOrderTrackingMap(orderCode, initialData) {
   try { fitAllMarkers(); } catch (e) { console.error('Initial fit bounds error:', e); }
 
   if (!initialData.driver?.assigned && initialData.order_status !== 'canceled' && initialData.order_status !== 'delivered') {
-    startDriverSearchTimer(initialData.created_at_time);
+    const remaining = typeof initialData.remaining_seconds === 'number' ? initialData.remaining_seconds : 60;
+    startDriverSearchTimer(remaining);
   }
 
   // Clear any existing poll
@@ -348,21 +349,20 @@ function centerOnDriver() {
 }
 
 let searchTimerInterval = null;
+let currentTimerSeconds = 60;
 
-function startDriverSearchTimer(createdAtTs) {
+function startDriverSearchTimer(initialRemainingSecs) {
   if (searchTimerInterval) clearInterval(searchTimerInterval);
-  if (!createdAtTs) return;
+  if (typeof initialRemainingSecs === 'number') {
+    currentTimerSeconds = Math.max(0, initialRemainingSecs);
+  }
 
   function updateTimer() {
-    const nowTs = Math.floor(Date.now() / 1000);
-    const elapsed = nowTs - createdAtTs;
-    const totalDuration = 60; // 1 minute = 60 seconds
-    const remaining = Math.max(0, totalDuration - elapsed);
-
     const clockEl = document.getElementById('search-timer-clock');
     const secEl = document.getElementById('search-timer-sec');
     const progressEl = document.getElementById('search-timer-progress');
 
+    const remaining = Math.max(0, currentTimerSeconds);
     const mins = Math.floor(remaining / 60);
     const secs = remaining % 60;
     const formattedTime = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
@@ -370,11 +370,11 @@ function startDriverSearchTimer(createdAtTs) {
     if (clockEl) clockEl.textContent = formattedTime;
     if (secEl) secEl.textContent = remaining + ' detik';
     if (progressEl) {
-      const percent = Math.min(100, Math.max(0, (remaining / totalDuration) * 100));
+      const percent = Math.min(100, Math.max(0, (remaining / 60) * 100));
       progressEl.style.width = percent + '%';
     }
 
-    if (remaining <= 0) {
+    if (currentTimerSeconds <= 0) {
       if (searchTimerInterval) {
         clearInterval(searchTimerInterval);
         searchTimerInterval = null;
@@ -382,6 +382,8 @@ function startDriverSearchTimer(createdAtTs) {
       if (typeof currentTrackingData !== 'undefined' && currentTrackingData?.order_code) {
         pollLiveTracking(currentTrackingData.order_code);
       }
+    } else {
+      currentTimerSeconds--;
     }
   }
 

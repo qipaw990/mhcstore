@@ -433,6 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
         payment_status: "<?= $order['payment_status'] ?>",
         payment_method: "<?= $order['payment_method'] ?>",
         created_at_time: <?= strtotime($order['created_at']) ?>,
+        remaining_seconds: <?= max(0, 60 - max(0, time() - strtotime($order['created_at']))) ?>,
         store: {
             name: "<?= htmlspecialchars($order['store_name'] ?? 'Penjemputan') ?>",
             lat: <?= (float)($order['store_lat'] ?? -6.9835) ?>,
