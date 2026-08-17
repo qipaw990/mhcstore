@@ -2879,9 +2879,21 @@ div[style*="border-radius: 18px"] .d-flex {
   box-shadow: 0 4px 12px rgba(238, 39, 55, 0.4);
 }
 
-.custom-pin {
+.leaflet-marker-icon,
+.custom-pin,
+.driver-radar-marker {
   background: transparent !important;
   border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: visible !important;
+}
+
+.custom-pin > div,
+.driver-radar-marker > div {
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
 }
 
 /* Driver Page Layout Padding Fix (Mencegah konten terpotong Bottom Nav) */

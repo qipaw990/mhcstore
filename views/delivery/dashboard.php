@@ -400,19 +400,13 @@ function initDriverRadarMap() {
         maxZoom: 19
     }).addTo(window.dRadarMap);
 
-    // Modern Driver Animated Marker Icon (CicalengkaGO Red)
+    // Driver Location Pin (Bulat Merah CicalengkaGO + Motor)
     const myIcon = L.divIcon({
-        className: 'driver-radar-marker',
-        html: `<div class="driver-marker-pulse-wrapper">
-                 <div class="pulse-ring"></div>
-                 <div class="pulse-ring-delayed"></div>
-                 <div class="marker-core">
-                   <i class="bi bi-bicycle"></i>
-                 </div>
-               </div>`,
-        iconSize: [44, 44],
-        iconAnchor: [22, 22],
-        popupAnchor: [0, -20]
+        className: 'custom-pin',
+        html: '<div style="background:#101820;color:#EE2737;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #ffffff;box-shadow:0 4px 14px rgba(16,24,32,0.45);font-size:18px;"><i class="bi bi-bicycle"></i></div>',
+        iconSize: [38, 38],
+        iconAnchor: [19, 19],
+        popupAnchor: [0, -19]
     });
 
     window.myDriverMarker = L.marker([window.driverLat, window.driverLng], { icon: myIcon })
@@ -429,18 +423,18 @@ function initDriverRadarMap() {
 
         const storeIcon = L.divIcon({
             className: 'custom-pin',
-            html: '<div style="background:#EE2737;color:white;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.3);"><i class="bi bi-shop"></i></div>',
-            iconSize: [34, 34],
-            iconAnchor: [17, 17],
-            popupAnchor: [0, -17]
+            html: '<div style="background:#D32F2F;color:white;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #ffffff;box-shadow:0 4px 14px rgba(211,47,47,0.45);font-size:18px;"><i class="bi bi-shop"></i></div>',
+            iconSize: [38, 38],
+            iconAnchor: [19, 19],
+            popupAnchor: [0, -19]
         });
 
         const custIcon = L.divIcon({
             className: 'custom-pin',
-            html: '<div style="background:#10b981;color:white;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.3);"><i class="bi bi-geo-alt-fill"></i></div>',
-            iconSize: [34, 34],
-            iconAnchor: [17, 17],
-            popupAnchor: [0, -17]
+            html: '<div style="background:#00A082;color:white;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #ffffff;box-shadow:0 4px 14px rgba(0,160,130,0.45);font-size:18px;"><i class="bi bi-geo-alt-fill"></i></div>',
+            iconSize: [38, 38],
+            iconAnchor: [19, 19],
+            popupAnchor: [0, -19]
         });
 
         window.actStoreMarker = L.marker([actStoreLat, actStoreLng], { icon: storeIcon })
@@ -471,7 +465,7 @@ function initDriverRadarMap() {
             window.actCustMarker.openPopup();
         }
     <?php else: ?>
-        // Plot Available Incoming Orders
+        // Plot Available Incoming Orders (Red Store Badges like Customer View)
         <?php foreach ($available_orders as $ord): ?>
             <?php 
                 $sLat = (float)($ord['store_lat'] ?? -6.9835);
@@ -483,10 +477,10 @@ function initDriverRadarMap() {
             (function() {
                 const oIcon = L.divIcon({
                     className: 'custom-pin',
-                    html: '<div style="background:#F7A800;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.3);"><i class="bi bi-box-seam"></i></div>',
-                    iconSize: [32, 32],
-                    iconAnchor: [16, 16],
-                    popupAnchor: [0, -16]
+                    html: '<div style="background:#D32F2F;color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #ffffff;box-shadow:0 4px 14px rgba(211,47,47,0.45);font-size:16px;"><i class="bi bi-shop"></i></div>',
+                    iconSize: [36, 36],
+                    iconAnchor: [18, 18],
+                    popupAnchor: [0, -18]
                 });
 
                 L.marker([<?= $sLat ?>, <?= $sLng ?>], { icon: oIcon })
