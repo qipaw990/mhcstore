@@ -1,44 +1,51 @@
 <!-- Merchant Digital Wallet & Withdrawal Hub -->
 <div class="mb-4">
     <!-- Merchant Balance Card -->
-    <div class="p-3.5 text-white shadow-2xs mb-3 position-relative overflow-hidden" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); border-radius: 16px; border: 1px solid rgba(255,255,255,0.12);">
+    <div class="p-4 text-white shadow-sm mb-3 position-relative overflow-hidden" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); border-radius: 20px; border: 1px solid rgba(255,255,255,0.12);">
         <!-- Background Decor Icon -->
-        <div class="position-absolute" style="right: 12px; bottom: 8px; font-size: 88px; opacity: 0.07; line-height: 1; pointer-events: none;">
+        <div class="position-absolute" style="right: -10px; top: -15px; font-size: 115px; color: #FFFFFF; opacity: 0.05; line-height: 1; pointer-events: none;">
             <i class="bi bi-wallet2"></i>
         </div>
 
         <div class="position-relative z-1">
-            <div class="d-flex align-items-center justify-content-between mb-1">
-                <span class="text-white-50 fw-bold" style="font-size: 10.5px; letter-spacing: 0.6px; text-transform: uppercase;">
-                    <i class="bi bi-shop me-1 text-danger"></i> SALDO PENGHASILAN TOKO
+            <!-- Header Label & Badge -->
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-bold d-flex align-items-center gap-1.5" style="font-size: 11px; letter-spacing: 0.5px; color: #94A3B8; text-transform: uppercase;">
+                    <i class="bi bi-shop text-danger" style="font-size: 13px;"></i> SALDO PENGHASILAN TOKO
                 </span>
-                <span class="badge bg-success-subtle text-success px-2.5 py-1 rounded-pill" style="font-size: 9.5px; font-weight: 700;">
-                    <i class="bi bi-shield-check me-0.5"></i> Siap Ditarik
+                <span class="badge d-inline-flex align-items-center gap-1" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34D399; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px;">
+                    <i class="bi bi-shield-check" style="font-size: 11px;"></i> Siap Ditarik
                 </span>
             </div>
 
-            <div class="fw-extrabold my-1" style="letter-spacing: -0.5px; font-size: 28px; font-weight: 800; line-height: 1.1;">
+            <!-- Big Balance Amount -->
+            <div class="fw-extrabold my-2 text-white" style="letter-spacing: -0.5px; font-size: 30px; font-weight: 800; line-height: 1.1;">
                 <?= format_rupiah($wallet['balance'] ?? 0) ?>
             </div>
 
             <!-- Mini Summary Grid -->
-            <div class="row g-2 mt-2 mb-3">
+            <div class="row g-2.5 my-3">
                 <div class="col-6">
-                    <div class="p-2 rounded-3" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);">
-                        <div class="text-white-50" style="font-size: 10px;">Total Penghasilan</div>
-                        <div class="fw-bold text-white small mt-0.5"><?= format_rupiah($wallet['total_earned'] ?? 0) ?></div>
+                    <div class="p-2.5 rounded-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);">
+                        <div class="d-flex align-items-center gap-1 text-white-50" style="font-size: 10px;">
+                            <i class="bi bi-graph-up-arrow text-success" style="font-size: 11px;"></i> Total Penghasilan
+                        </div>
+                        <div class="fw-bold text-white mt-1" style="font-size: 13px; letter-spacing: -0.2px;"><?= format_rupiah($wallet['total_earned'] ?? 0) ?></div>
                     </div>
                 </div>
                 <div class="col-6">
-                    <div class="p-2 rounded-3" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);">
-                        <div class="text-white-50" style="font-size: 10px;">Total Telah Ditarik</div>
-                        <div class="fw-bold text-warning small mt-0.5"><?= format_rupiah($total_withdrawn ?? 0) ?></div>
+                    <div class="p-2.5 rounded-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);">
+                        <div class="d-flex align-items-center gap-1 text-white-50" style="font-size: 10px;">
+                            <i class="bi bi-arrow-up-right-circle text-warning" style="font-size: 11px;"></i> Total Telah Ditarik
+                        </div>
+                        <div class="fw-bold mt-1" style="font-size: 13px; color: #FBBF24; letter-spacing: -0.2px;"><?= format_rupiah($total_withdrawn ?? 0) ?></div>
                     </div>
                 </div>
             </div>
 
+            <!-- Payout Action Button -->
             <div>
-                <button type="button" onclick="openVendorWithdrawModal()" class="vnd-action-btn red w-100 py-2.5" style="font-size: 12.5px; border-radius: 12px;">
+                <button type="button" onclick="openVendorWithdrawModal()" class="btn btn-danger w-100 py-2.5 px-3 fw-bold d-flex align-items-center justify-content-center gap-2 border-0" style="background: linear-gradient(135deg, #EE2737 0%, #C61524 100%); border-radius: 12px; font-size: 12.5px; box-shadow: 0 4px 14px rgba(238, 39, 55, 0.4); transition: all 0.2s ease;">
                     <i class="bi bi-arrow-up-right-circle-fill" style="font-size: 16px;"></i>
                     <span>Ajukan Penarikan Dana (Payout)</span>
                 </button>
