@@ -22,7 +22,7 @@
                 
                 <div style="display: flex; align-items: center; gap: 8px !important; font-size: 10px; color: #64748B; flex-wrap: wrap;">
                     <span style="color: #D97706; font-weight: 700; display: flex; align-items: center; gap: 3px; flex-shrink: 0;">
-                        <i class="bi bi-star-fill" style="font-size: 10px;"></i> <?= !empty($store['reviews_count']) && (int)$store['reviews_count'] > 0 ? number_format($store['rating'], 1) : '0.0' ?> 
+                        <i class="bi bi-star-fill" style="font-size: 10px;"></i> <?= number_format(($store['rating'] > 0 ? $store['rating'] : 5.0), 1) ?> 
                         <span style="color: #94A3B8; font-weight: 400;">(<?= (int)($store['reviews_count'] ?? 0) ?> ulasan)</span>
                     </span>
                     <span style="color: #CBD5E1;">•</span>

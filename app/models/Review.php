@@ -201,7 +201,7 @@ class Review extends Model
         );
 
         $count = (int)($stat['count'] ?? 0);
-        $avg = ($count > 0) ? round((float)$stat['avg_rating'], 1) : 0.0;
+        $avg = ($count > 0) ? round((float)$stat['avg_rating'], 1) : 5.0;
 
         Database::update('stores', [
             'rating'        => $avg,
@@ -220,7 +220,7 @@ class Review extends Model
         );
 
         $count = (int)($stat['count'] ?? 0);
-        $avg = ($count > 0) ? round((float)$stat['avg_rating'], 1) : 0.0;
+        $avg = ($count > 0) ? round((float)$stat['avg_rating'], 1) : 5.0;
 
         Database::update('delivery_men', [
             'rating'        => $avg,

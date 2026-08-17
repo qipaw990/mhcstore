@@ -185,6 +185,10 @@ class Order extends Model
             Database::execute("UPDATE `orders` SET `delivery_man_id` = NULL WHERE `order_status` IN ('pending', 'confirmed') AND `delivery_man_id` IS NOT NULL");
             Database::execute("UPDATE `delivery_men` dm LEFT JOIN `orders` o ON dm.current_order_id = o.id SET dm.current_order_id = NULL WHERE dm.current_order_id IS NOT NULL AND (o.id IS NULL OR o.order_status IN ('delivered', 'canceled'))");
 
+            // Sync rating toko dan driver jika rating bernilai 0.0
+            Database::execute("UPDATE `stores` SET `rating` = 5.0 WHERE `rating` = 0.0 OR `rating` IS NULL");
+            Database::execute("UPDATE `delivery_men` SET `rating` = 5.0 WHERE `rating` = 0.0 OR `rating` IS NULL");
+
             // Find active orders without driver (or unclaimed) where created_at is older than 60 seconds (1 minute)
             $expiredOrders = Database::query(
                 "SELECT id, order_code, customer_id, delivery_man_id, payment_method, payment_status, total_amount, created_at 

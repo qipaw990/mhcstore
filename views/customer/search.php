@@ -88,7 +88,7 @@
                             <div class="gofood-store-body p-2">
                                 <div class="gofood-store-name" style="font-size: 11px; letter-spacing: -0.2px;"><?= htmlspecialchars($s['name']) ?></div>
                                 <div class="gofood-store-meta" style="font-size: 9px;">
-                                    <span class="gofood-rating"><i class="bi bi-star-fill"></i> <?= number_format($s['rating'] ?? 5.0, 1) ?></span>
+                                    <span class="gofood-rating"><i class="bi bi-star-fill"></i> <?= number_format(($s['rating'] > 0 ? $s['rating'] : 5.0), 1) ?></span>
                                     <span>•</span>
                                     <span><?= htmlspecialchars($s['delivery_time'] ?? '20-30 mnt') ?></span>
                                 </div>
@@ -154,7 +154,7 @@
                             <div class="gofood-store-body p-2">
                                 <div class="gofood-store-name" style="font-size: 11px;"><?= htmlspecialchars($s['name']) ?></div>
                                 <div class="gofood-store-meta" style="font-size: 9px;">
-                                    <span class="gofood-rating"><i class="bi bi-star-fill"></i> <?= number_format($s['rating'] ?? 5.0, 1) ?></span>
+                                    <span class="gofood-rating"><i class="bi bi-star-fill"></i> <?= number_format(($s['rating'] > 0 ? $s['rating'] : 5.0), 1) ?></span>
                                     <span>•</span>
                                     <span><?= htmlspecialchars($s['delivery_time'] ?? '20-30 mnt') ?></span>
                                 </div>
