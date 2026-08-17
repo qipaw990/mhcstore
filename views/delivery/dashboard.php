@@ -60,7 +60,7 @@
     </div>
 
     <!-- Interactive Driver Radar & Navigation Map -->
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-3">
+    <div class="driver-map-card mb-3">
         <div class="p-3 bg-white d-flex align-items-center justify-content-between border-bottom">
             <div class="d-flex align-items-center gap-2">
                 <div class="rounded-circle text-white d-flex align-items-center justify-content-center shadow-xs" style="width: 28px; height: 28px; font-size: 14px; background: #EE2737;">
@@ -75,7 +75,7 @@
                 <i class="bi bi-crosshair"></i> Posisi Saya
             </button>
         </div>
-        <div id="driver-radar-map" style="width: 100%; height: 250px; z-index: 1;"></div>
+        <div id="driver-radar-map"></div>
     </div>
 
     <!-- Active Delivery Task (Step-by-Step Navigation: Store First, Then Customer) -->
@@ -400,13 +400,13 @@ function initDriverRadarMap() {
         maxZoom: 19
     }).addTo(window.dRadarMap);
 
-    // Driver Location Pin (Bulat Merah CicalengkaGO + Motor)
+    // Driver Location Pin
     const myIcon = L.divIcon({
-        className: 'custom-pin',
-        html: '<div style="background:#101820;color:#EE2737;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #ffffff;box-shadow:0 4px 14px rgba(16,24,32,0.45);font-size:18px;"><i class="bi bi-bicycle"></i></div>',
-        iconSize: [38, 38],
-        iconAnchor: [19, 19],
-        popupAnchor: [0, -19]
+        className: 'ccg-driver-pin',
+        html: '<div class="ccg-driver-pin-body driver-me"><i class="bi bi-bicycle"></i></div>',
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+        popupAnchor: [0, -20]
     });
 
     window.myDriverMarker = L.marker([window.driverLat, window.driverLng], { icon: myIcon })
@@ -422,19 +422,19 @@ function initDriverRadarMap() {
         const actDestLng = window.actDestLng;
 
         const storeIcon = L.divIcon({
-            className: 'custom-pin',
-            html: '<div style="background:#D32F2F;color:white;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #ffffff;box-shadow:0 4px 14px rgba(211,47,47,0.45);font-size:18px;"><i class="bi bi-shop"></i></div>',
-            iconSize: [38, 38],
-            iconAnchor: [19, 19],
-            popupAnchor: [0, -19]
+            className: 'ccg-driver-pin',
+            html: '<div class="ccg-driver-pin-body store"><i class="bi bi-shop"></i></div>',
+            iconSize: [40, 40],
+            iconAnchor: [20, 20],
+            popupAnchor: [0, -20]
         });
 
         const custIcon = L.divIcon({
-            className: 'custom-pin',
-            html: '<div style="background:#00A082;color:white;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #ffffff;box-shadow:0 4px 14px rgba(0,160,130,0.45);font-size:18px;"><i class="bi bi-geo-alt-fill"></i></div>',
-            iconSize: [38, 38],
-            iconAnchor: [19, 19],
-            popupAnchor: [0, -19]
+            className: 'ccg-driver-pin',
+            html: '<div class="ccg-driver-pin-body customer"><i class="bi bi-geo-alt-fill"></i></div>',
+            iconSize: [40, 40],
+            iconAnchor: [20, 20],
+            popupAnchor: [0, -20]
         });
 
         window.actStoreMarker = L.marker([actStoreLat, actStoreLng], { icon: storeIcon })
@@ -465,7 +465,7 @@ function initDriverRadarMap() {
             window.actCustMarker.openPopup();
         }
     <?php else: ?>
-        // Plot Available Incoming Orders (Red Store Badges like Customer View)
+        // Plot Available Incoming Orders
         <?php foreach ($available_orders as $ord): ?>
             <?php 
                 $sLat = (float)($ord['store_lat'] ?? -6.9835);
@@ -476,11 +476,11 @@ function initDriverRadarMap() {
             ?>
             (function() {
                 const oIcon = L.divIcon({
-                    className: 'custom-pin',
-                    html: '<div style="background:#D32F2F;color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #ffffff;box-shadow:0 4px 14px rgba(211,47,47,0.45);font-size:16px;"><i class="bi bi-shop"></i></div>',
-                    iconSize: [36, 36],
-                    iconAnchor: [18, 18],
-                    popupAnchor: [0, -18]
+                    className: 'ccg-driver-pin',
+                    html: '<div class="ccg-driver-pin-body store"><i class="bi bi-shop"></i></div>',
+                    iconSize: [40, 40],
+                    iconAnchor: [20, 20],
+                    popupAnchor: [0, -20]
                 });
 
                 L.marker([<?= $sLat ?>, <?= $sLng ?>], { icon: oIcon })

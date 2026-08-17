@@ -1,0 +1,122 @@
+/* ==========================================================================
+   CicalengkaGO - Driver Dedicated Modern Styling & Leaflet Map Fixes
+   ========================================================================== */
+
+/* 1. Complete Leaflet Distortion Safeguards */
+#driver-radar-map .leaflet-pane img,
+#driver-radar-map .leaflet-tile,
+#driver-radar-map .leaflet-marker-icon,
+#driver-radar-map .leaflet-marker-shadow {
+    max-width: none !important;
+    max-height: none !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+}
+
+#driver-radar-map .leaflet-shadow-pane,
+#driver-radar-map .leaflet-marker-shadow,
+.leaflet-shadow-pane,
+.leaflet-marker-shadow {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+/* Clear all default browser / bootstrap interference on Leaflet icons */
+#driver-radar-map .leaflet-marker-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* 2. Driver Custom Pin Base */
+.ccg-driver-pin {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 40px !important;
+    height: 40px !important;
+    background: transparent !important;
+    border: none !important;
+}
+
+.ccg-driver-pin-body {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid #FFFFFF;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    font-size: 17px;
+    color: #FFFFFF;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.ccg-driver-pin-body.driver-me {
+    background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+    color: #EE2737;
+    border-color: #FFFFFF;
+    box-shadow: 0 4px 16px rgba(238, 39, 55, 0.4);
+}
+
+.ccg-driver-pin-body.store {
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+    color: #FFFFFF;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+}
+
+.ccg-driver-pin-body.customer {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: #FFFFFF;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+}
+
+/* 3. Driver Map Card Container */
+.driver-map-card {
+    border-radius: 20px !important;
+    overflow: hidden !important;
+    border: 1px solid #E2E8F0 !important;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06) !important;
+    background: #FFFFFF;
+}
+
+#driver-radar-map {
+    width: 100%;
+    height: 260px;
+    background: #F1F5F9;
+    z-index: 1;
+}
+
+/* 4. Leaflet Popup Clean Styling */
+.leaflet-popup-content-wrapper {
+    border-radius: 14px !important;
+    padding: 4px 8px !important;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15) !important;
+    border: 1px solid #E2E8F0 !important;
+}
+
+.leaflet-popup-content {
+    margin: 8px 10px !important;
+    font-size: 11.5px !important;
+    line-height: 1.4 !important;
+    color: #0F172A !important;
+    min-width: 140px !important;
+}
+
+.leaflet-popup-tip {
+    box-shadow: none !important;
+}
+
+/* 5. Driver Dashboard Spacing Fix */
+.driver-page-container {
+    padding-bottom: 90px !important;
+}

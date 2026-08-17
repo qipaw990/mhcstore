@@ -21,6 +21,7 @@ $user = auth_user();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="<?= $baseUrl ?>/assets/css/mobile.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="<?= $baseUrl ?>/assets/css/driver-style.css?v=<?= time() ?>">
 
     <script>
         window.BASE_URL = "<?= $baseUrl ?>";
