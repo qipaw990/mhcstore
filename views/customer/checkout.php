@@ -45,7 +45,7 @@
     </div>
 
     <!-- Payment Method Selector Card -->
-    <div class="p-3.5 bg-white border shadow-2xs mb-3.5 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important; margin-bottom: 16px !important;">
+    <div class="bg-white border shadow-2xs mb-3.5 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important; margin-bottom: 16px !important;">
         <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom" style="border-color: #F1F5F9 !important;">
             <h6 class="fw-bold m-0 text-dark" style="font-size: 13px;"><i class="bi bi-wallet2 text-danger me-2"></i>Metode Pembayaran</h6>
             <span class="text-muted fw-normal" style="font-size: 10.5px;">Pilih salah satu</span>
