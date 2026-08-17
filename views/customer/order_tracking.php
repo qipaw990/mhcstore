@@ -46,10 +46,10 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
     <?php endif; ?>
 </div>
 
-<div class="px-3 py-2.5">
+<div class="px-3 py-3 d-flex flex-column gap-3">
     <?php if ($isCanceled): ?>
         <!-- Canceled Card -->
-        <div class="p-4 bg-white border shadow-xs text-center mb-3" style="border-radius: 14px;">
+        <div class="p-4 bg-white border shadow-xs text-center" style="border-radius: 16px; border-color: #E2E8F0 !important;">
             <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center mx-auto mb-2.5" style="width: 48px; height: 48px; font-size: 22px;">
                 <i class="bi bi-x-circle-fill"></i>
             </div>
@@ -60,7 +60,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
 
     <?php elseif ($isUnpaidOnline): ?>
         <!-- Unpaid Online Order Screen -->
-        <div class="p-3.5 bg-white border shadow-xs mb-3 text-center" style="border-radius: 14px;">
+        <div class="p-3.5 bg-white border shadow-xs text-center" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 16px !important;">
             <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center mx-auto mb-2.5" style="width: 52px; height: 52px; font-size: 24px;">
                 <i class="bi bi-credit-card-2-front-fill text-danger"></i>
             </div>
@@ -104,7 +104,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
     <?php else: ?>
         <!-- Active Tracking Screen (COD or Paid) -->
         <!-- Live Map Container with Floating HUD -->
-        <div class="position-relative mb-2.5 overflow-hidden shadow-xs border" style="border-radius: 14px;">
+        <div class="position-relative overflow-hidden shadow-xs border" style="border-radius: 16px; border-color: #E2E8F0 !important;">
             <!-- Live Floating HUD (Top) -->
             <div class="position-absolute top-0 start-0 end-0 p-2 z-3 d-flex align-items-center justify-content-between pointer-events-none">
                 <div class="badge bg-dark bg-opacity-75 backdrop-blur text-white px-2.5 py-1 fw-semibold rounded-pill d-flex align-items-center gap-1 shadow-xs" id="live-radar-status" style="font-size: 9.5px;">
@@ -141,7 +141,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
         </div>
 
         <!-- Order Delivered Success Celebration Card (Auto-Synced) -->
-        <div id="order-completed-card" class="p-3 mb-2.5 text-white shadow-xs <?= $order['order_status'] === 'delivered' ? '' : 'd-none' ?>" style="background: linear-gradient(135deg, #10B981 0%, #047857 100%); border-left: 4px solid #059669; border-radius: 14px;">
+        <div id="order-completed-card" class="p-3 text-white shadow-xs <?= $order['order_status'] === 'delivered' ? '' : 'd-none' ?>" style="background: linear-gradient(135deg, #10B981 0%, #047857 100%); border-left: 4px solid #059669; border-radius: 16px;">
             <div class="d-flex align-items-center gap-2.5">
                 <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center flex-shrink-0 shadow-xs" style="width: 36px; height: 36px; font-size: 18px;">
                     <i class="bi bi-check-circle-fill"></i>
@@ -154,7 +154,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
         </div>
 
         <!-- OTP Code Banner Card (Auto-Synced) -->
-        <div id="otp-banner-card" class="p-3 mb-2.5 text-white shadow-xs text-center <?= ($order['order_status'] === 'delivered' || $order['order_status'] === 'canceled') ? 'd-none' : '' ?>" style="background: linear-gradient(135deg, #101820 0%, #1e293b 100%); border-left: 4px solid #EE2737; border-radius: 14px;">
+        <div id="otp-banner-card" class="p-3 text-white shadow-xs text-center <?= ($order['order_status'] === 'delivered' || $order['order_status'] === 'canceled') ? 'd-none' : '' ?>" style="background: linear-gradient(135deg, #101820 0%, #1e293b 100%); border-left: 4px solid #EE2737; border-radius: 16px;">
             <div class="text-white-50 mb-0.5" style="font-size: 9.5px; font-weight: 600; letter-spacing: 0.5px;">KODE OTP PENERIMAAN</div>
             <div class="fw-bold my-1" style="letter-spacing: 4px; color: #EE2737; font-size: 22px;"><?= htmlspecialchars($order['otp']) ?></div>
             <div class="text-white-50 mt-0.5" style="font-size: 9px;">Berikan kode 4-digit ini kepada kurir saat pesanan tiba.</div>
@@ -163,7 +163,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
         <!-- Driver Info Card (Dynamic Auto-Sync) -->
         <div id="driver-card-container">
             <!-- Assigned Driver Card -->
-            <div id="driver-assigned-card" class="p-3 bg-white border shadow-xs mb-2.5 <?= empty($order['delivery_man_id']) ? 'd-none' : '' ?>" style="border-radius: 14px;">
+            <div id="driver-assigned-card" class="p-3.5 bg-white border shadow-xs <?= empty($order['delivery_man_id']) ? 'd-none' : '' ?>" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important;">
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center gap-2.5">
                         <img id="driver-avatar-img" src="<?= $baseUrl ?>/<?= htmlspecialchars($order['dm_avatar'] ?? 'assets/images/users/driver.png') ?>" alt="Driver" class="rounded-circle border border-2 border-danger" style="width: 40px; height: 40px; object-fit: cover;">
@@ -191,7 +191,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
             </div>
 
             <!-- Searching Driver Card -->
-            <div id="driver-searching-card" class="p-3 bg-white border shadow-xs mb-2.5 <?= !empty($order['delivery_man_id']) ? 'd-none' : '' ?>" style="border-radius: 14px;">
+            <div id="driver-searching-card" class="p-3.5 bg-white border shadow-xs <?= !empty($order['delivery_man_id']) ? 'd-none' : '' ?>" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important;">
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center gap-2.5">
                         <div class="spinner-border spinner-border-sm text-danger" style="width: 16px; height: 16px;" role="status"></div>
@@ -208,7 +208,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
         </div>
 
         <!-- Delivery Stepper Progress (Dynamic Auto-Sync) -->
-        <div class="p-3 bg-white border shadow-xs mb-2.5" style="border-radius: 14px;">
+        <div class="p-3.5 bg-white border shadow-xs" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important;">
             <h6 class="fw-bold mb-2.5 text-dark" style="font-size: 12px;">Status Pengantaran</h6>
             <div class="stepper-container p-0" id="order-stepper">
                 <?php
@@ -254,7 +254,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
 
     <?php if ($order['order_status'] === 'delivered'): ?>
         <?php $hasReviewed = !empty($order['review_info']['has_reviewed']); ?>
-        <div class="p-3 bg-white border shadow-xs mb-2.5" id="order-review-section" style="border-radius: 14px;">
+        <div class="p-3.5 bg-white border shadow-xs" id="order-review-section" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important;">
             <div class="d-flex align-items-center justify-content-between mb-2">
                 <div class="d-flex align-items-center gap-2">
                     <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; font-size: 14px;">
@@ -351,7 +351,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
     <?php endif; ?>
 
     <!-- Order Items & Address Summary (Always Visible) -->
-    <div class="p-3 bg-white border shadow-xs mb-3" style="border-radius: 14px;">
+    <div class="p-3.5 bg-white border shadow-xs" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important;">
         <h6 class="fw-bold mb-1.5 text-dark" style="font-size: 11.5px;"><i class="bi bi-shop text-danger me-1"></i> Titik Penjemputan</h6>
         <p class="text-dark fw-semibold mb-0.5" style="font-size: 10.5px;"><?= htmlspecialchars($order['store_name'] ?? 'Penjemputan Parcel') ?></p>
         <p class="text-muted mb-2.5" style="font-size: 9.5px;"><?= htmlspecialchars($order['store_address'] ?? 'Cicalengka, Bandung') ?></p>
