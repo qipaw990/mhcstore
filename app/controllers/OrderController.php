@@ -439,6 +439,9 @@ class OrderController extends Controller
 
     public function getLiveTracking(string $code): void
     {
+        // Run auto-cancel for unclaimed orders older than 60 seconds
+        \App\Models\Order::autoCancelUnclaimedOrders();
+
         $order = $this->orderModel->findByIdOrCode($code);
         if (!$order) {
             $this->errorResponse('Pesanan tidak ditemukan.', null, 404);
@@ -467,17 +470,20 @@ class OrderController extends Controller
             $unreadChatCount = (int)($unreadChat['cnt'] ?? 0);
         }
 
-                $isDriverAssigned = !empty($order['delivery_man_id']) && $order['order_status'] !== 'canceled' && in_array($order['order_status'], ['processing', 'handover', 'on_the_way', 'delivered']);
+        $isDriverAssigned = !empty($order['delivery_man_id']) && $order['order_status'] !== 'canceled' && in_array($order['order_status'], ['processing', 'handover', 'on_the_way', 'delivered']);
 
-                $this->json([
-                    'success' => true,
-                    'data'    => [
-                        'order_code'     => $order['order_code'],
-                        'order_status'   => $order['order_status'],
-                        'payment_status' => $order['payment_status'],
-                        'payment_method' => $order['payment_method'],
-                        'otp'            => $order['otp'],
-                        'unread_chats'   => $unreadChatCount,
+        $this->json([
+            'success' => true,
+            'data'    => [
+                'order_code'          => $order['order_code'],
+                'order_status'        => $order['order_status'],
+                'cancellation_reason' => $order['cancellation_reason'] ?? '',
+                'payment_status'      => $order['payment_status'],
+                'payment_method'      => $order['payment_method'],
+                'created_at_time'     => strtotime($order['created_at']),
+                'server_time'         => time(),
+                'otp'                 => $order['otp'],
+                'unread_chats'        => $unreadChatCount,
                         'driver'         => [
                             'assigned' => $isDriverAssigned,
                             'name'     => $isDriverAssigned ? ($order['dm_name'] ?? 'Mitra Kurir Cicalengka') : 'Mencari Kurir...',

@@ -193,19 +193,50 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
                 </div>
             </div>
 
-            <!-- Searching Driver Card -->
+            <!-- Searching Driver Card with Live Counter -->
             <div id="driver-searching-card" class="p-3.5 bg-white border shadow-xs <?= ($isDriverValid || $order['order_status'] === 'canceled' || $order['order_status'] === 'delivered') ? 'd-none' : '' ?>" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important;">
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center gap-2.5">
-                        <div class="spinner-border spinner-border-sm text-danger" style="width: 16px; height: 16px;" role="status"></div>
+                        <div class="spinner-border spinner-border-sm text-danger flex-shrink-0" style="width: 18px; height: 18px;" role="status"></div>
                         <div>
-                            <div class="fw-bold text-dark" style="font-size: 11.5px;">Mencari Kurir Terdekat...</div>
-                            <div class="text-muted" style="font-size: 9.5px;">Sistem sedang menugaskan kurir untuk pesanan Anda</div>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="fw-bold text-dark" style="font-size: 12px;">Mencari Kurir Terdekat...</div>
+                                <span id="search-timer-badge" class="badge bg-danger-subtle text-danger font-monospace px-2 py-0.5 rounded-pill" style="font-size: 11px; font-weight: 800;">
+                                    <i class="bi bi-clock-history me-1"></i><span id="search-timer-clock">01:00</span>
+                                </span>
+                            </div>
+                            <div class="text-muted mt-0.5" style="font-size: 9.5px;">Sistem sedang menugaskan kurir • Sisa waktu: <strong id="search-timer-sec" class="text-danger">60 detik</strong></div>
                         </div>
                     </div>
-                    <button type="button" onclick="openChatModal()" class="btn btn-outline-danger btn-sm rounded-pill px-2.5 py-1 d-flex align-items-center gap-1 fw-bold" style="font-size: 10.5px;">
+                    <button type="button" onclick="openChatModal()" class="btn btn-outline-danger btn-sm rounded-pill px-2.5 py-1 d-flex align-items-center gap-1 fw-bold flex-shrink-0" style="font-size: 10.5px;">
                         <i class="bi bi-chat-dots"></i> Chat
                     </button>
+                </div>
+                <div class="progress mt-2.5" style="height: 4px; border-radius: 10px; background: #F1F5F9;">
+                    <div id="search-timer-progress" class="progress-bar progress-bar-striped progress-bar-animated bg-danger" role="progressbar" style="width: 100%; transition: width 1s linear;"></div>
+                </div>
+            </div>
+
+            <!-- Order Canceled Alert Card -->
+            <div id="order-canceled-card" class="p-3.5 bg-danger-subtle border border-danger-subtle shadow-xs mb-3 <?= ($order['order_status'] === 'canceled') ? '' : 'd-none' ?>" style="border-radius: 16px; padding: 14px 16px !important; background-color: #FEF2F2 !important; border-color: #FCA5A5 !important;">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; font-size: 16px;">
+                        <i class="bi bi-x-lg"></i>
+                    </div>
+                    <div class="flex-grow-1 min-w-0">
+                        <h6 class="fw-bold text-danger m-0" style="font-size: 12.5px;">Pesanan Dibatalkan Otomatis</h6>
+                        <div class="text-muted mt-1" id="canceled-reason-text" style="font-size: 10px; line-height: 1.4;">
+                            <?= !empty($order['cancellation_reason']) ? htmlspecialchars($order['cancellation_reason']) : 'Pesanan otomatis dibatalkan karena tidak mendapatkan kurir dalam waktu 1 menit. Saldo / pembayaran Anda telah otomatis dikembalikan.' ?>
+                        </div>
+                        <div class="mt-2.5 d-flex gap-2">
+                            <a href="<?= $baseUrl ?>/search" class="btn btn-danger btn-sm rounded-pill fw-bold px-3 py-1" style="font-size: 10.5px; background: #EE2737; border: none;">
+                                <i class="bi bi-arrow-repeat me-1"></i> Pesan Lagi
+                            </a>
+                            <a href="<?= $baseUrl ?>/orders" class="btn btn-outline-secondary btn-sm rounded-pill fw-semibold px-3 py-1" style="font-size: 10.5px;">
+                                Riwayat Pesanan
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -392,15 +423,16 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
     </div>
 </div>
 
-<?php if (!$isUnpaidOnline && !$isCanceled): ?>
 <script src="<?= $baseUrl ?>/assets/js/tracking-map.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const initialData = {
         order_code: "<?= $order['order_code'] ?>",
         order_status: "<?= $order['order_status'] ?>",
+        cancellation_reason: "<?= htmlspecialchars($order['cancellation_reason'] ?? '') ?>",
         payment_status: "<?= $order['payment_status'] ?>",
         payment_method: "<?= $order['payment_method'] ?>",
+        created_at_time: <?= strtotime($order['created_at']) ?>,
         store: {
             name: "<?= htmlspecialchars($order['store_name'] ?? 'Penjemputan') ?>",
             lat: <?= (float)($order['store_lat'] ?? -6.9835) ?>,
@@ -426,7 +458,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initOrderTrackingMap("<?= $order['order_code'] ?>", initialData);
 });
 </script>
-<?php endif; ?>
 
 <?php if ($isUnpaidOnline): ?>
 <script>

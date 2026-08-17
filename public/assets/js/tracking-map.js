@@ -121,6 +121,10 @@ function initOrderTrackingMap(orderCode, initialData) {
   try { drawRoutePolylines(initialData); } catch (e) { console.error('Initial route polyline error:', e); }
   try { fitAllMarkers(); } catch (e) { console.error('Initial fit bounds error:', e); }
 
+  if (!initialData.driver?.assigned && initialData.order_status !== 'canceled' && initialData.order_status !== 'delivered') {
+    startDriverSearchTimer(initialData.created_at_time);
+  }
+
   // Clear any existing poll
   if (pollTimer) clearInterval(pollTimer);
 
@@ -343,13 +347,73 @@ function centerOnDriver() {
   }
 }
 
+let searchTimerInterval = null;
+
+function startDriverSearchTimer(createdAtTs) {
+  if (searchTimerInterval) clearInterval(searchTimerInterval);
+  if (!createdAtTs) return;
+
+  function updateTimer() {
+    const nowTs = Math.floor(Date.now() / 1000);
+    const elapsed = nowTs - createdAtTs;
+    const totalDuration = 60; // 1 minute = 60 seconds
+    const remaining = Math.max(0, totalDuration - elapsed);
+
+    const clockEl = document.getElementById('search-timer-clock');
+    const secEl = document.getElementById('search-timer-sec');
+    const progressEl = document.getElementById('search-timer-progress');
+
+    const mins = Math.floor(remaining / 60);
+    const secs = remaining % 60;
+    const formattedTime = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+
+    if (clockEl) clockEl.textContent = formattedTime;
+    if (secEl) secEl.textContent = remaining + ' detik';
+    if (progressEl) {
+      const percent = Math.min(100, Math.max(0, (remaining / totalDuration) * 100));
+      progressEl.style.width = percent + '%';
+    }
+
+    if (remaining <= 0) {
+      if (searchTimerInterval) {
+        clearInterval(searchTimerInterval);
+        searchTimerInterval = null;
+      }
+      if (typeof currentTrackingData !== 'undefined' && currentTrackingData?.order_code) {
+        pollLiveTracking(currentTrackingData.order_code);
+      }
+    }
+  }
+
+  updateTimer();
+  searchTimerInterval = setInterval(updateTimer, 1000);
+}
+
 function updateDriverCardUI(driver) {
   const assignedCard = document.getElementById('driver-assigned-card');
   const searchingCard = document.getElementById('driver-searching-card');
+  const canceledCard = document.getElementById('order-canceled-card');
+  const currentStatus = currentTrackingData ? currentTrackingData.order_status : null;
+
+  if (currentStatus === 'canceled') {
+    if (assignedCard) assignedCard.classList.add('d-none');
+    if (searchingCard) searchingCard.classList.add('d-none');
+    if (canceledCard) canceledCard.classList.remove('d-none');
+    if (searchTimerInterval) {
+      clearInterval(searchTimerInterval);
+      searchTimerInterval = null;
+    }
+    return;
+  }
 
   if (driver && driver.assigned) {
     if (assignedCard) assignedCard.classList.remove('d-none');
     if (searchingCard) searchingCard.classList.add('d-none');
+    if (canceledCard) canceledCard.classList.add('d-none');
+    if (searchTimerInterval) {
+      clearInterval(searchTimerInterval);
+      searchTimerInterval = null;
+    }
 
     const avatarImg = document.getElementById('driver-avatar-img');
     const nameText = document.getElementById('driver-name-text');
@@ -380,6 +444,7 @@ function updateDriverCardUI(driver) {
   } else {
     if (assignedCard) assignedCard.classList.add('d-none');
     if (searchingCard) searchingCard.classList.remove('d-none');
+    if (canceledCard) canceledCard.classList.add('d-none');
   }
 }
 
@@ -437,21 +502,40 @@ function updateTrackingStatusUI(status, data) {
     if (icon4) icon4.className = isStep4Done ? 'bi bi-check-lg' : 'bi bi-geo-alt-fill';
   }
 
-  // OTP Card vs Celebration Card Auto-Sync
+  // OTP Card vs Celebration Card vs Canceled Card Auto-Sync
   const otpCard = document.getElementById('otp-banner-card');
   const completedCard = document.getElementById('order-completed-card');
+  const searchingCard = document.getElementById('driver-searching-card');
+  const assignedCard = document.getElementById('driver-assigned-card');
+  const canceledCard = document.getElementById('order-canceled-card');
   const paymentBadge = document.getElementById('payment-status-text');
 
-  if (status === 'delivered') {
+  if (status === 'canceled') {
+    if (otpCard) otpCard.classList.add('d-none');
+    if (completedCard) completedCard.classList.add('d-none');
+    if (searchingCard) searchingCard.classList.add('d-none');
+    if (assignedCard) assignedCard.classList.add('d-none');
+    if (canceledCard) canceledCard.classList.remove('d-none');
+    if (data && data.cancellation_reason) {
+      const reasonEl = document.getElementById('canceled-reason-text');
+      if (reasonEl) reasonEl.textContent = data.cancellation_reason;
+    }
+    if (paymentBadge) {
+      paymentBadge.textContent = 'DIBATALKAN';
+      paymentBadge.className = 'fw-bold text-danger';
+    }
+  } else if (status === 'delivered') {
     if (otpCard) otpCard.classList.add('d-none');
     if (completedCard) completedCard.classList.remove('d-none');
+    if (canceledCard) canceledCard.classList.add('d-none');
     if (paymentBadge) {
       paymentBadge.textContent = 'LUNAS';
       paymentBadge.className = 'fw-bold text-success';
     }
-  } else if (status !== 'canceled') {
+  } else {
     if (otpCard) otpCard.classList.remove('d-none');
     if (completedCard) completedCard.classList.add('d-none');
+    if (canceledCard) canceledCard.classList.add('d-none');
   }
 
   // Stop polling if delivered or canceled to conserve resources
