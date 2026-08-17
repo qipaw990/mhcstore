@@ -212,59 +212,70 @@ class Order extends Model
                     'canceled_at'          => date('Y-m-d H:i:s')
                 ], 'id = ?', [$ord['id']]);
 
-                // ===== REFUND LOGIC PER PAYMENT METHOD =====
-
-                if ($ord['payment_status'] === 'paid') {
-                    $walletModel = new \App\Models\Wallet();
-
-                    if ($ord['payment_method'] === 'wallet') {
-                        // CicalengkaPay / Wallet → kembalikan saldo otomatis
-                        $walletModel->credit(
-                            (int)$ord['customer_id'],
-                            (float)$ord['total_amount'],
-                            'order_refund',
-                            "Pengembalian saldo CicalengkaPay untuk pesanan #{$ord['order_code']} (tidak ada driver)",
-                            (string)$ord['id']
-                        );
-                        Database::update('orders', ['payment_status' => 'refunded'], 'id = ?', [$ord['id']]);
-
-                    } elseif (in_array($ord['payment_method'], ['midtrans', 'online', 'qris', 'va', 'credit_card'])) {
-                        // Midtrans / Online → refund otomatis ke CicalengkaPay wallet
-                        // Lebih cepat & mudah dibanding proses refund ke rekening bank (1-7 hari kerja)
-                        $existing = Database::fetchOne(
-                            "SELECT id FROM `wallet_transactions` WHERE `reference_id` = ? AND `type` = 'order_refund' LIMIT 1",
-                            [(string)$ord['id']]
-                        );
-                        if (!$existing) {
-                            $walletModel->credit(
-                                (int)$ord['customer_id'],
-                                (float)$ord['total_amount'],
-                                'order_refund',
-                                "Refund Midtrans → CicalengkaPay untuk pesanan #{$ord['order_code']} (tidak ada driver tersedia)",
-                                (string)$ord['id']
-                            );
-                        }
-                        Database::update('orders', ['payment_status' => 'refunded'], 'id = ?', [$ord['id']]);
-                    }
-                    // COD: tidak ada uang yang keluar, tidak perlu refund
-                }
-
-                // Send notification to customer
-                $isRefunded = in_array($ord['payment_method'], ['wallet', 'midtrans', 'online', 'qris', 'va', 'credit_card']) && $ord['payment_status'] === 'paid';
-                $notifMsg = $isRefunded
-                    ? "Pesanan #{$ord['order_code']} dibatalkan otomatis (tidak ada driver). Dana Rp " . number_format((float)$ord['total_amount'], 0, ',', '.') . " telah dikembalikan ke CicalengkaPay Anda."
-                    : "Pesanan #{$ord['order_code']} dibatalkan otomatis karena tidak ada driver dalam waktu 1 menit.";
-
-                Database::insert('notifications', [
-                    'user_id'   => (int)$ord['customer_id'],
-                    'title'     => $isRefunded ? 'Pesanan Dibatalkan & Dana Dikembalikan 💚' : 'Pesanan Dibatalkan Otomatis ⚠️',
-                    'message'   => $notifMsg,
-                    'type'      => 'order',
-                    'data_json' => json_encode(['order_code' => $ord['order_code'], 'order_id' => $ord['id']])
-                ]);
+                // Perform robust refund to CicalengkaPay wallet
             }
         } catch (\Exception $e) {
-            error_log("autoCancelUnclaimedOrders Error: " . $e->getMessage());
+            error_log("autoCancelUnclaimedOrders error: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Helper terpusat untuk memproses pengembalian dana pesanan ke CicalengkaPay wallet.
+     */
+    public static function refundOrderIfPaid(int|array $order, string $reason = ''): bool
+    {
+        $ord = is_array($order) ? $order : (new self())->find($order);
+        if (!$ord) return false;
+
+        $orderId = (int)$ord['id'];
+        $customerId = (int)$ord['customer_id'];
+        $amount = (float)$ord['total_amount'];
+        $orderCode = $ord['order_code'];
+        $paymentStatus = $ord['payment_status'] ?? 'unpaid';
+        $paymentMethod = $ord['payment_method'] ?? 'wallet';
+
+        // Jika sudah di-refund sebelumnya, lewati
+        if ($paymentStatus === 'refunded') {
+            return false;
+        }
+
+        // Cek apakah pernah ada catatan refund di wallet_transactions
+        $existing = Database::fetchOne(
+            "SELECT id FROM `wallet_transactions` WHERE `reference_id` = ? AND `category` = 'order_refund' LIMIT 1",
+            [(string)$orderId]
+        );
+
+        if (!$existing && $amount > 0 && ($paymentStatus === 'paid' || in_array($paymentMethod, ['wallet', 'midtrans', 'online', 'qris', 'va', 'credit_card']))) {
+            $walletModel = new Wallet();
+            $desc = "Refund pengembalian dana untuk pesanan #{$orderCode}";
+            if (!empty($reason)) {
+                $desc .= " ({$reason})";
+            }
+
+            // Tambahkan saldo ke CicalengkaPay
+            $walletModel->credit(
+                $customerId,
+                $amount,
+                'order_refund',
+                $desc,
+                (string)$orderId
+            );
+
+            // Update status pembayaran pesanan menjadi refunded
+            Database::update('orders', ['payment_status' => 'refunded'], 'id = ?', [$orderId]);
+
+            // Kirim Notifikasi ke Pelanggan
+            Database::insert('notifications', [
+                'user_id'   => $customerId,
+                'title'     => 'Pesanan Dibatalkan & Dana Dikembalikan 💚',
+                'message'   => "Pesanan #{$orderCode} dibatalkan. Dana sebesar Rp " . number_format($amount, 0, ',', '.') . " telah dikembalikan ke saldo CicalengkaPay Anda.",
+                'type'      => 'order',
+                'data_json' => json_encode(['order_code' => $orderCode, 'order_id' => $orderId])
+            ]);
+
+            return true;
+        }
+
+        return false;
     }
 }

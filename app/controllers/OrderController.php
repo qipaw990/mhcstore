@@ -402,17 +402,21 @@ class OrderController extends Controller
             return;
         }
 
-        if ($order['payment_status'] === 'paid') {
-            $this->errorResponse('Pesanan yang sudah dibayar tidak dapat dibatalkan otomatis.');
+        if (in_array($order['order_status'], ['handover', 'on_the_way', 'delivered'])) {
+            $this->errorResponse('Pesanan yang sedang diantar kurir tidak dapat dibatalkan.');
             return;
         }
 
         \App\Core\Database::update('orders', [
-            'order_status' => 'canceled',
-            'canceled_at'  => date('Y-m-d H:i:s')
+            'order_status'        => 'canceled',
+            'cancellation_reason' => 'Dibatalkan oleh Pelanggan',
+            'canceled_at'          => date('Y-m-d H:i:s')
         ], 'id = ?', [$order['id']]);
 
-        $this->successResponse('Pesanan berhasil dibatalkan.');
+        // Proses auto-refund ke saldo CicalengkaPay pelanggan
+        Order::refundOrderIfPaid($order, 'Dibatalkan oleh pelanggan');
+
+        $this->successResponse('Pesanan berhasil dibatalkan dan pengembalian dana telah dikreditkan ke CicalengkaPay.');
     }
 
     public function showOrder(string $idOrCode): void

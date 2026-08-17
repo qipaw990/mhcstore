@@ -187,7 +187,11 @@ class AdminController extends Controller
         $reason = sanitize($data['reason'] ?? 'Dibatalkan oleh Administrator');
 
         Database::execute("UPDATE `orders` SET `order_status` = 'canceled', `canceled_at` = NOW(), `cancellation_reason` = ? WHERE `id` = ?", [$reason, $orderId]);
-        $this->successResponse('Pesanan berhasil dibatalkan.');
+        
+        // Panggil auto refund jika pesanan telah dibayar
+        Order::refundOrderIfPaid($orderId, $reason);
+
+        $this->successResponse('Pesanan berhasil dibatalkan dan pengembalian dana (jika ada) telah dikreditkan ke CicalengkaPay.');
     }
 
     public function deleteOrder(): void
