@@ -50,33 +50,32 @@ $unreadNotifs = $user ? (new \App\Models\Notification())->getUnreadCount($user['
     <!-- Gojek Super App Top Header (Only on Home Page) -->
     <?php if (($active_tab ?? '') === 'home'): ?>
     <header class="gojek-header">
-        <div class="gojek-top-row">
-            <div class="d-flex align-items-center gap-2">
-                <div class="d-flex align-items-center gap-2">
-                    <a href="<?= $baseUrl ?>/" class="d-flex align-items-center gap-2 text-decoration-none">
-                        <img src="<?= $baseUrl ?>/assets/images/logo-icon.svg" alt="CicalengkaGO" style="width: 36px; height: 36px; border-radius: 10px; box-shadow: 0 2px 6px rgba(238,39,55,0.25);">
-                        <span class="fw-bold" style="font-size: 17px; color: var(--gojek-charcoal); letter-spacing: -0.4px;">Cicalengka<span style="color: #EE2737;">GO</span></span>
-                    </a>
-                </div>
-                <div class="gojek-location-btn" onclick="if (typeof locateCustomerHomeGps === 'function') { locateCustomerHomeGps(); } else { window.location.href='<?= $baseUrl ?>/profile'; }" title="Pilih Lokasi">
+        <div class="gojek-top-row d-flex align-items-center justify-content-between gap-1">
+            <div class="d-flex align-items-center gap-1.5 min-w-0 flex-shrink-1">
+                <a href="<?= $baseUrl ?>/" class="d-flex align-items-center gap-1.5 text-decoration-none flex-shrink-0">
+                    <img src="<?= $baseUrl ?>/assets/images/logo-icon.svg" alt="CicalengkaGO" style="width: 28px; height: 28px; border-radius: 8px; box-shadow: 0 2px 5px rgba(238,39,55,0.25);">
+                    <span class="fw-bold" style="font-size: 13.5px; color: var(--gojek-charcoal); letter-spacing: -0.3px;">Cicalengka<span style="color: #EE2737;">GO</span></span>
+                </a>
+
+                <div class="gojek-location-btn min-w-0 flex-shrink-1" onclick="if (typeof locateCustomerHomeGps === 'function') { locateCustomerHomeGps(); } else { window.location.href='<?= $baseUrl ?>/profile'; }" title="Pilih Lokasi">
                     <i class="bi bi-geo-alt-fill gojek-location-icon"></i>
                     <div class="gojek-location-text">
                         <span>Cicalengka</span>
-                        <i class="bi bi-chevron-down ms-1" style="font-size: 9px;"></i>
+                        <i class="bi bi-chevron-down ms-0.5" style="font-size: 8px;"></i>
                     </div>
                 </div>
             </div>
 
-            <div class="gojek-header-actions">
+            <div class="gojek-header-actions d-flex align-items-center gap-1.5 flex-shrink-0">
                 <a href="<?= $baseUrl ?>/cart" class="gojek-icon-btn position-relative" title="Keranjang Belanja">
                     <i class="bi bi-cart3"></i>
                     <?php if (!empty($cartSummary['count']) && $cartSummary['count'] > 0): ?>
-                        <span id="header-cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 8px; padding: 2px 4px; border: 1.5px solid #FFFFFF;">
+                        <span id="header-cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 7.5px; padding: 2px 3.5px; border: 1.5px solid #FFFFFF;">
                             <?= $cartSummary['count'] ?>
                         </span>
                     <?php endif; ?>
                 </a>
-                <a href="<?= $baseUrl ?>/notifications" class="gojek-icon-btn" title="Notifikasi">
+                <a href="<?= $baseUrl ?>/notifications" class="gojek-icon-btn position-relative" title="Notifikasi">
                     <i class="bi bi-bell"></i>
                     <?php if ($unreadNotifs > 0): ?>
                         <span class="badge-dot" style="background:#EE2737;"></span>
