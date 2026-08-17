@@ -85,6 +85,19 @@ $user = auth_user();
             <span>Keluar</span>
         </a>
     </nav>
+
+    <!-- ===== CCG Driver Toast Notification Stack ===== -->
+    <div id="ccgDriverToastStack" style="
+        position: fixed;
+        top: 72px;
+        right: 12px;
+        left: 12px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        pointer-events: none;
+    "></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -92,14 +105,138 @@ $user = auth_user();
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="<?= $baseUrl ?>/assets/js/delivery-pwa.js?v=<?= time() ?>"></script>
 
+<script>
+/* =====================================================
+   CCG Driver Toast Notification System
+   Usage: showDriverToast('Pesan sukses!', 'success')
+          showDriverToast('Terjadi kesalahan', 'error')
+          showDriverToast('Info penting', 'info')
+          showDriverToast('Peringatan', 'warning')
+   ===================================================== */
+function showDriverToast(message, type = 'info', duration = 4000) {
+    const stack = document.getElementById('ccgDriverToastStack');
+    if (!stack) return;
+
+    const configs = {
+        success: {
+            icon: 'bi-check-circle-fill',
+            bg: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+            border: '#059669',
+            shadow: 'rgba(16, 185, 129, 0.35)',
+            label: 'Berhasil'
+        },
+        error: {
+            icon: 'bi-x-circle-fill',
+            bg: 'linear-gradient(135deg, #EE2737 0%, #DC2626 100%)',
+            border: '#DC2626',
+            shadow: 'rgba(238, 39, 55, 0.35)',
+            label: 'Perhatian'
+        },
+        info: {
+            icon: 'bi-info-circle-fill',
+            bg: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+            border: '#2563EB',
+            shadow: 'rgba(59, 130, 246, 0.35)',
+            label: 'Info'
+        },
+        warning: {
+            icon: 'bi-exclamation-triangle-fill',
+            bg: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+            border: '#D97706',
+            shadow: 'rgba(245, 158, 11, 0.35)',
+            label: 'Peringatan'
+        }
+    };
+
+    const cfg = configs[type] || configs.info;
+    const id = 'toast_' + Date.now();
+
+    const toast = document.createElement('div');
+    toast.id = id;
+    toast.style.cssText = `
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+        pointer-events: all;
+        transform: translateX(110%);
+        transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+        opacity: 0;
+        overflow: hidden;
+        position: relative;
+        max-width: 100%;
+    `;
+
+    toast.innerHTML = `
+        <div style="
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            background: ${cfg.bg};
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 10px ${cfg.shadow};
+        ">
+            <i class="bi ${cfg.icon}" style="color: #FFFFFF; font-size: 16px;"></i>
+        </div>
+        <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 11.5px; font-weight: 700; color: #0F172A; margin-bottom: 2px;">${cfg.label}</div>
+            <div style="font-size: 11px; color: #475569; line-height: 1.45;">${message}</div>
+        </div>
+        <button onclick="dismissDriverToast('${id}')" style="
+            background: none; border: none; padding: 0;
+            width: 20px; height: 20px;
+            display: flex; align-items: center; justify-content: center;
+            color: #94A3B8; cursor: pointer; flex-shrink: 0; margin-top: 1px;
+        ">
+            <i class="bi bi-x" style="font-size: 16px;"></i>
+        </button>
+        <div style="
+            position: absolute; bottom: 0; left: 0; height: 3px;
+            border-radius: 0 0 14px 14px;
+            background: ${cfg.bg};
+            width: 100%;
+            animation: ccgToastProgress ${duration}ms linear forwards;
+        "></div>
+    `;
+
+    stack.appendChild(toast);
+
+    // Trigger slide-in animation
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            toast.style.transform = 'translateX(0)';
+            toast.style.opacity = '1';
+        });
+    });
+
+    // Auto dismiss
+    setTimeout(() => dismissDriverToast(id), duration);
+}
+
+function dismissDriverToast(id) {
+    const toast = document.getElementById(id);
+    if (!toast) return;
+    toast.style.transform = 'translateX(110%)';
+    toast.style.opacity = '0';
+    setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
+}
+</script>
+
+<style>
+@keyframes ccgToastProgress {
+    from { width: 100%; }
+    to { width: 0%; }
+}
+</style>
+
 <?php if (!empty($_SESSION['success'])): ?>
     <script>
-        Swal.fire({
-            icon: 'success',
-            title: 'Berhasil',
-            text: '<?= addslashes($_SESSION['success']) ?>',
-            timer: 3000,
-            showConfirmButton: false
+        document.addEventListener('DOMContentLoaded', function() {
+            showDriverToast('<?= addslashes($_SESSION['success']) ?>', 'success');
         });
     </script>
     <?php unset($_SESSION['success']); ?>
@@ -107,14 +244,20 @@ $user = auth_user();
 
 <?php if (!empty($_SESSION['error'])): ?>
     <script>
-        Swal.fire({
-            icon: 'error',
-            title: 'Perhatian',
-            text: '<?= addslashes($_SESSION['error']) ?>',
-            confirmButtonColor: '#EE2737'
+        document.addEventListener('DOMContentLoaded', function() {
+            showDriverToast('<?= addslashes($_SESSION['error']) ?>', 'error', 6000);
         });
     </script>
     <?php unset($_SESSION['error']); ?>
+<?php endif; ?>
+
+<?php if (!empty($_SESSION['info'])): ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            showDriverToast('<?= addslashes($_SESSION['info']) ?>', 'info');
+        });
+    </script>
+    <?php unset($_SESSION['info']); ?>
 <?php endif; ?>
 
 </body>
