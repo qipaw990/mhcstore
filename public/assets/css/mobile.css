@@ -1387,16 +1387,23 @@ div[style*="border-radius: 16px"] > .d-flex {
 }
 
 .leaflet-popup-content-wrapper {
-  border-radius: 10px !important;
-  padding: 2px !important;
-  box-shadow: 0 4px 14px rgba(16, 24, 32, 0.12) !important;
-  font-family: var(--gojek-font) !important;
+  border-radius: 12px !important;
+  padding: 4px 6px !important;
+  box-shadow: 0 4px 16px rgba(16, 24, 32, 0.15) !important;
+  font-family: inherit !important;
+  min-width: 140px !important;
+  max-width: 220px !important;
+  width: auto !important;
 }
 
 .leaflet-popup-content {
-  margin: 6px 10px !important;
+  margin: 6px 8px !important;
   font-size: 11px !important;
-  line-height: 1.35 !important;
+  line-height: 1.4 !important;
+  width: auto !important;
+  min-width: 120px !important;
+  word-break: normal !important;
+  white-space: normal !important;
 }
 
 /* Compact Driver Switch iOS Style */

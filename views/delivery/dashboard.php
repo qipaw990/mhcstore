@@ -416,7 +416,7 @@ function initDriverRadarMap() {
     });
 
     window.myDriverMarker = L.marker([window.driverLat, window.driverLng], { icon: myIcon })
-        .bindPopup('<div class="text-center"><b>Lokasi Anda (Driver CicalengkaGO)</b><br><span class="badge bg-success-subtle text-success rounded-pill px-2 py-0.5 mt-1" style="font-size:10px;"><i class="bi bi-broadcast me-1"></i>GPS Aktif</span></div>')
+        .bindPopup('<div style="min-width: 140px; text-align: center;"><b>Lokasi Anda (Driver)</b><br><span class="badge bg-success-subtle text-success rounded-pill px-2 py-0.5 mt-1" style="font-size:10px;"><i class="bi bi-broadcast me-1"></i>GPS Aktif</span></div>')
         .addTo(window.dRadarMap);
 
     <?php if (!empty($active_order)): ?>
