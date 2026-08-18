@@ -466,6 +466,53 @@ class AdminController extends Controller
         $this->errorResponse('ID toko tidak valid.');
     }
 
+    public function bulkDeleteStores(): void
+    {
+        $data = $this->getPost();
+        $ids = $data['ids'] ?? [];
+        if (!is_array($ids)) {
+            $ids = explode(',', (string)$ids);
+        }
+        $ids = array_filter(array_map('intval', $ids));
+
+        if (empty($ids)) {
+            $this->errorResponse('Pilih setidaknya satu toko untuk dihapus.');
+            return;
+        }
+
+        try {
+            $inClause = implode(',', $ids);
+            Database::execute("DELETE FROM `products` WHERE `store_id` IN ({$inClause})");
+            Database::execute("DELETE FROM `store_schedules` WHERE `store_id` IN ({$inClause})");
+            Database::execute("DELETE FROM `stores` WHERE `id` IN ({$inClause})");
+
+            $this->successResponse(count($ids) . ' toko mitra berhasil dihapus.');
+        } catch (\Exception $e) {
+            $this->errorResponse('Gagal menghapus toko: ' . $e->getMessage());
+        }
+    }
+
+    public function deleteAllStores(): void
+    {
+        try {
+            Database::execute("SET FOREIGN_KEY_CHECKS = 0;");
+            Database::execute("TRUNCATE TABLE `products`");
+            Database::execute("TRUNCATE TABLE `store_schedules`");
+            Database::execute("TRUNCATE TABLE `stores`");
+            Database::execute("TRUNCATE TABLE `carts`");
+            Database::execute("TRUNCATE TABLE `order_items`");
+            Database::execute("TRUNCATE TABLE `orders`");
+            Database::execute("DELETE FROM `users` WHERE `role` = 'vendor'");
+            Database::execute("DELETE FROM `wallets` WHERE `user_type` = 'vendor'");
+            Database::execute("UPDATE `modules` SET `stores_count` = 0");
+            Database::execute("SET FOREIGN_KEY_CHECKS = 1;");
+
+            $this->successResponse('Seluruh data toko mitra, produk, dan akun vendor berhasil dikosongkan!');
+        } catch (\Exception $e) {
+            $this->errorResponse('Gagal mengosongkan toko: ' . $e->getMessage());
+        }
+    }
+
     // =========================================================================
     // 6. Products Management
     // =========================================================================

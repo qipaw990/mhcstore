@@ -72,8 +72,16 @@
                         <input type="text" id="storeSearchInput" onkeyup="filterStoreTable()" class="form-control bg-light border-start-0 rounded-end-pill" placeholder="Cari Nama Toko, Modul, Alamat...">
                     </div>
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="openAddStoreModal()">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <button type="button" id="bulkDeleteBtn" class="btn btn-outline-danger rounded-pill px-3 fw-bold btn-sm" style="display: none;" onclick="bulkDeleteStores()">
+                        <i class="bi bi-trash3 me-1"></i> Hapus Terpilih (<span id="selectedStoreCount">0</span>)
+                    </button>
+                    <?php if (!empty($stores)): ?>
+                        <button type="button" class="btn btn-danger rounded-pill px-3 fw-bold btn-sm" onclick="deleteAllStores()">
+                            <i class="bi bi-eraser-fill me-1"></i> Kosongkan Semua Toko
+                        </button>
+                    <?php endif; ?>
+                    <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold btn-sm" onclick="openAddStoreModal()">
                         <i class="bi bi-plus-lg me-1"></i> Tambah Mitra Toko
                     </button>
                 </div>
@@ -88,6 +96,9 @@
                 <table class="table table-hover align-middle mb-0" id="storesTable">
                     <thead>
                         <tr>
+                            <th style="width: 40px;" class="ps-3">
+                                <input type="checkbox" class="form-check-input" id="selectAllStoresCheck" onchange="toggleSelectAllStores(this)" style="cursor: pointer;">
+                            </th>
                             <th>Toko / Merchant</th>
                             <th>Modul Bisnis</th>
                             <th>Pemilik (Vendor)</th>
@@ -101,11 +112,14 @@
                     <tbody>
                         <?php if (empty($stores)): ?>
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-5">Belum ada data toko terdaftar.</td>
+                                <td colspan="9" class="text-center text-muted py-5">Belum ada data toko terdaftar.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($stores as $s): ?>
                                 <tr>
+                                    <td class="ps-3">
+                                        <input type="checkbox" class="form-check-input store-select-checkbox" value="<?= $s['id'] ?>" onchange="updateBulkDeleteState()" style="cursor: pointer;">
+                                    </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
                                             <div style="width: 44px; height: 44px; border-radius: 12px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #2563eb; overflow: hidden;">
@@ -418,6 +432,78 @@ function deleteStore(id, name) {
             const json = await res.json();
             if (json.success) {
                 Swal.fire('Terhapus!', json.message, 'success').then(() => location.reload());
+            } else {
+                Swal.fire('Gagal!', json.message, 'error');
+            }
+        }
+    });
+}
+
+function toggleSelectAllStores(masterCheck) {
+    const checkboxes = document.querySelectorAll('.store-select-checkbox');
+    checkboxes.forEach(cb => cb.checked = masterCheck.checked);
+    updateBulkDeleteState();
+}
+
+function updateBulkDeleteState() {
+    const selected = document.querySelectorAll('.store-select-checkbox:checked');
+    const bulkBtn = document.getElementById('bulkDeleteBtn');
+    const countSpan = document.getElementById('selectedStoreCount');
+    
+    if (selected.length > 0) {
+        bulkBtn.style.display = 'inline-block';
+        countSpan.textContent = selected.length;
+    } else {
+        bulkBtn.style.display = 'none';
+        countSpan.textContent = '0';
+    }
+}
+
+function bulkDeleteStores() {
+    const selected = Array.from(document.querySelectorAll('.store-select-checkbox:checked')).map(cb => cb.value);
+    if (selected.length === 0) {
+        Swal.fire('Perhatian', 'Pilih setidaknya satu toko yang ingin dihapus.', 'info');
+        return;
+    }
+
+    Swal.fire({
+        title: `Hapus ${selected.length} Toko Terpilih?`,
+        text: `Semua toko yang Anda centang beserta seluruh menu produknya akan dihapus permanen!`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: `Ya, Hapus ${selected.length} Toko!`,
+        cancelButtonText: 'Batal'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            const fd = new FormData();
+            fd.append('ids', selected.join(','));
+            const res = await fetch(`${window.BASE_URL}/admin/stores/bulk-delete`, { method: 'POST', body: fd });
+            const json = await res.json();
+            if (json.success) {
+                Swal.fire('Terhapus!', json.message, 'success').then(() => location.reload());
+            } else {
+                Swal.fire('Gagal!', json.message, 'error');
+            }
+        }
+    });
+}
+
+function deleteAllStores() {
+    Swal.fire({
+        title: '⚠️ KOSONGKAN SELURUH TOKO MITRA?',
+        text: 'Tindakan ini akan menghapus SEMUA toko mitra, menu produk, dan akun vendor dari sistem! Data yang terhapus tidak dapat dikembalikan.',
+        icon: 'error',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        confirmButtonText: 'Ya, Kosongkan Seluruh Data Toko!',
+        cancelButtonText: 'Batal'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            const res = await fetch(`${window.BASE_URL}/admin/stores/delete-all`, { method: 'POST' });
+            const json = await res.json();
+            if (json.success) {
+                Swal.fire('Berhasil Dikersihkan!', json.message, 'success').then(() => location.reload());
             } else {
                 Swal.fire('Gagal!', json.message, 'error');
             }

@@ -151,6 +151,8 @@ Router::group(['prefix' => '/admin', 'middleware' => ['AdminMiddleware']], funct
     Router::post('/stores/toggle-open', [AdminController::class, 'toggleStoreOpen']);
     Router::post('/stores/update-status', [AdminController::class, 'updateStoreStatus']);
     Router::post('/stores/delete', [AdminController::class, 'deleteStore']);
+    Router::post('/stores/bulk-delete', [AdminController::class, 'bulkDeleteStores']);
+    Router::post('/stores/delete-all', [AdminController::class, 'deleteAllStores']);
 
     // Products
     Router::get('/products', [AdminController::class, 'products']);
