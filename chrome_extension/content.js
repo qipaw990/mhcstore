@@ -363,9 +363,22 @@ function extractGrabFoodData() {
     }
   }
 
-  // Fallback coordinate extraction from HTML source or Google Maps links
-  if (!result.latitude || !result.longitude) {
+  // Fallback coordinate & operating hours extraction from HTML source or Google Maps links
+  if (!result.latitude || !result.longitude || !result.opening_time || result.opening_time === '08:00:00') {
     const pageHtml = document.documentElement.innerHTML;
+    const pageTxt  = document.body ? document.body.innerText : '';
+
+    // Extract hours from DOM text
+    const hoursMatch = pageTxt.match(/(?:Jam Buka|Buka|Opening Hours|Operasional|Jam operasional)[\s:]*(\d{1,2}[:.]\d{2}\s*[-–—to]+\s*\d{1,2}[:.]\d{2})/i) ||
+                       pageTxt.match(/(\d{1,2}[:.]\d{2}\s*[-–—to]+\s*\d{1,2}[:.]\d{2})/);
+    if (hoursMatch) {
+      const parsed = parseHoursText(hoursMatch[1]);
+      if (parsed) {
+        result.opening_time = parsed.opening_time;
+        result.closing_time = parsed.closing_time;
+      }
+    }
+
     const latLngMatch = pageHtml.match(/"latitude"\s*:\s*(-?\d+\.\d+).*?"longitude"\s*:\s*(-?\d+\.\d+)/) ||
                         pageHtml.match(/"lat"\s*:\s*(-?\d+\.\d+).*?"lng"\s*:\s*(-?\d+\.\d+)/);
     if (latLngMatch) {
