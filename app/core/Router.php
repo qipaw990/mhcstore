@@ -31,6 +31,11 @@ class Router
         self::addRoute('DELETE', $path, $handler, $middleware);
     }
 
+    public static function options(string $path, $handler, array $middleware = []): void
+    {
+        self::addRoute('OPTIONS', $path, $handler, $middleware);
+    }
+
     public static function group(array $attributes, callable $callback): void
     {
         $prevPrefix = self::$groupPrefix;
