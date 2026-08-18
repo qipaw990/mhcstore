@@ -51,31 +51,32 @@ class DeliveryController extends Controller
             $dm = $this->dmModel->find($dmId);
         }
 
-        // Active Order (Self-healing from both delivery_men and orders table)
+        // Active Batch (all orders in current trip)
+        $activeBatch = $this->deliveryService->getActiveBatch($userId);
         $activeOrder = null;
-        if (!empty($dm['current_order_id'])) {
-            $activeOrder = $this->orderModel->find($dm['current_order_id']);
-        }
-        if (!$activeOrder || in_array($activeOrder['order_status'], ['delivered', 'canceled'])) {
-            $assigned = Database::fetchOne(
-                "SELECT * FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` NOT IN ('delivered', 'canceled') ORDER BY `id` DESC LIMIT 1",
-                [$dm['id']]
-            );
-            if ($assigned) {
-                $activeOrder = $this->orderModel->findByCode($assigned['order_code']);
-                Database::update('delivery_men', ['current_order_id' => $assigned['id']], 'id = ?', [$dm['id']]);
-            } else {
-                $activeOrder = null;
-                if (!empty($dm['current_order_id'])) {
-                    Database::update('delivery_men', ['current_order_id' => null], 'id = ?', [$dm['id']]);
+        if (!empty($activeBatch['orders'])) {
+            // Use the first non-delivered order as the "current" order for map
+            foreach ($activeBatch['orders'] as $bo) {
+                if (!in_array($bo['order_status'], ['delivered', 'canceled'])) {
+                    $activeOrder = $bo;
+                    break;
                 }
             }
         } else {
-            $activeOrder = $this->orderModel->findByCode($activeOrder['order_code']);
+            // Fallback: look up last assigned order
+            if (!empty($dm['current_order_id'])) {
+                $activeOrder = $this->orderModel->find($dm['current_order_id']);
+                if ($activeOrder && in_array($activeOrder['order_status'], ['delivered', 'canceled'])) {
+                    $activeOrder = null;
+                }
+            }
         }
 
         // Available nearby orders in driver zone
-        $availableOrders = $this->orderModel->getAvailableForDelivery((int)($dm['zone_id'] ?? 1));
+        $availableOrders = [];
+        if (empty($activeOrder) || !empty($activeBatch['slots_left'])) {
+            $availableOrders = $this->orderModel->getAvailableForDelivery((int)($dm['zone_id'] ?? 1));
+        }
 
         // Auto-credit driver commission for delivered orders that haven't been credited yet
         $driverWallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
@@ -121,6 +122,7 @@ class DeliveryController extends Controller
             'title'            => 'Kurir Dashboard - CicalengkaGO',
             'driver'           => $dm,
             'active_order'     => $activeOrder,
+            'active_batch'     => $activeBatch,
             'available_orders' => $availableOrders,
             'wallet'           => $wallet,
             'reviews'          => $reviews,
@@ -239,18 +241,37 @@ class DeliveryController extends Controller
     public function acceptOrder(): void
     {
         $userId = auth_id();
-        $data = $this->getPost();
+        $data   = $this->getPost();
         $orderId = (int)($data['order_id'] ?? 0);
 
         try {
-            $this->deliveryService->acceptOrder($userId, $orderId);
-            $order = $this->orderModel->find($orderId);
-            $this->successResponse('Pesanan berhasil diterima! Segera menuju ke lokasi penjemputan.', [
-                'order_code' => $order['order_code']
-            ]);
+            $result = $this->deliveryService->acceptOrder($userId, $orderId);
+            $this->successResponse(
+                count($result['order_count'] ?? []) > 1
+                    ? "Pesanan ke-{$result['sequence']} berhasil ditambahkan ke trip Anda!"
+                    : 'Pesanan berhasil diterima! Segera menuju ke lokasi penjemputan.',
+                [
+                    'order_code'  => $result['order_code'],
+                    'batch_id'    => $result['batch_id'],
+                    'order_count' => $result['order_count'],
+                    'sequence'    => $result['sequence'],
+                ]
+            );
         } catch (Exception $e) {
             $this->errorResponse($e->getMessage());
         }
+    }
+
+    public function getBatchStatus(): void
+    {
+        $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Unauthorized', null, 401);
+            return;
+        }
+
+        $batch = $this->deliveryService->getActiveBatch($userId);
+        $this->successResponse('Batch status', $batch);
     }
 
     public function updateDeliveryStatus(): void

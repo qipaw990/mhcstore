@@ -89,6 +89,7 @@ Router::group(['prefix' => '/delivery', 'middleware' => ['DeliveryMiddleware']],
     Router::post('/accept-order', [DeliveryController::class, 'acceptOrder']);
     Router::post('/update-status', [DeliveryController::class, 'updateDeliveryStatus']);
     Router::post('/update-location', [DeliveryController::class, 'updateLocation']);
+    Router::get('/batch-status', [DeliveryController::class, 'getBatchStatus']);
     Router::get('/earnings', [DeliveryController::class, 'earnings']);
     Router::post('/withdraw', [DeliveryController::class, 'requestWithdraw']);
     Router::get('/profile', [DeliveryController::class, 'profile']);

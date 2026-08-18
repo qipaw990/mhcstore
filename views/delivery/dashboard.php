@@ -121,155 +121,150 @@
         <div id="driver-radar-map"></div>
     </div>
 
-    <!-- Active Delivery Task (Step-by-Step Navigation) -->
+    <!-- Active Delivery Task (Batch Trip View) -->
     <div id="driverActiveOrderSection">
-    <?php if (!empty($active_order)): ?>
-        <?php 
-            $isPickedUp = in_array($active_order['order_status'], ['picked_up', 'on_the_way', 'delivered']);
-            $storeLat = (float)($active_order['store_lat'] ?? -6.9835);
-            $storeLng = (float)($active_order['store_lng'] ?? 107.8335);
-            $custLat = (float)($active_order['delivery_address']['lat'] ?? -6.9855);
-            $custLng = (float)($active_order['delivery_address']['lng'] ?? 107.8350);
-            $storeGmapsUrl = "https://www.google.com/maps/dir/?api=1&destination={$storeLat},{$storeLng}&travelmode=two_wheeler";
-            $custGmapsUrl = "https://www.google.com/maps/dir/?api=1&destination={$custLat},{$custLng}&travelmode=two_wheeler";
+    <?php if (!empty($active_batch['orders'])): ?>
+        <?php
+        $batchOrders     = $active_batch['orders'];
+        $batchId         = $active_batch['batch_id'];
+        $batchCount      = count($batchOrders);
+        $deliveredCount  = count(array_filter($batchOrders, fn($o) => $o['order_status'] === 'delivered'));
+        $totalKm         = $active_batch['total_km'] ?? 0;
+        $estCommission   = $active_batch['est_commission'] ?? 0;
+        $progressPct     = $batchCount > 0 ? round(($deliveredCount / $batchCount) * 100) : 0;
         ?>
         <div class="active-task-container mb-4">
-            <!-- Dark Header & Order Stepper Bar -->
+            <!-- Batch Header -->
             <div class="active-task-header">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <span class="badge rounded-pill px-2.5 py-1 text-white" style="background: rgba(255, 255, 255, 0.15); font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">
-                        <i class="bi bi-bicycle me-1 text-warning"></i> ORDER BERLANGSUNG
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="badge rounded-pill px-2.5 py-1 text-white" style="background: rgba(255,255,255,0.15); font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">
+                        <i class="bi bi-bicycle me-1 text-warning"></i> TRIP BERLANGSUNG
                     </span>
-                    <span class="fw-extrabold text-warning" style="font-size: 13.5px; letter-spacing: 0.5px;">#<?= htmlspecialchars($active_order['order_code']) ?></span>
+                    <span class="badge bg-warning text-dark fw-bold px-2.5 py-1 rounded-pill" style="font-size: 10px;">
+                        <?= $deliveredCount ?>/<?= $batchCount ?> Terselesaikan
+                    </span>
                 </div>
 
-                <div class="active-task-stepper">
-                    <div class="stepper-step <?= !$isPickedUp ? 'active' : '' ?>">
-                        <span class="stepper-num"><?= !$isPickedUp ? '1' : '<i class="bi bi-check"></i>' ?></span>
-                        <span>1. Ke Toko/Resto</span>
+                <!-- Progress Bar -->
+                <div class="mb-2" style="background: rgba(255,255,255,0.15); border-radius: 99px; height: 6px; overflow: hidden;">
+                    <div style="width: <?= $progressPct ?>%; height: 100%; background: #F59E0B; border-radius: 99px; transition: width 0.4s ease;"></div>
+                </div>
+
+                <!-- KM + Commission Summary -->
+                <div class="d-flex align-items-center justify-content-between mt-2 pt-1">
+                    <div class="d-flex align-items-center gap-1 text-white" style="font-size: 11px; opacity: 0.85;">
+                        <i class="bi bi-signpost-2"></i>
+                        <span>Total Rute: <b><?= $totalKm ?> Km</b></span>
                     </div>
-                    <div class="stepper-step <?= $isPickedUp ? 'active' : '' ?>">
-                        <span class="stepper-num">2</span>
-                        <span>2. Ke Pelanggan</span>
+                    <div class="d-flex align-items-center gap-1 text-warning fw-bold" style="font-size: 11px;">
+                        <i class="bi bi-cash-stack"></i>
+                        <span>Est. Komisi: <?= format_rupiah($estCommission) ?></span>
                     </div>
                 </div>
             </div>
 
-            <!-- Card Body Step Details -->
-            <div class="p-3 bg-white">
-                <?php if (!$isPickedUp): ?>
-                    <!-- TAHAP 1: AMBIL PESANAN DI RESTO / TOKO -->
-                    <div class="mb-3">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="badge rounded-pill bg-danger-subtle text-danger px-2.5 py-1 fw-bold" style="font-size: 10px; letter-spacing: 0.3px;">
-                                <i class="bi bi-shop me-1"></i> TITIK AMBIL BARANG
+            <!-- Per-Order Cards in Batch -->
+            <div class="p-3 bg-white d-flex flex-column gap-3">
+                <?php foreach ($batchOrders as $idx => $bOrd): ?>
+                <?php
+                    $bIsPickedUp  = in_array($bOrd['order_status'], ['on_the_way', 'delivered']);
+                    $bIsDelivered = $bOrd['order_status'] === 'delivered';
+                    $bStoreLat    = (float)($bOrd['store_lat'] ?? -6.9835);
+                    $bStoreLng    = (float)($bOrd['store_lng'] ?? 107.8335);
+                    $bCustLat     = (float)($bOrd['delivery_address']['lat'] ?? -6.9855);
+                    $bCustLng     = (float)($bOrd['delivery_address']['lng'] ?? 107.8350);
+                    $bStoreUrl    = "https://www.google.com/maps/dir/?api=1&destination={$bStoreLat},{$bStoreLng}&travelmode=two_wheeler";
+                    $bCustUrl     = "https://www.google.com/maps/dir/?api=1&destination={$bCustLat},{$bCustLng}&travelmode=two_wheeler";
+                    $seqLabel     = "Toko " . ($idx + 1);
+                ?>
+                <div class="rounded-3 border overflow-hidden shadow-2xs <?= $bIsDelivered ? 'opacity-50' : '' ?>"
+                     style="border-color: <?= $bIsDelivered ? '#10B981' : ($bIsPickedUp ? '#F59E0B' : '#EE2737') ?> !important;">
+
+                    <!-- Order Mini Header -->
+                    <div class="px-3 py-2 d-flex align-items-center justify-content-between"
+                         style="background: <?= $bIsDelivered ? '#D1FAE5' : ($bIsPickedUp ? '#FEF3C7' : '#FEE2E2') ?>;">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge rounded-pill fw-bold text-white px-2 py-0.5"
+                                  style="font-size: 9px; background: <?= $bIsDelivered ? '#10B981' : ($bIsPickedUp ? '#F59E0B' : '#EE2737') ?>;">
+                                <?= $seqLabel ?>
                             </span>
-                            <?php if (!empty($active_order['store_phone'])): ?>
-                                <a href="tel:<?= htmlspecialchars($active_order['store_phone']) ?>" class="btn btn-outline-secondary btn-sm rounded-pill px-2.5 py-0.5 fw-bold" style="font-size: 10.5px;">
-                                    <i class="bi bi-telephone me-1"></i> Telp Toko
-                                </a>
+                            <span class="fw-bold text-dark" style="font-size: 11.5px;">#<?= htmlspecialchars($bOrd['order_code']) ?></span>
+                        </div>
+                        <span class="badge rounded-pill px-2 py-0.5 fw-bold"
+                              style="font-size: 9px; background: <?= $bIsDelivered ? '#D1FAE5' : ($bIsPickedUp ? '#FEF3C7' : '#FEE2E2') ?>; color: <?= $bIsDelivered ? '#059669' : ($bIsPickedUp ? '#D97706' : '#DC2626') ?>;">
+                            <?= $bIsDelivered ? '✓ Selesai' : ($bIsPickedUp ? '🏍 Mengantar' : '⏳ Belum Dijemput') ?>
+                        </span>
+                    </div>
+
+                    <div class="px-3 py-2.5">
+                        <!-- Store info row -->
+                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                            <div class="d-flex align-items-center gap-2 min-w-0">
+                                <i class="bi bi-shop text-danger flex-shrink-0" style="font-size: 14px;"></i>
+                                <div class="min-w-0">
+                                    <div class="fw-bold text-dark text-truncate" style="font-size: 11.5px;"><?= htmlspecialchars($bOrd['store_name'] ?? 'Toko') ?></div>
+                                    <div class="text-muted text-truncate" style="font-size: 10px;"><?= htmlspecialchars($bOrd['store_address'] ?? '') ?></div>
+                                </div>
+                            </div>
+                            <?php if (!$bIsPickedUp && !$bIsDelivered): ?>
+                            <a href="<?= $bStoreUrl ?>" target="_blank"
+                               class="btn btn-sm fw-bold flex-shrink-0 text-white rounded-pill px-2.5 py-1 shadow-xs d-flex align-items-center gap-1"
+                               style="background:#EE2737; font-size: 10px;">
+                                <i class="bi bi-compass-fill"></i> Navigasi
+                            </a>
                             <?php endif; ?>
                         </div>
 
-                        <!-- Store Main Info Box -->
-                        <div class="p-3 rounded-3 bg-white border mb-3 shadow-2xs" style="border-color: #E2E8F0 !important;">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="rounded-circle text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-xs" style="width: 42px; height: 42px; font-size: 18px; background: linear-gradient(135deg, #EE2737 0%, #DC2626 100%);">
-                                    <i class="bi bi-shop"></i>
-                                </div>
-                                <div class="flex-grow-1 min-w-0">
-                                    <div class="fw-bold text-dark text-truncate" style="font-size: 13.5px;"><?= htmlspecialchars($active_order['store_name'] ?? 'Toko / Restoran Cicalengka') ?></div>
-                                    <div class="text-muted text-truncate" style="font-size: 11px; margin-top: 1px;"><?= htmlspecialchars($active_order['store_address'] ?? 'Pusat Kuliner Cicalengka') ?></div>
+                        <!-- Customer info row -->
+                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                            <div class="d-flex align-items-center gap-2 min-w-0">
+                                <i class="bi bi-geo-alt-fill text-success flex-shrink-0" style="font-size: 14px;"></i>
+                                <div class="min-w-0">
+                                    <div class="fw-bold text-dark text-truncate" style="font-size: 11.5px;"><?= htmlspecialchars($bOrd['customer_name'] ?? 'Pelanggan') ?></div>
+                                    <div class="text-muted text-truncate" style="font-size: 10px;"><?= htmlspecialchars($bOrd['delivery_address']['address'] ?? 'Cicalengka') ?></div>
                                 </div>
                             </div>
+                            <?php if ($bIsPickedUp && !$bIsDelivered): ?>
+                            <a href="<?= $bCustUrl ?>" target="_blank"
+                               class="btn btn-sm fw-bold flex-shrink-0 text-white rounded-pill px-2.5 py-1 shadow-xs d-flex align-items-center gap-1"
+                               style="background:#10B981; font-size: 10px;">
+                                <i class="bi bi-compass-fill"></i> Navigasi
+                            </a>
+                            <?php endif; ?>
                         </div>
 
-                        <!-- Big Store Google Maps Navigation Link Button -->
-                        <a href="<?= $storeGmapsUrl ?>" target="_blank" class="btn text-white btn-sm w-100 fw-bold rounded-pill py-2.5 shadow-xs d-flex align-items-center justify-content-center gap-2 mb-3" style="background: linear-gradient(135deg, #EE2737 0%, #DC2626 100%); font-size: 12px; height: 42px;">
-                            <i class="bi bi-compass-fill" style="font-size: 15px;"></i>
-                            <span>Buka Navigasi Maps ke Resto / Toko</span>
-                        </a>
-
-                        <!-- Secondary Info: Tujuan Pengantaran Selanjutnya (Pelanggan) -->
-                        <div class="p-3 rounded-3 bg-light border d-flex flex-column gap-2 mb-2" style="border-color: #E2E8F0 !important;">
-                            <div class="d-flex align-items-start gap-2.5">
-                                <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center flex-shrink-0 mt-0.5" style="width: 24px; height: 24px; font-size: 12px;">
-                                    <i class="bi bi-person-fill"></i>
-                                </div>
-                                <div class="flex-grow-1 min-w-0">
-                                    <span class="text-muted fw-semibold" style="font-size: 10px;">Tujuan Antar Selanjutnya:</span>
-                                    <div class="fw-bold text-dark text-truncate" style="font-size: 12px; margin-top: 1px;"><?= htmlspecialchars($active_order['customer_name'] ?? 'Pelanggan') ?></div>
-                                    <div class="text-muted text-truncate" style="font-size: 11px;"><?= htmlspecialchars($active_order['delivery_address']['address'] ?? 'Cicalengka') ?></div>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-end pt-2 border-top" style="border-color: #E2E8F0 !important;">
-                                <button type="button" onclick="openDriverChatModal('<?= htmlspecialchars($active_order['order_code']) ?>')" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-1 fw-bold position-relative d-flex align-items-center gap-1.5" style="font-size: 11px;">
-                                    <i class="bi bi-chat-dots-fill"></i> Chat Pelanggan
-                                    <span id="driverChatUnreadDot1" class="ccg-unread-dot d-none"></span>
+                        <!-- Action Buttons -->
+                        <?php if (!$bIsDelivered): ?>
+                        <div class="d-flex gap-2 mt-2 pt-2" style="border-top: 1px dashed #E2E8F0;">
+                            <?php if (!$bIsPickedUp): ?>
+                                <button onclick="updateDeliveryStep(<?= $bOrd['id'] ?>, 'picked_up')"
+                                        class="btn fw-bold flex-grow-1 text-dark rounded-pill py-2 d-flex align-items-center justify-content-center gap-1 shadow-xs"
+                                        style="background:#F59E0B; border:none; font-size: 11px;">
+                                    <i class="bi bi-box-seam-fill"></i> Sudah Dijemput dari <?= $seqLabel ?>
                                 </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Button Konfirmasi Sudah Ambil Menu / Barang -->
-                    <button onclick="updateDeliveryStep(<?= $active_order['id'] ?>, 'picked_up')" class="btn btn-warning w-100 fw-bold py-2.5 text-dark rounded-pill shadow-xs d-flex align-items-center justify-content-center gap-2" style="font-size: 12.5px; height: 44px; background: #F59E0B; border: none;">
-                        <i class="bi bi-box-seam-fill fs-6"></i>
-                        <span>Konfirmasi Sudah Ambil Menu / Barang</span>
-                    </button>
-
-                <?php else: ?>
-                    <!-- TAHAP 2: ANTAR PESANAN KE PELANGGAN -->
-                    <div class="mb-3">
-                        <div class="p-2.5 rounded-3 bg-success-subtle border border-success-subtle d-flex align-items-center justify-content-between mb-3" style="font-size: 11px;">
-                            <div class="d-flex align-items-center gap-1.5 text-success fw-bold">
-                                <i class="bi bi-check-circle-fill"></i>
-                                <span>Menu dari <b><?= htmlspecialchars($active_order['store_name'] ?? 'Toko') ?></b> sudah diambil</span>
-                            </div>
-                        </div>
-
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="badge rounded-pill bg-success-subtle text-success px-2.5 py-1 fw-bold" style="font-size: 10px; letter-spacing: 0.3px;">
-                                <i class="bi bi-geo-alt-fill me-1"></i> LOKASI ANTAR PELANGGAN
-                            </span>
-                            <div class="d-flex gap-1.5 align-items-center">
-                                <button type="button" onclick="openDriverChatModal('<?= htmlspecialchars($active_order['order_code']) ?>')" class="btn btn-danger btn-sm rounded-pill px-3 py-1 fw-bold text-white position-relative shadow-xs d-flex align-items-center gap-1.5" style="background:#EE2737; font-size: 11px;">
-                                    <i class="bi bi-chat-dots-fill"></i> Chat App
-                                    <span id="driverChatUnreadDot2" class="ccg-unread-dot d-none"></span>
+                            <?php else: ?>
+                                <button onclick="updateDeliveryStep(<?= $bOrd['id'] ?>, 'delivered')"
+                                        class="btn btn-success fw-bold flex-grow-1 rounded-pill py-2 d-flex align-items-center justify-content-center gap-1 shadow-xs"
+                                        style="font-size: 11px;">
+                                    <i class="bi bi-shield-check"></i> Pesanan Sampai + OTP
                                 </button>
-                                <?php if (!empty($active_order['customer_phone'])): ?>
-                                    <a href="tel:<?= htmlspecialchars($active_order['customer_phone']) ?>" class="btn btn-outline-secondary btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;" title="Telepon Pelanggan">
-                                        <i class="bi bi-telephone-fill" style="font-size: 11px;"></i>
-                                    </a>
-                                <?php endif; ?>
-                            </div>
+                                <button type="button"
+                                        onclick="openDriverChatModal('<?= htmlspecialchars($bOrd['order_code']) ?>')"
+                                        class="btn btn-outline-danger btn-sm rounded-pill px-3 d-flex align-items-center gap-1 shadow-xs position-relative"
+                                        style="font-size: 11px;">
+                                    <i class="bi bi-chat-dots-fill"></i>
+                                    <span class="ccg-unread-dot d-none" id="driverChatUnreadDot_<?= $bOrd['id'] ?>"></span>
+                                </button>
+                            <?php endif; ?>
                         </div>
-
-                        <!-- Customer Main Info Box -->
-                        <div class="p-3 rounded-3 bg-white border mb-3 shadow-2xs" style="border-color: #E2E8F0 !important;">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-xs" style="width: 42px; height: 42px; font-size: 18px; background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
-                                    <i class="bi bi-person-fill"></i>
-                                </div>
-                                <div class="flex-grow-1 min-w-0">
-                                    <div class="fw-bold text-dark text-truncate" style="font-size: 13.5px;"><?= htmlspecialchars($active_order['customer_name'] ?? 'Pelanggan') ?></div>
-                                    <div class="text-muted text-truncate" style="font-size: 11px; margin-top: 1px;"><?= htmlspecialchars($active_order['delivery_address']['address'] ?? 'Cicalengka') ?></div>
-                                </div>
+                        <?php else: ?>
+                            <div class="d-flex align-items-center gap-1 text-success mt-2 pt-2" style="border-top: 1px dashed #E2E8F0; font-size: 11px; font-weight: 700;">
+                                <i class="bi bi-check-circle-fill"></i> Berhasil Diantar
                             </div>
-                        </div>
-
-                        <!-- Big Customer Google Maps Navigation Link Button -->
-                        <a href="<?= $custGmapsUrl ?>" target="_blank" class="btn btn-success btn-sm w-100 fw-bold rounded-pill py-2.5 shadow-xs d-flex align-items-center justify-content-center gap-2 mb-3" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); font-size: 12px; height: 42px;">
-                            <i class="bi bi-compass-fill" style="font-size: 15px;"></i>
-                            <span>Buka Navigasi Maps ke Alamat Pelanggan</span>
-                        </a>
+                        <?php endif; ?>
                     </div>
-
-                    <!-- Button Pesanan Sampai & Masukkan OTP -->
-                    <button onclick="updateDeliveryStep(<?= $active_order['id'] ?>, 'delivered')" class="btn btn-success w-100 fw-bold py-2.5 rounded-pill shadow-xs d-flex align-items-center justify-content-center gap-2" style="font-size: 12.5px; height: 44px; background: #10B981; border: none;">
-                        <i class="bi bi-shield-check fs-6"></i>
-                        <span>Pesanan Sampai & Masukkan OTP</span>
-                    </button>
-                <?php endif; ?>
+                </div>
+                <?php endforeach; ?>
             </div>
         </div>
     <?php endif; ?>
@@ -280,22 +275,23 @@
         <h6 class="fw-bold small m-0 text-dark">
             <i class="bi bi-radar me-1" style="color: #EE2737;"></i> Radar Order Sekitar Cicalengka
         </h6>
-        <span id="radarOrderCountBadge" class="badge rounded-pill px-2.5 py-1 text-white <?= (empty($active_order) && $driver['is_online'] && !empty($available_orders)) ? '' : 'd-none' ?>" style="font-size: 10px; font-weight: 700; background: #EE2737;">
-            <?= count($available_orders) ?> Order Siap
+        <span id="radarOrderCountBadge" class="badge rounded-pill px-2.5 py-1 text-white <?= ($driver['is_online'] && !empty($available_orders)) ? '' : 'd-none' ?>" style="font-size: 10px; font-weight: 700; background: #EE2737;">
+            <?= count($available_orders ?? []) ?> Order Siap
         </span>
     </div>
 
     <div id="driverRadarOrderSection">
-    <?php if (!empty($active_order)): ?>
+    <?php if (!empty($active_batch['orders']) && ($active_batch['slots_left'] ?? 0) <= 0): ?>
+        <!-- Batch full — no more orders -->
         <div class="ccg-card mb-3">
             <div class="d-flex align-items-center gap-3">
                 <div class="driver-metric-icon red flex-shrink-0" style="width: 42px; height: 42px; font-size: 18px;">
                     <i class="bi bi-lock-fill"></i>
                 </div>
                 <div>
-                    <div class="fw-bold small text-dark">Radar Order Baru Terkunci</div>
+                    <div class="fw-bold small text-dark">Trip Anda Penuh (<?= count($active_batch['orders']) ?>/<?= \App\Services\DeliveryService::MAX_BATCH_ORDERS ?>)</div>
                     <div class="text-muted" style="font-size: 11px; line-height: 1.4;">
-                        Anda sedang menjalankan pesanan <b class="text-danger">#<?= htmlspecialchars($active_order['order_code']) ?></b>. Selesaikan pengantaran pesanan saat ini terlebih dahulu sebelum mengambil pesanan lainnya.
+                        Selesaikan pengantaran yang ada sebelum mengambil pesanan baru.
                     </div>
                 </div>
             </div>
@@ -307,7 +303,7 @@
             </div>
             <div class="fw-bold small text-dark mb-1">Status Anda Saat Ini OFFLINE</div>
             <div class="text-muted small mb-3" style="font-size: 11px;">
-                Aktifkan saklar status online di atas untuk mulai melihat pesanan masuk dari toko & restoran Cicalengka.
+                Aktifkan saklar status online di atas untuk mulai melihat pesanan masuk dari toko &amp; restoran Cicalengka.
             </div>
             <button onclick="toggleDriverStatus()" class="btn text-white btn-sm fw-bold px-4 rounded-pill shadow-sm" style="background: #EE2737;">
                 <i class="bi bi-power me-1"></i> Aktifkan Status Online
@@ -322,6 +318,21 @@
             <div class="text-muted" style="font-size: 11px;">Radar aktif di area Cicalengka. Pesanan terdekat akan otomatis muncul di sini.</div>
         </div>
     <?php else: ?>
+        <?php
+        $hasBatch    = !empty($active_batch['orders']);
+        $slotsLeft   = $active_batch['slots_left'] ?? \App\Services\DeliveryService::MAX_BATCH_ORDERS;
+        ?>
+        <?php if ($hasBatch): ?>
+        <div class="p-2.5 rounded-3 border mb-3 d-flex align-items-center gap-2"
+             style="background: #FEF3C7; border-color: #F59E0B !important; font-size: 11px;">
+            <i class="bi bi-bicycle text-warning fw-bold" style="font-size: 16px;"></i>
+            <div>
+                <b class="text-dark">Trip aktif!</b>
+                <span class="text-muted"> Anda bisa tambah <b><?= $slotsLeft ?></b> pesanan lagi ke trip ini.</span>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <div class="d-flex flex-column gap-3" id="availableOrdersList">
             <?php foreach ($available_orders as $ord): ?>
                 <div class="p-3 bg-white rounded-4 border shadow-sm order-incoming-card" id="avail-order-<?= $ord['id'] ?>">
@@ -333,7 +344,7 @@
                             <span class="text-muted" style="font-size: 11px;">#<?= htmlspecialchars($ord['order_code'] ?? $ord['id']) ?></span>
                         </div>
                         <div class="text-end">
-                            <div class="text-muted" style="font-size: 10px; font-weight: 600;">Komisi Kurir:</div>
+                            <div class="text-muted" style="font-size: 10px; font-weight: 600;">Est. Komisi:</div>
                             <span class="fw-bold text-success" style="font-size: 14px;">+ <?= format_rupiah((float)$ord['delivery_charge'] * 0.85) ?></span>
                         </div>
                     </div>
@@ -358,8 +369,14 @@
                         <span class="small text-muted fw-semibold" style="font-size: 11px;">
                             <i class="bi bi-signpost-2 me-1" style="color: #EE2737;"></i> Est. Jarak: <?= $ord['distance_km'] ?? '1.5' ?> Km
                         </span>
-                        <button onclick="acceptDriverOrder(<?= $ord['id'] ?>)" class="btn text-white btn-sm fw-bold px-4 rounded-pill shadow-sm" style="background: #EE2737;">
-                            <i class="bi bi-check-lg me-1"></i> Ambil Order
+                        <button onclick="acceptDriverOrder(<?= $ord['id'] ?>)"
+                                class="btn text-white btn-sm fw-bold px-4 rounded-pill shadow-sm d-flex align-items-center gap-1"
+                                style="background: #EE2737; font-size: 11px;">
+                            <?php if ($hasBatch): ?>
+                                <i class="bi bi-plus-circle-fill"></i> Tambah ke Tripku
+                            <?php else: ?>
+                                <i class="bi bi-check-lg"></i> Ambil Order
+                            <?php endif; ?>
                         </button>
                     </div>
                 </div>

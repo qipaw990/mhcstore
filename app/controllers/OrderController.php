@@ -517,7 +517,19 @@ class OrderController extends Controller
         $createdAtTime  = (int)($timingRow['created_ts'] ?? strtotime($order['created_at']));
         $serverNow      = (int)($timingRow['now_ts'] ?? time());
         $elapsedSeconds = max(0, $serverNow - $createdAtTime);
-        $remainingSeconds = max(0, 60 - $elapsedSeconds);
+        $batchInfo = null;
+        if (!empty($order['delivery_batch_id'])) {
+            $totalInBatch = (int)Database::fetchColumn(
+                "SELECT COUNT(*) FROM `orders` WHERE `delivery_batch_id` = ? AND `order_status` != 'canceled'",
+                [$order['delivery_batch_id']]
+            );
+            $batchInfo = [
+                'batch_id'        => $order['delivery_batch_id'],
+                'pickup_sequence' => (int)($order['pickup_sequence'] ?? 1),
+                'total_orders'    => $totalInBatch,
+                'is_multi_pickup' => $totalInBatch > 1
+            ];
+        }
 
         $this->json([
             'success' => true,
@@ -532,16 +544,17 @@ class OrderController extends Controller
                 'remaining_seconds'   => $remainingSeconds,
                 'otp'                 => $order['otp'],
                 'unread_chats'        => $unreadChatCount,
-                        'driver'         => [
-                            'assigned' => $isDriverAssigned,
-                            'name'     => $isDriverAssigned ? ($order['dm_name'] ?? 'Mitra Kurir Cicalengka') : 'Mencari Kurir...',
-                            'phone'    => $isDriverAssigned ? ($order['dm_phone'] ?? '') : '',
-                            'avatar'   => $isDriverAssigned ? ($order['dm_avatar'] ?? 'assets/images/users/driver.png') : 'assets/images/users/driver.png',
-                            'vehicle'  => $isDriverAssigned ? ($order['vehicle_type'] ?? 'Motor') : 'Motor',
-                            'plate'    => $isDriverAssigned ? ($order['vehicle_number'] ?? '') : '',
-                            'lat'      => $isDriverAssigned ? $driverLat : null,
-                            'lng'      => $isDriverAssigned ? $driverLng : null
-                        ],
+                'batch_info'          => $batchInfo,
+                'driver'         => [
+                    'assigned' => $isDriverAssigned,
+                    'name'     => $isDriverAssigned ? ($order['dm_name'] ?? 'Mitra Kurir Cicalengka') : 'Mencari Kurir...',
+                    'phone'    => $isDriverAssigned ? ($order['dm_phone'] ?? '') : '',
+                    'avatar'   => $isDriverAssigned ? ($order['dm_avatar'] ?? 'assets/images/users/driver.png') : 'assets/images/users/driver.png',
+                    'vehicle'  => $isDriverAssigned ? ($order['vehicle_type'] ?? 'Motor') : 'Motor',
+                    'plate'    => $isDriverAssigned ? ($order['vehicle_number'] ?? '') : '',
+                    'lat'      => $isDriverAssigned ? $driverLat : null,
+                    'lng'      => $isDriverAssigned ? $driverLng : null
+                ],
                 'store'          => [
                     'name'    => $order['store_name'] ?? 'Titik Penjemputan',
                     'address' => $order['store_address'] ?? 'Cicalengka, Bandung',

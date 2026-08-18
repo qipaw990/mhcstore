@@ -160,6 +160,29 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
             <div class="text-white-50 mt-0.5" style="font-size: 9px;">Berikan kode 4-digit ini kepada kurir saat pesanan tiba.</div>
         </div>
 
+        <!-- Multi-Store Batch Pickup Notice for Customer -->
+        <?php if (!empty($order['delivery_batch_id'])): ?>
+        <div id="batch-pickup-notice-card" class="p-3 shadow-xs mb-1" style="background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 16px;">
+            <div class="d-flex align-items-start gap-2.5">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width: 32px; height: 32px; background: #FEF3C7; color: #D97706; font-size: 15px;">
+                    <i class="bi bi-shop-window"></i>
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fw-bold text-dark" style="font-size: 11.5px;">Penjemputan Multi-Toko</span>
+                        <span class="badge bg-warning text-dark rounded-pill px-2 py-0.5 fw-bold" style="font-size: 9px;">
+                            Penjemputan ke-<?= (int)($order['pickup_sequence'] ?? 1) ?>
+                        </span>
+                    </div>
+                    <div class="text-muted mt-1" style="font-size: 10.5px; line-height: 1.4;">
+                        Kurir Anda sedang mengambil pesanan dari beberapa toko dalam satu rute. Pesanan Anda akan segera diantar ke alamat Anda.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <?php 
         $isDriverValid = !empty($order['delivery_man_id']) && $order['order_status'] !== 'canceled' && in_array($order['order_status'], ['processing', 'handover', 'on_the_way', 'delivered']);
         ?>
