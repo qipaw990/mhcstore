@@ -16,6 +16,8 @@ function extractGrabFoodData() {
     delivery_time: '15-25 min',
     opening_time: '08:00:00',
     closing_time: '22:00:00',
+    operating_hours: '08:00 - 22:00',
+    is_open: 1,
     logo: '',
     cover_photo: '',
     products: []
@@ -182,11 +184,19 @@ function extractGrabFoodData() {
       
       if (obj.rating) result.rating = obj.rating;
       if (obj.reviewsCount) result.reviews_count = obj.reviewsCount;
+      if (obj.isOpen !== undefined) {
+        result.is_open = obj.isOpen ? 1 : 0;
+      } else if (obj.closed !== undefined) {
+        result.is_open = obj.closed ? 0 : 1;
+      } else if (obj.isClosed !== undefined) {
+        result.is_open = obj.isClosed ? 0 : 1;
+      }
       if (obj.openingHours || obj.businessHours || obj.openHours) {
         const hoursObj = parseHoursText(obj.openingHours || obj.businessHours || obj.openHours);
         if (hoursObj) {
           result.opening_time = hoursObj.opening_time;
           result.closing_time = hoursObj.closing_time;
+          if (hoursObj.operating_hours) result.operating_hours = hoursObj.operating_hours;
         }
       }
       if (obj.photoHref || obj.photo) {
@@ -396,10 +406,31 @@ function extractGrabFoodData() {
       const mapsMatch = pageHtml.match(/maps\.google\.com.*?q=(-?\d+\.\d+),(-?\d+\.\d+)/) ||
                         pageHtml.match(/google\.com\/maps.*?@(-?\d+\.\d+),(-?\d+\.\d+)/);
       if (mapsMatch) {
-        result.latitude = parseFloat(mapsMatch[1]);
-        result.longitude = parseFloat(mapsMatch[2]);
-      }
     }
+  }
+
+  // Live Open/Closed Status Detection from GrabFood DOM Text & Badges
+  const pageTxtLower = document.body ? document.body.innerText.toLowerCase() : '';
+  const closedPhrases = [
+    'sedang tutup',
+    'resto tutup',
+    'toko tutup',
+    'restoran tutup',
+    'tutup sementara',
+    'currently closed',
+    'temporarily closed',
+    'tidak menerima pesanan',
+    'tutup hari ini',
+    'closed for the day',
+    'buka besok',
+    'buka kembali'
+  ];
+
+  const hasClosedText  = closedPhrases.some(phrase => pageTxtLower.includes(phrase));
+  const hasClosedBadge = document.querySelector('[class*="closedBanner"], [class*="ClosedBanner"], [class*="closedTag"], [class*="ClosedTag"]') !== null;
+
+  if (hasClosedText || hasClosedBadge) {
+    result.is_open = 0;
   }
 
   // Cover & Logo image from DOM

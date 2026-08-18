@@ -305,16 +305,18 @@ class ApiController extends Controller
             $openTime  = !empty($data['opening_time']) ? date('H:i:s', strtotime($data['opening_time'])) : '08:00:00';
             $closeTime = !empty($data['closing_time']) ? date('H:i:s', strtotime($data['closing_time'])) : '22:00:00';
 
+            $isOpen = isset($data['is_open']) ? ((int)$data['is_open'] === 1 ? 1 : 0) : 1;
+
             if ($sRow) {
                 $storeId = (int)$sRow['id'];
-                $stmtUpS = $pdo->prepare("UPDATE stores SET logo = ?, cover_photo = ?, address = ?, rating = ?, latitude = ?, longitude = ? WHERE id = ?");
-                $stmtUpS->execute([$logo, $cover, $address, $rating, $lat, $lng, $storeId]);
+                $stmtUpS = $pdo->prepare("UPDATE stores SET logo = ?, cover_photo = ?, address = ?, rating = ?, latitude = ?, longitude = ?, is_open = ? WHERE id = ?");
+                $stmtUpS->execute([$logo, $cover, $address, $rating, $lat, $lng, $isOpen, $storeId]);
             } else {
                 $stmtInsS = $pdo->prepare("
                     INSERT INTO stores (
                         vendor_id, module_id, zone_id, name, phone, email, logo, cover_photo, address,
                         latitude, longitude, minimum_order, delivery_time, delivery_fee, is_open, status, rating, reviews_count
-                    ) VALUES (?, 1, 1, ?, ?, ?, ?, ?, ?, ?, ?, 0.00, ?, 5000.00, 1, 'approved', ?, ?)
+                    ) VALUES (?, 1, 1, ?, ?, ?, ?, ?, ?, ?, ?, 0.00, ?, 5000.00, ?, 'approved', ?, ?)
                 ");
                 $stmtInsS->execute([
                     $vendorId,
@@ -327,6 +329,7 @@ class ApiController extends Controller
                     $lat,
                     $lng,
                     $delTime,
+                    $isOpen,
                     $rating,
                     $revCount
                 ]);

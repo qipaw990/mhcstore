@@ -139,7 +139,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Check if active tab is a Store Listing page
+  // Live Store Status Inspector
+  const liveStoreCard        = document.getElementById('liveStoreCard');
+  const liveStoreName        = document.getElementById('liveStoreName');
+  const liveStoreStatusBadge = document.getElementById('liveStoreStatusBadge');
+  const liveStoreHours       = document.getElementById('liveStoreHours');
+
+  // Check if active tab is a GrabFood page & inspect store status live
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab && tab.url && tab.url.includes('food.grab.com')) {
@@ -147,6 +153,34 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (Array.isArray(stores) && stores.length > 0) {
         listingStores = stores;
         storeCountEl.textContent = listingStores.length;
+      }
+
+      if (tab.url.includes('/restaurant/')) {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ['content.js']
+        }).catch(() => {});
+
+        const infoRes = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: () => {
+            if (typeof extractGrabFoodData === 'function') {
+              return extractGrabFoodData();
+            }
+            return null;
+          }
+        }).catch(() => null);
+
+        const storeInfo = infoRes && infoRes[0] ? infoRes[0].result : null;
+        if (storeInfo && storeInfo.name && liveStoreCard) {
+          liveStoreCard.style.display = 'block';
+          liveStoreName.textContent = storeInfo.name;
+          const isOpen = storeInfo.is_open === 1;
+          liveStoreStatusBadge.textContent = isOpen ? '🟢 BUKA' : '🔴 TUTUP';
+          liveStoreStatusBadge.className = `badge ${isOpen ? 'success' : 'error'}`;
+          const hours = storeInfo.operating_hours || (storeInfo.opening_time.slice(0,5) + ' - ' + storeInfo.closing_time.slice(0,5));
+          liveStoreHours.textContent = `🕒 Jam Operasional: ${hours}`;
+        }
       }
     }
   } catch (e) {}
