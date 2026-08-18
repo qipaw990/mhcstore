@@ -179,6 +179,27 @@ async function runBatchScrape(stores, apiUrl) {
         const prodCount = scrapedData.products ? scrapedData.products.length : 0;
         const productsPreview = scrapedData.products ? scrapedData.products.slice(0, 6) : [];
 
+        // Save last scraped data & Auto Download JSON if enabled
+        await chrome.storage.local.set({ lastScrapedData: scrapedData });
+
+        const storageRes = await chrome.storage.local.get('autoDownloadJson');
+        if (storageRes.autoDownloadJson !== false) {
+          try {
+            const cleanName = scrapedData.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 45);
+            const fileName = `grabfood_${cleanName}_${Date.now()}.json`;
+            const jsonStr = JSON.stringify(scrapedData, null, 2);
+            const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonStr);
+
+            chrome.downloads.download({
+              url: dataUrl,
+              filename: fileName,
+              saveAs: false
+            }).catch(e => console.log('Auto-download skipped/failed', e));
+          } catch (dlErr) {
+            console.error('Auto download JSON error:', dlErr);
+          }
+        }
+
         // FASE 2: KIRIM DATA KE SERVER
         const sendPct = Math.round(((currentStep - 0.3) / total) * 100);
         statusObj.percent = sendPct;

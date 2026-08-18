@@ -202,9 +202,14 @@
     <span>🛑 Hentikan Scrape Massal</span>
   </button>
 
-  <button id="downloadJsonBtn" class="btn btn-secondary" style="display:none;">
+  <button id="downloadJsonBtn" class="btn btn-secondary" style="display:none; margin-top:8px;">
     <span>💾 Unduh JSON Hasil Scrape</span>
   </button>
+
+  <div style="margin-top:10px; display:flex; align-items:center; gap:6px; padding:6px; background:rgba(255,255,255,0.04); border-radius:6px; border:1px solid var(--border);">
+    <input type="checkbox" id="autoDownloadJson" checked style="width:auto; cursor:pointer;">
+    <label for="autoDownloadJson" style="margin:0; font-size:10.5px; text-transform:none; cursor:pointer; color:var(--text);">💾 Otomatis download file .JSON tiap beres 1 toko</label>
+  </div>
 
   <div id="progressContainer" style="display:none; margin-top:10px;">
     <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; font-weight:600; color:var(--text-muted);">

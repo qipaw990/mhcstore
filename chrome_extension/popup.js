@@ -20,15 +20,30 @@ document.addEventListener('DOMContentLoaded', async () => {
   let lastScrapedData = null;
   let listingStores = [];
 
-  // Restore saved API URL if any
-  chrome.storage.local.get(['cgo_api_url', 'batchStatus'], (res) => {
+  const autoDownloadJsonCheck = document.getElementById('autoDownloadJson');
+
+  // Restore saved API URL & Auto Download preference
+  chrome.storage.local.get(['cgo_api_url', 'batchStatus', 'lastScrapedData', 'autoDownloadJson'], (res) => {
     if (res.cgo_api_url) {
       apiUrlInput.value = res.cgo_api_url;
     }
     if (res.batchStatus) {
       updateBatchUI(res.batchStatus);
     }
+    if (res.lastScrapedData) {
+      lastScrapedData = res.lastScrapedData;
+      downloadJsonBtn.style.display = 'block';
+    }
+    if (autoDownloadJsonCheck) {
+      autoDownloadJsonCheck.checked = res.autoDownloadJson !== false;
+    }
   });
+
+  if (autoDownloadJsonCheck) {
+    autoDownloadJsonCheck.addEventListener('change', () => {
+      chrome.storage.local.set({ autoDownloadJson: autoDownloadJsonCheck.checked });
+    });
+  }
 
   // Listen to background storage changes for live progress updates
   chrome.storage.onChanged.addListener((changes, area) => {
@@ -347,10 +362,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function processScrapedData(data, apiUrl) {
     lastScrapedData = data;
     downloadJsonBtn.style.display = 'block';
+    chrome.storage.local.set({ lastScrapedData: data });
 
     if (!data.name) {
       handleError("Nama resto tidak terdeteksi di halaman ini.");
       return;
+    }
+
+    if (autoDownloadJsonCheck && autoDownloadJsonCheck.checked) {
+      try {
+        const cleanName = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 45);
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `grabfood_${cleanName}_${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (e) {}
     }
 
     statusTitle.textContent = data.name;
