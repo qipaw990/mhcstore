@@ -233,17 +233,10 @@ function extractGrabFoodData() {
     }
   });
 
-  // Ensure default fallback high quality food images if item image is still empty
-  result.products.forEach((p, idx) => {
-    if (!p.image || p.image.length < 5) {
-      const fallbackImgs = [
-        'https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=500&q=80',
-        'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=500&q=80',
-        'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=80',
-        'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=80',
-        'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=500&q=80'
-      ];
-      p.image = fallbackImgs[idx % fallbackImgs.length];
+  // Ensure smart keyword-based high quality food images if item image is still empty or missing on GrabFood
+  result.products.forEach((p) => {
+    if (!p.image || p.image.length < 5 || p.image.includes('unsplash')) {
+      p.image = getSmartFoodPhoto(p.name);
     }
   });
 
@@ -255,6 +248,48 @@ function extractGrabFoodData() {
   }
 
   return result;
+}
+
+// Smart Indonesian culinary photo resolver for menu items lacking GrabFood merchant photos
+function getSmartFoodPhoto(name) {
+  const n = (name || '').toLowerCase();
+  if (n.includes('nasi goreng') || n.includes('nasgor')) {
+    return 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=600&q=80';
+  }
+  if (n.includes('kwetiau') || n.includes('kwetiew')) {
+    return 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=80';
+  }
+  if (n.includes('mie') || n.includes('ramen') || n.includes('noodle')) {
+    return 'https://images.unsplash.com/photo-1612927601601-6638404737ce?auto=format&fit=crop&w=600&q=80';
+  }
+  if (n.includes('ayam') || n.includes('geprek') || n.includes('chicken')) {
+    return 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=600&q=80';
+  }
+  if (n.includes('seblak')) {
+    return 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=80';
+  }
+  if (n.includes('bakso') || n.includes('baso')) {
+    return 'https://images.unsplash.com/photo-1541696432-82c6da8ce7bf?auto=format&fit=crop&w=600&q=80';
+  }
+  if (n.includes('sate') || n.includes('satay')) {
+    return 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80';
+  }
+  if (n.includes('martabak') || n.includes('cake') || n.includes('cheese')) {
+    return 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=600&q=80';
+  }
+  if (n.includes('es') || n.includes('kopi') || n.includes('tea') || n.includes('drink') || n.includes('latte') || n.includes('jus')) {
+    return 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=600&q=80';
+  }
+  if (n.includes('wonton') || n.includes('dimsum')) {
+    return 'https://images.unsplash.com/photo-1496116218417-1a781b1c416c?auto=format&fit=crop&w=600&q=80';
+  }
+  if (n.includes('burger')) {
+    return 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80';
+  }
+  if (n.includes('fries') || n.includes('kentang')) {
+    return 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=600&q=80';
+  }
+  return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80';
 }
 
 // Listen for requests from popup.js
