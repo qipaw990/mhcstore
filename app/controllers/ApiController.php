@@ -307,8 +307,8 @@ class ApiController extends Controller
 
             if ($sRow) {
                 $storeId = (int)$sRow['id'];
-                $stmtUpS = $pdo->prepare("UPDATE stores SET logo = ?, cover_photo = ?, address = ?, rating = ? WHERE id = ?");
-                $stmtUpS->execute([$logo, $cover, $address, $rating, $storeId]);
+                $stmtUpS = $pdo->prepare("UPDATE stores SET logo = ?, cover_photo = ?, address = ?, rating = ?, latitude = ?, longitude = ? WHERE id = ?");
+                $stmtUpS->execute([$logo, $cover, $address, $rating, $lat, $lng, $storeId]);
             } else {
                 $stmtInsS = $pdo->prepare("
                     INSERT INTO stores (

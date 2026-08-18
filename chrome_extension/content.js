@@ -59,11 +59,18 @@ function extractGrabFoodData() {
     if (!obj || typeof obj !== 'object' || depth > 10) return;
 
     // Check if this object is a Store/Merchant
-    if (obj.name && (obj.latlng || obj.photoHref || obj.merchantID || obj.menu)) {
+    if (obj.name && (obj.latlng || obj.latitude || obj.location || obj.coordinates || obj.photoHref || obj.merchantID || obj.menu)) {
       if (!result.name) result.name = obj.name;
       if (obj.address) result.address = obj.address;
-      if (obj.latlng?.latitude) result.latitude = obj.latlng.latitude;
-      if (obj.latlng?.longitude) result.longitude = obj.latlng.longitude;
+      
+      const lat = obj.latitude || obj.lat || obj.latlng?.latitude || obj.latlng?.lat || obj.location?.latitude || obj.location?.lat || obj.coordinates?.latitude || obj.coordinates?.lat;
+      const lng = obj.longitude || obj.lng || obj.latlng?.longitude || obj.latlng?.lng || obj.location?.longitude || obj.location?.lng || obj.coordinates?.longitude || obj.coordinates?.lng;
+
+      if (lat && lng) {
+        result.latitude = parseFloat(lat);
+        result.longitude = parseFloat(lng);
+      }
+      
       if (obj.rating) result.rating = obj.rating;
       if (obj.reviewsCount) result.reviews_count = obj.reviewsCount;
       if (obj.openingHours || obj.businessHours || obj.openHours) {
@@ -181,10 +188,28 @@ function extractGrabFoodData() {
   // STRATEGY 2: COMPREHENSIVE DOM SCRAPER & IMAGE EXTRACTOR
   // -------------------------------------------------------------
 
-  // 1. Extract Store Name & Images from DOM
+  // 1. Extract Store Name & Images & Coordinates from DOM
   if (!result.name) {
     const h1El = document.querySelector('h1[class*="name"], h1[class*="merchant"], h1');
     if (h1El) result.name = h1El.textContent.trim();
+  }
+
+  // Fallback coordinate extraction from HTML source or Google Maps links
+  if (!result.latitude || !result.longitude) {
+    const pageHtml = document.documentElement.innerHTML;
+    const latLngMatch = pageHtml.match(/"latitude"\s*:\s*(-?\d+\.\d+).*?"longitude"\s*:\s*(-?\d+\.\d+)/) ||
+                        pageHtml.match(/"lat"\s*:\s*(-?\d+\.\d+).*?"lng"\s*:\s*(-?\d+\.\d+)/);
+    if (latLngMatch) {
+      result.latitude = parseFloat(latLngMatch[1]);
+      result.longitude = parseFloat(latLngMatch[2]);
+    } else {
+      const mapsMatch = pageHtml.match(/maps\.google\.com.*?q=(-?\d+\.\d+),(-?\d+\.\d+)/) ||
+                        pageHtml.match(/google\.com\/maps.*?@(-?\d+\.\d+),(-?\d+\.\d+)/);
+      if (mapsMatch) {
+        result.latitude = parseFloat(mapsMatch[1]);
+        result.longitude = parseFloat(mapsMatch[2]);
+      }
+    }
   }
 
   // Cover & Logo image from DOM
