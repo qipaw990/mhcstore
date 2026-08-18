@@ -44,6 +44,7 @@ function extractGrabFoodData() {
   // Helper to sanitize image URLs
   function cleanImageUrl(url) {
     if (!url) return '';
+    if (url.includes('logo-grabfood') || url.includes('placeholder') || url.includes('.svg')) return '';
     if (url.startsWith('//')) url = 'https:' + url;
     if (url.startsWith('/')) url = 'https://food.grab.com' + url;
     // Upgrade low-res thumbnail parameters if present

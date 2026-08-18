@@ -494,6 +494,9 @@ class ApiController extends Controller
                     || str_contains($img, 'default') 
                     || str_contains($img, 'unsplash') 
                     || str_contains($img, 'photo-1546069901-ba9599a7e63c')
+                    || str_contains($img, 'logo-grabfood')
+                    || str_contains($img, 'svg')
+                    || str_contains($img, 'placeholder')
                     || str_starts_with($img, 'http://') 
                     || str_starts_with($img, 'https://');
 

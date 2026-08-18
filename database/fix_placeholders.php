@@ -90,10 +90,12 @@ foreach ($products as $p) {
     $pid = (int)$p['id'];
     $img = $p['image'];
 
-    // Needs fix if empty, unsplash, default, or photo-1546069901-ba9599a7e63c
+    // Needs fix if empty, unsplash, default, logo-grabfood, or photo-1546069901-ba9599a7e63c
     $needsFix = empty($img) 
         || str_contains($img, 'default') 
         || str_contains($img, 'unsplash') 
+        || str_contains($img, 'logo-grabfood')
+        || str_contains($img, 'svg')
         || str_contains($img, 'photo-1546069901-ba9599a7e63c');
 
     if ($needsFix) {
