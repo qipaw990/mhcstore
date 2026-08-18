@@ -83,23 +83,31 @@
             <?php endforeach; ?>
         </div>
 
-        <!-- Product Detail Mini Modal -->
-        <div id="cartItemDetailModal" onclick="this.style.display='none'" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.45); align-items:flex-end; justify-content:center;">
-            <div onclick="event.stopPropagation()" style="background:#FFFFFF; border-radius:24px 24px 0 0; width:100%; max-width:480px; padding:20px; box-shadow:0 -8px 40px rgba(0,0,0,0.18); animation: slideUp 0.22s ease;">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <h6 class="fw-extrabold m-0 text-dark" style="font-size: 14px; letter-spacing:-0.3px; max-width: calc(100% - 40px);" id="ciModalName"></h6>
-                    <button onclick="document.getElementById('cartItemDetailModal').style.display='none'" class="btn p-0 d-flex align-items-center justify-content-center border rounded-circle text-muted" style="width:30px;height:30px;font-size:14px;flex-shrink:0;">
+        <!-- Product Detail Mini Modal (Compact Bottom Sheet) -->
+        <div id="cartItemDetailModal" onclick="this.style.display='none'" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.5); align-items:flex-end; justify-content:center;">
+            <div onclick="event.stopPropagation()" style="background:#FFFFFF; border-radius:20px 20px 0 0; width:100%; max-width:480px; padding:16px; box-shadow:0 -6px 32px rgba(0,0,0,0.16); animation: slideUp 0.22s ease;">
+                <!-- Drag Handle -->
+                <div class="mx-auto mb-3" style="width:36px; height:4px; background:#E2E8F0; border-radius:999px;"></div>
+
+                <!-- Header: name + close -->
+                <div class="d-flex justify-content-between align-items-start mb-2.5 gap-2">
+                    <h6 class="fw-extrabold m-0 text-dark" style="font-size: 13px; letter-spacing:-0.3px; line-height:1.3; flex: 1;" id="ciModalName"></h6>
+                    <button onclick="document.getElementById('cartItemDetailModal').style.display='none'" class="btn p-0 d-flex align-items-center justify-content-center border rounded-circle text-muted flex-shrink-0" style="width:26px;height:26px;font-size:13px;">
                         <i class="bi bi-x"></i>
                     </button>
                 </div>
-                <img id="ciModalImg" src="" alt="" class="w-100 mb-3" style="border-radius:16px; height:180px; object-fit:cover;">
-                <div class="d-flex justify-content-between align-items-center">
+
+                <!-- Product Image (compact) -->
+                <img id="ciModalImg" src="" alt="" class="w-100 mb-2.5" style="border-radius:14px; height:130px; object-fit:cover;">
+
+                <!-- Price + Qty Row -->
+                <div class="d-flex justify-content-between align-items-center p-2.5 rounded-3" style="background:#F8FAFC; border: 1px solid #E2E8F0;">
                     <div>
-                        <div class="text-muted" style="font-size:10px; font-weight:600;">Harga Satuan</div>
-                        <div class="fw-black text-danger" id="ciModalPrice" style="font-size:16px; letter-spacing:-0.4px;"></div>
+                        <div class="text-muted" style="font-size:9px; font-weight:700; letter-spacing:0.3px; text-transform:uppercase;">Harga Satuan</div>
+                        <div class="fw-black text-danger" id="ciModalPrice" style="font-size:15px; letter-spacing:-0.4px;"></div>
                     </div>
                     <div class="text-end">
-                        <div class="text-muted" style="font-size:10px; font-weight:600;">Jumlah di Keranjang</div>
+                        <div class="text-muted" style="font-size:9px; font-weight:700; letter-spacing:0.3px; text-transform:uppercase;">Di Keranjang</div>
                         <div class="fw-extrabold text-dark" id="ciModalQty" style="font-size:14px;"></div>
                     </div>
                 </div>
