@@ -322,10 +322,11 @@ class ApiController extends Controller
                 $pRec   = !empty($p['is_recommended']) ? 1 : 0;
                 $pDisc  = (float)($p['discount'] ?? 0);
 
-                $stmtP = $pdo->prepare("SELECT id FROM products WHERE store_id = ? AND name = ? LIMIT 1");
+                $stmtP = $pdo->prepare("SELECT id, image FROM products WHERE store_id = ? AND name = ? LIMIT 1");
                 $stmtP->execute([$storeId, $pName]);
+                $existingP = $stmtP->fetch(\PDO::FETCH_ASSOC);
 
-                if (!$stmtP->fetch()) {
+                if (!$existingP) {
                     $stmtInsP = $pdo->prepare("
                         INSERT INTO products (
                             store_id, module_id, category_id, name, description, image, price, discount,
@@ -343,6 +344,13 @@ class ApiController extends Controller
                         $pRec
                     ]);
                     $itemsImported++;
+                } else {
+                    // Update image if it was previously empty or unsplash default
+                    if (!empty($pImage) && (empty($existingP['image']) || strpos($existingP['image'], 'unsplash') !== false)) {
+                        $stmtUpP = $pdo->prepare("UPDATE products SET image = ?, description = ?, price = ? WHERE id = ?");
+                        $stmtUpP->execute([$pImage, $pDesc, $pPrice, $existingP['id']]);
+                        $itemsImported++;
+                    }
                 }
             }
 

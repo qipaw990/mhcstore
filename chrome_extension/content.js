@@ -1,5 +1,6 @@
 /**
- * Content script to extract store and menu data from GrabFood pages
+ * Enhanced CicalengkaGO GrabFood Store & Menu Scraper Content Script
+ * Exhaustively extracts store details, high-res images, categories, and products.
  */
 
 function extractGrabFoodData() {
@@ -11,90 +12,212 @@ function extractGrabFoodData() {
     phone: '',
     category: 'Kuliner & Snack',
     rating: 4.8,
-    reviews_count: 100,
+    reviews_count: 120,
     delivery_time: '15-25 min',
     logo: '',
     cover_photo: '',
     products: []
   };
 
-  // 1. Try extracting from __NEXT_DATA__
-  try {
-    const scriptEl = document.getElementById('__NEXT_DATA__');
-    if (scriptEl) {
-      const nextData = JSON.parse(scriptEl.textContent);
-      const redux = nextData?.props?.initialReduxState;
-      
-      // Check pageRestaurantDetail in redux
-      const prd = redux?.pageRestaurantDetail;
-      const entities = prd?.entities;
-      
-      if (entities) {
-        for (const key in entities) {
-          const item = entities[key];
-          if (item?.name && item?.menu) {
-            result.name = item.name;
-            result.address = item.address || result.address;
-            result.latitude = item.latlng?.latitude || result.latitude;
-            result.longitude = item.latlng?.longitude || result.longitude;
-            result.rating = item.rating || result.rating;
-            result.logo = item.photoHref || item.photo || '';
-            result.cover_photo = item.photoHref || '';
+  // Helper to sanitize image URLs
+  function cleanImageUrl(url) {
+    if (!url) return '';
+    if (url.startsWith('//')) url = 'https:' + url;
+    if (url.startsWith('/')) url = 'https://food.grab.com' + url;
+    // Upgrade low-res thumbnail parameters if present
+    url = url.replace(/w=\d+/, 'w=800').replace(/h=\d+/, 'h=800');
+    return url;
+  }
+
+  // -------------------------------------------------------------
+  // STRATEGY 1: RECURSIVE JSON & SCRIPT TAG CRAWLER
+  // -------------------------------------------------------------
+  function scanObjectForMenu(obj, depth = 0) {
+    if (!obj || typeof obj !== 'object' || depth > 10) return;
+
+    // Check if this object is a Store/Merchant
+    if (obj.name && (obj.latlng || obj.photoHref || obj.merchantID || obj.menu)) {
+      if (!result.name) result.name = obj.name;
+      if (obj.address) result.address = obj.address;
+      if (obj.latlng?.latitude) result.latitude = obj.latlng.latitude;
+      if (obj.latlng?.longitude) result.longitude = obj.latlng.longitude;
+      if (obj.rating) result.rating = obj.rating;
+      if (obj.reviewsCount) result.reviews_count = obj.reviewsCount;
+      if (obj.photoHref || obj.photo) {
+        const photo = cleanImageUrl(obj.photoHref || obj.photo);
+        if (!result.logo) result.logo = photo;
+        if (!result.cover_photo) result.cover_photo = photo;
+      }
+    }
+
+    // Check if this object is a Menu Category or Menu Item list
+    if (Array.isArray(obj.categories)) {
+      obj.categories.forEach(cat => {
+        const catName = cat.name || 'Menu Utama';
+        if (cat.name && result.category === 'Kuliner & Snack') {
+          result.category = cat.name;
+        }
+
+        const items = cat.items || cat.menuItems || [];
+        items.forEach(p => {
+          if (p && p.name) {
+            const price = (p.priceInCents ? p.priceInCents / 100 : (p.price || 15000));
+            const img = cleanImageUrl(p.imgHref || p.photoHref || p.photo || p.image || p.url || '');
             
-            const categories = item.menu?.categories || [];
-            categories.forEach(cat => {
-              const catName = cat.name || 'Menu Utama';
-              (cat.items || []).forEach(p => {
-                result.products.push({
-                  name: p.name || 'Menu Makanan',
-                  description: p.description || '',
-                  price: (p.priceInCents || 0) / 100,
-                  image: p.imgHref || p.photoHref || result.logo,
-                  is_recommended: p.imgHref ? 1 : 0,
-                  category: catName
-                });
+            // Check duplicate
+            if (!result.products.some(existing => existing.name === p.name)) {
+              result.products.push({
+                name: p.name.trim(),
+                description: (p.description || '').trim(),
+                price: parseFloat(price) || 15000,
+                image: img,
+                is_recommended: (p.imgHref || p.isRecommended) ? 1 : 0,
+                category: catName
               });
+            }
+          }
+        });
+      });
+    }
+
+    // Recursively scan keys
+    if (Array.isArray(obj)) {
+      obj.forEach(child => scanObjectForMenu(child, depth + 1));
+    } else {
+      Object.keys(obj).forEach(key => {
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+          scanObjectForMenu(obj[key], depth + 1);
+        }
+      });
+    }
+  }
+
+  // 1. Scan window.__NEXT_DATA__
+  try {
+    const nextScript = document.getElementById('__NEXT_DATA__');
+    if (nextScript && nextScript.textContent) {
+      const nextData = JSON.parse(nextScript.textContent);
+      scanObjectForMenu(nextData);
+    }
+  } catch (e) {
+    console.warn("CicalengkaGO NEXT_DATA scan error:", e);
+  }
+
+  // 2. Scan all script tags containing JSON data
+  if (result.products.length === 0) {
+    const scripts = document.querySelectorAll('script[type="application/json"], script:not([src])');
+    scripts.forEach(s => {
+      const txt = s.textContent || '';
+      if (txt.includes('priceInCents') || txt.includes('categories') || txt.includes('imgHref')) {
+        try {
+          const parsed = JSON.parse(txt);
+          scanObjectForMenu(parsed);
+        } catch (e) {
+          // Attempt regex extraction of JSON objects
+          const matches = txt.match(/\{"name":.*?"priceInCents":.*?\}/g);
+          if (matches) {
+            matches.forEach(m => {
+              try {
+                const p = JSON.parse(m);
+                if (p.name) {
+                  result.products.push({
+                    name: p.name,
+                    description: p.description || '',
+                    price: (p.priceInCents || 0) / 100,
+                    image: cleanImageUrl(p.imgHref || p.photoHref || ''),
+                    is_recommended: 0
+                  });
+                }
+              } catch (err) {}
             });
           }
         }
       }
-    }
-  } catch (e) {
-    console.warn("CicalengkaGO Scraper NEXT_DATA extraction warning:", e);
-  }
-
-  // 2. DOM Fallback if NEXT_DATA had incomplete products
-  if (!result.name) {
-    const titleEl = document.querySelector('h1.name, h1.merchant-name, .name___3oO_B, h1');
-    if (titleEl) {
-      result.name = titleEl.textContent.trim();
-    }
-  }
-
-  if (result.products.length === 0) {
-    // Scrape DOM menu cards
-    const menuCards = document.querySelectorAll('.menu-item, .item-card, [data-testid="menu-item"], .item___1vV-F');
-    menuCards.forEach(card => {
-      const nameEl = card.querySelector('.name, .item-name, h3, h4, .title___1b994');
-      const priceEl = card.querySelector('.price, .item-price, .price___2k_92');
-      const descEl = card.querySelector('.description, .item-desc, .desc___1LgG4');
-      const imgEl = card.querySelector('img');
-
-      if (nameEl && priceEl) {
-        const rawPrice = priceEl.textContent.replace(/[^0-9]/g, '');
-        const price = rawPrice ? parseInt(rawPrice, 10) : 15000;
-        result.products.push({
-          name: nameEl.textContent.trim(),
-          description: descEl ? descEl.textContent.trim() : '',
-          price: price,
-          image: imgEl ? imgEl.src : '',
-          is_recommended: 0
-        });
-      }
     });
   }
 
-  // Set default images if empty
+  // -------------------------------------------------------------
+  // STRATEGY 2: COMPREHENSIVE DOM SCRAPER & IMAGE EXTRACTOR
+  // -------------------------------------------------------------
+
+  // 1. Extract Store Name & Images from DOM
+  if (!result.name) {
+    const h1El = document.querySelector('h1[class*="name"], h1[class*="merchant"], h1');
+    if (h1El) result.name = h1El.textContent.trim();
+  }
+
+  // Cover & Logo image from DOM
+  const heroImgs = document.querySelectorAll('img[src*="food-cms"], img[src*="grab"], img[class*="header"], img[class*="hero"], img[class*="merchant"]');
+  heroImgs.forEach(img => {
+    const src = cleanImageUrl(img.src || img.getAttribute('data-src') || '');
+    if (src && (!result.logo || result.logo.includes('unsplash'))) {
+      result.logo = src;
+      result.cover_photo = src;
+    }
+  });
+
+  // 2. Extract DOM Menu Items if products are still empty or missing images
+  const domCards = document.querySelectorAll('[class*="itemCard"], [class*="menuItem"], [class*="item-"], [class*="MenuItem"], div[role="button"]');
+  
+  domCards.forEach(card => {
+    const nameEl = card.querySelector('h3, h4, [class*="name"], [class*="title"], [class*="itemName"]');
+    const priceEl = card.querySelector('[class*="price"], [class*="Price"]');
+    const descEl = card.querySelector('p, [class*="desc"], [class*="Description"]');
+    const imgEl = card.querySelector('img');
+
+    if (nameEl && priceEl) {
+      const nameText = nameEl.textContent.trim();
+      if (!nameText || nameText.length < 2) return;
+
+      const rawPrice = priceEl.textContent.replace(/[^0-9]/g, '');
+      const priceVal = rawPrice ? parseInt(rawPrice, 10) : 15000;
+
+      let imgUrl = '';
+      if (imgEl) {
+        imgUrl = cleanImageUrl(imgEl.src || imgEl.getAttribute('data-src') || imgEl.getAttribute('srcset') || '');
+      }
+      
+      // Fallback background-image
+      if (!imgUrl) {
+        const bgEl = card.querySelector('[style*="background-image"]');
+        if (bgEl) {
+          const bgMatch = bgEl.style.backgroundImage.match(/url\(['"]?(.*?)['"]?\)/);
+          if (bgMatch) imgUrl = cleanImageUrl(bgMatch[1]);
+        }
+      }
+
+      // Check if product already exists in list
+      const existingProduct = result.products.find(p => p.name.toLowerCase() === nameText.toLowerCase());
+      if (existingProduct) {
+        // Update missing image or description
+        if (!existingProduct.image && imgUrl) existingProduct.image = imgUrl;
+        if (!existingProduct.description && descEl) existingProduct.description = descEl.textContent.trim();
+      } else {
+        result.products.push({
+          name: nameText,
+          description: descEl ? descEl.textContent.trim() : '',
+          price: priceVal,
+          image: imgUrl || result.logo,
+          is_recommended: imgUrl ? 1 : 0
+        });
+      }
+    }
+  });
+
+  // Ensure default fallback high quality food images if item image is still empty
+  result.products.forEach((p, idx) => {
+    if (!p.image || p.image.length < 5) {
+      const fallbackImgs = [
+        'https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=500&q=80',
+        'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=500&q=80',
+        'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=80',
+        'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=80',
+        'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=500&q=80'
+      ];
+      p.image = fallbackImgs[idx % fallbackImgs.length];
+    }
+  });
+
   if (!result.logo) {
     result.logo = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=80';
   }
@@ -105,7 +228,7 @@ function extractGrabFoodData() {
   return result;
 }
 
-// Listen for requests from extension popup
+// Listen for requests from popup.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'SCRAPE_DATA') {
     const scraped = extractGrabFoodData();
