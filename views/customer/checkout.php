@@ -203,22 +203,48 @@ function _buildMap(initLat, initLng, isGPS) {
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-    const storeIcon = L.divIcon({
-        className: 'custom-pin-store',
-        html: '<div style="box-sizing:border-box;background:#101820;color:#EE2737;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 3px 10px rgba(0,0,0,0.35);font-size:16px;"><i class="bi bi-shop"></i></div>',
-        iconSize: [34, 34], iconAnchor: [17, 17]
+    const storeSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
+      <defs>
+        <linearGradient id="csg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#f87171"/>
+          <stop offset="100%" stop-color="#b91c1c"/>
+        </linearGradient>
+      </defs>
+      <path d="M16 2C9 2 3 8 3 15c0 10 13 29 13 29S29 25 29 15C29 8 23 2 16 2z" fill="url(#csg)" stroke="white" stroke-width="2"/>
+      <path d="M9 14 L9 12 Q9 10 16 10 Q23 10 23 12 L23 14 Q19.5 17 16 16 Q12.5 17 9 14z" fill="white"/>
+      <rect x="11" y="14.5" width="10" height="6" rx="0.5" fill="white" opacity="0.25"/>
+      <rect x="13" y="15" width="6" height="5.5" fill="white"/>
+      <rect x="14.5" y="16" width="3" height="4.5" fill="#b91c1c"/>
+    </svg>`;
+    const storeIcon = L.icon({
+        iconUrl: 'data:image/svg+xml,' + encodeURIComponent(storeSvg),
+        iconSize: [32, 46],
+        iconAnchor: [16, 46],
+        popupAnchor: [0, -46]
     });
-    storeMarker = L.marker([STORE_LAT, STORE_LNG], { icon: storeIcon })
+    storeMarker = L.marker([STORE_LAT, STORE_LNG], { icon: storeIcon, zIndexOffset: 100 })
         .addTo(map)
         .bindPopup(`<div style="font-size:12px;"><b>🏪 ${STORE_NAME}</b><br><span style="color:#666;">Titik Penjemputan</span></div>`);
 
-    const custIcon = L.divIcon({
-        className: 'custom-pin-customer',
-        html: '<div style="box-sizing:border-box;background:#EE2737;color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 4px 12px rgba(238,39,55,0.45);font-size:18px;"><i class="bi bi-geo-alt-fill"></i></div>',
-        iconSize: [36, 36], iconAnchor: [18, 18]
+    const custSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
+      <defs>
+        <linearGradient id="ccg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#34d399"/>
+          <stop offset="100%" stop-color="#047857"/>
+        </linearGradient>
+      </defs>
+      <path d="M16 2C9 2 3 8 3 15c0 10 13 29 13 29S29 25 29 15C29 8 23 2 16 2z" fill="url(#ccg)" stroke="white" stroke-width="2"/>
+      <circle cx="16" cy="11" r="3.8" fill="white"/>
+      <path d="M9 22 Q9 17 16 17 Q23 17 23 22" fill="white"/>
+    </svg>`;
+    const custIcon = L.icon({
+        iconUrl: 'data:image/svg+xml,' + encodeURIComponent(custSvg),
+        iconSize: [32, 46],
+        iconAnchor: [16, 46],
+        popupAnchor: [0, -46]
     });
 
-    customerMarker = L.marker([initLat, initLng], { icon: custIcon, draggable: false })
+    customerMarker = L.marker([initLat, initLng], { icon: custIcon, draggable: false, zIndexOffset: 500 })
         .addTo(map)
         .bindPopup('<div style="font-size:12px;"><b>📍 Lokasi Antar Terkunci</b><br><span style="color:#666;">Posisi sesuai lokasi GPS / Alamat</span></div>')
         .openPopup();

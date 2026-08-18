@@ -161,18 +161,40 @@ function initParcelMap() {
         attribution: '© OpenStreetMap'
     }).addTo(pMap);
 
-    const pickupIcon = L.divIcon({
-        className: 'custom-pin',
-        html: '<div style="box-sizing:border-box;background:#EE2737;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.3);"><i class="bi bi-box-arrow-up"></i></div>',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16]
+    const pickupSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
+      <defs>
+        <linearGradient id="psg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#f87171"/>
+          <stop offset="100%" stop-color="#b91c1c"/>
+        </linearGradient>
+      </defs>
+      <path d="M16 2C9 2 3 8 3 15c0 10 13 29 13 29S29 25 29 15C29 8 23 2 16 2z" fill="url(#psg)" stroke="white" stroke-width="2"/>
+      <path d="M11 15 h10 v8 h-10 z" fill="none" stroke="white" stroke-width="1.8"/>
+      <path d="M9 15 l7 -4 l7 4" fill="none" stroke="white" stroke-width="1.8"/>
+    </svg>`;
+    const pickupIcon = L.icon({
+        iconUrl: 'data:image/svg+xml,' + encodeURIComponent(pickupSvg),
+        iconSize: [32, 46],
+        iconAnchor: [16, 46],
+        popupAnchor: [0, -46]
     });
 
-    const destIcon = L.divIcon({
-        className: 'custom-pin',
-        html: '<div style="box-sizing:border-box;background:#111827;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.3);"><i class="bi bi-geo-alt-fill"></i></div>',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16]
+    const destSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
+      <defs>
+        <linearGradient id="dsg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#34d399"/>
+          <stop offset="100%" stop-color="#047857"/>
+        </linearGradient>
+      </defs>
+      <path d="M16 2C9 2 3 8 3 15c0 10 13 29 13 29S29 25 29 15C29 8 23 2 16 2z" fill="url(#dsg)" stroke="white" stroke-width="2"/>
+      <circle cx="16" cy="11" r="3.8" fill="white"/>
+      <path d="M9 22 Q9 17 16 17 Q23 17 23 22" fill="white"/>
+    </svg>`;
+    const destIcon = L.icon({
+        iconUrl: 'data:image/svg+xml,' + encodeURIComponent(destSvg),
+        iconSize: [32, 46],
+        iconAnchor: [16, 46],
+        popupAnchor: [0, -46]
     });
 
     pickupMarker = L.marker([pLat, pLng], { icon: pickupIcon, draggable: false }).addTo(pMap).bindPopup('<b>Titik Jemput Barang (Pengirim)</b>').openPopup();

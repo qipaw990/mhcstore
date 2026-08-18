@@ -385,11 +385,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const vMap = L.map('vendor-store-map', { zoomControl: false, attributionControl: false }).setView([sLat, sLng], 15);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(vMap);
 
-    const storeIcon = L.divIcon({
-        className: 'custom-pin',
-        html: '<div style="background:#EE2737;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.3);"><i class="bi bi-shop fs-6"></i></div>',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16]
+    const storeSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
+      <defs>
+        <linearGradient id="vsg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#f87171"/>
+          <stop offset="100%" stop-color="#b91c1c"/>
+        </linearGradient>
+      </defs>
+      <path d="M16 2C9 2 3 8 3 15c0 10 13 29 13 29S29 25 29 15C29 8 23 2 16 2z" fill="url(#vsg)" stroke="white" stroke-width="2"/>
+      <path d="M9 14 L9 12 Q9 10 16 10 Q23 10 23 12 L23 14 Q19.5 17 16 16 Q12.5 17 9 14z" fill="white"/>
+      <rect x="11" y="14.5" width="10" height="6" rx="0.5" fill="white" opacity="0.25"/>
+      <rect x="13" y="15" width="6" height="5.5" fill="white"/>
+      <rect x="14.5" y="16" width="3" height="4.5" fill="#b91c1c"/>
+    </svg>`;
+    const storeIcon = L.icon({
+        iconUrl: 'data:image/svg+xml,' + encodeURIComponent(storeSvg),
+        iconSize: [32, 46],
+        iconAnchor: [16, 46],
+        popupAnchor: [0, -46]
     });
 
     L.marker([sLat, sLng], { icon: storeIcon })

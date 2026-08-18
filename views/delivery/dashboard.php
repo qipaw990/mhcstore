@@ -495,16 +495,57 @@ function initDriverRadarMap() {
         maxZoom: 19
     }).addTo(window.dRadarMap);
 
+    // Helper SVG Data URIs for Driver Dashboard
+    const driverSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
+      <defs>
+        <linearGradient id="dg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#3b82f6"/>
+          <stop offset="100%" stop-color="#1d4ed8"/>
+        </linearGradient>
+      </defs>
+      <path d="M16 2C9 2 3 8 3 15c0 10 13 29 13 29S29 25 29 15C29 8 23 2 16 2z" fill="url(#dg)" stroke="white" stroke-width="2"/>
+      <circle cx="11" cy="17" r="3.5" fill="none" stroke="white" stroke-width="1.8"/>
+      <circle cx="21" cy="17" r="3.5" fill="none" stroke="white" stroke-width="1.8"/>
+      <polyline points="11,17 15,12 21,17" fill="none" stroke="white" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+      <line x1="15" y1="12" x2="15" y2="17" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="17" cy="10" r="2" fill="white"/>
+    </svg>`;
+    
+    const storeSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
+      <defs>
+        <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#f87171"/>
+          <stop offset="100%" stop-color="#b91c1c"/>
+        </linearGradient>
+      </defs>
+      <path d="M16 2C9 2 3 8 3 15c0 10 13 29 13 29S29 25 29 15C29 8 23 2 16 2z" fill="url(#sg)" stroke="white" stroke-width="2"/>
+      <path d="M9 14 L9 12 Q9 10 16 10 Q23 10 23 12 L23 14 Q19.5 17 16 16 Q12.5 17 9 14z" fill="white"/>
+      <rect x="11" y="14.5" width="10" height="6" rx="0.5" fill="white" opacity="0.25"/>
+      <rect x="13" y="15" width="6" height="5.5" fill="white"/>
+      <rect x="14.5" y="16" width="3" height="4.5" fill="#b91c1c"/>
+    </svg>`;
+    
+    const custSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
+      <defs>
+        <linearGradient id="cg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#34d399"/>
+          <stop offset="100%" stop-color="#047857"/>
+        </linearGradient>
+      </defs>
+      <path d="M16 2C9 2 3 8 3 15c0 10 13 29 13 29S29 25 29 15C29 8 23 2 16 2z" fill="url(#cg)" stroke="white" stroke-width="2"/>
+      <circle cx="16" cy="11" r="3.8" fill="white"/>
+      <path d="M9 22 Q9 17 16 17 Q23 17 23 22" fill="white"/>
+    </svg>`;
+
     // Driver Location Pin
-    const myIcon = L.divIcon({
-        className: 'ccg-driver-pin',
-        html: '<div class="ccg-driver-pin-body driver-me"><i class="bi bi-bicycle"></i></div>',
-        iconSize: [40, 40],
-        iconAnchor: [20, 20],
-        popupAnchor: [0, -20]
+    const myIcon = L.icon({
+        iconUrl: 'data:image/svg+xml,' + encodeURIComponent(driverSvg),
+        iconSize: [32, 46],
+        iconAnchor: [16, 46],
+        popupAnchor: [0, -46]
     });
 
-    window.myDriverMarker = L.marker([window.driverLat, window.driverLng], { icon: myIcon })
+    window.myDriverMarker = L.marker([window.driverLat, window.driverLng], { icon: myIcon, zIndexOffset: 1000 })
         .bindPopup('<div style="min-width: 140px; text-align: center;"><b>Lokasi Anda (Driver)</b><br><span class="badge bg-success-subtle text-success rounded-pill px-2 py-0.5 mt-1" style="font-size:10px;"><i class="bi bi-broadcast me-1"></i>GPS Aktif</span></div>')
         .addTo(window.dRadarMap);
 
@@ -516,27 +557,25 @@ function initDriverRadarMap() {
         const actDestLat = window.actDestLat;
         const actDestLng = window.actDestLng;
 
-        const storeIcon = L.divIcon({
-            className: 'ccg-driver-pin',
-            html: '<div class="ccg-driver-pin-body store"><i class="bi bi-shop"></i></div>',
-            iconSize: [40, 40],
-            iconAnchor: [20, 20],
-            popupAnchor: [0, -20]
+        const storeIcon = L.icon({
+            iconUrl: 'data:image/svg+xml,' + encodeURIComponent(storeSvg),
+            iconSize: [32, 46],
+            iconAnchor: [16, 46],
+            popupAnchor: [0, -46]
         });
 
-        const custIcon = L.divIcon({
-            className: 'ccg-driver-pin',
-            html: '<div class="ccg-driver-pin-body customer"><i class="bi bi-geo-alt-fill"></i></div>',
-            iconSize: [40, 40],
-            iconAnchor: [20, 20],
-            popupAnchor: [0, -20]
+        const custIcon = L.icon({
+            iconUrl: 'data:image/svg+xml,' + encodeURIComponent(custSvg),
+            iconSize: [32, 46],
+            iconAnchor: [16, 46],
+            popupAnchor: [0, -46]
         });
 
-        window.actStoreMarker = L.marker([actStoreLat, actStoreLng], { icon: storeIcon })
+        window.actStoreMarker = L.marker([actStoreLat, actStoreLng], { icon: storeIcon, zIndexOffset: 100 })
             .addTo(window.dRadarMap)
             .bindPopup("<b><?= htmlspecialchars($active_order['store_name'] ?? 'Penjemputan') ?></b><br><small class='text-muted'>Titik Ambil Barang</small><br><a href='<?= $storeGmapsUrl ?>' target='_blank' class='btn btn-danger btn-sm text-white w-100 mt-2 py-0.5 rounded-pill' style='font-size:10px;'>Google Maps Toko</a>");
 
-        window.actCustMarker = L.marker([actDestLat, actDestLng], { icon: custIcon })
+        window.actCustMarker = L.marker([actDestLat, actDestLng], { icon: custIcon, zIndexOffset: 500 })
             .addTo(window.dRadarMap)
             .bindPopup("<b><?= htmlspecialchars($active_order['customer_name'] ?? 'Tujuan') ?></b><br><small class='text-muted'>Titik Antar Pelanggan</small><br><a href='<?= $custGmapsUrl ?>' target='_blank' class='btn btn-success btn-sm text-white w-100 mt-2 py-0.5 rounded-pill' style='font-size:10px;'>Google Maps Pelanggan</a>");
 
@@ -570,15 +609,14 @@ function initDriverRadarMap() {
                 $dAddr = addslashes($ord['delivery_address']['address'] ?? 'Cicalengka');
             ?>
             (function() {
-                const oIcon = L.divIcon({
-                    className: 'ccg-driver-pin',
-                    html: '<div class="ccg-driver-pin-body store"><i class="bi bi-shop"></i></div>',
-                    iconSize: [40, 40],
-                    iconAnchor: [20, 20],
-                    popupAnchor: [0, -20]
+                const oIcon = L.icon({
+                    iconUrl: 'data:image/svg+xml,' + encodeURIComponent(storeSvg),
+                    iconSize: [32, 46],
+                    iconAnchor: [16, 46],
+                    popupAnchor: [0, -46]
                 });
 
-                L.marker([<?= $sLat ?>, <?= $sLng ?>], { icon: oIcon })
+                L.marker([<?= $sLat ?>, <?= $sLng ?>], { icon: oIcon, zIndexOffset: 100 })
                     .addTo(window.dRadarMap)
                     .bindPopup(`<b><?= $sName ?></b><br><small class="text-muted">Antar ke: <?= $dAddr ?></small><br><button onclick="acceptDriverOrder(<?= $oId ?>)" class="btn btn-sm w-100 mt-2 py-1 fw-bold rounded-pill text-white" style="background:#EE2737;">Ambil Order Ini</button>`);
             })();
