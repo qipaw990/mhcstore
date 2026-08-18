@@ -132,6 +132,8 @@ class OrderService
                 'customer_id'           => $customerId,
                 'store_id'              => $storeId,
                 'delivery_man_id'       => null,
+                'delivery_batch_id'     => $data['delivery_batch_id'] ?? null,
+                'pickup_sequence'       => (int)($data['pickup_sequence'] ?? 1),
                 'module_id'             => $store['module_id'],
                 'zone_id'               => $store['zone_id'],
                 'order_amount'          => $orderAmount,

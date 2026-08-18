@@ -40,8 +40,20 @@ class DeliveryService
         if (!empty($order['delivery_man_id'])) {
             throw new Exception("Pesanan sudah diambil oleh driver lain.");
         }
-        if (!empty($order['delivery_batch_id'])) {
-            throw new Exception("Pesanan ini sudah masuk batch pengiriman.");
+
+        // Check if this order is part of an unassigned multi-store batch
+        $batchIdToAccept = $order['delivery_batch_id'] ?? null;
+        $ordersToAccept  = [];
+
+        if ($batchIdToAccept) {
+            $ordersToAccept = Database::query(
+                "SELECT * FROM `orders` WHERE `delivery_batch_id` = ? AND (`delivery_man_id` IS NULL OR `delivery_man_id` = 0) AND `order_status` NOT IN ('canceled', 'delivered')",
+                [$batchIdToAccept]
+            );
+        }
+
+        if (empty($ordersToAccept)) {
+            $ordersToAccept = [$order];
         }
 
         // Load current active batch orders
@@ -49,42 +61,37 @@ class DeliveryService
         $activeOrderIds = !empty($dm['active_order_ids']) ? json_decode($dm['active_order_ids'], true) : [];
 
         // Validate batch size
-        if (!empty($activeOrderIds) && count($activeOrderIds) >= self::MAX_BATCH_ORDERS) {
-            throw new Exception("Trip Anda sudah penuh (" . self::MAX_BATCH_ORDERS . " pesanan). Selesaikan pengantaran sebelum mengambil pesanan baru.");
+        if (count($activeOrderIds) + count($ordersToAccept) > self::MAX_BATCH_ORDERS) {
+            throw new Exception("Jumlah pesanan melebihi batas maksimal trip driver (" . self::MAX_BATCH_ORDERS . " pesanan).");
         }
 
-        // Validate existing active orders are still in valid pickup states
-        if (!empty($activeOrderIds)) {
-            foreach ($activeOrderIds as $existingId) {
-                $existing = $this->orderModel->find($existingId);
-                if ($existing && in_array($existing['order_status'], ['on_the_way', 'delivered', 'canceled'])) {
-                    // This order is already picked up or done; allow adding more
-                    continue;
-                }
-            }
-        }
-
-        return Database::transaction(function () use ($dm, $order, $orderId, $activeBatchId, $activeOrderIds) {
-            // Create new batch ID if this is the first order
+        return Database::transaction(function () use ($dm, $ordersToAccept, $batchIdToAccept, $activeBatchId, $activeOrderIds) {
             if (empty($activeBatchId)) {
-                $activeBatchId = 'BATCH-' . strtoupper(substr(uniqid(), -6));
+                $activeBatchId = $batchIdToAccept ?: ('BATCH-' . strtoupper(substr(uniqid(), -6)));
             }
 
-            $activeOrderIds[] = $orderId;
-            $sequence = count($activeOrderIds);
+            $lastAcceptedId = null;
 
-            // Update the order
-            Database::update('orders', [
-                'delivery_man_id'   => $dm['id'],
-                'order_status'      => 'processing',
-                'processing_at'     => date('Y-m-d H:i:s'),
-                'delivery_batch_id' => $activeBatchId,
-                'pickup_sequence'   => $sequence,
-            ], 'id = ?', [$orderId]);
+            foreach ($ordersToAccept as $ord) {
+                $ordId = (int)$ord['id'];
+                if (!in_array($ordId, $activeOrderIds)) {
+                    $activeOrderIds[] = $ordId;
+                }
+                $sequence = count($activeOrderIds);
 
-            // Update driver batch state
+                Database::update('orders', [
+                    'delivery_man_id'   => $dm['id'],
+                    'order_status'      => 'processing',
+                    'processing_at'     => date('Y-m-d H:i:s'),
+                    'delivery_batch_id' => $activeBatchId,
+                    'pickup_sequence'   => $sequence,
+                ], 'id = ?', [$ordId]);
+
+                $lastAcceptedId = $ordId;
+            }
+
             Database::update('delivery_men', [
-                'current_order_id' => $orderId,         // latest accepted
+                'current_order_id' => $lastAcceptedId,
                 'active_batch_id'  => $activeBatchId,
                 'active_order_ids' => json_encode($activeOrderIds),
             ], 'id = ?', [$dm['id']]);
@@ -92,8 +99,8 @@ class DeliveryService
             return [
                 'batch_id'    => $activeBatchId,
                 'order_count' => count($activeOrderIds),
-                'sequence'    => $sequence,
-                'order_code'  => $order['order_code'],
+                'sequence'    => count($activeOrderIds),
+                'order_code'  => $ordersToAccept[0]['order_code'],
             ];
         });
     }

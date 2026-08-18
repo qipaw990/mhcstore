@@ -89,17 +89,21 @@ class OrderController extends Controller
 
             $allOrderCodes = [];
             $grandTotal    = 0.0;
+            $batchId       = (count($stores) > 1) ? ('BATCH-' . strtoupper(substr(uniqid(), -6)) . rand(10, 99)) : null;
+            $seq           = 1;
 
             // Create one order per store
             foreach ($stores as $storeGroup) {
                 $result = $this->orderService->createOrderFromCart($userId, [
-                    'delivery_address' => $deliveryAddress,
-                    'payment_method'   => $paymentMethod,
-                    'coupon_code'      => sanitize($data['coupon_code'] ?? ''),
-                    'order_notes'      => sanitize($data['order_notes'] ?? ''),
-                    'distance_km'      => (float)($data['distance_km'] ?? 1.5),
-                    'order_type'       => $data['order_type'] ?? 'delivery',
-                    'store_id'         => $storeGroup['store_id'],   // scoped to this store
+                    'delivery_address'  => $deliveryAddress,
+                    'payment_method'    => $paymentMethod,
+                    'coupon_code'       => sanitize($data['coupon_code'] ?? ''),
+                    'order_notes'       => sanitize($data['order_notes'] ?? ''),
+                    'distance_km'       => (float)($data['distance_km'] ?? 1.5),
+                    'order_type'        => $data['order_type'] ?? 'delivery',
+                    'store_id'          => $storeGroup['store_id'],   // scoped to this store
+                    'delivery_batch_id' => $batchId,
+                    'pickup_sequence'   => $seq++,
                 ]);
 
                 $allOrderCodes[] = $result['order_code'];

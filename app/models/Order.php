@@ -108,13 +108,50 @@ class Order extends Model
                 LEFT JOIN `modules` m ON o.module_id = m.id
                 WHERE o.customer_id = ?
                 ORDER BY o.id DESC";
-        $orders = Database::query($sql, [$customerId]);
-        foreach ($orders as &$o) {
+        $rawOrders = Database::query($sql, [$customerId]);
+
+        $grouped  = [];
+        $batchMap = [];
+
+        foreach ($rawOrders as $o) {
             $o['items'] = Database::query("SELECT * FROM `order_items` WHERE `order_id` = ?", [$o['id']]);
+            foreach ($o['items'] as &$it) {
+                $it['store_name'] = $o['store_name'] ?? 'Toko';
+            }
+            unset($it);
+
             $o['delivery_address'] = json_decode($o['delivery_address_json'] ?? '{}', true) ?: [];
-            $o['is_reviewed'] = Database::fetchOne("SELECT id FROM `reviews` WHERE `order_id` = ? AND `user_id` = ? LIMIT 1", [$o['id'], $customerId]) ? true : false;
+            $o['is_reviewed']      = Database::fetchOne("SELECT id FROM `reviews` WHERE `order_id` = ? AND `user_id` = ? LIMIT 1", [$o['id'], $customerId]) ? true : false;
+
+            $batchId = $o['delivery_batch_id'] ?? null;
+
+            if ($batchId) {
+                if (!isset($batchMap[$batchId])) {
+                    $parent                   = $o;
+                    $parent['sub_orders']     = [$o];
+                    $parent['store_names']   = [$o['store_name'] ?? 'Toko'];
+                    $parent['all_items']      = $o['items'];
+                    $parent['total_amount']   = (float)$o['total_amount'];
+                    $parent['is_multi_store'] = false;
+                    $batchMap[$batchId]       = count($grouped);
+                    $grouped[]                = $parent;
+                } else {
+                    $idx = $batchMap[$batchId];
+                    $grouped[$idx]['sub_orders'][]   = $o;
+                    $grouped[$idx]['store_names'][] = $o['store_name'] ?? 'Toko';
+                    $grouped[$idx]['all_items']      = array_merge($grouped[$idx]['all_items'], $o['items']);
+                    $grouped[$idx]['total_amount']   += (float)$o['total_amount'];
+                    $grouped[$idx]['is_multi_store'] = true;
+                    $grouped[$idx]['store_name']     = implode(' • ', array_unique($grouped[$idx]['store_names']));
+                    $grouped[$idx]['items']          = $grouped[$idx]['all_items'];
+                }
+            } else {
+                $o['is_multi_store'] = false;
+                $grouped[] = $o;
+            }
         }
-        return $orders;
+
+        return $grouped;
     }
 
     public function getStoreOrders(int $storeId): array
@@ -150,12 +187,47 @@ class Order extends Model
                 WHERE (o.delivery_man_id IS NULL OR o.delivery_man_id = 0 OR o.delivery_man_id = '')
                   AND o.order_status NOT IN ('delivered', 'canceled', 'refunded', 'failed')
                 ORDER BY o.id DESC";
-        $orders = Database::query($sql);
-        foreach ($orders as &$o) {
+        $rawOrders = Database::query($sql);
+
+        $result   = [];
+        $batchMap = [];
+
+        foreach ($rawOrders as $o) {
             $o['items'] = Database::query("SELECT * FROM `order_items` WHERE `order_id` = ?", [$o['id']]);
             $o['delivery_address'] = json_decode($o['delivery_address_json'] ?? '{}', true) ?: [];
+
+            $batchId = $o['delivery_batch_id'] ?? null;
+
+            if ($batchId) {
+                if (!isset($batchMap[$batchId])) {
+                    $parent                   = $o;
+                    $parent['is_multi_store'] = false;
+                    $parent['stores_count']   = 1;
+                    $parent['store_names']   = [$o['store_name']];
+                    $parent['all_items']      = $o['items'];
+                    $parent['total_amount']   = (float)$o['total_amount'];
+                    $parent['sub_order_ids']  = [(int)$o['id']];
+                    $batchMap[$batchId]       = count($result);
+                    $result[]                 = $parent;
+                } else {
+                    $idx = $batchMap[$batchId];
+                    $result[$idx]['is_multi_store']  = true;
+                    $result[$idx]['sub_order_ids'][] = (int)$o['id'];
+                    $result[$idx]['store_names'][]  = $o['store_name'];
+                    $result[$idx]['stores_count']   = count(array_unique($result[$idx]['store_names']));
+                    $result[$idx]['store_name']     = implode(' & ', array_unique($result[$idx]['store_names']));
+                    $result[$idx]['all_items']      = array_merge($result[$idx]['all_items'], $o['items']);
+                    $result[$idx]['items']          = $result[$idx]['all_items'];
+                    $result[$idx]['total_amount']   += (float)$o['total_amount'];
+                }
+            } else {
+                $o['is_multi_store'] = false;
+                $o['stores_count']   = 1;
+                $result[]            = $o;
+            }
         }
-        return $orders;
+
+        return $result;
     }
 
     public function updateStatus(int $id, string $status, array $extraData = []): bool

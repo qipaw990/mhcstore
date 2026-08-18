@@ -63,7 +63,13 @@
 
                     <!-- Store Name & Order Date -->
                     <div class="d-flex align-items-center gap-1.5 mb-2.5">
-                        <i class="bi bi-shop text-muted flex-shrink-0" style="font-size: 13px;"></i>
+                        <?php if (!empty($order['is_multi_store'])): ?>
+                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning flex-shrink-0" style="font-size: 9px; padding: 3px 8px; border-radius: 6px;">
+                                <i class="bi bi-shop-window me-1"></i>Multi-Toko
+                            </span>
+                        <?php else: ?>
+                            <i class="bi bi-shop text-muted flex-shrink-0" style="font-size: 13px;"></i>
+                        <?php endif; ?>
                         <span class="fw-bold text-dark text-truncate" style="font-size: 12px; letter-spacing: -0.2px;"><?= htmlspecialchars($order['store_name'] ?? 'Toko Cicalengka') ?></span>
                         <span class="text-muted flex-shrink-0" style="font-size: 10.5px;">• <?= date('d M, H:i', strtotime($order['created_at'])) ?></span>
                     </div>
@@ -75,6 +81,9 @@
                                 <div class="text-truncate d-flex align-items-center gap-1.5">
                                     <i class="bi bi-dot text-danger" style="font-size: 16px; margin-right: -4px;"></i>
                                     <span><?= $item['quantity'] ?>x <?= htmlspecialchars($item['product_name']) ?></span>
+                                    <?php if (!empty($order['is_multi_store']) && !empty($item['store_name'])): ?>
+                                        <span class="text-muted" style="font-size: 10px;">(<?= htmlspecialchars($item['store_name']) ?>)</span>
+                                    <?php endif; ?>
                                 </div>
                             <?php endforeach; ?>
                         <?php else: ?>
