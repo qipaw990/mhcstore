@@ -2883,13 +2883,21 @@ div[style*="border-radius: 18px"] .d-flex {
    Leaflet Map Marker & Custom Pin CSS Safeguards
    ============================================================ */
 
-/* 1. Reset tile and marker image constraints for Bootstrap compatibility */
-.leaflet-container img {
+/* 1. Global Box-Sizing for Leaflet Container & Markers */
+.leaflet-container,
+.leaflet-container *,
+.leaflet-marker-icon,
+.leaflet-marker-icon * {
+  box-sizing: border-box !important;
+}
+
+/* 2. Reset Leaflet map tiles */
+.leaflet-container img.leaflet-tile {
   max-width: none !important;
   max-height: none !important;
 }
 
-/* 2. Hide Leaflet default distorted shadow elements */
+/* 3. Hide all distorted Leaflet shadow PNG elements */
 .leaflet-shadow-pane,
 .leaflet-marker-shadow,
 .leaflet-pane > .leaflet-shadow-pane,
@@ -2899,21 +2907,34 @@ img.leaflet-marker-shadow {
   visibility: hidden !important;
   width: 0 !important;
   height: 0 !important;
+  border: none !important;
+  background: transparent !important;
 }
 
-/* 3. Remove Leaflet default white background and border from .leaflet-div-icon wrapper ONLY */
-.leaflet-div-icon {
+/* 4. Fix Default Leaflet Image Markers (img.leaflet-marker-icon) - Prevents White Needle Stretching */
+img.leaflet-marker-icon {
+  display: block !important;
+  max-width: none !important;
+  max-height: none !important;
+  width: 25px !important;
+  height: 41px !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
 }
 
-/* 4. Display flex centering for container div icons */
+/* 5. Fix Custom DivIcon Markers (div.leaflet-marker-icon & div.leaflet-div-icon) */
 div.leaflet-marker-icon,
 div.leaflet-div-icon {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  overflow: visible !important;
 }
 
 /* Driver Page Layout Padding Fix (Mencegah konten terpotong Bottom Nav) */
