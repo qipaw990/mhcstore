@@ -139,7 +139,7 @@ function initOrderTrackingMap(orderCode, initialData) {
   // Place Driver Marker if driver is assigned
   if (initialData.driver && initialData.driver.assigned && initialData.driver.lat) {
     driverMarker = L.marker([initialData.driver.lat, initialData.driver.lng], { icon: createDriverIcon(), zIndexOffset: 1000 })
-      .bindPopup(`<div class="p-1"><b>Kurir: ${escapeHtml(initialData.driver.name)}</b><br><span class="badge bg-primary-subtle text-primary small mt-1"><i class="bi bi-broadcast me-1"></i> Live GPS Aktif</span></div>`)
+      .bindPopup(`<div class="ccg-map-popup"><div class="popup-title">Kurir: ${escapeHtml(initialData.driver.name)}</div><span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5 mt-1" style="font-size:10px; font-weight: 600;"><i class="bi bi-broadcast me-1"></i> Live GPS Aktif</span></div>`)
       .addTo(trackingMap);
   }
 

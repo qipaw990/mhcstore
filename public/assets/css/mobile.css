@@ -2908,17 +2908,72 @@ img.leaflet-marker-icon {
 }
 
 /* CRITICAL: Remove Leaflet's default white background on divIcon containers */
-div.leaflet-div-icon {
+div.leaflet-div-icon,
+div.leaflet-marker-icon {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
 }
 
-/* Also clear on marker-icon divs when className is empty */
-div.leaflet-marker-icon {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
+/* ============================================================
+   Leaflet Map — Premium Modern Popup Card Styling
+   ============================================================ */
+.leaflet-popup-content-wrapper {
+  border-radius: 16px !important;
+  padding: 8px 12px !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18), 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+  border: 1px solid rgba(226, 232, 240, 0.85) !important;
+  background: #FFFFFF !important;
+  font-family: inherit !important;
+}
+
+.leaflet-popup-content {
+  margin: 4px 6px !important;
+  padding-right: 18px !important; /* Prevents close button overlapping title text */
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+  color: #0f172a !important;
+  min-width: 150px !important;
+  max-width: 260px !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+}
+
+/* Styled Close Button (X) */
+.leaflet-container a.leaflet-popup-close-button {
+  top: 6px !important;
+  right: 6px !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 50% !important;
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 13px !important;
+  line-height: 1 !important;
+  padding: 0 !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.ccg-map-popup {
+  padding: 2px 0;
+  text-align: left;
+}
+
+.ccg-map-popup .popup-title {
+  font-weight: 700;
+  font-size: 12.5px;
+  color: #0f172a;
+  line-height: 1.35;
+  margin-bottom: 3px;
 }
 
 /* Driver Page Layout Padding Fix (Mencegah konten terpotong Bottom Nav) */
