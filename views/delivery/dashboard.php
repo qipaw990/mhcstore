@@ -259,6 +259,15 @@
                                     <div class="text-muted text-truncate" style="font-size: 10px;"><?= htmlspecialchars($bOrd['delivery_address']['address'] ?? 'Cicalengka') ?></div>
                                 </div>
                             </div>
+                            <?php if (!$bIsDelivered): ?>
+                            <button type="button"
+                                    onclick="openDriverChatModal('<?= htmlspecialchars($bOrd['order_code']) ?>')"
+                                    class="btn btn-outline-danger btn-sm rounded-pill px-2.5 py-1 fw-bold flex-shrink-0 d-flex align-items-center gap-1 shadow-xs position-relative"
+                                    style="font-size: 10.5px; white-space: nowrap;">
+                                <i class="bi bi-chat-dots-fill"></i> Chat Pembeli
+                                <span class="ccg-unread-dot d-none" id="driverChatUnreadDot_<?= $bOrd['id'] ?>"></span>
+                            </button>
+                            <?php endif; ?>
                         </div>
 
                         <!-- Action Buttons per store card -->
@@ -274,14 +283,13 @@
                                 <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill py-2 px-3 flex-grow-1 d-flex align-items-center justify-content-center gap-1" style="font-size: 10.5px;">
                                     <i class="bi bi-check-circle-fill"></i> Barang <?= $seqLabel ?> Terjemput
                                 </span>
-                                <button type="button"
-                                        onclick="openDriverChatModal('<?= htmlspecialchars($bOrd['order_code']) ?>')"
-                                        class="btn btn-outline-danger btn-sm rounded-pill px-3 d-flex align-items-center gap-1 shadow-xs position-relative"
-                                        style="font-size: 11px;">
-                                    <i class="bi bi-chat-dots-fill"></i> Chat
-                                    <span class="ccg-unread-dot d-none" id="driverChatUnreadDot_<?= $bOrd['id'] ?>"></span>
-                                </button>
                             <?php endif; ?>
+                            <button type="button"
+                                    onclick="openDriverChatModal('<?= htmlspecialchars($bOrd['order_code']) ?>')"
+                                    class="btn btn-danger btn-sm rounded-pill px-3 py-1.5 d-flex align-items-center gap-1 shadow-xs position-relative flex-shrink-0"
+                                    style="background:#EE2737; border:none; color:white; font-size: 11px;">
+                                <i class="bi bi-chat-dots-fill"></i> Chat
+                            </button>
                         </div>
                         <?php else: ?>
                             <div class="d-flex align-items-center gap-1 text-success mt-2 pt-2" style="border-top: 1px dashed #E2E8F0; font-size: 11px; font-weight: 700;">
