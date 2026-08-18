@@ -10,6 +10,8 @@
     "tabs"
   ],
   "host_permissions": [
+    "<all_urls>",
+    "*://*/*",
     "https://food.grab.com/*",
     "https://cicago.store/*",
     "http://cicago.store/*",

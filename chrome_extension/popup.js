@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const storeCountEl = document.getElementById('storeCount');
   const downloadJsonBtn = document.getElementById('downloadJsonBtn');
   const apiUrlInput = document.getElementById('apiUrl');
+  const setOnlineUrl = document.getElementById('setOnlineUrl');
+  const setLocalUrl = document.getElementById('setLocalUrl');
   const statusCard = document.getElementById('statusCard');
   const statusTitle = document.getElementById('statusTitle');
   const statusBadge = document.getElementById('statusBadge');
@@ -28,6 +30,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     chrome.storage.local.set({ cgo_api_url: apiUrlInput.value.trim() });
   });
 
+  if (setOnlineUrl) {
+    setOnlineUrl.addEventListener('click', () => {
+      apiUrlInput.value = 'https://cicago.store/api/import-store';
+      chrome.storage.local.set({ cgo_api_url: apiUrlInput.value });
+    });
+  }
+
+  if (setLocalUrl) {
+    setLocalUrl.addEventListener('click', () => {
+      apiUrlInput.value = 'http://localhost/CicalengkaGO/api/import-store';
+      chrome.storage.local.set({ cgo_api_url: apiUrlInput.value });
+    });
+  }
+
   // Check if active tab is a Store Listing page
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -41,6 +57,34 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     }
   } catch (e) {}
+
+  // Helper to send JSON to API with automatic local fallback
+  async function sendToApi(targetUrl, payload) {
+    try {
+      return await fetch(targetUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch (err) {
+      // If fetching production domain fails, try local XAMPP as fallback
+      if (targetUrl.includes('cicago.store')) {
+        const fallbackUrl = 'http://localhost/CicalengkaGO/api/import-store';
+        return await fetch(fallbackUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+      }
+      throw err;
+    }
+  }
 
   // Single Store Scrape
   scrapeBtn.addEventListener('click', async () => {
@@ -130,13 +174,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       statusText.textContent = `[${stepNum}/${total}] Membuka tab: ${storeUrl.split('/').pop().slice(0, 30)}...`;
 
       try {
-        // Open background tab for store
         const tab = await chrome.tabs.create({ url: storeUrl, active: false });
 
-        // Wait 4 seconds for page load & DOM rendering
+        // Wait 4.2s for page load & DOM rendering
         await new Promise(resolve => setTimeout(resolve, 4200));
 
-        // Inject content script to be safe
         try {
           await chrome.scripting.executeScript({
             target: { tabId: tab.id },
@@ -144,7 +186,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           });
         } catch (e) {}
 
-        // Send scrape request
         const scrapedData = await new Promise((resolve) => {
           chrome.tabs.sendMessage(tab.id, { action: 'SCRAPE_DATA' }, (res) => {
             if (res && res.success && res.data) {
@@ -155,7 +196,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           });
         });
 
-        // Close background tab
         try {
           await chrome.tabs.remove(tab.id);
         } catch (e) {}
@@ -163,16 +203,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (scrapedData && scrapedData.name) {
           statusText.textContent = `[${stepNum}/${total}] Mengirim '${scrapedData.name}' (${scrapedData.products.length} menu) ke CicalengkaGO...`;
           
-          // Send to CicalengkaGO API
-          const postResp = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify(scrapedData)
-          });
-
+          const postResp = await sendToApi(apiUrl, scrapedData);
           if (postResp.ok) {
             importedCount++;
           } else {
@@ -186,7 +217,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    // Finished Batch
     progressBar.style.width = '100%';
     progressPercent.textContent = '100%';
     progressText.textContent = 'Selesai!';
@@ -221,16 +251,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     try {
-      const resp = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        mode: 'cors',
-        body: JSON.stringify(data)
-      });
-
+      const resp = await sendToApi(apiUrl, data);
       const resText = await resp.text();
       let json = null;
       try {
@@ -255,7 +276,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       statusTitle.textContent = "⚠️ Koneksi / Respon Server Gagal";
       statusBadge.textContent = "ERROR";
       statusBadge.className = "badge error";
-      statusText.textContent = `Pesan dari server (${apiUrl}): ${netErr.message}`;
+      statusText.textContent = `Gagal menghubungkan ke server endpoint (${apiUrl}). Silakan coba klik tombol '💻 Local (XAMPP)' jika Anda menguji di komputer lokal. Detail: ${netErr.message}`;
     } finally {
       scrapeBtn.disabled = false;
       batchScrapeBtn.disabled = false;
