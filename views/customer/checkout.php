@@ -167,57 +167,80 @@ const BASE_SUBTOTAL = <?= (float)$cart_data['subtotal'] ?>;
 const BASE_DELIVERY_FEE = <?= (float)$cart_data['store']['delivery_fee'] ?>;
 
 let map, customerMarker, storeMarker, routeLine;
+let mapInitialized = false;
 
 function initCheckoutMap() {
-    const initialLat = parseFloat(document.getElementById('input-lat').value) || -6.9855;
-    const initialLng = parseFloat(document.getElementById('input-lng').value) || 107.8350;
+    if (mapInitialized) return;
+    mapInitialized = true;
 
-    map = L.map('checkout-map', { zoomControl: false }).setView([initialLat, initialLng], 14);
+    if ('geolocation' in navigator) {
+        const gpsTimeout = setTimeout(() => {
+            _buildMap(STORE_LAT, STORE_LNG, false);
+        }, 5000);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
-    }).addTo(map);
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                clearTimeout(gpsTimeout);
+                _buildMap(pos.coords.latitude, pos.coords.longitude, true);
+            },
+            () => {
+                clearTimeout(gpsTimeout);
+                _buildMap(STORE_LAT, STORE_LNG, false);
+            },
+            { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+        );
+    } else {
+        _buildMap(STORE_LAT, STORE_LNG, false);
+    }
+}
 
-    // Store Marker (Distinct Red Store Badge)
+function _buildMap(initLat, initLng, isGPS) {
+    document.getElementById('input-lat').value = initLat.toFixed(6);
+    document.getElementById('input-lng').value = initLng.toFixed(6);
+
+    map = L.map('checkout-map', { zoomControl: true, attributionControl: false })
+           .setView([initLat, initLng], isGPS ? 16 : 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
     const storeIcon = L.divIcon({
         className: 'custom-pin-store',
         html: '<div style="background:#101820;color:#EE2737;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 3px 10px rgba(0,0,0,0.35);font-size:16px;"><i class="bi bi-shop"></i></div>',
-        iconSize: [34, 34],
-        iconAnchor: [17, 17]
+        iconSize: [34, 34], iconAnchor: [17, 17]
     });
     storeMarker = L.marker([STORE_LAT, STORE_LNG], { icon: storeIcon })
         .addTo(map)
-        .bindPopup(`<div style="font-size:12px;"><b>🏪 Resto / Toko:</b><br>${STORE_NAME}</div>`);
+        .bindPopup(`<div style="font-size:12px;"><b>🏪 ${STORE_NAME}</b><br><span style="color:#666;">Titik Penjemputan</span></div>`);
 
-    // Customer Marker (CicalengkaGO Red Draggable Pin)
     const custIcon = L.divIcon({
         className: 'custom-pin-customer',
         html: '<div style="background:#EE2737;color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 4px 12px rgba(238,39,55,0.45);font-size:18px;"><i class="bi bi-geo-alt-fill"></i></div>',
-        iconSize: [36, 36],
-        iconAnchor: [18, 18]
+        iconSize: [36, 36], iconAnchor: [18, 18]
     });
 
-    customerMarker = L.marker([initialLat, initialLng], {
-        icon: custIcon,
-        draggable: true
-    }).addTo(map).bindPopup('<div style="font-size:12px;"><b>📍 Lokasi Pengantaran (Rumah Anda)</b><br><span style="color:#666;">Geser pin ini jika lokasi belum pas</span></div>').openPopup();
+    customerMarker = L.marker([initLat, initLng], { icon: custIcon, draggable: true })
+        .addTo(map)
+        .bindPopup('<div style="font-size:12px;"><b>📍 Lokasi Antar Anda</b><br><span style="color:#666;">Geser pin untuk sesuaikan posisi</span></div>')
+        .openPopup();
 
-    customerMarker.on('dragend', function (e) {
+    customerMarker.on('dragend', (e) => {
         const pos = e.target.getLatLng();
         updateLocationData(pos.lat, pos.lng);
     });
 
-    map.on('click', function (e) {
+    map.on('click', (e) => {
         customerMarker.setLatLng(e.latlng);
         updateLocationData(e.latlng.lat, e.latlng.lng);
     });
 
-    updateRouteAndDistance(initialLat, initialLng);
+    // Paksa render ulang tile supaya tidak blank di mobile
+    map.whenReady(() => setTimeout(() => map.invalidateSize(), 150));
 
-    // Auto-detect real device GPS on load silently
-    setTimeout(() => {
-        getCurrentLocation(true);
-    }, 500);
+    updateRouteAndDistance(initLat, initLng);
+    if (isGPS) reverseGeocode(initLat, initLng, 'input-address');
+
+    const bounds = L.latLngBounds([[STORE_LAT, STORE_LNG], [initLat, initLng]]);
+    map.fitBounds(bounds, { padding: [40, 40] });
 }
 
 let geocodeTimer = null;
@@ -295,9 +318,20 @@ function getCurrentLocation(isSilent = false) {
             (pos) => {
                 const lat = pos.coords.latitude;
                 const lng = pos.coords.longitude;
+
+                if (!map) {
+                    // Peta belum dibuat (seharusnya sudah), build ulang
+                    _buildMap(lat, lng, true);
+                    return;
+                }
+
                 if (customerMarker) customerMarker.setLatLng([lat, lng]);
-                if (map) map.setView([lat, lng], 15);
+                const bounds = L.latLngBounds([[STORE_LAT, STORE_LNG], [lat, lng]]);
+                map.fitBounds(bounds, { padding: [40, 40] });
+                setTimeout(() => map.invalidateSize(), 100);
+
                 updateLocationData(lat, lng);
+                reverseGeocode(lat, lng, 'input-address');
 
                 if (!isSilent) {
                     Swal.fire({
