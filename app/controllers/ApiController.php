@@ -483,14 +483,38 @@ class ApiController extends Controller
                 $stmtDel->execute([$sid]);
             }
 
-            $products = $pdo->query("SELECT id, name, image FROM products")->fetchAll(\PDO::FETCH_ASSOC);
+            $products = $pdo->query("SELECT id, name, description, image FROM products")->fetchAll(\PDO::FETCH_ASSOC);
             $updatedProducts = 0;
 
             foreach ($products as $p) {
                 $pid = (int)$p['id'];
                 $img = $p['image'];
+                $rawName = $p['name'];
+
+                // Clean concatenated product name
+                if (preg_match('/([a-z0-9])([A-Z])/', $rawName, $m, PREG_OFFSET_CAPTURE)) {
+                    $splitPos = $m[1][1] + 1;
+                    $cleanTitle = trim(substr($rawName, 0, $splitPos));
+                    $cleanDesc  = trim(substr($rawName, $splitPos));
+
+                    if (!empty($cleanTitle) && strlen($cleanTitle) > 3) {
+                        $stmtClean = $pdo->prepare("UPDATE products SET name = ?, description = ? WHERE id = ?");
+                        $stmtClean->execute([$cleanTitle, $cleanDesc, $pid]);
+                        $rawName = $cleanTitle;
+                    }
+                }
+
+                // Check small file / SVG
+                $isSmallFile = false;
+                if (!empty($img) && str_starts_with($img, 'uploads/')) {
+                    $fullPath = PUBLIC_PATH . '/' . $img;
+                    if (file_exists($fullPath) && filesize($fullPath) < 15000) {
+                        $isSmallFile = true;
+                    }
+                }
 
                 $needsFix = empty($img) 
+                    || $isSmallFile
                     || str_contains($img, 'default') 
                     || str_contains($img, 'unsplash') 
                     || str_contains($img, 'photo-1546069901-ba9599a7e63c')
@@ -501,7 +525,7 @@ class ApiController extends Controller
                     || str_starts_with($img, 'https://');
 
                 if ($needsFix) {
-                    $targetUrl = $this->getFoodImageByName($p['name']);
+                    $targetUrl = $this->getFoodImageByName($rawName);
                     $newImg = download_and_save_image($targetUrl, 'products');
                     if (!empty($newImg)) {
                         $stmtUpP = $pdo->prepare("UPDATE products SET image = ? WHERE id = ?");
@@ -511,7 +535,7 @@ class ApiController extends Controller
                 }
             }
 
-            $this->successResponse("Sukses! Berhasil mengunduh foto produk asli dan spesifik ke penyimpanan lokal server.", [
+            $this->successResponse("Sukses! Berhasil merapikan nama menu dan mengunduh foto produk kuliner HD ke penyimpanan lokal server.", [
                 'updated_stores'   => $updatedStores,
                 'updated_products' => $updatedProducts
             ]);

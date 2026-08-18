@@ -82,33 +82,62 @@ foreach ($scrapedStores as $sid) {
     }
 }
 
-// 2. For remaining products, check if image is unsplash placeholder or generic salad bowl (photo-1546069901-ba9599a7e63c)
-$products = $pdo->query("SELECT id, name, image FROM products")->fetchAll(PDO::FETCH_ASSOC);
+// 2. Clean concatenated product names & replace small icon/placeholder images
+$products = $pdo->query("SELECT id, name, description, image FROM products")->fetchAll(PDO::FETCH_ASSOC);
 $updatedCount = 0;
+$cleanedNamesCount = 0;
 
 foreach ($products as $p) {
     $pid = (int)$p['id'];
     $img = $p['image'];
+    $rawName = $p['name'];
 
-    // Needs fix if empty, unsplash, default, logo-grabfood, or photo-1546069901-ba9599a7e63c
+    // Clean concatenated product name e.g. "Nasi goreng sosisNasi Goreng campur..."
+    if (preg_match('/([a-z0-9])([A-Z])/', $rawName, $m, PREG_OFFSET_CAPTURE)) {
+        $splitPos = $m[1][1] + 1;
+        $cleanTitle = trim(substr($rawName, 0, $splitPos));
+        $cleanDesc  = trim(substr($rawName, $splitPos));
+
+        if (!empty($cleanTitle) && strlen($cleanTitle) > 3) {
+            $stmtClean = $pdo->prepare("UPDATE products SET name = ?, description = ? WHERE id = ?");
+            $stmtClean->execute([$cleanTitle, $cleanDesc, $pid]);
+            $rawName = $cleanTitle;
+            $cleanedNamesCount++;
+            echo "   [Product #{$pid}] Cleaned name: '{$cleanTitle}' | Desc: '{$cleanDesc}'" . $nl;
+        }
+    }
+
+    // Check if file is small SVG icon (< 15KB)
+    $isSmallFile = false;
+    if (!empty($img) && str_starts_with($img, 'uploads/')) {
+        $fullPath = PUBLIC_PATH . '/' . $img;
+        if (file_exists($fullPath) && filesize($fullPath) < 15000) {
+            $isSmallFile = true;
+        }
+    }
+
+    // Needs fix if empty, small SVG, unsplash, default, logo-grabfood, or photo-1546069901-ba9599a7e63c
     $needsFix = empty($img) 
+        || $isSmallFile
         || str_contains($img, 'default') 
         || str_contains($img, 'unsplash') 
         || str_contains($img, 'logo-grabfood')
         || str_contains($img, 'svg')
-        || str_contains($img, 'photo-1546069901-ba9599a7e63c');
+        || str_contains($img, 'photo-1546069901-ba9599a7e63c')
+        || str_starts_with($img, 'http://')
+        || str_starts_with($img, 'https://');
 
     if ($needsFix) {
-        $targetRemoteUrl = get_food_image_by_name($p['name']);
+        $targetRemoteUrl = get_food_image_by_name($rawName);
         $localPath = download_and_save_image($targetRemoteUrl, 'products');
 
         if (!empty($localPath)) {
             $stmtUp = $pdo->prepare("UPDATE products SET image = ? WHERE id = ?");
             $stmtUp->execute([$localPath, $pid]);
             $updatedCount++;
-            echo "   [Product #{$pid}] Replaced placeholder image for '{$p['name']}' -> {$localPath}" . $nl;
+            echo "   [Product #{$pid}] Replaced placeholder for '{$rawName}' -> {$localPath}" . $nl;
         }
     }
 }
 
-echo "✅ Finished! Updated {$updatedCount} product images to high quality local food photos." . $nl;
+echo "✅ Finished! Cleaned {$cleanedNamesCount} names & updated {$updatedCount} product images to high quality local food photos." . $nl;
