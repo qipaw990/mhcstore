@@ -346,41 +346,41 @@ function extractGrabFoodData() {
 
   // 2. Extract DOM Menu Items
   const cardSelectors = [
-    '[class*="menuItemWrapper"]',
-    '[class*="menuItem___"]',
-    '[class*="menuItem--"]',
-    '[class*="itemCard"]',
-    '[class*="MenuItem"]',
+    'div[class*="menuItem___"]',
+    'div[class*="menuItemWrapper"]',
+    'div[class*="itemCard"]',
+    'div[class*="MenuItem"]',
     'div[class*="categoryContent"] > div',
     '.ant-col-lg-8'
   ];
   
-  let domCards = document.querySelectorAll(cardSelectors.join(', '));
-  if (!domCards || domCards.length === 0) {
-    domCards = document.querySelectorAll('[class*="menuItem"], [class*="itemCard"], [class*="MenuItem"], div[role="button"]');
-  }
+  let domCards = Array.from(document.querySelectorAll(cardSelectors.join(', ')));
   
-  domCards.forEach(card => {
+  // Deduplicate nested card elements if outer and inner match
+  const filteredCards = domCards.filter(c => {
+    return !domCards.some(other => other !== c && other.contains(c));
+  });
+
+  filteredCards.forEach(card => {
     // Skip cards inside 'Untukmu' recommendation section
-    const parentSec = card.closest('section, [class*="category"], [class*="Category"], [class*="section"]');
+    const parentSec = card.closest('div[class*="categoryContent"], div[class*="CategoryContent"], section, [class*="category"], [class*="Category"], [class*="section"]');
     let catName = 'Menu Utama';
     if (parentSec) {
-      const headerText = (parentSec.querySelector('h1, h2, h3, h4, [class*="categoryName"], [class*="title"], [class*="header"]') || {}).textContent || '';
-      const htLower = headerText.toLowerCase().trim();
+      const headerEl = parentSec.querySelector('h1, h2, h3, h4, [class*="categoryTitle"], [class*="categoryName"], [class*="categoryHeader"], [class*="title"], [class*="header"]');
+      const headerText = headerEl ? headerEl.textContent.trim() : '';
+      const htLower = headerText.toLowerCase();
       if (htLower) {
         if (htLower.includes('untukmu') || htLower.includes('untuk mu') || htLower.includes('for you') || htLower.includes('rekomendasi') || htLower.includes('recommended')) {
           return;
         }
-        catName = headerText.trim();
+        catName = headerText;
       }
     }
 
-    const titleEl = card.querySelector('[class*="itemNameTitle"], [class*="item-name"], [class*="product-name"], h3, h4, h5') ||
-                    card.querySelector('[class*="itemName"] p') ||
-                    card.querySelector('[class*="titleTitle"]');
-    const priceEl = card.querySelector('[class*="discountedPrice"], [class*="itemPrice"], [class*="price"], [class*="Price"]');
-    const descEl = card.querySelector('[class*="itemDescription"], [class*="product-description"], p[class*="desc"]');
-    const imgEl = card.querySelector('img[class*="realImage"], img[src*="food-cms"], img[src*="grab"], img');
+    const titleEl = card.querySelector('p[class*="itemNameTitle"], [class*="itemNameTitle"], [class*="itemName"] p, [class*="itemName"], [class*="item-name"], [class*="product-name"], h3, h4, h5');
+    const priceEl = card.querySelector('p[class*="discountedPrice"], [class*="discountedPrice"], [class*="itemPrice"] p, [class*="itemPrice"], [class*="price"], [class*="Price"]');
+    const descEl  = card.querySelector('p[class*="itemDescription"], [class*="itemDescription"], [class*="product-description"], p[class*="desc"]');
+    const imgEl   = card.querySelector('img[class*="realImage"], div[class*="menuItemPhoto"] img, div[class*="menuItemPhotoContainer"] img, img[src*="food-cms"], img[src*="huawei-food-cms"], img[src*="grab"], img');
 
     if (titleEl) {
       const nameText = titleEl.textContent.trim();
@@ -404,7 +404,7 @@ function extractGrabFoodData() {
         }
       }
 
-      let descText = descEl ? descEl.textContent.trim() : '';
+      let descText = descEl ? descEl.textContent.replace(/\u00a0/g, ' ').trim() : '';
       if (descText === nameText) descText = '';
 
       const existingProduct = result.products.find(p => p.name.toLowerCase() === nameText.toLowerCase());
