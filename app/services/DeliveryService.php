@@ -340,40 +340,43 @@ class DeliveryService
         }
     }
 
-    /**
-     * Calculate total km of the route:
-     * Driver pos → Store1 → Store2 → … → Customer destination (last order's address)
-     */
     private function calcBatchTotalKm(array $dm, array $orders): float
     {
         if (empty($orders)) return 0.0;
 
-        $driverLat = (float)($dm['current_latitude']  ?? -6.9840);
-        $driverLng = (float)($dm['current_longitude'] ?? 107.8340);
+        // Sort by pickup_sequence
+        usort($orders, fn($a, $b) => (int)($a['pickup_sequence'] ?? 1) <=> (int)($b['pickup_sequence'] ?? 1));
 
         $totalKm = 0.0;
-        $prevLat = $driverLat;
-        $prevLng = $driverLng;
+        $prevLat = (float)($orders[0]['store_lat'] ?? $orders[0]['latitude'] ?? -6.9835);
+        $prevLng = (float)($orders[0]['store_lng'] ?? $orders[0]['longitude'] ?? 107.8335);
 
-        // Sort by pickup_sequence
-        usort($orders, fn($a, $b) => (int)$a['pickup_sequence'] <=> (int)$b['pickup_sequence']);
-
-        foreach ($orders as $ord) {
-            $storeLat = (float)($ord['store_lat'] ?? -6.9835);
-            $storeLng = (float)($ord['store_lng'] ?? 107.8335);
-            $totalKm += haversine_distance($prevLat, $prevLng, $storeLat, $storeLng);
-            $prevLat  = $storeLat;
-            $prevLng  = $storeLng;
+        for ($i = 1; $i < count($orders); $i++) {
+            $stLat = (float)($orders[$i]['store_lat'] ?? $orders[$i]['latitude'] ?? -6.9835);
+            $stLng = (float)($orders[$i]['store_lng'] ?? $orders[$i]['longitude'] ?? 107.8335);
+            if ($stLat != 0 && $stLng != 0 && $prevLat != 0 && $prevLng != 0) {
+                $totalKm += haversine_distance($prevLat, $prevLng, $stLat, $stLng);
+                $prevLat  = $stLat;
+                $prevLng  = $stLng;
+            }
         }
 
         // Last leg: last store → customer destination
         $lastOrder = end($orders);
         $addr      = is_string($lastOrder['delivery_address_json'] ?? null)
             ? json_decode($lastOrder['delivery_address_json'], true)
-            : [];
+            : ($lastOrder['delivery_address'] ?? []);
         $destLat   = (float)($addr['lat'] ?? -6.9855);
         $destLng   = (float)($addr['lng'] ?? 107.8350);
-        $totalKm  += haversine_distance($prevLat, $prevLng, $destLat, $destLng);
+
+        if ($destLat != 0 && $destLng != 0 && $prevLat != 0 && $prevLng != 0) {
+            $totalKm += haversine_distance($prevLat, $prevLng, $destLat, $destLng);
+        }
+
+        // Fallback to order recorded distance_km if calculated distance is minimal
+        if ($totalKm < 0.3 && !empty($lastOrder['distance_km'])) {
+            $totalKm = (float)$lastOrder['distance_km'];
+        }
 
         return max(0.5, round($totalKm, 2));
     }

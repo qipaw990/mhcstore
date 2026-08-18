@@ -287,14 +287,26 @@ class Order extends Model
                 $subOrds = $resOrd['sub_orders'];
                 usort($subOrds, fn($a, $b) => (int)($a['pickup_sequence'] ?? 1) <=> (int)($b['pickup_sequence'] ?? 1));
 
+                $storeIds = array_filter(array_column($subOrds, 'store_id'));
+                $stores = [];
+                if (!empty($storeIds)) {
+                    $placeholders = implode(',', array_fill(0, count($storeIds), '?'));
+                    $sRows = Database::query("SELECT id, name, address, latitude, longitude FROM stores WHERE id IN ({$placeholders})", array_values($storeIds));
+                    foreach ($sRows as $sr) {
+                        $stores[$sr['id']] = $sr;
+                    }
+                }
+
                 $totalRouteKm = 0.0;
-                $prevLat = (float)($subOrds[0]['store_lat'] ?? -6.9835);
-                $prevLng = (float)($subOrds[0]['store_lng'] ?? 107.8335);
+                $st0Id   = $subOrds[0]['store_id'] ?? null;
+                $prevLat = (float)($subOrds[0]['store_lat'] ?? $stores[$st0Id]['latitude'] ?? -6.9835);
+                $prevLng = (float)($subOrds[0]['store_lng'] ?? $stores[$st0Id]['longitude'] ?? 107.8335);
 
                 for ($i = 1; $i < count($subOrds); $i++) {
-                    $sLat = (float)($subOrds[$i]['store_lat'] ?? -6.9835);
-                    $sLng = (float)($subOrds[$i]['store_lng'] ?? 107.8335);
-                    if ($sLat != 0 && $sLng != 0) {
+                    $stId = $subOrds[$i]['store_id'] ?? null;
+                    $sLat = (float)($subOrds[$i]['store_lat'] ?? $stores[$stId]['latitude'] ?? -6.9835);
+                    $sLng = (float)($subOrds[$i]['store_lng'] ?? $stores[$stId]['longitude'] ?? 107.8335);
+                    if ($sLat != 0 && $sLng != 0 && $prevLat != 0 && $prevLng != 0) {
                         $totalRouteKm += haversine_distance($prevLat, $prevLng, $sLat, $sLng);
                         $prevLat = $sLat;
                         $prevLng = $sLng;
@@ -302,15 +314,18 @@ class Order extends Model
                 }
 
                 $lastSub  = end($subOrds);
-                $custAddr = $lastSub['delivery_address'] ?? [];
+                $custAddr = is_string($lastSub['delivery_address_json'] ?? null)
+                    ? json_decode($lastSub['delivery_address_json'], true)
+                    : ($lastSub['delivery_address'] ?? []);
                 $destLat  = (float)($custAddr['lat'] ?? -6.9855);
                 $destLng  = (float)($custAddr['lng'] ?? 107.8350);
-                if ($destLat != 0 && $destLng != 0) {
+
+                if ($destLat != 0 && $destLng != 0 && $prevLat != 0 && $prevLng != 0) {
                     $totalRouteKm += haversine_distance($prevLat, $prevLng, $destLat, $destLng);
                 }
 
-                if ($totalRouteKm < 0.5) {
-                    $totalRouteKm = array_sum(array_map(fn($so) => max(0.5, (float)($so['distance_km'] ?? 1.5)), $subOrds));
+                if ($totalRouteKm < 0.3) {
+                    $totalRouteKm = (float)($lastSub['distance_km'] ?? 1.5);
                 }
 
                 $resOrd['distance_km'] = round($totalRouteKm, 2);
