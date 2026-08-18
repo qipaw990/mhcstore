@@ -302,35 +302,41 @@ class DeliveryService
         return (float)$order['delivery_charge'] * 0.85;
     }
 
-    private function creditBatchCommission(array $dm, string $batchId, array $lastOrder): void
+    public function creditBatchCommission(array $dm, string $batchId, ?array $lastOrder = null): void
     {
         $batchOrders = Database::query(
             "SELECT * FROM `orders` WHERE `delivery_batch_id` = ? AND `order_status` = 'delivered'",
             [$batchId]
         );
 
+        if (empty($batchOrders)) return;
+
         $totalKm = $this->calcBatchTotalKm($dm, $batchOrders);
         $totalCommission = $this->calcBatchCommissionAmount($batchOrders, $totalKm);
 
-        // Split commission proportionally per order
-        foreach ($batchOrders as $ord) {
-            $ratio   = count($batchOrders) > 0 ? 1 / count($batchOrders) : 1;
-            $earning = round($totalCommission * $ratio, 2);
+        // Check if ANY sub-order or the batchId was already credited to driver's wallet
+        $orderIds = array_map(fn($o) => (string)$o['id'], $batchOrders);
+        $orderIds[] = $batchId;
+        $inPlaceholders = implode(',', array_fill(0, count($orderIds), '?'));
 
-            $alreadyCredited = Database::fetchOne(
-                "SELECT id FROM `wallet_transactions` WHERE `wallet_id` = (SELECT id FROM wallets WHERE user_id = ? AND type = 'delivery_man' LIMIT 1) AND `category` = 'order_earning' AND `reference_id` = ? LIMIT 1",
-                [$dm['user_id'], (string)$ord['id']]
+        $alreadyCredited = Database::fetchOne(
+            "SELECT wt.id FROM `wallet_transactions` wt
+             JOIN `wallets` w ON wt.wallet_id = w.id
+             WHERE w.user_id = ? AND w.user_type = 'delivery_man' 
+               AND wt.category = 'order_earning' 
+               AND wt.reference_id IN ({$inPlaceholders}) LIMIT 1",
+            array_merge([$dm['user_id']], $orderIds)
+        );
+
+        if (!$alreadyCredited) {
+            $storeCount = count($batchOrders);
+            $this->walletModel->credit(
+                $dm['user_id'],
+                $totalCommission,
+                'order_earning',
+                "Komisi Batch {$batchId} ({$storeCount} Toko, {$totalKm} km total)",
+                $batchId
             );
-
-            if (!$alreadyCredited) {
-                $this->walletModel->credit(
-                    $dm['user_id'],
-                    $earning,
-                    'order_earning',
-                    "Komisi batch {$batchId} – #{$ord['order_code']} ({$totalKm} km total)",
-                    (string)$ord['id']
-                );
-            }
         }
     }
 

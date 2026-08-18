@@ -81,23 +81,34 @@ class DeliveryController extends Controller
         // Auto-credit driver commission for delivered orders that haven't been credited yet
         $driverWallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
         $deliveredDriverOrders = Database::query(
-            "SELECT id, order_code, delivery_charge FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` = 'delivered'",
+            "SELECT id, order_code, delivery_charge, delivery_batch_id FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` = 'delivered'",
             [$dm['id']]
         );
+        $processedBatches = [];
+        $deliveryService = new \App\Services\DeliveryService();
+
         foreach ($deliveredDriverOrders as $dOrder) {
-            $alreadyCredited = Database::fetchOne(
-                "SELECT id FROM `wallet_transactions` WHERE `wallet_id` = ? AND `category` = 'order_earning' AND `reference_id` = ? LIMIT 1",
-                [$driverWallet['id'], (string)$dOrder['id']]
-            );
-            if (!$alreadyCredited) {
-                $driverEarning = (float)$dOrder['delivery_charge'] * 0.85;
-                $this->walletModel->credit(
-                    $userId,
-                    $driverEarning,
-                    'order_earning',
-                    "Komisi pengantaran pesanan #{$dOrder['order_code']}",
-                    (string)$dOrder['id']
+            $batchId = $dOrder['delivery_batch_id'] ?? null;
+            if (!empty($batchId)) {
+                if (!in_array($batchId, $processedBatches)) {
+                    $processedBatches[] = $batchId;
+                    $deliveryService->creditBatchCommission($dm, $batchId);
+                }
+            } else {
+                $alreadyCredited = Database::fetchOne(
+                    "SELECT id FROM `wallet_transactions` WHERE `wallet_id` = ? AND `category` = 'order_earning' AND `reference_id` = ? LIMIT 1",
+                    [$driverWallet['id'], (string)$dOrder['id']]
                 );
+                if (!$alreadyCredited) {
+                    $driverEarning = (float)$dOrder['delivery_charge'] * 0.85;
+                    $this->walletModel->credit(
+                        $userId,
+                        $driverEarning,
+                        'order_earning',
+                        "Komisi pengantaran pesanan #{$dOrder['order_code']}",
+                        (string)$dOrder['id']
+                    );
+                }
             }
         }
 
