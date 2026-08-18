@@ -54,30 +54,83 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Check if active tab is a Store Listing page
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab && tab.url && tab.url.includes('food.grab.com')) {
+  // Helper function to scan tab DOM for store URLs
+  async function scanTabForStores(tabId) {
+    try {
       await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
+        target: { tabId: tabId },
         files: ['content.js']
       }).catch(() => {});
 
       const res = await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
+        target: { tabId: tabId },
         func: () => {
-          if (typeof extractStoreLinksFromListing === 'function') {
-            return extractStoreLinksFromListing();
+          if (typeof window.extractStoreLinksFromListing === 'function') {
+            const list = window.extractStoreLinksFromListing();
+            if (list && list.length > 0) return list;
           }
-          return [];
+          if (typeof extractStoreLinksFromListing === 'function') {
+            const list = extractStoreLinksFromListing();
+            if (list && list.length > 0) return list;
+          }
+          
+          const storeUrls = new Set();
+          const links = document.querySelectorAll('a[href*="/restaurant/"], a[href*="/store/"]');
+          links.forEach(a => {
+            let href = a.getAttribute('href');
+            if (!href) return;
+            if (href.startsWith('/')) href = 'https://food.grab.com' + href;
+            const cleanUrl = href.split('?')[0];
+            if (cleanUrl.includes('/restaurant/')) storeUrls.add(cleanUrl);
+          });
+
+          const cols = document.querySelectorAll('[class*="RestaurantListCol"], [class*="asList"], [class*="restaurantCard"], [class*="RestaurantCard"]');
+          cols.forEach(col => {
+            const a = col.querySelector('a') || col.closest('a');
+            if (a) {
+              let href = a.getAttribute('href');
+              if (href) {
+                if (href.startsWith('/')) href = 'https://food.grab.com' + href;
+                const cleanUrl = href.split('?')[0];
+                if (cleanUrl.includes('/restaurant/')) storeUrls.add(cleanUrl);
+              }
+            }
+          });
+
+          try {
+            const nextScript = document.getElementById('__NEXT_DATA__');
+            if (nextScript && nextScript.textContent) {
+              const txt = nextScript.textContent;
+              const matches = txt.match(/\/id\/id\/restaurant\/[a-zA-Z0-9\-_]+(?:\/[a-zA-Z0-9\-_]+)?/g) ||
+                              txt.match(/https:\/\/food\.grab\.com\/[a-z]{2}\/[a-z]{2}\/restaurant\/[a-zA-Z0-9\-_]+(?:\/[a-zA-Z0-9\-_]+)?/g);
+              if (matches) {
+                matches.forEach(m => {
+                  let fullUrl = m;
+                  if (fullUrl.startsWith('/')) fullUrl = 'https://food.grab.com' + fullUrl;
+                  storeUrls.add(fullUrl.split('?')[0]);
+                });
+              }
+            }
+          } catch (e) {}
+
+          return Array.from(storeUrls);
         }
       });
 
-      const stores = res && res[0] ? res[0].result : [];
+      return res && res[0] ? res[0].result : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // Check if active tab is a Store Listing page
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab && tab.url && tab.url.includes('food.grab.com')) {
+      const stores = await scanTabForStores(tab.id);
       if (Array.isArray(stores) && stores.length > 0) {
         listingStores = stores;
         storeCountEl.textContent = listingStores.length;
-        batchScrapeBtn.style.display = 'flex';
       }
     }
   } catch (e) {}
@@ -196,22 +249,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab && tab.url && tab.url.includes('food.grab.com')) {
-          await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content.js']
-          }).catch(() => {});
-
-          const res = await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: () => {
-              if (typeof extractStoreLinksFromListing === 'function') {
-                return extractStoreLinksFromListing();
-              }
-              return [];
-            }
-          });
-
-          const stores = res && res[0] ? res[0].result : [];
+          const stores = await scanTabForStores(tab.id);
           if (Array.isArray(stores) && stores.length > 0) {
             listingStores = stores;
             storeCountEl.textContent = listingStores.length;
