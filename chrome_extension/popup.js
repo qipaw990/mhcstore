@@ -136,37 +136,93 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   } catch (e) {}
 
+  const batchLogsContainer = document.getElementById('batchLogsContainer');
+  const batchLogsList = document.getElementById('batchLogsList');
+
   function updateBatchUI(status) {
     if (!status) return;
 
     if (status.isBatchRunning) {
       scrapeBtn.disabled = true;
       batchScrapeBtn.disabled = true;
+      stopBatchBtn.style.display = 'flex';
       progressContainer.style.display = 'block';
       statusCard.classList.add('active');
-      statusTitle.textContent = "🚀 Scrape Massal Berjalan (Background)...";
-      statusBadge.textContent = "RUNNING";
-      statusBadge.className = "badge";
+
+      statusTitle.textContent = status.statusTitle || `🚀 [${status.current}/${status.total}] Memproses...`;
+      statusText.textContent = status.statusText || "Meng-scrape data toko dari GrabFood...";
+      
+      const phase = status.phase || 'SCRAPING';
+      statusBadge.textContent = phase;
+      statusBadge.className = `badge ${phase.toLowerCase()}`;
       
       const pct = status.percent || 0;
       progressBar.style.width = `${pct}%`;
       progressPercent.textContent = `${pct}%`;
-      progressText.textContent = `[${status.current || 1}/${status.total || 1}] Memproses...`;
-      statusText.textContent = status.statusText || "Meng-scrape toko...";
+      progressText.textContent = `[${status.current || 1}/${status.total || 1}] ${phase}...`;
+
+      // Render product preview if available
+      if (Array.isArray(status.scrapedProducts) && status.scrapedProducts.length > 0) {
+        itemList.innerHTML = '';
+        itemList.style.display = 'block';
+        status.scrapedProducts.forEach(p => {
+          const li = document.createElement('li');
+          li.innerHTML = `<span>${p.name}</span><strong>Rp ${p.price.toLocaleString('id-ID')}</strong>`;
+          itemList.appendChild(li);
+        });
+      } else if (phase === 'SCRAPING') {
+        itemList.style.display = 'none';
+      }
+
+      // Render batch logs history
+      if (Array.isArray(status.logs) && status.logs.length > 0) {
+        batchLogsContainer.style.display = 'block';
+        batchLogsList.innerHTML = '';
+        status.logs.forEach(log => {
+          const li = document.createElement('li');
+          const isOk = log.status === 'success';
+          li.innerHTML = `
+            <div>
+              <strong style="color:${isOk ? '#00AA5B' : '#EF4444'};">${isOk ? '✅' : '⚠️'} ${log.name}</strong>
+              <div style="font-size:9.5px; color:var(--text-muted);">${log.count} menu terimpor • ${log.time}</div>
+            </div>
+            <span class="badge ${isOk ? 'success' : 'error'}">${isOk ? 'OK' : 'FAIL'}</span>
+          `;
+          batchLogsList.appendChild(li);
+        });
+      }
+
     } else if (status.completed) {
+      scrapeBtn.disabled = false;
+      batchScrapeBtn.disabled = false;
+      stopBatchBtn.style.display = 'none';
       progressContainer.style.display = 'block';
       progressBar.style.width = '100%';
       progressPercent.textContent = '100%';
       progressText.textContent = 'Selesai!';
 
       statusCard.classList.add('active');
-      statusTitle.textContent = "🎉 BATCH IMPORT SELESAI!";
+      statusTitle.textContent = status.statusTitle || "🎉 BATCH IMPORT SELESAI!";
       statusBadge.textContent = "COMPLETED";
       statusBadge.className = "badge success";
       statusText.textContent = status.statusText || "Seluruh toko berhasil diimpor ke CicalengkaGO!";
 
-      scrapeBtn.disabled = false;
-      batchScrapeBtn.disabled = false;
+      if (Array.isArray(status.logs) && status.logs.length > 0) {
+        batchLogsContainer.style.display = 'block';
+        batchLogsList.innerHTML = '';
+        status.logs.forEach(log => {
+          const li = document.createElement('li');
+          const isOk = log.status === 'success';
+          li.innerHTML = `
+            <div>
+              <strong style="color:${isOk ? '#00AA5B' : '#EF4444'};">${isOk ? '✅' : '⚠️'} ${log.name}</strong>
+              <div style="font-size:9.5px; color:var(--text-muted);">${log.count} menu terimpor • ${log.time}</div>
+            </div>
+            <span class="badge ${isOk ? 'success' : 'error'}">${isOk ? 'OK' : 'FAIL'}</span>
+          `;
+          batchLogsList.appendChild(li);
+        });
+      }
     }
   }
 

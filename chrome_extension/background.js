@@ -73,25 +73,33 @@ async function runBatchScrape(stores, apiUrl) {
   isBatchRunning = true;
   cancelRequested = false;
   const total = stores.length;
+  const logsList = [];
 
   for (let i = 0; i < total; i++) {
     if (cancelRequested) break;
 
     const storeUrl = stores[i];
     const currentStep = i + 1;
-    const pct = Math.round((currentStep / total) * 100);
+    const rawSlug = storeUrl.split('/').pop().split('?')[0].replace(/-/g, ' ');
 
+    // FASE 1: SCRAPING (Buka Tab & Ekstraksi Data)
+    const scrapePct = Math.round(((currentStep - 0.7) / total) * 100);
     const statusObj = {
       isBatchRunning: true,
       current: currentStep,
       total: total,
-      percent: pct,
-      statusText: `[${currentStep}/${total}] Membuka & memuat toko: ${storeUrl.split('/').pop().slice(0, 30)}...`
+      percent: Math.max(1, scrapePct),
+      phase: 'SCRAPING',
+      statusTitle: `🔍 [${currentStep}/${total}] FASE 1: MENG-SCRAPE RESTO`,
+      statusText: `Membuka & membaca DOM toko: '${rawSlug.slice(0, 32)}...'`,
+      currentStoreName: rawSlug,
+      scrapedProducts: [],
+      logs: logsList
     };
     await chrome.storage.local.set({ batchStatus: statusObj });
 
     try {
-      // 1. Create tab in BACKGROUND so user view doesn't switch away
+      // 1. Create tab in BACKGROUND
       const tab = await chrome.tabs.create({ url: storeUrl, active: false });
 
       // 2. Wait until tab HTTP state is complete (max 12s)
@@ -120,7 +128,7 @@ async function runBatchScrape(stores, apiUrl) {
         }
       }).catch(() => {});
 
-      // 6. Give 1.5 seconds buffer for React menu state update
+      // 6. Buffer for React menu state update
       await new Promise(r => setTimeout(r, 1500));
 
       // 7. Primary Extraction Attempt
@@ -156,20 +164,69 @@ async function runBatchScrape(stores, apiUrl) {
 
       if (scrapedData && scrapedData.name) {
         const prodCount = scrapedData.products ? scrapedData.products.length : 0;
-        statusObj.statusText = `[${currentStep}/${total}] Mengirim '${scrapedData.name}' (${prodCount} menu) ke server...`;
+        const productsPreview = scrapedData.products ? scrapedData.products.slice(0, 6) : [];
+
+        // FASE 2: KIRIM DATA KE SERVER
+        const sendPct = Math.round(((currentStep - 0.3) / total) * 100);
+        statusObj.percent = sendPct;
+        statusObj.phase = 'SENDING';
+        statusObj.currentStoreName = scrapedData.name;
+        statusObj.scrapedProducts = productsPreview;
+        statusObj.statusTitle = `📤 [${currentStep}/${total}] FASE 2: MENGIRIM KE SERVER`;
+        statusObj.statusText = `Ditemukan ${prodCount} menu dari '${scrapedData.name}'. Mengirim ke CicalengkaGO...`;
         await chrome.storage.local.set({ batchStatus: statusObj });
 
         try {
-          await sendToApi(apiUrl, scrapedData);
-          statusObj.statusText = `[${currentStep}/${total}] ✅ Sukses: '${scrapedData.name}' (${prodCount} menu terimpor)`;
+          const apiResp = await sendToApi(apiUrl, scrapedData);
+          const apiJson = await apiResp.json().catch(() => null);
+          const serverMsg = (apiJson && apiJson.message) ? apiJson.message : `Toko '${scrapedData.name}' (${prodCount} menu) berhasil diimpor!`;
+
+          const stepPct = Math.round((currentStep / total) * 100);
+          statusObj.percent = stepPct;
+          statusObj.phase = 'SUCCESS';
+          statusObj.statusTitle = `✅ [${currentStep}/${total}] TERIMPOR KE SERVER`;
+          statusObj.statusText = serverMsg;
+
+          logsList.unshift({
+            name: scrapedData.name,
+            count: prodCount,
+            status: 'success',
+            time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+          });
+          statusObj.logs = logsList.slice(0, 20);
           await chrome.storage.local.set({ batchStatus: statusObj });
+
         } catch (apiErr) {
           console.error("API Error importing store", scrapedData.name, apiErr);
-          statusObj.statusText = `[${currentStep}/${total}] ⚠️ Gagal API (${scrapedData.name}): ${apiErr.message}`;
+          const stepPct = Math.round((currentStep / total) * 100);
+          statusObj.percent = stepPct;
+          statusObj.phase = 'ERROR';
+          statusObj.statusTitle = `⚠️ [${currentStep}/${total}] GAGAL IMPOR SERVER`;
+          statusObj.statusText = `Gagal API (${scrapedData.name}): ${apiErr.message}`;
+
+          logsList.unshift({
+            name: scrapedData.name,
+            count: prodCount,
+            status: 'error',
+            time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+          });
+          statusObj.logs = logsList.slice(0, 20);
           await chrome.storage.local.set({ batchStatus: statusObj });
         }
       } else {
-        statusObj.statusText = `[${currentStep}/${total}] ⚠️ Gagal membaca DOM resto`;
+        const stepPct = Math.round((currentStep / total) * 100);
+        statusObj.percent = stepPct;
+        statusObj.phase = 'ERROR';
+        statusObj.statusTitle = `⚠️ [${currentStep}/${total}] GAGAL SCRAPE`;
+        statusObj.statusText = `Tidak dapat membaca data menu dari toko '${rawSlug}'`;
+
+        logsList.unshift({
+          name: rawSlug.slice(0, 25),
+          count: 0,
+          status: 'error',
+          time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+        });
+        statusObj.logs = logsList.slice(0, 20);
         await chrome.storage.local.set({ batchStatus: statusObj });
       }
     } catch (err) {
@@ -186,7 +243,9 @@ async function runBatchScrape(stores, apiUrl) {
         current: total,
         total: total,
         percent: 100,
-        statusText: `🎉 BATCH IMPORT SELESAI! Selesai memproses ${total} toko!`
+        statusTitle: `🎉 BATCH IMPORT SELESAI!`,
+        statusText: `Selesai memproses seluruh ${total} toko! Semua data telah tersimpan di CicalengkaGO.`,
+        logs: logsList
       }
     });
   }
