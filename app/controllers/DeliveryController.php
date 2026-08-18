@@ -246,18 +246,19 @@ class DeliveryController extends Controller
 
         try {
             $result = $this->deliveryService->acceptOrder($userId, $orderId);
+            $orderCount = is_array($result['order_count'] ?? null) ? count($result['order_count']) : (int)($result['order_count'] ?? 1);
             $this->successResponse(
-                count($result['order_count'] ?? []) > 1
+                $orderCount > 1
                     ? "Pesanan ke-{$result['sequence']} berhasil ditambahkan ke trip Anda!"
                     : 'Pesanan berhasil diterima! Segera menuju ke lokasi penjemputan.',
                 [
                     'order_code'  => $result['order_code'],
                     'batch_id'    => $result['batch_id'],
-                    'order_count' => $result['order_count'],
+                    'order_count' => $orderCount,
                     'sequence'    => $result['sequence'],
                 ]
             );
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             $this->errorResponse($e->getMessage());
         }
     }
@@ -285,7 +286,7 @@ class DeliveryController extends Controller
         try {
             $this->deliveryService->updateOrderStatus($userId, $orderId, $status, $otp);
             $this->successResponse('Status pengantaran berhasil diperbarui.');
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             $this->errorResponse($e->getMessage());
         }
     }
