@@ -104,7 +104,15 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify(data)
       });
 
-      const json = await resp.json();
+      const resText = await resp.text();
+      let json = null;
+      try {
+        json = JSON.parse(resText);
+      } catch (parseErr) {
+        // Strip HTML tags to get clean error message if server returned PHP error HTML
+        const cleanMsg = resText.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
+        throw new Error(cleanMsg.slice(0, 180) || "Server tidak mengembalikan format JSON yang valid.");
+      }
 
       if (resp.ok && json.success) {
         statusTitle.textContent = "✅ Berhasil Diimpor!";
@@ -118,10 +126,10 @@ document.addEventListener('DOMContentLoaded', () => {
         statusText.textContent = json.message || "Terjadi kesalahan server saat mengimpor toko.";
       }
     } catch (netErr) {
-      statusTitle.textContent = "⚠️ Koneksi Server Gagal";
-      statusBadge.textContent = "OFFLINE";
+      statusTitle.textContent = "⚠️ Koneksi / Respon Server Gagal";
+      statusBadge.textContent = "ERROR";
       statusBadge.className = "badge error";
-      statusText.textContent = `Tidak dapat menghubungi ${apiUrl}. (${netErr.message || 'NetworkError'}). Jika menggunakan localhost, pastikan Apache aktif atau gunakan server lokal XAMPP.`;
+      statusText.textContent = `Pesan dari server (${apiUrl}): ${netErr.message}`;
     } finally {
       scrapeBtn.disabled = false;
       scrapeBtn.innerHTML = '<span>🚀 Scrape & Impor Toko Ini</span>';

@@ -202,30 +202,41 @@ class ApiController extends Controller
 
     public function importStore(): void
     {
+        // Suppress HTML error output and clean buffer to ensure pure JSON response
+        @ini_set('display_errors', '0');
+        if (ob_get_length()) {
+            @ob_clean();
+        }
+
         header("Access-Control-Allow-Origin: *");
         header("Access-Control-Allow-Methods: POST, OPTIONS");
-        header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+        header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept");
+        header("Content-Type: application/json; charset=utf-8");
 
         if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
             http_response_code(200);
             exit;
         }
 
-        $rawInput = file_get_contents('php://input');
-        $data = json_decode($rawInput, true) ?: $this->getPost();
-
-        $storeName = trim($data['name'] ?? '');
-        if (empty($storeName)) {
-            $this->errorResponse('Nama toko tidak boleh kosong.');
-            return;
-        }
-
         try {
+            $rawInput = file_get_contents('php://input');
+            $data = json_decode($rawInput, true);
+            if (!$data && !empty($_POST)) {
+                $data = $_POST;
+            }
+
+            $storeName = trim($data['name'] ?? '');
+            if (empty($storeName)) {
+                $this->errorResponse('Nama toko tidak boleh kosong.');
+                return;
+            }
+
             $pdo = \App\Core\Database::getPdo();
 
             // 1. Create or Get Vendor
-            $phone = !empty($data['phone']) ? trim($data['phone']) : ('08' . rand(100000000, 999999999));
-            $email = 'vendor_' . preg_replace('/[^a-z0-9]/', '', strtolower($storeName)) . '@cicalengkago.id';
+            $phone = !empty($data['phone']) ? trim($data['phone']) : ('08' . str_pad((string)rand(100000000, 999999999), 10, '0', STR_PAD_LEFT));
+            $cleanName = preg_replace('/[^a-z0-9]/', '', strtolower($storeName));
+            $email = 'vendor_' . ($cleanName ?: 'store_' . rand(1000, 9999)) . '@cicalengkago.id';
 
             $stmtV = $pdo->prepare("SELECT id FROM users WHERE email = ? OR phone = ? LIMIT 1");
             $stmtV->execute([$email, $phone]);
@@ -234,13 +245,25 @@ class ApiController extends Controller
             if ($vUser) {
                 $vendorId = (int)$vUser['id'];
             } else {
+                // Handle duplicate phone/email graceful fallback
+                $phoneAlt = '08' . str_pad((string)rand(100000000, 999999999), 10, '0', STR_PAD_LEFT);
+                $emailAlt = 'vendor_' . rand(10000, 99999) . '@cicalengkago.id';
                 $stmtInsV = $pdo->prepare("INSERT INTO users (role, name, email, phone, password, is_active) VALUES ('vendor', ?, ?, ?, ?, 1)");
-                $stmtInsV->execute([
-                    "Mitra " . $storeName,
-                    $email,
-                    $phone,
-                    password_hash('vendor123', PASSWORD_BCRYPT)
-                ]);
+                try {
+                    $stmtInsV->execute([
+                        "Mitra " . $storeName,
+                        $email,
+                        $phone,
+                        password_hash('vendor123', PASSWORD_BCRYPT)
+                    ]);
+                } catch (\PDOException $pe) {
+                    $stmtInsV->execute([
+                        "Mitra " . $storeName,
+                        $emailAlt,
+                        $phoneAlt,
+                        password_hash('vendor123', PASSWORD_BCRYPT)
+                    ]);
+                }
                 $vendorId = (int)$pdo->lastInsertId();
 
                 $stmtW = $pdo->prepare("INSERT INTO wallets (user_id, user_type, balance) VALUES (?, 'vendor', 0)");
@@ -345,7 +368,6 @@ class ApiController extends Controller
                     ]);
                     $itemsImported++;
                 } else {
-                    // Update image if it was previously empty or unsplash default
                     if (!empty($pImage) && (empty($existingP['image']) || strpos($existingP['image'], 'unsplash') !== false)) {
                         $stmtUpP = $pdo->prepare("UPDATE products SET image = ?, description = ?, price = ? WHERE id = ?");
                         $stmtUpP->execute([$pImage, $pDesc, $pPrice, $existingP['id']]);
@@ -365,7 +387,7 @@ class ApiController extends Controller
                 'imported_items'   => $itemsImported,
                 'total_food_stores'=> $cnt
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->errorResponse("Gagal mengimpor toko: " . $e->getMessage());
         }
     }
