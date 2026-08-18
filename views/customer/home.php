@@ -163,7 +163,7 @@
                 <div class="gofood-store-body">
                     <div class="gofood-store-name text-truncate"><?= htmlspecialchars($store['name']) ?></div>
                     <div class="gofood-store-meta">
-                        <span class="gofood-rating flex-shrink-0"><i class="bi bi-star-fill"></i> <?= number_format(($store['rating'] > 0 ? $store['rating'] : 5.0), 1) ?></span>
+                        <span class="gofood-rating flex-shrink-0"><i class="bi bi-star-fill"></i> <?= number_format((float)($store['rating'] ?? 5.0), 1) ?></span>
                         <span>•</span>
                         <span class="text-truncate"><?= htmlspecialchars($store['delivery_time'] ?? '20-30 mnt') ?></span>
                     </div>

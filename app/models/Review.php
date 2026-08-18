@@ -201,12 +201,13 @@ class Review extends Model
         );
 
         $count = (int)($stat['count'] ?? 0);
-        $avg = ($count > 0) ? round((float)$stat['avg_rating'], 1) : 5.0;
-
-        Database::update('stores', [
-            'rating'        => $avg,
-            'reviews_count' => $count
-        ], 'id = ?', [$storeId]);
+        if ($count > 0) {
+            $avg = round((float)$stat['avg_rating'], 1);
+            Database::update('stores', [
+                'rating'        => $avg,
+                'reviews_count' => $count
+            ], 'id = ?', [$storeId]);
+        }
     }
 
     /**
@@ -220,12 +221,13 @@ class Review extends Model
         );
 
         $count = (int)($stat['count'] ?? 0);
-        $avg = ($count > 0) ? round((float)$stat['avg_rating'], 1) : 5.0;
-
-        Database::update('delivery_men', [
-            'rating'        => $avg,
-            'reviews_count' => $count
-        ], 'id = ?', [$dmId]);
+        if ($count > 0) {
+            $avg = round((float)$stat['avg_rating'], 1);
+            Database::update('delivery_men', [
+                'rating'        => $avg,
+                'reviews_count' => $count
+            ], 'id = ?', [$dmId]);
+        }
     }
 
     /**
