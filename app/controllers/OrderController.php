@@ -121,9 +121,7 @@ class OrderController extends Controller
                 'order_codes'    => $allOrderCodes,
                 'store_count'    => count($allOrderCodes),
                 'payment_method' => $paymentMethod,
-                'redirect'       => $multiOrder
-                    ? 'orders'
-                    : 'orders/' . $firstCode . '/tracking',
+                'redirect'       => 'orders/' . $firstCode . '/tracking',
             ];
 
             // Online payment: 1 Snap token covering grand total of all stores
