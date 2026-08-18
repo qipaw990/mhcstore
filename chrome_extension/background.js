@@ -54,11 +54,11 @@ async function runBatchScrape(stores, apiUrl) {
     await chrome.storage.local.set({ batchStatus: statusObj });
 
     try {
-      // Create background tab
-      const tab = await chrome.tabs.create({ url: storeUrl, active: false });
+      // Create active tab so Chrome hydrates Next.js DOM and menu items fully
+      const tab = await chrome.tabs.create({ url: storeUrl, active: true });
 
-      // Wait 4.5 seconds for page load & image rendering
-      await new Promise(r => setTimeout(r, 4500));
+      // Wait 3.8 seconds for full DOM & menu item rendering
+      await new Promise(r => setTimeout(r, 3800));
 
       if (cancelRequested) {
         await chrome.tabs.remove(tab.id).catch(() => {});

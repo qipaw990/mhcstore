@@ -126,6 +126,25 @@ function extractGrabFoodData() {
           }
         });
       });
+    // Check if this object contains direct items or menuItems list
+    if (Array.isArray(obj.items) || Array.isArray(obj.menuItems) || Array.isArray(obj.products)) {
+      const itemsList = obj.items || obj.menuItems || obj.products || [];
+      itemsList.forEach(p => {
+        if (p && p.name && (p.priceInCents !== undefined || p.price !== undefined || p.imgHref || p.photoHref)) {
+          const price = (p.priceInCents ? p.priceInCents / 100 : (p.price || 15000));
+          const img = cleanImageUrl(p.imgHref || p.photoHref || p.photo || p.image || p.url || '');
+          if (!result.products.some(existing => existing.name === p.name)) {
+            result.products.push({
+              name: p.name.trim(),
+              description: (p.description || '').trim(),
+              price: parseFloat(price) || 15000,
+              image: img,
+              is_recommended: 0,
+              category: result.category || 'Menu Utama'
+            });
+          }
+        }
+      });
     }
 
     // Recursively scan keys
