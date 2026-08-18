@@ -289,11 +289,11 @@ class ApiController extends Controller
             $stmtS->execute([$storeName]);
             $sRow = $stmtS->fetch(\PDO::FETCH_ASSOC);
 
-            $rawLogo  = !empty($data['logo']) ? $data['logo'] : 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=80';
-            $rawCover = !empty($data['cover_photo']) ? $data['cover_photo'] : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80';
+            $rawLogo  = !empty($data['logo']) ? $data['logo'] : 'assets/images/stores/store1.jpg';
+            $rawCover = !empty($data['cover_photo']) ? $data['cover_photo'] : 'assets/images/stores/cover1.jpg';
 
-            $logo  = download_and_save_image($rawLogo, 'stores');
-            $cover = download_and_save_image($rawCover, 'stores');
+            $logo  = str_starts_with($rawLogo, 'http') ? download_and_save_image($rawLogo, 'stores') : $rawLogo;
+            $cover = str_starts_with($rawCover, 'http') ? download_and_save_image($rawCover, 'stores') : $rawCover;
 
             $address  = !empty($data['address']) ? trim($data['address']) : 'Cicalengka, Kab. Bandung';
             $lat      = !empty($data['latitude']) ? (float)$data['latitude'] : -6.98350000;
@@ -376,9 +376,9 @@ class ApiController extends Controller
                 $pPrice    = (float)($p['price'] ?? 0);
                 $rawPImage = !empty($p['image']) ? trim($p['image']) : '';
 
-                // Ensure product does NOT use store logo or store cover photo
-                if (empty($rawPImage) || $rawPImage === $rawLogo || $rawPImage === $rawCover || str_contains($rawPImage, '/stores/')) {
-                    $rawPImage = $this->getFoodImageByName($pName);
+                // Ensure product does NOT use store logo or store cover photo or unsplash
+                if (empty($rawPImage) || $rawPImage === $rawLogo || $rawPImage === $rawCover || str_contains($rawPImage, '/stores/') || str_contains($rawPImage, 'unsplash')) {
+                    $rawPImage = 'assets/images/products/food1.jpg';
                 }
 
                 $pImage    = download_and_save_image($rawPImage, 'products');
