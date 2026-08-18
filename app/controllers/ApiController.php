@@ -376,12 +376,12 @@ class ApiController extends Controller
                 $pPrice    = (float)($p['price'] ?? 0);
                 $rawPImage = !empty($p['image']) ? trim($p['image']) : '';
 
-                // Clean image URL: do not use store logo/cover or unsplash
-                if ($rawPImage === $rawLogo || $rawPImage === $rawCover || str_contains($rawPImage, '/stores/') || str_contains($rawPImage, 'unsplash')) {
-                    $rawPImage = '';
+                // Clean image URL: if product missing item photo, fallback to store cover/logo
+                if (empty($rawPImage) || str_contains($rawPImage, 'unsplash')) {
+                    $rawPImage = !empty($rawCover) ? $rawCover : $rawLogo;
                 }
 
-                $pImage = (!empty($rawPImage) && str_starts_with($rawPImage, 'http')) ? download_and_save_image($rawPImage, 'products') : $rawPImage;
+                $pImage = (!empty($rawPImage) && str_starts_with($rawPImage, 'http')) ? download_and_save_image($rawPImage, 'products') : ($rawPImage ?: $cover);
                 $pRec      = !empty($p['is_recommended']) ? 1 : 0;
                 $pDisc     = (float)($p['discount'] ?? 0);
 

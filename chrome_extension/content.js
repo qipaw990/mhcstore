@@ -512,8 +512,7 @@ function extractGrabFoodData() {
     }
 
     // Check if image is a REAL GrabFood merchant item photo
-    const isStoreImg = p.image && (p.image === result.logo || p.image === result.cover_photo || p.image.includes('/stores/'));
-    const isRealGrabPhoto = p.image && !isStoreImg && (
+    const isRealGrabPhoto = p.image && (
       p.image.includes('compressed_webp') || 
       p.image.includes('menueditor_item') ||
       p.image.includes('/items/') ||
@@ -543,6 +542,16 @@ function extractGrabFoodData() {
   if (!result.cover_photo || (!result.cover_photo.includes('food-cms') && !result.cover_photo.includes('huawei-food-cms'))) {
     result.cover_photo = '';
   }
+
+  // Guaranteed Zero Empty Images: Fallback to store cover/logo for products missing specific item photos
+  const fallbackStorePhoto = result.cover_photo || result.logo || 
+    result.products.find(p => p.image && (p.image.includes('food-cms') || p.image.includes('huawei-food-cms')))?.image || '';
+
+  result.products.forEach(p => {
+    if (!p.image && fallbackStorePhoto) {
+      p.image = fallbackStorePhoto;
+    }
+  });
 
   return result;
 }
