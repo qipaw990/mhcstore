@@ -252,27 +252,67 @@ class Order extends Model
                     $parent                   = $o;
                     $parent['is_multi_store'] = false;
                     $parent['stores_count']   = 1;
-                    $parent['store_names']   = [$o['store_name']];
+                    $parent['store_names']    = [$o['store_name']];
                     $parent['all_items']      = $o['items'];
                     $parent['total_amount']   = (float)$o['total_amount'];
+                    $parent['delivery_charge']= (float)($o['delivery_charge'] ?? 0);
                     $parent['sub_order_ids']  = [(int)$o['id']];
+                    $parent['sub_orders']     = [$o];
                     $batchMap[$batchId]       = count($result);
                     $result[]                 = $parent;
                 } else {
                     $idx = $batchMap[$batchId];
                     $result[$idx]['is_multi_store']  = true;
                     $result[$idx]['sub_order_ids'][] = (int)$o['id'];
-                    $result[$idx]['store_names'][]  = $o['store_name'];
-                    $result[$idx]['stores_count']   = count(array_unique($result[$idx]['store_names']));
-                    $result[$idx]['store_name']     = implode(' & ', array_unique($result[$idx]['store_names']));
-                    $result[$idx]['all_items']      = array_merge($result[$idx]['all_items'], $o['items']);
-                    $result[$idx]['items']          = $result[$idx]['all_items'];
+                    $result[$idx]['sub_orders'][]    = $o;
+                    $result[$idx]['store_names'][]   = $o['store_name'];
+                    $result[$idx]['stores_count']    = count(array_unique($result[$idx]['store_names']));
+                    $result[$idx]['store_name']      = implode(' & ', array_unique($result[$idx]['store_names']));
+                    $result[$idx]['all_items']       = array_merge($result[$idx]['all_items'], $o['items']);
+                    $result[$idx]['items']           = $result[$idx]['all_items'];
                     $result[$idx]['total_amount']   += (float)$o['total_amount'];
+                    $result[$idx]['delivery_charge']+= (float)($o['delivery_charge'] ?? 0);
                 }
             } else {
                 $o['is_multi_store'] = false;
                 $o['stores_count']   = 1;
                 $result[]            = $o;
+            }
+        }
+
+        // Final pass: calculate multi-leg distance_km for batch orders
+        foreach ($result as &$resOrd) {
+            if (!empty($resOrd['sub_orders']) && count($resOrd['sub_orders']) > 1) {
+                $subOrds = $resOrd['sub_orders'];
+                usort($subOrds, fn($a, $b) => (int)($a['pickup_sequence'] ?? 1) <=> (int)($b['pickup_sequence'] ?? 1));
+
+                $totalRouteKm = 0.0;
+                $prevLat = (float)($subOrds[0]['store_lat'] ?? -6.9835);
+                $prevLng = (float)($subOrds[0]['store_lng'] ?? 107.8335);
+
+                for ($i = 1; $i < count($subOrds); $i++) {
+                    $sLat = (float)($subOrds[$i]['store_lat'] ?? -6.9835);
+                    $sLng = (float)($subOrds[$i]['store_lng'] ?? 107.8335);
+                    if ($sLat != 0 && $sLng != 0) {
+                        $totalRouteKm += haversine_distance($prevLat, $prevLng, $sLat, $sLng);
+                        $prevLat = $sLat;
+                        $prevLng = $sLng;
+                    }
+                }
+
+                $lastSub  = end($subOrds);
+                $custAddr = $lastSub['delivery_address'] ?? [];
+                $destLat  = (float)($custAddr['lat'] ?? -6.9855);
+                $destLng  = (float)($custAddr['lng'] ?? 107.8350);
+                if ($destLat != 0 && $destLng != 0) {
+                    $totalRouteKm += haversine_distance($prevLat, $prevLng, $destLat, $destLng);
+                }
+
+                if ($totalRouteKm < 0.5) {
+                    $totalRouteKm = array_sum(array_map(fn($so) => max(0.5, (float)($so['distance_km'] ?? 1.5)), $subOrds));
+                }
+
+                $resOrd['distance_km'] = round($totalRouteKm, 2);
             }
         }
 
