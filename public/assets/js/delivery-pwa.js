@@ -225,6 +225,11 @@ async function syncDriverLiveDashboard() {
       console.warn(`[📡 Radar Sync] Response status error: ${res.status}`);
       return;
     }
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.warn('[📡 Radar Sync] Non-JSON response received');
+      return;
+    }
     const json = await res.json();
     if (!json.success || !json.data) {
       console.warn('[📡 Radar Sync] Invalid JSON response:', json);

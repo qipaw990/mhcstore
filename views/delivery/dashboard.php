@@ -442,19 +442,61 @@
 </div>
 </div>
 
+<?php
+$activeTripOrders = [];
+if (!empty($active_batch['orders'])) {
+    foreach ($active_batch['orders'] as $idx => $bOrd) {
+        $activeTripOrders[] = [
+            'id'           => (int)$bOrd['id'],
+            'order_code'   => $bOrd['order_code'],
+            'sequence'     => $idx + 1,
+            'status'       => $bOrd['order_status'],
+            'is_picked_up' => in_array($bOrd['order_status'], ['picked_up', 'on_the_way', 'delivered']),
+            'is_delivered' => $bOrd['order_status'] === 'delivered',
+            'store' => [
+                'name'    => $bOrd['store_name'] ?? 'Toko / Resto',
+                'address' => $bOrd['store_address'] ?? 'Cicalengka',
+                'lat'     => (float)($bOrd['store_lat'] ?? -6.9835),
+                'lng'     => (float)($bOrd['store_lng'] ?? 107.8335)
+            ],
+            'customer' => [
+                'name'    => $bOrd['customer_name'] ?? 'Pelanggan',
+                'address' => $bOrd['delivery_address']['address'] ?? 'Cicalengka',
+                'lat'     => (float)($bOrd['delivery_address']['lat'] ?? -6.9855),
+                'lng'     => (float)($bOrd['delivery_address']['lng'] ?? 107.8350)
+            ]
+        ];
+    }
+} elseif (!empty($active_order)) {
+    $activeTripOrders[] = [
+        'id'           => (int)$active_order['id'],
+        'order_code'   => $active_order['order_code'],
+        'sequence'     => 1,
+        'status'       => $active_order['order_status'],
+        'is_picked_up' => in_array($active_order['order_status'], ['picked_up', 'on_the_way', 'delivered']),
+        'is_delivered' => $active_order['order_status'] === 'delivered',
+        'store' => [
+            'name'    => $active_order['store_name'] ?? 'Toko / Resto',
+            'address' => $active_order['store_address'] ?? 'Cicalengka',
+            'lat'     => (float)($active_order['store_lat'] ?? -6.9835),
+            'lng'     => (float)($active_order['store_lng'] ?? 107.8335)
+        ],
+        'customer' => [
+            'name'    => $active_order['customer_name'] ?? 'Pelanggan',
+            'address' => $active_order['delivery_address']['address'] ?? 'Cicalengka',
+            'lat'     => (float)($active_order['delivery_address']['lat'] ?? -6.9855),
+            'lng'     => (float)($active_order['delivery_address']['lng'] ?? 107.8350)
+        ]
+    ];
+}
+?>
+
 <script>
-window.HAS_ACTIVE_ORDER = <?= !empty($active_order) ? 'true' : 'false' ?>;
+window.ACTIVE_TRIP_ORDERS = <?= json_encode($activeTripOrders) ?>;
+window.HAS_ACTIVE_ORDER = window.ACTIVE_TRIP_ORDERS.length > 0;
 window.dRadarMap = null;
 window.myDriverMarker = null;
 window.activeRouteLine = null;
-window.actStoreMarker = null;
-window.actCustMarker = null;
-
-window.actStoreLat = <?= (float)($active_order['store_lat'] ?? -6.9835) ?>;
-window.actStoreLng = <?= (float)($active_order['store_lng'] ?? 107.8335) ?>;
-window.actDestLat = <?= (float)($active_order['delivery_address']['lat'] ?? -6.9855) ?>;
-window.actDestLng = <?= (float)($active_order['delivery_address']['lng'] ?? 107.8350) ?>;
-window.isPickedUp = <?= (!empty($active_order) && in_array($active_order['order_status'], ['picked_up', 'on_the_way', 'delivered'])) ? 'true' : 'false' ?>;
 
 window.driverLat = <?= (float)($driver['current_latitude'] ?? $driver['latitude'] ?? -6.9840) ?>;
 window.driverLng = <?= (float)($driver['current_longitude'] ?? $driver['longitude'] ?? 107.8340) ?>;
@@ -467,41 +509,64 @@ window.updateDriverLiveLocation = function(lat, lng, recenter = false) {
         window.myDriverMarker.setLatLng([lat, lng]);
     }
 
-    if (window.HAS_ACTIVE_ORDER && window.dRadarMap) {
-        const targetLat = window.isPickedUp ? window.actDestLat : window.actStoreLat;
-        const targetLng = window.isPickedUp ? window.actDestLng : window.actStoreLng;
-
-        if (targetLat && targetLng && targetLat !== 0 && targetLng !== 0) {
-            if (window.activeRouteLine) {
-                window.activeRouteLine.setLatLngs([[lat, lng], [targetLat, targetLng]]);
-            } else {
-                window.activeRouteLine = L.polyline([[lat, lng], [targetLat, targetLng]], {
-                    color: window.isPickedUp ? '#10b981' : '#EE2737',
-                    weight: 5,
-                    dashArray: '6, 8'
-                }).addTo(window.dRadarMap);
-            }
-            if (recenter) {
-                const bounds = L.latLngBounds([[lat, lng], [targetLat, targetLng]]);
-                window.dRadarMap.fitBounds(bounds, { padding: [40, 40] });
-            }
-        }
-    } else if (recenter && window.dRadarMap) {
+    if (recenter && window.dRadarMap) {
         window.dRadarMap.setView([lat, lng], 15);
     }
-
-    // Persist to server
-    const fd = new FormData();
-    fd.append('lat', lat);
-    fd.append('lng', lng);
-    fetch((window.BASE_URL || '') + '/delivery/update-location', {
-        method: 'POST',
-        body: fd
-    }).catch(() => {});
 };
+
+function createStoreMapIcon(seq) {
+    const badgeHtml = seq ? `<circle cx="24" cy="8" r="7.5" fill="#1e293b" stroke="white" stroke-width="1.5"/><text x="24" y="11" font-size="9" font-weight="800" fill="white" text-anchor="middle">${seq}</text>` : '';
+    const storeSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
+      <defs>
+        <linearGradient id="sg_${seq || 0}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#f87171"/>
+          <stop offset="100%" stop-color="#b91c1c"/>
+        </linearGradient>
+      </defs>
+      <path d="M16 2C9 2 3 8 3 15c0 10 13 29 13 29S29 25 29 15C29 8 23 2 16 2z" fill="url(#sg_${seq || 0})" stroke="white" stroke-width="2"/>
+      <path d="M9 14 L9 12 Q9 10 16 10 Q23 10 23 12 L23 14 Q19.5 17 16 16 Q12.5 17 9 14z" fill="white"/>
+      <rect x="11" y="14.5" width="10" height="6" rx="0.5" fill="white" opacity="0.25"/>
+      <rect x="13" y="15" width="6" height="5.5" fill="white"/>
+      <rect x="14.5" y="16" width="3" height="4.5" fill="#b91c1c"/>
+      ${badgeHtml}
+    </svg>`;
+    return L.icon({
+        iconUrl: 'data:image/svg+xml,' + encodeURIComponent(storeSvg),
+        iconSize: [32, 46],
+        iconAnchor: [16, 46],
+        popupAnchor: [0, -46]
+    });
+}
+
+function createCustMapIcon(seq) {
+    const badgeHtml = seq ? `<circle cx="24" cy="8" r="7.5" fill="#047857" stroke="white" stroke-width="1.5"/><text x="24" y="11" font-size="9" font-weight="800" fill="white" text-anchor="middle">${seq}</text>` : '';
+    const custSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
+      <defs>
+        <linearGradient id="cg_${seq || 0}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#34d399"/>
+          <stop offset="100%" stop-color="#047857"/>
+        </linearGradient>
+      </defs>
+      <path d="M16 2C9 2 3 8 3 15c0 10 13 29 13 29S29 25 29 15C29 8 23 2 16 2z" fill="url(#cg_${seq || 0})" stroke="white" stroke-width="2"/>
+      <circle cx="16" cy="11" r="3.8" fill="white"/>
+      <path d="M9 22 Q9 17 16 17 Q23 17 23 22" fill="white"/>
+      ${badgeHtml}
+    </svg>`;
+    return L.icon({
+        iconUrl: 'data:image/svg+xml,' + encodeURIComponent(custSvg),
+        iconSize: [32, 46],
+        iconAnchor: [16, 46],
+        popupAnchor: [0, -46]
+    });
+}
 
 function initDriverRadarMap() {
     if (!document.getElementById('driver-radar-map')) return;
+
+    if (window.dRadarMap) {
+        window.dRadarMap.remove();
+        window.dRadarMap = null;
+    }
 
     window.dRadarMap = L.map('driver-radar-map', { 
         zoomControl: false,
@@ -512,7 +577,6 @@ function initDriverRadarMap() {
         maxZoom: 19
     }).addTo(window.dRadarMap);
 
-    // Helper SVG Data URIs for Driver Dashboard
     const driverSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
       <defs>
         <linearGradient id="dg" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -527,34 +591,7 @@ function initDriverRadarMap() {
       <line x1="15" y1="12" x2="15" y2="17" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
       <circle cx="17" cy="10" r="2" fill="white"/>
     </svg>`;
-    
-    const storeSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
-      <defs>
-        <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#f87171"/>
-          <stop offset="100%" stop-color="#b91c1c"/>
-        </linearGradient>
-      </defs>
-      <path d="M16 2C9 2 3 8 3 15c0 10 13 29 13 29S29 25 29 15C29 8 23 2 16 2z" fill="url(#sg)" stroke="white" stroke-width="2"/>
-      <path d="M9 14 L9 12 Q9 10 16 10 Q23 10 23 12 L23 14 Q19.5 17 16 16 Q12.5 17 9 14z" fill="white"/>
-      <rect x="11" y="14.5" width="10" height="6" rx="0.5" fill="white" opacity="0.25"/>
-      <rect x="13" y="15" width="6" height="5.5" fill="white"/>
-      <rect x="14.5" y="16" width="3" height="4.5" fill="#b91c1c"/>
-    </svg>`;
-    
-    const custSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
-      <defs>
-        <linearGradient id="cg" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#34d399"/>
-          <stop offset="100%" stop-color="#047857"/>
-        </linearGradient>
-      </defs>
-      <path d="M16 2C9 2 3 8 3 15c0 10 13 29 13 29S29 25 29 15C29 8 23 2 16 2z" fill="url(#cg)" stroke="white" stroke-width="2"/>
-      <circle cx="16" cy="11" r="3.8" fill="white"/>
-      <path d="M9 22 Q9 17 16 17 Q23 17 23 22" fill="white"/>
-    </svg>`;
 
-    // Driver Location Pin
     const myIcon = L.icon({
         iconUrl: 'data:image/svg+xml,' + encodeURIComponent(driverSvg),
         iconSize: [32, 46],
@@ -566,57 +603,55 @@ function initDriverRadarMap() {
         .bindPopup('<div class="ccg-map-popup"><div class="popup-title">Lokasi Anda (Driver)</div><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-0.5 mt-1" style="font-size:10px; font-weight: 600;"><i class="bi bi-broadcast me-1"></i>GPS Aktif</span></div>')
         .addTo(window.dRadarMap);
 
-    <?php if (!empty($active_order)): ?>
-        // Plot Active Order Details (Step-by-step)
-        const isPickedUp = window.isPickedUp;
-        const actStoreLat = window.actStoreLat;
-        const actStoreLng = window.actStoreLng;
-        const actDestLat = window.actDestLat;
-        const actDestLng = window.actDestLng;
+    if (window.HAS_ACTIVE_ORDER && window.ACTIVE_TRIP_ORDERS.length > 0) {
+        const boundsGroup = [window.myDriverMarker];
+        const routePoints = [[window.driverLat, window.driverLng]];
 
-        const storeIcon = L.icon({
-            iconUrl: 'data:image/svg+xml,' + encodeURIComponent(storeSvg),
-            iconSize: [32, 46],
-            iconAnchor: [16, 46],
-            popupAnchor: [0, -46]
+        window.ACTIVE_TRIP_ORDERS.forEach((tOrd, idx) => {
+            const isMulti = window.ACTIVE_TRIP_ORDERS.length > 1;
+            const seqNum = isMulti ? (idx + 1) : null;
+
+            // Plot Store Marker
+            if (tOrd.store && tOrd.store.lat && tOrd.store.lng) {
+                const sLat = tOrd.store.lat;
+                const sLng = tOrd.store.lng;
+                const storeUrl = `https://www.google.com/maps/dir/?api=1&destination=${sLat},${sLng}&travelmode=two_wheeler`;
+                const sMarker = L.marker([sLat, sLng], { icon: createStoreMapIcon(seqNum), zIndexOffset: 100 + idx })
+                    .addTo(window.dRadarMap)
+                    .bindPopup(`<b>${escapeHtml(tOrd.store.name)}</b><br><small class="text-muted">Penjemputan ${isMulti ? 'Toko #' + (idx + 1) : 'Toko'}</small><br><a href="${storeUrl}" target="_blank" class="btn btn-danger btn-sm text-white w-100 mt-2 py-0.5 rounded-pill" style="font-size:10px;">Google Maps Toko</a>`);
+                boundsGroup.push(sMarker);
+                if (!tOrd.is_picked_up) {
+                    routePoints.push([sLat, sLng]);
+                }
+            }
+
+            // Plot Customer Marker
+            if (tOrd.customer && tOrd.customer.lat && tOrd.customer.lng) {
+                const cLat = tOrd.customer.lat;
+                const cLng = tOrd.customer.lng;
+                const custUrl = `https://www.google.com/maps/dir/?api=1&destination=${cLat},${cLng}&travelmode=two_wheeler`;
+                const cMarker = L.marker([cLat, cLng], { icon: createCustMapIcon(seqNum), zIndexOffset: 500 + idx })
+                    .addTo(window.dRadarMap)
+                    .bindPopup(`<b>${escapeHtml(tOrd.customer.name)}</b><br><small class="text-muted">${escapeHtml(tOrd.customer.address)}</small><br><a href="${custUrl}" target="_blank" class="btn btn-success btn-sm text-white w-100 mt-2 py-0.5 rounded-pill" style="font-size:10px;">Google Maps Pelanggan</a>`);
+                boundsGroup.push(cMarker);
+                routePoints.push([cLat, cLng]);
+            }
         });
 
-        const custIcon = L.icon({
-            iconUrl: 'data:image/svg+xml,' + encodeURIComponent(custSvg),
-            iconSize: [32, 46],
-            iconAnchor: [16, 46],
-            popupAnchor: [0, -46]
-        });
-
-        window.actStoreMarker = L.marker([actStoreLat, actStoreLng], { icon: storeIcon, zIndexOffset: 100 })
-            .addTo(window.dRadarMap)
-            .bindPopup("<b><?= htmlspecialchars($active_order['store_name'] ?? 'Penjemputan') ?></b><br><small class='text-muted'>Titik Ambil Barang</small><br><a href='<?= $storeGmapsUrl ?>' target='_blank' class='btn btn-danger btn-sm text-white w-100 mt-2 py-0.5 rounded-pill' style='font-size:10px;'>Google Maps Toko</a>");
-
-        window.actCustMarker = L.marker([actDestLat, actDestLng], { icon: custIcon, zIndexOffset: 500 })
-            .addTo(window.dRadarMap)
-            .bindPopup("<b><?= htmlspecialchars($active_order['customer_name'] ?? 'Tujuan') ?></b><br><small class='text-muted'>Titik Antar Pelanggan</small><br><a href='<?= $custGmapsUrl ?>' target='_blank' class='btn btn-success btn-sm text-white w-100 mt-2 py-0.5 rounded-pill' style='font-size:10px;'>Google Maps Pelanggan</a>");
-
-        if (!isPickedUp) {
-            // Tahap 1: Driver -> Toko
-            window.activeRouteLine = L.polyline([[window.driverLat, window.driverLng], [actStoreLat, actStoreLng]], {
+        if (routePoints.length >= 2) {
+            window.activeRouteLine = L.polyline(routePoints, {
                 color: '#EE2737',
                 weight: 5,
                 dashArray: '6, 8'
             }).addTo(window.dRadarMap);
-            window.dRadarMap.fitBounds(window.activeRouteLine.getBounds(), { padding: [40, 40] });
-            window.actStoreMarker.openPopup();
-        } else {
-            // Tahap 2: Driver -> Customer
-            window.activeRouteLine = L.polyline([[window.driverLat, window.driverLng], [actDestLat, actDestLng]], {
-                color: '#10b981',
-                weight: 5,
-                dashArray: '6, 8'
-            }).addTo(window.dRadarMap);
-            window.dRadarMap.fitBounds(window.activeRouteLine.getBounds(), { padding: [40, 40] });
-            window.actCustMarker.openPopup();
         }
-    <?php else: ?>
-        // Plot Available Incoming Orders
+
+        if (boundsGroup.length > 0) {
+            const fg = L.featureGroup(boundsGroup);
+            window.dRadarMap.fitBounds(fg.getBounds().pad(0.25));
+        }
+    } else {
+        // Plot Available Radar Orders
         <?php foreach ($available_orders as $ord): ?>
             <?php 
                 $sLat = (float)($ord['store_lat'] ?? -6.9835);
@@ -626,13 +661,7 @@ function initDriverRadarMap() {
                 $dAddrJs = json_encode($ord['delivery_address']['address'] ?? 'Cicalengka');
             ?>
             (function() {
-                const oIcon = L.icon({
-                    iconUrl: 'data:image/svg+xml,' + encodeURIComponent(storeSvg),
-                    iconSize: [32, 46],
-                    iconAnchor: [16, 46],
-                    popupAnchor: [0, -46]
-                });
-
+                const oIcon = createStoreMapIcon(null);
                 const sName = <?= $sNameJs ?>;
                 const dAddr = <?= $dAddrJs ?>;
 
@@ -641,7 +670,7 @@ function initDriverRadarMap() {
                     .bindPopup(`<b>${escapeHtml(sName)}</b><br><small class="text-muted">Antar ke: ${escapeHtml(dAddr)}</small><br><button onclick="acceptDriverOrder(<?= $oId ?>)" class="btn btn-sm w-100 mt-2 py-1 fw-bold rounded-pill text-white" style="background:#EE2737;">Ambil Order Ini</button>`);
             })();
         <?php endforeach; ?>
-    <?php endif; ?>
+    }
 
     // Immediately fetch device physical GPS
     if ('geolocation' in navigator) {
@@ -656,6 +685,12 @@ function initDriverRadarMap() {
             timeout: 6000
         });
     }
+
+    setTimeout(() => {
+        if (window.dRadarMap) {
+            window.dRadarMap.invalidateSize();
+        }
+    }, 200);
 }
 
 function centerDriverMap() {
@@ -736,7 +771,13 @@ if (typeof window.acceptDriverOrder === 'undefined') {
     };
 }
 
-document.addEventListener('DOMContentLoaded', initDriverRadarMap);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        initDriverRadarMap();
+    });
+} else {
+    initDriverRadarMap();
+}
 </script>
 
 <!-- CicalengkaGO In-App Chat Modal (Driver) -->
