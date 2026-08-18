@@ -32,6 +32,44 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
+// Helper to wait until tab HTTP load is complete
+async function waitForTabComplete(tabId, maxWaitMs = 12000) {
+  const startTime = Date.now();
+  while (Date.now() - startTime < maxWaitMs) {
+    try {
+      const tab = await chrome.tabs.get(tabId);
+      if (tab && tab.status === 'complete') return true;
+    } catch (e) {
+      return false;
+    }
+    await new Promise(r => setTimeout(r, 400));
+  }
+  return false;
+}
+
+// Helper to poll DOM until Next.js / React hydration renders content
+async function waitForDomHydration(tabId, maxWaitMs = 10000) {
+  const startTime = Date.now();
+  while (Date.now() - startTime < maxWaitMs) {
+    try {
+      const res = await chrome.scripting.executeScript({
+        target: { tabId: tabId },
+        func: () => {
+          const hasH1 = !!document.querySelector('h1')?.textContent?.trim();
+          const hasNextData = !!document.getElementById('__NEXT_DATA__')?.textContent;
+          const hasItems = document.querySelectorAll('[class*="menuItem"], [class*="itemRow"], [class*="restaurantCard"], [class*="itemCard"], [class*="category"]').length > 0;
+          return hasH1 || hasNextData || hasItems;
+        }
+      });
+      if (res && res[0] && res[0].result === true) {
+        return true;
+      }
+    } catch (e) {}
+    await new Promise(r => setTimeout(r, 500));
+  }
+  return false;
+}
+
 async function runBatchScrape(stores, apiUrl) {
   isBatchRunning = true;
   cancelRequested = false;
@@ -49,36 +87,45 @@ async function runBatchScrape(stores, apiUrl) {
       current: currentStep,
       total: total,
       percent: pct,
-      statusText: `[${currentStep}/${total}] Membuka toko: ${storeUrl.split('/').pop().slice(0, 30)}...`
+      statusText: `[${currentStep}/${total}] Membuka & memuat toko: ${storeUrl.split('/').pop().slice(0, 30)}...`
     };
     await chrome.storage.local.set({ batchStatus: statusObj });
 
     try {
-      // Create tab in BACKGROUND so user view doesn't switch away
+      // 1. Create tab in BACKGROUND so user view doesn't switch away
       const tab = await chrome.tabs.create({ url: storeUrl, active: false });
 
-      // Wait 3.8 seconds for full DOM & menu item rendering
-      await new Promise(r => setTimeout(r, 3800));
+      // 2. Wait until tab HTTP state is complete (max 12s)
+      await waitForTabComplete(tab.id, 12000);
+
+      // 3. Wait until React / Next.js DOM is hydrated (max 10s)
+      await waitForDomHydration(tab.id, 10000);
 
       if (cancelRequested) {
         await chrome.tabs.remove(tab.id).catch(() => {});
         break;
       }
 
-      // Inject content script
+      // 4. Inject content.js
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         files: ['content.js']
       }).catch(() => {});
 
-      // Scroll slightly to trigger lazy-loaded items
+      // 5. Scroll page down & up to trigger lazy-loaded product cards and images
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
-        func: () => { window.scrollTo(0, 500); }
+        func: () => {
+          window.scrollTo(0, 1000);
+          setTimeout(() => window.scrollTo(0, 0), 200);
+        }
       }).catch(() => {});
 
-      // Execute extraction directly in tab DOM
-      const results = await chrome.scripting.executeScript({
+      // 6. Give 1.5 seconds buffer for React menu state update
+      await new Promise(r => setTimeout(r, 1500));
+
+      // 7. Primary Extraction Attempt
+      let results = await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         func: () => {
           if (typeof extractGrabFoodData === 'function') {
@@ -86,11 +133,26 @@ async function runBatchScrape(stores, apiUrl) {
           }
           return null;
         }
-      });
+      }).catch(() => null);
 
-      const scrapedData = results && results[0] ? results[0].result : null;
+      let scrapedData = results && results[0] ? results[0].result : null;
 
-      // Close tab
+      // 8. Retry Mechanism: If 0 products extracted, wait 2s and retry extraction once
+      if (!scrapedData || !scrapedData.products || scrapedData.products.length === 0) {
+        await new Promise(r => setTimeout(r, 2000));
+        results = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: () => {
+            if (typeof extractGrabFoodData === 'function') {
+              return extractGrabFoodData();
+            }
+            return null;
+          }
+        }).catch(() => null);
+        scrapedData = (results && results[0] && results[0].result) ? results[0].result : scrapedData;
+      }
+
+      // 9. Close tab ONLY AFTER extraction is complete
       await chrome.tabs.remove(tab.id).catch(() => {});
 
       if (scrapedData && scrapedData.name) {
