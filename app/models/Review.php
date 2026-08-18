@@ -16,13 +16,17 @@ class Review extends Model
     /**
      * Submit review for an order (Store & Courier)
      */
+    /**
+     * Submit review for an order (Store & Courier)
+     */
     public function submitReview(
         int $orderId,
         int $userId,
-        int $storeRating,
+        $storeRating,
         ?string $storeComment = '',
         ?int $dmRating = null,
-        ?string $dmComment = ''
+        ?string $dmComment = '',
+        ?array $multiStoreReviews = []
     ): array {
         $order = Database::fetchOne("SELECT * FROM `orders` WHERE `id` = ? LIMIT 1", [$orderId]);
         if (!$order) {
@@ -41,8 +45,43 @@ class Review extends Model
         $storeReviewId = null;
         $dmReviewId = null;
 
-        // 1. Review Store (if order has store_id)
-        if (!empty($order['store_id'])) {
+        // 1. Multi-store batch reviews (if array provided)
+        if (!empty($multiStoreReviews)) {
+            foreach ($multiStoreReviews as $ms) {
+                $sId = (int)($ms['store_id'] ?? 0);
+                $oId = (int)($ms['order_id'] ?? $orderId);
+                $sRating = min(5, max(1, (int)($ms['rating'] ?? 5)));
+                $sComment = sanitize($ms['comment'] ?? '');
+
+                if ($sId) {
+                    $existingStoreReview = Database::fetchOne(
+                        "SELECT id FROM `reviews` WHERE `order_id` = ? AND `user_id` = ? AND `store_id` = ? LIMIT 1",
+                        [$oId, $userId, $sId]
+                    );
+
+                    if ($existingStoreReview) {
+                        Database::update('reviews', [
+                            'rating'     => $sRating,
+                            'comment'    => $sComment,
+                            'created_at' => $now
+                        ], 'id = ?', [$existingStoreReview['id']]);
+                        $storeReviewId = $existingStoreReview['id'];
+                    } else {
+                        $storeReviewId = $this->create([
+                            'order_id'   => $oId,
+                            'user_id'    => $userId,
+                            'store_id'   => $sId,
+                            'rating'     => $sRating,
+                            'comment'    => $sComment,
+                            'created_at' => $now
+                        ]);
+                    }
+
+                    $this->recalculateStoreRating($sId);
+                }
+            }
+        } elseif (!empty($order['store_id'])) {
+            // Single store review
             $storeId = (int)$order['store_id'];
             $existingStoreReview = Database::fetchOne(
                 "SELECT id FROM `reviews` WHERE `order_id` = ? AND `user_id` = ? AND `store_id` = ? LIMIT 1",
@@ -51,7 +90,7 @@ class Review extends Model
 
             if ($existingStoreReview) {
                 Database::update('reviews', [
-                    'rating'     => min(5, max(1, $storeRating)),
+                    'rating'     => min(5, max(1, (int)$storeRating)),
                     'comment'    => sanitize($storeComment ?? ''),
                     'created_at' => $now
                 ], 'id = ?', [$existingStoreReview['id']]);
@@ -61,25 +100,13 @@ class Review extends Model
                     'order_id'   => $orderId,
                     'user_id'    => $userId,
                     'store_id'   => $storeId,
-                    'rating'     => min(5, max(1, $storeRating)),
+                    'rating'     => min(5, max(1, (int)$storeRating)),
                     'comment'    => sanitize($storeComment ?? ''),
                     'created_at' => $now
                 ]);
             }
 
-            // Recalculate Store Rating & Reviews Count
             $this->recalculateStoreRating($storeId);
-
-            // Notify store vendor
-            $store = Database::fetchOne("SELECT vendor_id, name FROM `stores` WHERE `id` = ? LIMIT 1", [$storeId]);
-            if ($store && !empty($store['vendor_id'])) {
-                (new Notification())->createNotification(
-                    (int)$store['vendor_id'],
-                    'Ulasan Toko Baru! ⭐',
-                    "Toko Anda menerima ulasan {$storeRating} bintang untuk pesanan #{$order['order_code']}.",
-                    'review'
-                );
-            }
         }
 
         // 2. Review Delivery Courier (if delivery_man_id exists)
@@ -108,19 +135,7 @@ class Review extends Model
                 ]);
             }
 
-            // Recalculate Courier Rating & Reviews Count
             $this->recalculateDmRating($dmId);
-
-            // Notify delivery courier
-            $dm = Database::fetchOne("SELECT user_id FROM `delivery_men` WHERE `id` = ? LIMIT 1", [$dmId]);
-            if ($dm && !empty($dm['user_id'])) {
-                (new Notification())->createNotification(
-                    (int)$dm['user_id'],
-                    'Ulasan Driver Baru! ⭐',
-                    "Anda menerima ulasan {$dmRating} bintang untuk pengantaran pesanan #{$order['order_code']}.",
-                    'review'
-                );
-            }
         }
 
         return [
@@ -134,20 +149,39 @@ class Review extends Model
      */
     public function getOrderReview(int $orderId, int $userId): array
     {
+        $order = Database::fetchOne("SELECT id, delivery_batch_id FROM `orders` WHERE `id` = ? LIMIT 1", [$orderId]);
+        $orderIds = [$orderId];
+        if ($order && !empty($order['delivery_batch_id'])) {
+            $batchOrds = Database::query("SELECT id FROM `orders` WHERE `delivery_batch_id` = ?", [$order['delivery_batch_id']]);
+            if (!empty($batchOrds)) {
+                $orderIds = array_column($batchOrds, 'id');
+            }
+        }
+
+        $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
+        $params = array_merge($orderIds, [$userId]);
+
         $reviews = Database::query(
-            "SELECT * FROM `reviews` WHERE `order_id` = ? AND `user_id` = ?",
-            [$orderId, $userId]
+            "SELECT r.*, s.name as store_name
+             FROM `reviews` r
+             LEFT JOIN `stores` s ON r.store_id = s.id
+             WHERE r.order_id IN ({$placeholders}) AND r.user_id = ?",
+            $params
         );
 
         $result = [
-            'has_reviewed' => !empty($reviews),
-            'store_review' => null,
-            'dm_review'    => null
+            'has_reviewed'  => !empty($reviews),
+            'store_review'  => null,
+            'store_reviews' => [],
+            'dm_review'     => null
         ];
 
         foreach ($reviews as $rev) {
             if (!empty($rev['store_id'])) {
-                $result['store_review'] = $rev;
+                if ($result['store_review'] === null) {
+                    $result['store_review'] = $rev;
+                }
+                $result['store_reviews'][] = $rev;
             } elseif (!empty($rev['delivery_man_id'])) {
                 $result['dm_review'] = $rev;
             }

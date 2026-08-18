@@ -138,6 +138,7 @@ class Order extends Model
                     $storeSeen[$sId] = true;
                     $order['batch_stores'][] = [
                         'store_id' => $sId,
+                        'order_id' => $subOrd['id'],
                         'name'     => $subOrd['store_name'] ?? 'Toko Cicalengka',
                         'address'  => $subOrd['store_address'] ?? 'Cicalengka, Bandung',
                         'phone'    => $subOrd['store_phone'] ?? '',

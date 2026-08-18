@@ -374,11 +374,30 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
             </div>
 
             <?php if ($hasReviewed): ?>
-                <!-- Display Submitted Review -->
-                <div class="p-2.5 bg-light rounded-3 border mt-2">
-                    <?php if (!empty($order['review_info']['store_review'])): ?>
+                <!-- Display Submitted Reviews -->
+                <div class="p-2.5 bg-light rounded-3 border mt-2 d-flex flex-column gap-2">
+                    <?php if (!empty($order['review_info']['store_reviews'])): ?>
+                        <?php foreach ($order['review_info']['store_reviews'] as $sr): ?>
+                        <div class="p-2 bg-white rounded-2 border">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold text-dark text-truncate" style="font-size: 11px;">
+                                    <i class="bi bi-shop text-danger me-1"></i> <?= htmlspecialchars($sr['store_name'] ?? 'Toko') ?>
+                                </span>
+                                <div class="text-warning fw-bold flex-shrink-0" style="font-size: 10px;">
+                                    <?php for ($s = 1; $s <= 5; $s++): ?>
+                                        <i class="bi <?= $s <= (int)$sr['rating'] ? 'bi-star-fill' : 'bi-star' ?>"></i>
+                                    <?php endfor; ?>
+                                    <span class="ms-1 text-dark"><?= (int)$sr['rating'] ?>/5</span>
+                                </div>
+                            </div>
+                            <?php if (!empty($sr['comment'])): ?>
+                                <div class="text-muted mt-1 ps-1 fst-italic" style="font-size: 9.5px;">"<?= htmlspecialchars($sr['comment']) ?>"</div>
+                            <?php endif; ?>
+                        </div>
+                        <?php endforeach; ?>
+                    <?php elseif (!empty($order['review_info']['store_review'])): ?>
                         <?php $sr = $order['review_info']['store_review']; ?>
-                        <div class="mb-2">
+                        <div class="p-2 bg-white rounded-2 border">
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="fw-bold text-dark" style="font-size: 11px;"><i class="bi bi-shop text-danger me-1"></i> <?= htmlspecialchars($order['store_name'] ?? 'Toko') ?></span>
                                 <div class="text-warning fw-bold" style="font-size: 10px;">
@@ -396,7 +415,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
 
                     <?php if (!empty($order['review_info']['dm_review'])): ?>
                         <?php $dr = $order['review_info']['dm_review']; ?>
-                        <div class="pt-2 border-top">
+                        <div class="p-2 bg-white rounded-2 border border-primary-subtle">
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="fw-bold text-dark" style="font-size: 11px;"><i class="bi bi-bicycle text-primary me-1"></i> <?= htmlspecialchars($order['dm_name'] ?? 'Kurir Driver') ?></span>
                                 <div class="text-warning fw-bold" style="font-size: 10px;">
@@ -415,18 +434,46 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
             <?php else: ?>
                 <!-- Rating Input Widget Form -->
                 <div class="p-2.5 bg-light rounded-3 border mt-2">
-                    <div class="mb-2.5">
-                        <label class="fw-bold text-dark d-block mb-1" style="font-size: 10.5px;"><i class="bi bi-shop text-danger me-1"></i> Rating Toko / Makanan</label>
-                        <div class="d-flex justify-content-center gap-2.5 py-1" id="tracking-store-stars">
-                            <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="1" onclick="setTrackingStoreStar(1)"></i>
-                            <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="2" onclick="setTrackingStoreStar(2)"></i>
-                            <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="3" onclick="setTrackingStoreStar(3)"></i>
-                            <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="4" onclick="setTrackingStoreStar(4)"></i>
-                            <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="5" onclick="setTrackingStoreStar(5)"></i>
+                    <?php if (!empty($order['batch_stores']) && count($order['batch_stores']) > 1): ?>
+                        <div class="text-dark fw-bold mb-2 pb-1 border-bottom d-flex align-items-center justify-content-between" style="font-size: 11px;">
+                            <span><i class="bi bi-shop-window me-1 text-danger"></i> Rating Toko & Makanan (<?= count($order['batch_stores']) ?> Toko)</span>
+                            <span class="badge bg-danger-subtle text-danger rounded-pill" style="font-size: 9px;">Multi-Store</span>
                         </div>
-                        <div class="text-center fw-bold text-warning-emphasis mb-1.5" id="tracking-store-text" style="font-size: 10px;">Sangat Puas (5 Bintang)</div>
-                        <textarea id="tracking-store-comment" name="store_comment" class="form-control form-control-sm rounded-2" rows="2" style="font-size: 10px;" placeholder="Bagaimana rasa makanan atau pelayanan toko?"></textarea>
-                    </div>
+                        <div class="d-flex flex-column gap-2 mb-3">
+                            <?php foreach ($order['batch_stores'] as $sIdx => $bStore): ?>
+                            <div class="p-2.5 bg-white rounded-3 border shadow-2xs multi-store-review-item"
+                                 data-store-id="<?= (int)$bStore['store_id'] ?>"
+                                 data-order-id="<?= (int)($bStore['order_id'] ?? $order['id']) ?>">
+                                <div class="fw-bold text-dark mb-1 d-flex align-items-center gap-1.5" style="font-size: 11px;">
+                                    <span class="badge rounded-circle text-white d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                                          style="width: 18px; height: 18px; font-size: 9.5px; background: #EE2737;"><?= $sIdx + 1 ?></span>
+                                    <span class="text-truncate"><?= htmlspecialchars($bStore['name']) ?></span>
+                                </div>
+                                <div class="d-flex justify-content-center gap-2 py-1 multi-store-stars-container" id="multi-stars-<?= $bStore['store_id'] ?>">
+                                    <?php for($star=1; $star<=5; $star++): ?>
+                                    <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="<?= $star ?>" onclick="setMultiStoreStar(<?= $bStore['store_id'] ?>, <?= $star ?>)"></i>
+                                    <?php endfor; ?>
+                                </div>
+                                <div class="text-center fw-bold text-warning-emphasis mb-1.5 multi-store-rating-text" id="multi-text-<?= $bStore['store_id'] ?>" style="font-size: 10px;">Sangat Puas (5 Bintang)</div>
+                                <textarea id="multi-comment-<?= $bStore['store_id'] ?>" class="form-control form-control-sm rounded-2 multi-store-comment-input" rows="2" style="font-size: 10px;" placeholder="Bagaimana makanan/pelayanan toko ini?"></textarea>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <!-- Single Store Rating Widget -->
+                        <div class="mb-2.5">
+                            <label class="fw-bold text-dark d-block mb-1" style="font-size: 10.5px;"><i class="bi bi-shop text-danger me-1"></i> Rating Toko / Makanan</label>
+                            <div class="d-flex justify-content-center gap-2.5 py-1" id="tracking-store-stars">
+                                <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="1" onclick="setTrackingStoreStar(1)"></i>
+                                <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="2" onclick="setTrackingStoreStar(2)"></i>
+                                <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="3" onclick="setTrackingStoreStar(3)"></i>
+                                <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="4" onclick="setTrackingStoreStar(4)"></i>
+                                <i class="bi bi-star-fill text-warning fs-4 cursor-pointer" data-val="5" onclick="setTrackingStoreStar(5)"></i>
+                            </div>
+                            <div class="text-center fw-bold text-warning-emphasis mb-1.5" id="tracking-store-text" style="font-size: 10px;">Sangat Puas (5 Bintang)</div>
+                            <textarea id="tracking-store-comment" name="store_comment" class="form-control form-control-sm rounded-2" rows="2" style="font-size: 10px;" placeholder="Bagaimana rasa makanan atau pelayanan toko?"></textarea>
+                        </div>
+                    <?php endif; ?>
 
                     <?php if (!empty($order['delivery_man_id'])): ?>
                         <div class="mb-2.5 pt-2 border-top">
@@ -1232,6 +1279,24 @@ async function cancelUnpaidOrder() {
 // Live Rating Functions for Tracking Page
 let currentTrackingStoreRating = 5;
 let currentTrackingDmRating = 5;
+let multiStoreRatings = {};
+
+function setMultiStoreStar(storeId, val) {
+    multiStoreRatings[storeId] = val;
+    const container = document.getElementById('multi-stars-' + storeId);
+    if (!container) return;
+    const stars = container.querySelectorAll('i');
+    stars.forEach((s, idx) => {
+        if (idx < val) {
+            s.className = 'bi bi-star-fill text-warning fs-4 cursor-pointer';
+        } else {
+            s.className = 'bi bi-star text-muted fs-4 cursor-pointer';
+        }
+    });
+    const texts = ['', 'Kecewa (1 Bintang)', 'Kurang Puas (2 Bintang)', 'Cukup Baik (3 Bintang)', 'Puas (4 Bintang)', 'Sangat Puas (5 Bintang)'];
+    const textEl = document.getElementById('multi-text-' + storeId);
+    if (textEl) textEl.textContent = texts[val] || '';
+}
 
 function setTrackingStoreStar(val) {
     currentTrackingStoreRating = val;
@@ -1270,14 +1335,33 @@ async function submitTrackingReview(orderId, hasDriver) {
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1.5"></span> Mengirim Ulasan...';
     }
 
-    const storeComment = document.getElementById('tracking-store-comment')?.value || '';
-    const dmComment = document.getElementById('tracking-dm-comment')?.value || '';
-
     const fd = new FormData();
     fd.append('order_id', orderId);
-    fd.append('store_rating', currentTrackingStoreRating);
-    fd.append('store_comment', storeComment);
+
+    const multiItems = document.querySelectorAll('.multi-store-review-item');
+    if (multiItems.length > 0) {
+        let multiStoreReviewsData = [];
+        multiItems.forEach(item => {
+            const storeId = parseInt(item.getAttribute('data-store-id'));
+            const oId = parseInt(item.getAttribute('data-order-id')) || orderId;
+            const rating = multiStoreRatings[storeId] || 5;
+            const comment = document.getElementById('multi-comment-' + storeId)?.value || '';
+            multiStoreReviewsData.push({
+                store_id: storeId,
+                order_id: oId,
+                rating: rating,
+                comment: comment
+            });
+        });
+        fd.append('multi_store_reviews', JSON.stringify(multiStoreReviewsData));
+    } else {
+        const storeComment = document.getElementById('tracking-store-comment')?.value || '';
+        fd.append('store_rating', currentTrackingStoreRating);
+        fd.append('store_comment', storeComment);
+    }
+
     if (hasDriver) {
+        const dmComment = document.getElementById('tracking-dm-comment')?.value || '';
         fd.append('dm_rating', currentTrackingDmRating);
         fd.append('dm_comment', dmComment);
     }

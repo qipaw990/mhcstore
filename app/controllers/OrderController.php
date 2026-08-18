@@ -606,10 +606,18 @@ class OrderController extends Controller
             return;
         }
 
-        $storeRating = (int)($data['store_rating'] ?? 5);
+        $storeRating  = (int)($data['store_rating'] ?? 5);
         $storeComment = sanitize($data['store_comment'] ?? '');
-        $dmRating = (isset($data['dm_rating']) && $data['dm_rating'] !== '') ? (int)$data['dm_rating'] : null;
-        $dmComment = sanitize($data['dm_comment'] ?? '');
+        $dmRating     = (isset($data['dm_rating']) && $data['dm_rating'] !== '') ? (int)$data['dm_rating'] : null;
+        $dmComment    = sanitize($data['dm_comment'] ?? '');
+
+        $multiStoreReviews = [];
+        if (!empty($data['multi_store_reviews'])) {
+            $decoded = is_array($data['multi_store_reviews']) ? $data['multi_store_reviews'] : json_decode($data['multi_store_reviews'], true);
+            if (is_array($decoded)) {
+                $multiStoreReviews = $decoded;
+            }
+        }
 
         try {
             $reviewModel = new \App\Models\Review();
@@ -619,7 +627,8 @@ class OrderController extends Controller
                 $storeRating,
                 $storeComment,
                 $dmRating,
-                $dmComment
+                $dmComment,
+                $multiStoreReviews
             );
 
             $this->successResponse('Terima kasih! Ulasan dan rating bintang berhasil dikirimkan.', $res);
