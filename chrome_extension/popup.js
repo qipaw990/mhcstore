@@ -191,8 +191,41 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
+    // Try extracting listing stores on the fly if not detected yet
     if (!listingStores || listingStores.length === 0) {
-      alert("Tidak ada toko yang terdeteksi di halaman ini.");
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab && tab.url && tab.url.includes('food.grab.com')) {
+          await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['content.js']
+          }).catch(() => {});
+
+          const res = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => {
+              if (typeof extractStoreLinksFromListing === 'function') {
+                return extractStoreLinksFromListing();
+              }
+              return [];
+            }
+          });
+
+          const stores = res && res[0] ? res[0].result : [];
+          if (Array.isArray(stores) && stores.length > 0) {
+            listingStores = stores;
+            storeCountEl.textContent = listingStores.length;
+          } else if (tab.url.includes('/restaurant/')) {
+            // Fallback: If user is on a single store page, batch scrape this 1 store
+            listingStores = [tab.url.split('?')[0]];
+            storeCountEl.textContent = "1";
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (!listingStores || listingStores.length === 0) {
+      alert("Harap buka halaman daftar restoran GrabFood (food.grab.com/id/id/restaurants) terlebih dahulu!");
       return;
     }
 
