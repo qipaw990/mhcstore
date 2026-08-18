@@ -121,19 +121,26 @@
     <div class="p-3 bg-white border shadow-2xs mb-3.5 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 16px !important; margin-bottom: 16px !important;">
         <h6 class="fw-bold mb-3 text-dark d-flex align-items-center justify-content-between gap-2" style="font-size: 12.5px;">
             <span class="text-truncate"><i class="bi bi-receipt me-2 text-danger"></i>Rincian Tagihan</span>
-            <span class="badge bg-light text-muted fw-normal px-2 py-1 rounded-pill flex-shrink-0" style="font-size: 9.5px;"><?= count($cart_data['stores']) ?> Toko</span>
+            <?php if (count($cart_data['stores']) > 1): ?>
+                <span class="badge bg-danger-subtle text-danger fw-bold px-2.5 py-1 rounded-pill flex-shrink-0" style="font-size: 9.5px;">
+                    <i class="bi bi-shop-window me-1"></i><?= count($cart_data['stores']) ?> Toko (Multi-Store)
+                </span>
+            <?php else: ?>
+                <span class="badge bg-light text-muted fw-normal px-2 py-1 rounded-pill flex-shrink-0" style="font-size: 9.5px;"><?= count($cart_data['stores']) ?> Toko</span>
+            <?php endif; ?>
         </h6>
-        <?php foreach ($cart_data['stores'] as $sg): ?>
-            <div class="mb-2 pb-2" style="border-bottom: 1px dashed #F1F5F9;">
-                <div class="fw-bold text-dark text-truncate mb-1" style="font-size: 11px;">
+        <?php foreach ($cart_data['stores'] as $sIdx => $sg): ?>
+            <div class="mb-2.5 pb-2" style="border-bottom: 1px dashed #F1F5F9;">
+                <div class="fw-bold text-dark text-truncate mb-1 d-flex align-items-center gap-1.5" style="font-size: 11.5px;">
+                    <span class="badge rounded-circle text-white d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 18px; height: 18px; font-size: 9.5px; background: #EE2737;"><?= $sIdx + 1 ?></span>
                     <i class="bi bi-shop me-1 text-danger"></i><?= htmlspecialchars($sg['name']) ?>
                 </div>
-                <div class="d-flex justify-content-between text-muted gap-2" style="font-size: 10.5px;">
+                <div class="d-flex justify-content-between text-muted gap-2 ps-3.5" style="font-size: 10.5px;">
                     <span class="text-truncate">Subtotal (<?= $sg['item_count'] ?> item)</span>
                     <span class="text-dark fw-bold flex-shrink-0"><?= format_rupiah($sg['subtotal']) ?></span>
                 </div>
-                <div class="d-flex justify-content-between text-muted gap-2" style="font-size: 10.5px;">
-                    <span class="text-truncate">Ongkir (<span class="fee-dist-text">est.</span>)</span>
+                <div class="d-flex justify-content-between text-muted gap-2 ps-3.5" style="font-size: 10.5px;">
+                    <span class="text-truncate">Ongkir Toko #<?= $sIdx + 1 ?></span>
                     <span class="text-dark fw-bold flex-shrink-0"><?= format_rupiah($sg['delivery_fee']) ?></span>
                 </div>
             </div>
@@ -167,22 +174,31 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePaymentCardStyles();
 });
 
-const STORE_LAT  = <?= (float)($cart_data['stores'][0]['latitude']  ?? -6.9835) ?>;
-const STORE_LNG  = <?= (float)($cart_data['stores'][0]['longitude'] ?? 107.8335) ?>;
-const STORE_NAME = "<?= htmlspecialchars($cart_data['stores'][0]['name'] ?? 'Resto') ?>";
+const STORES_DATA = <?= json_encode(array_values(array_map(function($s) {
+    return [
+        'store_id' => $s['store_id'],
+        'name'     => $s['name'],
+        'lat'      => (float)($s['latitude'] ?? -6.9835),
+        'lng'      => (float)($s['longitude'] ?? 107.8335)
+    ];
+}, $cart_data['stores']))) ?>;
+
 const BASE_SUBTOTAL     = <?= (float)$cart_data['grand_subtotal'] ?>;
 const BASE_DELIVERY_FEE = <?= (float)$cart_data['grand_delivery'] ?>;
 
-let map, customerMarker, storeMarker, routeLine;
+let map, customerMarker, storeMarkers = [], routeLine;
 let mapInitialized = false;
 
 function initCheckoutMap() {
     if (mapInitialized) return;
     mapInitialized = true;
 
+    const defaultLat = STORES_DATA[0]?.lat || -6.9835;
+    const defaultLng = STORES_DATA[0]?.lng || 107.8335;
+
     if ('geolocation' in navigator) {
         const gpsTimeout = setTimeout(() => {
-            _buildMap(STORE_LAT, STORE_LNG, false);
+            _buildMap(defaultLat, defaultLng, false);
         }, 5000);
 
         navigator.geolocation.getCurrentPosition(
@@ -192,12 +208,12 @@ function initCheckoutMap() {
             },
             () => {
                 clearTimeout(gpsTimeout);
-                _buildMap(STORE_LAT, STORE_LNG, false);
+                _buildMap(defaultLat, defaultLng, false);
             },
             { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
         );
     } else {
-        _buildMap(STORE_LAT, STORE_LNG, false);
+        _buildMap(defaultLat, defaultLng, false);
     }
 }
 
@@ -229,9 +245,16 @@ function _buildMap(initLat, initLng, isGPS) {
         iconAnchor: [16, 46],
         popupAnchor: [0, -46]
     });
-    storeMarker = L.marker([STORE_LAT, STORE_LNG], { icon: storeIcon, zIndexOffset: 100 })
-        .addTo(map)
-        .bindPopup(`<div style="font-size:12px;"><b>🏪 ${STORE_NAME}</b><br><span style="color:#666;">Titik Penjemputan</span></div>`);
+
+    storeMarkers = [];
+    STORES_DATA.forEach((st, idx) => {
+        const sLat = st.lat || -6.9835;
+        const sLng = st.lng || 107.8335;
+        const sm = L.marker([sLat, sLng], { icon: storeIcon, zIndexOffset: 100 + idx })
+            .addTo(map)
+            .bindPopup(`<div style="font-size:12px;"><b>🏪 Toko ${idx + 1}: ${st.name}</b><br><span style="color:#666;">Penjemputan Order ${idx + 1}</span></div>`);
+        storeMarkers.push(sm);
+    });
 
     const custSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
       <defs>
@@ -256,14 +279,10 @@ function _buildMap(initLat, initLng, isGPS) {
         .bindPopup('<div style="font-size:12px;"><b>📍 Lokasi Antar Terkunci</b><br><span style="color:#666;">Posisi sesuai lokasi GPS / Alamat</span></div>')
         .openPopup();
 
-    // Paksa render ulang tile supaya tidak blank di mobile
     map.whenReady(() => setTimeout(() => map.invalidateSize(), 150));
 
     updateRouteAndDistance(initLat, initLng);
     if (isGPS) reverseGeocode(initLat, initLng, 'input-address');
-
-    const bounds = L.latLngBounds([[STORE_LAT, STORE_LNG], [initLat, initLng]]);
-    map.fitBounds(bounds, { padding: [40, 40] });
 }
 
 let geocodeTimer = null;
@@ -298,41 +317,44 @@ function updateLocationData(lat, lng) {
     reverseGeocode(lat, lng, 'input-address');
 }
 
-function updateRouteAndDistance(lat, lng) {
+function updateRouteAndDistance(custLat, custLng) {
     if (routeLine) map.removeLayer(routeLine);
 
-    routeLine = L.polyline([[STORE_LAT, STORE_LNG], [lat, lng]], {
+    // Build route points sequentially: Store 1 -> Store 2 -> ... -> Customer
+    const routePoints = STORES_DATA.map(s => [s.lat || -6.9835, s.lng || 107.8335]);
+    routePoints.push([custLat, custLng]);
+
+    routeLine = L.polyline(routePoints, {
         color: '#EE2737',
         weight: 4,
-        opacity: 0.8,
+        opacity: 0.85,
         dashArray: '6, 8'
     }).addTo(map);
 
-    const bounds = L.latLngBounds([[STORE_LAT, STORE_LNG], [lat, lng]]);
-    map.fitBounds(bounds, { padding: [30, 30] });
+    const bounds = L.latLngBounds(routePoints);
+    map.fitBounds(bounds, { padding: [35, 35] });
 
-    // Haversine Distance in KM
-    const dLat = (lat - STORE_LAT) * Math.PI / 180;
-    const dLng = (lng - STORE_LNG) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(STORE_LAT * Math.PI / 180) * Math.cos(lat * Math.PI / 180) *
-              Math.sin(dLng / 2) * Math.sin(dLng / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distKm = Math.max(0.5, Math.round((6371 * c) * 10) / 10);
+    // Calculate total multi-leg distance in KM
+    let totalDistKm = 0;
+    for (let i = 0; i < routePoints.length - 1; i++) {
+        const p1 = routePoints[i];
+        const p2 = routePoints[i+1];
+        const dLat = (p2[0] - p1[0]) * Math.PI / 180;
+        const dLng = (p2[1] - p1[1]) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                  Math.cos(p1[0] * Math.PI / 180) * Math.cos(p2[0] * Math.PI / 180) *
+                  Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        totalDistKm += (6371 * c);
+    }
+
+    const distKm = Math.max(0.5, Math.round(totalDistKm * 10) / 10);
 
     document.getElementById('input-distance').value = distKm;
-    document.getElementById('distance-badge').innerHTML = `<i class="bi bi-signpost-2 me-1"></i> Est. Jarak: ${distKm} Km`;
-    document.getElementById('fee-dist-text').textContent = `${distKm} Km`;
+    document.getElementById('distance-badge').innerHTML = `<i class="bi bi-signpost-2 me-1"></i> Est. Total Jarak: ${distKm} Km`;
 
-    // Dynamic Delivery Fee: Base 5000 + 2000/km after 2km
-    let currentFee = BASE_DELIVERY_FEE;
-    if (distKm > 2) {
-        currentFee = BASE_DELIVERY_FEE + Math.round((distKm - 2) * 2000);
-    }
-    const total = BASE_SUBTOTAL + currentFee;
-
-    document.getElementById('delivery-fee-display').textContent = 'Rp ' + currentFee.toLocaleString('id-ID');
-    document.getElementById('total-amount-display').textContent = 'Rp ' + total.toLocaleString('id-ID');
+    const feeTextEls = document.querySelectorAll('.fee-dist-text');
+    feeTextEls.forEach(el => el.textContent = `${distKm} Km`);
 }
 
 function getCurrentLocation(isSilent = false) {
