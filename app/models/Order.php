@@ -405,6 +405,11 @@ class Order extends Model
         $ord = is_array($order) ? $order : (new self())->find($order);
         if (!$ord) return false;
 
+        $batchId = $ord['delivery_batch_id'] ?? null;
+        if (!empty($batchId)) {
+            return self::refundBatchIfPaid($batchId, $reason, $ord);
+        }
+
         $orderId = (int)$ord['id'];
         $customerId = (int)$ord['customer_id'];
         $amount = (float)$ord['total_amount'];
@@ -458,6 +463,96 @@ class Order extends Model
         }
 
         return false;
+    }
+
+    /**
+     * Memproses pengembalian dana untuk 1 batch pesanan multi-toko sebagai 1 transaksi tunggal.
+     */
+    public static function refundBatchIfPaid(string $batchId, string $reason = '', ?array $primaryOrder = null): bool
+    {
+        $batchOrders = Database::query(
+            "SELECT * FROM `orders` WHERE `delivery_batch_id` = ?",
+            [$batchId]
+        );
+
+        if (empty($batchOrders)) return false;
+
+        $firstOrder = $batchOrders[0];
+        $customerId = (int)$firstOrder['customer_id'];
+
+        // Cek apakah batchId atau salah satu sub-order ID sudah pernah di-refund
+        $orderIds = array_map(fn($o) => (string)$o['id'], $batchOrders);
+        $orderIds[] = $batchId;
+        $inPlaceholders = implode(',', array_fill(0, count($orderIds), '?'));
+
+        $alreadyRefunded = Database::fetchOne(
+            "SELECT wt.id FROM `wallet_transactions` wt
+             JOIN `wallets` w ON wt.wallet_id = w.id
+             WHERE w.user_id = ? AND w.user_type = 'customer'
+               AND wt.category IN ('refund', 'order_refund')
+               AND wt.reference_id IN ({$inPlaceholders}) LIMIT 1",
+            array_merge([$customerId], $orderIds)
+        );
+
+        if ($alreadyRefunded) {
+            return false;
+        }
+
+        $validPaidMethods = ['wallet', 'cicalengkapay', 'cicago_pay', 'saldo', 'balance', 'midtrans', 'online', 'qris', 'va', 'credit_card'];
+        $totalRefundAmount = 0.0;
+        $isAnyPaid = false;
+
+        foreach ($batchOrders as $bOrd) {
+            $pStatus = strtolower($bOrd['payment_status'] ?? 'unpaid');
+            $pMethod = strtolower($bOrd['payment_method'] ?? 'wallet');
+            if ($pStatus === 'paid' || in_array($pMethod, $validPaidMethods)) {
+                $isAnyPaid = true;
+                $totalRefundAmount += (float)$bOrd['total_amount'];
+            }
+        }
+
+        if (!$isAnyPaid || $totalRefundAmount <= 0) {
+            return false;
+        }
+
+        $walletModel = new Wallet();
+        $storeCount = count($batchOrders);
+        $desc = "Refund pengembalian dana batch pesanan {$batchId} ({$storeCount} Toko)";
+        if (!empty($reason)) {
+            $desc .= " ({$reason})";
+        }
+
+        // Tangani 1 kredit refund tunggal di dompet pelanggan
+        $walletModel->credit(
+            $customerId,
+            $totalRefundAmount,
+            'refund',
+            $desc,
+            $batchId
+        );
+
+        // Update semua order dalam batch: payment_status = refunded, order_status = canceled
+        foreach ($batchOrders as $bOrd) {
+            $updateData = ['payment_status' => 'refunded'];
+            if (in_array($bOrd['order_status'], ['pending', 'confirmed'])) {
+                $updateData['order_status']        = 'canceled';
+                $updateData['cancellation_reason'] = $reason ?: 'Dibatalkan';
+                $updateData['canceled_at']          = date('Y-m-d H:i:s');
+                $updateData['delivery_man_id']     = null;
+            }
+            Database::update('orders', $updateData, 'id = ?', [$bOrd['id']]);
+        }
+
+        // Kirim 1 notifikasi tunggal untuk refund batch
+        Database::insert('notifications', [
+            'user_id'   => $customerId,
+            'title'     => 'Pesanan Multi-Toko Dibatalkan & Dana Dikembalikan 💚',
+            'message'   => "Pesanan multi-toko ({$batchId}) dibatalkan. Total dana sebesar Rp " . number_format($totalRefundAmount, 0, ',', '.') . " telah dikembalikan ke saldo CicalengkaPay Anda.",
+            'type'      => 'order',
+            'data_json' => json_encode(['batch_id' => $batchId, 'order_code' => $firstOrder['order_code']])
+        ]);
+
+        return true;
     }
 
     /**
