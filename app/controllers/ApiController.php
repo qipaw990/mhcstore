@@ -289,11 +289,11 @@ class ApiController extends Controller
             $stmtS->execute([$storeName]);
             $sRow = $stmtS->fetch(\PDO::FETCH_ASSOC);
 
-            $rawLogo  = !empty($data['logo']) ? $data['logo'] : 'assets/images/stores/store1.jpg';
-            $rawCover = !empty($data['cover_photo']) ? $data['cover_photo'] : 'assets/images/stores/cover1.jpg';
+            $rawLogo  = !empty($data['logo']) ? trim($data['logo']) : '';
+            $rawCover = !empty($data['cover_photo']) ? trim($data['cover_photo']) : '';
 
-            $logo  = str_starts_with($rawLogo, 'http') ? download_and_save_image($rawLogo, 'stores') : $rawLogo;
-            $cover = str_starts_with($rawCover, 'http') ? download_and_save_image($rawCover, 'stores') : $rawCover;
+            $logo  = (!empty($rawLogo) && str_starts_with($rawLogo, 'http')) ? download_and_save_image($rawLogo, 'stores') : $rawLogo;
+            $cover = (!empty($rawCover) && str_starts_with($rawCover, 'http')) ? download_and_save_image($rawCover, 'stores') : $rawCover;
 
             $address  = !empty($data['address']) ? trim($data['address']) : 'Cicalengka, Kab. Bandung';
             $lat      = !empty($data['latitude']) ? (float)$data['latitude'] : -6.98350000;
@@ -376,12 +376,12 @@ class ApiController extends Controller
                 $pPrice    = (float)($p['price'] ?? 0);
                 $rawPImage = !empty($p['image']) ? trim($p['image']) : '';
 
-                // Ensure product does NOT use store logo or store cover photo or unsplash
-                if (empty($rawPImage) || $rawPImage === $rawLogo || $rawPImage === $rawCover || str_contains($rawPImage, '/stores/') || str_contains($rawPImage, 'unsplash')) {
-                    $rawPImage = 'assets/images/products/food1.jpg';
+                // Clean image URL: do not use store logo/cover or unsplash
+                if ($rawPImage === $rawLogo || $rawPImage === $rawCover || str_contains($rawPImage, '/stores/') || str_contains($rawPImage, 'unsplash')) {
+                    $rawPImage = '';
                 }
 
-                $pImage    = download_and_save_image($rawPImage, 'products');
+                $pImage = (!empty($rawPImage) && str_starts_with($rawPImage, 'http')) ? download_and_save_image($rawPImage, 'products') : $rawPImage;
                 $pRec      = !empty($p['is_recommended']) ? 1 : 0;
                 $pDisc     = (float)($p['discount'] ?? 0);
 

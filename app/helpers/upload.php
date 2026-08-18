@@ -62,7 +62,7 @@ function download_and_save_image(string $url, string $folder = 'general'): strin
 {
     $url = trim($url);
     if (empty($url)) {
-        return 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=80';
+        return '';
     }
 
     // If it's already a local relative path (e.g. uploads/stores/img_xxx.jpg), return as is

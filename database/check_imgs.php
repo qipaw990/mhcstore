@@ -1,7 +1,11 @@
 <?php
-$pdo = new PDO('mysql:host=127.0.0.1;dbname=cicalengkago_db;charset=utf8mb4', 'root', '');
-$prods = $pdo->query('SELECT p.id, p.store_id, s.name as store_name, p.name, p.image FROM products p JOIN stores s ON p.store_id = s.id')->fetchAll(PDO::FETCH_ASSOC);
-echo "TOTAL PRODUCTS: " . count($prods) . "\n\n";
-foreach ($prods as $p) {
-    echo "ID: {$p['id']} | Store: {$p['store_name']} | Product: {$p['name']} | Image: {$p['image']}\n";
-}
+$config = require __DIR__ . '/../app/config/database.php';
+$pdo = new PDO("mysql:host={$config['host']};dbname={$config['dbname']};charset={$config['charset']}", $config['username'], $config['password']);
+
+$stmtS = $pdo->query("SELECT id, name, logo, cover_photo FROM stores ORDER BY id DESC LIMIT 5");
+echo "=== LATEST STORES ===\n";
+print_r($stmtS->fetchAll(PDO::FETCH_ASSOC));
+
+$stmtP = $pdo->query("SELECT id, store_id, name, image FROM products ORDER BY id DESC LIMIT 20");
+echo "=== LATEST PRODUCTS ===\n";
+print_r($stmtP->fetchAll(PDO::FETCH_ASSOC));
