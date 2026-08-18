@@ -188,22 +188,22 @@ function extractGrabFoodData() {
       }
     }
 
+    // Initialize photo harvest cache
+    window.__grabProductPhotos = window.__grabProductPhotos || {};
+
     // Check if this object is a Menu Category or Menu Item list
     if (Array.isArray(obj.categories)) {
       obj.categories.forEach(cat => {
         const catName = cat.name || 'Menu Utama';
         const catNameLower = catName.toLowerCase();
 
-        // Skip "Untukmu" / "Rekomendasi" / "For You" recommendation section
-        if (catNameLower.includes('untukmu') || 
-            catNameLower.includes('untuk mu') || 
-            catNameLower.includes('for you') || 
-            catNameLower.includes('rekomendasi') || 
-            catNameLower.includes('recommended')) {
-          return;
-        }
+        const isRecSection = catNameLower.includes('untukmu') || 
+                             catNameLower.includes('untuk mu') || 
+                             catNameLower.includes('for you') || 
+                             catNameLower.includes('rekomendasi') || 
+                             catNameLower.includes('recommended');
 
-        if (cat.name && (result.category === 'Kuliner & Snack' || result.category === 'Menu Utama')) {
+        if (cat.name && !isRecSection && (result.category === 'Kuliner & Snack' || result.category === 'Menu Utama')) {
           result.category = cat.name;
         }
 
@@ -219,6 +219,14 @@ function extractGrabFoodData() {
             const pNameClean = cleanProductName(p.name);
             const normKey = normalizeTitleKey(pNameClean);
             
+            // Harvest photo into memory cache regardless of section
+            if (img && normKey) {
+              window.__grabProductPhotos[normKey] = img;
+            }
+
+            // Do not add recommendation items as duplicate products
+            if (isRecSection) return;
+
             const existing = result.products.find(e => normalizeTitleKey(e.name) === normKey);
             if (existing) {
               if (!existing.image && img) existing.image = img;
@@ -228,7 +236,7 @@ function extractGrabFoodData() {
                 name: pNameClean,
                 description: (p.description || '').trim(),
                 price: parseFloat(price) || 15000,
-                image: img,
+                image: img || (window.__grabProductPhotos[normKey] || ''),
                 is_recommended: 0,
                 category: catName
               });
@@ -402,18 +410,19 @@ function extractGrabFoodData() {
   });
 
   filteredCards.forEach(card => {
-    // Skip cards inside 'Untukmu' recommendation section
     const parentSec = card.closest('div[class*="categoryContent"], div[class*="CategoryContent"], section, [class*="category"], [class*="Category"], [class*="section"]');
     let catName = 'Menu Utama';
+    let isRecSection = false;
     if (parentSec) {
       const headerEl = parentSec.querySelector('h1, h2, h3, h4, [class*="categoryTitle"], [class*="categoryName"], [class*="categoryHeader"], [class*="title"], [class*="header"]');
       const headerText = headerEl ? headerEl.textContent.trim() : '';
       const htLower = headerText.toLowerCase();
       if (htLower) {
         if (htLower.includes('untukmu') || htLower.includes('untuk mu') || htLower.includes('for you') || htLower.includes('rekomendasi') || htLower.includes('recommended')) {
-          return;
+          isRecSection = true;
+        } else {
+          catName = headerText;
         }
-        catName = headerText;
       }
     }
 
@@ -448,6 +457,15 @@ function extractGrabFoodData() {
       if (descText === nameText) descText = '';
 
       const normKey = normalizeTitleKey(nameText);
+
+      // Harvest photo into memory cache regardless of section
+      if (imgUrl && normKey) {
+        window.__grabProductPhotos[normKey] = imgUrl;
+      }
+
+      // Skip creating duplicate products from "Untukmu" section
+      if (isRecSection) return;
+
       const existingProduct = result.products.find(p => normalizeTitleKey(p.name) === normKey);
       if (existingProduct) {
         existingProduct.name = nameText;
@@ -458,7 +476,7 @@ function extractGrabFoodData() {
           name: nameText,
           description: descText,
           price: priceVal,
-          image: imgUrl || '',
+          image: imgUrl || (window.__grabProductPhotos[normKey] || ''),
           is_recommended: imgUrl ? 1 : 0,
           category: catName
         });
