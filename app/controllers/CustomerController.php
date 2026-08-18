@@ -104,6 +104,58 @@ class CustomerController extends Controller
         ], 'customer_layout');
     }
 
+    public function exploreStores(): void
+    {
+        $moduleId = !empty($_GET['module_id']) ? (int)$_GET['module_id'] : null;
+        $search   = trim($_GET['q'] ?? '');
+        $filter   = trim($_GET['filter'] ?? 'all'); // 'all', 'open', 'rating', 'popular'
+
+        $params = [];
+        $whereClause = "WHERE s.status = 'approved'";
+
+        if ($moduleId) {
+            $whereClause .= " AND s.module_id = ?";
+            $params[] = $moduleId;
+        }
+
+        if (!empty($search)) {
+            $whereClause .= " AND (s.name LIKE ? OR s.address LIKE ?)";
+            $params[] = "%{$search}%";
+            $params[] = "%{$search}%";
+        }
+
+        if ($filter === 'open') {
+            $whereClause .= " AND s.is_open = 1";
+        } elseif ($filter === 'rating') {
+            $whereClause .= " AND s.rating >= 4.5";
+        }
+
+        $orderBy = "s.is_open DESC, s.rating DESC, s.order_count DESC";
+        if ($filter === 'popular') {
+            $orderBy = "s.order_count DESC, s.rating DESC";
+        }
+
+        $sql = "SELECT s.*, m.name as module_name,
+                       (SELECT COUNT(*) FROM products WHERE store_id = s.id AND status = 1) as product_count
+                FROM `stores` s
+                LEFT JOIN `modules` m ON s.module_id = m.id
+                {$whereClause}
+                ORDER BY {$orderBy}";
+
+        $stores = Database::query($sql, $params);
+        $modules = $this->moduleModel->activeModules();
+
+        $this->view('customer.explore_stores', [
+            'title'           => 'Jelajah Resto & Toko Cicalengka - CicalengkaGO',
+            'stores'          => $stores,
+            'modules'         => $modules,
+            'selected_module' => $moduleId,
+            'search'          => $search,
+            'active_filter'   => $filter,
+            'active_tab'      => 'explore'
+        ], 'customer_layout');
+    }
+
     public function search(): void
     {
         $query = trim($_GET['q'] ?? '');

@@ -39,6 +39,8 @@ Router::get('/logout', [AuthController::class, 'logout']);
 // ==========================================
 Router::get('/', [CustomerController::class, 'home']);
 Router::get('/search', [CustomerController::class, 'search']);
+Router::get('/explore-stores', [CustomerController::class, 'exploreStores']);
+Router::get('/stores', [CustomerController::class, 'exploreStores']);
 Router::get('/stores/{id}', [CustomerController::class, 'storeDetail']);
 Router::get('/parcel', [CustomerController::class, 'parcel']);
 Router::get('/profile', [CustomerController::class, 'profile']);

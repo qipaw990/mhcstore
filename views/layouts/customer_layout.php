@@ -130,6 +130,10 @@ $unreadNotifs = $user ? (new \App\Models\Notification())->getUnreadCount($user['
             <i class="bi bi-house-door<?= ($active_tab ?? '') === 'home' ? '-fill' : '' ?>"></i>
             <span>Beranda</span>
         </a>
+        <a href="<?= $baseUrl ?>/explore-stores" class="gojek-nav-item <?= ($active_tab ?? '') === 'explore' ? 'active' : '' ?>">
+            <i class="bi bi-compass<?= ($active_tab ?? '') === 'explore' ? '-fill' : '' ?>"></i>
+            <span>Jelajah</span>
+        </a>
         <a href="<?= $baseUrl ?>/search" class="gojek-nav-item <?= in_array(($active_tab ?? ''), ['promos', 'search']) ? 'active' : '' ?>">
             <i class="bi bi-percent"></i>
             <span>Promo</span>
@@ -137,10 +141,6 @@ $unreadNotifs = $user ? (new \App\Models\Notification())->getUnreadCount($user['
         <a href="<?= $baseUrl ?>/orders" class="gojek-nav-item <?= ($active_tab ?? '') === 'orders' ? 'active' : '' ?>">
             <i class="bi bi-receipt"></i>
             <span>Pesanan</span>
-        </a>
-        <a href="<?= $baseUrl ?>/notifications" class="gojek-nav-item <?= ($active_tab ?? '') === 'chat' ? 'active' : '' ?>">
-            <i class="bi bi-chat-dots<?= ($active_tab ?? '') === 'chat' ? '-fill' : '' ?>"></i>
-            <span>Chat</span>
         </a>
         <a href="<?= $baseUrl ?>/profile" class="gojek-nav-item <?= ($active_tab ?? '') === 'profile' ? 'active' : '' ?>">
             <i class="bi bi-person<?= ($active_tab ?? '') === 'profile' ? '-fill' : '' ?>"></i>
