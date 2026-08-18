@@ -119,32 +119,38 @@ async function runBatchScrape(stores, apiUrl) {
         files: ['content.js']
       }).catch(() => {});
 
-      // 5. Scroll page step-by-step to bottom & top to trigger lazy-loaded product cards and images
+      // 5. Scroll page step-by-step to bottom & top to trigger lazy-loaded product cards and harvest images into cache
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         func: async () => {
           await new Promise((resolve) => {
+            window.__grabProductPhotos = window.__grabProductPhotos || {};
             let totalHeight = 0;
-            const distance = 400;
+            const distance = 350;
             const timer = setInterval(() => {
               const scrollHeight = document.body.scrollHeight;
               window.scrollBy(0, distance);
               totalHeight += distance;
 
-              // Force image loading from data-src / srcset attributes
-              document.querySelectorAll('img').forEach(img => {
-                const ds = img.getAttribute('data-src') || img.getAttribute('srcset') || img.getAttribute('data-srcset');
-                if (ds && (!img.src || img.src.includes('data:image'))) {
-                  img.src = ds.split(' ')[0];
+              // Harvest images in viewport during downward scroll
+              document.querySelectorAll('div[class*="menuItem___"], div[class*="menuItem--"], div[class*="menuItemWrapper"]').forEach(card => {
+                const titleEl = card.querySelector('p[class*="itemNameTitle"], [class*="itemNameTitle"], [class*="itemName"] p, [class*="itemName"]');
+                const imgEl   = card.querySelector('img[class*="realImage"], div[class*="menuItemPhoto"] img, div[class*="menuItemPhotoContainer"] img, img[src*="food-cms"], img[src*="huawei-food-cms"], img[src*="grab"], img');
+                if (titleEl && imgEl) {
+                  const titleKey = titleEl.textContent.trim().toLowerCase();
+                  const imgSrc = imgEl.src || imgEl.getAttribute('data-src') || imgEl.getAttribute('srcset') || '';
+                  if (titleKey && imgSrc && (imgSrc.includes('food-cms') || imgSrc.includes('huawei-food-cms') || imgSrc.includes('compressed_webp') || imgSrc.includes('grab.com'))) {
+                    window.__grabProductPhotos[titleKey] = imgSrc;
+                  }
                 }
               });
 
-              if (totalHeight >= scrollHeight || totalHeight > 15000) {
+              if (totalHeight >= scrollHeight || totalHeight > 18000) {
                 clearInterval(timer);
                 window.scrollTo(0, 0);
                 setTimeout(resolve, 600);
               }
-            }, 100);
+            }, 120);
           });
         }
       }).catch(() => {});

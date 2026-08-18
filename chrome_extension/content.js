@@ -192,7 +192,11 @@ function extractGrabFoodData() {
         items.forEach(p => {
           if (p && p.name) {
             const price = (p.priceInCents ? p.priceInCents / 100 : (p.price || 15000));
-            const img = cleanImageUrl(p.imgHref || p.photoHref || p.photo || p.image || p.url || '');
+            let rawImg = p.imgHref || p.photoHref || p.photo || p.image || p.url || p.photoUrl || '';
+            if (!rawImg && Array.isArray(p.photos) && p.photos[0]) {
+              rawImg = p.photos[0].photoHref || p.photos[0].url || p.photos[0] || '';
+            }
+            const img = cleanImageUrl(rawImg);
             
             // Check duplicate
             if (!result.products.some(existing => existing.name.toLowerCase() === p.name.trim().toLowerCase())) {
@@ -216,7 +220,11 @@ function extractGrabFoodData() {
       itemsList.forEach(p => {
         if (p && p.name) {
           const price = (p.priceInCents ? p.priceInCents / 100 : (p.price || 15000));
-          const img = cleanImageUrl(p.imgHref || p.photoHref || p.photo || p.image || p.url || '');
+          let rawImg = p.imgHref || p.photoHref || p.photo || p.image || p.url || p.photoUrl || '';
+          if (!rawImg && Array.isArray(p.photos) && p.photos[0]) {
+            rawImg = p.photos[0].photoHref || p.photos[0].url || p.photos[0] || '';
+          }
+          const img = cleanImageUrl(rawImg);
           if (!result.products.some(existing => existing.name.toLowerCase() === p.name.trim().toLowerCase())) {
             result.products.push({
               name: p.name.trim(),
@@ -457,6 +465,14 @@ function extractGrabFoodData() {
             if (!p.description) p.description = desc;
           }
         }
+      }
+    }
+
+    // Check harvest cache window.__grabProductPhotos if image is missing
+    if (!p.image && p.name && window.__grabProductPhotos) {
+      const nameKey = p.name.trim().toLowerCase();
+      if (window.__grabProductPhotos[nameKey]) {
+        p.image = window.__grabProductPhotos[nameKey];
       }
     }
 
