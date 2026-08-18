@@ -34,12 +34,7 @@ function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
 function createDriverIcon() {
   return L.divIcon({
     className: '',
-    html: `<div style="position:relative;width:40px;height:40px;box-sizing:border-box;">
-             <div style="position:absolute;top:0;left:0;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#0d6efd,#1e40af);border:3px solid #ffffff;box-shadow:0 4px 14px rgba(13,110,253,0.5);box-sizing:border-box;"></div>
-             <div style="position:absolute;top:0;left:0;width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
-               <i class="bi bi-bicycle" style="font-size:18px;color:#ffffff;line-height:1;display:block;"></i>
-             </div>
-           </div>`,
+    html: '<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#0d6efd,#1e40af);display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 4px 14px rgba(13,110,253,0.5);box-sizing:border-box;"><i class="bi bi-bicycle" style="font-size:18px;color:#fff;"></i></div>',
     iconSize: [40, 40],
     iconAnchor: [20, 20]
   });
@@ -76,12 +71,7 @@ function initOrderTrackingMap(orderCode, initialData) {
   // Store Marker
   const storeIcon = L.divIcon({
     className: '',
-    html: `<div style="position:relative;width:36px;height:36px;box-sizing:border-box;">
-             <div style="position:absolute;top:0;left:0;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#b91c1c);border:2.5px solid #ffffff;box-shadow:0 4px 12px rgba(239,68,68,0.5);box-sizing:border-box;"></div>
-             <div style="position:absolute;top:0;left:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
-               <i class="bi bi-shop" style="font-size:16px;color:#ffffff;line-height:1;display:block;"></i>
-             </div>
-           </div>`,
+    html: '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#b91c1c);display:flex;align-items:center;justify-content:center;border:2.5px solid #fff;box-shadow:0 4px 12px rgba(239,68,68,0.5);box-sizing:border-box;"><i class="bi bi-shop" style="font-size:16px;color:#fff;"></i></div>',
     iconSize: [36, 36],
     iconAnchor: [18, 18]
   });
@@ -89,12 +79,7 @@ function initOrderTrackingMap(orderCode, initialData) {
   // Customer Destination Marker
   const customerIcon = L.divIcon({
     className: '',
-    html: `<div style="position:relative;width:36px;height:36px;box-sizing:border-box;">
-             <div style="position:absolute;top:0;left:0;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#10b981,#047857);border:2.5px solid #ffffff;box-shadow:0 4px 12px rgba(16,185,129,0.5);box-sizing:border-box;"></div>
-             <div style="position:absolute;top:0;left:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
-               <i class="bi bi-geo-alt-fill" style="font-size:16px;color:#ffffff;line-height:1;display:block;"></i>
-             </div>
-           </div>`,
+    html: '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#10b981,#047857);display:flex;align-items:center;justify-content:center;border:2.5px solid #fff;box-shadow:0 4px 12px rgba(16,185,129,0.5);box-sizing:border-box;"><i class="bi bi-geo-alt-fill" style="font-size:16px;color:#fff;"></i></div>',
     iconSize: [36, 36],
     iconAnchor: [18, 18]
   });

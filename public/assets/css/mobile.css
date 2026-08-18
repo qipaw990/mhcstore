@@ -2880,55 +2880,36 @@ div[style*="border-radius: 18px"] .d-flex {
 }
 
 /* ============================================================
-   Leaflet Map Marker & Custom Pin Bulletproof CSS System
+   Leaflet Map — Minimal CSS Fixes Only
    ============================================================ */
 
-/* 1. Reset Leaflet container & force box-sizing */
-.leaflet-container,
-.leaflet-container * {
-  box-sizing: border-box !important;
-}
-
-/* 2. Reset Leaflet map tile images */
+/* Prevent tile distortion */
 .leaflet-container img.leaflet-tile {
   max-width: none !important;
   max-height: none !important;
 }
 
-/* 3. Hide all Leaflet shadow elements */
+/* Hide default shadow image */
 .leaflet-shadow-pane,
 .leaflet-marker-shadow,
 img.leaflet-marker-shadow {
   display: none !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
   width: 0 !important;
   height: 0 !important;
-  border: none !important;
-  background: transparent !important;
 }
 
-/* 4. Default Leaflet Image Markers — keep at natural size, no distortion */
-img.leaflet-marker-icon {
-  display: block !important;
-  max-width: none !important;
-  max-height: none !important;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-/* 5. CRITICAL: Override Leaflet's built-in white background on div-based markers */
-div.leaflet-marker-icon,
+/* CRITICAL: Remove Leaflet's default white background on divIcon containers */
 div.leaflet-div-icon {
-  position: relative !important;
   background: transparent !important;
-  background-color: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  outline: none !important;
-  overflow: visible !important;
-  padding: 0 !important;
+}
+
+/* Also clear on marker-icon divs when className is empty */
+div.leaflet-marker-icon {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 /* Driver Page Layout Padding Fix (Mencegah konten terpotong Bottom Nav) */
