@@ -1,15 +1,15 @@
 <!-- Gojek Search Header Bar -->
-<div class="bg-white border-bottom sticky-top shadow-2xs" style="z-index: 1020; border-bottom-color: #E2E8F0 !important; padding: 8px 12px 8px !important;">
-    <div class="d-flex align-items-center gap-2 w-100">
-        <a href="<?= $baseUrl ?>" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-2xs" style="width: 30px; height: 30px; border: 1px solid #E2E8F0; background: #F8FAFC; padding: 0;">
-            <i class="bi bi-arrow-left text-dark" style="font-size: 13px;"></i>
+<div class="bg-white border-bottom sticky-top shadow-2xs" style="z-index: 1020; border-bottom-color: #E2E8F0 !important; padding: 6px 10px 6px !important;">
+    <div class="d-flex align-items-center gap-1.5 w-100">
+        <a href="<?= $baseUrl ?>" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-2xs" style="width: 28px; height: 28px; border: 1px solid #E2E8F0; background: #F8FAFC; padding: 0;">
+            <i class="bi bi-arrow-left text-dark" style="font-size: 12px;"></i>
         </a>
         <form action="<?= $baseUrl ?>/search" method="GET" class="flex-grow-1 m-0 position-relative min-w-0">
-            <div class="m-0 d-flex align-items-center gap-1.5 px-2.5 rounded-pill overflow-hidden" style="background: #F1F5F9; border: 1px solid #CBD5E1; height: 34px;">
-                <i class="bi bi-search text-danger flex-shrink-0" style="font-size: 12.5px;"></i>
-                <input type="text" name="q" id="search-input" value="<?= htmlspecialchars($query ?? '') ?>" placeholder="Cari sate, geprek, martabak, sembako..." autocomplete="off" style="border: none; background: transparent; outline: none; font-size: 11.5px; width: 100%; font-weight: 500; color: #1E293B;">
+            <div class="m-0 d-flex align-items-center gap-1.5 px-2.5 rounded-pill overflow-hidden" style="background: #F1F5F9; border: 1px solid #CBD5E1; height: 32px;">
+                <i class="bi bi-search text-danger flex-shrink-0" style="font-size: 11.5px;"></i>
+                <input type="text" name="q" id="search-input" value="<?= htmlspecialchars($query ?? '') ?>" placeholder="Cari sate, geprek, martabak, sembako..." autocomplete="off" style="border: none; background: transparent; outline: none; font-size: 11px; width: 100%; font-weight: 500; color: #1E293B;">
                 <?php if (!empty($query)): ?>
-                    <a href="<?= $baseUrl ?>/search<?= !empty($_GET['module_id']) ? '?module_id=' . (int)$_GET['module_id'] : '' ?>" class="text-muted text-decoration-none ms-1 flex-shrink-0" title="Hapus"><i class="bi bi-x-circle-fill text-secondary" style="font-size: 13px;"></i></a>
+                    <a href="<?= $baseUrl ?>/search<?= !empty($_GET['module_id']) ? '?module_id=' . (int)$_GET['module_id'] : '' ?>" class="text-muted text-decoration-none ms-1 flex-shrink-0" title="Hapus"><i class="bi bi-x-circle-fill text-secondary" style="font-size: 12px;"></i></a>
                 <?php endif; ?>
             </div>
             <?php if (!empty($_GET['module_id'])): ?>
@@ -19,26 +19,26 @@
     </div>
 
     <!-- Category Chips Pill Scroll -->
-    <div class="d-flex gap-1.5 overflow-x-auto w-100" style="scrollbar-width: none; margin-top: 8px !important; padding-bottom: 2px !important;">
-        <a href="<?= $baseUrl ?>/search<?= !empty($query) ? '?q=' . urlencode($query) : '' ?>" class="badge rounded-pill text-decoration-none d-flex align-items-center gap-1 flex-shrink-0 <?= empty($_GET['module_id']) ? 'bg-danger text-white shadow-2xs' : 'bg-white text-secondary border' ?>" style="font-size: 10.5px !important; font-weight: 600; padding: 4px 10px !important; border-radius: 20px !important;">
-            <i class="bi bi-grid-fill" style="font-size: 9.5px;"></i> Semua
+    <div class="d-flex gap-1 overflow-x-auto w-100" style="scrollbar-width: none; margin-top: 6px !important; padding-bottom: 2px !important;">
+        <a href="<?= $baseUrl ?>/search<?= !empty($query) ? '?q=' . urlencode($query) : '' ?>" class="badge rounded-pill text-decoration-none d-flex align-items-center gap-1 flex-shrink-0 <?= empty($_GET['module_id']) ? 'bg-danger text-white shadow-2xs' : 'bg-white text-secondary border' ?>" style="font-size: 9.5px !important; font-weight: 600; padding: 3px 9px !important; border-radius: 20px !important;">
+            <i class="bi bi-grid-fill" style="font-size: 9px;"></i> Semua
         </a>
-        <a href="<?= $baseUrl ?>/search?module_id=1<?= !empty($query) ? '&q=' . urlencode($query) : '' ?>" class="badge rounded-pill text-decoration-none d-flex align-items-center gap-1 flex-shrink-0 <?= (($_GET['module_id'] ?? '') == '1') ? 'bg-danger text-white shadow-2xs' : 'bg-white text-secondary border' ?>" style="font-size: 10.5px !important; font-weight: 600; padding: 4px 10px !important; border-radius: 20px !important;">
-            <i class="bi bi-egg-fried" style="font-size: 9.5px;"></i> GoFood
+        <a href="<?= $baseUrl ?>/search?module_id=1<?= !empty($query) ? '&q=' . urlencode($query) : '' ?>" class="badge rounded-pill text-decoration-none d-flex align-items-center gap-1 flex-shrink-0 <?= (($_GET['module_id'] ?? '') == '1') ? 'bg-danger text-white shadow-2xs' : 'bg-white text-secondary border' ?>" style="font-size: 9.5px !important; font-weight: 600; padding: 3px 9px !important; border-radius: 20px !important;">
+            <i class="bi bi-egg-fried" style="font-size: 9px;"></i> GoFood
         </a>
-        <a href="<?= $baseUrl ?>/search?module_id=2<?= !empty($query) ? '&q=' . urlencode($query) : '' ?>" class="badge rounded-pill text-decoration-none d-flex align-items-center gap-1 flex-shrink-0 <?= (($_GET['module_id'] ?? '') == '2') ? 'text-white shadow-2xs' : 'bg-white text-secondary border' ?>" style="<?= (($_GET['module_id'] ?? '') == '2') ? 'background:#F06400;' : '' ?> font-size: 10.5px !important; font-weight: 600; padding: 4px 10px !important; border-radius: 20px !important;">
-            <i class="bi bi-cart3" style="font-size: 9.5px;"></i> GoMart
+        <a href="<?= $baseUrl ?>/search?module_id=2<?= !empty($query) ? '&q=' . urlencode($query) : '' ?>" class="badge rounded-pill text-decoration-none d-flex align-items-center gap-1 flex-shrink-0 <?= (($_GET['module_id'] ?? '') == '2') ? 'text-white shadow-2xs' : 'bg-white text-secondary border' ?>" style="<?= (($_GET['module_id'] ?? '') == '2') ? 'background:#F06400;' : '' ?> font-size: 9.5px !important; font-weight: 600; padding: 3px 9px !important; border-radius: 20px !important;">
+            <i class="bi bi-cart3" style="font-size: 9px;"></i> GoMart
         </a>
-        <a href="<?= $baseUrl ?>/search?module_id=3<?= !empty($query) ? '&q=' . urlencode($query) : '' ?>" class="badge rounded-pill text-decoration-none d-flex align-items-center gap-1 flex-shrink-0 <?= (($_GET['module_id'] ?? '') == '3') ? 'text-white shadow-2xs' : 'bg-white text-secondary border' ?>" style="<?= (($_GET['module_id'] ?? '') == '3') ? 'background:#0081A0;' : '' ?> font-size: 10.5px !important; font-weight: 600; padding: 4px 10px !important; border-radius: 20px !important;">
-            <i class="bi bi-capsule" style="font-size: 9.5px;"></i> GoMed
+        <a href="<?= $baseUrl ?>/search?module_id=3<?= !empty($query) ? '&q=' . urlencode($query) : '' ?>" class="badge rounded-pill text-decoration-none d-flex align-items-center gap-1 flex-shrink-0 <?= (($_GET['module_id'] ?? '') == '3') ? 'text-white shadow-2xs' : 'bg-white text-secondary border' ?>" style="<?= (($_GET['module_id'] ?? '') == '3') ? 'background:#0081A0;' : '' ?> font-size: 9.5px !important; font-weight: 600; padding: 3px 9px !important; border-radius: 20px !important;">
+            <i class="bi bi-capsule" style="font-size: 9px;"></i> GoMed
         </a>
-        <a href="<?= $baseUrl ?>/search?module_id=4<?= !empty($query) ? '&q=' . urlencode($query) : '' ?>" class="badge rounded-pill text-decoration-none d-flex align-items-center gap-1 flex-shrink-0 <?= (($_GET['module_id'] ?? '') == '4') ? 'text-white shadow-2xs' : 'bg-white text-secondary border' ?>" style="<?= (($_GET['module_id'] ?? '') == '4') ? 'background:#8B5CF6;' : '' ?> font-size: 10.5px !important; font-weight: 600; padding: 4px 10px !important; border-radius: 20px !important;">
-            <i class="bi bi-bag-heart" style="font-size: 9.5px;"></i> GoShop
+        <a href="<?= $baseUrl ?>/search?module_id=4<?= !empty($query) ? '&q=' . urlencode($query) : '' ?>" class="badge rounded-pill text-decoration-none d-flex align-items-center gap-1 flex-shrink-0 <?= (($_GET['module_id'] ?? '') == '4') ? 'text-white shadow-2xs' : 'bg-white text-secondary border' ?>" style="<?= (($_GET['module_id'] ?? '') == '4') ? 'background:#8B5CF6;' : '' ?> font-size: 9.5px !important; font-weight: 600; padding: 3px 9px !important; border-radius: 20px !important;">
+            <i class="bi bi-bag-heart" style="font-size: 9px;"></i> GoShop
         </a>
     </div>
 </div>
 
-<div style="padding: 12px !important;">
+<div style="padding: 10px !important;">
     <?php if (empty($query)): ?>
         <!-- Trending & Popular Searches Card -->
         <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px !important; padding: 12px !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03); margin-bottom: 12px !important;">
