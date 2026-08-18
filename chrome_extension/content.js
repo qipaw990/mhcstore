@@ -25,17 +25,25 @@ function extractGrabFoodData() {
     if (!text) return null;
     const lower = text.toLowerCase();
     if (lower.includes('24 jam') || lower.includes('24 hour') || lower.includes('24-hour')) {
-      return { opening_time: '00:00:00', closing_time: '23:59:59' };
+      return { opening_time: '00:00:00', closing_time: '23:59:59', operating_hours: '00:00 - 23:59' };
     }
-    const match = text.match(/(\d{1,2})[:.](\d{2})\s*[-–—to]+\s*(\d{1,2})[:.](\d{2})/);
-    if (match) {
-      const openH = match[1].padStart(2, '0');
-      const openM = match[2];
-      const closeH = match[3].padStart(2, '0');
-      const closeM = match[4];
+    const matches = Array.from(text.matchAll(/(\d{1,2})[:.](\d{2})\s*[-–—to]+\s*(\d{1,2})[:.](\d{2})/g));
+    if (matches.length > 0) {
+      const first = matches[0];
+      const last  = matches[matches.length - 1];
+      const openH = first[1].padStart(2, '0');
+      const openM = first[2];
+      const closeH = last[3].padStart(2, '0');
+      const closeM = last[4];
+
+      const shifts = matches.map(m => {
+        return `${m[1].padStart(2, '0')}:${m[2]} - ${m[3].padStart(2, '0')}:${m[4]}`;
+      }).join(', ');
+
       return {
         opening_time: `${openH}:${openM}:00`,
-        closing_time: `${closeH}:${closeM}:00`
+        closing_time: `${closeH}:${closeM}:00`,
+        operating_hours: shifts
       };
     }
     return null;
@@ -542,18 +550,25 @@ function extractGrabFoodData() {
       }
     }
 
-    // Check if image is a REAL GrabFood merchant item photo
-    const isRealGrabPhoto = p.image && (
-      p.image.includes('compressed_webp') || 
+    // Check if image is a REAL GrabFood merchant item photo (and NOT a merchant logo/hero photo)
+    const isMerchantLogo = p.image && (
+      p.image.includes('/merchants/') ||
+      p.image.includes('/hero/') ||
+      p.image.includes('logo-grabfood') ||
+      p.image.includes('placeholder')
+    );
+
+    const isRealItemPhoto = p.image && !isMerchantLogo && (
       p.image.includes('menueditor_item') ||
       p.image.includes('/items/') ||
+      p.image.includes('compressed_webp') ||
       p.image.includes('huawei-food-cms') ||
       p.image.includes('food-cms') ||
       p.image.includes('cloudfront.net') ||
       p.image.includes('grab.com')
     );
 
-    if (!isRealGrabPhoto) {
+    if (!isRealItemPhoto) {
       p.image = '';
     }
   });
@@ -573,16 +588,6 @@ function extractGrabFoodData() {
   if (!result.cover_photo || (!result.cover_photo.includes('food-cms') && !result.cover_photo.includes('huawei-food-cms'))) {
     result.cover_photo = '';
   }
-
-  // Guaranteed Zero Empty Images: Fallback to store cover/logo for products missing specific item photos
-  const fallbackStorePhoto = result.cover_photo || result.logo || 
-    result.products.find(p => p.image && (p.image.includes('food-cms') || p.image.includes('huawei-food-cms')))?.image || '';
-
-  result.products.forEach(p => {
-    if (!p.image && fallbackStorePhoto) {
-      p.image = fallbackStorePhoto;
-    }
-  });
 
   return result;
 }

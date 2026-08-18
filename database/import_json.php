@@ -103,9 +103,15 @@ foreach ($products as $p) {
     if (empty($pName)) continue;
     $pDesc     = trim($p['description'] ?? '');
     $pPrice    = (float)($p['price'] ?? 15000);
-    $rawPImage = !empty($p['image']) ? $p['image'] : $rawLogo;
-    $pImage    = download_and_save_image($rawPImage, 'products');
-    $pRec      = !empty($p['is_recommended']) ? 1 : 0;
+    $rawPImage = !empty($p['image']) ? trim($p['image']) : '';
+    
+    // Filter out store hero/logo images mistakenly passed for products
+    if (str_contains($rawPImage, '/merchants/') || str_contains($rawPImage, '/hero/') || str_contains($rawPImage, 'placeholder') || str_contains($rawPImage, 'logo-grabfood')) {
+        $rawPImage = '';
+    }
+
+    $pImage = !empty($rawPImage) ? download_and_save_image($rawPImage, 'products') : null;
+    $pRec   = !empty($p['is_recommended']) ? 1 : 0;
 
     $stmtP = $pdo->prepare("SELECT id FROM products WHERE store_id = ? AND name = ? LIMIT 1");
     $stmtP->execute([$storeId, $pName]);

@@ -60,30 +60,48 @@ function get_store_schedule_status(int $storeId, int $vendorIsOpen = 1): array
     $currentTime = date('H:i:s');
 
     try {
-        $schedule = \App\Core\Database::fetchOne(
-            "SELECT opening_time, closing_time FROM store_schedules WHERE store_id = ? AND day_of_week = ? LIMIT 1",
+        $schedules = \App\Core\Database::query(
+            "SELECT opening_time, closing_time FROM store_schedules WHERE store_id = ? AND day_of_week = ? ORDER BY opening_time ASC",
             [$storeId, $dayOfWeek]
         );
     } catch (\Throwable $e) {
-        $schedule = null;
+        $schedules = [];
     }
 
-    $openTime  = $schedule['opening_time'] ?? '08:00:00';
-    $closeTime = $schedule['closing_time'] ?? '22:00:00';
+    if (empty($schedules)) {
+        $schedules = [
+            ['opening_time' => '08:00:00', 'closing_time' => '22:00:00']
+        ];
+    }
 
-    $openTimeFormatted  = date('H:i', strtotime($openTime));
-    $closeTimeFormatted = date('H:i', strtotime($closeTime));
-    $operatingHours     = "{$openTimeFormatted} - {$closeTimeFormatted}";
+    $isWithinHours = false;
+    $formattedShifts = [];
+    $firstOpen = null;
+    $lastClose = null;
 
-    $isWithinHours = ($currentTime >= $openTime && $currentTime <= $closeTime);
+    foreach ($schedules as $idx => $sch) {
+        $op = $sch['opening_time'] ?? '08:00:00';
+        $cl = $sch['closing_time'] ?? '22:00:00';
+
+        if ($idx === 0) $firstOpen = date('H:i', strtotime($op));
+        $lastClose = date('H:i', strtotime($cl));
+
+        if ($currentTime >= $op && $currentTime <= $cl) {
+            $isWithinHours = true;
+        }
+
+        $formattedShifts[] = date('H:i', strtotime($op)) . ' - ' . date('H:i', strtotime($cl));
+    }
+
+    $operatingHours  = implode(', ', $formattedShifts);
     $isCurrentlyOpen = ($isWithinHours && (int)$vendorIsOpen === 1);
 
     return [
         'is_open'          => $isCurrentlyOpen,
         'is_within_hours'  => $isWithinHours,
         'vendor_is_open'   => ((int)$vendorIsOpen === 1),
-        'opening_time'     => $openTimeFormatted,
-        'closing_time'     => $closeTimeFormatted,
+        'opening_time'     => $firstOpen,
+        'closing_time'     => $lastClose,
         'operating_hours'  => $operatingHours
     ];
 }
