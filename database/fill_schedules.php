@@ -1,8 +1,23 @@
 <?php
-$pdo = new PDO('mysql:host=127.0.0.1;dbname=cicalengkago_db;charset=utf8mb4', 'root', '');
-$stores = $pdo->query('SELECT id, name FROM stores')->fetchAll(PDO::FETCH_ASSOC);
+define('BASE_PATH', dirname(__DIR__));
+define('APP_PATH', BASE_PATH . '/app');
+require_once APP_PATH . '/autoload.php';
 
-echo "Populating store schedules for all " . count($stores) . " stores...\n";
+try {
+    $pdo = \App\Core\Database::getPdo();
+} catch (\Throwable $e) {
+    try {
+        $pdo = new PDO('mysql:host=127.0.0.1;dbname=cicalengkago_db;charset=utf8mb4', 'root', '');
+    } catch (\Throwable $e2) {
+        die("Connection error: " . $e2->getMessage());
+    }
+}
+
+$stores = $pdo->query('SELECT id, name FROM stores')->fetchAll(PDO::FETCH_ASSOC);
+$isCli = (php_sapi_name() === 'cli');
+$nl = $isCli ? "\n" : "<br>";
+
+echo "Populating store schedules for all " . count($stores) . " stores..." . $nl;
 
 foreach ($stores as $s) {
     $sid = $s['id'];
@@ -16,4 +31,4 @@ foreach ($stores as $s) {
     }
 }
 
-echo "✅ Success! All stores now have complete opening and closing times.\n";
+echo "✅ Success! All stores now have complete opening and closing times." . $nl;
