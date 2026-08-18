@@ -40,13 +40,13 @@
         <!-- Cart Items List -->
         <div class="d-flex flex-column gap-2.5 mb-3">
             <?php foreach ($cart_summary['items'] as $item): ?>
-                <div class="p-2.5 bg-white border shadow-2xs d-flex align-items-center gap-2.5" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+                <div class="px-3 py-3 bg-white border shadow-2xs d-flex align-items-center gap-3" style="border-radius: 18px; border-color: #E2E8F0 !important;">
 
                     <!-- Product Image — clickable to show detail modal -->
                     <img src="<?= $baseUrl ?>/<?= htmlspecialchars($item['product_image'] ?? 'assets/images/products/default.jpg') ?>"
                          alt="Img"
-                         class="rounded-3 flex-shrink-0"
-                         style="width: 52px; height: 52px; object-fit: cover; border-radius: 12px !important; cursor: pointer;"
+                         class="flex-shrink-0"
+                         style="width: 56px; height: 56px; object-fit: cover; border-radius: 14px; cursor: pointer;"
                          onclick="showCartItemDetail(<?= htmlspecialchars(json_encode([
                              'name'  => $item['product_name'],
                              'price' => format_rupiah($item['price']),
@@ -55,7 +55,7 @@
                          ])) ?>)">
 
                     <!-- Name + Price — strictly truncated, never pushes stepper -->
-                    <div class="flex-grow-1 min-w-0" style="overflow: hidden;"
+                    <div class="flex-grow-1 min-w-0"
                          onclick="showCartItemDetail(<?= htmlspecialchars(json_encode([
                              'name'  => $item['product_name'],
                              'price' => format_rupiah($item['price']),
@@ -63,19 +63,19 @@
                              'qty'   => $item['quantity'],
                          ])) ?>)"
                          style="cursor: pointer; overflow: hidden;">
-                        <div class="fw-bold text-dark" style="font-size: 12px; letter-spacing: -0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">
+                        <div class="fw-bold text-dark" style="font-size: 12.5px; letter-spacing: -0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">
                             <?= htmlspecialchars($item['product_name']) ?>
                         </div>
-                        <div class="fw-extrabold text-danger mt-1" style="font-size: 12.5px;"><?= format_rupiah($item['price']) ?></div>
+                        <div class="fw-extrabold text-danger mt-1.5" style="font-size: 13px;"><?= format_rupiah($item['price']) ?></div>
                     </div>
 
                     <!-- Quantity Stepper — always flex-shrink-0, never displaced -->
-                    <div class="d-flex align-items-center gap-1.5 flex-shrink-0 ms-auto">
-                        <button onclick="updateCartQty(<?= $item['id'] ?>, -1)" class="btn btn-sm p-0 d-flex align-items-center justify-content-center text-dark border shadow-2xs" style="width: 28px; height: 28px; border-radius: 50%; font-size: 11px; background:#FFFFFF; border-color: #CBD5E1 !important;">
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-auto">
+                        <button onclick="updateCartQty(<?= $item['id'] ?>, -1)" class="btn btn-sm p-0 d-flex align-items-center justify-content-center text-dark border shadow-2xs" style="width: 30px; height: 30px; border-radius: 50%; font-size: 12px; background:#FFFFFF; border-color: #CBD5E1 !important;">
                             <i class="bi bi-dash"></i>
                         </button>
-                        <span class="fw-extrabold text-center" style="font-size: 13px; min-width: 20px; color: #0F172A;"><?= $item['quantity'] ?></span>
-                        <button onclick="updateCartQty(<?= $item['id'] ?>, 1)" class="btn btn-sm p-0 d-flex align-items-center justify-content-center text-white border-0 shadow-2xs" style="width: 28px; height: 28px; background: #EE2737; border-radius: 50%; font-size: 11px;">
+                        <span class="fw-extrabold text-center" style="font-size: 14px; min-width: 22px; color: #0F172A;"><?= $item['quantity'] ?></span>
+                        <button onclick="updateCartQty(<?= $item['id'] ?>, 1)" class="btn btn-sm p-0 d-flex align-items-center justify-content-center text-white border-0 shadow-2xs" style="width: 30px; height: 30px; background: #EE2737; border-radius: 50%; font-size: 12px;">
                             <i class="bi bi-plus"></i>
                         </button>
                     </div>
