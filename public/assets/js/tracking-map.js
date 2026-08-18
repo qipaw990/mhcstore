@@ -584,13 +584,14 @@ function updateTrackingStatusUI(status, data) {
     if (icon4) icon4.className = isStep4Done ? 'bi bi-check-lg' : 'bi bi-geo-alt-fill';
   }
 
-  // OTP Card vs Celebration Card vs Canceled Card Auto-Sync
+  // OTP Card vs Celebration Card vs Canceled Card vs Batch Notice Auto-Sync
   const otpCard = document.getElementById('otp-banner-card');
   const completedCard = document.getElementById('order-completed-card');
   const searchingCard = document.getElementById('driver-searching-card');
   const assignedCard = document.getElementById('driver-assigned-card');
   const canceledCard = document.getElementById('order-canceled-card');
   const paymentBadge = document.getElementById('payment-status-text');
+  const batchNoticeCard = document.getElementById('batch-pickup-notice-card');
 
   if (status === 'canceled') {
     if (otpCard) otpCard.classList.add('d-none');
@@ -598,6 +599,7 @@ function updateTrackingStatusUI(status, data) {
     if (searchingCard) searchingCard.classList.add('d-none');
     if (assignedCard) assignedCard.classList.add('d-none');
     if (canceledCard) canceledCard.classList.remove('d-none');
+    if (batchNoticeCard) batchNoticeCard.classList.add('d-none');
     if (data && data.cancellation_reason) {
       const reasonEl = document.getElementById('canceled-reason-text');
       if (reasonEl) reasonEl.textContent = data.cancellation_reason;
@@ -610,6 +612,7 @@ function updateTrackingStatusUI(status, data) {
     if (otpCard) otpCard.classList.add('d-none');
     if (completedCard) completedCard.classList.remove('d-none');
     if (canceledCard) canceledCard.classList.add('d-none');
+    if (batchNoticeCard) batchNoticeCard.classList.add('d-none');
     if (paymentBadge) {
       paymentBadge.textContent = 'LUNAS';
       paymentBadge.className = 'fw-bold text-success';
@@ -618,6 +621,7 @@ function updateTrackingStatusUI(status, data) {
     if (otpCard) otpCard.classList.remove('d-none');
     if (completedCard) completedCard.classList.add('d-none');
     if (canceledCard) canceledCard.classList.add('d-none');
+    if (batchNoticeCard) batchNoticeCard.classList.remove('d-none');
   }
 
   // Stop polling if delivered or canceled to conserve resources

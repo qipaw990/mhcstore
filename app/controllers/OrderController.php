@@ -522,7 +522,8 @@ class OrderController extends Controller
         );
         $createdAtTime  = (int)($timingRow['created_ts'] ?? strtotime($order['created_at']));
         $serverNow      = (int)($timingRow['now_ts'] ?? time());
-        $elapsedSeconds = max(0, $serverNow - $createdAtTime);
+        $elapsedSeconds   = max(0, $serverNow - $createdAtTime);
+        $remainingSeconds = max(0, 60 - $elapsedSeconds);
         $batchInfo = null;
         if (!empty($order['delivery_batch_id'])) {
             $totalInBatch = (int)Database::fetchColumn(

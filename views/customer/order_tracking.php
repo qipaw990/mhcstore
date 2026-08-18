@@ -162,7 +162,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
 
         <!-- Multi-Store Batch Pickup Notice for Customer -->
         <?php if (!empty($order['delivery_batch_id'])): ?>
-        <div id="batch-pickup-notice-card" class="p-3 shadow-xs mb-1" style="background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 16px;">
+        <div id="batch-pickup-notice-card" class="p-3 shadow-xs mb-1 <?= ($order['order_status'] === 'delivered' || $order['order_status'] === 'canceled') ? 'd-none' : '' ?>" style="background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 16px;">
             <div class="d-flex align-items-start gap-2.5">
                 <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
                      style="width: 32px; height: 32px; background: #FEF3C7; color: #D97706; font-size: 15px;">
