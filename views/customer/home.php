@@ -1,8 +1,8 @@
 <!-- CicalengkaPay Wallet Card -->
-<div class="gopay-super-card shadow-sm overflow-hidden mb-3.5" style="border-radius: 18px; margin: 12px 14px 18px !important; padding: 14px 16px !important;">
+<div class="gopay-super-card shadow-2xs overflow-hidden mb-3">
     <div class="gopay-left min-w-0">
         <div class="gopay-logo-badge flex-shrink-0">
-            <i class="bi bi-wallet2 fs-5 text-white"></i>
+            <i class="bi bi-wallet2 text-white"></i>
             <span class="gopay-text">Cicalengka</span><span class="pay-text">Pay</span>
         </div>
         <div class="gopay-balance-row min-w-0">
@@ -10,8 +10,8 @@
         </div>
         <div class="gopay-coins-row text-truncate">
             <i class="bi bi-award-fill text-warning flex-shrink-0"></i>
-            <span class="text-truncate">0 Poin CicalengkaGO</span>
-            <span class="ms-1 text-white-50 flex-shrink-0" style="font-size: 10px;">• Riwayat</span>
+            <span class="text-truncate">0 Poin</span>
+            <span class="ms-1 text-white-50 flex-shrink-0" style="font-size: 9px;">• Riwayat</span>
         </div>
     </div>
 
@@ -38,13 +38,13 @@
 </div>
 
 <!-- Kategori Pilihan & Layanan CicalengkaGO -->
-<div class="gojek-services-section px-3 pt-1 pb-3 mb-2">
-    <div class="d-flex align-items-center justify-content-between mb-3 px-0.5">
-        <h6 class="fw-bold m-0" style="font-size: 13.5px; color: var(--gojek-charcoal); letter-spacing: -0.3px;">
-            <i class="bi bi-grid-1x2-fill me-1.5" style="color: var(--gojek-green);"></i> Kategori Pilihan
+<div class="gojek-services-section px-3 pt-1 pb-2.5 mb-2">
+    <div class="d-flex align-items-center justify-content-between mb-2.5 px-0.5">
+        <h6 class="fw-bold m-0" style="font-size: 12.5px; color: var(--gojek-charcoal); letter-spacing: -0.3px;">
+            <i class="bi bi-grid-1x2-fill me-1" style="color: var(--gojek-green);"></i> Kategori Pilihan
         </h6>
-        <a href="<?= $baseUrl ?>/search" class="text-decoration-none fw-bold" style="font-size: 11px; color: var(--gojek-green);">
-            Lihat Semua <i class="bi bi-chevron-right" style="font-size: 9.5px;"></i>
+        <a href="<?= $baseUrl ?>/search" class="text-decoration-none fw-bold" style="font-size: 10.5px; color: var(--gojek-green);">
+            Lihat Semua <i class="bi bi-chevron-right" style="font-size: 9px;"></i>
         </a>
     </div>
 
@@ -117,17 +117,17 @@
 
 <!-- Gojek Promo Banners Carousel -->
 <?php if (!empty($banners)): ?>
-<div class="gojek-promo-section px-3 py-2 mb-2.5">
-    <div id="gojekBannerCarousel" class="carousel slide gojek-carousel-container shadow-2xs overflow-hidden" data-bs-ride="carousel" style="border-radius: 16px;">
+<div class="gojek-promo-section px-3 py-1 mb-2">
+    <div id="gojekBannerCarousel" class="carousel slide gojek-carousel-container shadow-2xs overflow-hidden" data-bs-ride="carousel" style="border-radius: 14px;">
         <div class="carousel-inner overflow-hidden">
             <?php foreach ($banners as $index => $banner): ?>
                 <div class="carousel-item <?= $index === 0 ? 'active' : '' ?>">
-                    <img src="<?= $baseUrl ?>/<?= htmlspecialchars($banner['image']) ?>" alt="<?= htmlspecialchars($banner['title']) ?>" class="d-block w-100" style="height: 115px; object-fit: cover; border-radius: 16px;">
+                    <img src="<?= $baseUrl ?>/<?= htmlspecialchars($banner['image']) ?>" alt="<?= htmlspecialchars($banner['title']) ?>" class="d-block w-100 gojek-banner-img">
                 </div>
             <?php endforeach; ?>
         </div>
         <?php if (count($banners) > 1): ?>
-            <div class="carousel-indicators mb-2">
+            <div class="carousel-indicators mb-1.5">
                 <?php foreach ($banners as $index => $banner): ?>
                     <button type="button" data-bs-target="#gojekBannerCarousel" data-bs-slide-to="<?= $index ?>" class="<?= $index === 0 ? 'active' : '' ?>" aria-label="Slide <?= $index + 1 ?>"></button>
                 <?php endforeach; ?>
@@ -138,31 +138,31 @@
 <?php endif; ?>
 
 <!-- GoFood Pilihan Terlaris Hari Ini -->
-<div class="gojek-section-header px-3 pt-3 pb-1.5">
+<div class="gojek-section-header px-3 pt-2.5 pb-1">
     <div>
-        <h2 class="gojek-section-title" style="font-size: 13.5px; letter-spacing: -0.3px;">Paling Laris di Cicalengka</h2>
-        <div class="gojek-section-subtitle" style="font-size: 10px;">Diskon & resto favorit pilihan warga Cicalengka</div>
+        <h2 class="gojek-section-title" style="font-size: 12.5px; letter-spacing: -0.3px;">Paling Laris di Cicalengka</h2>
+        <div class="gojek-section-subtitle" style="font-size: 9.5px;">Diskon & resto favorit pilihan warga Cicalengka</div>
     </div>
-    <a href="<?= $baseUrl ?>/search?module_id=<?= $selected_module_id ?>" class="gojek-section-link" style="font-size: 11px;">Lihat Semua</a>
+    <a href="<?= $baseUrl ?>/search?module_id=<?= $selected_module_id ?>" class="gojek-section-link" style="font-size: 10.5px;">Lihat Semua</a>
 </div>
 
-<div class="gofood-stores-scroll px-3 pb-3 mb-2">
+<div class="gofood-stores-scroll px-3 pb-2.5 mb-2">
     <?php if (empty($popular_stores)): ?>
         <div class="text-muted small p-3">Belum ada resto pada kategori ini.</div>
     <?php else: ?>
         <?php foreach ($popular_stores as $store): ?>
-            <a href="<?= $baseUrl ?>/stores/<?= $store['id'] ?>" class="gofood-store-card shadow-2xs overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+            <a href="<?= $baseUrl ?>/stores/<?= $store['id'] ?>" class="gofood-store-card shadow-2xs overflow-hidden">
                 <div class="gofood-store-img-box position-relative overflow-hidden">
                     <img src="<?= $baseUrl ?>/<?= htmlspecialchars($store['cover_photo'] ?? 'assets/images/stores/geprek_cover.jpg') ?>" alt="<?= htmlspecialchars($store['name']) ?>" class="gofood-store-img">
                     <?php if ($store['is_open']): ?>
-                        <span class="gofood-open-tag" style="border-radius: 6px;"><i class="bi bi-door-open-fill me-1"></i> Buka</span>
+                        <span class="gofood-open-tag"><i class="bi bi-door-open-fill me-0.5"></i> Buka</span>
                     <?php else: ?>
-                        <span class="gofood-closed-tag" style="border-radius: 6px;"><i class="bi bi-door-closed-fill me-1"></i> Tutup</span>
+                        <span class="gofood-closed-tag"><i class="bi bi-door-closed-fill me-0.5"></i> Tutup</span>
                     <?php endif; ?>
                 </div>
-                <div class="gofood-store-body" style="padding: 10px 12px 12px !important;">
-                    <div class="gofood-store-name text-truncate" style="font-size: 12px; letter-spacing: -0.2px;"><?= htmlspecialchars($store['name']) ?></div>
-                    <div class="gofood-store-meta" style="font-size: 10px;">
+                <div class="gofood-store-body">
+                    <div class="gofood-store-name text-truncate"><?= htmlspecialchars($store['name']) ?></div>
+                    <div class="gofood-store-meta">
                         <span class="gofood-rating flex-shrink-0"><i class="bi bi-star-fill"></i> <?= number_format(($store['rating'] > 0 ? $store['rating'] : 5.0), 1) ?></span>
                         <span>•</span>
                         <span class="text-truncate"><?= htmlspecialchars($store['delivery_time'] ?? '20-30 mnt') ?></span>
@@ -174,30 +174,30 @@
 </div>
 
 <!-- GoFood & GoMart Rekomendasi Menu & Produk -->
-<div class="gojek-section-header px-3 pt-3 pb-1.5">
+<div class="gojek-section-header px-3 pt-2.5 pb-1">
     <div>
-        <h2 class="gojek-section-title" style="font-size: 13.5px; letter-spacing: -0.3px;">Rekomendasi Menu Favorit</h2>
-        <div class="gojek-section-subtitle" style="font-size: 10px;">Paling sering dipesan dengan pengantaran cepat</div>
+        <h2 class="gojek-section-title" style="font-size: 12.5px; letter-spacing: -0.3px;">Rekomendasi Menu Favorit</h2>
+        <div class="gojek-section-subtitle" style="font-size: 9.5px;">Paling sering dipesan dengan pengantaran cepat</div>
     </div>
 </div>
 
 <div class="gofood-products-grid px-3 pb-4">
     <?php foreach ($recommended_products as $prod): ?>
-        <div class="gofood-product-card shadow-2xs overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+        <div class="gofood-product-card shadow-2xs overflow-hidden">
             <div class="position-relative overflow-hidden">
-                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($prod['image'] ?? 'assets/images/products/default.jpg') ?>" alt="<?= htmlspecialchars($prod['name']) ?>" class="gofood-prod-img" style="height: 105px;">
+                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($prod['image'] ?? 'assets/images/products/default.jpg') ?>" alt="<?= htmlspecialchars($prod['name']) ?>" class="gofood-prod-img">
                 <?php if ((float)$prod['discount'] > 0): ?>
-                    <span class="gofood-discount-tag" style="border-radius: 6px;">Diskon <?= $prod['discount_type'] === 'percent' ? (int)$prod['discount'] . '%' : format_rupiah($prod['discount']) ?></span>
+                    <span class="gofood-discount-tag">Diskon <?= $prod['discount_type'] === 'percent' ? (int)$prod['discount'] . '%' : format_rupiah($prod['discount']) ?></span>
                 <?php endif; ?>
             </div>
-            <div class="gofood-prod-body" style="padding: 12px 14px 14px !important;">
-                <div class="gofood-prod-store text-truncate" style="font-size: 10px;"><?= htmlspecialchars($prod['store_name'] ?? 'Mitra GoFood') ?></div>
-                <div class="gofood-prod-name text-truncate" style="font-size: 12px; letter-spacing: -0.2px;"><?= htmlspecialchars($prod['name']) ?></div>
-                <div class="gofood-price-row mt-1.5 d-flex align-items-center justify-content-between gap-1">
+            <div class="gofood-prod-body">
+                <div class="gofood-prod-store text-truncate"><?= htmlspecialchars($prod['store_name'] ?? 'Mitra GoFood') ?></div>
+                <div class="gofood-prod-name text-truncate"><?= htmlspecialchars($prod['name']) ?></div>
+                <div class="gofood-price-row mt-1 d-flex align-items-center justify-content-between gap-1">
                     <div class="min-w-0">
-                        <div class="gofood-price text-truncate" style="font-size: 13px;"><?= format_rupiah($prod['final_price']) ?></div>
+                        <div class="gofood-price text-truncate"><?= format_rupiah($prod['final_price']) ?></div>
                         <?php if (!empty($prod['discount']) && (float)$prod['discount'] > 0 && (float)$prod['price'] > (float)$prod['final_price']): ?>
-                            <span class="text-muted text-decoration-line-through text-truncate d-block" style="font-size: 9.5px;"><?= format_rupiah($prod['price']) ?></span>
+                            <span class="text-muted text-decoration-line-through text-truncate d-block" style="font-size: 9px;"><?= format_rupiah($prod['price']) ?></span>
                         <?php endif; ?>
                     </div>
                     <button type="button" class="gofood-btn-add shadow-2xs flex-shrink-0" onclick="addToCart(<?= $prod['id'] ?>, 1)" title="Tambah ke Keranjang">
