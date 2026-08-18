@@ -373,9 +373,9 @@ class DeliveryService
             $totalKm += haversine_distance($prevLat, $prevLng, $destLat, $destLng);
         }
 
-        // Fallback to order recorded distance_km if calculated distance is minimal
-        if ($totalKm < 0.3 && !empty($lastOrder['distance_km'])) {
-            $totalKm = (float)$lastOrder['distance_km'];
+        // Fallback to sum of order recorded distance_km if calculated distance is minimal
+        if ($totalKm < 0.3) {
+            $totalKm = array_sum(array_map(fn($o) => max(0.5, (float)($o['distance_km'] ?? 1.5)), $orders));
         }
 
         return max(0.5, round($totalKm, 2));

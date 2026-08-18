@@ -325,7 +325,7 @@ class Order extends Model
                 }
 
                 if ($totalRouteKm < 0.3) {
-                    $totalRouteKm = (float)($lastSub['distance_km'] ?? 1.5);
+                    $totalRouteKm = array_sum(array_map(fn($so) => max(0.5, (float)($so['distance_km'] ?? 1.5)), $subOrds));
                 }
 
                 $resOrd['distance_km'] = round($totalRouteKm, 2);
