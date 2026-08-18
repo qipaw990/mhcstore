@@ -142,7 +142,7 @@
 
     <div class="d-flex gap-2.5 overflow-x-auto pb-2" style="scrollbar-width: none;">
         <?php foreach ($discounted_products as $discProd): ?>
-            <div class="shadow-2xs overflow-hidden flex-shrink-0" style="width: 140px; background: #FFFFFF; border-radius: 12px; border: 1px solid #E2E8F0;">
+            <div class="shadow-2xs overflow-hidden flex-shrink-0" style="width: 140px; background: #FFFFFF; border-radius: 12px; border: 1px solid #E2E8F0; cursor: pointer;" onclick="window.location.href='<?= $baseUrl ?>/stores/<?= $discProd['store_id'] ?>'">
                 <div class="position-relative overflow-hidden" style="height: 100px;">
                     <img src="<?= asset_url($discProd['image'] ?? null, 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80') ?>" alt="<?= htmlspecialchars($discProd['name']) ?>" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80';">
                     <span class="position-absolute top-0 start-0 bg-danger text-white px-1.5 py-0.5 font-monospace fw-bold" style="font-size: 8.5px; border-bottom-end-radius: 8px;">
@@ -156,7 +156,7 @@
                         <div class="fw-extrabold text-danger" style="font-size: 11.5px;"><?= format_rupiah($discProd['final_price']) ?></div>
                         <div class="text-muted text-decoration-line-through text-truncate" style="font-size: 8.5px;"><?= format_rupiah($discProd['price']) ?></div>
                     </div>
-                    <button type="button" class="gofood-btn-add-block mt-1 w-100" onclick="addToCart(<?= $discProd['id'] ?>, 1)">
+                    <button type="button" class="gofood-btn-add-block mt-1 w-100" onclick="event.stopPropagation(); addToCart(<?= $discProd['id'] ?>, 1)">
                         <i class="bi bi-plus-lg" style="font-size: 9px;"></i> Tambah
                     </button>
                 </div>
@@ -216,7 +216,7 @@
 
 <div class="gofood-products-grid px-3 pb-4">
     <?php foreach ($recommended_products as $prod): ?>
-        <div class="gofood-product-card shadow-2xs overflow-hidden">
+        <div class="gofood-product-card shadow-2xs overflow-hidden" style="cursor: pointer;" onclick="window.location.href='<?= $baseUrl ?>/stores/<?= $prod['store_id'] ?>'">
             <div class="position-relative overflow-hidden">
                 <img src="<?= asset_url($prod['image'] ?? null, 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80') ?>" alt="<?= htmlspecialchars($prod['name']) ?>" class="gofood-prod-img" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80';">
                 <?php if ((float)$prod['discount'] > 0): ?>
@@ -233,7 +233,7 @@
                             <span class="text-muted text-decoration-line-through text-truncate d-block" style="font-size: 9px;"><?= format_rupiah($prod['price']) ?></span>
                         <?php endif; ?>
                     </div>
-                    <button type="button" class="gofood-btn-add-block" onclick="addToCart(<?= $prod['id'] ?>, 1)" title="Tambah ke Keranjang">
+                    <button type="button" class="gofood-btn-add-block" onclick="event.stopPropagation(); addToCart(<?= $prod['id'] ?>, 1)" title="Tambah ke Keranjang">
                         <i class="bi bi-plus-lg" style="font-size: 10px;"></i> Tambah
                     </button>
                 </div>

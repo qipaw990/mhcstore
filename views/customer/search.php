@@ -109,7 +109,7 @@
                 </div>
                 <div class="gofood-products-grid p-0">
                     <?php foreach ($recommend_products as $prod): ?>
-                        <div class="gofood-product-card" style="border-radius: 12px;">
+                        <div class="gofood-product-card" style="border-radius: 12px; cursor: pointer;" onclick="window.location.href='<?= $baseUrl ?>/stores/<?= $prod['store_id'] ?>'">
                             <div class="position-relative">
                                 <img src="<?= asset_url($prod['image'] ?? null, 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80') ?>" alt="<?= htmlspecialchars($prod['name']) ?>" class="gofood-prod-img" style="height: 84px;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80';">
                                 <?php if (!empty($prod['discount']) && (float)$prod['discount'] > 0): ?>
@@ -126,7 +126,7 @@
                                             <span class="text-muted text-decoration-line-through" style="font-size: 8.5px;"><?= format_rupiah($prod['price']) ?></span>
                                         <?php endif; ?>
                                     </div>
-                                    <button type="button" class="gofood-btn-add-block" onclick="addToCart(<?= $prod['id'] ?>, 1)" title="Tambah ke Keranjang">
+                                    <button type="button" class="gofood-btn-add-block" onclick="event.stopPropagation(); addToCart(<?= $prod['id'] ?>, 1)" title="Tambah ke Keranjang">
                                         <i class="bi bi-plus-lg" style="font-size: 10px;"></i> Tambah
                                     </button>
                                 </div>
@@ -180,7 +180,7 @@
             <?php else: ?>
                 <div class="gofood-products-grid p-0">
                     <?php foreach ($products as $prod): ?>
-                        <div class="gofood-product-card" style="border-radius: 12px;">
+                        <div class="gofood-product-card" style="border-radius: 12px; cursor: pointer;" onclick="window.location.href='<?= $baseUrl ?>/stores/<?= $prod['store_id'] ?>'">
                             <div class="position-relative">
                                 <img src="<?= asset_url($prod['image'] ?? null, 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80') ?>" alt="<?= htmlspecialchars($prod['name']) ?>" class="gofood-prod-img" style="height: 84px;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80';">
                                 <?php if (!empty($prod['discount']) && (float)$prod['discount'] > 0): ?>
@@ -190,15 +190,15 @@
                             <div class="gofood-prod-body p-2">
                                 <div class="gofood-prod-store" style="font-size: 8.5px;"><?= htmlspecialchars($prod['store_name'] ?? 'Mitra GoFood') ?></div>
                                 <div class="gofood-prod-name" style="font-size: 10.5px; line-height: 1.2;"><?= htmlspecialchars($prod['name']) ?></div>
-                                <div class="gofood-price-row mt-1">
+                                <div class="gofood-price-row mt-1 d-flex flex-column gap-0.5">
                                     <div>
                                         <div class="gofood-price" style="font-size: 11px;"><?= format_rupiah($prod['final_price']) ?></div>
                                         <?php if (!empty($prod['discount']) && (float)$prod['discount'] > 0 && (float)$prod['price'] > (float)$prod['final_price']): ?>
                                             <span class="text-muted text-decoration-line-through" style="font-size: 8.5px;"><?= format_rupiah($prod['price']) ?></span>
                                         <?php endif; ?>
                                     </div>
-                                    <button type="button" class="gofood-btn-add" onclick="addToCart(<?= $prod['id'] ?>, 1)" title="Tambah ke Keranjang" style="width: 26px; height: 26px; font-size: 11px;">
-                                        <i class="bi bi-plus-lg"></i>
+                                    <button type="button" class="gofood-btn-add-block" onclick="event.stopPropagation(); addToCart(<?= $prod['id'] ?>, 1)" title="Tambah ke Keranjang">
+                                        <i class="bi bi-plus-lg" style="font-size: 10px;"></i> Tambah
                                     </button>
                                 </div>
                             </div>
