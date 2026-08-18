@@ -100,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
+        mode: 'cors',
         body: JSON.stringify(data)
       });
 
@@ -120,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
       statusTitle.textContent = "⚠️ Koneksi Server Gagal";
       statusBadge.textContent = "OFFLINE";
       statusBadge.className = "badge error";
-      statusText.textContent = "Tidak dapat terhubung ke endpoint CicalengkaGO. Data telah disiapkan, Anda bisa mengunduh file JSON.";
+      statusText.textContent = `Tidak dapat menghubungi ${apiUrl}. (${netErr.message || 'NetworkError'}). Jika menggunakan localhost, pastikan Apache aktif atau gunakan server lokal XAMPP.`;
     } finally {
       scrapeBtn.disabled = false;
       scrapeBtn.innerHTML = '<span>🚀 Scrape & Impor Toko Ini</span>';
