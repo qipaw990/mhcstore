@@ -347,6 +347,7 @@ function extractGrabFoodData() {
   // 2. Extract DOM Menu Items
   const cardSelectors = [
     'div[class*="menuItem___"]',
+    'div[class*="menuItem--"]',
     'div[class*="menuItemWrapper"]',
     'div[class*="itemCard"]',
     'div[class*="MenuItem"]',
