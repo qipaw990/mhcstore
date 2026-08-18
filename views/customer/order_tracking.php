@@ -448,7 +448,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
                 <?php endforeach; ?>
             <?php else: ?>
                 <div class="d-flex justify-content-between">
-                    <span>Pengiriman Paket Kilat GoSend</span>
+                    <span>Pesanan CicalengkaGO</span>
                     <span class="text-dark fw-semibold"><?= format_rupiah($order['order_amount']) ?></span>
                 </div>
             <?php endif; ?>

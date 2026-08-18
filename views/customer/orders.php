@@ -50,9 +50,9 @@
                     <div class="d-flex align-items-center justify-content-between mb-2">
                         <div class="d-flex align-items-center gap-1.5">
                             <div class="rounded-circle text-white d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; background: linear-gradient(135deg, #EE2737, #C61524); box-shadow: 0 2px 5px rgba(238,39,55,0.25);">
-                                <i class="bi <?= empty($order['items']) ? 'bi-box-seam-fill' : 'bi-egg-fried' ?>" style="font-size: 11px;"></i>
+                                <i class="bi bi-egg-fried" style="font-size: 11px;"></i>
                             </div>
-                            <span class="fw-bold" style="color: var(--gojek-charcoal); font-size: 12px; letter-spacing: -0.2px;"><?= empty($order['items']) ? 'GoSend' : 'GoFood' ?></span>
+                            <span class="fw-bold" style="color: var(--gojek-charcoal); font-size: 12px; letter-spacing: -0.2px;">CicalengkaGO</span>
                             <span class="text-muted" style="font-size: 10px;">#<?= htmlspecialchars($order['order_code']) ?></span>
                         </div>
                         <span class="badge <?= $badgeClass ?> fw-bold status-badge" style="font-size: 9px; padding: 3px 8px; border-radius: 6px;"><?= $statusLabel ?></span>
@@ -60,7 +60,7 @@
 
                     <div class="d-flex align-items-center gap-1.5 mb-2">
                         <i class="bi bi-shop text-muted" style="font-size: 12px;"></i>
-                        <span class="fw-bold text-dark text-truncate" style="font-size: 11.5px; letter-spacing: -0.2px;"><?= htmlspecialchars($order['store_name'] ?? 'Penjemputan GoSend') ?></span>
+                        <span class="fw-bold text-dark text-truncate" style="font-size: 11.5px; letter-spacing: -0.2px;"><?= htmlspecialchars($order['store_name'] ?? 'Toko Cicalengka') ?></span>
                         <span class="text-muted" style="font-size: 10px;">• <?= date('d M, H:i', strtotime($order['created_at'])) ?></span>
                     </div>
 
@@ -70,7 +70,7 @@
                                 <div class="text-truncate">• <?= $item['quantity'] ?>x <?= htmlspecialchars($item['product_name']) ?></div>
                             <?php endforeach; ?>
                         <?php else: ?>
-                            <div>• Pengiriman Paket Kilat GoSend Cicalengka</div>
+                            <div>• Pesanan CicalengkaGO</div>
                         <?php endif; ?>
                     </div>
 
