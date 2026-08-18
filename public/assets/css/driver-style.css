@@ -10,27 +10,40 @@
 #driver-radar-map .leaflet-tile {
     max-width: none !important;
     max-height: none !important;
+    box-shadow: none !important;
 }
 
 #driver-radar-map .leaflet-shadow-pane,
 #driver-radar-map .leaflet-marker-shadow,
 .leaflet-shadow-pane,
-.leaflet-marker-shadow {
+.leaflet-marker-shadow,
+img.leaflet-marker-shadow {
     display: none !important;
     opacity: 0 !important;
     visibility: hidden !important;
     width: 0 !important;
     height: 0 !important;
+    border: none !important;
+    background: transparent !important;
 }
 
-.leaflet-marker-icon {
+.leaflet-marker-icon,
+.leaflet-div-icon,
+div.leaflet-marker-icon,
+div.leaflet-div-icon {
     background: transparent !important;
+    background-color: transparent !important;
     border: none !important;
     box-shadow: none !important;
     outline: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    line-height: 1 !important;
 }
 
 div.leaflet-marker-icon,
+div.leaflet-div-icon,
 #driver-radar-map div.leaflet-marker-icon {
     display: flex !important;
     align-items: center !important;

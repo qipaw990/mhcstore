@@ -2879,41 +2879,63 @@ div[style*="border-radius: 18px"] .d-flex {
   box-shadow: 0 4px 12px rgba(238, 39, 55, 0.4);
 }
 
-/* Leaflet Map Marker & Custom Pin CSS Safeguards */
+/* ============================================================
+   Leaflet Map Marker & Custom Pin CSS Safeguards
+   ============================================================ */
+
+/* 1. Reset all images inside Leaflet containers so Bootstrap doesn't distort them */
 .leaflet-container img {
   max-width: none !important;
   max-height: none !important;
+  box-shadow: none !important;
 }
 
-.leaflet-container img.leaflet-marker-icon,
-.leaflet-container img.leaflet-marker-shadow,
 .leaflet-container img.leaflet-tile {
   max-width: none !important;
   max-height: none !important;
-  width: auto;
-  height: auto;
 }
 
-/* Sembunyikan default Leaflet shadow png yang terdistorsi */
+/* 2. Completely hide distorted Leaflet shadow PNGs */
 .leaflet-shadow-pane,
 .leaflet-marker-shadow,
-.leaflet-pane > .leaflet-shadow-pane {
+.leaflet-pane > .leaflet-shadow-pane,
+img.leaflet-marker-shadow {
   display: none !important;
   opacity: 0 !important;
   visibility: hidden !important;
   width: 0 !important;
   height: 0 !important;
+  border: none !important;
+  background: transparent !important;
 }
 
-.leaflet-marker-icon {
+/* 3. Strip background, border, shadow, and line-height from default Leaflet divIcon containers */
+.leaflet-marker-icon,
+.leaflet-div-icon,
+div.leaflet-marker-icon,
+div.leaflet-div-icon,
+.custom-map-icon,
+.custom-pin,
+.custom-pin-customer,
+.custom-pin-store,
+.custom-map-pin,
+.driver-radar-marker,
+.driver-pulse-container,
+.ccg-driver-pin {
   background: transparent !important;
+  background-color: transparent !important;
   border: none !important;
   box-shadow: none !important;
   outline: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  line-height: 1 !important;
 }
 
-/* Flex layout ONLY for container div icons (prevents standard <img> markers from flex stretching) */
+/* 4. Flex centering for DivIcon containers */
 div.leaflet-marker-icon,
+div.leaflet-div-icon,
 .custom-map-icon,
 .custom-pin,
 .custom-pin-customer,
@@ -2925,10 +2947,16 @@ div.leaflet-marker-icon,
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
   overflow: visible !important;
+}
+
+/* 5. Prevent pseudoelement rendering on marker wrappers */
+.leaflet-marker-icon::before,
+.leaflet-marker-icon::after,
+.leaflet-div-icon::before,
+.leaflet-div-icon::after {
+  display: none !important;
+  content: none !important;
 }
 
 .custom-pin > div,
