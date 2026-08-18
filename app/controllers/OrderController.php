@@ -531,7 +531,9 @@ class OrderController extends Controller
                 'batch_id'        => $order['delivery_batch_id'],
                 'pickup_sequence' => (int)($order['pickup_sequence'] ?? 1),
                 'total_orders'    => $totalInBatch,
-                'is_multi_pickup' => $totalInBatch > 1
+                'is_multi_pickup' => $totalInBatch > 1,
+                'stores'          => $order['batch_stores'] ?? [],
+                'total_amount'    => $order['batch_total_amount'] ?? (float)$order['total_amount'],
             ];
         }
 

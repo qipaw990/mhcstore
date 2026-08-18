@@ -59,6 +59,8 @@ class Order extends Model
             if ($currentUserId) {
                 $order['review_info'] = (new \App\Models\Review())->getOrderReview((int)$order['id'], $currentUserId);
             }
+
+            $this->enrichBatchOrderDetails($order);
         }
         return $order;
     }
@@ -93,11 +95,58 @@ class Order extends Model
                 if ($currentUserId) {
                     $order['review_info'] = (new \App\Models\Review())->getOrderReview((int)$order['id'], $currentUserId);
                 }
+
+                $this->enrichBatchOrderDetails($order);
             }
             return $order;
         }
 
         return $this->findByCode((string)$idOrCode);
+    }
+
+    public function enrichBatchOrderDetails(array &$order): void
+    {
+        if (empty($order['delivery_batch_id'])) {
+            return;
+        }
+
+        $batchOrders = Database::query(
+            "SELECT o.*, s.name as store_name, s.phone as store_phone, s.address as store_address,
+                    s.latitude as store_lat, s.longitude as store_lng, s.logo as store_logo
+             FROM `orders` o
+             LEFT JOIN `stores` s ON o.store_id = s.id
+             WHERE o.delivery_batch_id = ? AND o.order_status != 'canceled'
+             ORDER BY o.pickup_sequence ASC, o.id ASC",
+            [$order['delivery_batch_id']]
+        );
+
+        if (count($batchOrders) > 1) {
+            $order['is_multi_store_batch'] = true;
+            $order['batch_sub_orders']     = [];
+            $order['batch_stores']         = [];
+            $order['batch_total_amount']   = 0.0;
+
+            $storeSeen = [];
+
+            foreach ($batchOrders as $subOrd) {
+                $subOrd['items'] = Database::query("SELECT * FROM `order_items` WHERE `order_id` = ?", [$subOrd['id']]);
+                $order['batch_sub_orders'][] = $subOrd;
+                $order['batch_total_amount'] += (float)$subOrd['total_amount'];
+
+                $sId = $subOrd['store_id'];
+                if ($sId && !isset($storeSeen[$sId])) {
+                    $storeSeen[$sId] = true;
+                    $order['batch_stores'][] = [
+                        'store_id' => $sId,
+                        'name'     => $subOrd['store_name'] ?? 'Toko Cicalengka',
+                        'address'  => $subOrd['store_address'] ?? 'Cicalengka, Bandung',
+                        'phone'    => $subOrd['store_phone'] ?? '',
+                        'lat'      => (float)($subOrd['store_lat'] ?? -6.9835),
+                        'lng'      => (float)($subOrd['store_lng'] ?? 107.8335)
+                    ];
+                }
+            }
+        }
     }
 
     public function getCustomerOrders(int $customerId): array

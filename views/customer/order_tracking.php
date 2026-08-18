@@ -72,7 +72,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
             
             <div class="p-2.5 bg-light rounded-3 border mb-2.5">
                 <div class="text-muted" style="font-size: 9.5px;">TOTAL NOMINAL</div>
-                <div class="fw-bold text-danger my-1" style="font-size: 20px;"><?= format_rupiah($order['total_amount']) ?></div>
+                <div class="fw-bold text-danger my-1" style="font-size: 20px;"><?= format_rupiah(!empty($order['is_multi_store_batch']) ? $order['batch_total_amount'] : $order['total_amount']) ?></div>
                 <div class="badge bg-white text-dark border px-2 py-1" style="font-size: 9.5px;">
                     <i class="bi bi-shield-check text-success me-0.5"></i> Midtrans QRIS / VA / E-Wallet
                 </div>
@@ -453,16 +453,58 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
 
     <!-- Order Items & Address Summary (Always Visible) -->
     <div class="p-3.5 bg-white border shadow-xs" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important;">
-        <h6 class="fw-bold mb-1.5 text-dark" style="font-size: 11.5px;"><i class="bi bi-shop text-danger me-1"></i> Titik Penjemputan</h6>
-        <p class="text-dark fw-semibold mb-0.5" style="font-size: 10.5px;"><?= htmlspecialchars($order['store_name'] ?? 'Penjemputan Parcel') ?></p>
-        <p class="text-muted mb-2.5" style="font-size: 9.5px;"><?= htmlspecialchars($order['store_address'] ?? 'Cicalengka, Bandung') ?></p>
+        <?php if (!empty($order['is_multi_store_batch']) && !empty($order['batch_stores'])): ?>
+            <h6 class="fw-bold mb-2 text-dark d-flex align-items-center justify-content-between" style="font-size: 11.5px;">
+                <span><i class="bi bi-shop text-danger me-1"></i> Titik Penjemputan (<?= count($order['batch_stores']) ?> Toko)</span>
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning" style="font-size: 8.5px;">Multi-Toko</span>
+            </h6>
+            <div class="d-flex flex-column gap-2 mb-3">
+                <?php foreach ($order['batch_stores'] as $idx => $st): ?>
+                    <div class="p-2.5 rounded-3 border d-flex align-items-start gap-2" style="font-size: 10px; background: #F8FAFC; border-color: #E2E8F0 !important;">
+                        <span class="badge bg-danger text-white rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 20px; height: 20px; font-size: 9.5px; margin-top: 1px;">
+                            <?= $idx + 1 ?>
+                        </span>
+                        <div class="min-w-0 flex-grow-1">
+                            <div class="fw-bold text-dark text-truncate" style="font-size: 11px;"><?= htmlspecialchars($st['name']) ?></div>
+                            <div class="text-muted text-truncate" style="font-size: 9.5px;"><?= htmlspecialchars($st['address']) ?></div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?>
+            <h6 class="fw-bold mb-1.5 text-dark" style="font-size: 11.5px;"><i class="bi bi-shop text-danger me-1"></i> Titik Penjemputan</h6>
+            <p class="text-dark fw-semibold mb-0.5" style="font-size: 10.5px;"><?= htmlspecialchars($order['store_name'] ?? 'Penjemputan Parcel') ?></p>
+            <p class="text-muted mb-2.5" style="font-size: 9.5px;"><?= htmlspecialchars($order['store_address'] ?? 'Cicalengka, Bandung') ?></p>
+        <?php endif; ?>
 
         <h6 class="fw-bold mb-1.5 text-dark" style="font-size: 11.5px;"><i class="bi bi-geo-alt-fill text-success me-1"></i> Alamat Tujuan Pengantaran</h6>
         <p class="text-muted mb-2.5" style="font-size: 10px;"><?= htmlspecialchars($order['delivery_address']['address'] ?? 'Cicalengka') ?></p>
 
         <h6 class="fw-bold mb-1.5 text-dark" style="font-size: 11.5px;"><i class="bi bi-bag-check-fill text-primary me-1"></i> Rincian Menu / Paket</h6>
-        <div class="d-flex flex-column gap-1.5 text-muted mb-2.5" style="font-size: 10px;">
-            <?php if (!empty($order['items'])): ?>
+        <div class="d-flex flex-column gap-2 text-muted mb-2.5" style="font-size: 10px;">
+            <?php if (!empty($order['is_multi_store_batch']) && !empty($order['batch_sub_orders'])): ?>
+                <?php foreach ($order['batch_sub_orders'] as $subOrd): ?>
+                    <div class="p-2.5 rounded-3" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
+                        <div class="fw-bold text-dark mb-1.5 pb-1 border-bottom d-flex align-items-center justify-content-between" style="font-size: 10.5px;">
+                            <span><i class="bi bi-shop text-danger me-1"></i> <?= htmlspecialchars($subOrd['store_name'] ?? 'Toko') ?></span>
+                            <span class="text-muted font-monospace" style="font-size: 9px;">#<?= htmlspecialchars($subOrd['order_code']) ?></span>
+                        </div>
+                        <?php if (!empty($subOrd['items'])): ?>
+                            <?php foreach ($subOrd['items'] as $item): ?>
+                                <div class="d-flex justify-content-between py-0.5">
+                                    <span><?= $item['quantity'] ?>x <?= htmlspecialchars($item['product_name']) ?></span>
+                                    <span class="text-dark fw-semibold"><?= format_rupiah($item['total_price']) ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <div class="d-flex justify-content-between py-0.5">
+                                <span>Pesanan Toko</span>
+                                <span class="text-dark fw-semibold"><?= format_rupiah($subOrd['total_amount']) ?></span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            <?php elseif (!empty($order['items'])): ?>
                 <?php foreach ($order['items'] as $item): ?>
                     <div class="d-flex justify-content-between">
                         <span><?= $item['quantity'] ?>x <?= htmlspecialchars($item['product_name']) ?></span>
@@ -479,7 +521,9 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
         <hr class="my-2">
         <div class="d-flex justify-content-between fw-bold" style="font-size: 11.5px;">
             <span>Total Tagihan (<?= strtoupper($order['payment_method']) ?>)</span>
-            <span class="text-danger" style="font-size: 13px;"><?= format_rupiah($order['total_amount']) ?></span>
+            <span class="text-danger" style="font-size: 14px;">
+                <?= format_rupiah(!empty($order['is_multi_store_batch']) ? $order['batch_total_amount'] : $order['total_amount']) ?>
+            </span>
         </div>
         <div class="d-flex justify-content-between text-muted mt-1.5" style="font-size: 9.5px;">
             <span>Status Pembayaran</span>
