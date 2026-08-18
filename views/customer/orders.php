@@ -5,18 +5,20 @@
     </span>
 </div>
 
-<div class="px-2.5 py-2.5" id="orders-main-container">
+<div class="px-3 py-3 pb-5" id="orders-main-container" style="background: #F8FAFC; min-height: calc(100vh - 60px);">
     <?php if (empty($orders)): ?>
-        <div class="text-center py-4" id="empty-orders-view">
-            <div class="rounded-circle bg-light text-muted d-flex align-items-center justify-content-center mx-auto mb-2.5" style="width: 52px; height: 52px; font-size: 22px;">
-                <i class="bi bi-receipt text-muted"></i>
+        <div class="text-center py-5 bg-white border my-2" id="empty-orders-view" style="border-radius: 20px; border-color: #E2E8F0 !important;">
+            <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 shadow-2xs" style="width: 64px; height: 64px; background: #FEE2E2; color: #EE2737; font-size: 26px;">
+                <i class="bi bi-receipt"></i>
             </div>
-            <h6 class="fw-bold mb-1" style="color: var(--gojek-charcoal); font-size: 13px;">Belum Ada Riwayat Pesanan</h6>
-            <p class="text-muted mb-3" style="font-size: 10.5px; max-width: 260px; margin-left: auto; margin-right: auto; line-height: 1.4;">Pesanan Kuliner & Kirim Paket Anda akan muncul di halaman ini.</p>
-            <a href="<?= $baseUrl ?>" class="btn btn-gojek-green px-3.5 py-2" style="background:#EE2737 !important; color:#FFFFFF !important; border-radius:9999px; width: auto; display: inline-flex; text-decoration:none; font-size: 11.5px; font-weight: 700;">Pesan Sekarang</a>
+            <h6 class="fw-extrabold mb-1.5" style="color: #0F172A; font-size: 14px;">Belum Ada Riwayat Pesanan</h6>
+            <p class="text-muted mb-4 mx-auto" style="font-size: 11px; max-width: 270px; line-height: 1.5;">Pesanan Kuliner & Kirim Paket Anda akan tersimpan di halaman ini.</p>
+            <a href="<?= $baseUrl ?>" class="btn text-white fw-extrabold shadow-2xs px-4 py-2.5" style="background: linear-gradient(135deg, #EE2737, #C61524); border-radius: 9999px; font-size: 12px; text-decoration: none;">
+                <i class="bi bi-bag-check-fill me-1.5"></i> Pesan Sekarang
+            </a>
         </div>
     <?php else: ?>
-        <div class="d-flex flex-column gap-2.5" id="orders-list-wrapper">
+        <div class="d-flex flex-column gap-3" id="orders-list-wrapper">
             <?php foreach ($orders as $order): ?>
                 <?php
                 $isCanceled = ($order['order_status'] === 'canceled');
@@ -46,58 +48,68 @@
                     $statusLabel = 'Selesai';
                 }
                 ?>
-                <div class="p-2.5 bg-white border shadow-2xs order-card-item" id="order-card-<?= htmlspecialchars($order['order_code']) ?>" style="border-radius: 14px; border-color: #E2E8F0 !important;">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <div class="d-flex align-items-center gap-1.5">
-                            <div class="rounded-circle text-white d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; background: linear-gradient(135deg, #EE2737, #C61524); box-shadow: 0 2px 5px rgba(238,39,55,0.25);">
-                                <i class="bi bi-egg-fried" style="font-size: 11px;"></i>
+                <div class="p-3.5 bg-white border shadow-2xs order-card-item" id="order-card-<?= htmlspecialchars($order['order_code']) ?>" style="border-radius: 18px; border-color: #E2E8F0 !important;">
+                    <!-- Top Row: Brand, Order Code & Status -->
+                    <div class="d-flex align-items-center justify-content-between mb-2.5">
+                        <div class="d-flex align-items-center gap-2 min-w-0">
+                            <div class="rounded-circle text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-2xs" style="width: 26px; height: 26px; background: linear-gradient(135deg, #EE2737, #C61524);">
+                                <i class="bi bi-egg-fried" style="font-size: 12px;"></i>
                             </div>
-                            <span class="fw-bold" style="color: var(--gojek-charcoal); font-size: 12px; letter-spacing: -0.2px;">CicalengkaGO</span>
-                            <span class="text-muted" style="font-size: 10px;">#<?= htmlspecialchars($order['order_code']) ?></span>
+                            <span class="fw-extrabold text-truncate" style="color: #0F172A; font-size: 13px; letter-spacing: -0.2px;">CicalengkaGO</span>
+                            <span class="text-secondary fw-semibold font-monospace" style="font-size: 10px; background: #F1F5F9; padding: 2px 7px; border-radius: 6px;">#<?= htmlspecialchars($order['order_code']) ?></span>
                         </div>
-                        <span class="badge <?= $badgeClass ?> fw-bold status-badge" style="font-size: 9px; padding: 3px 8px; border-radius: 6px;"><?= $statusLabel ?></span>
+                        <span class="badge <?= $badgeClass ?> fw-bold status-badge flex-shrink-0 ms-2" style="font-size: 9.5px; padding: 4px 10px; border-radius: 9999px;"><?= $statusLabel ?></span>
                     </div>
 
-                    <div class="d-flex align-items-center gap-1.5 mb-2">
-                        <i class="bi bi-shop text-muted" style="font-size: 12px;"></i>
-                        <span class="fw-bold text-dark text-truncate" style="font-size: 11.5px; letter-spacing: -0.2px;"><?= htmlspecialchars($order['store_name'] ?? 'Toko Cicalengka') ?></span>
-                        <span class="text-muted" style="font-size: 10px;">• <?= date('d M, H:i', strtotime($order['created_at'])) ?></span>
+                    <!-- Store Name & Order Date -->
+                    <div class="d-flex align-items-center gap-1.5 mb-2.5">
+                        <i class="bi bi-shop text-muted flex-shrink-0" style="font-size: 13px;"></i>
+                        <span class="fw-bold text-dark text-truncate" style="font-size: 12px; letter-spacing: -0.2px;"><?= htmlspecialchars($order['store_name'] ?? 'Toko Cicalengka') ?></span>
+                        <span class="text-muted flex-shrink-0" style="font-size: 10.5px;">• <?= date('d M, H:i', strtotime($order['created_at'])) ?></span>
                     </div>
 
-                    <div class="p-2 bg-light rounded-3 text-muted mb-2.5" style="font-size: 10.5px; line-height: 1.4; border-radius: 8px !important;">
+                    <!-- Purchased Items Summary Container -->
+                    <div class="p-2.5 bg-light rounded-3 text-secondary mb-3" style="font-size: 11px; line-height: 1.5; border-radius: 12px !important; background: #F8FAFC !important; border: 1px solid #F1F5F9;">
                         <?php if (!empty($order['items'])): ?>
                             <?php foreach ($order['items'] as $item): ?>
-                                <div class="text-truncate">• <?= $item['quantity'] ?>x <?= htmlspecialchars($item['product_name']) ?></div>
+                                <div class="text-truncate d-flex align-items-center gap-1.5">
+                                    <i class="bi bi-dot text-danger" style="font-size: 16px; margin-right: -4px;"></i>
+                                    <span><?= $item['quantity'] ?>x <?= htmlspecialchars($item['product_name']) ?></span>
+                                </div>
                             <?php endforeach; ?>
                         <?php else: ?>
-                            <div>• Pesanan CicalengkaGO</div>
+                            <div class="d-flex align-items-center gap-1.5">
+                                <i class="bi bi-dot text-danger" style="font-size: 16px; margin-right: -4px;"></i>
+                                <span>Pesanan CicalengkaGO</span>
+                            </div>
                         <?php endif; ?>
                     </div>
 
-                    <div class="d-flex align-items-center justify-content-between">
+                    <!-- Card Footer: Total Payment & Action Button -->
+                    <div class="d-flex align-items-center justify-content-between pt-1">
                         <div>
-                            <div class="text-muted" style="font-size: 9.5px;">
+                            <div class="text-muted text-uppercase" style="font-size: 9.5px; font-weight: 700; letter-spacing: 0.3px;">
                                 <?= $isUnpaid ? 'Total Tagihan' : 'Total Pembayaran' ?>
-                                <span class="fw-semibold">(<?= strtoupper($order['payment_method']) ?>)</span>
+                                <span class="text-secondary fw-semibold">(<?= strtoupper($order['payment_method']) ?>)</span>
                             </div>
-                            <div class="fw-extrabold <?= $isUnpaid ? 'text-danger' : 'text-dark' ?>" style="font-size: 13px;"><?= format_rupiah($order['total_amount']) ?></div>
+                            <div class="fw-black <?= $isUnpaid ? 'text-danger' : 'text-dark' ?>" style="font-size: 14.5px; letter-spacing: -0.3px; color: #0F172A;"><?= format_rupiah($order['total_amount']) ?></div>
                         </div>
 
-                        <div class="d-flex gap-1.5 align-items-center">
+                        <div class="d-flex gap-2 align-items-center flex-shrink-0">
                             <?php if ($isUnpaid): ?>
-                                <a href="<?= $baseUrl ?>/orders/<?= $order['order_code'] ?>/tracking" class="btn btn-sm rounded-pill fw-bold px-3 py-1 text-white shadow-2xs" style="background: linear-gradient(135deg, #EE2737, #C61524); font-size: 10.5px;">
+                                <a href="<?= $baseUrl ?>/orders/<?= $order['order_code'] ?>/tracking" class="btn btn-sm rounded-pill fw-extrabold px-3 py-1.5 text-white shadow-2xs" style="background: linear-gradient(135deg, #EE2737, #C61524); font-size: 11px;">
                                     <i class="bi bi-credit-card-2-front-fill me-1"></i> Bayar
                                 </a>
                             <?php elseif ($isCanceled): ?>
-                                <a href="<?= $baseUrl ?>" class="btn btn-sm rounded-pill fw-semibold px-2.5 py-1 btn-light border" style="font-size: 10.5px;">
+                                <a href="<?= $baseUrl ?>" class="btn btn-sm rounded-pill fw-bold px-3 py-1.5 text-danger border" style="font-size: 11px; background: #FFF5F5; border-color: #FECDD3 !important;">
                                     <i class="bi bi-arrow-clockwise me-1"></i> Pesan Lagi
                                 </a>
                             <?php elseif ($status === 'delivered'): ?>
-                                <a href="<?= $baseUrl ?>/orders/<?= $order['order_code'] ?>/tracking" class="btn btn-sm rounded-pill fw-semibold px-2.5 py-1 btn-light border" style="font-size: 10.5px;">
-                                    <i class="bi bi-receipt me-1"></i> Rincian
+                                <a href="<?= $baseUrl ?>/orders/<?= $order['order_code'] ?>/tracking" class="btn btn-sm rounded-pill fw-bold px-3 py-1.5 text-dark border shadow-2xs" style="font-size: 11px; background: #F8FAFC; border-color: #CBD5E1 !important;">
+                                    <i class="bi bi-journal-text me-1 text-danger"></i> Rincian
                                 </a>
                             <?php else: ?>
-                                <a href="<?= $baseUrl ?>/orders/<?= $order['order_code'] ?>/tracking" class="btn btn-sm rounded-pill fw-bold px-3 py-1 text-white shadow-2xs" style="background: linear-gradient(135deg, #EE2737, #C61524); font-size: 10.5px;">
+                                <a href="<?= $baseUrl ?>/orders/<?= $order['order_code'] ?>/tracking" class="btn btn-sm rounded-pill fw-extrabold px-3 py-1.5 text-white shadow-2xs" style="background: linear-gradient(135deg, #EE2737, #C61524); font-size: 11px;">
                                     <i class="bi bi-geo-alt-fill me-1"></i> Lacak Live
                                 </a>
                             <?php endif; ?>
