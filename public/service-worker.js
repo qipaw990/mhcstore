@@ -1,11 +1,11 @@
 /**
- * CicalengkaGO Service Worker v3.2.0
+ * CicalengkaGO Service Worker v3.3.0
  * Resilient Network-First Strategy
  * Third-party CDN: Stale-While-Revalidate
  * Dynamic Pages / Payments / API: Pure Network Bypass (Never Intercept)
  */
 
-const SW_VERSION = '3.2.0';
+const SW_VERSION = '3.3.0';
 const CACHE_LOCAL = 'cicago-local-v' + SW_VERSION;
 const CACHE_CDN   = 'cicago-cdn-v2';
 
