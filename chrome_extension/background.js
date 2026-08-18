@@ -225,7 +225,8 @@ async function runBatchScrape(stores, apiUrl) {
             name: scrapedData.name,
             count: prodCount,
             status: 'success',
-            time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+            time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+            data: scrapedData
           });
           statusObj.logs = logsList.slice(0, 20);
           await chrome.storage.local.set({ batchStatus: statusObj });
@@ -242,7 +243,8 @@ async function runBatchScrape(stores, apiUrl) {
             name: scrapedData.name,
             count: prodCount,
             status: 'error',
-            time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+            time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+            data: scrapedData
           });
           statusObj.logs = logsList.slice(0, 20);
           await chrome.storage.local.set({ batchStatus: statusObj });

@@ -190,22 +190,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       // Render batch logs history
-      if (Array.isArray(status.logs) && status.logs.length > 0) {
-        batchLogsContainer.style.display = 'block';
-        batchLogsList.innerHTML = '';
-        status.logs.forEach(log => {
-          const li = document.createElement('li');
-          const isOk = log.status === 'success';
-          li.innerHTML = `
-            <div>
-              <strong style="color:${isOk ? '#00AA5B' : '#EF4444'};">${isOk ? '✅' : '⚠️'} ${log.name}</strong>
-              <div style="font-size:9.5px; color:var(--text-muted);">${log.count} menu terimpor • ${log.time}</div>
-            </div>
-            <span class="badge ${isOk ? 'success' : 'error'}">${isOk ? 'OK' : 'FAIL'}</span>
-          `;
-          batchLogsList.appendChild(li);
-        });
-      }
+      renderLogs(status.logs);
 
     } else if (status.completed) {
       scrapeBtn.disabled = false;
@@ -222,23 +207,65 @@ document.addEventListener('DOMContentLoaded', async () => {
       statusBadge.className = "badge success";
       statusText.textContent = status.statusText || "Seluruh toko berhasil diimpor ke CicalengkaGO!";
 
-      if (Array.isArray(status.logs) && status.logs.length > 0) {
-        batchLogsContainer.style.display = 'block';
-        batchLogsList.innerHTML = '';
-        status.logs.forEach(log => {
-          const li = document.createElement('li');
-          const isOk = log.status === 'success';
-          li.innerHTML = `
-            <div>
-              <strong style="color:${isOk ? '#00AA5B' : '#EF4444'};">${isOk ? '✅' : '⚠️'} ${log.name}</strong>
-              <div style="font-size:9.5px; color:var(--text-muted);">${log.count} menu terimpor • ${log.time}</div>
-            </div>
-            <span class="badge ${isOk ? 'success' : 'error'}">${isOk ? 'OK' : 'FAIL'}</span>
-          `;
-          batchLogsList.appendChild(li);
-        });
-      }
+      renderLogs(status.logs);
     }
+  }
+
+  function renderLogs(logs) {
+    if (!Array.isArray(logs) || logs.length === 0) return;
+    batchLogsContainer.style.display = 'block';
+    batchLogsList.innerHTML = '';
+    logs.forEach(log => {
+      const li = document.createElement('li');
+      const isOk = log.status === 'success';
+
+      const leftDiv = document.createElement('div');
+      leftDiv.style.flex = '1';
+      leftDiv.style.overflow = 'hidden';
+      leftDiv.style.marginRight = '6px';
+      leftDiv.innerHTML = `
+        <strong style="color:${isOk ? '#00AA5B' : '#EF4444'}; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+          ${isOk ? '✅' : '⚠️'} ${log.name}
+        </strong>
+        <div style="font-size:9.5px; color:var(--text-muted);">${log.count} menu terimpor • ${log.time}</div>
+      `;
+
+      const rightDiv = document.createElement('div');
+      rightDiv.style.display = 'flex';
+      rightDiv.style.alignItems = 'center';
+      rightDiv.style.gap = '4px';
+
+      const badgeSpan = document.createElement('span');
+      badgeSpan.className = `badge ${isOk ? 'success' : 'error'}`;
+      badgeSpan.textContent = isOk ? 'OK' : 'FAIL';
+      rightDiv.appendChild(badgeSpan);
+
+      if (log.data) {
+        const dlBtn = document.createElement('button');
+        dlBtn.type = 'button';
+        dlBtn.innerHTML = '📥 JSON';
+        dlBtn.title = `Unduh file JSON untuk toko '${log.name}'`;
+        dlBtn.style.cssText = 'padding:2px 6px; font-size:9.5px; border-radius:4px; border:1px solid #00AA5B; background:rgba(0,170,91,0.2); color:#00AA5B; cursor:pointer; font-weight:bold; outline:none; transition:background 0.2s;';
+        dlBtn.addEventListener('mouseover', () => dlBtn.style.background = 'rgba(0,170,91,0.4)');
+        dlBtn.addEventListener('mouseout', () => dlBtn.style.background = 'rgba(0,170,91,0.2)');
+        dlBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const cleanName = log.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 45);
+          const blob = new Blob([JSON.stringify(log.data, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `grabfood_${cleanName}.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+        });
+        rightDiv.appendChild(dlBtn);
+      }
+
+      li.appendChild(leftDiv);
+      li.appendChild(rightDiv);
+      batchLogsList.appendChild(li);
+    });
   }
 
   // Single Store Scrape
