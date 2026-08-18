@@ -21,8 +21,16 @@ $lat       = !empty($data['latitude']) ? (float)$data['latitude'] : -6.9840;
 $lng       = !empty($data['longitude']) ? (float)$data['longitude'] : 107.8350;
 $phone     = !empty($data['phone']) ? $data['phone'] : ('08' . rand(100000000, 999999999));
 $catName   = !empty($data['category']) ? $data['category'] : 'Nasi Goreng & Olahan';
-$logo      = !empty($data['logo']) ? $data['logo'] : 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=500&q=80';
-$cover     = !empty($data['cover_photo']) ? $data['cover_photo'] : 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=800&q=80';
+define('BASE_PATH', dirname(__DIR__));
+define('APP_PATH', BASE_PATH . '/app');
+define('PUBLIC_PATH', BASE_PATH . '/public');
+require_once APP_PATH . '/helpers/upload.php';
+
+$rawLogo  = !empty($data['logo']) ? $data['logo'] : 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=500&q=80';
+$rawCover = !empty($data['cover_photo']) ? $data['cover_photo'] : 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=800&q=80';
+
+$logo  = download_and_save_image($rawLogo, 'stores');
+$cover = download_and_save_image($rawCover, 'stores');
 
 // 1. Vendor
 $email = 'vendor_' . preg_replace('/[^a-z0-9]/', '', strtolower($storeName)) . '@cicalengkago.id';
@@ -82,10 +90,11 @@ $importedCount = 0;
 foreach ($products as $p) {
     $pName  = trim($p['name'] ?? '');
     if (empty($pName)) continue;
-    $pDesc  = trim($p['description'] ?? '');
-    $pPrice = (float)($p['price'] ?? 15000);
-    $pImage = !empty($p['image']) ? $p['image'] : $logo;
-    $pRec   = !empty($p['is_recommended']) ? 1 : 0;
+    $pDesc     = trim($p['description'] ?? '');
+    $pPrice    = (float)($p['price'] ?? 15000);
+    $rawPImage = !empty($p['image']) ? $p['image'] : $rawLogo;
+    $pImage    = download_and_save_image($rawPImage, 'products');
+    $pRec      = !empty($p['is_recommended']) ? 1 : 0;
 
     $stmtP = $pdo->prepare("SELECT id FROM products WHERE store_id = ? AND name = ? LIMIT 1");
     $stmtP->execute([$storeId, $pName]);

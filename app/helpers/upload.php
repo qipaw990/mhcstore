@@ -54,3 +54,98 @@ function upload_image(array $file, string $folder = 'general'): ?string
 
     return null;
 }
+
+/**
+ * Downloads a remote image from URL and saves it to local public/uploads directory.
+ */
+function download_and_save_image(string $url, string $folder = 'general'): string
+{
+    $url = trim($url);
+    if (empty($url)) {
+        return 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=80';
+    }
+
+    // If it's already a local relative path (e.g. uploads/stores/img_xxx.jpg), return as is
+    if (!str_starts_with($url, 'http://') && !str_starts_with($url, 'https://')) {
+        return $url;
+    }
+
+    // If it's hosted on our own server domain, return as is
+    $host = parse_url($url, PHP_URL_HOST);
+    if ($host && in_array(strtolower($host), ['cicago.store', 'localhost', '127.0.0.1'])) {
+        return $url;
+    }
+
+    $folder = trim($folder, '/\\');
+    $targetDir = PUBLIC_PATH . '/uploads/' . $folder;
+
+    if (!is_dir($targetDir)) {
+        @mkdir($targetDir, 0777, true);
+        @chmod($targetDir, 0777);
+    }
+
+    // Download image using cURL
+    $imgData = null;
+    $contentType = '';
+    
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+        curl_setopt($ch, CURLOPT_TIMEOUT, 12);
+        $imgData = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $contentType = (string)curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+        curl_close($ch);
+
+        if ($httpCode !== 200) {
+            $imgData = null;
+        }
+    }
+
+    if (empty($imgData)) {
+        $opts = [
+            "http" => [
+                "method" => "GET",
+                "header" => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n",
+                "timeout" => 10
+            ],
+            "ssl" => [
+                "verify_peer" => false,
+                "verify_peer_name" => false
+            ]
+        ];
+        $context = stream_context_create($opts);
+        $imgData = @file_get_contents($url, false, $context);
+    }
+
+    if (empty($imgData)) {
+        return $url; // Return original remote URL if download fails
+    }
+
+    // Determine extension
+    $ext = 'jpg';
+    if (str_contains($contentType, 'png')) $ext = 'png';
+    elseif (str_contains($contentType, 'webp')) $ext = 'webp';
+    elseif (str_contains($contentType, 'gif')) $ext = 'gif';
+    else {
+        $pathExt = pathinfo(parse_url($url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION);
+        if (in_array(strtolower($pathExt), ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
+            $ext = strtolower($pathExt);
+        }
+    }
+
+    $filename = uniqid('grab_', true) . '.' . $ext;
+    $destination = $targetDir . '/' . $filename;
+
+    if (@file_put_contents($destination, $imgData)) {
+        @chmod($destination, 0664);
+        return 'uploads/' . $folder . '/' . $filename;
+    }
+
+    return $url;
+}
+

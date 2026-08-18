@@ -289,11 +289,15 @@ class ApiController extends Controller
             $stmtS->execute([$storeName]);
             $sRow = $stmtS->fetch(\PDO::FETCH_ASSOC);
 
+            $rawLogo  = !empty($data['logo']) ? $data['logo'] : 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=80';
+            $rawCover = !empty($data['cover_photo']) ? $data['cover_photo'] : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80';
+
+            $logo  = download_and_save_image($rawLogo, 'stores');
+            $cover = download_and_save_image($rawCover, 'stores');
+
             $address  = !empty($data['address']) ? trim($data['address']) : 'Cicalengka, Kab. Bandung';
             $lat      = !empty($data['latitude']) ? (float)$data['latitude'] : -6.98350000;
             $lng      = !empty($data['longitude']) ? (float)$data['longitude'] : 107.83350000;
-            $logo     = !empty($data['logo']) ? $data['logo'] : 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=80';
-            $cover    = !empty($data['cover_photo']) ? $data['cover_photo'] : 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80';
             $delTime  = !empty($data['delivery_time']) ? $data['delivery_time'] : '15-25 min';
             $rating   = !empty($data['rating']) ? (float)$data['rating'] : 4.8;
             $revCount = !empty($data['reviews_count']) ? (int)$data['reviews_count'] : rand(50, 200);
@@ -339,11 +343,12 @@ class ApiController extends Controller
                 $pName = trim($p['name'] ?? '');
                 if (empty($pName)) continue;
 
-                $pDesc  = trim($p['description'] ?? '');
-                $pPrice = (float)($p['price'] ?? 0);
-                $pImage = !empty($p['image']) ? $p['image'] : $logo;
-                $pRec   = !empty($p['is_recommended']) ? 1 : 0;
-                $pDisc  = (float)($p['discount'] ?? 0);
+                $pDesc     = trim($p['description'] ?? '');
+                $pPrice    = (float)($p['price'] ?? 0);
+                $rawPImage = !empty($p['image']) ? $p['image'] : $rawLogo;
+                $pImage    = download_and_save_image($rawPImage, 'products');
+                $pRec      = !empty($p['is_recommended']) ? 1 : 0;
+                $pDisc     = (float)($p['discount'] ?? 0);
 
                 $stmtP = $pdo->prepare("SELECT id, image FROM products WHERE store_id = ? AND name = ? LIMIT 1");
                 $stmtP->execute([$storeId, $pName]);
