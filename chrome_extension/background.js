@@ -54,8 +54,8 @@ async function runBatchScrape(stores, apiUrl) {
     await chrome.storage.local.set({ batchStatus: statusObj });
 
     try {
-      // Create active tab so Chrome hydrates Next.js DOM and menu items fully
-      const tab = await chrome.tabs.create({ url: storeUrl, active: true });
+      // Create tab in BACKGROUND so user view doesn't switch away
+      const tab = await chrome.tabs.create({ url: storeUrl, active: false });
 
       // Wait 3.8 seconds for full DOM & menu item rendering
       await new Promise(r => setTimeout(r, 3800));
@@ -69,6 +69,12 @@ async function runBatchScrape(stores, apiUrl) {
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         files: ['content.js']
+      }).catch(() => {});
+
+      // Scroll slightly to trigger lazy-loaded items
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: () => { window.scrollTo(0, 500); }
       }).catch(() => {});
 
       // Execute extraction directly in tab DOM
@@ -88,14 +94,22 @@ async function runBatchScrape(stores, apiUrl) {
       await chrome.tabs.remove(tab.id).catch(() => {});
 
       if (scrapedData && scrapedData.name) {
-        statusObj.statusText = `[${currentStep}/${total}] Mengirim '${scrapedData.name}' (${scrapedData.products.length} menu) ke CicalengkaGO...`;
+        const prodCount = scrapedData.products ? scrapedData.products.length : 0;
+        statusObj.statusText = `[${currentStep}/${total}] Mengirim '${scrapedData.name}' (${prodCount} menu) ke server...`;
         await chrome.storage.local.set({ batchStatus: statusObj });
 
         try {
           await sendToApi(apiUrl, scrapedData);
+          statusObj.statusText = `[${currentStep}/${total}] ✅ Sukses: '${scrapedData.name}' (${prodCount} menu terimpor)`;
+          await chrome.storage.local.set({ batchStatus: statusObj });
         } catch (apiErr) {
           console.error("API Error importing store", scrapedData.name, apiErr);
+          statusObj.statusText = `[${currentStep}/${total}] ⚠️ Gagal API (${scrapedData.name}): ${apiErr.message}`;
+          await chrome.storage.local.set({ batchStatus: statusObj });
         }
+      } else {
+        statusObj.statusText = `[${currentStep}/${total}] ⚠️ Gagal membaca DOM resto`;
+        await chrome.storage.local.set({ batchStatus: statusObj });
       }
     } catch (err) {
       console.error("Batch error for store index", i, err);
@@ -111,15 +125,16 @@ async function runBatchScrape(stores, apiUrl) {
         current: total,
         total: total,
         percent: 100,
-        statusText: `🎉 BATCH IMPORT SELESAI! Berhasil memproses ${total} toko!`
+        statusText: `🎉 BATCH IMPORT SELESAI! Selesai memproses ${total} toko!`
       }
     });
   }
 }
 
 async function sendToApi(targetUrl, payload) {
+  let response = null;
   try {
-    const res = await fetch(targetUrl, {
+    response = await fetch(targetUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -127,12 +142,10 @@ async function sendToApi(targetUrl, payload) {
       },
       body: JSON.stringify(payload)
     });
-    if (res.ok) return res;
-    throw new Error(`HTTP status ${res.status}`);
   } catch (err) {
     if (targetUrl.includes('cicago.store')) {
       const fallbackUrl = 'http://localhost/CicalengkaGO/api/import-store';
-      return await fetch(fallbackUrl, {
+      response = await fetch(fallbackUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -140,7 +153,15 @@ async function sendToApi(targetUrl, payload) {
         },
         body: JSON.stringify(payload)
       });
+    } else {
+      throw err;
     }
-    throw err;
   }
+
+  if (!response || !response.ok) {
+    const errTxt = response ? await response.text().catch(() => '') : 'Koneksi Gagal';
+    throw new Error(`Server Error ${response ? response.status : ''}`);
+  }
+
+  return response;
 }
