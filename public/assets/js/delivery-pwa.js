@@ -8,6 +8,22 @@ let prevAvailableCount = -1;
 let prevActiveOrderStatus = null;
 let audioCtx = null;
 
+// SweetAlert Toast Notification Engine for Driver PWA
+const Toast = (typeof Swal !== 'undefined') ? Swal.mixin({
+  toast: true,
+  position: 'top-end',
+  showConfirmButton: false,
+  timer: 3000,
+  timerProgressBar: true,
+  didOpen: (toast) => {
+    toast.addEventListener('mouseenter', Swal.stopTimer);
+    toast.addEventListener('mouseleave', Swal.resumeTimer);
+  }
+}) : {
+  fire: (opts) => alert((opts.title || '') + ': ' + (opts.text || ''))
+};
+window.Toast = Toast;
+
 // Synthesized pleasant chime for new order alert without external asset dependency
 function playNewOrderChime() {
   try {
@@ -61,9 +77,15 @@ async function toggleDriverStatus() {
     const res = await fetch(API_BASE + '/delivery/toggle-online', { method: 'POST' });
     const data = await res.json();
     if (data.success) {
-      // Sync live instead of full reload if available
+      Toast.fire({
+        icon: 'info',
+        title: 'Status Diperbarui',
+        text: data.message || 'Status online driver berhasil diubah.'
+      });
       syncDriverLiveDashboard();
-      location.reload();
+      setTimeout(() => {
+        location.reload();
+      }, 400);
     }
   } catch (err) {
     console.error(err);
@@ -72,15 +94,16 @@ async function toggleDriverStatus() {
 
 // Accept Incoming Order
 async function acceptDriverOrder(orderId) {
-  if (window.HAS_ACTIVE_ORDER) {
-    Swal.fire({
-      title: 'Pesanan Masih Aktif!',
-      text: 'Anda sedang menjalankan pengantaran pesanan. Harap selesaikan pengantaran saat ini terlebih dahulu sebelum mengambil pesanan baru!',
-      icon: 'warning',
-      confirmButtonColor: '#EE2737'
-    });
-    return;
+  const cardEl = document.getElementById('avail-order-' + orderId);
+  let btnEl = null;
+  if (cardEl) {
+    btnEl = cardEl.querySelector('button');
+    if (btnEl) {
+      btnEl.disabled = true;
+      btnEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengambil...';
+    }
   }
+
   try {
     const formData = new FormData();
     formData.append('order_id', orderId);
@@ -92,24 +115,34 @@ async function acceptDriverOrder(orderId) {
 
     const data = await res.json();
     if (data.success) {
-      Swal.fire({
-        title: 'Pesanan Diterima!',
-        text: data.message,
+      Toast.fire({
         icon: 'success',
-        confirmButtonColor: '#EE2737'
-      }).then(() => {
+        title: 'Pesanan Diterima! 🚀',
+        text: data.message || 'Pesanan berhasil diambil.'
+      });
+      setTimeout(() => {
         location.reload();
-      });
+      }, 500);
     } else {
-      Swal.fire({
-        title: 'Gagal',
-        text: data.message,
+      Toast.fire({
         icon: 'error',
-        confirmButtonColor: '#EE2737'
+        title: 'Gagal Mengambil Pesanan',
+        text: data.message || 'Pesanan sudah diambil oleh driver lain.'
       });
+      if (cardEl) cardEl.remove();
+      syncDriverLiveDashboard();
     }
   } catch (err) {
     console.error(err);
+    Toast.fire({
+      icon: 'error',
+      title: 'Koneksi Terputus',
+      text: 'Gagal terhubung ke server.'
+    });
+    if (btnEl) {
+      btnEl.disabled = false;
+      btnEl.innerHTML = '<i class="bi bi-check-lg"></i> Ambil Order';
+    }
   }
 }
 
@@ -151,24 +184,28 @@ async function updateDeliveryStep(orderId, status) {
 
     const data = await res.json();
     if (data.success) {
-      Swal.fire({
-        title: 'Berhasil!',
-        text: data.message,
+      Toast.fire({
         icon: 'success',
-        confirmButtonColor: '#EE2737'
-      }).then(() => {
-        location.reload();
+        title: status === 'delivered' ? 'Pengantaran Selesai! 🎉' : 'Pesanan Dijemput! 🛵',
+        text: data.message || 'Status pengantaran berhasil diperbarui.'
       });
+      setTimeout(() => {
+        location.reload();
+      }, 500);
     } else {
-      Swal.fire({
-        title: 'Gagal',
-        text: data.message,
+      Toast.fire({
         icon: 'error',
-        confirmButtonColor: '#EE2737'
+        title: 'Gagal Memperbarui Status',
+        text: data.message || 'Terjadi kesalahan pada server.'
       });
     }
   } catch (err) {
     console.error(err);
+    Toast.fire({
+      icon: 'error',
+      title: 'Koneksi Terputus',
+      text: 'Gagal terhubung ke server.'
+    });
   }
 }
 
