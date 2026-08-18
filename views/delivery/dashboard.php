@@ -270,6 +270,23 @@
                             <?php endif; ?>
                         </div>
 
+                        <!-- Items list in active order card -->
+                        <?php if (!empty($bOrd['items'])): ?>
+                        <div class="p-2 bg-light rounded-3 border-start border-3 border-danger my-2" style="font-size: 11px;">
+                            <div class="text-muted fw-bold mb-1" style="font-size: 9.5px; text-transform: uppercase;">
+                                <i class="bi bi-bag-check me-1"></i> Rincian Pesanan:
+                            </div>
+                            <div class="d-flex flex-column gap-1">
+                                <?php foreach ($bOrd['items'] as $it): ?>
+                                <div class="d-flex align-items-center justify-content-between text-dark">
+                                    <span><b class="text-danger"><?= (int)($it['quantity'] ?? 1) ?>x</b> <?= htmlspecialchars($it['item_name'] ?? $it['product_name'] ?? 'Item') ?></span>
+                                    <span class="text-muted" style="font-size: 10px;"><?= format_rupiah((float)($it['price'] ?? 0)) ?></span>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
                         <!-- Action Buttons per store card -->
                         <?php if (!$bIsDelivered): ?>
                         <div class="d-flex gap-2 mt-2 pt-2 align-items-center" style="border-top: 1px dashed #E2E8F0;">
@@ -336,7 +353,7 @@
                 <div>
                     <div class="fw-bold small text-dark">Trip Anda Penuh (<?= count($active_batch['orders']) ?>/<?= \App\Services\DeliveryService::MAX_BATCH_ORDERS ?>)</div>
                     <div class="text-muted" style="font-size: 11px; line-height: 1.4;">
-                        Selesaikan pengantaran yang ada sebelum mengambil pesanan baru.
+                        Selesaikan pengantaran pesanan aktif saat ini terlebih dahulu sebelum mengambil pesanan baru.
                     </div>
                 </div>
             </div>
@@ -394,6 +411,27 @@
                         </div>
                     </div>
 
+                    <!-- Store Info (Multi-Store or Single Store) -->
+                    <?php if (!empty($ord['store_names']) && count($ord['store_names']) > 1): ?>
+                    <div class="mb-2">
+                        <div class="d-flex align-items-center gap-1.5 mb-1.5">
+                            <span class="badge rounded-pill px-2.5 py-1 text-white" style="font-size: 10px; font-weight: 700; background: #0284C7;">
+                                <i class="bi bi-shop-window me-1"></i> Multi-Store Order (<?= count($ord['store_names']) ?> Toko)
+                            </span>
+                        </div>
+                        <div class="p-2.5 bg-light rounded-3 border d-flex flex-column gap-1.5" style="font-size: 11px;">
+                            <?php foreach ($ord['store_names'] as $sIdx => $sName): ?>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge rounded-circle text-white d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                                          style="width: 18px; height: 18px; font-size: 9.5px; background: #EE2737;">
+                                        <?= $sIdx + 1 ?>
+                                    </span>
+                                    <span class="fw-bold text-dark text-truncate" style="font-size: 11.5px;"><?= htmlspecialchars($sName) ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php else: ?>
                     <div class="d-flex align-items-start gap-2 mb-2">
                         <i class="bi bi-shop" style="font-size: 15px; margin-top: 1px; color: #EE2737;"></i>
                         <div>
@@ -401,6 +439,27 @@
                             <div class="text-muted" style="font-size: 11px;"><?= htmlspecialchars($ord['store_address'] ?? 'Pusat Cicalengka') ?></div>
                         </div>
                     </div>
+                    <?php endif; ?>
+
+                    <!-- Items Summary -->
+                    <?php if (!empty($ord['items'])): ?>
+                    <div class="p-2 bg-light rounded-3 border-start border-3 border-danger mb-2.5" style="font-size: 11px;">
+                        <div class="text-muted fw-bold mb-1" style="font-size: 9.5px; text-transform: uppercase;">
+                            <i class="bi bi-bag-check me-1"></i> Detail Pesanan:
+                        </div>
+                        <div class="d-flex flex-column gap-1">
+                            <?php foreach (array_slice($ord['items'], 0, 3) as $it): ?>
+                            <div class="d-flex align-items-center justify-content-between text-dark">
+                                <span><b class="text-danger"><?= (int)($it['quantity'] ?? 1) ?>x</b> <?= htmlspecialchars($it['product_name'] ?? $it['item_name'] ?? $it['name'] ?? 'Menu') ?></span>
+                                <span class="text-muted" style="font-size: 10px;"><?= format_rupiah((float)($it['price'] ?? 0)) ?></span>
+                            </div>
+                            <?php endforeach; ?>
+                            <?php if (count($ord['items']) > 3): ?>
+                            <div class="text-muted fst-italic" style="font-size: 10px;">+ <?= count($ord['items']) - 3 ?> menu lainnya</div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
                     <div class="d-flex align-items-start gap-2 mb-3">
                         <i class="bi bi-geo-alt-fill" style="font-size: 15px; margin-top: 1px; color: #EE2737;"></i>

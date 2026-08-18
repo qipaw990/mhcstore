@@ -385,6 +385,65 @@ async function syncDriverLiveDashboard() {
           const custAddr = (ord.delivery_address && ord.delivery_address.address) ? ord.delivery_address.address : 'Cicalengka';
           const dist = ord.distance_km || '1.5';
           const ordCode = ord.order_code || ord.id;
+          const storeNames = ord.store_names || [];
+
+          let storeHtml = '';
+          if (storeNames.length > 1) {
+            let listHtml = storeNames.map((sn, idx) => `
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge rounded-circle text-white d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                      style="width: 18px; height: 18px; font-size: 9.5px; background: #EE2737;">${idx + 1}</span>
+                <span class="fw-bold text-dark text-truncate" style="font-size: 11.5px;">${sn}</span>
+              </div>
+            `).join('');
+
+            storeHtml = `
+              <div class="mb-2">
+                <div class="d-flex align-items-center gap-1.5 mb-1.5">
+                  <span class="badge rounded-pill px-2.5 py-1 text-white" style="font-size: 10px; font-weight: 700; background: #0284C7;">
+                    <i class="bi bi-shop-window me-1"></i> Multi-Store Order (${storeNames.length} Toko)
+                  </span>
+                </div>
+                <div class="p-2.5 bg-light rounded-3 border d-flex flex-column gap-1.5" style="font-size: 11px;">
+                  ${listHtml}
+                </div>
+              </div>
+            `;
+          } else {
+            storeHtml = `
+              <div class="d-flex align-items-start gap-2 mb-2">
+                <i class="bi bi-shop" style="font-size: 15px; margin-top: 1px; color: #EE2737;"></i>
+                <div>
+                  <div class="fw-bold small text-dark">${storeName}</div>
+                  <div class="text-muted" style="font-size: 11px;">${storeAddr}</div>
+                </div>
+              </div>
+            `;
+          }
+
+          let itemsHtml = '';
+          if (ord.items && ord.items.length > 0) {
+            const visibleItems = ord.items.slice(0, 3);
+            const itemList = visibleItems.map(it => `
+              <div class="d-flex align-items-center justify-content-between text-dark">
+                <span><b class="text-danger">${it.quantity || 1}x</b> ${it.product_name || it.item_name || it.name || 'Menu'}</span>
+                <span class="text-muted" style="font-size: 10px;">${formatRupiahJs(it.price || 0)}</span>
+              </div>
+            `).join('');
+            const moreCount = ord.items.length > 3 ? `<div class="text-muted fst-italic" style="font-size: 10px;">+ ${ord.items.length - 3} menu lainnya</div>` : '';
+
+            itemsHtml = `
+              <div class="p-2 bg-light rounded-3 border-start border-3 border-danger mb-2.5" style="font-size: 11px;">
+                <div class="text-muted fw-bold mb-1" style="font-size: 9.5px; text-transform: uppercase;">
+                  <i class="bi bi-bag-check me-1"></i> Detail Pesanan:
+                </div>
+                <div class="d-flex flex-column gap-1">
+                  ${itemList}
+                  ${moreCount}
+                </div>
+              </div>
+            `;
+          }
 
           cardsHtml += `
             <div class="p-3 bg-white rounded-4 border shadow-sm order-incoming-card" id="avail-order-${ord.id}">
@@ -396,18 +455,13 @@ async function syncDriverLiveDashboard() {
                         <span class="text-muted" style="font-size: 11px;">#${ordCode}</span>
                     </div>
                     <div class="text-end">
-                        <div class="text-muted" style="font-size: 10px; font-weight: 600;">Komisi Kurir:</div>
+                        <div class="text-muted" style="font-size: 10px; font-weight: 600;">Est. Komisi:</div>
                         <span class="fw-bold text-success" style="font-size: 14px;">+ ${comm}</span>
                     </div>
                 </div>
 
-                <div class="d-flex align-items-start gap-2 mb-2">
-                    <i class="bi bi-shop" style="font-size: 15px; margin-top: 1px; color: #EE2737;"></i>
-                    <div>
-                        <div class="fw-bold small text-dark">${storeName}</div>
-                        <div class="text-muted" style="font-size: 11px;">${storeAddr}</div>
-                    </div>
-                </div>
+                ${storeHtml}
+                ${itemsHtml}
 
                 <div class="d-flex align-items-start gap-2 mb-3">
                     <i class="bi bi-geo-alt-fill" style="font-size: 15px; margin-top: 1px; color: #EE2737;"></i>
@@ -421,7 +475,7 @@ async function syncDriverLiveDashboard() {
                     <span class="small text-muted fw-semibold" style="font-size: 11px;">
                         <i class="bi bi-signpost-2 me-1" style="color: #EE2737;"></i> Est. Jarak: ${dist} Km
                     </span>
-                    <button onclick="acceptDriverOrder(${ord.id})" class="btn text-white btn-sm fw-bold px-4 rounded-pill shadow-sm" style="background: #EE2737;">
+                    <button onclick="acceptDriverOrder(${ord.id})" class="btn text-white btn-sm fw-bold px-4 rounded-pill shadow-sm" style="background: #EE2737; font-size: 11px;">
                         <i class="bi bi-check-lg me-1"></i> Ambil Order
                     </button>
                 </div>

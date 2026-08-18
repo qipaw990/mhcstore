@@ -273,6 +273,13 @@ class DeliveryService
             $ord['delivery_address'] = is_string($ord['delivery_address_json'] ?? null)
                 ? json_decode($ord['delivery_address_json'], true)
                 : ($ord['delivery_address'] ?? []);
+            $ord['items'] = Database::query(
+                "SELECT oi.*, COALESCE(p.name, 'Item') as item_name 
+                 FROM `order_items` oi 
+                 LEFT JOIN `products` p ON oi.product_id = p.id 
+                 WHERE oi.order_id = ?",
+                [$ord['id']]
+            );
         }
 
         $totalKm       = $this->calcBatchTotalKm($dm, $orders);
