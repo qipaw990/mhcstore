@@ -265,6 +265,35 @@ function extractGrabFoodData() {
       });
     }
 
+    // Check if this object itself is a single menu item
+    if (obj.name && (obj.priceInCents !== undefined || obj.priceInMin !== undefined || obj.imgHref || obj.photoHref || obj.itemDescription !== undefined)) {
+      const pNameClean = cleanProductName(obj.name);
+      if (pNameClean && pNameClean.length >= 2 && !pNameClean.toLowerCase().includes('antar ke') && !pNameClean.toLowerCase().includes('masuk/daftar')) {
+        const price = (obj.priceInCents ? obj.priceInCents / 100 : (obj.priceInMin ? obj.priceInMin / 100 : (obj.price || 15000)));
+        let rawImg = obj.imgHref || obj.photoHref || obj.photo || obj.image || obj.url || obj.photoUrl || '';
+        if (!rawImg && Array.isArray(obj.photos) && obj.photos[0]) {
+          rawImg = obj.photos[0].photoHref || obj.photos[0].url || obj.photos[0] || '';
+        }
+        const img = cleanImageUrl(rawImg);
+        const normKey = normalizeTitleKey(pNameClean);
+
+        const existing = result.products.find(e => normalizeTitleKey(e.name) === normKey);
+        if (existing) {
+          if (!existing.image && img) existing.image = img;
+          if (!existing.description && (obj.description || obj.itemDescription)) existing.description = (obj.description || obj.itemDescription || '').trim();
+        } else {
+          result.products.push({
+            name: pNameClean,
+            description: (obj.description || obj.itemDescription || '').trim(),
+            price: parseFloat(price) || 15000,
+            image: img,
+            is_recommended: 0,
+            category: result.category || 'Menu Utama'
+          });
+        }
+      }
+    }
+
     // Check if this object contains direct items or menuItems list
     if (Array.isArray(obj.items) || Array.isArray(obj.menuItems) || Array.isArray(obj.products)) {
       const itemsList = obj.items || obj.menuItems || obj.products || [];

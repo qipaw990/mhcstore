@@ -55,9 +55,10 @@ async function waitForDomHydration(tabId, maxWaitMs = 12000) {
       const res = await chrome.scripting.executeScript({
         target: { tabId: tabId },
         func: () => {
+          const hasNextData = document.getElementById('__NEXT_DATA__') !== null && document.getElementById('__NEXT_DATA__').textContent.length > 50;
           const hasCards = document.querySelectorAll('[class*="menuItem"], [class*="itemCard"], [class*="MenuItem"], p[class*="itemNameTitle"], div[class*="itemName"]').length > 0;
           const hasLdJsonMenu = Array.from(document.querySelectorAll('script[type="application/ld+json"]')).some(s => s.textContent.includes('hasMenu') || s.textContent.includes('hasMenuItem') || s.textContent.includes('MenuItem'));
-          return hasCards || hasLdJsonMenu;
+          return hasNextData || hasCards || hasLdJsonMenu;
         }
       });
       if (res && res[0] && res[0].result === true) {
