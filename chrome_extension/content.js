@@ -424,10 +424,21 @@ function extractGrabFoodData() {
     }
   });
 
+  // 1. Exclude products under 'Untukmu', 'Rekomendasi', or 'For You' recommendation categories
+  result.products = result.products.filter(p => {
+    if (!p.category) return true;
+    const cat = p.category.toLowerCase().trim();
+    return !cat.includes('untukmu') &&
+           !cat.includes('untuk mu') &&
+           !cat.includes('for you') &&
+           !cat.includes('rekomendasi') &&
+           !cat.includes('recommended');
+  });
+
   // Filter & clean scraped product titles and images
   result.products.forEach((p) => {
     if (p.name) {
-      // Check 1: UPPERCASE title concatenated with TitleCase description (e.g. "SATE AYAM 5 TUSUKDaging ayam...")
+      // Check 1: UPPERCASE title concatenated with TitleCase description
       const upperMatch = p.name.match(/^([A-Z0-9\s\-\.\/]{3,})([A-Z][a-z].*)$/);
       if (upperMatch && upperMatch[1].trim().length >= 3) {
         const title = upperMatch[1].trim();
@@ -435,7 +446,7 @@ function extractGrabFoodData() {
         p.name = title;
         if (!p.description) p.description = desc;
       } else {
-        // Check 2: Lowercase/digit concatenated with Uppercase (e.g. "sate 5tusukDaging...")
+        // Check 2: Lowercase/digit concatenated with Uppercase
         const match = p.name.match(/([a-z0-9])([A-Z])/);
         if (match && match.index) {
           const title = p.name.substring(0, match.index + 1).trim();
@@ -448,13 +459,16 @@ function extractGrabFoodData() {
       }
     }
 
-    // Check if image is a REAL GrabFood merchant item photo (not the store logo or store cover photo)
+    // Check if image is a REAL GrabFood merchant item photo
     const isStoreImg = p.image && (p.image === result.logo || p.image === result.cover_photo || p.image.includes('/stores/'));
     const isRealGrabPhoto = p.image && !isStoreImg && (
       p.image.includes('compressed_webp') || 
       p.image.includes('menueditor_item') ||
       p.image.includes('/items/') ||
-      p.image.includes('huawei-food-cms')
+      p.image.includes('huawei-food-cms') ||
+      p.image.includes('food-cms') ||
+      p.image.includes('cloudfront.net') ||
+      p.image.includes('grab.com')
     );
 
     if (!isRealGrabPhoto) {

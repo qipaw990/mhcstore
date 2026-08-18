@@ -299,6 +299,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         files: ['content.js']
       }).catch(() => {});
 
+      // Scroll page to trigger lazy-loaded images
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: async () => {
+          await new Promise((resolve) => {
+            let totalHeight = 0;
+            const distance = 400;
+            const timer = setInterval(() => {
+              const scrollHeight = document.body.scrollHeight;
+              window.scrollBy(0, distance);
+              totalHeight += distance;
+
+              document.querySelectorAll('img').forEach(img => {
+                const ds = img.getAttribute('data-src') || img.getAttribute('srcset') || img.getAttribute('data-srcset');
+                if (ds && (!img.src || img.src.includes('data:image'))) {
+                  img.src = ds.split(' ')[0];
+                }
+              });
+
+              if (totalHeight >= scrollHeight || totalHeight > 15000) {
+                clearInterval(timer);
+                window.scrollTo(0, 0);
+                setTimeout(resolve, 500);
+              }
+            }, 100);
+          });
+        }
+      }).catch(() => {});
+
       // Execute extraction function directly in tab DOM
       const results = await chrome.scripting.executeScript({
         target: { tabId: tab.id },

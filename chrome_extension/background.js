@@ -125,24 +125,32 @@ async function runBatchScrape(stores, apiUrl) {
         func: async () => {
           await new Promise((resolve) => {
             let totalHeight = 0;
-            const distance = 700;
+            const distance = 400;
             const timer = setInterval(() => {
               const scrollHeight = document.body.scrollHeight;
               window.scrollBy(0, distance);
               totalHeight += distance;
 
-              if (totalHeight >= scrollHeight || totalHeight > 10000) {
+              // Force image loading from data-src / srcset attributes
+              document.querySelectorAll('img').forEach(img => {
+                const ds = img.getAttribute('data-src') || img.getAttribute('srcset') || img.getAttribute('data-srcset');
+                if (ds && (!img.src || img.src.includes('data:image'))) {
+                  img.src = ds.split(' ')[0];
+                }
+              });
+
+              if (totalHeight >= scrollHeight || totalHeight > 15000) {
                 clearInterval(timer);
                 window.scrollTo(0, 0);
-                setTimeout(resolve, 300);
+                setTimeout(resolve, 600);
               }
-            }, 80);
+            }, 100);
           });
         }
       }).catch(() => {});
 
       // 6. Buffer for React menu state update
-      await new Promise(r => setTimeout(r, 1500));
+      await new Promise(r => setTimeout(r, 1000));
 
       // 7. Primary Extraction Attempt
       let results = await chrome.scripting.executeScript({
