@@ -402,8 +402,8 @@ function getSmartFoodPhoto(name) {
 function extractStoreLinksFromListing() {
   const storeUrls = new Set();
 
-  // 1. Scan DOM <a> elements with /restaurant/ or store cards
-  const links = document.querySelectorAll('a[href*="/restaurant/"], a[href*="/store/"], [class*="restaurantCard"] a, [class*="RestaurantCard"] a, [class*="card"] a');
+  // 1. Scan DOM <a> elements matching GrabFood restaurant links
+  const links = document.querySelectorAll('a[href*="/restaurant/"], a[href*="/store/"]');
   links.forEach(a => {
     let href = a.getAttribute('href');
     if (!href) return;
@@ -414,10 +414,10 @@ function extractStoreLinksFromListing() {
     }
   });
 
-  // 2. Scan parent cards if <a> is inside
-  const cards = document.querySelectorAll('[class*="restaurantCard"], [class*="RestaurantCard"], [class*="itemCard"]');
-  cards.forEach(c => {
-    const a = c.querySelector('a') || c.closest('a');
+  // 2. Scan RestaurantListCol, RestaurantListRow, and asList card containers
+  const cols = document.querySelectorAll('[class*="RestaurantListCol"], [class*="asList"], [class*="restaurantCard"], [class*="RestaurantCard"]');
+  cols.forEach(col => {
+    const a = col.querySelector('a') || col.closest('a');
     if (a) {
       let href = a.getAttribute('href');
       if (href) {
@@ -430,13 +430,13 @@ function extractStoreLinksFromListing() {
     }
   });
 
-  // 3. Scan window.__NEXT_DATA__ or script tags for restaurant URLs
-  const scripts = document.querySelectorAll('script');
-  scripts.forEach(s => {
-    const txt = s.textContent || '';
-    if (txt.includes('/restaurant/')) {
-      const matches = txt.match(/https:\/\/food\.grab\.com\/[a-z]{2}\/[a-z]{2}\/restaurant\/[a-zA-Z0-9\-_]+/g) ||
-                      txt.match(/\/id\/id\/restaurant\/[a-zA-Z0-9\-_]+/g);
+  // 3. Scan __NEXT_DATA__ JSON script tag
+  try {
+    const nextScript = document.getElementById('__NEXT_DATA__');
+    if (nextScript && nextScript.textContent) {
+      const txt = nextScript.textContent;
+      const matches = txt.match(/\/id\/id\/restaurant\/[a-zA-Z0-9\-_]+(?:\/[a-zA-Z0-9\-_]+)?/g) ||
+                      txt.match(/https:\/\/food\.grab\.com\/[a-z]{2}\/[a-z]{2}\/restaurant\/[a-zA-Z0-9\-_]+(?:\/[a-zA-Z0-9\-_]+)?/g);
       if (matches) {
         matches.forEach(m => {
           let fullUrl = m;
@@ -445,7 +445,7 @@ function extractStoreLinksFromListing() {
         });
       }
     }
-  });
+  } catch (e) {}
 
   return Array.from(storeUrls);
 }
