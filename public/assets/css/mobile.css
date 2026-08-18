@@ -2880,10 +2880,10 @@ div[style*="border-radius: 18px"] .d-flex {
 }
 
 /* ============================================================
-   Leaflet Map Marker & Custom Pin CSS Safeguards
+   Leaflet Map Marker & Custom Pin Bulletproof CSS System
    ============================================================ */
 
-/* 1. Global Box-Sizing for Leaflet Container & Markers */
+/* 1. Reset Leaflet container & force box-sizing */
 .leaflet-container,
 .leaflet-container *,
 .leaflet-marker-icon,
@@ -2891,7 +2891,7 @@ div[style*="border-radius: 18px"] .d-flex {
   box-sizing: border-box !important;
 }
 
-/* 2. Reset Leaflet map tiles */
+/* 2. Reset Leaflet map tile images */
 .leaflet-container img.leaflet-tile {
   max-width: none !important;
   max-height: none !important;
@@ -2911,7 +2911,7 @@ img.leaflet-marker-shadow {
   background: transparent !important;
 }
 
-/* 4. Fix Default Leaflet Image Markers (img.leaflet-marker-icon) */
+/* 4. Default Leaflet Image Markers (img.leaflet-marker-icon) */
 img.leaflet-marker-icon {
   display: block !important;
   max-width: none !important;
@@ -2923,25 +2923,30 @@ img.leaflet-marker-icon {
   box-shadow: none !important;
 }
 
-/* 5. Fix Custom DivIcon Containers (div.leaflet-marker-icon & div.leaflet-div-icon) */
+/* 5. Custom DivIcon Outer Containers (div.leaflet-marker-icon & div.leaflet-div-icon) */
 div.leaflet-marker-icon,
 div.leaflet-div-icon {
-  display: block !important;
   background: transparent !important;
   background-color: transparent !important;
   border: none !important;
   box-shadow: none !important;
   outline: none !important;
   overflow: visible !important;
+  padding: 0 !important;
 }
 
-/* 6. Flex centering for custom pin inner classes */
-.custom-map-icon,
-.custom-pin,
-.custom-pin-customer,
-.custom-pin-store,
-.custom-map-pin,
-.ccg-driver-pin {
+/* 6. Enforce 100% width, height & 1:1 Aspect Ratio on inner elements of DivIcon */
+div.leaflet-marker-icon > div,
+div.leaflet-div-icon > div {
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;

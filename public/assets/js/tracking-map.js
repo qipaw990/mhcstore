@@ -76,7 +76,7 @@ function initOrderTrackingMap(orderCode, initialData) {
   // Store Marker
   const storeIcon = L.divIcon({
     className: 'custom-map-icon',
-    html: `<div style="box-sizing:border-box;background:linear-gradient(135deg, #ef4444, #b91c1c);color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 4px 14px rgba(239,68,68,0.4);">
+    html: `<div style="background:linear-gradient(135deg, #ef4444, #b91c1c);color:white;width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 4px 14px rgba(239,68,68,0.4);box-sizing:border-box;">
              <i class="bi bi-shop" style="font-size:17px;"></i>
            </div>`,
     iconSize: [36, 36],
@@ -86,7 +86,7 @@ function initOrderTrackingMap(orderCode, initialData) {
   // Customer Destination Marker (Always strictly locked from checkout coordinates)
   const customerIcon = L.divIcon({
     className: 'custom-map-icon',
-    html: `<div style="box-sizing:border-box;background:linear-gradient(135deg, #10b981, #047857);color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 4px 14px rgba(16,185,129,0.4);">
+    html: `<div style="background:linear-gradient(135deg, #10b981, #047857);color:white;width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 4px 14px rgba(16,185,129,0.4);box-sizing:border-box;">
              <i class="bi bi-geo-alt-fill" style="font-size:17px;"></i>
            </div>`,
     iconSize: [36, 36],
