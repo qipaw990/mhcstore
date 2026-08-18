@@ -18,6 +18,14 @@ img.leaflet-marker-shadow {
     height: 0 !important;
 }
 
+img.leaflet-marker-icon {
+    max-width: none !important;
+    max-height: none !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
 div.leaflet-div-icon {
     background: transparent !important;
     border: none !important;

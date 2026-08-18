@@ -5,7 +5,7 @@
  * Dynamic Pages / Payments / API: Pure Network Bypass (Never Intercept)
  */
 
-const SW_VERSION = '2.4.5';
+const SW_VERSION = '2.4.6';
 const CACHE_LOCAL = 'cicago-local-v' + SW_VERSION;
 const CACHE_CDN   = 'cicago-cdn-v2';
 

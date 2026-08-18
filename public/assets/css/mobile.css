@@ -2898,6 +2898,15 @@ img.leaflet-marker-shadow {
   height: 0 !important;
 }
 
+/* Ensure SVG L.icon() img tags maintain natural Leaflet inline width/height */
+img.leaflet-marker-icon {
+  max-width: none !important;
+  max-height: none !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 /* CRITICAL: Remove Leaflet's default white background on divIcon containers */
 div.leaflet-div-icon {
   background: transparent !important;

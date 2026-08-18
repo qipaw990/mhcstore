@@ -32,11 +32,25 @@ function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
 }
 
 function createDriverIcon() {
-  return L.divIcon({
-    className: '',
-    html: '<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#0d6efd,#1e40af);display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 4px 14px rgba(13,110,253,0.5);box-sizing:border-box;"><i class="bi bi-bicycle" style="font-size:18px;color:#fff;"></i></div>',
-    iconSize: [40, 40],
-    iconAnchor: [20, 20]
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
+    <defs>
+      <linearGradient id="dg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#3b82f6"/>
+        <stop offset="100%" stop-color="#1d4ed8"/>
+      </linearGradient>
+    </defs>
+    <path d="M16 2C9 2 3 8 3 15c0 10 13 29 13 29S29 25 29 15C29 8 23 2 16 2z" fill="url(#dg)" stroke="white" stroke-width="2"/>
+    <circle cx="11" cy="17" r="3.5" fill="none" stroke="white" stroke-width="1.8"/>
+    <circle cx="21" cy="17" r="3.5" fill="none" stroke="white" stroke-width="1.8"/>
+    <polyline points="11,17 15,12 21,17" fill="none" stroke="white" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+    <line x1="15" y1="12" x2="15" y2="17" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="17" cy="10" r="2" fill="white"/>
+  </svg>`;
+  return L.icon({
+    iconUrl: 'data:image/svg+xml,' + encodeURIComponent(svg),
+    iconSize: [32, 46],
+    iconAnchor: [16, 46],
+    popupAnchor: [0, -46]
   });
 }
 
@@ -68,20 +82,44 @@ function initOrderTrackingMap(orderCode, initialData) {
     maxZoom: 19
   }).addTo(trackingMap);
 
-  // Store Marker
-  const storeIcon = L.divIcon({
-    className: '',
-    html: '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#b91c1c);display:flex;align-items:center;justify-content:center;border:2.5px solid #fff;box-shadow:0 4px 12px rgba(239,68,68,0.5);box-sizing:border-box;"><i class="bi bi-shop" style="font-size:16px;color:#fff;"></i></div>',
-    iconSize: [36, 36],
-    iconAnchor: [18, 18]
+  // Store Marker — Red teardrop with shop symbol
+  const storeSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
+    <defs>
+      <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#f87171"/>
+        <stop offset="100%" stop-color="#b91c1c"/>
+      </linearGradient>
+    </defs>
+    <path d="M16 2C9 2 3 8 3 15c0 10 13 29 13 29S29 25 29 15C29 8 23 2 16 2z" fill="url(#sg)" stroke="white" stroke-width="2"/>
+    <path d="M9 14 L9 12 Q9 10 16 10 Q23 10 23 12 L23 14 Q19.5 17 16 16 Q12.5 17 9 14z" fill="white"/>
+    <rect x="11" y="14.5" width="10" height="6" rx="0.5" fill="white" opacity="0.25"/>
+    <rect x="13" y="15" width="6" height="5.5" fill="white"/>
+    <rect x="14.5" y="16" width="3" height="4.5" fill="#b91c1c"/>
+  </svg>`;
+  const storeIcon = L.icon({
+    iconUrl: 'data:image/svg+xml,' + encodeURIComponent(storeSvg),
+    iconSize: [32, 46],
+    iconAnchor: [16, 46],
+    popupAnchor: [0, -46]
   });
 
-  // Customer Destination Marker
-  const customerIcon = L.divIcon({
-    className: '',
-    html: '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#10b981,#047857);display:flex;align-items:center;justify-content:center;border:2.5px solid #fff;box-shadow:0 4px 12px rgba(16,185,129,0.5);box-sizing:border-box;"><i class="bi bi-geo-alt-fill" style="font-size:16px;color:#fff;"></i></div>',
-    iconSize: [36, 36],
-    iconAnchor: [18, 18]
+  // Customer Destination Marker — Green teardrop with person symbol
+  const customerSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
+    <defs>
+      <linearGradient id="cg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#34d399"/>
+        <stop offset="100%" stop-color="#047857"/>
+      </linearGradient>
+    </defs>
+    <path d="M16 2C9 2 3 8 3 15c0 10 13 29 13 29S29 25 29 15C29 8 23 2 16 2z" fill="url(#cg)" stroke="white" stroke-width="2"/>
+    <circle cx="16" cy="11" r="3.8" fill="white"/>
+    <path d="M9 22 Q9 17 16 17 Q23 17 23 22" fill="white"/>
+  </svg>`;
+  const customerIcon = L.icon({
+    iconUrl: 'data:image/svg+xml,' + encodeURIComponent(customerSvg),
+    iconSize: [32, 46],
+    iconAnchor: [16, 46],
+    popupAnchor: [0, -46]
   });
 
   // Place Store Marker
