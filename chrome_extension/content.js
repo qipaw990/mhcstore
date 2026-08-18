@@ -53,6 +53,70 @@ function extractGrabFoodData() {
   }
 
   // -------------------------------------------------------------
+  // STRATEGY 0: SCHEMA.ORG JSON-LD PARSER (FASTEST & MOST ACCURATE)
+  // -------------------------------------------------------------
+  try {
+    const ldScripts = document.querySelectorAll('script[type="application/ld+json"]');
+    ldScripts.forEach(script => {
+      if (!script.textContent) return;
+      try {
+        const ldData = JSON.parse(script.textContent);
+        const ldObj = Array.isArray(ldData) ? ldData.find(item => item['@type'] && (item['@type'].includes('Restaurant') || item['@type'].includes('LocalBusiness'))) : ldData;
+        
+        if (ldObj && ldObj.name) {
+          if (!result.name) result.name = ldObj.name.trim();
+          if (ldObj.address && ldObj.address.streetAddress) {
+            result.address = ldObj.address.streetAddress.trim();
+          }
+          if (ldObj.image) {
+            const cleanImg = cleanImageUrl(typeof ldObj.image === 'string' ? ldObj.image : (ldObj.image.url || ''));
+            if (cleanImg) {
+              result.logo = cleanImg;
+              result.cover_photo = cleanImg;
+            }
+          }
+          if (ldObj.aggregateRating && ldObj.aggregateRating.ratingValue) {
+            result.rating = parseFloat(ldObj.aggregateRating.ratingValue);
+          }
+          if (ldObj.aggregateRating && ldObj.aggregateRating.ratingCount) {
+            result.reviews_count = parseInt(ldObj.aggregateRating.ratingCount, 10);
+          }
+
+          // Parse Menu Sections & Items
+          const hasMenu = ldObj.hasMenu;
+          if (hasMenu && Array.isArray(hasMenu.hasMenuSection)) {
+            hasMenu.hasMenuSection.forEach(section => {
+              const catName = section.name || 'Menu Utama';
+              if (Array.isArray(section.hasMenuItem)) {
+                section.hasMenuItem.forEach(item => {
+                  if (item && item.name) {
+                    let priceVal = 15000;
+                    if (item.offers) {
+                      const pStr = String(item.offers.price || '').replace(/[^0-9]/g, '');
+                      if (pStr) priceVal = parseInt(pStr, 10);
+                    }
+
+                    if (!result.products.some(p => p.name === item.name.trim())) {
+                      result.products.push({
+                        name: item.name.trim(),
+                        description: (item.description || '').trim(),
+                        price: priceVal,
+                        image: result.logo || '',
+                        is_recommended: 0,
+                        category: catName
+                      });
+                    }
+                  }
+                });
+              }
+            });
+          }
+        }
+      } catch (err) {}
+    });
+  } catch (e) {}
+
+  // -------------------------------------------------------------
   // STRATEGY 1: RECURSIVE JSON & SCRIPT TAG CRAWLER
   // -------------------------------------------------------------
   function scanObjectForMenu(obj, depth = 0) {
