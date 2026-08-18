@@ -149,36 +149,61 @@ class DeliveryService
                     }
                 }
 
-                // Check if ALL batch orders are now delivered
+                // Check if this is a batch delivery
                 $batchId = $order['delivery_batch_id'];
                 if (!empty($batchId)) {
-                    // Mark this one delivered first
-                    Database::update('orders', $updateData, 'id = ?', [$orderId]);
-                    $updateData = []; // already applied
-
-                    // Count remaining non-delivered in batch
-                    $remaining = (int)Database::fetchColumn(
-                        "SELECT COUNT(*) FROM `orders`
+                    // Fetch all non-delivered orders in this batch
+                    $remainingOrders = Database::query(
+                        "SELECT * FROM `orders`
                          WHERE `delivery_batch_id` = ?
-                           AND `order_status` NOT IN ('delivered', 'canceled')
-                           AND `id` != ?",
-                        [$batchId, $orderId]
+                           AND `order_status` NOT IN ('delivered', 'canceled')",
+                        [$batchId]
                     );
 
-                    if ($remaining === 0) {
-                        // All done — compute total km and credit batch commission
-                        $this->creditBatchCommission($dm, $batchId, $order);
-                        // Clear driver batch state
-                        Database::update('delivery_men', [
-                            'current_order_id' => null,
-                            'active_batch_id'  => null,
-                            'active_order_ids' => null,
-                            'total_orders'     => Database::fetchColumn(
-                                "SELECT COUNT(*) FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` = 'delivered'",
-                                [$dm['id']]
-                            ),
-                        ], 'id = ?', [$dm['id']]);
+                    foreach ($remainingOrders as $bOrdToDel) {
+                        if (empty($otp) || trim($otp) !== trim($bOrdToDel['otp'])) {
+                            throw new Exception("Kode OTP pengantaran salah!");
+                        }
                     }
+
+                    foreach ($remainingOrders as $bOrdToDel) {
+                        $subUpdateData = [
+                            'order_status'   => 'delivered',
+                            'delivered_at'   => $now,
+                            'payment_status' => 'paid'
+                        ];
+                        Database::update('orders', $subUpdateData, 'id = ?', [$bOrdToDel['id']]);
+
+                        // Credit Vendor Earnings (90% of order amount)
+                        if (!empty($bOrdToDel['store_id'])) {
+                            $store = Database::fetchOne("SELECT vendor_id, name FROM stores WHERE id = ?", [$bOrdToDel['store_id']]);
+                            if ($store) {
+                                $vendorEarning = (float)$bOrdToDel['order_amount'] * 0.90;
+                                $this->walletModel->credit(
+                                    $store['vendor_id'],
+                                    $vendorEarning,
+                                    'order_earning',
+                                    "Penjualan pesanan #{$bOrdToDel['order_code']}",
+                                    (string)$bOrdToDel['id']
+                                );
+                            }
+                        }
+                    }
+
+                    $updateData = []; // applied in loop above
+
+                    // All batch orders delivered — compute total km and credit batch commission
+                    $this->creditBatchCommission($dm, $batchId, $order);
+                    // Clear driver batch state
+                    Database::update('delivery_men', [
+                        'current_order_id' => null,
+                        'active_batch_id'  => null,
+                        'active_order_ids' => null,
+                        'total_orders'     => Database::fetchColumn(
+                            "SELECT COUNT(*) FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` = 'delivered'",
+                            [$dm['id']]
+                        ),
+                    ], 'id = ?', [$dm['id']]);
                 } else {
                     // Single order delivery (no batch)
                     $dmEarning = $this->calcSingleCommission($order);

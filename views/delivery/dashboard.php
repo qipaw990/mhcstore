@@ -132,6 +132,22 @@
         $totalKm         = $active_batch['total_km'] ?? 0;
         $estCommission   = $active_batch['est_commission'] ?? 0;
         $progressPct     = $batchCount > 0 ? round(($deliveredCount / $batchCount) * 100) : 0;
+
+        // Check if ALL non-canceled orders in batch are picked up
+        $unpickedOrders  = array_filter($batchOrders, fn($o) => !in_array($o['order_status'], ['picked_up', 'on_the_way', 'delivered']));
+        $allBatchStoresPickedUp = (count($unpickedOrders) === 0);
+
+        // Find first active (non-delivered) order for OTP submission & Customer location
+        $firstActiveOrder = null;
+        foreach ($batchOrders as $bOrd) {
+            if ($bOrd['order_status'] !== 'delivered') {
+                $firstActiveOrder = $bOrd;
+                break;
+            }
+        }
+        $firstCustLat = (float)($firstActiveOrder['delivery_address']['lat'] ?? -6.9855);
+        $firstCustLng = (float)($firstActiveOrder['delivery_address']['lng'] ?? 107.8350);
+        $batchCustUrl = ($firstCustLat && $firstCustLng) ? "https://www.google.com/maps/dir/?api=1&destination={$firstCustLat},{$firstCustLng}&travelmode=two_wheeler" : "#";
         ?>
         <div class="active-task-container mb-4">
             <!-- Batch Header -->
@@ -163,6 +179,28 @@
                 </div>
             </div>
 
+            <!-- Header Banner when ALL Stores are Picked Up -->
+            <?php if ($allBatchStoresPickedUp && $firstActiveOrder): ?>
+            <div class="p-3 text-white d-flex align-items-center justify-content-between gap-2 shadow-xs" style="background: linear-gradient(135deg, #10B981, #047857) !important;">
+                <div style="min-width: 0; flex: 1;">
+                    <div class="fw-bold d-flex align-items-center gap-1" style="font-size: 12.5px;">
+                        <i class="bi bi-check-circle-fill text-warning"></i> Semua Barang Terjemput!
+                    </div>
+                    <div class="text-truncate" style="font-size: 10.5px; opacity: 0.95;">
+                        Antar ke: <b><?= htmlspecialchars($firstActiveOrder['customer_name'] ?? 'Pelanggan') ?></b>
+                    </div>
+                    <div class="text-truncate" style="font-size: 10px; opacity: 0.85;">
+                        <?= htmlspecialchars($firstActiveOrder['delivery_address']['address'] ?? 'Cicalengka') ?>
+                    </div>
+                </div>
+                <a href="<?= $batchCustUrl ?>" target="_blank"
+                   class="btn btn-light btn-sm fw-bold rounded-pill text-success px-3 shadow-xs flex-shrink-0 d-flex align-items-center gap-1"
+                   style="font-size: 11px; white-space: nowrap;">
+                    <i class="bi bi-compass-fill"></i> Navigasi ke Pembeli
+                </a>
+            </div>
+            <?php endif; ?>
+
             <!-- Per-Order Cards in Batch -->
             <div class="p-3 bg-white d-flex flex-column gap-3">
                 <?php foreach ($batchOrders as $idx => $bOrd): ?>
@@ -171,10 +209,7 @@
                     $bIsDelivered = $bOrd['order_status'] === 'delivered';
                     $bStoreLat    = (float)($bOrd['store_lat'] ?? -6.9835);
                     $bStoreLng    = (float)($bOrd['store_lng'] ?? 107.8335);
-                    $bCustLat     = (float)($bOrd['delivery_address']['lat'] ?? -6.9855);
-                    $bCustLng     = (float)($bOrd['delivery_address']['lng'] ?? 107.8350);
                     $bStoreUrl    = "https://www.google.com/maps/dir/?api=1&destination={$bStoreLat},{$bStoreLng}&travelmode=two_wheeler";
-                    $bCustUrl     = "https://www.google.com/maps/dir/?api=1&destination={$bCustLat},{$bCustLng}&travelmode=two_wheeler";
                     $seqLabel     = "Toko " . ($idx + 1);
                 ?>
                 <div class="rounded-3 border overflow-hidden shadow-2xs <?= $bIsDelivered ? 'opacity-50' : '' ?>"
@@ -210,7 +245,7 @@
                             <a href="<?= $bStoreUrl ?>" target="_blank"
                                class="btn btn-sm fw-bold flex-shrink-0 text-white rounded-pill px-2.5 py-1 shadow-xs d-flex align-items-center gap-1"
                                style="background:#EE2737; font-size: 10px; white-space: nowrap;">
-                                <i class="bi bi-compass-fill"></i> Navigasi
+                                <i class="bi bi-compass-fill"></i> Navigasi Toko
                             </a>
                             <?php endif; ?>
                         </div>
@@ -224,18 +259,11 @@
                                     <div class="text-muted text-truncate" style="font-size: 10px;"><?= htmlspecialchars($bOrd['delivery_address']['address'] ?? 'Cicalengka') ?></div>
                                 </div>
                             </div>
-                            <?php if ($bIsPickedUp && !$bIsDelivered): ?>
-                            <a href="<?= $bCustUrl ?>" target="_blank"
-                               class="btn btn-sm fw-bold flex-shrink-0 text-white rounded-pill px-2.5 py-1 shadow-xs d-flex align-items-center gap-1"
-                               style="background:#10B981; font-size: 10px; white-space: nowrap;">
-                                <i class="bi bi-compass-fill"></i> Navigasi
-                            </a>
-                            <?php endif; ?>
                         </div>
 
-                        <!-- Action Buttons -->
+                        <!-- Action Buttons per store card -->
                         <?php if (!$bIsDelivered): ?>
-                        <div class="d-flex gap-2 mt-2 pt-2" style="border-top: 1px dashed #E2E8F0;">
+                        <div class="d-flex gap-2 mt-2 pt-2 align-items-center" style="border-top: 1px dashed #E2E8F0;">
                             <?php if (!$bIsPickedUp): ?>
                                 <button onclick="updateDeliveryStep(<?= $bOrd['id'] ?>, 'picked_up')"
                                         class="btn fw-bold flex-grow-1 text-dark rounded-pill py-2 d-flex align-items-center justify-content-center gap-1 shadow-xs"
@@ -243,16 +271,14 @@
                                     <i class="bi bi-box-seam-fill"></i> Sudah Dijemput dari <?= $seqLabel ?>
                                 </button>
                             <?php else: ?>
-                                <button onclick="updateDeliveryStep(<?= $bOrd['id'] ?>, 'delivered')"
-                                        class="btn btn-success fw-bold flex-grow-1 rounded-pill py-2 d-flex align-items-center justify-content-center gap-1 shadow-xs"
-                                        style="font-size: 11px;">
-                                    <i class="bi bi-shield-check"></i> Pesanan Sampai + OTP
-                                </button>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill py-2 px-3 flex-grow-1 d-flex align-items-center justify-content-center gap-1" style="font-size: 10.5px;">
+                                    <i class="bi bi-check-circle-fill"></i> Barang <?= $seqLabel ?> Terjemput
+                                </span>
                                 <button type="button"
                                         onclick="openDriverChatModal('<?= htmlspecialchars($bOrd['order_code']) ?>')"
                                         class="btn btn-outline-danger btn-sm rounded-pill px-3 d-flex align-items-center gap-1 shadow-xs position-relative"
                                         style="font-size: 11px;">
-                                    <i class="bi bi-chat-dots-fill"></i>
+                                    <i class="bi bi-chat-dots-fill"></i> Chat
                                     <span class="ccg-unread-dot d-none" id="driverChatUnreadDot_<?= $bOrd['id'] ?>"></span>
                                 </button>
                             <?php endif; ?>
@@ -266,6 +292,17 @@
                 </div>
                 <?php endforeach; ?>
             </div>
+
+            <!-- Single Batch Delivery Completion OTP Button at bottom -->
+            <?php if ($allBatchStoresPickedUp && $firstActiveOrder): ?>
+            <div class="p-3 bg-white border-top">
+                <button onclick="updateDeliveryStep(<?= $firstActiveOrder['id'] ?>, 'delivered')"
+                        class="btn btn-success fw-bold w-100 rounded-pill py-2.5 d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                        style="background: #10B981; border: none; font-size: 12.5px;">
+                    <i class="bi bi-shield-check fs-5"></i> Pesanan Sampai (Verifikasi OTP Pelanggan)
+                </button>
+            </div>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
     </div>
