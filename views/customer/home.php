@@ -105,12 +105,12 @@
             <span class="gojek-service-label">Kopi & Cafe</span>
         </a>
 
-        <!-- 8. Kirim Paket (GoSend) -->
-        <a href="<?= $baseUrl ?>/parcel" class="gojek-service-item">
-            <div class="gojek-service-squircle gosend">
-                <i class="bi bi-box-seam-fill"></i>
+        <!-- 8. Sembako & Mart -->
+        <a href="<?= $baseUrl ?>/search?q=Sembako" class="gojek-service-item">
+            <div class="gojek-service-squircle sembako">
+                <i class="bi bi-basket3-fill"></i>
             </div>
-            <span class="gojek-service-label">GoSend Paket</span>
+            <span class="gojek-service-label">Sembako Mart</span>
         </a>
     </div>
 </div>

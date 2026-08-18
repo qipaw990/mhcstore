@@ -500,7 +500,12 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
 
 .gojek-service-squircle.kopi {
   background: linear-gradient(135deg, #0D9488, #115E59);
-  box-shadow: 0 2px 6px rgba(139, 92, 246, 0.2);
+  box-shadow: 0 2px 6px rgba(13, 148, 136, 0.2);
+}
+
+.gojek-service-squircle.sembako {
+  background: linear-gradient(135deg, #10B981, #059669);
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
 }
 
 .gojek-service-squircle.sate {

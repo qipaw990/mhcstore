@@ -132,18 +132,7 @@ class CustomerController extends Controller
 
     public function parcel(): void
     {
-        $userId = auth_id();
-        $walletBalance = 0.00;
-        if ($userId) {
-            $wallet = $this->walletModel->getOrCreate($userId, 'customer');
-            $walletBalance = (float)$wallet['balance'];
-        }
-
-        $this->view('customer.parcel', [
-            'title'          => 'Kirim Paket Kilat Cicalengka (Cicago Parcel)',
-            'wallet_balance' => $walletBalance,
-            'active_tab'     => 'parcel'
-        ], 'customer_layout');
+        $this->redirect('');
     }
 
     public function profile(): void
