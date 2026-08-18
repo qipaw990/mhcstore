@@ -13,7 +13,7 @@
             </button>
         </div>
         <div class="text-muted mb-2.5" style="font-size: 10.5px; line-height: 1.4;">
-            Geser pin merah atau ketuk peta untuk menyesuaikan lokasi tepat rumah Anda.
+            <i class="bi bi-lock-fill text-muted me-1"></i> Titik lokasi pengantaran terkunci presisi sesuai posisi GPS / alamat Anda.
         </div>
         <div id="checkout-map" style="width: 100%; height: 180px; border-radius: 12px;" class="border shadow-2xs mb-2.5"></div>
         <div class="d-flex align-items-center justify-content-between gap-2 overflow-hidden">
@@ -218,20 +218,10 @@ function _buildMap(initLat, initLng, isGPS) {
         iconSize: [36, 36], iconAnchor: [18, 18]
     });
 
-    customerMarker = L.marker([initLat, initLng], { icon: custIcon, draggable: true })
+    customerMarker = L.marker([initLat, initLng], { icon: custIcon, draggable: false })
         .addTo(map)
-        .bindPopup('<div style="font-size:12px;"><b>📍 Lokasi Antar Anda</b><br><span style="color:#666;">Geser pin untuk sesuaikan posisi</span></div>')
+        .bindPopup('<div style="font-size:12px;"><b>📍 Lokasi Antar Terkunci</b><br><span style="color:#666;">Posisi sesuai lokasi GPS / Alamat</span></div>')
         .openPopup();
-
-    customerMarker.on('dragend', (e) => {
-        const pos = e.target.getLatLng();
-        updateLocationData(pos.lat, pos.lng);
-    });
-
-    map.on('click', (e) => {
-        customerMarker.setLatLng(e.latlng);
-        updateLocationData(e.latlng.lat, e.latlng.lng);
-    });
 
     // Paksa render ulang tile supaya tidak blank di mobile
     map.whenReady(() => setTimeout(() => map.invalidateSize(), 150));

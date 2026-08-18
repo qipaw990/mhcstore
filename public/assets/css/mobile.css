@@ -2879,7 +2879,22 @@ div[style*="border-radius: 18px"] .d-flex {
   box-shadow: 0 4px 12px rgba(238, 39, 55, 0.4);
 }
 
-/* Sembunyikan default Leaflet shadow png yang terdistorsi menjadi elips vertikal */
+/* Leaflet Map Marker & Custom Pin CSS Safeguards */
+.leaflet-container img {
+  max-width: none !important;
+  max-height: none !important;
+}
+
+.leaflet-container img.leaflet-marker-icon,
+.leaflet-container img.leaflet-marker-shadow,
+.leaflet-container img.leaflet-tile {
+  max-width: none !important;
+  max-height: none !important;
+  width: auto;
+  height: auto;
+}
+
+/* Sembunyikan default Leaflet shadow png yang terdistorsi */
 .leaflet-shadow-pane,
 .leaflet-marker-shadow,
 .leaflet-pane > .leaflet-shadow-pane {
@@ -2890,20 +2905,38 @@ div[style*="border-radius: 18px"] .d-flex {
   height: 0 !important;
 }
 
-.leaflet-marker-icon,
-.custom-pin,
-.driver-radar-marker {
+.leaflet-marker-icon {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Flex layout ONLY for container div icons (prevents standard <img> markers from flex stretching) */
+div.leaflet-marker-icon,
+.custom-map-icon,
+.custom-pin,
+.custom-pin-customer,
+.custom-pin-store,
+.custom-map-pin,
+.driver-radar-marker,
+.driver-pulse-container,
+.ccg-driver-pin {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   overflow: visible !important;
 }
 
 .custom-pin > div,
-.driver-radar-marker > div {
+.custom-pin-customer > div,
+.custom-pin-store > div,
+.custom-map-icon > div,
+.driver-radar-marker > div,
+.ccg-driver-pin > div {
   box-sizing: border-box !important;
   flex-shrink: 0 !important;
 }

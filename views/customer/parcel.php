@@ -27,7 +27,7 @@
                 </button>
             </div>
             <div class="text-muted mb-2.5" style="font-size: 10px;">
-                Geser pin <span class="text-danger fw-bold">🔴 Jemput</span> dan <span class="text-dark fw-bold">🎯 Tujuan</span> pada peta.
+                <i class="bi bi-lock-fill text-muted me-1"></i> Titik rute penjemputan & pengantaran paket terkunci sesuai GPS / alamat.
             </div>
             <div id="parcel-map" style="width: 100%; height: 180px; border-radius: 12px;" class="border shadow-2xs mb-2.5"></div>
             <div class="d-flex align-items-center justify-content-between">
@@ -175,56 +175,8 @@ function initParcelMap() {
         iconAnchor: [16, 16]
     });
 
-    pickupMarker = L.marker([pLat, pLng], { icon: pickupIcon, draggable: true }).addTo(pMap).bindPopup('<b>Titik Jemput Barang (Pengirim)</b>').openPopup();
-    destMarker = L.marker([dLat, dLng], { icon: destIcon, draggable: true }).addTo(pMap).bindPopup('<b>Titik Tujuan (Penerima)</b>');
-
-    let pickupGeocodeTimer = null;
-    let destGeocodeTimer = null;
-
-    function reverseGeocode(lat, lng, targetInputId, isPickup = true) {
-        let timer = isPickup ? pickupGeocodeTimer : destGeocodeTimer;
-        if (timer) clearTimeout(timer);
-
-        const newTimer = setTimeout(async () => {
-            try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`, {
-                    headers: { 'Accept-Language': 'id-ID,id;q=0.9' }
-                });
-                const data = await res.json();
-                if (data && data.display_name) {
-                    const input = document.getElementById(targetInputId);
-                    if (input) {
-                        let cleanAddr = data.display_name
-                            .replace(/, Indonesia$/i, '')
-                            .replace(/, Jawa Barat$/i, '')
-                            .replace(/, Kabupaten Bandung$/i, '');
-                        input.value = cleanAddr;
-                    }
-                }
-            } catch (err) {
-                console.warn('[ReverseGeocode] Error:', err);
-            }
-        }, 400);
-
-        if (isPickup) pickupGeocodeTimer = newTimer;
-        else destGeocodeTimer = newTimer;
-    }
-
-    pickupMarker.on('dragend', function (e) {
-        const pos = e.target.getLatLng();
-        document.getElementById('pickup_lat').value = pos.lat.toFixed(6);
-        document.getElementById('pickup_lng').value = pos.lng.toFixed(6);
-        reverseGeocode(pos.lat, pos.lng, 'pickup_address', true);
-        redrawParcelRoute();
-    });
-
-    destMarker.on('dragend', function (e) {
-        const pos = e.target.getLatLng();
-        document.getElementById('dest_lat').value = pos.lat.toFixed(6);
-        document.getElementById('dest_lng').value = pos.lng.toFixed(6);
-        reverseGeocode(pos.lat, pos.lng, 'destination_address', false);
-        redrawParcelRoute();
-    });
+    pickupMarker = L.marker([pLat, pLng], { icon: pickupIcon, draggable: false }).addTo(pMap).bindPopup('<b>Titik Jemput Barang (Pengirim)</b>').openPopup();
+    destMarker = L.marker([dLat, dLng], { icon: destIcon, draggable: false }).addTo(pMap).bindPopup('<b>Titik Tujuan (Penerima)</b>');
 
     redrawParcelRoute();
 

@@ -5,14 +5,11 @@
 /* --------------------------------------------------------------------------
    1. Leaflet Map Safeguards & Custom Pin Badges
    -------------------------------------------------------------------------- */
+.leaflet-container img,
 #driver-radar-map .leaflet-pane img,
-#driver-radar-map .leaflet-tile,
-#driver-radar-map .leaflet-marker-icon,
-#driver-radar-map .leaflet-marker-shadow {
+#driver-radar-map .leaflet-tile {
     max-width: none !important;
     max-height: none !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
 }
 
 #driver-radar-map .leaflet-shadow-pane,
@@ -26,11 +23,15 @@
     height: 0 !important;
 }
 
-#driver-radar-map .leaflet-marker-icon {
+.leaflet-marker-icon {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     outline: none !important;
+}
+
+div.leaflet-marker-icon,
+#driver-radar-map div.leaflet-marker-icon {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
