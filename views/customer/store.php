@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const storeIcon = L.divIcon({
                     className: 'custom-pin',
-                    html: '<div style="background:#EE2737;color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);font-size:10px;"><i class="bi bi-shop"></i></div>',
+                    html: '<div style="box-sizing:border-box;background:#EE2737;color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);font-size:10px;"><i class="bi bi-shop"></i></div>',
                     iconSize: [24, 24],
                     iconAnchor: [12, 12]
                 });

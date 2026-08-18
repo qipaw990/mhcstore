@@ -163,14 +163,14 @@ function initParcelMap() {
 
     const pickupIcon = L.divIcon({
         className: 'custom-pin',
-        html: '<div style="background:#EE2737;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.3);"><i class="bi bi-box-arrow-up"></i></div>',
+        html: '<div style="box-sizing:border-box;background:#EE2737;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.3);"><i class="bi bi-box-arrow-up"></i></div>',
         iconSize: [32, 32],
         iconAnchor: [16, 16]
     });
 
     const destIcon = L.divIcon({
         className: 'custom-pin',
-        html: '<div style="background:#111827;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.3);"><i class="bi bi-geo-alt-fill"></i></div>',
+        html: '<div style="box-sizing:border-box;background:#111827;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.3);"><i class="bi bi-geo-alt-fill"></i></div>',
         iconSize: [32, 32],
         iconAnchor: [16, 16]
     });

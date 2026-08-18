@@ -205,7 +205,7 @@ function _buildMap(initLat, initLng, isGPS) {
 
     const storeIcon = L.divIcon({
         className: 'custom-pin-store',
-        html: '<div style="background:#101820;color:#EE2737;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 3px 10px rgba(0,0,0,0.35);font-size:16px;"><i class="bi bi-shop"></i></div>',
+        html: '<div style="box-sizing:border-box;background:#101820;color:#EE2737;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 3px 10px rgba(0,0,0,0.35);font-size:16px;"><i class="bi bi-shop"></i></div>',
         iconSize: [34, 34], iconAnchor: [17, 17]
     });
     storeMarker = L.marker([STORE_LAT, STORE_LNG], { icon: storeIcon })
@@ -214,7 +214,7 @@ function _buildMap(initLat, initLng, isGPS) {
 
     const custIcon = L.divIcon({
         className: 'custom-pin-customer',
-        html: '<div style="background:#EE2737;color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 4px 12px rgba(238,39,55,0.45);font-size:18px;"><i class="bi bi-geo-alt-fill"></i></div>',
+        html: '<div style="box-sizing:border-box;background:#EE2737;color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 4px 12px rgba(238,39,55,0.45);font-size:18px;"><i class="bi bi-geo-alt-fill"></i></div>',
         iconSize: [36, 36], iconAnchor: [18, 18]
     });
 
