@@ -210,7 +210,26 @@ function extractGrabFoodData() {
   // 1. Extract Store Name & Images & Coordinates from DOM
   if (!result.name) {
     const h1El = document.querySelector('h1[class*="name"], h1[class*="merchant"], h1');
-    if (h1El) result.name = h1El.textContent.trim();
+    if (h1El && h1El.textContent.trim()) {
+      result.name = h1El.textContent.trim();
+    }
+  }
+
+  if (!result.name) {
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    const titleTxt = ogTitle ? (ogTitle.getAttribute('content') || ogTitle.content) : document.title;
+    if (titleTxt) {
+      result.name = titleTxt.split('|')[0].replace(/- Delivery.*/i, '').replace(/ - GrabFood.*/i, '').trim();
+    }
+  }
+
+  if (!result.name) {
+    const pathParts = window.location.pathname.split('/');
+    const restIdx = pathParts.indexOf('restaurant');
+    if (restIdx !== -1 && pathParts[restIdx + 1]) {
+      const slug = pathParts[restIdx + 1].replace(/-delivery.*/i, '').replace(/-/g, ' ');
+      result.name = slug.replace(/\b\w/g, l => l.toUpperCase());
+    }
   }
 
   // Fallback coordinate extraction from HTML source or Google Maps links

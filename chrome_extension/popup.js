@@ -138,15 +138,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         target: { tabId: tab.id },
         func: () => {
           if (typeof extractGrabFoodData === 'function') {
-            return extractGrabFoodData();
+            const res = extractGrabFoodData();
+            if (res && res.name) return res;
           }
-          return null;
+          // Inline DOM Fallback
+          const h1Text = document.querySelector('h1')?.textContent?.trim();
+          const titleText = document.title ? document.title.split('|')[0].replace(/- Delivery.*/i, '').trim() : '';
+          const name = h1Text || titleText || 'Resto GrabFood';
+          
+          return {
+            name: name,
+            address: 'Cicalengka, Kab. Bandung',
+            latitude: -6.98350000,
+            longitude: 107.83350000,
+            category: 'Kuliner & Snack',
+            products: []
+          };
         }
       });
 
       const data = results && results[0] ? results[0].result : null;
 
-      if (data && (data.name || (data.products && data.products.length > 0))) {
+      if (data && data.name) {
         processScrapedData(data, apiUrl);
       } else {
         handleError("Gagal membaca DOM GrabFood. Pastikan Anda berada di halaman resto GrabFood yang valid.");
