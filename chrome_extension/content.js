@@ -665,10 +665,10 @@ function extractStoreLinksFromListing() {
   // 1. Scan DOM <a> elements matching GrabFood restaurant links
   const links = document.querySelectorAll('a[href*="/restaurant/"], a[href*="/store/"]');
   links.forEach(a => {
-    let href = a.getAttribute('href');
+    let href = a.href || a.getAttribute('href');
     if (!href) return;
     if (href.startsWith('/')) href = 'https://food.grab.com' + href;
-    const cleanUrl = href.split('?')[0];
+    const cleanUrl = href.split('?')[0].replace(/\/+$/, '');
     if (cleanUrl.includes('/restaurant/')) {
       storeUrls.add(cleanUrl);
     }
@@ -679,10 +679,10 @@ function extractStoreLinksFromListing() {
   cols.forEach(col => {
     const a = col.querySelector('a') || col.closest('a');
     if (a) {
-      let href = a.getAttribute('href');
+      let href = a.href || a.getAttribute('href');
       if (href) {
         if (href.startsWith('/')) href = 'https://food.grab.com' + href;
-        const cleanUrl = href.split('?')[0];
+        const cleanUrl = href.split('?')[0].replace(/\/+$/, '');
         if (cleanUrl.includes('/restaurant/')) {
           storeUrls.add(cleanUrl);
         }
@@ -695,13 +695,15 @@ function extractStoreLinksFromListing() {
     const nextScript = document.getElementById('__NEXT_DATA__');
     if (nextScript && nextScript.textContent) {
       const txt = nextScript.textContent;
-      const matches = txt.match(/\/id\/id\/restaurant\/[a-zA-Z0-9\-_]+(?:\/[a-zA-Z0-9\-_]+)?/g) ||
-                      txt.match(/https:\/\/food\.grab\.com\/[a-z]{2}\/[a-z]{2}\/restaurant\/[a-zA-Z0-9\-_]+(?:\/[a-zA-Z0-9\-_]+)?/g);
+      const matches = txt.match(/\/id\/id\/restaurant\/[a-zA-Z0-9\-_%\/]+/g) ||
+                      txt.match(/https:\/\/food\.grab\.com\/[a-z]{2}\/[a-z]{2}\/restaurant\/[a-zA-Z0-9\-_%\/]+/g);
       if (matches) {
         matches.forEach(m => {
-          let fullUrl = m;
+          let fullUrl = m.split('?')[0].replace(/\/+$/, '');
           if (fullUrl.startsWith('/')) fullUrl = 'https://food.grab.com' + fullUrl;
-          storeUrls.add(fullUrl.split('?')[0]);
+          if (fullUrl.includes('/restaurant/')) {
+            storeUrls.add(fullUrl);
+          }
         });
       }
     }

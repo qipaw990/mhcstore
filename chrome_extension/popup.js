@@ -93,10 +93,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           const storeUrls = new Set();
           const links = document.querySelectorAll('a[href*="/restaurant/"], a[href*="/store/"]');
           links.forEach(a => {
-            let href = a.getAttribute('href');
+            let href = a.href || a.getAttribute('href');
             if (!href) return;
             if (href.startsWith('/')) href = 'https://food.grab.com' + href;
-            const cleanUrl = href.split('?')[0];
+            const cleanUrl = href.split('?')[0].replace(/\/+$/, '');
             if (cleanUrl.includes('/restaurant/')) storeUrls.add(cleanUrl);
           });
 
@@ -104,10 +104,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           cols.forEach(col => {
             const a = col.querySelector('a') || col.closest('a');
             if (a) {
-              let href = a.getAttribute('href');
+              let href = a.href || a.getAttribute('href');
               if (href) {
                 if (href.startsWith('/')) href = 'https://food.grab.com' + href;
-                const cleanUrl = href.split('?')[0];
+                const cleanUrl = href.split('?')[0].replace(/\/+$/, '');
                 if (cleanUrl.includes('/restaurant/')) storeUrls.add(cleanUrl);
               }
             }
@@ -117,13 +117,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             const nextScript = document.getElementById('__NEXT_DATA__');
             if (nextScript && nextScript.textContent) {
               const txt = nextScript.textContent;
-              const matches = txt.match(/\/id\/id\/restaurant\/[a-zA-Z0-9\-_]+(?:\/[a-zA-Z0-9\-_]+)?/g) ||
-                              txt.match(/https:\/\/food\.grab\.com\/[a-z]{2}\/[a-z]{2}\/restaurant\/[a-zA-Z0-9\-_]+(?:\/[a-zA-Z0-9\-_]+)?/g);
+              const matches = txt.match(/\/id\/id\/restaurant\/[a-zA-Z0-9\-_%\/]+/g) ||
+                              txt.match(/https:\/\/food\.grab\.com\/[a-z]{2}\/[a-z]{2}\/restaurant\/[a-zA-Z0-9\-_%\/]+/g);
               if (matches) {
                 matches.forEach(m => {
-                  let fullUrl = m;
+                  let fullUrl = m.split('?')[0].replace(/\/+$/, '');
                   if (fullUrl.startsWith('/')) fullUrl = 'https://food.grab.com' + fullUrl;
-                  storeUrls.add(fullUrl.split('?')[0]);
+                  if (fullUrl.includes('/restaurant/')) storeUrls.add(fullUrl);
                 });
               }
             }
@@ -257,11 +257,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       leftDiv.style.flex = '1';
       leftDiv.style.overflow = 'hidden';
       leftDiv.style.marginRight = '6px';
+      const subText = isOk ? `${log.count} menu terimpor • ${log.time}` : (log.data ? `${log.count} menu diekstrak (API Offline) • ${log.time}` : `0 menu terimpor • ${log.time}`);
       leftDiv.innerHTML = `
-        <strong style="color:${isOk ? '#00AA5B' : '#EF4444'}; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-          ${isOk ? '✅' : '⚠️'} ${log.name}
+        <strong style="color:${isOk ? '#00AA5B' : (log.data ? '#D97706' : '#EF4444')}; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px;">
+          ${isOk ? '✅' : (log.data ? '💾' : '⚠️')} ${log.name}
         </strong>
-        <div style="font-size:9.5px; color:var(--text-muted);">${log.count} menu terimpor • ${log.time}</div>
+        <div style="font-size:9.5px; color:var(--text-muted);">${subText}</div>
       `;
 
       const rightDiv = document.createElement('div');
@@ -270,8 +271,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       rightDiv.style.gap = '4px';
 
       const badgeSpan = document.createElement('span');
-      badgeSpan.className = `badge ${isOk ? 'success' : 'error'}`;
-      badgeSpan.textContent = isOk ? 'OK' : 'FAIL';
+      badgeSpan.className = `badge ${isOk ? 'success' : (log.data ? 'sending' : 'error')}`;
+      badgeSpan.textContent = isOk ? 'OK' : (log.data ? 'SAVED' : 'FAIL');
       rightDiv.appendChild(badgeSpan);
 
       if (log.data) {
