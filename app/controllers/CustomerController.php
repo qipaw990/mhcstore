@@ -42,7 +42,41 @@ class CustomerController extends Controller
         $banners = $this->bannerModel->getActiveBanners($selectedModuleId);
         $categories = (new Category())->getByModule($selectedModuleId);
         $popularStores = $this->storeModel->getByModule($selectedModuleId);
-        $recommendedProducts = $this->productModel->getRecommended(10);
+        
+        $topRatedStores = Database::query("
+            SELECT s.*, m.name as module_name
+            FROM `stores` s
+            LEFT JOIN `modules` m ON s.module_id = m.id
+            WHERE s.status = 'approved'
+            ORDER BY s.is_open DESC, s.rating DESC, s.order_count DESC
+            LIMIT 12
+        ");
+
+        $recommendedProducts = $this->productModel->getRecommended(12);
+        if (empty($recommendedProducts)) {
+            $recommendedProducts = Database::query("
+                SELECT p.*, s.name as store_name, s.is_open as store_is_open 
+                FROM `products` p 
+                JOIN `stores` s ON p.store_id = s.id 
+                WHERE p.status = 1 AND s.status = 'approved' 
+                ORDER BY s.is_open DESC, p.id DESC LIMIT 12
+            ");
+            foreach ($recommendedProducts as &$p) {
+                $p['final_price'] = $this->productModel->calculateFinalPrice($p);
+            }
+        }
+
+        $discountedProducts = Database::query("
+            SELECT p.*, s.name as store_name, s.is_open as store_is_open
+            FROM `products` p
+            JOIN `stores` s ON p.store_id = s.id
+            WHERE p.status = 1 AND s.status = 'approved' AND p.discount > 0
+            ORDER BY p.discount DESC LIMIT 10
+        ");
+        foreach ($discountedProducts as &$p) {
+            $p['final_price'] = $this->productModel->calculateFinalPrice($p);
+        }
+
         $cartSummary = $this->cartModel->getUserCart($userId, session_id());
         
         $walletBalance = 0.00;
@@ -60,7 +94,9 @@ class CustomerController extends Controller
             'banners'             => $banners,
             'categories'          => $categories,
             'popular_stores'      => $popularStores,
+            'top_rated_stores'    => $topRatedStores,
             'recommended_products'=> $recommendedProducts,
+            'discounted_products' => $discountedProducts,
             'cart_summary'        => $cartSummary,
             'wallet_balance'      => $walletBalance,
             'coupons'             => $coupons,

@@ -1,21 +1,24 @@
 <!-- GoFood Store Header Cover & Floating Back Button -->
 <div class="position-relative">
-    <img src="<?= asset_url($store['cover_photo'] ?? null, 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80') ?>" alt="<?= htmlspecialchars($store['name']) ?>" style="width: 100%; height: 120px; object-fit: cover;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80';">
+    <img src="<?= asset_url($store['cover_photo'] ?? null, 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80') ?>" alt="<?= htmlspecialchars($store['name']) ?>" style="width: 100%; height: 130px; object-fit: cover;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80';">
     <div class="position-absolute top-0 start-0" style="padding: 10px;">
-        <a href="<?= $baseUrl ?>" class="btn btn-light rounded-circle shadow-sm d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(8px); border: 1px solid rgba(226, 232, 240, 0.8); padding: 0;">
-            <i class="bi bi-arrow-left text-dark" style="font-size: 14px;"></i>
+        <a href="<?= $baseUrl ?>" class="btn btn-light rounded-circle shadow-sm d-flex align-items-center justify-content-center" style="width: 34px; height: 34px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); border: 1px solid rgba(226, 232, 240, 0.8); padding: 0;">
+            <i class="bi bi-arrow-left text-dark" style="font-size: 15px;"></i>
         </a>
     </div>
 </div>
 
 <!-- Store Main Information Floating Card -->
 <div style="padding: 0 12px !important;">
-    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px !important; margin-top: -24px; position: relative; z-index: 2; padding: 14px 16px !important; margin-bottom: 16px !important; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);">
+    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px !important; margin-top: -24px; position: relative; z-index: 2; padding: 14px 16px !important; margin-bottom: 14px !important; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);">
         <div style="display: flex; align-items: flex-start; gap: 12px !important; margin-bottom: 10px !important;">
-            <img src="<?= asset_url($store['logo'] ?? null, 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=80') ?>" alt="Logo" style="width: 48px; height: 48px; object-fit: cover; border-radius: 12px !important; flex-shrink: 0; background: #FFFFFF; border: 1px solid #E2E8F0;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=80';">
+            <img src="<?= asset_url($store['logo'] ?? null, 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=80') ?>" alt="Logo" style="width: 52px; height: 52px; object-fit: cover; border-radius: 12px !important; flex-shrink: 0; background: #FFFFFF; border: 1px solid #E2E8F0;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=80';">
             <div style="flex-grow: 1; min-width: 0;">
-                <h6 style="font-size: 14px; font-weight: 800; color: #0F172A; margin: 0 0 3px 0 !important; line-height: 1.3; letter-spacing: -0.2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;"><?= htmlspecialchars($store['name']) ?></h6>
-                <div style="font-size: 10.5px; color: #64748B; margin-bottom: 6px !important; display: flex; align-items: center; gap: 4px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                <div class="d-flex align-items-center gap-1.5">
+                    <h6 style="font-size: 14.5px; font-weight: 800; color: #0F172A; margin: 0 !important; line-height: 1.3; letter-spacing: -0.2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;"><?= htmlspecialchars($store['name']) ?></h6>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill flex-shrink-0" style="font-size: 8.5px; padding: 2px 6px;"><i class="bi bi-patch-check-fill me-0.5"></i> Resto Resmi</span>
+                </div>
+                <div style="font-size: 10.5px; color: #64748B; margin-top: 3px; margin-bottom: 6px !important; display: flex; align-items: center; gap: 4px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
                     <i class="bi bi-geo-alt-fill text-danger flex-shrink-0" style="font-size: 11px;"></i>
                     <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;"><?= htmlspecialchars($store['address']) ?></span>
                 </div>
@@ -40,7 +43,7 @@
         <!-- Store Map Collapse & Navigation Actions -->
         <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #F1F5F9; padding-top: 10px !important; margin-top: 10px !important; gap: 10px !important;">
             <button class="btn btn-outline-danger btn-sm rounded-pill fw-bold" style="font-size: 11px !important; padding: 5px 12px !important; border: 1px solid #EE2737; color: #EE2737; flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px;" type="button" data-bs-toggle="collapse" data-bs-target="#storeMapCollapse" aria-expanded="false">
-                <i class="bi bi-map-fill" style="font-size: 11px;"></i> Peta Resto
+                <i class="bi bi-map-fill" style="font-size: 11px;"></i> Lokasi Resto
             </button>
             <a href="https://www.google.com/maps/dir/?api=1&destination=<?= (float)($store['latitude'] ?? -6.9835) ?>,<?= (float)($store['longitude'] ?? 107.8335) ?>" target="_blank" class="btn btn-light btn-sm text-dark rounded-pill fw-semibold border" style="font-size: 11px !important; padding: 5px 12px !important; border-color: #CBD5E1; background: #F8FAFC; color: #1E293B; flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; text-decoration: none;">
                 <i class="bi bi-compass text-danger" style="font-size: 11px;"></i> Petunjuk Arah
@@ -100,22 +103,50 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<!-- GoFood Product Catalog -->
-<div style="padding: 0 12px 16px 12px !important;">
-    <div style="margin-top: 14px !important; margin-bottom: 12px !important; padding: 0 2px;">
-        <h6 style="font-size: 12.5px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 6px;">
-            <i class="bi bi-egg-fried text-danger" style="font-size: 14px;"></i> Daftar Menu Makanan & Minuman
-        </h6>
+<?php
+// Extract unique categories from product list
+$categoriesInStore = [];
+if (!empty($products)) {
+    foreach ($products as $p) {
+        $cName = trim($p['category_name'] ?? 'Menu Utama');
+        if (!in_array($cName, $categoriesInStore)) {
+            $categoriesInStore[] = $cName;
+        }
+    }
+}
+?>
+
+<!-- Search Bar inside Store & Sticky Category Pills -->
+<div class="px-3 sticky-top bg-white py-2 shadow-2xs" style="z-index: 10; top: 0;">
+    <div class="position-relative mb-2">
+        <input type="text" id="storeMenuSearchInput" class="form-control rounded-pill border ps-4 pe-4 py-1.5" style="font-size: 11.5px; background: #F8FAFC;" placeholder="Cari menu di <?= htmlspecialchars($store['name']) ?>...">
+        <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-2.5 text-muted" style="font-size: 12px;"></i>
     </div>
 
+    <!-- Category Pills Filter -->
+    <div class="d-flex align-items-center gap-1.5 overflow-x-auto pb-1" id="storeCatPillsContainer" style="scrollbar-width: none;">
+        <button type="button" class="btn btn-sm btn-dark rounded-pill px-3 py-1 font-monospace fw-bold store-cat-btn active" data-cat="all" style="font-size: 10px; flex-shrink: 0;">
+            Semua (<?= count($products) ?>)
+        </button>
+        <?php foreach ($categoriesInStore as $cName): ?>
+            <button type="button" class="btn btn-sm btn-light border rounded-pill px-3 py-1 text-dark store-cat-btn" data-cat="<?= htmlspecialchars($cName) ?>" style="font-size: 10px; flex-shrink: 0; font-weight: 600;">
+                <?= htmlspecialchars($cName) ?>
+            </button>
+        <?php endforeach; ?>
+    </div>
+</div>
+
+<!-- GoFood Product Catalog -->
+<div style="padding: 10px 12px 24px 12px !important;">
     <?php if (empty($products)): ?>
-        <div style="text-align: center; padding: 14px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; color: #64748B; font-size: 11px;">Belum ada menu yang ditampilkan.</div>
+        <div style="text-align: center; padding: 20px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; color: #64748B; font-size: 11px;">Belum ada menu yang ditampilkan.</div>
     <?php else: ?>
-        <div style="display: flex; flex-direction: column; gap: 12px !important; margin-bottom: 16px !important;">
+        <div id="storeProductsList" style="display: flex; flex-direction: column; gap: 12px !important; margin-bottom: 16px !important;">
             <?php foreach ($products as $prod):
                 $isOutOfStock = ((int)($prod['stock'] ?? 0) <= 0);
+                $cName = trim($prod['category_name'] ?? 'Menu Utama');
             ?>
-                <div style="background: #FFFFFF; border: 1px solid <?= $isOutOfStock ? '#FEE2E2' : '#E2E8F0' ?>; border-radius: 14px !important; padding: 12px 14px !important; display: flex; align-items: center; justify-content: space-between; gap: 12px !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02); overflow: hidden; <?= $isOutOfStock ? 'opacity: 0.72;' : '' ?>">
+                <div class="store-product-item-card" data-category="<?= htmlspecialchars($cName) ?>" data-name="<?= strtolower(htmlspecialchars($prod['name'])) ?>" style="background: #FFFFFF; border: 1px solid <?= $isOutOfStock ? '#FEE2E2' : '#E2E8F0' ?>; border-radius: 14px !important; padding: 12px 14px !important; display: flex; align-items: center; justify-content: space-between; gap: 12px !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02); overflow: hidden; <?= $isOutOfStock ? 'opacity: 0.72;' : '' ?>">
                     <div style="flex-grow: 1; min-width: 0;">
                         <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px !important;">
                             <div style="font-size: 12.5px; font-weight: 700; color: #0F172A; line-height: 1.3; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="<?= htmlspecialchars($prod['name']) ?>"><?= htmlspecialchars($prod['name']) ?></div>
@@ -136,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
 
                     <div style="flex-shrink: 0; text-align: center; width: 76px;">
-                        <img src="<?= asset_url($prod['image'] ?? null, 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80') ?>" alt="<?= htmlspecialchars($prod['name']) ?>" style="width: 76px; height: 76px; object-fit: cover; border-radius: 12px !important; margin-bottom: 4px !important; border: 1px solid #F1F5F9;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80';">
+                        <img src="<?= asset_url($prod['image'] ?? null, asset_url($store['cover_photo'] ?? null, 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80')) ?>" alt="<?= htmlspecialchars($prod['name']) ?>" style="width: 76px; height: 76px; object-fit: cover; border-radius: 12px !important; margin-bottom: 4px !important; border: 1px solid #F1F5F9;" onerror="this.onerror=null; this.src='<?= asset_url($store['cover_photo'] ?? null, 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80') ?>';">
                         <div>
                             <?php if (!$store['is_open']): ?>
                                 <button type="button" class="btn btn-sm btn-secondary disabled w-100" style="font-size: 10px; padding: 3px 0 !important; border-radius: 20px !important;">Tutup</button>
@@ -207,3 +238,50 @@ document.addEventListener('DOMContentLoaded', () => {
         <?php endif; ?>
     </div>
 </div>
+
+<!-- Interactive JS Filtering for Store Menu & Categories -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('storeMenuSearchInput');
+    const catBtns = document.querySelectorAll('.store-cat-btn');
+    const cards = document.querySelectorAll('.store-product-item-card');
+
+    let activeCat = 'all';
+
+    function filterMenu() {
+        const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+        cards.forEach(card => {
+            const cCat = card.getAttribute('data-category') || '';
+            const cName = card.getAttribute('data-name') || '';
+
+            const matchCat = (activeCat === 'all' || cCat === activeCat);
+            const matchSearch = (!query || cName.includes(query));
+
+            if (matchCat && matchSearch) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', filterMenu);
+    }
+
+    catBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            catBtns.forEach(b => {
+                b.classList.remove('btn-dark', 'active');
+                b.classList.add('btn-light', 'border');
+            });
+            btn.classList.remove('btn-light', 'border');
+            btn.classList.add('btn-dark', 'active');
+
+            activeCat = btn.getAttribute('data-cat');
+            filterMenu();
+        });
+    });
+});
+</script>
