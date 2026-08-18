@@ -66,92 +66,92 @@
         <div class="bg-white border shadow-2xs overflow-hidden mb-3" style="border-radius: 16px; border-color: #E2E8F0 !important;">
             
             <!-- Edit Profil & Kata Sandi -->
-            <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#editProfileModal" class="px-3 py-2.5 d-flex align-items-center justify-content-between text-decoration-none text-dark border-bottom hover-bg-light transition">
+            <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#editProfileModal" class="d-flex align-items-center justify-content-between text-decoration-none border-bottom transition" style="padding: 12px 14px !important; background: #FFFFFF;">
                 <div class="d-flex align-items-center gap-3 min-w-0">
-                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background: #FEE2E2; color: #EE2737;">
-                        <i class="bi bi-person-gear" style="font-size: 17px;"></i>
+                    <div style="width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 12px; background: #FEE2E2; color: #EE2737; display: flex; align-items: center; justify-content: center; flex-shrink: 0; align-self: center;">
+                        <i class="bi bi-person-gear" style="font-size: 18px;"></i>
                     </div>
                     <div class="min-w-0">
-                        <div class="fw-bold text-truncate" style="font-size: 12.5px; color: #0F172A;">Edit Profil & Kata Sandi</div>
-                        <div class="text-muted text-truncate" style="font-size: 10px;">Ubah foto profil, nama & password</div>
+                        <div class="fw-bold text-truncate" style="font-size: 13px; color: #0F172A; line-height: 1.3;">Edit Profil & Kata Sandi</div>
+                        <div class="text-muted text-truncate mt-0.5" style="font-size: 10px; color: #64748B;">Ubah foto profil, nama & password</div>
                     </div>
                 </div>
-                <i class="bi bi-chevron-right text-muted flex-shrink-0 ms-2" style="font-size: 11px;"></i>
+                <i class="bi bi-chevron-right flex-shrink-0 ms-2" style="font-size: 12px; color: #94A3B8;"></i>
             </a>
 
             <!-- Riwayat Pesanan -->
-            <a href="<?= $baseUrl ?>/orders" class="px-3 py-2.5 d-flex align-items-center justify-content-between text-decoration-none text-dark border-bottom hover-bg-light transition">
+            <a href="<?= $baseUrl ?>/orders" class="d-flex align-items-center justify-content-between text-decoration-none border-bottom transition" style="padding: 12px 14px !important; background: #FFFFFF;">
                 <div class="d-flex align-items-center gap-3 min-w-0">
-                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background: #E0F2FE; color: #0284C7;">
-                        <i class="bi bi-receipt" style="font-size: 17px;"></i>
+                    <div style="width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 12px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; flex-shrink: 0; align-self: center;">
+                        <i class="bi bi-receipt" style="font-size: 18px;"></i>
                     </div>
                     <div class="min-w-0">
-                        <div class="fw-bold text-truncate" style="font-size: 12.5px; color: #0F172A;">Riwayat Pesanan</div>
-                        <div class="text-muted text-truncate" style="font-size: 10px;">Cek daftar transaksi & status pengiriman</div>
+                        <div class="fw-bold text-truncate" style="font-size: 13px; color: #0F172A; line-height: 1.3;">Riwayat Pesanan</div>
+                        <div class="text-muted text-truncate mt-0.5" style="font-size: 10px; color: #64748B;">Cek daftar transaksi & status pengiriman</div>
                     </div>
                 </div>
-                <i class="bi bi-chevron-right text-muted flex-shrink-0 ms-2" style="font-size: 11px;"></i>
+                <i class="bi bi-chevron-right flex-shrink-0 ms-2" style="font-size: 12px; color: #94A3B8;"></i>
             </a>
 
             <!-- Voucher & Promo Saya -->
-            <a href="<?= $baseUrl ?>/search" class="px-3 py-2.5 d-flex align-items-center justify-content-between text-decoration-none text-dark border-bottom hover-bg-light transition">
+            <a href="<?= $baseUrl ?>/search" class="d-flex align-items-center justify-content-between text-decoration-none border-bottom transition" style="padding: 12px 14px !important; background: #FFFFFF;">
                 <div class="d-flex align-items-center gap-3 min-w-0">
-                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background: #FEF3C7; color: #D97706;">
-                        <i class="bi bi-percent" style="font-size: 17px;"></i>
+                    <div style="width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 12px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0; align-self: center;">
+                        <i class="bi bi-percent" style="font-size: 18px;"></i>
                     </div>
                     <div class="min-w-0">
-                        <div class="fw-bold text-truncate" style="font-size: 12.5px; color: #0F172A;">Voucher & Promo Saya</div>
-                        <div class="text-muted text-truncate" style="font-size: 10px;">Kupon diskon & penawaran menarik</div>
+                        <div class="fw-bold text-truncate" style="font-size: 13px; color: #0F172A; line-height: 1.3;">Voucher & Promo Saya</div>
+                        <div class="text-muted text-truncate mt-0.5" style="font-size: 10px; color: #64748B;">Kupon diskon & penawaran menarik</div>
                     </div>
                 </div>
-                <i class="bi bi-chevron-right text-muted flex-shrink-0 ms-2" style="font-size: 11px;"></i>
+                <i class="bi bi-chevron-right flex-shrink-0 ms-2" style="font-size: 12px; color: #94A3B8;"></i>
             </a>
 
             <!-- Pusat Notifikasi -->
-            <a href="<?= $baseUrl ?>/notifications" class="px-3 py-2.5 d-flex align-items-center justify-content-between text-decoration-none text-dark border-bottom hover-bg-light transition">
+            <a href="<?= $baseUrl ?>/notifications" class="d-flex align-items-center justify-content-between text-decoration-none border-bottom transition" style="padding: 12px 14px !important; background: #FFFFFF;">
                 <div class="d-flex align-items-center gap-3 min-w-0">
-                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background: #F3E8FF; color: #9333EA;">
-                        <i class="bi bi-bell" style="font-size: 17px;"></i>
+                    <div style="width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 12px; background: #F3E8FF; color: #9333EA; display: flex; align-items: center; justify-content: center; flex-shrink: 0; align-self: center;">
+                        <i class="bi bi-bell" style="font-size: 18px;"></i>
                     </div>
                     <div class="min-w-0">
-                        <div class="fw-bold text-truncate" style="font-size: 12.5px; color: #0F172A;">Pusat Notifikasi</div>
-                        <div class="text-muted text-truncate" style="font-size: 10px;">Pesan masuk, update pesanan & promo</div>
+                        <div class="fw-bold text-truncate" style="font-size: 13px; color: #0F172A; line-height: 1.3;">Pusat Notifikasi</div>
+                        <div class="text-muted text-truncate mt-0.5" style="font-size: 10px; color: #64748B;">Pesan masuk, update pesanan & promo</div>
                     </div>
                 </div>
-                <i class="bi bi-chevron-right text-muted flex-shrink-0 ms-2" style="font-size: 11px;"></i>
+                <i class="bi bi-chevron-right flex-shrink-0 ms-2" style="font-size: 12px; color: #94A3B8;"></i>
             </a>
 
             <!-- Bantuan & CS 24 Jam -->
-            <a href="javascript:void(0)" onclick="Swal.fire('Pusat Bantuan', 'Hubungi layanan pelanggan CicalengkaGO via WhatsApp di 0812-3456-7890', 'info')" class="px-3 py-2.5 d-flex align-items-center justify-content-between text-decoration-none text-dark border-bottom hover-bg-light transition">
+            <a href="javascript:void(0)" onclick="Swal.fire('Pusat Bantuan', 'Hubungi layanan pelanggan CicalengkaGO via WhatsApp di 0812-3456-7890', 'info')" class="d-flex align-items-center justify-content-between text-decoration-none border-bottom transition" style="padding: 12px 14px !important; background: #FFFFFF;">
                 <div class="d-flex align-items-center gap-3 min-w-0">
-                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background: #CCFBF1; color: #0D9488;">
-                        <i class="bi bi-question-circle" style="font-size: 17px;"></i>
+                    <div style="width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 12px; background: #CCFBF1; color: #0D9488; display: flex; align-items: center; justify-content: center; flex-shrink: 0; align-self: center;">
+                        <i class="bi bi-question-circle" style="font-size: 18px;"></i>
                     </div>
                     <div class="min-w-0">
-                        <div class="fw-bold text-truncate" style="font-size: 12.5px; color: #0F172A;">Bantuan & CS 24 Jam</div>
-                        <div class="text-muted text-truncate" style="font-size: 10px;">Pertanyaan umum & bantuan kendala</div>
+                        <div class="fw-bold text-truncate" style="font-size: 13px; color: #0F172A; line-height: 1.3;">Bantuan & CS 24 Jam</div>
+                        <div class="text-muted text-truncate mt-0.5" style="font-size: 10px; color: #64748B;">Pertanyaan umum & bantuan kendala</div>
                     </div>
                 </div>
-                <i class="bi bi-chevron-right text-muted flex-shrink-0 ms-2" style="font-size: 11px;"></i>
+                <i class="bi bi-chevron-right flex-shrink-0 ms-2" style="font-size: 12px; color: #94A3B8;"></i>
             </a>
 
             <!-- Keluar Akun -->
-            <a href="<?= $baseUrl ?>/logout" class="px-3 py-2.5 d-flex align-items-center justify-content-between text-decoration-none hover-bg-light transition">
+            <a href="<?= $baseUrl ?>/logout" class="d-flex align-items-center justify-content-between text-decoration-none transition" style="padding: 12px 14px !important; background: #FFFFFF;">
                 <div class="d-flex align-items-center gap-3 min-w-0">
-                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background: #FFE4E6; color: #E11D48;">
-                        <i class="bi bi-box-arrow-right" style="font-size: 17px;"></i>
+                    <div style="width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 12px; background: #FFE4E6; color: #E11D48; display: flex; align-items: center; justify-content: center; flex-shrink: 0; align-self: center;">
+                        <i class="bi bi-box-arrow-right" style="font-size: 18px;"></i>
                     </div>
                     <div class="min-w-0">
-                        <div class="fw-bold text-truncate" style="font-size: 12.5px; color: #E11D48;">Keluar Akun</div>
-                        <div class="text-muted text-truncate" style="font-size: 10px;">Keluar dari sesi akun saat ini</div>
+                        <div class="fw-bold text-truncate" style="font-size: 13.5px; color: #E11D48; line-height: 1.3;">Keluar Akun</div>
+                        <div class="text-muted text-truncate mt-0.5" style="font-size: 10px; color: #64748B;">Keluar dari sesi akun saat ini</div>
                     </div>
                 </div>
-                <i class="bi bi-chevron-right flex-shrink-0 ms-2" style="font-size: 11px; color: #E11D48;"></i>
+                <i class="bi bi-chevron-right flex-shrink-0 ms-2" style="font-size: 12px; color: #E11D48;"></i>
             </a>
         </div>
 
         <div class="text-center text-muted py-2 mb-3" style="font-size: 10px; font-weight: 500;">
-            CicalengkaGO v3.4.0 • Platform Layanan Lokal Cicalengka
+            CicalengkaGO v3.6.0 • Platform Layanan Lokal Cicalengka
         </div>
     <?php else: ?>
         <div class="bg-white border shadow-sm p-4 my-2 text-center" style="border-radius: 20px; border-color: #E2E8F0 !important;">
