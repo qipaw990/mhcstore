@@ -5,6 +5,8 @@
 
 declare(strict_types=1);
 
+date_default_timezone_set('Asia/Jakarta');
+
 define('BASE_PATH', dirname(__DIR__));
 define('APP_PATH', BASE_PATH . '/app');
 define('PUBLIC_PATH', __DIR__);

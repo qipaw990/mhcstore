@@ -34,6 +34,7 @@ class Database
             for ($attempt = 1; $attempt <= 2; $attempt++) {
                 try {
                     $this->pdo = new PDO($dsn, $config['username'], $config['password'], $config['options']);
+                    $this->pdo->exec("SET time_zone = '+07:00';");
                     $connected = true;
                     break 2; // Connected successfully
                 } catch (PDOException $e) {

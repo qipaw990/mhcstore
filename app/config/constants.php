@@ -3,6 +3,9 @@
  * System Constants
  */
 
+// Force timezone to Asia/Jakarta (WIB)
+date_default_timezone_set('Asia/Jakarta');
+
 if (!defined('ROOT_PATH')) define('ROOT_PATH', dirname(__DIR__, 2));
 if (!defined('BASE_PATH')) define('BASE_PATH', ROOT_PATH);
 if (!defined('APP_PATH')) define('APP_PATH', ROOT_PATH . '/app');
