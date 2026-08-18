@@ -1038,25 +1038,26 @@ div[style*="border-radius: 16px"] > .d-flex {
  * Compact Floating Cart Sticky Pill & Cart Badges
  * ========================================================================= */
 .floating-cart-pill {
-  position: fixed;
-  bottom: calc(52px + env(safe-area-inset-bottom, 0px)) !important;
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 24px);
-  max-width: 456px;
+  position: fixed !important;
+  bottom: calc(54px + env(safe-area-inset-bottom, 0px)) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: calc(100% - 24px) !important;
+  max-width: 456px !important;
   background: #0F172A !important;
   color: #FFFFFF !important;
   text-decoration: none !important;
-  z-index: 1030;
+  z-index: 1030 !important;
   border-radius: 9999px !important;
   padding: 7px 14px !important;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.35) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.4) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   backdrop-filter: blur(8px);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box !important;
 }
 
 .floating-cart-pill:hover,
@@ -3101,8 +3102,9 @@ div.leaflet-marker-icon {
   /* Floating Cart Pill */
   .floating-cart-pill {
     width: calc(100% - 16px) !important;
+    max-width: calc(480px - 16px) !important;
     padding: 6px 12px !important;
-    bottom: calc(48px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom: calc(50px + env(safe-area-inset-bottom, 0px)) !important;
   }
   .floating-cart-price {
     font-size: 11.5px !important;
