@@ -317,8 +317,22 @@ function getSmartFoodPhoto(name) {
 // Listen for requests from popup.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'SCRAPE_DATA') {
-    const scraped = extractGrabFoodData();
-    sendResponse({ success: true, data: scraped });
+    // Auto-scroll to bottom and back to top to trigger GrabFood lazy loading images
+    const scrollStep = Math.max(200, Math.floor(document.body.scrollHeight / 5));
+    let currentScroll = 0;
+    const timer = setInterval(() => {
+      currentScroll += scrollStep;
+      window.scrollTo(0, currentScroll);
+      if (currentScroll >= document.body.scrollHeight) {
+        clearInterval(timer);
+        window.scrollTo(0, 0);
+        setTimeout(() => {
+          const scraped = extractGrabFoodData();
+          sendResponse({ success: true, data: scraped });
+        }, 300);
+      }
+    }, 100);
+
+    return true; // keeps channel open for async sendResponse
   }
-  return true;
 });
