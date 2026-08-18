@@ -2883,19 +2883,13 @@ div[style*="border-radius: 18px"] .d-flex {
    Leaflet Map Marker & Custom Pin CSS Safeguards
    ============================================================ */
 
-/* 1. Reset all images inside Leaflet containers so Bootstrap doesn't distort them */
+/* 1. Reset tile and marker image constraints for Bootstrap compatibility */
 .leaflet-container img {
   max-width: none !important;
   max-height: none !important;
-  box-shadow: none !important;
 }
 
-.leaflet-container img.leaflet-tile {
-  max-width: none !important;
-  max-height: none !important;
-}
-
-/* 2. Completely hide distorted Leaflet shadow PNGs */
+/* 2. Hide Leaflet default distorted shadow elements */
 .leaflet-shadow-pane,
 .leaflet-marker-shadow,
 .leaflet-pane > .leaflet-shadow-pane,
@@ -2905,68 +2899,21 @@ img.leaflet-marker-shadow {
   visibility: hidden !important;
   width: 0 !important;
   height: 0 !important;
-  border: none !important;
-  background: transparent !important;
 }
 
-/* 3. Strip background, border, shadow, and line-height from default Leaflet divIcon containers */
-.leaflet-marker-icon,
-.leaflet-div-icon,
-div.leaflet-marker-icon,
-div.leaflet-div-icon,
-.custom-map-icon,
-.custom-pin,
-.custom-pin-customer,
-.custom-pin-store,
-.custom-map-pin,
-.driver-radar-marker,
-.driver-pulse-container,
-.ccg-driver-pin {
+/* 3. Remove Leaflet default white background and border from .leaflet-div-icon wrapper ONLY */
+.leaflet-div-icon {
   background: transparent !important;
-  background-color: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  outline: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border-radius: 0 !important;
-  line-height: 1 !important;
 }
 
-/* 4. Flex centering for DivIcon containers */
+/* 4. Display flex centering for container div icons */
 div.leaflet-marker-icon,
-div.leaflet-div-icon,
-.custom-map-icon,
-.custom-pin,
-.custom-pin-customer,
-.custom-pin-store,
-.custom-map-pin,
-.driver-radar-marker,
-.driver-pulse-container,
-.ccg-driver-pin {
+div.leaflet-div-icon {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  overflow: visible !important;
-}
-
-/* 5. Prevent pseudoelement rendering on marker wrappers */
-.leaflet-marker-icon::before,
-.leaflet-marker-icon::after,
-.leaflet-div-icon::before,
-.leaflet-div-icon::after {
-  display: none !important;
-  content: none !important;
-}
-
-.custom-pin > div,
-.custom-pin-customer > div,
-.custom-pin-store > div,
-.custom-map-icon > div,
-.driver-radar-marker > div,
-.ccg-driver-pin > div {
-  box-sizing: border-box !important;
-  flex-shrink: 0 !important;
 }
 
 /* Driver Page Layout Padding Fix (Mencegah konten terpotong Bottom Nav) */

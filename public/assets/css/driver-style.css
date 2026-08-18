@@ -10,7 +10,6 @@
 #driver-radar-map .leaflet-tile {
     max-width: none !important;
     max-height: none !important;
-    box-shadow: none !important;
 }
 
 #driver-radar-map .leaflet-shadow-pane,
@@ -23,23 +22,12 @@ img.leaflet-marker-shadow {
     visibility: hidden !important;
     width: 0 !important;
     height: 0 !important;
-    border: none !important;
-    background: transparent !important;
 }
 
-.leaflet-marker-icon,
-.leaflet-div-icon,
-div.leaflet-marker-icon,
-div.leaflet-div-icon {
+.leaflet-div-icon {
     background: transparent !important;
-    background-color: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    outline: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border-radius: 0 !important;
-    line-height: 1 !important;
 }
 
 div.leaflet-marker-icon,
