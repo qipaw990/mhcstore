@@ -66,19 +66,20 @@ $sRow = $stmtS->fetch();
 
 $openTime  = !empty($data['opening_time']) ? date('H:i:s', strtotime($data['opening_time'])) : '08:00:00';
 $closeTime = !empty($data['closing_time']) ? date('H:i:s', strtotime($data['closing_time'])) : '22:00:00';
+$grabUrl   = !empty($data['grab_url']) ? trim($data['grab_url']) : (!empty($data['url']) ? trim($data['url']) : null);
 $isOpen    = isset($data['is_open']) ? ((int)$data['is_open'] === 1 ? 1 : 0) : 1;
 
 if ($sRow) {
     $storeId = (int)$sRow['id'];
-    $stmtUp = $pdo->prepare("UPDATE stores SET logo = ?, cover_photo = ?, address = ?, latitude = ?, longitude = ?, is_open = ? WHERE id = ?");
-    $stmtUp->execute([$logo, $cover, $address, $lat, $lng, $isOpen, $storeId]);
+    $stmtUp = $pdo->prepare("UPDATE stores SET logo = ?, cover_photo = ?, address = ?, latitude = ?, longitude = ?, grab_url = COALESCE(?, grab_url), is_open = ? WHERE id = ?");
+    $stmtUp->execute([$logo, $cover, $address, $lat, $lng, $grabUrl, $isOpen, $storeId]);
     echo "[UPDATED STORE] {$storeName} (ID: {$storeId}, Status: " . ($isOpen ? 'BUKA' : 'TUTUP') . ")\n";
 } else {
     $stmtInsS = $pdo->prepare("
-        INSERT INTO stores (vendor_id, module_id, zone_id, name, phone, email, logo, cover_photo, address, latitude, longitude, minimum_order, delivery_time, delivery_fee, is_open, status, rating, reviews_count)
-        VALUES (?, 1, 1, ?, ?, ?, ?, ?, ?, ?, ?, 0.00, '15-25 min', 5000.00, ?, 'approved', 4.8, 145)
+        INSERT INTO stores (vendor_id, module_id, zone_id, name, phone, email, logo, cover_photo, address, latitude, longitude, minimum_order, delivery_time, delivery_fee, grab_url, is_open, status, rating, reviews_count)
+        VALUES (?, 1, 1, ?, ?, ?, ?, ?, ?, ?, ?, 0.00, '15-25 min', 5000.00, ?, ?, 'approved', 4.8, 145)
     ");
-    $stmtInsS->execute([$vendorId, $storeName, $phone, $email, $logo, $cover, $address, $lat, $lng, $isOpen]);
+    $stmtInsS->execute([$vendorId, $storeName, $phone, $email, $logo, $cover, $address, $lat, $lng, $grabUrl, $isOpen]);
     $storeId = (int)$pdo->lastInsertId();
     echo "[NEW STORE IMPORTED] {$storeName} (ID: {$storeId}, Status: " . ($isOpen ? 'BUKA' : 'TUTUP') . ")\n";
 }

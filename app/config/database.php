@@ -16,11 +16,11 @@ $getEnvVar = function($keys, $default = '') {
 
 return [
     'driver'    => 'mysql',
-    'host'      => $getEnvVar(['DB_HOST'], 'cicalengkago_db'),
+    'host'      => $getEnvVar(['DB_HOST'], '127.0.0.1'),
     'port'      => $getEnvVar(['DB_PORT'], '3306'),
-    'database'  => $getEnvVar(['DB_DATABASE', 'DB_NAME'], 'cicalengkago'),
-    'username'  => $getEnvVar(['DB_USERNAME', 'DB_USER'], 'cicalengka_user'),
-    'password'  => $getEnvVar(['DB_PASSWORD', 'DB_PASS'], 'cicalengka_pass'),
+    'database'  => $getEnvVar(['DB_DATABASE', 'DB_NAME'], 'cicalengkago_db'),
+    'username'  => $getEnvVar(['DB_USERNAME', 'DB_USER'], 'root'),
+    'password'  => $getEnvVar(['DB_PASSWORD', 'DB_PASS'], ''),
     'charset'   => 'utf8mb4',
     'collation' => 'utf8mb4_unicode_ci',
     'options'   => [

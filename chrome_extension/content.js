@@ -6,6 +6,7 @@
 function extractGrabFoodData() {
   const result = {
     name: '',
+    grab_url: window.location.href ? window.location.href.split('?')[0] : '',
     address: 'Cicalengka, Kab. Bandung',
     latitude: -6.98350000,
     longitude: 107.83350000,
