@@ -476,26 +476,92 @@ class ApiController extends Controller
                 }
             }
 
+            // Cleanup old dummy non-grab products for stores that have scraped grab products
+            $scrapedStores = $pdo->query("SELECT DISTINCT store_id FROM products WHERE image LIKE 'uploads/products/grab_%'")->fetchAll(\PDO::FETCH_COLUMN);
+            foreach ($scrapedStores as $sid) {
+                $stmtDel = $pdo->prepare("DELETE FROM products WHERE store_id = ? AND image NOT LIKE 'uploads/products/grab_%'");
+                $stmtDel->execute([$sid]);
+            }
+
             $products = $pdo->query("SELECT id, name, image FROM products")->fetchAll(\PDO::FETCH_ASSOC);
             $updatedProducts = 0;
 
             foreach ($products as $p) {
                 $pid = (int)$p['id'];
-                if (!empty($p['image']) && (str_starts_with($p['image'], 'http://') || str_starts_with($p['image'], 'https://'))) {
-                    $newImg = download_and_save_image($p['image'], 'products');
-                    $stmtUpP = $pdo->prepare("UPDATE products SET image = ? WHERE id = ?");
-                    $stmtUpP->execute([$newImg, $pid]);
-                    $updatedProducts++;
+                $img = $p['image'];
+
+                $needsFix = empty($img) 
+                    || str_contains($img, 'default') 
+                    || str_contains($img, 'unsplash') 
+                    || str_contains($img, 'photo-1546069901-ba9599a7e63c')
+                    || str_starts_with($img, 'http://') 
+                    || str_starts_with($img, 'https://');
+
+                if ($needsFix) {
+                    $targetUrl = $this->getFoodImageByName($p['name']);
+                    $newImg = download_and_save_image($targetUrl, 'products');
+                    if (!empty($newImg)) {
+                        $stmtUpP = $pdo->prepare("UPDATE products SET image = ? WHERE id = ?");
+                        $stmtUpP->execute([$newImg, $pid]);
+                        $updatedProducts++;
+                    }
                 }
             }
 
-            $this->successResponse("Sukses! Berhasil mengunduh foto remote ke penyimpanan lokal server.", [
+            $this->successResponse("Sukses! Berhasil mengunduh foto produk asli dan spesifik ke penyimpanan lokal server.", [
                 'updated_stores'   => $updatedStores,
                 'updated_products' => $updatedProducts
             ]);
         } catch (\Throwable $e) {
             $this->errorResponse("Gagal memperbaiki gambar: " . $e->getMessage());
         }
+    }
+
+    private function getFoodImageByName(string $name): string
+    {
+        $nameLower = strtolower($name);
+
+        if (str_contains($nameLower, 'nasi goreng') || str_contains($nameLower, 'nasgor')) {
+            return 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=500&q=80';
+        }
+        if (str_contains($nameLower, 'kwetiau') || str_contains($nameLower, 'kwetiew')) {
+            return 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=500&q=80';
+        }
+        if (str_contains($nameLower, 'mie') || str_contains($nameLower, 'ramen') || str_contains($nameLower, 'noodle')) {
+            return 'https://images.unsplash.com/photo-1612927601601-6638404737ce?w=500&q=80';
+        }
+        if (str_contains($nameLower, 'ayam') || str_contains($nameLower, 'geprek') || str_contains($nameLower, 'chicken')) {
+            return 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=500&q=80';
+        }
+        if (str_contains($nameLower, 'seblak')) {
+            return 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=500&q=80';
+        }
+        if (str_contains($nameLower, 'bakso') || str_contains($nameLower, 'baso')) {
+            return 'https://images.unsplash.com/photo-1541696432-82c6da8ce7bf?w=500&q=80';
+        }
+        if (str_contains($nameLower, 'sate') || str_contains($nameLower, 'satay')) {
+            return 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80';
+        }
+        if (str_contains($nameLower, 'martabak') || str_contains($nameLower, 'cake') || str_contains($nameLower, 'cheese')) {
+            return 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&q=80';
+        }
+        if (str_contains($nameLower, 'es') || str_contains($nameLower, 'kopi') || str_contains($nameLower, 'tea') || str_contains($nameLower, 'drink') || str_contains($nameLower, 'latte')) {
+            return 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=500&q=80';
+        }
+        if (str_contains($nameLower, 'wonton') || str_contains($nameLower, 'dimsum')) {
+            return 'https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=500&q=80';
+        }
+        if (str_contains($nameLower, 'burger')) {
+            return 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80';
+        }
+        if (str_contains($nameLower, 'fries') || str_contains($nameLower, 'kentang')) {
+            return 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=500&q=80';
+        }
+        if (str_contains($nameLower, 'rendang') || str_contains($nameLower, 'padang') || str_contains($nameLower, 'nasi timbel') || str_contains($nameLower, 'liwet')) {
+            return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80';
+        }
+
+        return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80';
     }
 }
 
