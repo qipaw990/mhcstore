@@ -201,3 +201,9 @@ Router::group(['prefix' => '/admin', 'middleware' => ['AdminMiddleware']], funct
     Router::post('/topups/manual-cancel', [AdminController::class, 'manualCancelTopup']);
 });
 
+// API Extension Scraper Import Route
+Router::post('/api/import-store', [\App\Controllers\ApiController::class, 'importStore']);
+Router::options('/api/import-store', [\App\Controllers\ApiController::class, 'importStore']);
+
+
+

@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "CicalengkaGO - GrabFood Store & Menu Scraper",
+  "version": "1.0.0",
+  "description": "Ekstensi Chrome untuk meng-scrape toko dan menu dari GrabFood & mengimpornya langsung ke CicalengkaGO.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://food.grab.com/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "CicalengkaGO Scraper"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://food.grab.com/*"],
+      "js": ["content.js"]
+    }
+  ]
+}

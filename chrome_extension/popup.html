@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>CicalengkaGO Scraper</title>
+  <style>
+    :root {
+      --primary: #00AA5B;
+      --primary-dark: #008748;
+      --bg: #0F172A;
+      --card-bg: #1E293B;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --border: #334155;
+    }
+    body {
+      width: 340px;
+      margin: 0;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      box-sizing: border-box;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .header img {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .header span {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: block;
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+    input {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background-color: var(--card-bg);
+      color: var(--text);
+      font-size: 12px;
+      box-sizing: border-box;
+      outline: none;
+    }
+    input:focus {
+      border-color: var(--primary);
+    }
+    .btn {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      background-color: var(--primary);
+      color: #FFFFFF;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background-color 0.2s;
+    }
+    .btn:hover {
+      background-color: var(--primary-dark);
+    }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      margin-top: 8px;
+    }
+    .btn-secondary:hover {
+      background-color: var(--border);
+    }
+    .status-card {
+      margin-top: 14px;
+      padding: 10px;
+      border-radius: 8px;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      font-size: 11.5px;
+      display: none;
+    }
+    .status-card.active {
+      display: block;
+    }
+    .status-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .status-text {
+      color: var(--text-muted);
+      word-break: break-word;
+    }
+    .item-list {
+      max-height: 120px;
+      overflow-y: auto;
+      margin-top: 8px;
+      padding: 0;
+      list-style: none;
+      border-top: 1px solid var(--border);
+      padding-top: 6px;
+    }
+    .item-list li {
+      font-size: 10.5px;
+      color: var(--text);
+      padding: 3px 0;
+      display: flex;
+      justify-content: space-between;
+    }
+    .badge {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      background-color: #0284C7;
+      color: #FFFFFF;
+    }
+    .badge.success { background-color: var(--primary); }
+    .badge.error { background-color: #EF4444; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div style="width:28px;height:28px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#fff;font-size:14px;">CGO</div>
+    <div>
+      <h2>CicalengkaGO Scraper</h2>
+      <span>GrabFood Store & Menu Importer</span>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="apiUrl">URL Endpoint CicalengkaGO</label>
+    <input type="text" id="apiUrl" value="http://localhost/CicalengkaGO/api/import-store">
+  </div>
+
+  <button id="scrapeBtn" class="btn">
+    <span>🚀 Scrape & Impor Toko Ini</span>
+  </button>
+
+  <button id="downloadJsonBtn" class="btn btn-secondary" style="display:none;">
+    <span>💾 Unduh JSON Hasil Scrape</span>
+  </button>
+
+  <div id="statusCard" class="status-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="status-title" id="statusTitle">Menunggu...</div>
+      <span id="statusBadge" class="badge">READY</span>
+    </div>
+    <div class="status-text" id="statusText">Buka halaman resto GrabFood lalu klik tombol Scrape di atas.</div>
+    <ul id="itemList" class="item-list" style="display:none;"></ul>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
