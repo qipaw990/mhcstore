@@ -201,9 +201,11 @@ Router::group(['prefix' => '/admin', 'middleware' => ['AdminMiddleware']], funct
     Router::post('/topups/manual-cancel', [AdminController::class, 'manualCancelTopup']);
 });
 
-// API Extension Scraper Import Route
+// API Extension Scraper Import Route & Schedule Filler
 Router::post('/api/import-store', [\App\Controllers\ApiController::class, 'importStore']);
 Router::options('/api/import-store', [\App\Controllers\ApiController::class, 'importStore']);
+Router::get('/api/fill-schedules', [\App\Controllers\ApiController::class, 'fillSchedules']);
+Router::get('/fill-schedules', [\App\Controllers\ApiController::class, 'fillSchedules']);
 
 
 

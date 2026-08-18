@@ -407,5 +407,39 @@ class ApiController extends Controller
             $this->errorResponse("Gagal mengimpor toko: " . $e->getMessage());
         }
     }
+
+    public function fillSchedules(): void
+    {
+        @ini_set('display_errors', '0');
+        if (ob_get_length()) {
+            @ob_clean();
+        }
+
+        try {
+            $pdo = \App\Core\Database::getPdo();
+            $stores = $pdo->query('SELECT id, name FROM stores')->fetchAll(\PDO::FETCH_ASSOC);
+
+            $count = 0;
+            foreach ($stores as $s) {
+                $sid = (int)$s['id'];
+                for ($d = 0; $d <= 6; $d++) {
+                    $stmt = $pdo->prepare('SELECT id FROM store_schedules WHERE store_id = ? AND day_of_week = ? LIMIT 1');
+                    $stmt->execute([$sid, $d]);
+                    if (!$stmt->fetch()) {
+                        $ins = $pdo->prepare("INSERT INTO store_schedules (store_id, day_of_week, opening_time, closing_time) VALUES (?, ?, '08:00:00', '22:00:00')");
+                        $ins->execute([$sid, $d]);
+                        $count++;
+                    }
+                }
+            }
+
+            $this->successResponse("Berhasil memperbarui jadwal toko di database! Total " . count($stores) . " toko kini memiliki jam buka (08:00) dan tutup (22:00).", [
+                'total_stores'    => count($stores),
+                'schedules_added' => $count
+            ]);
+        } catch (\Throwable $e) {
+            $this->errorResponse("Gagal mengisi jadwal: " . $e->getMessage());
+        }
+    }
 }
 
