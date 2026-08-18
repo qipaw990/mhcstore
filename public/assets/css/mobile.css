@@ -2913,6 +2913,169 @@ div[style*="border-radius: 18px"] .d-flex {
   padding-bottom: 85px !important;
 }
 
+/* ============================================================
+   RESPONSIVE LAYOUT FIXES FOR SMALLER MOBILE DEVICES (< 380px)
+   Mencegah UI gepeng, teks terpotong, & elemen menumpuk
+   ============================================================ */
+
+/* Global Anti-Overflow Rules */
+.mobile-app-wrapper {
+  overflow-x: hidden !important;
+}
+.mobile-app-wrapper *,
+.mobile-app-wrapper *::before,
+.mobile-app-wrapper *::after {
+  max-width: 100%;
+}
+
+@media (max-width: 380px) {
+  /* Header adjustments for small mobile screens */
+  .gojek-header {
+    padding: 6px 10px 8px !important;
+  }
+  .gojek-top-row {
+    gap: 4px !important;
+  }
+  .gojek-location-btn {
+    max-width: 80px !important;
+    padding: 2px 6px !important;
+    height: 26px !important;
+  }
+  .gojek-location-text {
+    max-width: 48px !important;
+    font-size: 9.5px !important;
+  }
+  .gojek-icon-btn {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 12px !important;
+  }
+
+  /* Subpage Header */
+  .app-subpage-header {
+    padding: 10px 12px !important;
+    min-height: 50px !important;
+  }
+  .app-subpage-header h6 {
+    font-size: 13.5px !important;
+  }
+
+  /* CicalengkaPay Card */
+  .gopay-super-card {
+    margin: 8px 10px !important;
+    padding: 10px 12px !important;
+    border-radius: 14px !important;
+  }
+  .gopay-amount {
+    font-size: 14px !important;
+  }
+  .gopay-actions-grid {
+    gap: 6px !important;
+  }
+  .gopay-action-icon {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 11.5px !important;
+    border-radius: 8px !important;
+  }
+  .gopay-action-label {
+    font-size: 8.5px !important;
+  }
+
+  /* Grid Layanan Kategori 4 Kolom */
+  .gojek-services-grid {
+    gap: 10px 4px !important;
+  }
+  .gojek-service-squircle {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 16px !important;
+    border-radius: 11px !important;
+  }
+  .gojek-service-label {
+    font-size: 8.5px !important;
+  }
+
+  /* Product Cards Grid */
+  .gofood-products-grid {
+    gap: 10px !important;
+    padding: 0 10px 16px !important;
+  }
+  .gofood-prod-img {
+    height: 84px !important;
+  }
+  .gofood-prod-body {
+    padding: 8px 10px 10px !important;
+  }
+  .gofood-prod-name {
+    font-size: 11px !important;
+    min-height: 28px !important;
+  }
+
+  /* Store Cards */
+  .gofood-store-card {
+    min-width: 135px !important;
+    max-width: 135px !important;
+  }
+  .gofood-store-img-box {
+    height: 76px !important;
+  }
+  .gofood-store-body {
+    padding: 8px 10px 10px !important;
+  }
+
+  /* Store detail product row */
+  div[style*="border-radius: 14px"] img[style*="width: 70px"] {
+    width: 56px !important;
+    height: 56px !important;
+  }
+
+  /* Floating Cart Pill */
+  .floating-cart-pill {
+    width: calc(100% - 16px) !important;
+    padding: 6px 12px !important;
+    bottom: calc(48px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .floating-cart-price {
+    font-size: 11.5px !important;
+  }
+  .cart-qty-badge {
+    font-size: 8.5px !important;
+    padding: 2px 6px !important;
+  }
+
+  /* Bottom Navigation */
+  .gojek-bottom-nav,
+  .mobile-bottom-nav,
+  .driver-bottom-nav {
+    height: calc(42px + env(safe-area-inset-bottom, 0px)) !important;
+    min-height: calc(42px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .gojek-nav-item i,
+  .nav-tab-item i {
+    font-size: 15px !important;
+  }
+  .gojek-nav-item span,
+  .nav-tab-item span {
+    font-size: 8px !important;
+  }
+}
+
+@media (max-width: 340px) {
+  /* Extra compact for 320px devices */
+  .gojek-location-btn {
+    display: none !important;
+  }
+  .gofood-products-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  .payment-option {
+    padding: 8px 10px !important;
+  }
+}
+
+
 
 
 
