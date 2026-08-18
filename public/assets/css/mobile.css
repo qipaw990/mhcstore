@@ -2885,9 +2885,7 @@ div[style*="border-radius: 18px"] .d-flex {
 
 /* 1. Reset Leaflet container & force box-sizing */
 .leaflet-container,
-.leaflet-container *,
-.leaflet-marker-icon,
-.leaflet-marker-icon * {
+.leaflet-container * {
   box-sizing: border-box !important;
 }
 
@@ -2897,10 +2895,9 @@ div[style*="border-radius: 18px"] .d-flex {
   max-height: none !important;
 }
 
-/* 3. Hide all distorted Leaflet shadow PNG elements */
+/* 3. Hide all Leaflet shadow elements */
 .leaflet-shadow-pane,
 .leaflet-marker-shadow,
-.leaflet-pane > .leaflet-shadow-pane,
 img.leaflet-marker-shadow {
   display: none !important;
   opacity: 0 !important;
@@ -2911,19 +2908,17 @@ img.leaflet-marker-shadow {
   background: transparent !important;
 }
 
-/* 4. Default Leaflet Image Markers (img.leaflet-marker-icon) */
+/* 4. Default Leaflet Image Markers — keep at natural size, no distortion */
 img.leaflet-marker-icon {
   display: block !important;
   max-width: none !important;
   max-height: none !important;
-  width: 25px !important;
-  height: 41px !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
 }
 
-/* 5. Custom DivIcon Outer Containers (div.leaflet-marker-icon & div.leaflet-div-icon) */
+/* 5. CRITICAL: Override Leaflet's built-in white background on div-based markers */
 div.leaflet-marker-icon,
 div.leaflet-div-icon {
   background: transparent !important;
@@ -2935,21 +2930,11 @@ div.leaflet-div-icon {
   padding: 0 !important;
 }
 
-/* 6. Enforce 100% width, height & 1:1 Aspect Ratio on inner elements of DivIcon */
+/* 6. Inner div — do NOT force 100% width/height, let inline px sizes control it */
 div.leaflet-marker-icon > div,
 div.leaflet-div-icon > div {
-  width: 100% !important;
-  height: 100% !important;
-  min-width: 100% !important;
-  min-height: 100% !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
-  aspect-ratio: 1 / 1 !important;
-  box-sizing: border-box !important;
   flex-shrink: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  box-sizing: border-box !important;
 }
 
 /* Driver Page Layout Padding Fix (Mencegah konten terpotong Bottom Nav) */

@@ -6,9 +6,7 @@
    1. Leaflet Map Safeguards & Custom Pin Badges
    -------------------------------------------------------------------------- */
 .leaflet-container,
-.leaflet-container *,
-.leaflet-marker-icon,
-.leaflet-marker-icon * {
+.leaflet-container * {
     box-sizing: border-box !important;
 }
 
@@ -18,8 +16,6 @@
     max-height: none !important;
 }
 
-#driver-radar-map .leaflet-shadow-pane,
-#driver-radar-map .leaflet-marker-shadow,
 .leaflet-shadow-pane,
 .leaflet-marker-shadow,
 img.leaflet-marker-shadow {
@@ -36,16 +32,13 @@ img.leaflet-marker-icon {
     display: block !important;
     max-width: none !important;
     max-height: none !important;
-    width: 25px !important;
-    height: 41px !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
 }
 
 div.leaflet-marker-icon,
-div.leaflet-div-icon,
-#driver-radar-map div.leaflet-marker-icon {
+div.leaflet-div-icon {
     background: transparent !important;
     background-color: transparent !important;
     border: none !important;
@@ -57,18 +50,8 @@ div.leaflet-div-icon,
 
 div.leaflet-marker-icon > div,
 div.leaflet-div-icon > div {
-    width: 100% !important;
-    height: 100% !important;
-    min-width: 100% !important;
-    min-height: 100% !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
-    aspect-ratio: 1 / 1 !important;
-    box-sizing: border-box !important;
     flex-shrink: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+    box-sizing: border-box !important;
 }
 
 .ccg-driver-pin {
