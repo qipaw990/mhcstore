@@ -154,16 +154,38 @@
             CicalengkaGO v3.4.0 • Platform Layanan Lokal Cicalengka
         </div>
     <?php else: ?>
-        <div class="text-center py-5">
-            <div class="rounded-circle bg-light text-muted d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 58px; height: 58px; font-size: 24px;">
-                <i class="bi bi-person-lock text-muted"></i>
+        <div class="bg-white border shadow-sm p-4 my-2 text-center" style="border-radius: 20px; border-color: #E2E8F0 !important;">
+            <!-- Icon Squircle Illustration -->
+            <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 shadow-2xs" style="width: 72px; height: 72px; background: #FEE2E2; color: #EE2737;">
+                <i class="bi bi-person-badge-fill" style="font-size: 32px;"></i>
             </div>
-            <h6 class="fw-bold mb-1.5" style="color: var(--gojek-charcoal); font-size: 13.5px;">Masuk ke Akun CicalengkaGO</h6>
-            <p class="text-muted mb-3.5" style="font-size: 11px; max-width: 280px; margin-left: auto; margin-right: auto; line-height: 1.5;">Masuk untuk melihat pesanan, saldo CicalengkaPay, dan promo khusus Anda.</p>
-            <div class="d-grid gap-2.5">
-                <a href="<?= $baseUrl ?>/login" class="btn btn-gojek-green py-2.5" style="background: linear-gradient(135deg, #EE2737, #C61524) !important; color:#FFFFFF !important; border-radius:9999px; font-weight:800; font-size:12.5px; text-decoration:none;">Masuk Sekarang</a>
-                <a href="<?= $baseUrl ?>/register" class="btn btn-outline-danger rounded-pill fw-bold py-2.5" style="border-color:#EE2737; color:#EE2737; font-size:12.5px;">Daftar Akun Baru</a>
+            
+            <h5 class="fw-extrabold text-dark mb-1.5" style="font-size: 15px; letter-spacing: -0.3px; color: #0F172A;">Selamat Datang di CicalengkaGO!</h5>
+            <p class="text-secondary mb-4 mx-auto" style="font-size: 11px; max-width: 290px; line-height: 1.5; font-weight: 500;">
+                Masuk ke akun Anda untuk menikmati transaksi pesan antar makanan, saldo CicalengkaPay, dan promo menarik setiap hari.
+            </p>
+            
+            <div class="d-flex flex-column gap-2 mb-4 mx-auto" style="max-width: 300px;">
+                <a href="<?= $baseUrl ?>/login" class="btn text-white fw-extrabold shadow-2xs d-flex align-items-center justify-content-center gap-2 py-2.5 text-decoration-none" style="background: linear-gradient(135deg, #EE2737, #C61524); border-radius: 9999px; font-size: 13px; box-shadow: 0 4px 12px rgba(238, 39, 55, 0.25);">
+                    <i class="bi bi-box-arrow-in-right" style="font-size: 15px;"></i> Masuk Sekarang
+                </a>
+                <a href="<?= $baseUrl ?>/register" class="btn btn-light fw-bold text-dark d-flex align-items-center justify-content-center gap-2 py-2 text-decoration-none" style="background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 9999px; font-size: 12px;">
+                    <i class="bi bi-person-plus-fill text-danger" style="font-size: 14px;"></i> Daftar Akun Baru
+                </a>
             </div>
+
+            <!-- Features Grid -->
+            <div class="pt-3 border-top d-flex justify-content-center align-items-center gap-3 text-muted" style="font-size: 10px; font-weight: 600;">
+                <span class="d-flex align-items-center gap-1"><i class="bi bi-lightning-charge-fill text-warning"></i> Cepat</span>
+                <span>•</span>
+                <span class="d-flex align-items-center gap-1"><i class="bi bi-shield-check text-success"></i> Aman</span>
+                <span>•</span>
+                <span class="d-flex align-items-center gap-1"><i class="bi bi-tags-fill text-danger"></i> Hemat</span>
+            </div>
+        </div>
+
+        <div class="text-center text-muted py-3" style="font-size: 10px; font-weight: 500;">
+            CicalengkaGO v3.5.0 • Platform Layanan Lokal Cicalengka
         </div>
     <?php endif; ?>
 </div>
