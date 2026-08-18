@@ -39,6 +39,7 @@ img.leaflet-marker-icon {
 
 div.leaflet-marker-icon,
 div.leaflet-div-icon {
+    position: relative !important;
     background: transparent !important;
     background-color: transparent !important;
     border: none !important;
@@ -46,12 +47,6 @@ div.leaflet-div-icon {
     outline: none !important;
     overflow: visible !important;
     padding: 0 !important;
-}
-
-div.leaflet-marker-icon > div,
-div.leaflet-div-icon > div {
-    flex-shrink: 0 !important;
-    box-sizing: border-box !important;
 }
 
 .ccg-driver-pin {

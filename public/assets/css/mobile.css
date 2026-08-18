@@ -2921,6 +2921,7 @@ img.leaflet-marker-icon {
 /* 5. CRITICAL: Override Leaflet's built-in white background on div-based markers */
 div.leaflet-marker-icon,
 div.leaflet-div-icon {
+  position: relative !important;
   background: transparent !important;
   background-color: transparent !important;
   border: none !important;
@@ -2928,13 +2929,6 @@ div.leaflet-div-icon {
   outline: none !important;
   overflow: visible !important;
   padding: 0 !important;
-}
-
-/* 6. Inner div — do NOT force 100% width/height, let inline px sizes control it */
-div.leaflet-marker-icon > div,
-div.leaflet-div-icon > div {
-  flex-shrink: 0 !important;
-  box-sizing: border-box !important;
 }
 
 /* Driver Page Layout Padding Fix (Mencegah konten terpotong Bottom Nav) */
