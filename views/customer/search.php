@@ -1,15 +1,15 @@
 <!-- Gojek Search Header Bar -->
-<div class="bg-white border-bottom sticky-top shadow-2xs" style="z-index: 1020; border-bottom-color: #E2E8F0 !important; padding: 6px 10px 6px !important;">
-    <div class="d-flex align-items-center gap-1.5 w-100">
-        <a href="<?= $baseUrl ?>" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-2xs" style="width: 28px; height: 28px; border: 1px solid #E2E8F0; background: #F8FAFC; padding: 0;">
-            <i class="bi bi-arrow-left text-dark" style="font-size: 12px;"></i>
+<div class="bg-white border-bottom sticky-top shadow-2xs" style="z-index: 1020; border-bottom-color: #E2E8F0 !important; padding: 8px 12px !important;">
+    <div class="d-flex align-items-center gap-2 w-100">
+        <a href="<?= $baseUrl ?>" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-2xs" style="width: 34px; height: 34px; border: 1px solid #E2E8F0; background: #F8FAFC; padding: 0;">
+            <i class="bi bi-arrow-left text-dark" style="font-size: 14px;"></i>
         </a>
         <form action="<?= $baseUrl ?>/search" method="GET" class="flex-grow-1 m-0 position-relative min-w-0">
-            <div class="m-0 d-flex align-items-center gap-1.5 px-2.5 rounded-pill overflow-hidden" style="background: #F1F5F9; border: 1px solid #CBD5E1; height: 32px;">
-                <i class="bi bi-search text-danger flex-shrink-0" style="font-size: 11.5px;"></i>
-                <input type="text" name="q" id="search-input" value="<?= htmlspecialchars($query ?? '') ?>" placeholder="Cari sate, geprek, martabak, sembako..." autocomplete="off" style="border: none; background: transparent; outline: none; font-size: 11px; width: 100%; font-weight: 500; color: #1E293B;">
+            <div class="m-0 d-flex align-items-center gap-2 px-3 rounded-pill" style="background: #F1F5F9; border: 1px solid #CBD5E1; height: 36px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);">
+                <i class="bi bi-search flex-shrink-0" style="font-size: 13px; color: #64748B;"></i>
+                <input type="text" name="q" id="search-input" value="<?= htmlspecialchars($query ?? '') ?>" placeholder="Cari sate, geprek, martabak, sembako..." autocomplete="off" style="border: none; background: transparent; outline: none; font-size: 12px; font-weight: 500; color: #0F172A; width: 100%; height: 100%; padding: 0; line-height: normal;">
                 <?php if (!empty($query)): ?>
-                    <a href="<?= $baseUrl ?>/search<?= !empty($_GET['module_id']) ? '?module_id=' . (int)$_GET['module_id'] : '' ?>" class="text-muted text-decoration-none ms-1 flex-shrink-0" title="Hapus"><i class="bi bi-x-circle-fill text-secondary" style="font-size: 12px;"></i></a>
+                    <a href="<?= $baseUrl ?>/search<?= !empty($_GET['module_id']) ? '?module_id=' . (int)$_GET['module_id'] : '' ?>" class="text-muted text-decoration-none ms-1 flex-shrink-0 d-flex align-items-center" title="Hapus"><i class="bi bi-x-circle-fill text-secondary" style="font-size: 14px;"></i></a>
                 <?php endif; ?>
             </div>
             <?php if (!empty($_GET['module_id'])): ?>
