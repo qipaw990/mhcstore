@@ -65,24 +65,24 @@ async function runBatchScrape(stores, apiUrl) {
         break;
       }
 
-      // Inject content script to be safe
-      try {
-        await chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          files: ['content.js']
-        });
-      } catch (e) {}
+      // Inject content script
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['content.js']
+      }).catch(() => {});
 
-      // Send SCRAPE_DATA request
-      const scrapedData = await new Promise((resolve) => {
-        chrome.tabs.sendMessage(tab.id, { action: 'SCRAPE_DATA' }, (res) => {
-          if (res && res.success && res.data) {
-            resolve(res.data);
-          } else {
-            resolve(null);
+      // Execute extraction directly in tab DOM
+      const results = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: () => {
+          if (typeof extractGrabFoodData === 'function') {
+            return extractGrabFoodData();
           }
-        });
+          return null;
+        }
       });
+
+      const scrapedData = results && results[0] ? results[0].result : null;
 
       // Close tab
       await chrome.tabs.remove(tab.id).catch(() => {});

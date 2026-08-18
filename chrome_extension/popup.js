@@ -123,28 +123,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab) throw new Error("Tidak menemukan tab aktif.");
-      if (!tab.url.includes("food.grab.com")) {
+      if (!tab.url || !tab.url.includes("food.grab.com")) {
         throw new Error("Harap buka halaman resto GrabFood terlebih dahulu (food.grab.com)!");
       }
 
-      chrome.tabs.sendMessage(tab.id, { action: 'SCRAPE_DATA' }, async (response) => {
-        if (chrome.runtime.lastError || !response || !response.success) {
-          await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content.js']
-          });
-          
-          chrome.tabs.sendMessage(tab.id, { action: 'SCRAPE_DATA' }, (resp2) => {
-            if (resp2 && resp2.success) {
-              processScrapedData(resp2.data, apiUrl);
-            } else {
-              handleError("Gagal membaca DOM GrabFood. Pastikan halaman sudah selesai ter-load.");
-            }
-          });
-        } else {
-          processScrapedData(response.data, apiUrl);
+      // Inject content script
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['content.js']
+      }).catch(() => {});
+
+      // Execute extraction function directly in tab DOM
+      const results = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: () => {
+          if (typeof extractGrabFoodData === 'function') {
+            return extractGrabFoodData();
+          }
+          return null;
         }
       });
+
+      const data = results && results[0] ? results[0].result : null;
+
+      if (data && (data.name || (data.products && data.products.length > 0))) {
+        processScrapedData(data, apiUrl);
+      } else {
+        handleError("Gagal membaca DOM GrabFood. Pastikan Anda berada di halaman resto GrabFood yang valid.");
+      }
     } catch (err) {
       handleError(err.message);
     }
