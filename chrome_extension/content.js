@@ -360,8 +360,45 @@ function getSmartFoodPhoto(name) {
   return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80';
 }
 
+// Extract all store URLs on the listing page
+function extractStoreLinksFromListing() {
+  const storeUrls = new Set();
+
+  // 1. Scan DOM <a> elements with /restaurant/
+  const links = document.querySelectorAll('a[href*="/restaurant/"], a[href*="/store/"]');
+  links.forEach(a => {
+    let href = a.getAttribute('href');
+    if (!href) return;
+    if (href.startsWith('/')) href = 'https://food.grab.com' + href;
+    const cleanUrl = href.split('?')[0];
+    if (cleanUrl.includes('/restaurant/')) {
+      storeUrls.add(cleanUrl);
+    }
+  });
+
+  // 2. Scan window.__NEXT_DATA__ or script tags for restaurant URLs
+  const scripts = document.querySelectorAll('script');
+  scripts.forEach(s => {
+    const txt = s.textContent || '';
+    if (txt.includes('/restaurant/')) {
+      const matches = txt.match(/https:\/\/food\.grab\.com\/[a-z]{2}\/[a-z]{2}\/restaurant\/[a-zA-Z0-9\-_]+/g);
+      if (matches) {
+        matches.forEach(m => storeUrls.add(m));
+      }
+    }
+  });
+
+  return Array.from(storeUrls);
+}
+
 // Listen for requests from popup.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'GET_LISTING_STORES') {
+    const stores = extractStoreLinksFromListing();
+    sendResponse({ success: true, stores: stores });
+    return true;
+  }
+
   if (request.action === 'SCRAPE_DATA') {
     // Auto-scroll to bottom and back to top to trigger GrabFood lazy loading images
     const scrollStep = Math.max(200, Math.floor(document.body.scrollHeight / 5));
