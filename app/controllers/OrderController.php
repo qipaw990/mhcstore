@@ -68,7 +68,6 @@ class OrderController extends Controller
         $data = $this->getPost();
         $paymentMethod = $data['payment_method'] ?? 'cod';
 
-        // Build delivery address array
         $deliveryAddress = [
             'contact_name'  => sanitize($data['contact_name'] ?? $_SESSION['user']['name']),
             'contact_phone' => sanitize($data['contact_phone'] ?? $_SESSION['user']['phone']),
@@ -76,53 +75,78 @@ class OrderController extends Controller
             'lat'           => (float)($data['latitude'] ?? -6.9840),
             'lng'           => (float)($data['longitude'] ?? 107.8340),
             'road'          => sanitize($data['road'] ?? ''),
-            'house'         => sanitize($data['house'] ?? '')
+            'house'         => sanitize($data['house'] ?? ''),
         ];
 
         try {
-            $result = $this->orderService->createOrderFromCart($userId, [
-                'delivery_address' => $deliveryAddress,
-                'payment_method'   => $paymentMethod,
-                'coupon_code'      => sanitize($data['coupon_code'] ?? ''),
-                'order_notes'      => sanitize($data['order_notes'] ?? ''),
-                'distance_km'      => (float)($data['distance_km'] ?? 1.5),
-                'order_type'       => $data['order_type'] ?? 'delivery'
-            ]);
+            $cartData   = $this->cartModel->getUserCart($userId);
+            $stores     = $cartData['stores'] ?? [];
+
+            if (empty($stores)) {
+                $this->errorResponse('Keranjang belanja Anda kosong.');
+                return;
+            }
+
+            $allOrderCodes = [];
+            $grandTotal    = 0.0;
+
+            // Create one order per store
+            foreach ($stores as $storeGroup) {
+                $result = $this->orderService->createOrderFromCart($userId, [
+                    'delivery_address' => $deliveryAddress,
+                    'payment_method'   => $paymentMethod,
+                    'coupon_code'      => sanitize($data['coupon_code'] ?? ''),
+                    'order_notes'      => sanitize($data['order_notes'] ?? ''),
+                    'distance_km'      => (float)($data['distance_km'] ?? 1.5),
+                    'order_type'       => $data['order_type'] ?? 'delivery',
+                    'store_id'         => $storeGroup['store_id'],   // scoped to this store
+                ]);
+
+                $allOrderCodes[] = $result['order_code'];
+                $grandTotal     += (float)($result['total'] ?? 0);
+            }
+
+            $firstCode   = $allOrderCodes[0];
+            $multiOrder  = count($allOrderCodes) > 1;
 
             $responseData = [
-                'order_code'     => $result['order_code'],
-                'order_id'       => $result['order_id'],
+                'order_code'     => $firstCode,
+                'order_id'       => null,
+                'order_codes'    => $allOrderCodes,
+                'store_count'    => count($allOrderCodes),
                 'payment_method' => $paymentMethod,
-                'redirect'       => 'orders/' . $result['order_code'] . '/tracking'
+                'redirect'       => $multiOrder
+                    ? 'orders'
+                    : 'orders/' . $firstCode . '/tracking',
             ];
 
-            // If online payment via Midtrans Snap
+            // Online payment: 1 Snap token covering grand total of all stores
             if ($paymentMethod === 'midtrans') {
-                $user = auth_user();
-                $snapOrderId = $result['order_code'] . '-' . time() . '-' . rand(100, 999);
-                $snapParams = [
+                $user        = auth_user();
+                $appConfig   = require APP_PATH . '/config/app.php';
+                $publicUrl   = rtrim($appConfig['public_url'] ?? '', '/');
+                $snapOrderId = 'MULTI-' . time() . '-' . rand(100, 999);
+                $snapParams  = [
                     'transaction_details' => [
                         'order_id'     => $snapOrderId,
-                        'gross_amount' => (int)round($result['total'])
+                        'gross_amount' => (int)round($grandTotal)
                     ],
                     'customer_details' => [
                         'first_name' => $deliveryAddress['contact_name'] ?: ($user['name'] ?? 'Pelanggan'),
                         'email'      => $user['email'] ?? 'customer@cicalengkago.id',
-                        'phone'      => $deliveryAddress['contact_phone'] ?: ($user['phone'] ?? '081234567890')
+                        'phone'      => $deliveryAddress['contact_phone'] ?: ($user['phone'] ?? '081234567890'),
                     ],
-                    'item_details' => [
-                        [
-                            'id'       => 'ORDER_' . $result['order_code'],
-                            'price'    => (int)round($result['total']),
-                            'quantity' => 1,
-                            'name'     => 'Pesanan CicalengkaGO #' . $result['order_code']
-                        ]
-                    ],
+                    'item_details' => array_map(fn($code) => [
+                        'id'       => 'ORDER_' . $code,
+                        'price'    => (int)round($grandTotal / count($allOrderCodes)),
+                        'quantity' => 1,
+                        'name'     => 'Pesanan CicalengkaGO #' . $code,
+                    ], $allOrderCodes),
                     'callbacks' => [
-                        'finish'   => $publicUrl . '/orders/' . $result['order_code'] . '/tracking',
-                        'error'    => $publicUrl . '/orders/' . $result['order_code'] . '/tracking',
-                        'unfinish' => $publicUrl . '/orders/' . $result['order_code'] . '/tracking'
-                    ]
+                        'finish'   => $publicUrl . '/orders',
+                        'error'    => $publicUrl . '/orders',
+                        'unfinish' => $publicUrl . '/orders',
+                    ],
                 ];
 
                 $snapResult = $this->midtransService->createSnapToken($snapParams);
@@ -131,7 +155,12 @@ class OrderController extends Controller
                 $responseData['redirect_url'] = $snapResult['redirect_url'];
             }
 
-            $this->successResponse('Pesanan berhasil dibuat!', $responseData);
+            $this->successResponse(
+                count($allOrderCodes) > 1
+                    ? count($allOrderCodes) . ' pesanan dari toko berbeda berhasil dibuat!'
+                    : 'Pesanan berhasil dibuat!',
+                $responseData
+            );
         } catch (Exception $e) {
             $this->errorResponse($e->getMessage());
         }

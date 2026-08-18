@@ -31,28 +31,35 @@ class OrderService
             // Auto cancel any unclaimed orders older than 60 seconds
             \App\Models\Order::autoCancelUnclaimedOrders();
 
-            // Restrict 1 active order per customer
-            $activeOrder = Database::fetchOne(
-                "SELECT id, order_code FROM `orders` WHERE `customer_id` = ? AND `order_status` NOT IN ('delivered', 'canceled') LIMIT 1",
-                [$customerId]
-            );
-            if ($activeOrder) {
-                throw new Exception("Anda masih memiliki pesanan aktif (#{$activeOrder['order_code']}) yang sedang berlangsung. Harap selesaikan atau tunggu pesanan sebelumnya selesai sebelum membuat pesanan baru.");
-            }
+            // Determine which store this sub-order is for
+            $targetStoreId = isset($data['store_id']) ? (int)$data['store_id'] : null;
 
             $cartData = $this->cartModel->getUserCart($customerId);
             if (empty($cartData['items'])) {
                 throw new Exception("Keranjang belanja kosong.");
             }
 
-            $storeId = $cartData['store_id'];
+            // Filter items to only the target store
+            if ($targetStoreId) {
+                $storeItems = array_filter($cartData['items'], fn($i) => (int)$i['store_id'] === $targetStoreId);
+                $storeId    = $targetStoreId;
+            } else {
+                $storeItems = $cartData['items'];
+                $storeId    = $cartData['store_id'];
+            }
+
+            $storeItems = array_values($storeItems);
+            if (empty($storeItems)) {
+                throw new Exception("Tidak ada item untuk toko yang dipilih.");
+            }
+
             $store = (new Store())->find($storeId);
             if (!$store) {
                 throw new Exception("Toko tidak ditemukan.");
             }
 
-            // Validasi stok semua item sebelum order dibuat
-            foreach ($cartData['items'] as $item) {
+            // Validasi stok semua item
+            foreach ($storeItems as $item) {
                 $product = Database::fetchOne(
                     "SELECT id, name, stock, status FROM `products` WHERE `id` = ? LIMIT 1",
                     [(int)$item['product_id']]
@@ -65,11 +72,11 @@ class OrderService
                 }
             }
 
-            $orderAmount = (float)$cartData['subtotal'];
-            
-            // Calculate accurate distance from GPS Coordinates
-            $destLat = (float)($data['delivery_address']['lat'] ?? -6.9840);
-            $destLng = (float)($data['delivery_address']['lng'] ?? 107.8340);
+            $orderAmount = array_sum(array_column($storeItems, 'item_total'));
+
+            // Calculate distance-based delivery fee
+            $destLat  = (float)($data['delivery_address']['lat'] ?? -6.9840);
+            $destLng  = (float)($data['delivery_address']['lng'] ?? 107.8340);
             $storeLat = (float)($store['latitude'] ?? -6.9835);
             $storeLng = (float)($store['longitude'] ?? 107.8335);
 
@@ -82,15 +89,14 @@ class OrderService
 
             $deliveryCharge = calculate_delivery_fee($distanceKm, (float)$store['delivery_fee']);
 
-            // Coupon Calculation
+            // Coupon
             $couponDiscount = 0.00;
-            $couponCode = null;
+            $couponCode     = null;
             if (!empty($data['coupon_code'])) {
                 $coupon = $this->couponModel->validateCoupon($data['coupon_code'], $orderAmount);
                 if ($coupon) {
-                    $couponCode = $coupon['code'];
+                    $couponCode     = $coupon['code'];
                     $couponDiscount = (float)$coupon['calculated_discount'];
-                    // Increment coupon usage
                     Database::execute("UPDATE `coupons` SET `usage_count` = `usage_count` + 1 WHERE `id` = ?", [$coupon['id']]);
                 }
             }
@@ -100,11 +106,11 @@ class OrderService
                 $taxAmount = ($orderAmount * ((float)$store['tax_percent'] / 100));
             }
 
-            $totalAmount = max(0, ($orderAmount - $couponDiscount) + $deliveryCharge + $taxAmount);
+            $totalAmount   = max(0, ($orderAmount - $couponDiscount) + $deliveryCharge + $taxAmount);
             $paymentMethod = $data['payment_method'] ?? 'cod';
             $paymentStatus = 'unpaid';
 
-            // Wallet payment deduction
+            // Wallet debit
             if ($paymentMethod === 'wallet') {
                 $this->walletModel->debit(
                     $customerId,
@@ -115,14 +121,12 @@ class OrderService
                 $paymentStatus = 'paid';
             }
 
-            $orderCode = 'CCG-' . strtoupper(substr(uniqid(), -6)) . rand(10, 99);
-            $otp = str_pad((string)rand(1000, 9999), 4, '0', STR_PAD_LEFT);
-
+            $orderCode   = 'CCG-' . strtoupper(substr(uniqid(), -6)) . rand(10, 99);
+            $otp         = str_pad((string)rand(1000, 9999), 4, '0', STR_PAD_LEFT);
             $isCodOrPaid = ($paymentMethod === 'cod' || $paymentStatus === 'paid');
             $orderStatus = $isCodOrPaid ? 'confirmed' : 'pending';
             $confirmedAt = $isCodOrPaid ? date('Y-m-d H:i:s') : null;
 
-            // Create Order record
             $orderId = Database::insert('orders', [
                 'order_code'            => $orderCode,
                 'customer_id'           => $customerId,
@@ -144,25 +148,24 @@ class OrderService
                 'order_notes'           => $data['order_notes'] ?? null,
                 'otp'                   => $otp,
                 'distance_km'           => $distanceKm,
-                'confirmed_at'          => $confirmedAt
+                'confirmed_at'          => $confirmedAt,
             ]);
 
-            // Create Order Items
-            foreach ($cartData['items'] as $item) {
+            // Create Order Items & decrement stock
+            foreach ($storeItems as $item) {
                 Database::insert('order_items', [
-                    'order_id'        => $orderId,
-                    'product_id'      => $item['product_id'],
-                    'product_name'    => $item['product_name'],
-                    'price'           => $item['price'],
-                    'quantity'        => $item['quantity'],
-                    'variation_json'  => !empty($item['variation_id']) ? json_encode(['name' => $item['variation_name']]) : null,
-                    'addons_json'     => $item['addons_json'],
-                    'total_price'     => $item['item_total']
+                    'order_id'       => $orderId,
+                    'product_id'     => $item['product_id'],
+                    'product_name'   => $item['product_name'],
+                    'price'          => $item['price'],
+                    'quantity'       => $item['quantity'],
+                    'variation_json' => !empty($item['variation_id']) ? json_encode(['name' => $item['variation_name']]) : null,
+                    'addons_json'    => $item['addons_json'],
+                    'total_price'    => $item['item_total'],
                 ]);
 
-                // Decrement product stock (prevent negative stock)
                 Database::execute(
-                    "UPDATE `products` SET 
+                    "UPDATE `products` SET
                         `stock` = GREATEST(0, `stock` - ?),
                         `order_count` = `order_count` + 1,
                         `status` = IF(`stock` - ? <= 0, 0, `status`)
@@ -170,25 +173,27 @@ class OrderService
                     [$item['quantity'], $item['quantity'], $item['product_id']]
                 );
             }
+
             Database::execute("UPDATE `stores` SET `order_count` = `order_count` + 1 WHERE `id` = ?", [$storeId]);
 
-            // Clear Cart
-            $this->cartModel->clearCart($customerId);
+            // Clear only this store's cart items (not the entire cart)
+            $where = "user_id = ? AND store_id = ?";
+            Database::delete('carts', $where, [$customerId, $storeId]);
 
-            // Send notification to customer
+            // Notification
             Database::insert('notifications', [
                 'user_id'   => $customerId,
                 'title'     => "Pesanan #{$orderCode} Diterima",
                 'message'   => "Pesanan Anda di {$store['name']} sedang disiapkan oleh penjual.",
                 'type'      => 'order',
-                'data_json' => json_encode(['order_code' => $orderCode, 'order_id' => $orderId])
+                'data_json' => json_encode(['order_code' => $orderCode, 'order_id' => $orderId]),
             ]);
 
             return [
                 'order_id'   => $orderId,
                 'order_code' => $orderCode,
                 'total'      => $totalAmount,
-                'otp'        => $otp
+                'otp'        => $otp,
             ];
         });
     }

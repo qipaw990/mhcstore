@@ -53,9 +53,9 @@
 
         <div class="payment-option-list">
             <!-- CicalengkaPay Digital Wallet -->
-            <label class="payment-option <?= ((float)$wallet['balance'] >= (float)$cart_data['subtotal']) ? 'border-danger bg-danger-subtle active' : 'opacity-75' ?>" id="label_pay_wallet">
+            <label class="payment-option <?= ((float)$wallet['balance'] >= (float)$cart_data['grand_total']) ? 'border-danger bg-danger-subtle active' : 'opacity-75' ?>" id="label_pay_wallet">
                 <div class="d-flex align-items-center min-w-0 flex-grow-1">
-                    <input type="radio" name="payment_method" id="pay_wallet" value="wallet" onchange="updatePaymentCardStyles()" <?= ((float)$wallet['balance'] >= (float)$cart_data['subtotal']) ? 'checked' : 'disabled' ?>>
+                    <input type="radio" name="payment_method" id="pay_wallet" value="wallet" onchange="updatePaymentCardStyles()" <?= ((float)$wallet['balance'] >= (float)$cart_data['grand_total']) ? 'checked' : 'disabled' ?>>
                     <div class="min-w-0 flex-grow-1">
                         <div class="fw-bold text-dark text-truncate" style="font-size: 12px;">
                             <span style="color:#EE2737; font-weight:800;">CicalengkaPay</span>
@@ -64,7 +64,7 @@
                         <div class="text-muted mt-0.5 text-truncate" style="font-size: 10.5px;">Saldo: <?= format_rupiah($wallet['balance'] ?? 0) ?></div>
                     </div>
                 </div>
-                <?php if ((float)$wallet['balance'] < (float)$cart_data['subtotal']): ?>
+                <?php if ((float)$wallet['balance'] < (float)$cart_data['grand_total']): ?>
                     <span class="badge bg-warning text-dark flex-shrink-0 ms-2">Kurang</span>
                 <?php else: ?>
                     <span class="badge text-white flex-shrink-0 ms-2" style="background:#EE2737 !important;">Tersedia</span>
@@ -89,9 +89,9 @@
             </label>
 
             <!-- COD (Cash on Delivery) -->
-            <label class="payment-option <?= ((float)$wallet['balance'] < (float)$cart_data['subtotal']) ? 'border-danger bg-danger-subtle active' : '' ?>" id="label_pay_cod">
+            <label class="payment-option <?= ((float)$wallet['balance'] < (float)$cart_data['grand_total']) ? 'border-danger bg-danger-subtle active' : '' ?>" id="label_pay_cod">
                 <div class="d-flex align-items-center min-w-0 flex-grow-1">
-                    <input type="radio" name="payment_method" id="pay_cod" value="cod" onchange="updatePaymentCardStyles()" <?= ((float)$wallet['balance'] < (float)$cart_data['subtotal']) ? 'checked' : '' ?>>
+                    <input type="radio" name="payment_method" id="pay_cod" value="cod" onchange="updatePaymentCardStyles()" <?= ((float)$wallet['balance'] < (float)$cart_data['grand_total']) ? 'checked' : '' ?>>
                     <div class="min-w-0 flex-grow-1">
                         <div class="fw-bold text-dark text-truncate" style="font-size: 12px;">Tunai saat Tiba (COD)</div>
                         <div class="text-muted mt-0.5 text-truncate" style="font-size: 10.5px;">Bayar langsung ke kurir motor</div>
@@ -117,24 +117,31 @@
         <input type="text" name="order_notes" id="order_notes" class="form-control form-control-sm bg-light" style="font-size: 11px; border-radius: 10px; border-color: #E2E8F0;" placeholder="Contoh: Sambal dipisah, jangan pakai bawang goreng">
     </div>
 
-    <!-- Order Breakdown Card -->
+        <!-- Order Breakdown Card: Per-store breakdown + Grand Total -->
     <div class="p-3 bg-white border shadow-2xs mb-3.5 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 16px !important; margin-bottom: 16px !important;">
         <h6 class="fw-bold mb-3 text-dark d-flex align-items-center justify-content-between gap-2" style="font-size: 12.5px;">
             <span class="text-truncate"><i class="bi bi-receipt me-2 text-danger"></i>Rincian Tagihan</span>
-            <span class="badge bg-light text-muted fw-normal px-2 py-1 rounded-pill flex-shrink-0" style="font-size: 9.5px;">Super Fast Delivery</span>
+            <span class="badge bg-light text-muted fw-normal px-2 py-1 rounded-pill flex-shrink-0" style="font-size: 9.5px;"><?= count($cart_data['stores']) ?> Toko</span>
         </h6>
-        <div class="d-flex justify-content-between text-muted mb-2 gap-2" style="font-size: 11px;">
-            <span class="text-truncate">Subtotal Pesanan</span>
-            <span class="text-dark fw-bold flex-shrink-0"><?= format_rupiah($cart_data['subtotal']) ?></span>
-        </div>
-        <div class="d-flex justify-content-between text-muted mb-2 gap-2" style="font-size: 11px;">
-            <span class="text-truncate">Ongkir (<span id="fee-dist-text">1.5 Km</span>)</span>
-            <span class="text-dark fw-bold flex-shrink-0" id="delivery-fee-display"><?= format_rupiah($cart_data['store']['delivery_fee']) ?></span>
-        </div>
+        <?php foreach ($cart_data['stores'] as $sg): ?>
+            <div class="mb-2 pb-2" style="border-bottom: 1px dashed #F1F5F9;">
+                <div class="fw-bold text-dark text-truncate mb-1" style="font-size: 11px;">
+                    <i class="bi bi-shop me-1 text-danger"></i><?= htmlspecialchars($sg['name']) ?>
+                </div>
+                <div class="d-flex justify-content-between text-muted gap-2" style="font-size: 10.5px;">
+                    <span class="text-truncate">Subtotal (<?= $sg['item_count'] ?> item)</span>
+                    <span class="text-dark fw-bold flex-shrink-0"><?= format_rupiah($sg['subtotal']) ?></span>
+                </div>
+                <div class="d-flex justify-content-between text-muted gap-2" style="font-size: 10.5px;">
+                    <span class="text-truncate">Ongkir (<span class="fee-dist-text">est.</span>)</span>
+                    <span class="text-dark fw-bold flex-shrink-0"><?= format_rupiah($sg['delivery_fee']) ?></span>
+                </div>
+            </div>
+        <?php endforeach; ?>
         <hr class="my-2.5" style="border-color: #F1F5F9;">
         <div class="d-flex justify-content-between align-items-center fw-bold gap-2" style="font-size: 13px;">
             <span class="text-dark text-truncate">Total Pembayaran</span>
-            <span class="text-danger fs-6 flex-shrink-0" id="total-amount-display"><?= format_rupiah($cart_data['subtotal'] + $cart_data['store']['delivery_fee']) ?></span>
+            <span class="text-danger fs-6 flex-shrink-0" id="total-amount-display"><?= format_rupiah($cart_data['grand_total']) ?></span>
         </div>
     </div>
 
@@ -160,11 +167,11 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePaymentCardStyles();
 });
 
-const STORE_LAT = <?= (float)($cart_data['store']['latitude'] ?? -6.9835) ?>;
-const STORE_LNG = <?= (float)($cart_data['store']['longitude'] ?? 107.8335) ?>;
-const STORE_NAME = "<?= htmlspecialchars($cart_data['store']['name'] ?? 'Resto') ?>";
-const BASE_SUBTOTAL = <?= (float)$cart_data['subtotal'] ?>;
-const BASE_DELIVERY_FEE = <?= (float)$cart_data['store']['delivery_fee'] ?>;
+const STORE_LAT  = <?= (float)($cart_data['stores'][0]['latitude']  ?? -6.9835) ?>;
+const STORE_LNG  = <?= (float)($cart_data['stores'][0]['longitude'] ?? 107.8335) ?>;
+const STORE_NAME = "<?= htmlspecialchars($cart_data['stores'][0]['name'] ?? 'Resto') ?>";
+const BASE_SUBTOTAL     = <?= (float)$cart_data['grand_subtotal'] ?>;
+const BASE_DELIVERY_FEE = <?= (float)$cart_data['grand_delivery'] ?>;
 
 let map, customerMarker, storeMarker, routeLine;
 let mapInitialized = false;

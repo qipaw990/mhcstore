@@ -1,5 +1,5 @@
 /**
- * CicalengkaGO Service Worker v4.0.0
+ * CicalengkaGO Service Worker v5.0.0
  * Resilient Network-First Strategy
  * Third-party CDN: Stale-While-Revalidate
  * Dynamic Pages / Payments / API: Pure Network Bypass (Never Intercept)

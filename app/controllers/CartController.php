@@ -45,20 +45,7 @@ class CartController extends Controller
         $userId = auth_id();
         $sessionId = session_id();
 
-        // Check if cart has items from another store
-        $currentCart = $this->cartModel->getUserCart($userId, $sessionId);
-        if (!empty($currentCart['items']) && $currentCart['store_id'] != $product['store_id']) {
-            if (empty($data['force_switch_store'])) {
-                $this->json([
-                    'success' => false,
-                    'is_store_conflict' => true,
-                    'message' => "Keranjang Anda sudah berisi item dari toko lain ({$currentCart['store']['name']}). Ganti dengan produk dari {$product['store_name']}?"
-                ], 409);
-                return;
-            }
-            // Clear previous store items if user agreed
-            $this->cartModel->clearCart($userId, $sessionId);
-        }
+        // Multi-store cart: no longer block adding from a different store
 
         // Calculate item base price + variation price
         $price = (float)$product['final_price'];

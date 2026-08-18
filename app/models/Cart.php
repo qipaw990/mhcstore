@@ -26,40 +26,75 @@ class Cart extends Model
                 JOIN `stores` s ON c.store_id = s.id
                 LEFT JOIN `product_variations` pv ON c.variation_id = pv.id
                 WHERE {$where}
-                ORDER BY c.id DESC";
+                ORDER BY c.store_id ASC, c.id DESC";
 
-        $items = Database::query($sql, [$param]);
-        $subtotal = 0;
-        $storeId = null;
-        $storeInfo = null;
+        $rows = Database::query($sql, [$param]);
 
-        foreach ($items as &$item) {
-            $item['addons'] = json_decode($item['addons_json'] ?? '[]', true) ?: [];
-            $unitPrice = (float)$item['price'];
-            $qty = (int)$item['quantity'];
+        // --- Build grouped-by-store structure ---
+        $stores        = [];  // indexed by store_id
+        $allItems      = [];  // flat list (backward compat)
+        $grandSubtotal = 0.0;
+
+        foreach ($rows as &$item) {
+            $item['addons']     = json_decode($item['addons_json'] ?? '[]', true) ?: [];
+            $unitPrice          = (float)$item['price'];
+            $qty                = (int)$item['quantity'];
             $item['item_total'] = $unitPrice * $qty;
-            $subtotal += $item['item_total'];
-            $storeId = $item['store_id'];
-            if (!$storeInfo) {
-                $storeInfo = [
-                    'id' => $item['store_id'],
-                    'name' => $item['store_name'],
-                    'logo' => $item['store_logo'],
-                    'delivery_fee' => (float)$item['delivery_fee'],
+
+            $sid = (int)$item['store_id'];
+
+            if (!isset($stores[$sid])) {
+                $stores[$sid] = [
+                    'store_id'      => $sid,
+                    'name'          => $item['store_name'],
+                    'logo'          => $item['store_logo'],
+                    'delivery_fee'  => (float)$item['delivery_fee'],
                     'minimum_order' => (float)$item['minimum_order'],
-                    'latitude' => !empty($item['store_lat']) ? (float)$item['store_lat'] : -6.9835,
-                    'longitude' => !empty($item['store_lng']) ? (float)$item['store_lng'] : 107.8335,
-                    'address' => $item['store_address'] ?? ''
+                    'latitude'      => !empty($item['store_lat'])  ? (float)$item['store_lat']  : -6.9835,
+                    'longitude'     => !empty($item['store_lng'])  ? (float)$item['store_lng']  : 107.8335,
+                    'address'       => $item['store_address'] ?? '',
+                    'items'         => [],
+                    'subtotal'      => 0.0,
+                    'item_count'    => 0,
                 ];
             }
+
+            $stores[$sid]['items'][]    = $item;
+            $stores[$sid]['subtotal']  += $item['item_total'];
+            $stores[$sid]['item_count']++;
+
+            $grandSubtotal += $item['item_total'];
+            $allItems[]     = $item;
         }
 
+        $grandDelivery = array_sum(array_column($stores, 'delivery_fee'));
+
+        // Backward-compat single-store fields (first store in list)
+        $firstStore = !empty($stores) ? array_values($stores)[0] : null;
+        $storeInfo  = $firstStore ? [
+            'id'            => $firstStore['store_id'],
+            'name'          => $firstStore['name'],
+            'logo'          => $firstStore['logo'],
+            'delivery_fee'  => $firstStore['delivery_fee'],
+            'minimum_order' => $firstStore['minimum_order'],
+            'latitude'      => $firstStore['latitude'],
+            'longitude'     => $firstStore['longitude'],
+            'address'       => $firstStore['address'],
+        ] : null;
+
         return [
-            'items' => $items,
-            'count' => count($items),
-            'subtotal' => $subtotal,
-            'store' => $storeInfo,
-            'store_id' => $storeId
+            // Multi-store grouped data (new)
+            'stores'         => array_values($stores),
+            'store_count'    => count($stores),
+            'grand_subtotal' => $grandSubtotal,
+            'grand_delivery' => $grandDelivery,
+            'grand_total'    => $grandSubtotal + $grandDelivery,
+            // Backward-compat flat data (existing code won't break)
+            'items'          => $allItems,
+            'count'          => count($allItems),
+            'subtotal'       => $grandSubtotal,
+            'store'          => $storeInfo,
+            'store_id'       => $firstStore['store_id'] ?? null,
         ];
     }
 
