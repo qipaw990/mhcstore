@@ -467,7 +467,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
     </div>
 </div>
 
-<script src="<?= $baseUrl ?>/assets/js/tracking-map.js"></script>
+<script src="<?= $baseUrl ?>/assets/js/tracking-map.js?v=<?= time() ?>"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const initialData = {
