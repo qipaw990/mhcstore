@@ -46,9 +46,7 @@ img.leaflet-marker-icon {
 div.leaflet-marker-icon,
 div.leaflet-div-icon,
 #driver-radar-map div.leaflet-marker-icon {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+    display: block !important;
     background: transparent !important;
     background-color: transparent !important;
     border: none !important;

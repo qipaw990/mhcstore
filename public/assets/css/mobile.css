@@ -2911,7 +2911,7 @@ img.leaflet-marker-shadow {
   background: transparent !important;
 }
 
-/* 4. Fix Default Leaflet Image Markers (img.leaflet-marker-icon) - Prevents White Needle Stretching */
+/* 4. Fix Default Leaflet Image Markers (img.leaflet-marker-icon) */
 img.leaflet-marker-icon {
   display: block !important;
   max-width: none !important;
@@ -2923,18 +2923,28 @@ img.leaflet-marker-icon {
   box-shadow: none !important;
 }
 
-/* 5. Fix Custom DivIcon Markers (div.leaflet-marker-icon & div.leaflet-div-icon) */
+/* 5. Fix Custom DivIcon Containers (div.leaflet-marker-icon & div.leaflet-div-icon) */
 div.leaflet-marker-icon,
 div.leaflet-div-icon {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  display: block !important;
   background: transparent !important;
   background-color: transparent !important;
   border: none !important;
   box-shadow: none !important;
   outline: none !important;
   overflow: visible !important;
+}
+
+/* 6. Flex centering for custom pin inner classes */
+.custom-map-icon,
+.custom-pin,
+.custom-pin-customer,
+.custom-pin-store,
+.custom-map-pin,
+.ccg-driver-pin {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 /* Driver Page Layout Padding Fix (Mencegah konten terpotong Bottom Nav) */

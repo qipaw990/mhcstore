@@ -34,15 +34,14 @@ function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
 function createDriverIcon() {
   return L.divIcon({
     className: 'custom-map-icon driver-pulse-container',
-    html: `<div style="position:relative;width:52px;height:52px;display:flex;align-items:center;justify-content:center;">
-             <div class="pulse-ring-outer" style="position:absolute;width:100%;height:100%;border-radius:50%;background:rgba(13,110,253,0.25);animation:radar-pulse 2s infinite ease-out;"></div>
-             <div class="pulse-ring-inner" style="position:absolute;width:75%;height:75%;border-radius:50%;background:rgba(13,110,253,0.35);animation:radar-pulse 2s infinite ease-out 0.5s;"></div>
-             <div style="background:linear-gradient(135deg, #0d6efd, #1e40af);color:white;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 6px 18px rgba(13,110,253,0.6);z-index:3;">
-               <i class="bi bi-bicycle" style="font-size:20px;"></i>
+    html: `<div style="position:relative;width:44px;height:44px;display:flex;align-items:center;justify-content:center;box-sizing:border-box;">
+             <div style="position:absolute;top:0;left:0;width:44px;height:44px;border-radius:50%;background:rgba(13,110,253,0.25);animation:driver-radar-pulse 2s infinite ease-out;pointer-events:none;box-sizing:border-box;"></div>
+             <div style="position:relative;z-index:3;background:linear-gradient(135deg, #0d6efd, #1e40af);color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 4px 12px rgba(13,110,253,0.5);box-sizing:border-box;">
+               <i class="bi bi-bicycle" style="font-size:18px;"></i>
              </div>
            </div>`,
-    iconSize: [52, 52],
-    iconAnchor: [26, 26]
+    iconSize: [44, 44],
+    iconAnchor: [22, 22]
   });
 }
 
@@ -77,21 +76,21 @@ function initOrderTrackingMap(orderCode, initialData) {
   // Store Marker
   const storeIcon = L.divIcon({
     className: 'custom-map-icon',
-    html: `<div style="box-sizing:border-box;background:linear-gradient(135deg, #ef4444, #b91c1c);color:white;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 6px 16px rgba(239,68,68,0.4);">
-             <i class="bi bi-shop" style="font-size:18px;"></i>
+    html: `<div style="box-sizing:border-box;background:linear-gradient(135deg, #ef4444, #b91c1c);color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 4px 14px rgba(239,68,68,0.4);">
+             <i class="bi bi-shop" style="font-size:17px;"></i>
            </div>`,
-    iconSize: [38, 38],
-    iconAnchor: [19, 19]
+    iconSize: [36, 36],
+    iconAnchor: [18, 18]
   });
 
   // Customer Destination Marker (Always strictly locked from checkout coordinates)
   const customerIcon = L.divIcon({
     className: 'custom-map-icon',
-    html: `<div style="box-sizing:border-box;background:linear-gradient(135deg, #10b981, #047857);color:white;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 6px 16px rgba(16,185,129,0.4);">
-             <i class="bi bi-geo-alt-fill" style="font-size:18px;"></i>
+    html: `<div style="box-sizing:border-box;background:linear-gradient(135deg, #10b981, #047857);color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 4px 14px rgba(16,185,129,0.4);">
+             <i class="bi bi-geo-alt-fill" style="font-size:17px;"></i>
            </div>`,
-    iconSize: [38, 38],
-    iconAnchor: [19, 19]
+    iconSize: [36, 36],
+    iconAnchor: [18, 18]
   });
 
   // Place Store Marker
