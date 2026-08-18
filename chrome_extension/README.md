@@ -21,8 +21,8 @@ Ekstensi Google Chrome (Manifest V3) resmi untuk meng-scrape data toko dan menu 
    `https://food.grab.com/id/id/restaurant/cfc-griya-cicalengka-delivery/6-CYLEAFVTBJ6FTX`
 2. Klik ikon puzzle/ekstensi **CicalengkaGO Scraper** di toolbar Chrome.
 3. Pastikan URL Endpoint mengarah ke server CicalengkaGO Anda:
-   - Lokal XAMPP: `http://localhost/CicalengkaGO/api/import-store`
-   - Server CasaOS/Docker: `http://<IP_SERVER>/api/import-store`
+   - Server Production: `https://cicago.store/api/import-store`
+   - Server Lokal XAMPP: `http://localhost/CicalengkaGO/api/import-store`
 4. Klik tombol **`🚀 Scrape & Impor Toko Ini`**.
 5. Ekstensi akan secara otomatis membaca:
    - Nama Toko & Alamat

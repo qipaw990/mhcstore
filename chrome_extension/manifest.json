@@ -10,6 +10,8 @@
   ],
   "host_permissions": [
     "https://food.grab.com/*",
+    "https://cicago.store/*",
+    "http://cicago.store/*",
     "http://localhost/*",
     "http://127.0.0.1/*"
   ],
