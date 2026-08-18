@@ -40,16 +40,37 @@
         <!-- Cart Items List -->
         <div class="d-flex flex-column gap-2.5 mb-3">
             <?php foreach ($cart_summary['items'] as $item): ?>
-                <div class="p-2.5 bg-white border shadow-2xs d-flex align-items-center justify-content-between gap-2.5 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important;">
-                    <img src="<?= $baseUrl ?>/<?= htmlspecialchars($item['product_image'] ?? 'assets/images/products/default.jpg') ?>" alt="Img" class="rounded-3 flex-shrink-0" style="width: 52px; height: 52px; object-fit: cover; border-radius: 12px !important;">
-                    
-                    <div class="flex-grow-1 min-w-0">
-                        <div class="fw-bold text-dark text-truncate" style="font-size: 12px; letter-spacing: -0.2px;" title="<?= htmlspecialchars($item['product_name']) ?>"><?= htmlspecialchars($item['product_name']) ?></div>
+                <div class="p-2.5 bg-white border shadow-2xs d-flex align-items-center gap-2.5" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+
+                    <!-- Product Image — clickable to show detail modal -->
+                    <img src="<?= $baseUrl ?>/<?= htmlspecialchars($item['product_image'] ?? 'assets/images/products/default.jpg') ?>"
+                         alt="Img"
+                         class="rounded-3 flex-shrink-0"
+                         style="width: 52px; height: 52px; object-fit: cover; border-radius: 12px !important; cursor: pointer;"
+                         onclick="showCartItemDetail(<?= htmlspecialchars(json_encode([
+                             'name'  => $item['product_name'],
+                             'price' => format_rupiah($item['price']),
+                             'image' => $baseUrl . '/' . ($item['product_image'] ?? 'assets/images/products/default.jpg'),
+                             'qty'   => $item['quantity'],
+                         ])) ?>)">
+
+                    <!-- Name + Price — strictly truncated, never pushes stepper -->
+                    <div class="flex-grow-1 min-w-0" style="overflow: hidden;"
+                         onclick="showCartItemDetail(<?= htmlspecialchars(json_encode([
+                             'name'  => $item['product_name'],
+                             'price' => format_rupiah($item['price']),
+                             'image' => $baseUrl . '/' . ($item['product_image'] ?? 'assets/images/products/default.jpg'),
+                             'qty'   => $item['quantity'],
+                         ])) ?>)"
+                         style="cursor: pointer; overflow: hidden;">
+                        <div class="fw-bold text-dark" style="font-size: 12px; letter-spacing: -0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">
+                            <?= htmlspecialchars($item['product_name']) ?>
+                        </div>
                         <div class="fw-extrabold text-danger mt-1" style="font-size: 12.5px;"><?= format_rupiah($item['price']) ?></div>
                     </div>
 
-                    <!-- Quantity Modifiers -->
-                    <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
+                    <!-- Quantity Stepper — always flex-shrink-0, never displaced -->
+                    <div class="d-flex align-items-center gap-1.5 flex-shrink-0 ms-auto">
                         <button onclick="updateCartQty(<?= $item['id'] ?>, -1)" class="btn btn-sm p-0 d-flex align-items-center justify-content-center text-dark border shadow-2xs" style="width: 28px; height: 28px; border-radius: 50%; font-size: 11px; background:#FFFFFF; border-color: #CBD5E1 !important;">
                             <i class="bi bi-dash"></i>
                         </button>
@@ -60,6 +81,29 @@
                     </div>
                 </div>
             <?php endforeach; ?>
+        </div>
+
+        <!-- Product Detail Mini Modal -->
+        <div id="cartItemDetailModal" onclick="this.style.display='none'" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.45); align-items:flex-end; justify-content:center;">
+            <div onclick="event.stopPropagation()" style="background:#FFFFFF; border-radius:24px 24px 0 0; width:100%; max-width:480px; padding:20px; box-shadow:0 -8px 40px rgba(0,0,0,0.18); animation: slideUp 0.22s ease;">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h6 class="fw-extrabold m-0 text-dark" style="font-size: 14px; letter-spacing:-0.3px; max-width: calc(100% - 40px);" id="ciModalName"></h6>
+                    <button onclick="document.getElementById('cartItemDetailModal').style.display='none'" class="btn p-0 d-flex align-items-center justify-content-center border rounded-circle text-muted" style="width:30px;height:30px;font-size:14px;flex-shrink:0;">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+                <img id="ciModalImg" src="" alt="" class="w-100 mb-3" style="border-radius:16px; height:180px; object-fit:cover;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted" style="font-size:10px; font-weight:600;">Harga Satuan</div>
+                        <div class="fw-black text-danger" id="ciModalPrice" style="font-size:16px; letter-spacing:-0.4px;"></div>
+                    </div>
+                    <div class="text-end">
+                        <div class="text-muted" style="font-size:10px; font-weight:600;">Jumlah di Keranjang</div>
+                        <div class="fw-extrabold text-dark" id="ciModalQty" style="font-size:14px;"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Summary Calculation Card -->
@@ -99,6 +143,12 @@
     <?php endif; ?>
 </div>
 
+<style>
+@keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+</style>
 <script>
 async function clearAllCart() {
     Swal.fire({
@@ -114,5 +164,14 @@ async function clearAllCart() {
             location.reload();
         }
     });
+}
+
+function showCartItemDetail(item) {
+    document.getElementById('ciModalName').textContent  = item.name;
+    document.getElementById('ciModalPrice').textContent = item.price;
+    document.getElementById('ciModalImg').src           = item.image;
+    document.getElementById('ciModalQty').textContent   = item.qty + ' pcs';
+    const modal = document.getElementById('cartItemDetailModal');
+    modal.style.display = 'flex';
 }
 </script>
