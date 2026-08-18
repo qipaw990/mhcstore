@@ -56,6 +56,20 @@ function extractGrabFoodData() {
     return url;
   }
 
+  // Clean trailing price pattern e.g. " 40.000" or ".40.000" appended to title
+  function cleanProductName(t) {
+    if (!t) return '';
+    return t.replace(/[\s\.\,]+\d{1,3}[\.\,]\d{3}\s*$/, '')
+            .replace(/[\s\.\,]+\d{4,6}\s*$/, '')
+            .trim();
+  }
+
+  // Normalized key for fuzzy cross-strategy matching
+  function normalizeTitleKey(t) {
+    if (!t) return '';
+    return cleanProductName(t).toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+
   // -------------------------------------------------------------
   // STRATEGY 0: SCHEMA.ORG JSON-LD PARSER (FASTEST & MOST ACCURATE)
   // -------------------------------------------------------------
@@ -113,8 +127,13 @@ function extractGrabFoodData() {
                     }
                   }
 
-                  const nameTrimmed = item.name.trim();
-                  if (nameTrimmed && !result.products.some(p => p.name.toLowerCase() === nameTrimmed.toLowerCase())) {
+                  const nameTrimmed = cleanProductName(item.name);
+                  const normKey = normalizeTitleKey(nameTrimmed);
+                  const existingP = result.products.find(p => normalizeTitleKey(p.name) === normKey);
+                  if (existingP) {
+                    const itemImg = item.image ? cleanImageUrl(typeof item.image === 'string' ? item.image : (item.image.url || item.photo || '')) : '';
+                    if (!existingP.image && itemImg) existingP.image = itemImg;
+                  } else if (nameTrimmed) {
                     const itemImg = item.image ? cleanImageUrl(typeof item.image === 'string' ? item.image : (item.image.url || item.photo || '')) : '';
                     result.products.push({
                       name: nameTrimmed,
@@ -197,11 +216,16 @@ function extractGrabFoodData() {
               rawImg = p.photos[0].photoHref || p.photos[0].url || p.photos[0] || '';
             }
             const img = cleanImageUrl(rawImg);
+            const pNameClean = cleanProductName(p.name);
+            const normKey = normalizeTitleKey(pNameClean);
             
-            // Check duplicate
-            if (!result.products.some(existing => existing.name.toLowerCase() === p.name.trim().toLowerCase())) {
+            const existing = result.products.find(e => normalizeTitleKey(e.name) === normKey);
+            if (existing) {
+              if (!existing.image && img) existing.image = img;
+              if (!existing.description && p.description) existing.description = p.description.trim();
+            } else if (pNameClean) {
               result.products.push({
-                name: p.name.trim(),
+                name: pNameClean,
                 description: (p.description || '').trim(),
                 price: parseFloat(price) || 15000,
                 image: img,
@@ -225,9 +249,16 @@ function extractGrabFoodData() {
             rawImg = p.photos[0].photoHref || p.photos[0].url || p.photos[0] || '';
           }
           const img = cleanImageUrl(rawImg);
-          if (!result.products.some(existing => existing.name.toLowerCase() === p.name.trim().toLowerCase())) {
+          const pNameClean = cleanProductName(p.name);
+          const normKey = normalizeTitleKey(pNameClean);
+
+          const existing = result.products.find(e => normalizeTitleKey(e.name) === normKey);
+          if (existing) {
+            if (!existing.image && img) existing.image = img;
+            if (!existing.description && p.description) existing.description = p.description.trim();
+          } else if (pNameClean) {
             result.products.push({
-              name: p.name.trim(),
+              name: pNameClean,
               description: (p.description || '').trim(),
               price: parseFloat(price) || 15000,
               image: img,
@@ -392,7 +423,7 @@ function extractGrabFoodData() {
     const imgEl   = card.querySelector('img[class*="realImage"], div[class*="menuItemPhoto"] img, div[class*="menuItemPhotoContainer"] img, img[src*="food-cms"], img[src*="huawei-food-cms"], img[src*="grab"], img');
 
     if (titleEl) {
-      const nameText = titleEl.textContent.trim();
+      const nameText = cleanProductName(titleEl.textContent.trim());
       if (!nameText || nameText.length < 2 || nameText.toLowerCase().includes('antar ke') || nameText.toLowerCase().includes('masuk/daftar')) return;
 
       let priceVal = 15000;
@@ -416,8 +447,10 @@ function extractGrabFoodData() {
       let descText = descEl ? descEl.textContent.replace(/\u00a0/g, ' ').trim() : '';
       if (descText === nameText) descText = '';
 
-      const existingProduct = result.products.find(p => p.name.toLowerCase() === nameText.toLowerCase());
+      const normKey = normalizeTitleKey(nameText);
+      const existingProduct = result.products.find(p => normalizeTitleKey(p.name) === normKey);
       if (existingProduct) {
+        existingProduct.name = nameText;
         if (!existingProduct.image && imgUrl) existingProduct.image = imgUrl;
         if (!existingProduct.description && descText) existingProduct.description = descText;
       } else {
@@ -446,6 +479,8 @@ function extractGrabFoodData() {
 
   // Filter & clean scraped product titles and images
   result.products.forEach((p) => {
+    p.name = cleanProductName(p.name);
+
     if (p.name) {
       // Check 1: UPPERCASE title concatenated with TitleCase description
       const upperMatch = p.name.match(/^([A-Z0-9\s\-\.\/]{3,})([A-Z][a-z].*)$/);
@@ -470,9 +505,9 @@ function extractGrabFoodData() {
 
     // Check harvest cache window.__grabProductPhotos if image is missing
     if (!p.image && p.name && window.__grabProductPhotos) {
-      const nameKey = p.name.trim().toLowerCase();
-      if (window.__grabProductPhotos[nameKey]) {
-        p.image = window.__grabProductPhotos[nameKey];
+      const normKey = normalizeTitleKey(p.name);
+      if (window.__grabProductPhotos[normKey]) {
+        p.image = window.__grabProductPhotos[normKey];
       }
     }
 

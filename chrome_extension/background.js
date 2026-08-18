@@ -137,8 +137,9 @@ async function runBatchScrape(stores, apiUrl) {
                 const titleEl = card.querySelector('p[class*="itemNameTitle"], [class*="itemNameTitle"], [class*="itemName"] p, [class*="itemName"]');
                 const imgEl   = card.querySelector('img[class*="realImage"], div[class*="menuItemPhoto"] img, div[class*="menuItemPhotoContainer"] img, img[src*="food-cms"], img[src*="huawei-food-cms"], img[src*="grab"], img');
                 if (titleEl && imgEl) {
-                  const titleKey = titleEl.textContent.trim().toLowerCase();
-                  const imgSrc = imgEl.src || imgEl.getAttribute('data-src') || imgEl.getAttribute('srcset') || '';
+                  const rawTitle = titleEl.textContent.trim();
+                  const titleKey = rawTitle.toLowerCase().replace(/[\s\.\,]+\d{1,3}[\.\,]\d{3}\s*$/, '').replace(/[^a-z0-9]/g, '');
+                  const imgSrc   = imgEl.src || imgEl.getAttribute('data-src') || imgEl.getAttribute('srcset') || '';
                   if (titleKey && imgSrc && (imgSrc.includes('food-cms') || imgSrc.includes('huawei-food-cms') || imgSrc.includes('compressed_webp') || imgSrc.includes('grab.com'))) {
                     window.__grabProductPhotos[titleKey] = imgSrc;
                   }
