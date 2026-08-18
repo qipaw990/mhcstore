@@ -206,6 +206,8 @@ Router::post('/api/import-store', [\App\Controllers\ApiController::class, 'impor
 Router::options('/api/import-store', [\App\Controllers\ApiController::class, 'importStore']);
 Router::get('/api/fill-schedules', [\App\Controllers\ApiController::class, 'fillSchedules']);
 Router::get('/fill-schedules', [\App\Controllers\ApiController::class, 'fillSchedules']);
+Router::get('/api/fix-images', [\App\Controllers\ApiController::class, 'fixImages']);
+Router::get('/fix-images', [\App\Controllers\ApiController::class, 'fixImages']);
 
 
 

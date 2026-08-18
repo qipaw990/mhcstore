@@ -38,3 +38,19 @@ function time_elapsed_id($datetime): string
     if ($diff < 86400) return floor($diff / 3600) . ' jam lalu';
     return floor($diff / 86400) . ' hari lalu';
 }
+
+function asset_url(?string $path, string $fallback = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80'): string
+{
+    $path = trim((string)$path);
+    if (empty($path)) {
+        return $fallback;
+    }
+
+    if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+        return $path;
+    }
+
+    $baseUrl = rtrim($GLOBALS['baseUrl'] ?? '', '/');
+    return $baseUrl . '/' . ltrim($path, '/');
+}
+

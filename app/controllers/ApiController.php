@@ -441,5 +441,61 @@ class ApiController extends Controller
             $this->errorResponse("Gagal mengisi jadwal: " . $e->getMessage());
         }
     }
+
+    public function fixImages(): void
+    {
+        @ini_set('display_errors', '0');
+        if (ob_get_length()) {
+            @ob_clean();
+        }
+
+        try {
+            $pdo = \App\Core\Database::getPdo();
+            $stores = $pdo->query("SELECT id, name, logo, cover_photo FROM stores")->fetchAll(\PDO::FETCH_ASSOC);
+            $updatedStores = 0;
+
+            foreach ($stores as $s) {
+                $sid = (int)$s['id'];
+                $newLogo = $s['logo'];
+                $newCover = $s['cover_photo'];
+                $changed = false;
+
+                if (!empty($s['logo']) && (str_starts_with($s['logo'], 'http://') || str_starts_with($s['logo'], 'https://'))) {
+                    $newLogo = download_and_save_image($s['logo'], 'stores');
+                    $changed = true;
+                }
+                if (!empty($s['cover_photo']) && (str_starts_with($s['cover_photo'], 'http://') || str_starts_with($s['cover_photo'], 'https://'))) {
+                    $newCover = download_and_save_image($s['cover_photo'], 'stores');
+                    $changed = true;
+                }
+
+                if ($changed) {
+                    $stmtUp = $pdo->prepare("UPDATE stores SET logo = ?, cover_photo = ? WHERE id = ?");
+                    $stmtUp->execute([$newLogo, $newCover, $sid]);
+                    $updatedStores++;
+                }
+            }
+
+            $products = $pdo->query("SELECT id, name, image FROM products")->fetchAll(\PDO::FETCH_ASSOC);
+            $updatedProducts = 0;
+
+            foreach ($products as $p) {
+                $pid = (int)$p['id'];
+                if (!empty($p['image']) && (str_starts_with($p['image'], 'http://') || str_starts_with($p['image'], 'https://'))) {
+                    $newImg = download_and_save_image($p['image'], 'products');
+                    $stmtUpP = $pdo->prepare("UPDATE products SET image = ? WHERE id = ?");
+                    $stmtUpP->execute([$newImg, $pid]);
+                    $updatedProducts++;
+                }
+            }
+
+            $this->successResponse("Sukses! Berhasil mengunduh foto remote ke penyimpanan lokal server.", [
+                'updated_stores'   => $updatedStores,
+                'updated_products' => $updatedProducts
+            ]);
+        } catch (\Throwable $e) {
+            $this->errorResponse("Gagal memperbaiki gambar: " . $e->getMessage());
+        }
+    }
 }
 

@@ -1,6 +1,6 @@
 <!-- GoFood Store Header Cover & Floating Back Button -->
 <div class="position-relative">
-    <img src="<?= $baseUrl ?>/<?= htmlspecialchars($store['cover_photo'] ?? 'assets/images/stores/geprek_cover.jpg') ?>" alt="<?= htmlspecialchars($store['name']) ?>" style="width: 100%; height: 120px; object-fit: cover;">
+    <img src="<?= asset_url($store['cover_photo'] ?? null, 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80') ?>" alt="<?= htmlspecialchars($store['name']) ?>" style="width: 100%; height: 120px; object-fit: cover;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80';">
     <div class="position-absolute top-0 start-0" style="padding: 10px;">
         <a href="<?= $baseUrl ?>" class="btn btn-light rounded-circle shadow-sm d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(8px); border: 1px solid rgba(226, 232, 240, 0.8); padding: 0;">
             <i class="bi bi-arrow-left text-dark" style="font-size: 14px;"></i>
@@ -12,7 +12,7 @@
 <div style="padding: 0 12px !important;">
     <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px !important; margin-top: -24px; position: relative; z-index: 2; padding: 14px 16px !important; margin-bottom: 16px !important; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);">
         <div style="display: flex; align-items: flex-start; gap: 12px !important; margin-bottom: 10px !important;">
-            <img src="<?= $baseUrl ?>/<?= htmlspecialchars($store['logo'] ?? 'assets/images/stores/geprek_logo.png') ?>" alt="Logo" style="width: 48px; height: 48px; object-fit: cover; border-radius: 12px !important; flex-shrink: 0; background: #FFFFFF; border: 1px solid #E2E8F0;">
+            <img src="<?= asset_url($store['logo'] ?? null, 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=80') ?>" alt="Logo" style="width: 48px; height: 48px; object-fit: cover; border-radius: 12px !important; flex-shrink: 0; background: #FFFFFF; border: 1px solid #E2E8F0;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=80';">
             <div style="flex-grow: 1; min-width: 0;">
                 <h6 style="font-size: 14px; font-weight: 800; color: #0F172A; margin: 0 0 3px 0 !important; line-height: 1.3; letter-spacing: -0.2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;"><?= htmlspecialchars($store['name']) ?></h6>
                 <div style="font-size: 10.5px; color: #64748B; margin-bottom: 6px !important; display: flex; align-items: center; gap: 4px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
 
                     <div style="flex-shrink: 0; text-align: center; width: 76px;">
-                        <img src="<?= $baseUrl ?>/<?= htmlspecialchars($prod['image'] ?? 'assets/images/products/default.jpg') ?>" alt="<?= htmlspecialchars($prod['name']) ?>" style="width: 76px; height: 76px; object-fit: cover; border-radius: 12px !important; margin-bottom: 4px !important; border: 1px solid #F1F5F9;">
+                        <img src="<?= asset_url($prod['image'] ?? null, 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80') ?>" alt="<?= htmlspecialchars($prod['name']) ?>" style="width: 76px; height: 76px; object-fit: cover; border-radius: 12px !important; margin-bottom: 4px !important; border: 1px solid #F1F5F9;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80';">
                         <div>
                             <?php if (!$store['is_open']): ?>
                                 <button type="button" class="btn btn-sm btn-secondary disabled w-100" style="font-size: 10px; padding: 3px 0 !important; border-radius: 20px !important;">Tutup</button>

@@ -82,7 +82,7 @@
                     <?php foreach ($popular_stores as $s): ?>
                         <a href="<?= $baseUrl ?>/stores/<?= $s['id'] ?>" class="gofood-store-card shadow-2xs" style="border-radius: 14px; border-color: #E2E8F0 !important;">
                             <div class="gofood-store-img-box" style="height: 76px;">
-                                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($s['cover_photo'] ?? 'assets/images/stores/geprek_cover.jpg') ?>" class="gofood-store-img" alt="Store">
+                                <img src="<?= asset_url($s['cover_photo'] ?? null, 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80') ?>" class="gofood-store-img" alt="Store" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80';">
                                 <span class="gofood-open-tag" style="border-radius: 5px; font-size: 8px; padding: 1.5px 5px;"><i class="bi bi-door-open-fill me-0.5"></i> Buka</span>
                             </div>
                             <div class="gofood-store-body p-2">
@@ -111,7 +111,7 @@
                     <?php foreach ($recommend_products as $prod): ?>
                         <div class="gofood-product-card" style="border-radius: 12px;">
                             <div class="position-relative">
-                                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($prod['image'] ?? 'assets/images/products/default.jpg') ?>" alt="<?= htmlspecialchars($prod['name']) ?>" class="gofood-prod-img" style="height: 84px;">
+                                <img src="<?= asset_url($prod['image'] ?? null, 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80') ?>" alt="<?= htmlspecialchars($prod['name']) ?>" class="gofood-prod-img" style="height: 84px;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80';">
                                 <?php if (!empty($prod['discount']) && (float)$prod['discount'] > 0): ?>
                                     <span class="gofood-discount-tag" style="font-size: 8px; padding: 2px 5px;">Diskon <?= $prod['discount_type'] === 'percent' ? (int)$prod['discount'] . '%' : format_rupiah($prod['discount']) ?></span>
                                 <?php endif; ?>
@@ -148,7 +148,7 @@
                     <?php foreach ($stores as $s): ?>
                         <a href="<?= $baseUrl ?>/stores/<?= $s['id'] ?>" class="gofood-store-card">
                             <div class="gofood-store-img-box" style="height: 76px;">
-                                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($s['cover_photo'] ?? 'assets/images/stores/geprek_cover.jpg') ?>" class="gofood-store-img" alt="Store">
+                                <img src="<?= asset_url($s['cover_photo'] ?? null, 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80') ?>" class="gofood-store-img" alt="Store" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80';">
                                 <span class="gofood-open-tag" style="border-radius: 5px; font-size: 8px; padding: 1.5px 5px;"><i class="bi bi-door-open-fill me-0.5"></i> Buka</span>
                             </div>
                             <div class="gofood-store-body p-2">
@@ -182,7 +182,7 @@
                     <?php foreach ($products as $prod): ?>
                         <div class="gofood-product-card" style="border-radius: 12px;">
                             <div class="position-relative">
-                                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($prod['image'] ?? 'assets/images/products/default.jpg') ?>" alt="<?= htmlspecialchars($prod['name']) ?>" class="gofood-prod-img" style="height: 84px;">
+                                <img src="<?= asset_url($prod['image'] ?? null, 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80') ?>" alt="<?= htmlspecialchars($prod['name']) ?>" class="gofood-prod-img" style="height: 84px;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80';">
                                 <?php if (!empty($prod['discount']) && (float)$prod['discount'] > 0): ?>
                                     <span class="gofood-discount-tag" style="font-size: 8px; padding: 2px 5px;">Diskon <?= $prod['discount_type'] === 'percent' ? (int)$prod['discount'] . '%' : format_rupiah($prod['discount']) ?></span>
                                 <?php endif; ?>

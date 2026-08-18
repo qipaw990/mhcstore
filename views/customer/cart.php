@@ -37,8 +37,9 @@
             <!-- Store Header Card -->
             <div class="p-3 bg-white border shadow-2xs mb-2 d-flex align-items-center gap-2.5 overflow-hidden" style="border-radius: 18px; border-color: #E2E8F0 !important;">
                 <?php if (!empty($group['logo'])): ?>
-                    <img src="<?= $baseUrl ?>/<?= htmlspecialchars($group['logo']) ?>" alt="Logo"
-                         class="flex-shrink-0" style="width: 40px; height: 40px; border-radius: 12px; object-fit: cover; border: 1px solid #E2E8F0;">
+                    <img src="<?= asset_url($group['logo'], 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=80') ?>" alt="Logo"
+                         class="flex-shrink-0" style="width: 40px; height: 40px; border-radius: 12px; object-fit: cover; border: 1px solid #E2E8F0;"
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=80';">
                 <?php else: ?>
                     <div class="rounded-circle text-white d-flex align-items-center justify-content-center flex-shrink-0"
                          style="width: 40px; height: 40px; background: linear-gradient(135deg, #EE2737, #C61524); font-size: 16px; box-shadow: 0 4px 12px rgba(238,39,55,0.25);">
@@ -65,13 +66,14 @@
                     <div class="px-3 py-3 bg-white border shadow-2xs d-flex align-items-center gap-3" style="border-radius: 18px; border-color: #E2E8F0 !important;">
 
                         <!-- Product Image -->
-                        <img src="<?= $baseUrl ?>/<?= htmlspecialchars($item['product_image'] ?? 'assets/images/products/default.jpg') ?>"
+                        <img src="<?= asset_url($item['product_image'] ?? null, 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80') ?>"
                              alt="Img" class="flex-shrink-0"
                              style="width: 56px; height: 56px; object-fit: cover; border-radius: 14px; cursor: pointer;"
+                             onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80';"
                              onclick="showCartItemDetail(<?= htmlspecialchars(json_encode([
                                  'name'  => $item['product_name'],
                                  'price' => format_rupiah($item['price']),
-                                 'image' => $baseUrl . '/' . ($item['product_image'] ?? 'assets/images/products/default.jpg'),
+                                 'image' => asset_url($item['product_image'] ?? null),
                                  'qty'   => $item['quantity'],
                              ])) ?>)">
 
