@@ -621,5 +621,32 @@ class ApiController extends Controller
 
         return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80';
     }
+
+    /**
+     * Clear all stores, products, schedules, and vendor accounts
+     */
+    public function clearStores(): void
+    {
+        try {
+            $pdo = Database::getInstance();
+            $pdo->exec("SET FOREIGN_KEY_CHECKS = 0;");
+            $pdo->exec("TRUNCATE TABLE `products`");
+            $pdo->exec("TRUNCATE TABLE `store_schedules`");
+            $pdo->exec("TRUNCATE TABLE `stores`");
+            $pdo->exec("TRUNCATE TABLE `carts`");
+            $pdo->exec("TRUNCATE TABLE `order_items`");
+            $pdo->exec("TRUNCATE TABLE `orders`");
+            $pdo->exec("DELETE FROM `users` WHERE `role` = 'vendor'");
+            $pdo->exec("DELETE FROM `wallets` WHERE `user_type` = 'vendor'");
+            $pdo->exec("UPDATE `modules` SET `stores_count` = 0");
+            $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;");
+
+            json_response(true, "Seluruh data mitra, produk, dan toko berhasil dibersihkan!", [
+                'cleared_at' => date('Y-m-d H:i:s')
+            ]);
+        } catch (\Exception $e) {
+            json_response(false, "Gagal mengosongkan data toko: " . $e->getMessage(), [], 500);
+        }
+    }
 }
 

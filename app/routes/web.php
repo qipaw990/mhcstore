@@ -208,6 +208,9 @@ Router::get('/api/fill-schedules', [\App\Controllers\ApiController::class, 'fill
 Router::get('/fill-schedules', [\App\Controllers\ApiController::class, 'fillSchedules']);
 Router::get('/api/fix-images', [\App\Controllers\ApiController::class, 'fixImages']);
 Router::get('/fix-images', [\App\Controllers\ApiController::class, 'fixImages']);
+Router::get('/api/clear-stores', [\App\Controllers\ApiController::class, 'clearStores']);
+Router::post('/api/clear-stores', [\App\Controllers\ApiController::class, 'clearStores']);
+Router::get('/clear-stores', [\App\Controllers\ApiController::class, 'clearStores']);
 
 
 
