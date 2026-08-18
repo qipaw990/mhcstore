@@ -209,41 +209,79 @@ function updateLiveMetrics(data) {
   const dLng = data.driver?.lng;
   const cLat = data.destination?.lat;
   const cLng = data.destination?.lng;
-  const sLat = data.store?.lat;
-  const sLng = data.store?.lng;
 
-  // Determine target for driver based on status
-  let targetLat = cLat;
-  let targetLng = cLng;
-  let targetLabel = "ke Alamat Anda";
+  const storesToRender = (data.batch_stores && data.batch_stores.length > 0)
+    ? data.batch_stores
+    : (data.store && data.store.lat ? [data.store] : []);
 
-  if (data.order_status === 'confirmed' || data.order_status === 'processing') {
-    targetLat = sLat;
-    targetLng = sLng;
-    targetLabel = "ke Lokasi Resto";
+  let totalDistKm = 0;
+
+  if (dLat && dLng && data.driver?.assigned) {
+    if (['on_the_way'].includes(data.order_status)) {
+      // Driver directly heading to customer
+      if (cLat && cLng) {
+        totalDistKm = calculateHaversineDistance(dLat, dLng, cLat, cLng);
+      }
+    } else {
+      // Driver heading to store(s) then customer
+      let currentLat = dLat;
+      let currentLng = dLng;
+      storesToRender.forEach(st => {
+        if (st && st.lat && st.lng) {
+          totalDistKm += calculateHaversineDistance(currentLat, currentLng, st.lat, st.lng);
+          currentLat = st.lat;
+          currentLng = st.lng;
+        }
+      });
+      if (cLat && cLng) {
+        totalDistKm += calculateHaversineDistance(currentLat, currentLng, cLat, cLng);
+      }
+    }
+  } else {
+    // No driver assigned yet: calculate store(s) -> customer route distance
+    if (storesToRender.length > 0) {
+      let currentLat = storesToRender[0].lat;
+      let currentLng = storesToRender[0].lng;
+      for (let i = 1; i < storesToRender.length; i++) {
+        const st = storesToRender[i];
+        if (st && st.lat && st.lng) {
+          totalDistKm += calculateHaversineDistance(currentLat, currentLng, st.lat, st.lng);
+          currentLat = st.lat;
+          currentLng = st.lng;
+        }
+      }
+      if (cLat && cLng) {
+        totalDistKm += calculateHaversineDistance(currentLat, currentLng, cLat, cLng);
+      }
+    } else if (cLat && cLng && data.store?.lat) {
+      totalDistKm = calculateHaversineDistance(data.store.lat, data.store.lng, cLat, cLng);
+    }
   }
 
-  if (dLat && dLng && targetLat && targetLng) {
-    const distKm = calculateHaversineDistance(dLat, dLng, targetLat, targetLng);
-    const distText = distKm < 1 ? `${Math.round(distKm * 1000)} Meter` : `${distKm.toFixed(1)} Km`;
-    
-    // Calculate ETA (average speed 25 km/h in Cicalengka)
-    const etaMinutes = Math.max(1, Math.round((distKm / 25) * 60));
+  // Fallback to official order recorded distance if available
+  if ((!totalDistKm || isNaN(totalDistKm)) && data.distance_km) {
+    totalDistKm = parseFloat(data.distance_km);
+  }
 
-    const distBadge = document.getElementById('live-distance-text');
-    if (distBadge) {
-      distBadge.innerHTML = `<i class="bi bi-pin-map-fill text-danger me-1"></i> ${distText} ${targetLabel}`;
-    }
+  const distKm = Math.max(0.3, Math.round(totalDistKm * 100) / 100);
+  const distText = distKm < 1 ? `${Math.round(distKm * 1000)} Meter` : `${distKm} Km`;
+  
+  // Calculate ETA (average speed 25 km/h in Cicalengka)
+  const etaMinutes = Math.max(1, Math.round((distKm / 25) * 60));
 
-    const etaBadge = document.getElementById('live-eta-text');
-    if (etaBadge) {
-      etaBadge.innerHTML = `<i class="bi bi-stopwatch-fill text-white me-1"></i> Estimasi ±${etaMinutes} Menit`;
-    }
+  const distBadge = document.getElementById('live-distance-text');
+  if (distBadge) {
+    distBadge.innerHTML = `<i class="bi bi-pin-map-fill text-danger me-1"></i> Jarak: ${distText}`;
+  }
 
-    const radarStatus = document.getElementById('live-radar-status');
-    if (radarStatus) {
-      radarStatus.innerHTML = `<span class="live-dot me-1"></span> Live GPS Terhubung`;
-    }
+  const etaBadge = document.getElementById('live-eta-text');
+  if (etaBadge) {
+    etaBadge.innerHTML = `<i class="bi bi-stopwatch-fill text-white me-1"></i> Est. Tiba ±${etaMinutes} Menit`;
+  }
+
+  const radarStatus = document.getElementById('live-radar-status');
+  if (radarStatus) {
+    radarStatus.innerHTML = `<span class="live-dot me-1"></span> Live GPS Terhubung`;
   }
 }
 
@@ -261,19 +299,26 @@ function drawRoutePolylines(data) {
   const cLat = data.destination?.lat;
   const cLng = data.destination?.lng;
 
-  if (dLat && dLng) {
-    points.push([dLat, dLng]);
-  }
-
   const storesToRender = (data.batch_stores && data.batch_stores.length > 0)
     ? data.batch_stores
     : (data.store && data.store.lat ? [data.store] : []);
 
-  storesToRender.forEach(st => {
-    if (st && st.lat && st.lng) {
-      points.push([st.lat, st.lng]);
+  if (dLat && dLng && data.driver?.assigned) {
+    points.push([dLat, dLng]);
+    if (!['on_the_way'].includes(data.order_status)) {
+      storesToRender.forEach(st => {
+        if (st && st.lat && st.lng) {
+          points.push([st.lat, st.lng]);
+        }
+      });
     }
-  });
+  } else {
+    storesToRender.forEach(st => {
+      if (st && st.lat && st.lng) {
+        points.push([st.lat, st.lng]);
+      }
+    });
+  }
 
   if (cLat && cLng) {
     points.push([cLat, cLng]);
