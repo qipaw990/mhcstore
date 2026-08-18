@@ -320,15 +320,24 @@ function extractGrabFoodData() {
 
   // Filter & clean scraped product titles and images
   result.products.forEach((p) => {
-    // Clean concatenated product name e.g. "Nasi goreng sosisNasi Goreng campur..."
     if (p.name) {
-      const match = p.name.match(/([a-z0-9])([A-Z])/);
-      if (match && match.index) {
-        const title = p.name.substring(0, match.index + 1).trim();
-        const desc  = p.name.substring(match.index + 1).trim();
-        if (title.length > 2) {
-          p.name = title;
-          if (!p.description) p.description = desc;
+      // Check 1: UPPERCASE title concatenated with TitleCase description (e.g. "SATE AYAM 5 TUSUKDaging ayam...")
+      const upperMatch = p.name.match(/^([A-Z0-9\s\-\.\/]{3,})([A-Z][a-z].*)$/);
+      if (upperMatch && upperMatch[1].trim().length >= 3) {
+        const title = upperMatch[1].trim();
+        const desc  = upperMatch[2].trim();
+        p.name = title;
+        if (!p.description) p.description = desc;
+      } else {
+        // Check 2: Lowercase/digit concatenated with Uppercase (e.g. "sate 5tusukDaging...")
+        const match = p.name.match(/([a-z0-9])([A-Z])/);
+        if (match && match.index) {
+          const title = p.name.substring(0, match.index + 1).trim();
+          const desc  = p.name.substring(match.index + 1).trim();
+          if (title.length > 2) {
+            p.name = title;
+            if (!p.description) p.description = desc;
+          }
         }
       }
     }
@@ -346,10 +355,19 @@ function extractGrabFoodData() {
     }
   });
 
-  if (!result.logo || !result.logo.includes('food-cms')) {
+  // Fallback logo & cover_photo from first product photo if merchant logo is generic
+  if ((!result.logo || !result.logo.includes('food-cms')) && result.products.length > 0) {
+    const firstGrabImg = result.products.find(p => p.image && (p.image.includes('food-cms') || p.image.includes('huawei-food-cms')))?.image;
+    if (firstGrabImg) {
+      result.logo = firstGrabImg;
+      result.cover_photo = firstGrabImg;
+    }
+  }
+
+  if (!result.logo || (!result.logo.includes('food-cms') && !result.logo.includes('huawei-food-cms'))) {
     result.logo = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=80';
   }
-  if (!result.cover_photo || !result.cover_photo.includes('food-cms')) {
+  if (!result.cover_photo || (!result.cover_photo.includes('food-cms') && !result.cover_photo.includes('huawei-food-cms'))) {
     result.cover_photo = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80';
   }
 
