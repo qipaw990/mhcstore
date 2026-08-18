@@ -302,6 +302,9 @@ class ApiController extends Controller
             $rating   = !empty($data['rating']) ? (float)$data['rating'] : 4.8;
             $revCount = !empty($data['reviews_count']) ? (int)$data['reviews_count'] : rand(50, 200);
 
+            $openTime  = !empty($data['opening_time']) ? date('H:i:s', strtotime($data['opening_time'])) : '08:00:00';
+            $closeTime = !empty($data['closing_time']) ? date('H:i:s', strtotime($data['closing_time'])) : '22:00:00';
+
             if ($sRow) {
                 $storeId = (int)$sRow['id'];
                 $stmtUpS = $pdo->prepare("UPDATE stores SET logo = ?, cover_photo = ?, address = ?, rating = ? WHERE id = ?");
@@ -328,10 +331,18 @@ class ApiController extends Controller
                     $revCount
                 ]);
                 $storeId = (int)$pdo->lastInsertId();
+            }
 
-                for ($day = 0; $day <= 6; $day++) {
-                    $stmtSch = $pdo->prepare("INSERT INTO store_schedules (store_id, day_of_week, opening_time, closing_time) VALUES (?, ?, '08:00:00', '22:00:00')");
-                    $stmtSch->execute([$storeId, $day]);
+            // Save or Update store schedules (Day 0 to 6)
+            for ($day = 0; $day <= 6; $day++) {
+                $stmtCheckSch = $pdo->prepare("SELECT id FROM store_schedules WHERE store_id = ? AND day_of_week = ? LIMIT 1");
+                $stmtCheckSch->execute([$storeId, $day]);
+                if ($stmtCheckSch->fetch()) {
+                    $stmtUpSch = $pdo->prepare("UPDATE store_schedules SET opening_time = ?, closing_time = ? WHERE store_id = ? AND day_of_week = ?");
+                    $stmtUpSch->execute([$openTime, $closeTime, $storeId, $day]);
+                } else {
+                    $stmtInsSch = $pdo->prepare("INSERT INTO store_schedules (store_id, day_of_week, opening_time, closing_time) VALUES (?, ?, ?, ?)");
+                    $stmtInsSch->execute([$storeId, $day, $openTime, $closeTime]);
                 }
             }
 

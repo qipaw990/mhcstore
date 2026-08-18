@@ -14,10 +14,32 @@ function extractGrabFoodData() {
     rating: 4.8,
     reviews_count: 120,
     delivery_time: '15-25 min',
+    opening_time: '08:00:00',
+    closing_time: '22:00:00',
     logo: '',
     cover_photo: '',
     products: []
   };
+
+  function parseHoursText(text) {
+    if (!text) return null;
+    const lower = text.toLowerCase();
+    if (lower.includes('24 jam') || lower.includes('24 hour') || lower.includes('24-hour')) {
+      return { opening_time: '00:00:00', closing_time: '23:59:59' };
+    }
+    const match = text.match(/(\d{1,2})[:.](\d{2})\s*[-–—to]+\s*(\d{1,2})[:.](\d{2})/);
+    if (match) {
+      const openH = match[1].padStart(2, '0');
+      const openM = match[2];
+      const closeH = match[3].padStart(2, '0');
+      const closeM = match[4];
+      return {
+        opening_time: `${openH}:${openM}:00`,
+        closing_time: `${closeH}:${closeM}:00`
+      };
+    }
+    return null;
+  }
 
   // Helper to sanitize image URLs
   function cleanImageUrl(url) {
@@ -43,6 +65,13 @@ function extractGrabFoodData() {
       if (obj.latlng?.longitude) result.longitude = obj.latlng.longitude;
       if (obj.rating) result.rating = obj.rating;
       if (obj.reviewsCount) result.reviews_count = obj.reviewsCount;
+      if (obj.openingHours || obj.businessHours || obj.openHours) {
+        const hoursObj = parseHoursText(obj.openingHours || obj.businessHours || obj.openHours);
+        if (hoursObj) {
+          result.opening_time = hoursObj.opening_time;
+          result.closing_time = hoursObj.closing_time;
+        }
+      }
       if (obj.photoHref || obj.photo) {
         const photo = cleanImageUrl(obj.photoHref || obj.photo);
         if (!result.logo) result.logo = photo;

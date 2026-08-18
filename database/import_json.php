@@ -64,6 +64,9 @@ $stmtS = $pdo->prepare("SELECT id FROM stores WHERE name = ? LIMIT 1");
 $stmtS->execute([$storeName]);
 $sRow = $stmtS->fetch();
 
+$openTime  = !empty($data['opening_time']) ? date('H:i:s', strtotime($data['opening_time'])) : '08:00:00';
+$closeTime = !empty($data['closing_time']) ? date('H:i:s', strtotime($data['closing_time'])) : '22:00:00';
+
 if ($sRow) {
     $storeId = (int)$sRow['id'];
     $stmtUp = $pdo->prepare("UPDATE stores SET logo = ?, cover_photo = ?, address = ?, latitude = ?, longitude = ? WHERE id = ?");
@@ -77,9 +80,17 @@ if ($sRow) {
     $stmtInsS->execute([$vendorId, $storeName, $phone, $email, $logo, $cover, $address, $lat, $lng]);
     $storeId = (int)$pdo->lastInsertId();
     echo "[NEW STORE IMPORTED] {$storeName} (ID: {$storeId})\n";
+}
 
-    for ($d = 0; $d <= 6; $d++) {
-        $pdo->exec("INSERT INTO store_schedules (store_id, day_of_week, opening_time, closing_time) VALUES ({$storeId}, {$d}, '08:00:00', '22:00:00')");
+for ($d = 0; $d <= 6; $d++) {
+    $stmtCheck = $pdo->prepare("SELECT id FROM store_schedules WHERE store_id = ? AND day_of_week = ? LIMIT 1");
+    $stmtCheck->execute([$storeId, $d]);
+    if ($stmtCheck->fetch()) {
+        $stmtUpSch = $pdo->prepare("UPDATE store_schedules SET opening_time = ?, closing_time = ? WHERE store_id = ? AND day_of_week = ?");
+        $stmtUpSch->execute([$openTime, $closeTime, $storeId, $d]);
+    } else {
+        $stmtInsSch = $pdo->prepare("INSERT INTO store_schedules (store_id, day_of_week, opening_time, closing_time) VALUES (?, ?, ?, ?)");
+        $stmtInsSch->execute([$storeId, $d, $openTime, $closeTime]);
     }
 }
 
