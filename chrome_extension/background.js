@@ -119,12 +119,25 @@ async function runBatchScrape(stores, apiUrl) {
         files: ['content.js']
       }).catch(() => {});
 
-      // 5. Scroll page down & up to trigger lazy-loaded product cards and images
+      // 5. Scroll page step-by-step to bottom & top to trigger lazy-loaded product cards and images
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
-        func: () => {
-          window.scrollTo(0, 1000);
-          setTimeout(() => window.scrollTo(0, 0), 200);
+        func: async () => {
+          await new Promise((resolve) => {
+            let totalHeight = 0;
+            const distance = 700;
+            const timer = setInterval(() => {
+              const scrollHeight = document.body.scrollHeight;
+              window.scrollBy(0, distance);
+              totalHeight += distance;
+
+              if (totalHeight >= scrollHeight || totalHeight > 10000) {
+                clearInterval(timer);
+                window.scrollTo(0, 0);
+                setTimeout(resolve, 300);
+              }
+            }, 80);
+          });
         }
       }).catch(() => {});
 
