@@ -149,14 +149,18 @@
                         <a href="<?= $baseUrl ?>/stores/<?= $s['id'] ?>" class="gofood-store-card">
                             <div class="gofood-store-img-box" style="height: 76px;">
                                 <img src="<?= asset_url($s['cover_photo'] ?? null, 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80') ?>" class="gofood-store-img" alt="Store" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80';">
-                                <span class="gofood-open-tag" style="border-radius: 5px; font-size: 8px; padding: 1.5px 5px;"><i class="bi bi-door-open-fill me-0.5"></i> Buka</span>
+                                <?php if (!empty($s['is_open'])): ?>
+                                    <span class="gofood-open-tag" style="border-radius: 5px; font-size: 8px; padding: 1.5px 5px;"><i class="bi bi-door-open-fill me-0.5"></i> Buka</span>
+                                <?php else: ?>
+                                    <span class="gofood-closed-tag" style="border-radius: 5px; font-size: 8px; padding: 1.5px 5px;"><i class="bi bi-door-closed-fill me-0.5"></i> Tutup</span>
+                                <?php endif; ?>
                             </div>
                             <div class="gofood-store-body p-2">
                                 <div class="gofood-store-name" style="font-size: 11px;"><?= htmlspecialchars($s['name']) ?></div>
                                 <div class="gofood-store-meta" style="font-size: 9px;">
                                     <span class="gofood-rating"><i class="bi bi-star-fill"></i> <?= number_format(($s['rating'] > 0 ? $s['rating'] : 5.0), 1) ?></span>
                                     <span>•</span>
-                                    <span><?= htmlspecialchars($s['delivery_time'] ?? '20-30 mnt') ?></span>
+                                    <span><i class="bi bi-clock me-0.5"></i><?= htmlspecialchars($s['operating_hours'] ?? '08:00 - 22:00') ?></span>
                                 </div>
                             </div>
                         </a>

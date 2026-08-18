@@ -54,3 +54,48 @@ function asset_url(?string $path, string $fallback = 'https://images.unsplash.co
     return $baseUrl . '/' . ltrim($path, '/');
 }
 
+function get_store_schedule_status(int $storeId, int $vendorIsOpen = 1): array
+{
+    $dayOfWeek = (int)date('w');
+    $currentTime = date('H:i:s');
+
+    try {
+        $schedule = \App\Core\Database::fetchOne(
+            "SELECT opening_time, closing_time FROM store_schedules WHERE store_id = ? AND day_of_week = ? LIMIT 1",
+            [$storeId, $dayOfWeek]
+        );
+    } catch (\Throwable $e) {
+        $schedule = null;
+    }
+
+    $openTime  = $schedule['opening_time'] ?? '08:00:00';
+    $closeTime = $schedule['closing_time'] ?? '22:00:00';
+
+    $openTimeFormatted  = date('H:i', strtotime($openTime));
+    $closeTimeFormatted = date('H:i', strtotime($closeTime));
+    $operatingHours     = "{$openTimeFormatted} - {$closeTimeFormatted}";
+
+    $isWithinHours = ($currentTime >= $openTime && $currentTime <= $closeTime);
+    $isCurrentlyOpen = ($isWithinHours && (int)$vendorIsOpen === 1);
+
+    return [
+        'is_open'          => $isCurrentlyOpen,
+        'is_within_hours'  => $isWithinHours,
+        'vendor_is_open'   => ((int)$vendorIsOpen === 1),
+        'opening_time'     => $openTimeFormatted,
+        'closing_time'     => $closeTimeFormatted,
+        'operating_hours'  => $operatingHours
+    ];
+}
+
+function attach_store_schedule_data(&$store): void
+{
+    if (empty($store['id'])) return;
+    $scheduleData = get_store_schedule_status((int)$store['id'], (int)($store['is_open'] ?? 1));
+    $store['is_open']         = $scheduleData['is_open'] ? 1 : 0;
+    $store['opening_time']    = $scheduleData['opening_time'];
+    $store['closing_time']    = $scheduleData['closing_time'];
+    $store['operating_hours'] = $scheduleData['operating_hours'];
+}
+
+

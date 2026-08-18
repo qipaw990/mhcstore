@@ -76,12 +76,15 @@
                         <div class="card border-0 shadow-2xs overflow-hidden rounded-4 h-100 hover-shadow transition-all" style="border: 1px solid #E2E8F0 !important;">
                             <div class="position-relative" style="height: 120px;">
                                 <img src="<?= asset_url($s['cover_photo'] ?? null, 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80') ?>" alt="<?= htmlspecialchars($s['name']) ?>" class="w-100 h-100" style="object-fit: cover;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80';">
-                                <div class="position-absolute top-0 end-0 p-2">
-                                    <?php if ($s['is_open']): ?>
+                                <div class="position-absolute top-0 end-0 p-2 d-flex flex-column align-items-end gap-1">
+                                    <?php if (!empty($s['is_open'])): ?>
                                         <span class="badge bg-success shadow-2xs font-monospace fw-bold rounded-pill" style="font-size: 9px; padding: 4px 8px;"><i class="bi bi-door-open-fill me-0.5"></i> BUKA</span>
                                     <?php else: ?>
                                         <span class="badge bg-danger shadow-2xs font-monospace fw-bold rounded-pill" style="font-size: 9px; padding: 4px 8px;"><i class="bi bi-door-closed-fill me-0.5"></i> TUTUP</span>
                                     <?php endif; ?>
+                                    <span class="badge bg-dark text-white font-monospace rounded-pill" style="font-size: 8px; padding: 2.5px 6px; background: rgba(15,23,42,0.75) !important;">
+                                        <i class="bi bi-clock me-0.5"></i> <?= htmlspecialchars($s['operating_hours'] ?? '08:00 - 22:00') ?>
+                                    </span>
                                 </div>
                                 <div class="position-absolute bottom-0 start-0 p-2 w-100 d-flex align-items-end justify-content-between" style="background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);">
                                     <span class="badge bg-white text-dark font-monospace fw-bold rounded-pill border" style="font-size: 9px;">
@@ -130,15 +133,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const storeData = <?= json_encode(array_map(function($st) use ($baseUrl) {
         return [
-            'id'        => $st['id'],
-            'name'      => $st['name'],
-            'address'   => $st['address'],
-            'lat'       => (float)($st['latitude'] ?? -6.9835),
-            'lng'       => (float)($st['longitude'] ?? 107.8335),
-            'rating'    => number_format((float)($st['rating'] ?? 5.0), 1),
-            'is_open'   => (bool)$st['is_open'],
-            'logo'      => asset_url($st['logo'] ?? null, 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=80'),
-            'store_url' => $baseUrl . '/stores/' . $st['id']
+            'id'              => $st['id'],
+            'name'            => $st['name'],
+            'address'         => $st['address'],
+            'lat'             => (float)($st['latitude'] ?? -6.9835),
+            'lng'             => (float)($st['longitude'] ?? 107.8335),
+            'rating'          => number_format((float)($st['rating'] ?? 5.0), 1),
+            'is_open'         => (bool)$st['is_open'],
+            'operating_hours' => $st['operating_hours'] ?? '08:00 - 22:00',
+            'logo'            => asset_url($st['logo'] ?? null, 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=80'),
+            'store_url'       => $baseUrl . '/stores/' . $st['id']
         ];
     }, $stores)) ?>;
 
@@ -172,14 +176,14 @@ document.addEventListener('DOMContentLoaded', () => {
         storeData.forEach(st => {
             if (st.lat && st.lng) {
                 const statusBadge = st.is_open 
-                    ? '<span style="color:#16a34a; font-weight:bold;">🟢 BUKA</span>' 
-                    : '<span style="color:#dc2626; font-weight:bold;">🔴 TUTUP</span>';
+                    ? `<span style="color:#16a34a; font-weight:bold;">🟢 BUKA (${st.operating_hours})</span>` 
+                    : `<span style="color:#dc2626; font-weight:bold;">🔴 TUTUP (${st.operating_hours})</span>`;
 
                 const popupHtml = `
-                    <div style="width: 170px; text-align: center; font-family: sans-serif;">
+                    <div style="width: 180px; text-align: center; font-family: sans-serif;">
                         <img src="${st.logo}" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover; margin-bottom: 4px; border: 1px solid #cbd5e1;">
                         <h6 style="font-size: 11.5px; font-weight: 800; margin: 0 0 2px 0; color: #0f172a;">${st.name}</h6>
-                        <div style="font-size: 9.5px; color: #64748b; margin-bottom: 4px;">${statusBadge} • ⭐ ${st.rating}</div>
+                        <div style="font-size: 9px; color: #64748b; margin-bottom: 4px;">${statusBadge} • ⭐ ${st.rating}</div>
                         <a href="${st.store_url}" class="btn btn-sm btn-danger rounded-pill w-100 text-white font-weight-bold" style="font-size: 9.5px; padding: 3px 0; text-decoration: none;">Lihat Menu Resto</a>
                     </div>
                 `;

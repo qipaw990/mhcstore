@@ -185,7 +185,7 @@
             <a href="<?= $baseUrl ?>/stores/<?= $store['id'] ?>" class="gofood-store-card shadow-2xs overflow-hidden">
                 <div class="gofood-store-img-box position-relative overflow-hidden">
                     <img src="<?= asset_url($store['cover_photo'] ?? null, 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80') ?>" alt="<?= htmlspecialchars($store['name']) ?>" class="gofood-store-img" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80';">
-                    <?php if ($store['is_open']): ?>
+                    <?php if (!empty($store['is_open'])): ?>
                         <span class="gofood-open-tag"><i class="bi bi-door-open-fill me-0.5"></i> Buka</span>
                     <?php else: ?>
                         <span class="gofood-closed-tag"><i class="bi bi-door-closed-fill me-0.5"></i> Tutup</span>
@@ -196,7 +196,7 @@
                     <div class="gofood-store-meta">
                         <span class="gofood-rating flex-shrink-0"><i class="bi bi-star-fill"></i> <?= number_format((float)($store['rating'] ?? 5.0), 1) ?></span>
                         <span>•</span>
-                        <span class="text-truncate"><?= htmlspecialchars($store['delivery_time'] ?? '15-25 mnt') ?></span>
+                        <span class="text-truncate"><i class="bi bi-clock me-0.5"></i><?= htmlspecialchars($store['operating_hours'] ?? '08:00 - 22:00') ?></span>
                     </div>
                 </div>
             </a>

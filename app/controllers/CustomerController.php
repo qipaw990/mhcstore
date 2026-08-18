@@ -42,15 +42,23 @@ class CustomerController extends Controller
         $banners = $this->bannerModel->getActiveBanners($selectedModuleId);
         $categories = (new Category())->getByModule($selectedModuleId);
         $popularStores = $this->storeModel->getByModule($selectedModuleId);
+        foreach ($popularStores as &$s) {
+            attach_store_schedule_data($s);
+        }
+        unset($s);
         
         $topRatedStores = Database::query("
             SELECT s.*, m.name as module_name
             FROM `stores` s
             LEFT JOIN `modules` m ON s.module_id = m.id
             WHERE s.status = 'approved'
-            ORDER BY s.is_open DESC, s.rating DESC, s.order_count DESC
+            ORDER BY s.rating DESC, s.order_count DESC
             LIMIT 12
         ");
+        foreach ($topRatedStores as &$s) {
+            attach_store_schedule_data($s);
+        }
+        unset($s);
 
         $recommendedProducts = $this->productModel->getRecommended(12);
         if (empty($recommendedProducts)) {
@@ -59,7 +67,7 @@ class CustomerController extends Controller
                 FROM `products` p 
                 JOIN `stores` s ON p.store_id = s.id 
                 WHERE p.status = 1 AND s.status = 'approved' 
-                ORDER BY s.is_open DESC, p.id DESC LIMIT 12
+                ORDER BY p.id DESC LIMIT 12
             ");
             foreach ($recommendedProducts as &$p) {
                 $p['final_price'] = $this->productModel->calculateFinalPrice($p);
@@ -124,13 +132,11 @@ class CustomerController extends Controller
             $params[] = "%{$search}%";
         }
 
-        if ($filter === 'open') {
-            $whereClause .= " AND s.is_open = 1";
-        } elseif ($filter === 'rating') {
+        if ($filter === 'rating') {
             $whereClause .= " AND s.rating >= 4.5";
         }
 
-        $orderBy = "s.is_open DESC, s.rating DESC, s.order_count DESC";
+        $orderBy = "s.rating DESC, s.order_count DESC";
         if ($filter === 'popular') {
             $orderBy = "s.order_count DESC, s.rating DESC";
         }
@@ -143,6 +149,17 @@ class CustomerController extends Controller
                 ORDER BY {$orderBy}";
 
         $stores = Database::query($sql, $params);
+        foreach ($stores as &$s) {
+            attach_store_schedule_data($s);
+        }
+        unset($s);
+
+        if ($filter === 'open') {
+            $stores = array_values(array_filter($stores, function($st) {
+                return !empty($st['is_open']);
+            }));
+        }
+
         $modules = $this->moduleModel->activeModules();
 
         $this->view('customer.explore_stores', [
@@ -169,9 +186,18 @@ class CustomerController extends Controller
         if (!empty($query)) {
             $products = $this->productModel->search($query, $moduleId);
             $stores = Database::query("SELECT * FROM `stores` WHERE `name` LIKE ? OR `address` LIKE ?", ["%{$query}%", "%{$query}%"]);
+            foreach ($stores as &$s) {
+                attach_store_schedule_data($s);
+            }
+            unset($s);
         } else {
             // Data rekomendasi untuk halaman pencarian discovery
-            $popularStores = Database::query("SELECT * FROM `stores` WHERE `status` = 1 ORDER BY `rating` DESC LIMIT 6");
+            $popularStores = Database::query("SELECT * FROM `stores` WHERE `status` = 'approved' ORDER BY `rating` DESC LIMIT 6");
+            foreach ($popularStores as &$s) {
+                attach_store_schedule_data($s);
+            }
+            unset($s);
+
             $recommendProducts = $this->productModel->getRecommended(10);
             if (empty($recommendProducts)) {
                 $recommendProducts = Database::query("SELECT p.*, s.name as store_name, s.is_open as store_is_open FROM `products` p JOIN `stores` s ON p.store_id = s.id WHERE p.status = 1 ORDER BY p.id DESC LIMIT 10");
@@ -200,12 +226,16 @@ class CustomerController extends Controller
             return;
         }
 
+        attach_store_schedule_data($store);
+
         $products = $this->productModel->getByStore($id);
         $cartSummary = $this->cartModel->getUserCart(auth_id(), session_id());
         
         $reviewModel = new \App\Models\Review();
         $reviewModel->recalculateStoreRating($id);
         $store = $this->storeModel->findWithDetails($id);
+        attach_store_schedule_data($store);
+        
         $reviews = $reviewModel->getStoreReviews($id, 15);
 
         $this->view('customer.store', [

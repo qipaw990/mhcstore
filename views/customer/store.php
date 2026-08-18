@@ -23,15 +23,19 @@
                     <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;"><?= htmlspecialchars($store['address']) ?></span>
                 </div>
                 
-                <div style="display: flex; align-items: center; gap: 8px !important; font-size: 10px; color: #64748B; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 6px !important; font-size: 10px; color: #64748B; flex-wrap: wrap;">
                     <span style="color: #D97706; font-weight: 700; display: flex; align-items: center; gap: 3px; flex-shrink: 0;">
                         <i class="bi bi-star-fill" style="font-size: 10px;"></i> <?= number_format((float)($store['rating'] ?? 5.0), 1) ?> 
                         <span style="color: #94A3B8; font-weight: 400;">(<?= (int)($store['reviews_count'] ?? 0) ?> ulasan)</span>
                     </span>
                     <span style="color: #CBD5E1;">•</span>
-                    <span style="display: flex; align-items: center; gap: 3px; flex-shrink: 0;"><i class="bi bi-clock me-0.5"></i><?= htmlspecialchars($store['delivery_time'] ?? '15-25 mnt') ?></span>
+                    <span style="display: flex; align-items: center; gap: 3px; flex-shrink: 0;"><i class="bi bi-truck me-0.5 text-primary"></i><?= htmlspecialchars($store['delivery_time'] ?? '15-25 mnt') ?></span>
                     <span style="color: #CBD5E1;">•</span>
-                    <?php if ($store['is_open']): ?>
+                    <span class="badge bg-light text-dark border rounded-pill flex-shrink-0" style="font-size: 9px; padding: 2px 7px;" title="Jam Operasional Toko">
+                        <i class="bi bi-clock-history text-danger me-0.5"></i> <?= htmlspecialchars($store['operating_hours'] ?? '08:00 - 22:00') ?>
+                    </span>
+                    <span style="color: #CBD5E1;">•</span>
+                    <?php if (!empty($store['is_open'])): ?>
                         <span class="badge bg-success-subtle text-success fw-bold rounded-pill flex-shrink-0" style="font-size: 9px; padding: 2px 7px;"><i class="bi bi-door-open-fill me-0.5"></i> Buka</span>
                     <?php else: ?>
                         <span class="badge bg-danger-subtle text-danger fw-bold rounded-pill flex-shrink-0" style="font-size: 9px; padding: 2px 7px;"><i class="bi bi-door-closed-fill me-0.5"></i> Tutup</span>
