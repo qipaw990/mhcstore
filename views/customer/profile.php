@@ -1,113 +1,157 @@
-<div class="border-bottom bg-white d-flex align-items-center justify-content-between sticky-top app-subpage-header px-3 py-2 shadow-xs">
+<div class="border-bottom bg-white d-flex align-items-center justify-content-between sticky-top app-subpage-header px-3 py-2.5 shadow-2xs" style="z-index: 1020;">
     <h6 class="fw-bold m-0 text-dark" style="font-size: 14px; letter-spacing: -0.3px;">Akun Saya</h6>
     <?php if ($user): ?>
-        <span class="badge text-white px-2.5 py-1 rounded-pill shadow-2xs flex-shrink-0" style="background: linear-gradient(135deg, #EE2737, #C61524); font-size: 9px;">
+        <span class="badge text-white px-2.5 py-1 rounded-pill shadow-2xs flex-shrink-0" style="background: linear-gradient(135deg, #EE2737, #C61524); font-size: 9.5px; font-weight: 700;">
             <i class="bi bi-star-fill me-1 text-warning"></i> CicalengkaClub
         </span>
     <?php endif; ?>
 </div>
 
-<div class="px-2.5 py-2.5">
+<div class="px-3 py-3" style="background: #F8FAFC; min-height: calc(100vh - 110px);">
     <?php if (!empty($_SESSION['error'])): ?>
-        <div class="alert alert-danger rounded-3 border-0 p-2.5 mb-2.5" style="font-size: 10.5px;">
-            <i class="bi bi-exclamation-triangle-fill me-1"></i> <?= htmlspecialchars($_SESSION['error']) ?>
+        <div class="alert alert-danger rounded-3 border-0 p-2.5 mb-3 shadow-2xs" style="font-size: 11px;">
+            <i class="bi bi-exclamation-triangle-fill me-1.5"></i> <?= htmlspecialchars($_SESSION['error']) ?>
         </div>
         <?php unset($_SESSION['error']); ?>
     <?php endif; ?>
 
     <?php if (!empty($_SESSION['success'])): ?>
-        <div class="alert alert-success rounded-3 border-0 p-2.5 mb-2.5" style="font-size: 10.5px;">
-            <i class="bi bi-check-circle-fill me-1"></i> <?= htmlspecialchars($_SESSION['success']) ?>
+        <div class="alert alert-success rounded-3 border-0 p-2.5 mb-3 shadow-2xs" style="font-size: 11px;">
+            <i class="bi bi-check-circle-fill me-1.5"></i> <?= htmlspecialchars($_SESSION['success']) ?>
         </div>
         <?php unset($_SESSION['success']); ?>
     <?php endif; ?>
 
     <?php if ($user): ?>
-        <!-- User Profile Header Card -->
-        <div class="p-2.5 bg-white border shadow-2xs mb-2.5 d-flex align-items-center gap-2.5 overflow-hidden" style="border-radius: 14px; border-color: #E2E8F0 !important;">
-            <div class="position-relative flex-shrink-0">
-                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/default.png') ?>" alt="User" class="rounded-circle border border-2 shadow-2xs" style="width: 44px; height: 44px; object-fit: cover; border-color: #EE2737 !important;">
+        <!-- User Profile Card -->
+        <div class="bg-white border shadow-2xs mb-3 p-3 position-relative" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="position-relative flex-shrink-0">
+                    <img src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/default.png') ?>" alt="User" class="rounded-circle border border-2 shadow-2xs" style="width: 52px; height: 52px; object-fit: cover; border-color: #EE2737 !important;">
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="fw-bold text-truncate" style="color: #0F172A; font-size: 14px; letter-spacing: -0.2px;"><?= htmlspecialchars($user['name'] ?? 'Pengguna') ?></div>
+                    <div class="text-secondary text-truncate mt-0.5" style="font-size: 11px; font-weight: 500;">
+                        <i class="bi bi-telephone-fill me-1 text-muted" style="font-size: 10px;"></i><?= htmlspecialchars($user['phone'] ?? '-') ?>
+                    </div>
+                    <?php if (!empty($user['email'])): ?>
+                        <div class="text-muted text-truncate mt-0.5" style="font-size: 10.5px;">
+                            <i class="bi bi-envelope-fill me-1 text-muted" style="font-size: 9.5px;"></i><?= htmlspecialchars($user['email']) ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                <button type="button" class="btn btn-light btn-sm rounded-circle border shadow-2xs d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background: #F1F5F9; border-color: #CBD5E1 !important;" data-bs-toggle="modal" data-bs-target="#editProfileModal" title="Edit Profil">
+                    <i class="bi bi-pencil-fill text-danger" style="font-size: 13px;"></i>
+                </button>
             </div>
-            <div class="flex-grow-1 min-w-0">
-                <div class="fw-bold text-truncate" style="color: var(--gojek-charcoal); font-size: 12.5px; letter-spacing: -0.2px;"><?= htmlspecialchars($user['name'] ?? 'Pengguna') ?></div>
-                <div class="text-muted text-truncate" style="font-size: 10px;"><?= htmlspecialchars($user['phone'] ?? '-') ?></div>
-                <?php if (!empty($user['email'])): ?>
-                    <div class="text-muted text-truncate" style="font-size: 9.5px;"><?= htmlspecialchars($user['email']) ?></div>
-                <?php endif; ?>
-            </div>
-            <button type="button" class="btn btn-light btn-sm rounded-circle border shadow-2xs d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; background:#F8FAFC;" data-bs-toggle="modal" data-bs-target="#editProfileModal" title="Edit Profil">
-                <i class="bi bi-pencil-fill text-danger" style="font-size: 12px;"></i>
-            </button>
         </div>
 
-        <!-- CicalengkaPay Quick Card -->
-        <div class="p-2.5 bg-white border shadow-2xs mb-2.5 d-flex align-items-center justify-content-between gap-2 overflow-hidden" style="border-radius: 14px; border-color: #E2E8F0 !important;">
-            <div class="d-flex align-items-center gap-2.5 min-w-0">
-                <div class="rounded-circle d-flex align-items-center justify-content-center text-white flex-shrink-0" style="width: 34px; height: 34px; font-size: 15px; background: linear-gradient(135deg, #EE2737, #C61524); box-shadow: 0 2px 6px rgba(238,39,55,0.25);">
+        <!-- CicalengkaPay Quick Balance Card -->
+        <div class="bg-white border shadow-2xs mb-3 p-3 d-flex align-items-center justify-content-between gap-2 position-relative overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+            <div class="d-flex align-items-center gap-3 min-w-0">
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-white flex-shrink-0 shadow-2xs" style="width: 38px; height: 38px; font-size: 17px; background: linear-gradient(135deg, #EE2737, #C61524);">
                     <i class="bi bi-wallet2"></i>
                 </div>
                 <div class="min-w-0">
-                    <div class="fw-bold text-truncate" style="color: #EE2737; font-size: 9.5px;">Cicalengka<span style="color:#C61524;">Pay</span></div>
-                    <div class="fw-extrabold text-dark text-truncate" style="font-size: 13px;"><?= format_rupiah($wallet['balance'] ?? 0) ?></div>
+                    <div class="fw-bold text-uppercase text-muted" style="font-size: 9.5px; letter-spacing: 0.5px;">Saldo Cicalengka<span style="color: #EE2737;">Pay</span></div>
+                    <div class="fw-black text-dark text-truncate" style="font-size: 15px; letter-spacing: -0.3px; color: #0F172A;"><?= format_rupiah($wallet['balance'] ?? 0) ?></div>
                 </div>
             </div>
-            <a href="<?= $baseUrl ?>/wallet" class="btn btn-sm rounded-pill fw-bold px-3 py-1 text-white shadow-2xs flex-shrink-0" style="background: linear-gradient(135deg, #EE2737, #C61524); font-size: 10px;">
+            <a href="<?= $baseUrl ?>/wallet" class="btn btn-sm rounded-pill fw-bold px-3 py-1.5 text-white shadow-2xs flex-shrink-0" style="background: linear-gradient(135deg, #EE2737, #C61524); font-size: 11px;">
                 Isi Saldo
             </a>
         </div>
 
         <!-- Menu Navigation List -->
-        <div class="bg-white border shadow-2xs overflow-hidden mb-3" style="border-radius: 14px; border-color: #E2E8F0 !important;">
-            <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#editProfileModal" class="p-2.5 px-3 d-flex align-items-center justify-content-between text-decoration-none text-dark border-bottom hover-bg-light transition" style="padding: 9px 12px !important;">
-                <div class="d-flex align-items-center gap-2.5 min-w-0">
-                    <i class="bi bi-person-gear flex-shrink-0" style="color: #EE2737 !important; font-size: 15px;"></i>
+        <div class="bg-white border shadow-2xs overflow-hidden mb-3" style="border-radius: 16px; border-color: #E2E8F0 !important;">
+            
+            <!-- Edit Profil & Kata Sandi -->
+            <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#editProfileModal" class="px-3 py-2.5 d-flex align-items-center justify-content-between text-decoration-none text-dark border-bottom hover-bg-light transition">
+                <div class="d-flex align-items-center gap-3 min-w-0">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background: #FEE2E2; color: #EE2737;">
+                        <i class="bi bi-person-gear" style="font-size: 17px;"></i>
+                    </div>
                     <div class="min-w-0">
-                        <div class="fw-bold text-truncate" style="font-size: 11.5px; letter-spacing: -0.2px;">Edit Profil & Kata Sandi</div>
-                        <div class="text-muted text-truncate" style="font-size: 9.5px;">Ubah foto, profil & password</div>
+                        <div class="fw-bold text-truncate" style="font-size: 12.5px; color: #0F172A;">Edit Profil & Kata Sandi</div>
+                        <div class="text-muted text-truncate" style="font-size: 10px;">Ubah foto profil, nama & password</div>
                     </div>
                 </div>
-                <i class="bi bi-chevron-right text-muted flex-shrink-0" style="font-size: 10px;"></i>
+                <i class="bi bi-chevron-right text-muted flex-shrink-0 ms-2" style="font-size: 11px;"></i>
             </a>
 
-            <a href="<?= $baseUrl ?>/orders" class="p-2.5 px-3 d-flex align-items-center justify-content-between text-decoration-none text-dark border-bottom hover-bg-light transition" style="padding: 9px 12px !important;">
-                <div class="d-flex align-items-center gap-2.5 min-w-0">
-                    <i class="bi bi-receipt flex-shrink-0" style="color: #EE2737 !important; font-size: 15px;"></i>
-                    <span class="fw-bold text-truncate" style="font-size: 11.5px; letter-spacing: -0.2px;">Riwayat Pesanan</span>
+            <!-- Riwayat Pesanan -->
+            <a href="<?= $baseUrl ?>/orders" class="px-3 py-2.5 d-flex align-items-center justify-content-between text-decoration-none text-dark border-bottom hover-bg-light transition">
+                <div class="d-flex align-items-center gap-3 min-w-0">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background: #E0F2FE; color: #0284C7;">
+                        <i class="bi bi-receipt" style="font-size: 17px;"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="fw-bold text-truncate" style="font-size: 12.5px; color: #0F172A;">Riwayat Pesanan</div>
+                        <div class="text-muted text-truncate" style="font-size: 10px;">Cek daftar transaksi & status pengiriman</div>
+                    </div>
                 </div>
-                <i class="bi bi-chevron-right text-muted flex-shrink-0" style="font-size: 10px;"></i>
+                <i class="bi bi-chevron-right text-muted flex-shrink-0 ms-2" style="font-size: 11px;"></i>
             </a>
 
-            <a href="<?= $baseUrl ?>/search" class="p-2.5 px-3 d-flex align-items-center justify-content-between text-decoration-none text-dark border-bottom hover-bg-light transition" style="padding: 9px 12px !important;">
-                <div class="d-flex align-items-center gap-2.5 min-w-0">
-                    <i class="bi bi-percent text-warning flex-shrink-0" style="font-size: 15px;"></i>
-                    <span class="fw-bold text-truncate" style="font-size: 11.5px; letter-spacing: -0.2px;">Voucher & Promo Saya</span>
+            <!-- Voucher & Promo Saya -->
+            <a href="<?= $baseUrl ?>/search" class="px-3 py-2.5 d-flex align-items-center justify-content-between text-decoration-none text-dark border-bottom hover-bg-light transition">
+                <div class="d-flex align-items-center gap-3 min-w-0">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background: #FEF3C7; color: #D97706;">
+                        <i class="bi bi-percent" style="font-size: 17px;"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="fw-bold text-truncate" style="font-size: 12.5px; color: #0F172A;">Voucher & Promo Saya</div>
+                        <div class="text-muted text-truncate" style="font-size: 10px;">Kupon diskon & penawaran menarik</div>
+                    </div>
                 </div>
-                <i class="bi bi-chevron-right text-muted flex-shrink-0" style="font-size: 10px;"></i>
+                <i class="bi bi-chevron-right text-muted flex-shrink-0 ms-2" style="font-size: 11px;"></i>
             </a>
 
-            <a href="<?= $baseUrl ?>/notifications" class="p-2.5 px-3 d-flex align-items-center justify-content-between text-decoration-none text-dark border-bottom hover-bg-light transition" style="padding: 9px 12px !important;">
-                <div class="d-flex align-items-center gap-2.5 min-w-0">
-                    <i class="bi bi-bell text-primary flex-shrink-0" style="font-size: 15px;"></i>
-                    <span class="fw-bold text-truncate" style="font-size: 11.5px; letter-spacing: -0.2px;">Pusat Notifikasi</span>
+            <!-- Pusat Notifikasi -->
+            <a href="<?= $baseUrl ?>/notifications" class="px-3 py-2.5 d-flex align-items-center justify-content-between text-decoration-none text-dark border-bottom hover-bg-light transition">
+                <div class="d-flex align-items-center gap-3 min-w-0">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background: #F3E8FF; color: #9333EA;">
+                        <i class="bi bi-bell" style="font-size: 17px;"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="fw-bold text-truncate" style="font-size: 12.5px; color: #0F172A;">Pusat Notifikasi</div>
+                        <div class="text-muted text-truncate" style="font-size: 10px;">Pesan masuk, update pesanan & promo</div>
+                    </div>
                 </div>
-                <i class="bi bi-chevron-right text-muted flex-shrink-0" style="font-size: 10px;"></i>
+                <i class="bi bi-chevron-right text-muted flex-shrink-0 ms-2" style="font-size: 11px;"></i>
             </a>
 
-            <a href="javascript:void(0)" onclick="Swal.fire('Pusat Bantuan', 'Hubungi layanan pelanggan CicalengkaGO via WhatsApp di 0812-3456-7890', 'info')" class="p-2.5 px-3 d-flex align-items-center justify-content-between text-decoration-none text-dark border-bottom hover-bg-light transition" style="padding: 9px 12px !important;">
-                <div class="d-flex align-items-center gap-2.5 min-w-0">
-                    <i class="bi bi-question-circle-fill text-info flex-shrink-0" style="font-size: 15px;"></i>
-                    <span class="fw-bold text-truncate" style="font-size: 11.5px; letter-spacing: -0.2px;">Bantuan & CS 24 Jam</span>
+            <!-- Bantuan & CS 24 Jam -->
+            <a href="javascript:void(0)" onclick="Swal.fire('Pusat Bantuan', 'Hubungi layanan pelanggan CicalengkaGO via WhatsApp di 0812-3456-7890', 'info')" class="px-3 py-2.5 d-flex align-items-center justify-content-between text-decoration-none text-dark border-bottom hover-bg-light transition">
+                <div class="d-flex align-items-center gap-3 min-w-0">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background: #CCFBF1; color: #0D9488;">
+                        <i class="bi bi-question-circle" style="font-size: 17px;"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="fw-bold text-truncate" style="font-size: 12.5px; color: #0F172A;">Bantuan & CS 24 Jam</div>
+                        <div class="text-muted text-truncate" style="font-size: 10px;">Pertanyaan umum & bantuan kendala</div>
+                    </div>
                 </div>
-                <i class="bi bi-chevron-right text-muted flex-shrink-0" style="font-size: 10px;"></i>
+                <i class="bi bi-chevron-right text-muted flex-shrink-0 ms-2" style="font-size: 11px;"></i>
             </a>
 
-            <a href="<?= $baseUrl ?>/logout" class="p-2.5 px-3 d-flex align-items-center justify-content-between text-decoration-none text-danger hover-bg-light transition" style="padding: 9px 12px !important;">
-                <div class="d-flex align-items-center gap-2.5 min-w-0">
-                    <i class="bi bi-box-arrow-right flex-shrink-0" style="font-size: 15px;"></i>
-                    <span class="fw-bold text-truncate" style="font-size: 11.5px; letter-spacing: -0.2px;">Keluar Akun</span>
+            <!-- Keluar Akun -->
+            <a href="<?= $baseUrl ?>/logout" class="px-3 py-2.5 d-flex align-items-center justify-content-between text-decoration-none hover-bg-light transition">
+                <div class="d-flex align-items-center gap-3 min-w-0">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background: #FFE4E6; color: #E11D48;">
+                        <i class="bi bi-box-arrow-right" style="font-size: 17px;"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="fw-bold text-truncate" style="font-size: 12.5px; color: #E11D48;">Keluar Akun</div>
+                        <div class="text-muted text-truncate" style="font-size: 10px;">Keluar dari sesi akun saat ini</div>
+                    </div>
                 </div>
-                <i class="bi bi-chevron-right flex-shrink-0" style="font-size: 10px;"></i>
+                <i class="bi bi-chevron-right flex-shrink-0 ms-2" style="font-size: 11px; color: #E11D48;"></i>
             </a>
+        </div>
+
+        <div class="text-center text-muted py-2 mb-3" style="font-size: 10px; font-weight: 500;">
+            CicalengkaGO v3.4.0 • Platform Layanan Lokal Cicalengka
         </div>
     <?php else: ?>
         <div class="text-center py-5">
