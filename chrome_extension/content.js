@@ -234,17 +234,38 @@ function extractGrabFoodData() {
     }
   });
 
-  // Ensure smart keyword-based high quality food images if item image is still empty or missing on GrabFood
+  // Filter & clean scraped product titles and images
   result.products.forEach((p) => {
-    if (!p.image || p.image.length < 5 || p.image.includes('unsplash')) {
+    // Clean concatenated product name e.g. "Nasi goreng sosisNasi Goreng campur..."
+    if (p.name) {
+      const match = p.name.match(/([a-z0-9])([A-Z])/);
+      if (match && match.index) {
+        const title = p.name.substring(0, match.index + 1).trim();
+        const desc  = p.name.substring(match.index + 1).trim();
+        if (title.length > 2) {
+          p.name = title;
+          if (!p.description) p.description = desc;
+        }
+      }
+    }
+
+    // Check if image is a REAL GrabFood merchant food photo (contains food-cms / huawei-food-cms / compressed_webp / menueditor_item)
+    const isRealGrabPhoto = p.image && (
+      p.image.includes('food-cms') || 
+      p.image.includes('huawei-food-cms') || 
+      p.image.includes('compressed_webp') || 
+      p.image.includes('menueditor_item')
+    );
+
+    if (!isRealGrabPhoto) {
       p.image = getSmartFoodPhoto(p.name);
     }
   });
 
-  if (!result.logo) {
+  if (!result.logo || !result.logo.includes('food-cms')) {
     result.logo = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&q=80';
   }
-  if (!result.cover_photo) {
+  if (!result.cover_photo || !result.cover_photo.includes('food-cms')) {
     result.cover_photo = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80';
   }
 
