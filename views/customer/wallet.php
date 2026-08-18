@@ -63,41 +63,46 @@
     </div>
 
     <!-- Quick Top Up Amount Selector -->
-    <div class="p-3 mb-3 bg-white border" style="border-radius: 20px; border-color: #E2E8F0 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.03);">
+    <div class="p-3 mb-3 bg-white border" style="border-radius: 20px; border-color: #E2E8F0 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+        <!-- Section Header -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div class="d-flex align-items-center gap-2">
-                <div class="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center flex-shrink-0 shadow-2xs" style="width: 28px; height: 28px; font-size: 13px;">
-                    <i class="bi bi-lightning-fill"></i>
+                <div class="d-flex align-items-center justify-content-center flex-shrink-0 rounded-circle" style="width: 32px; height: 32px; background: linear-gradient(135deg, #F59E0B, #D97706); box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);">
+                    <i class="bi bi-lightning-fill text-white" style="font-size: 14px;"></i>
                 </div>
                 <div>
-                    <h6 class="fw-bold m-0 text-dark" style="font-size: 13px; letter-spacing: -0.2px;">Isi Saldo Instan</h6>
+                    <h6 class="fw-extrabold m-0 text-dark" style="font-size: 13.5px; letter-spacing: -0.3px;">Isi Saldo Instan</h6>
                     <div class="text-muted" style="font-size: 9.5px; font-weight: 500;">Bebas Biaya Admin • Langsung Masuk</div>
                 </div>
             </div>
-            <span class="badge text-white px-2 py-1" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); font-size: 8px; font-weight: 700; border-radius: 6px;">
+            <span class="text-white fw-extrabold" style="background: linear-gradient(135deg, #0F172A 0%, #334155 100%); font-size: 8px; letter-spacing: 0.5px; border-radius: 8px; padding: 5px 10px;">
                 QRIS & E-WALLET
             </span>
         </div>
 
-        <div class="row g-2.5">
+        <!-- Nominal Grid -->
+        <div class="row g-2">
             <?php
             $quickNominals = [
-                ['amount' => 20000,  'label' => '20.000',  'tag' => 'Hemat'],
-                ['amount' => 50000,  'label' => '50.000',  'tag' => 'Populer'],
-                ['amount' => 100000, 'label' => '100.000', 'tag' => 'Favorit'],
-                ['amount' => 200000, 'label' => '200.000', 'tag' => 'SULTAN']
+                ['amount' => 20000,  'label' => '20.000',  'tag' => 'Hemat',   'tagColor' => '#16A34A', 'tagBg' => '#DCFCE7', 'borderColor' => '#BBF7D0'],
+                ['amount' => 50000,  'label' => '50.000',  'tag' => 'Populer', 'tagColor' => '#2563EB', 'tagBg' => '#DBEAFE', 'borderColor' => '#BFDBFE'],
+                ['amount' => 100000, 'label' => '100.000', 'tag' => 'Favorit', 'tagColor' => '#D97706', 'tagBg' => '#FEF3C7', 'borderColor' => '#FDE68A'],
+                ['amount' => 200000, 'label' => '200.000', 'tag' => 'SULTAN',  'tagColor' => '#7C3AED', 'tagBg' => '#EDE9FE', 'borderColor' => '#DDD6FE'],
             ];
             foreach ($quickNominals as $item):
             ?>
             <div class="col-6">
-                <button type="button" onclick="quickTopUp(<?= $item['amount'] ?>)" 
-                        class="btn w-100 p-2.5 border text-start position-relative overflow-hidden transition-all shadow-2xs" 
-                        style="border-radius: 14px !important; background: #F8FAFC; border: 1px solid #CBD5E1 !important; min-height: 52px;">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span class="text-muted" style="font-size: 9px; font-weight: 600;">Rp</span>
-                        <span class="badge bg-danger-subtle text-danger fw-bold" style="font-size: 7.5px; padding: 2px 5px; border-radius: 4px;"><?= $item['tag'] ?></span>
-                    </div>
-                    <div class="fw-extrabold text-dark" style="font-size: 13.5px; letter-spacing: -0.3px; color: #0F172A !important;">
+                <button type="button" onclick="quickTopUp(<?= $item['amount'] ?>)"
+                        class="btn w-100 text-start position-relative overflow-hidden"
+                        style="border-radius: 14px; background: #FFFFFF; border: 1.5px solid <?= $item['borderColor'] ?>; padding: 10px 12px; min-height: 58px; transition: all 0.15s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                    <!-- Tag Badge -->
+                    <span class="position-absolute fw-extrabold" style="top: 8px; right: 8px; font-size: 8px; padding: 2px 7px; border-radius: 20px; color: <?= $item['tagColor'] ?>; background: <?= $item['tagBg'] ?>; letter-spacing: 0.2px;">
+                        <?= $item['tag'] ?>
+                    </span>
+                    <!-- Rp Label -->
+                    <div class="text-muted mb-0.5" style="font-size: 9px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase;">Rp</div>
+                    <!-- Amount -->
+                    <div class="fw-black" style="font-size: 15px; letter-spacing: -0.5px; color: #0F172A; line-height: 1.1;">
                         <?= $item['label'] ?>
                     </div>
                 </button>
@@ -105,9 +110,10 @@
             <?php endforeach; ?>
         </div>
 
+        <!-- Custom Amount Button -->
         <div class="mt-2.5">
-            <button type="button" onclick="customTopUpDialog()" class="btn btn-light border w-100 py-2 rounded-pill fw-bold text-danger d-flex align-items-center justify-content-center gap-1.5" style="font-size: 11px; background: #FFF5F5; border-color: #FECDD3 !important;">
-                <i class="bi bi-pencil-square" style="font-size: 12px;"></i>
+            <button type="button" onclick="customTopUpDialog()" class="btn w-100 py-2.5 d-flex align-items-center justify-content-center gap-2 fw-bold" style="border-radius: 14px; background: #FFF5F5; border: 1.5px dashed #FECDD3; color: #EE2737; font-size: 11.5px;">
+                <i class="bi bi-pencil-square" style="font-size: 13px;"></i>
                 <span>Masukkan Nominal Lainnya</span>
             </button>
         </div>
