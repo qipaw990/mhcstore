@@ -382,17 +382,15 @@ class DeliveryService
     }
 
     /**
-     * Commission = total_km × average_rate_per_km × 0.85
-     * rate_per_km = delivery_charge / distance_km per order
+     * Net Driver Commission = 85% of total delivery charges for all orders in the batch
      */
     private function calcBatchCommissionAmount(array $orders, float $totalKm): float
     {
         if (empty($orders)) return 0.0;
 
-        $sumCharge   = array_sum(array_column($orders, 'delivery_charge'));
-        $sumDistance = array_sum(array_map(fn($o) => max(0.5, (float)$o['distance_km']), $orders));
-        $ratePerKm   = $sumDistance > 0 ? ($sumCharge / $sumDistance) : 3000.0;
+        $sumCharge = array_sum(array_column($orders, 'delivery_charge'));
+        $netCommission = $sumCharge * 0.85;
 
-        return max(500, $totalKm * $ratePerKm * 0.85);
+        return max(500.0, round($netCommission, 0));
     }
 }
