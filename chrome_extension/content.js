@@ -402,8 +402,8 @@ function getSmartFoodPhoto(name) {
 function extractStoreLinksFromListing() {
   const storeUrls = new Set();
 
-  // 1. Scan DOM <a> elements with /restaurant/
-  const links = document.querySelectorAll('a[href*="/restaurant/"], a[href*="/store/"]');
+  // 1. Scan DOM <a> elements with /restaurant/ or store cards
+  const links = document.querySelectorAll('a[href*="/restaurant/"], a[href*="/store/"], [class*="restaurantCard"] a, [class*="RestaurantCard"] a, [class*="card"] a');
   links.forEach(a => {
     let href = a.getAttribute('href');
     if (!href) return;
@@ -414,14 +414,35 @@ function extractStoreLinksFromListing() {
     }
   });
 
-  // 2. Scan window.__NEXT_DATA__ or script tags for restaurant URLs
+  // 2. Scan parent cards if <a> is inside
+  const cards = document.querySelectorAll('[class*="restaurantCard"], [class*="RestaurantCard"], [class*="itemCard"]');
+  cards.forEach(c => {
+    const a = c.querySelector('a') || c.closest('a');
+    if (a) {
+      let href = a.getAttribute('href');
+      if (href) {
+        if (href.startsWith('/')) href = 'https://food.grab.com' + href;
+        const cleanUrl = href.split('?')[0];
+        if (cleanUrl.includes('/restaurant/')) {
+          storeUrls.add(cleanUrl);
+        }
+      }
+    }
+  });
+
+  // 3. Scan window.__NEXT_DATA__ or script tags for restaurant URLs
   const scripts = document.querySelectorAll('script');
   scripts.forEach(s => {
     const txt = s.textContent || '';
     if (txt.includes('/restaurant/')) {
-      const matches = txt.match(/https:\/\/food\.grab\.com\/[a-z]{2}\/[a-z]{2}\/restaurant\/[a-zA-Z0-9\-_]+/g);
+      const matches = txt.match(/https:\/\/food\.grab\.com\/[a-z]{2}\/[a-z]{2}\/restaurant\/[a-zA-Z0-9\-_]+/g) ||
+                      txt.match(/\/id\/id\/restaurant\/[a-zA-Z0-9\-_]+/g);
       if (matches) {
-        matches.forEach(m => storeUrls.add(m));
+        matches.forEach(m => {
+          let fullUrl = m;
+          if (fullUrl.startsWith('/')) fullUrl = 'https://food.grab.com' + fullUrl;
+          storeUrls.add(fullUrl.split('?')[0]);
+        });
       }
     }
   });

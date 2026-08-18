@@ -58,13 +58,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab && tab.url && tab.url.includes('food.grab.com')) {
-      chrome.tabs.sendMessage(tab.id, { action: 'GET_LISTING_STORES' }, (response) => {
-        if (response && response.success && Array.isArray(response.stores) && response.stores.length > 0) {
-          listingStores = response.stores;
-          storeCountEl.textContent = listingStores.length;
-          batchScrapeBtn.style.display = 'flex';
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['content.js']
+      }).catch(() => {});
+
+      const res = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: () => {
+          if (typeof extractStoreLinksFromListing === 'function') {
+            return extractStoreLinksFromListing();
+          }
+          return [];
         }
       });
+
+      const stores = res && res[0] ? res[0].result : [];
+      if (Array.isArray(stores) && stores.length > 0) {
+        listingStores = stores;
+        storeCountEl.textContent = listingStores.length;
+        batchScrapeBtn.style.display = 'flex';
+      }
     }
   } catch (e) {}
 
