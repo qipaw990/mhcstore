@@ -33,15 +33,12 @@ function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
 
 function createDriverIcon() {
   return L.divIcon({
-    className: 'custom-map-icon driver-pulse-container',
-    html: `<div style="position:relative;width:44px;height:44px;display:flex;align-items:center;justify-content:center;box-sizing:border-box;">
-             <div style="position:absolute;top:0;left:0;width:44px;height:44px;border-radius:50%;background:rgba(13,110,253,0.25);animation:driver-radar-pulse 2s infinite ease-out;pointer-events:none;box-sizing:border-box;"></div>
-             <div style="position:relative;z-index:3;background:linear-gradient(135deg, #0d6efd, #1e40af);color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 4px 12px rgba(13,110,253,0.5);box-sizing:border-box;">
-               <i class="bi bi-bicycle" style="font-size:18px;"></i>
-             </div>
+    className: 'custom-map-icon',
+    html: `<div style="background:linear-gradient(135deg, #0d6efd, #1e40af);color:#ffffff;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #ffffff;box-shadow:0 0 0 5px rgba(13,110,253,0.3), 0 6px 16px rgba(13,110,253,0.5);box-sizing:border-box;flex-shrink:0;">
+             <i class="bi bi-bicycle" style="font-size:19px;color:#ffffff;"></i>
            </div>`,
-    iconSize: [44, 44],
-    iconAnchor: [22, 22]
+    iconSize: [38, 38],
+    iconAnchor: [19, 19]
   });
 }
 
@@ -76,18 +73,18 @@ function initOrderTrackingMap(orderCode, initialData) {
   // Store Marker
   const storeIcon = L.divIcon({
     className: 'custom-map-icon',
-    html: `<div style="background:linear-gradient(135deg, #ef4444, #b91c1c);color:white;width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 4px 14px rgba(239,68,68,0.4);box-sizing:border-box;">
-             <i class="bi bi-shop" style="font-size:17px;"></i>
+    html: `<div style="background:linear-gradient(135deg, #ef4444, #b91c1c);color:#ffffff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid #ffffff;box-shadow:0 4px 12px rgba(239,68,68,0.45);box-sizing:border-box;flex-shrink:0;">
+             <i class="bi bi-shop" style="font-size:17px;color:#ffffff;"></i>
            </div>`,
     iconSize: [36, 36],
     iconAnchor: [18, 18]
   });
 
-  // Customer Destination Marker (Always strictly locked from checkout coordinates)
+  // Customer Destination Marker
   const customerIcon = L.divIcon({
     className: 'custom-map-icon',
-    html: `<div style="background:linear-gradient(135deg, #10b981, #047857);color:white;width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid white;box-shadow:0 4px 14px rgba(16,185,129,0.4);box-sizing:border-box;">
-             <i class="bi bi-geo-alt-fill" style="font-size:17px;"></i>
+    html: `<div style="background:linear-gradient(135deg, #10b981, #047857);color:#ffffff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2.5px solid #ffffff;box-shadow:0 4px 12px rgba(16,185,129,0.45);box-sizing:border-box;flex-shrink:0;">
+             <i class="bi bi-geo-alt-fill" style="font-size:17px;color:#ffffff;"></i>
            </div>`,
     iconSize: [36, 36],
     iconAnchor: [18, 18]
@@ -95,21 +92,21 @@ function initOrderTrackingMap(orderCode, initialData) {
 
   // Place Store Marker
   if (initialData.store && initialData.store.lat) {
-    storeMarker = L.marker([initialData.store.lat, initialData.store.lng], { icon: storeIcon })
+    storeMarker = L.marker([initialData.store.lat, initialData.store.lng], { icon: storeIcon, zIndexOffset: 100 })
       .bindPopup(`<div class="p-1"><b>${escapeHtml(initialData.store.name)}</b><br><span class="badge bg-danger-subtle text-danger small mt-1">Titik Penjemputan</span></div>`)
       .addTo(trackingMap);
   }
 
   // Place Customer Destination Marker
   if (initialData.destination && initialData.destination.lat) {
-    customerMarker = L.marker([initialData.destination.lat, initialData.destination.lng], { icon: customerIcon })
+    customerMarker = L.marker([initialData.destination.lat, initialData.destination.lng], { icon: customerIcon, zIndexOffset: 500 })
       .bindPopup(`<div class="p-1"><b>Tujuan Pengantaran</b><br><small class="text-muted">${escapeHtml(initialData.destination.address || 'Cicalengka')}</small></div>`)
       .addTo(trackingMap);
   }
 
   // Place Driver Marker if driver is assigned
   if (initialData.driver && initialData.driver.assigned && initialData.driver.lat) {
-    driverMarker = L.marker([initialData.driver.lat, initialData.driver.lng], { icon: createDriverIcon() })
+    driverMarker = L.marker([initialData.driver.lat, initialData.driver.lng], { icon: createDriverIcon(), zIndexOffset: 1000 })
       .bindPopup(`<div class="p-1"><b>Kurir: ${escapeHtml(initialData.driver.name)}</b><br><span class="badge bg-primary-subtle text-primary small mt-1"><i class="bi bi-broadcast me-1"></i> Live GPS Aktif</span></div>`)
       .addTo(trackingMap);
   }
@@ -297,7 +294,7 @@ async function pollLiveTracking(orderCode) {
         if (driverMarker) {
           smoothMoveMarker(d.driver.lat, d.driver.lng);
         } else if (trackingMap) {
-          driverMarker = L.marker([d.driver.lat, d.driver.lng], { icon: createDriverIcon() })
+          driverMarker = L.marker([d.driver.lat, d.driver.lng], { icon: createDriverIcon(), zIndexOffset: 1000 })
             .bindPopup(`<div class="p-1"><b>Kurir: ${escapeHtml(d.driver.name)}</b><br><span class="badge bg-primary-subtle text-primary small mt-1"><i class="bi bi-broadcast me-1"></i> Live GPS Aktif</span></div>`)
             .addTo(trackingMap);
         }
