@@ -104,9 +104,9 @@ class Order extends Model
         return $this->findByCode((string)$idOrCode);
     }
 
-    public function enrichBatchOrderDetails(array &$order): void
+    public function enrichBatchOrderDetails(?array &$order): void
     {
-        if (empty($order['delivery_batch_id'])) {
+        if (empty($order) || empty($order['delivery_batch_id'])) {
             return;
         }
 

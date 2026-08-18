@@ -622,8 +622,8 @@ function initDriverRadarMap() {
                 $sLat = (float)($ord['store_lat'] ?? -6.9835);
                 $sLng = (float)($ord['store_lng'] ?? 107.8335);
                 $oId = (int)$ord['id'];
-                $sName = addslashes($ord['store_name'] ?? 'Toko / Resto');
-                $dAddr = addslashes($ord['delivery_address']['address'] ?? 'Cicalengka');
+                $sNameJs = json_encode($ord['store_name'] ?? 'Toko / Resto');
+                $dAddrJs = json_encode($ord['delivery_address']['address'] ?? 'Cicalengka');
             ?>
             (function() {
                 const oIcon = L.icon({
@@ -633,9 +633,12 @@ function initDriverRadarMap() {
                     popupAnchor: [0, -46]
                 });
 
+                const sName = <?= $sNameJs ?>;
+                const dAddr = <?= $dAddrJs ?>;
+
                 L.marker([<?= $sLat ?>, <?= $sLng ?>], { icon: oIcon, zIndexOffset: 100 })
                     .addTo(window.dRadarMap)
-                    .bindPopup(`<b><?= $sName ?></b><br><small class="text-muted">Antar ke: <?= $dAddr ?></small><br><button onclick="acceptDriverOrder(<?= $oId ?>)" class="btn btn-sm w-100 mt-2 py-1 fw-bold rounded-pill text-white" style="background:#EE2737;">Ambil Order Ini</button>`);
+                    .bindPopup(`<b>${escapeHtml(sName)}</b><br><small class="text-muted">Antar ke: ${escapeHtml(dAddr)}</small><br><button onclick="acceptDriverOrder(<?= $oId ?>)" class="btn btn-sm w-100 mt-2 py-1 fw-bold rounded-pill text-white" style="background:#EE2737;">Ambil Order Ini</button>`);
             })();
         <?php endforeach; ?>
     <?php endif; ?>
