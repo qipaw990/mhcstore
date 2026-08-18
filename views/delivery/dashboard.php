@@ -199,9 +199,9 @@
                     <div class="px-3 py-2.5">
                         <!-- Store info row -->
                         <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
-                            <div class="d-flex align-items-center gap-2 min-w-0">
+                            <div class="d-flex align-items-center gap-2" style="min-width: 0; flex: 1;">
                                 <i class="bi bi-shop text-danger flex-shrink-0" style="font-size: 14px;"></i>
-                                <div class="min-w-0">
+                                <div style="min-width: 0; flex: 1;">
                                     <div class="fw-bold text-dark text-truncate" style="font-size: 11.5px;"><?= htmlspecialchars($bOrd['store_name'] ?? 'Toko') ?></div>
                                     <div class="text-muted text-truncate" style="font-size: 10px;"><?= htmlspecialchars($bOrd['store_address'] ?? '') ?></div>
                                 </div>
@@ -209,7 +209,7 @@
                             <?php if (!$bIsPickedUp && !$bIsDelivered): ?>
                             <a href="<?= $bStoreUrl ?>" target="_blank"
                                class="btn btn-sm fw-bold flex-shrink-0 text-white rounded-pill px-2.5 py-1 shadow-xs d-flex align-items-center gap-1"
-                               style="background:#EE2737; font-size: 10px;">
+                               style="background:#EE2737; font-size: 10px; white-space: nowrap;">
                                 <i class="bi bi-compass-fill"></i> Navigasi
                             </a>
                             <?php endif; ?>
@@ -217,9 +217,9 @@
 
                         <!-- Customer info row -->
                         <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
-                            <div class="d-flex align-items-center gap-2 min-w-0">
+                            <div class="d-flex align-items-center gap-2" style="min-width: 0; flex: 1;">
                                 <i class="bi bi-geo-alt-fill text-success flex-shrink-0" style="font-size: 14px;"></i>
-                                <div class="min-w-0">
+                                <div style="min-width: 0; flex: 1;">
                                     <div class="fw-bold text-dark text-truncate" style="font-size: 11.5px;"><?= htmlspecialchars($bOrd['customer_name'] ?? 'Pelanggan') ?></div>
                                     <div class="text-muted text-truncate" style="font-size: 10px;"><?= htmlspecialchars($bOrd['delivery_address']['address'] ?? 'Cicalengka') ?></div>
                                 </div>
@@ -227,7 +227,7 @@
                             <?php if ($bIsPickedUp && !$bIsDelivered): ?>
                             <a href="<?= $bCustUrl ?>" target="_blank"
                                class="btn btn-sm fw-bold flex-shrink-0 text-white rounded-pill px-2.5 py-1 shadow-xs d-flex align-items-center gap-1"
-                               style="background:#10B981; font-size: 10px;">
+                               style="background:#10B981; font-size: 10px; white-space: nowrap;">
                                 <i class="bi bi-compass-fill"></i> Navigasi
                             </a>
                             <?php endif; ?>
