@@ -374,7 +374,13 @@ class ApiController extends Controller
 
                 $pDesc     = trim($p['description'] ?? '');
                 $pPrice    = (float)($p['price'] ?? 0);
-                $rawPImage = !empty($p['image']) ? $p['image'] : $rawLogo;
+                $rawPImage = !empty($p['image']) ? trim($p['image']) : '';
+
+                // Ensure product does NOT use store logo or store cover photo
+                if (empty($rawPImage) || $rawPImage === $rawLogo || $rawPImage === $rawCover || str_contains($rawPImage, '/stores/')) {
+                    $rawPImage = $this->getFoodImageByName($pName);
+                }
+
                 $pImage    = download_and_save_image($rawPImage, 'products');
                 $pRec      = !empty($p['is_recommended']) ? 1 : 0;
                 $pDisc     = (float)($p['discount'] ?? 0);
@@ -401,7 +407,10 @@ class ApiController extends Controller
                         $pRec
                     ]);
                 } else {
-                    $imgToUpdate = (!empty($pImage) && (empty($existingP['image']) || strpos($existingP['image'], 'unsplash') !== false)) ? $pImage : $existingP['image'];
+                    $currImg = $existingP['image'] ?? '';
+                    $isDuplicateStoreImg = ($currImg === $logo || $currImg === $cover || str_contains($currImg, 'unsplash') || empty($currImg));
+                    $imgToUpdate = (!empty($pImage) && ($isDuplicateStoreImg || str_contains($pImage, 'uploads/products/'))) ? $pImage : $currImg;
+
                     $stmtUpP = $pdo->prepare("UPDATE products SET category_id = ?, description = ?, price = ?, image = ? WHERE id = ?");
                     $stmtUpP->execute([$itemCatId, $pDesc, $pPrice, $imgToUpdate, $existingP['id']]);
                 }
@@ -499,6 +508,9 @@ class ApiController extends Controller
                 $stmtDel->execute([$sid]);
             }
 
+            // Find duplicate images shared across multiple products (e.g. store logo used for all items)
+            $imageCounts = $pdo->query("SELECT image, COUNT(*) as cnt FROM products WHERE image IS NOT NULL AND image != '' GROUP BY image HAVING cnt > 1")->fetchAll(\PDO::FETCH_KEY_PAIR);
+
             $products = $pdo->query("SELECT id, name, description, image FROM products")->fetchAll(\PDO::FETCH_ASSOC);
             $updatedProducts = 0;
 
@@ -520,7 +532,7 @@ class ApiController extends Controller
                     }
                 }
 
-                // Check small file / SVG
+                // Check small file / SVG / duplicate store image
                 $isSmallFile = false;
                 if (!empty($img) && str_starts_with($img, 'uploads/')) {
                     $fullPath = PUBLIC_PATH . '/' . $img;
@@ -529,8 +541,11 @@ class ApiController extends Controller
                     }
                 }
 
+                $isSharedDuplicate = isset($imageCounts[$img]);
+
                 $needsFix = empty($img) 
                     || $isSmallFile
+                    || $isSharedDuplicate
                     || str_contains($img, 'default') 
                     || str_contains($img, 'unsplash') 
                     || str_contains($img, 'photo-1546069901-ba9599a7e63c')
