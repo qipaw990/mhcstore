@@ -47,18 +47,17 @@ async function waitForTabComplete(tabId, maxWaitMs = 12000) {
   return false;
 }
 
-// Helper to poll DOM until Next.js / React hydration renders content
-async function waitForDomHydration(tabId, maxWaitMs = 10000) {
+// Helper to poll DOM until Next.js / React hydration renders menu content or JSON-LD menu
+async function waitForDomHydration(tabId, maxWaitMs = 12000) {
   const startTime = Date.now();
   while (Date.now() - startTime < maxWaitMs) {
     try {
       const res = await chrome.scripting.executeScript({
         target: { tabId: tabId },
         func: () => {
-          const hasH1 = !!document.querySelector('h1')?.textContent?.trim();
-          const hasNextData = !!document.getElementById('__NEXT_DATA__')?.textContent;
-          const hasItems = document.querySelectorAll('[class*="menuItem"], [class*="itemRow"], [class*="restaurantCard"], [class*="itemCard"], [class*="category"]').length > 0;
-          return hasH1 || hasNextData || hasItems;
+          const hasCards = document.querySelectorAll('[class*="menuItem"], [class*="itemCard"], [class*="MenuItem"], p[class*="itemNameTitle"], div[class*="itemName"]').length > 0;
+          const hasLdJsonMenu = Array.from(document.querySelectorAll('script[type="application/ld+json"]')).some(s => s.textContent.includes('hasMenu') || s.textContent.includes('hasMenuItem') || s.textContent.includes('MenuItem'));
+          return hasCards || hasLdJsonMenu;
         }
       });
       if (res && res[0] && res[0].result === true) {

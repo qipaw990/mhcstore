@@ -61,57 +61,70 @@ function extractGrabFoodData() {
       if (!script.textContent) return;
       try {
         const ldData = JSON.parse(script.textContent);
-        const ldObj = Array.isArray(ldData) ? ldData.find(item => item['@type'] && (item['@type'].includes('Restaurant') || item['@type'].includes('LocalBusiness'))) : ldData;
+        const itemsToScan = Array.isArray(ldData) ? ldData : [ldData];
         
-        if (ldObj && ldObj.name) {
-          if (!result.name) result.name = ldObj.name.trim();
-          if (ldObj.address && ldObj.address.streetAddress) {
-            result.address = ldObj.address.streetAddress.trim();
-          }
-          if (ldObj.image) {
-            const cleanImg = cleanImageUrl(typeof ldObj.image === 'string' ? ldObj.image : (ldObj.image.url || ''));
-            if (cleanImg) {
-              result.logo = cleanImg;
-              result.cover_photo = cleanImg;
-            }
-          }
-          if (ldObj.aggregateRating && ldObj.aggregateRating.ratingValue) {
-            result.rating = parseFloat(ldObj.aggregateRating.ratingValue);
-          }
-          if (ldObj.aggregateRating && ldObj.aggregateRating.ratingCount) {
-            result.reviews_count = parseInt(ldObj.aggregateRating.ratingCount, 10);
-          }
+        itemsToScan.forEach(ldObj => {
+          if (!ldObj || typeof ldObj !== 'object') return;
+          const typeStr = JSON.stringify(ldObj['@type'] || '');
 
-          // Parse Menu Sections & Items
-          const hasMenu = ldObj.hasMenu;
-          if (hasMenu && Array.isArray(hasMenu.hasMenuSection)) {
-            hasMenu.hasMenuSection.forEach(section => {
+          if (typeStr.includes('Restaurant') || typeStr.includes('LocalBusiness') || typeStr.includes('FoodEstablishment') || ldObj.name) {
+            if (!result.name && ldObj.name) result.name = ldObj.name.trim();
+            if (ldObj.address) {
+              const addrStr = typeof ldObj.address === 'string' ? ldObj.address : (ldObj.address.streetAddress || ldObj.address.addressLocality || '');
+              if (addrStr && !result.address) result.address = addrStr.trim();
+            }
+            if (ldObj.image) {
+              const cleanImg = cleanImageUrl(typeof ldObj.image === 'string' ? ldObj.image : (ldObj.image.url || ''));
+              if (cleanImg && !result.logo) {
+                result.logo = cleanImg;
+                result.cover_photo = cleanImg;
+              }
+            }
+            if (ldObj.aggregateRating && ldObj.aggregateRating.ratingValue) {
+              result.rating = parseFloat(ldObj.aggregateRating.ratingValue);
+            }
+            if (ldObj.aggregateRating && ldObj.aggregateRating.ratingCount) {
+              result.reviews_count = parseInt(ldObj.aggregateRating.ratingCount, 10);
+            }
+
+            // Parse Menu Sections & Items
+            const hasMenu = ldObj.hasMenu || ldObj.menu;
+            const sections = (hasMenu && hasMenu.hasMenuSection) ? hasMenu.hasMenuSection : (ldObj.hasMenuSection || []);
+            const sectionsArr = Array.isArray(sections) ? sections : [sections];
+
+            sectionsArr.forEach(section => {
+              if (!section) return;
               const catName = section.name || 'Menu Utama';
-              if (Array.isArray(section.hasMenuItem)) {
-                section.hasMenuItem.forEach(item => {
-                  if (item && item.name) {
-                    let priceVal = 15000;
-                    if (item.offers) {
-                      const pStr = String(item.offers.price || '').replace(/[^0-9]/g, '');
+              const menuItems = section.hasMenuItem || section.itemListElement || section.items || [];
+              const itemsArr = Array.isArray(menuItems) ? menuItems : [menuItems];
+
+              itemsArr.forEach(item => {
+                if (item && item.name) {
+                  let priceVal = 15000;
+                  if (item.offers) {
+                    const offerObj = Array.isArray(item.offers) ? item.offers[0] : item.offers;
+                    if (offerObj && offerObj.price) {
+                      const pStr = String(offerObj.price || '').replace(/[^0-9]/g, '');
                       if (pStr) priceVal = parseInt(pStr, 10);
                     }
-
-                    if (!result.products.some(p => p.name === item.name.trim())) {
-                      result.products.push({
-                        name: item.name.trim(),
-                        description: (item.description || '').trim(),
-                        price: priceVal,
-                        image: result.logo || '',
-                        is_recommended: 0,
-                        category: catName
-                      });
-                    }
                   }
-                });
-              }
+
+                  const nameTrimmed = item.name.trim();
+                  if (nameTrimmed && !result.products.some(p => p.name.toLowerCase() === nameTrimmed.toLowerCase())) {
+                    result.products.push({
+                      name: nameTrimmed,
+                      description: (item.description || '').trim(),
+                      price: priceVal,
+                      image: result.logo || '',
+                      is_recommended: 0,
+                      category: catName
+                    });
+                  }
+                }
+              });
             });
           }
-        }
+        });
       } catch (err) {}
     });
   } catch (e) {}
@@ -324,38 +337,58 @@ function extractGrabFoodData() {
     }
   });
 
-  // 2. Extract DOM Menu Items if products are still empty or missing images
-  const domCards = document.querySelectorAll('[class*="itemCard"], [class*="menuItem"], [class*="item-"], [class*="MenuItem"], div[role="button"]');
+  // 2. Extract DOM Menu Items
+  const cardSelectors = [
+    '[class*="menuItemWrapper"]',
+    '[class*="menuItem___"]',
+    '[class*="menuItem--"]',
+    '[class*="itemCard"]',
+    '[class*="MenuItem"]',
+    'div[class*="categoryContent"] > div',
+    '.ant-col-lg-8'
+  ];
+  
+  let domCards = document.querySelectorAll(cardSelectors.join(', '));
+  if (!domCards || domCards.length === 0) {
+    domCards = document.querySelectorAll('[class*="menuItem"], [class*="itemCard"], [class*="MenuItem"], div[role="button"]');
+  }
   
   domCards.forEach(card => {
     // Skip cards inside 'Untukmu' recommendation section
     const parentSec = card.closest('section, [class*="category"], [class*="Category"], [class*="section"]');
+    let catName = 'Menu Utama';
     if (parentSec) {
-      const headerText = (parentSec.querySelector('h1, h2, h3, h4, [class*="title"], [class*="header"]') || {}).textContent || '';
-      const htLower = headerText.toLowerCase();
-      if (htLower.includes('untukmu') || htLower.includes('untuk mu') || htLower.includes('for you') || htLower.includes('rekomendasi') || htLower.includes('recommended')) {
-        return;
+      const headerText = (parentSec.querySelector('h1, h2, h3, h4, [class*="categoryName"], [class*="title"], [class*="header"]') || {}).textContent || '';
+      const htLower = headerText.toLowerCase().trim();
+      if (htLower) {
+        if (htLower.includes('untukmu') || htLower.includes('untuk mu') || htLower.includes('for you') || htLower.includes('rekomendasi') || htLower.includes('recommended')) {
+          return;
+        }
+        catName = headerText.trim();
       }
     }
 
-    const nameEl = card.querySelector('h3, h4, [class*="name"], [class*="title"], [class*="itemName"]');
-    const priceEl = card.querySelector('[class*="price"], [class*="Price"]');
-    const descEl = card.querySelector('p, [class*="desc"], [class*="Description"]');
-    const imgEl = card.querySelector('img');
+    const titleEl = card.querySelector('[class*="itemNameTitle"], [class*="item-name"], [class*="product-name"], h3, h4, h5') ||
+                    card.querySelector('[class*="itemName"] p') ||
+                    card.querySelector('[class*="titleTitle"]');
+    const priceEl = card.querySelector('[class*="discountedPrice"], [class*="itemPrice"], [class*="price"], [class*="Price"]');
+    const descEl = card.querySelector('[class*="itemDescription"], [class*="product-description"], p[class*="desc"]');
+    const imgEl = card.querySelector('img[class*="realImage"], img[src*="food-cms"], img[src*="grab"], img');
 
-    if (nameEl && priceEl) {
-      const nameText = nameEl.textContent.trim();
-      if (!nameText || nameText.length < 2) return;
+    if (titleEl) {
+      const nameText = titleEl.textContent.trim();
+      if (!nameText || nameText.length < 2 || nameText.toLowerCase().includes('antar ke') || nameText.toLowerCase().includes('masuk/daftar')) return;
 
-      const rawPrice = priceEl.textContent.replace(/[^0-9]/g, '');
-      const priceVal = rawPrice ? parseInt(rawPrice, 10) : 15000;
+      let priceVal = 15000;
+      if (priceEl) {
+        const rawPrice = priceEl.textContent.replace(/[^0-9]/g, '');
+        if (rawPrice) priceVal = parseInt(rawPrice, 10);
+      }
 
       let imgUrl = '';
       if (imgEl) {
         imgUrl = cleanImageUrl(imgEl.src || imgEl.getAttribute('data-src') || imgEl.getAttribute('srcset') || '');
       }
-      
-      // Fallback background-image
       if (!imgUrl) {
         const bgEl = card.querySelector('[style*="background-image"]');
         if (bgEl) {
@@ -364,19 +397,21 @@ function extractGrabFoodData() {
         }
       }
 
-      // Check if product already exists in list
+      let descText = descEl ? descEl.textContent.trim() : '';
+      if (descText === nameText) descText = '';
+
       const existingProduct = result.products.find(p => p.name.toLowerCase() === nameText.toLowerCase());
       if (existingProduct) {
-        // Update missing image or description
         if (!existingProduct.image && imgUrl) existingProduct.image = imgUrl;
-        if (!existingProduct.description && descEl) existingProduct.description = descEl.textContent.trim();
+        if (!existingProduct.description && descText) existingProduct.description = descText;
       } else {
         result.products.push({
           name: nameText,
-          description: descEl ? descEl.textContent.trim() : '',
+          description: descText,
           price: priceVal,
-          image: imgUrl || result.logo,
-          is_recommended: imgUrl ? 1 : 0
+          image: imgUrl || result.logo || '',
+          is_recommended: imgUrl ? 1 : 0,
+          category: catName
         });
       }
     }
