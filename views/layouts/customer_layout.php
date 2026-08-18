@@ -112,7 +112,7 @@ $unreadNotifs = $user ? (new \App\Models\Notification())->getUnreadCount($user['
     $isCartOrCheckout = (strpos($currentUri, '/cart') !== false || strpos($currentUri, '/checkout') !== false || ($active_tab ?? '') === 'cart' || ($active_tab ?? '') === 'checkout');
     ?>
     <?php if (!$isCartOrCheckout): ?>
-    <a href="<?= $baseUrl ?>/cart" id="floating-cart-pill" class="floating-cart-pill <?= empty($cartSummary['items']) ? 'd-none' : '' ?>">
+    <a href="<?= $baseUrl ?>/cart" id="floating-cart-pill" class="floating-cart-pill <?= (empty($cartSummary['items']) || ($cartSummary['count'] ?? 0) <= 0) ? 'd-none' : '' ?>">
         <div class="floating-cart-left">
             <span id="floating-cart-count" class="cart-qty-badge"><i class="bi bi-bag-fill" style="font-size:9.5px;"></i> <span id="floating-cart-count-num"><?= $cartSummary['count'] ?? 0 ?></span> Menu</span>
             <span id="floating-cart-price" class="floating-cart-price"><?= format_rupiah($cartSummary['subtotal'] ?? 0) ?></span>

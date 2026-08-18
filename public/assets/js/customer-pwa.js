@@ -109,8 +109,15 @@ function updateFloatingCart(count, totalFmt) {
   if (!pill) return;
 
   if (count > 0) {
-    document.getElementById('floating-cart-count').textContent = count + ' Menu';
-    document.getElementById('floating-cart-price').textContent = totalFmt;
+    const numEl = document.getElementById('floating-cart-count-num');
+    if (numEl) {
+      numEl.textContent = count;
+    } else {
+      const countEl = document.getElementById('floating-cart-count');
+      if (countEl) countEl.innerHTML = `<i class="bi bi-bag-fill" style="font-size:9.5px;"></i> <span id="floating-cart-count-num">${count}</span> Menu`;
+    }
+    const priceEl = document.getElementById('floating-cart-price');
+    if (priceEl) priceEl.textContent = totalFmt;
     pill.classList.remove('d-none');
   } else {
     pill.classList.add('d-none');
