@@ -436,6 +436,9 @@ function extractGrabFoodData() {
       const mapsMatch = pageHtml.match(/maps\.google\.com.*?q=(-?\d+\.\d+),(-?\d+\.\d+)/) ||
                         pageHtml.match(/google\.com\/maps.*?@(-?\d+\.\d+),(-?\d+\.\d+)/);
       if (mapsMatch) {
+        result.latitude = parseFloat(mapsMatch[1]);
+        result.longitude = parseFloat(mapsMatch[2]);
+      }
     }
   }
 
