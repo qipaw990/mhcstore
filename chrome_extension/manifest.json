@@ -22,6 +22,9 @@
     "default_popup": "popup.html",
     "default_title": "CicalengkaGO Scraper"
   },
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": ["https://food.grab.com/*"],

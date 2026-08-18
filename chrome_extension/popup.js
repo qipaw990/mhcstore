@@ -20,9 +20,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   let listingStores = [];
 
   // Restore saved API URL if any
-  chrome.storage.local.get(['cgo_api_url'], (res) => {
+  chrome.storage.local.get(['cgo_api_url', 'batchStatus'], (res) => {
     if (res.cgo_api_url) {
       apiUrlInput.value = res.cgo_api_url;
+    }
+    if (res.batchStatus) {
+      updateBatchUI(res.batchStatus);
+    }
+  });
+
+  // Listen to background storage changes for live progress updates
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.batchStatus) {
+      updateBatchUI(changes.batchStatus.newValue);
     }
   });
 
@@ -58,31 +68,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   } catch (e) {}
 
-  // Helper to send JSON to API with automatic local fallback
-  async function sendToApi(targetUrl, payload) {
-    try {
-      return await fetch(targetUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-    } catch (err) {
-      // If fetching production domain fails, try local XAMPP as fallback
-      if (targetUrl.includes('cicago.store')) {
-        const fallbackUrl = 'http://localhost/CicalengkaGO/api/import-store';
-        return await fetch(fallbackUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
-      }
-      throw err;
+  function updateBatchUI(status) {
+    if (!status) return;
+
+    if (status.isBatchRunning) {
+      scrapeBtn.disabled = true;
+      batchScrapeBtn.disabled = true;
+      progressContainer.style.display = 'block';
+      statusCard.classList.add('active');
+      statusTitle.textContent = "🚀 Scrape Massal Berjalan (Background)...";
+      statusBadge.textContent = "RUNNING";
+      statusBadge.className = "badge";
+      
+      const pct = status.percent || 0;
+      progressBar.style.width = `${pct}%`;
+      progressPercent.textContent = `${pct}%`;
+      progressText.textContent = `[${status.current || 1}/${status.total || 1}] Memproses...`;
+      statusText.textContent = status.statusText || "Meng-scrape toko...";
+    } else if (status.completed) {
+      progressContainer.style.display = 'block';
+      progressBar.style.width = '100%';
+      progressPercent.textContent = '100%';
+      progressText.textContent = 'Selesai!';
+
+      statusCard.classList.add('active');
+      statusTitle.textContent = "🎉 BATCH IMPORT SELESAI!";
+      statusBadge.textContent = "COMPLETED";
+      statusBadge.className = "badge success";
+      statusText.textContent = status.statusText || "Seluruh toko berhasil diimpor ke CicalengkaGO!";
+
+      scrapeBtn.disabled = false;
+      batchScrapeBtn.disabled = false;
     }
   }
 
@@ -134,7 +150,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Batch Store Scrape (Sequential Multi-Tab)
+  // Batch Store Scrape (Delegate to Background Worker)
   batchScrapeBtn.addEventListener('click', async () => {
     const apiUrl = apiUrlInput.value.trim();
     if (!apiUrl) {
@@ -147,7 +163,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    if (!confirm(`Apakah Anda yakin ingin meng-scrape & mengimpor ${listingStores.length} toko sekaligus ke CicalengkaGO?`)) {
+    if (!confirm(`Apakah Anda yakin ingin meng-scrape & mengimpor ${listingStores.length} toko sekaligus ke CicalengkaGO?\n\nProses ini berjalan otomatis di background.`)) {
       return;
     }
 
@@ -155,79 +171,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     batchScrapeBtn.disabled = true;
     progressContainer.style.display = 'block';
     statusCard.classList.add('active');
-    statusTitle.textContent = "🚀 Scrape Massal Berjalan...";
-    statusBadge.textContent = "BATCH SCRAPE";
+    statusTitle.textContent = "🚀 Memulai Scrape Massal...";
+    statusBadge.textContent = "STARTING";
     statusBadge.className = "badge";
 
-    let importedCount = 0;
-    let failedCount = 0;
-    const total = listingStores.length;
-
-    for (let i = 0; i < total; i++) {
-      const storeUrl = listingStores[i];
-      const stepNum = i + 1;
-      const pct = Math.round((stepNum / total) * 100);
-
-      progressBar.style.width = `${pct}%`;
-      progressPercent.textContent = `${pct}%`;
-      progressText.textContent = `[${stepNum}/${total}] Membuka toko...`;
-      statusText.textContent = `[${stepNum}/${total}] Membuka tab: ${storeUrl.split('/').pop().slice(0, 30)}...`;
-
-      try {
-        const tab = await chrome.tabs.create({ url: storeUrl, active: false });
-
-        // Wait 4.2s for page load & DOM rendering
-        await new Promise(resolve => setTimeout(resolve, 4200));
-
-        try {
-          await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content.js']
-          });
-        } catch (e) {}
-
-        const scrapedData = await new Promise((resolve) => {
-          chrome.tabs.sendMessage(tab.id, { action: 'SCRAPE_DATA' }, (res) => {
-            if (res && res.success && res.data) {
-              resolve(res.data);
-            } else {
-              resolve(null);
-            }
-          });
-        });
-
-        try {
-          await chrome.tabs.remove(tab.id);
-        } catch (e) {}
-
-        if (scrapedData && scrapedData.name) {
-          statusText.textContent = `[${stepNum}/${total}] Mengirim '${scrapedData.name}' (${scrapedData.products.length} menu) ke CicalengkaGO...`;
-          
-          const postResp = await sendToApi(apiUrl, scrapedData);
-          if (postResp.ok) {
-            importedCount++;
-          } else {
-            failedCount++;
-          }
-        } else {
-          failedCount++;
-        }
-      } catch (err) {
-        failedCount++;
-      }
-    }
-
-    progressBar.style.width = '100%';
-    progressPercent.textContent = '100%';
-    progressText.textContent = 'Selesai!';
-
-    statusTitle.textContent = "🎉 BATCH IMPORT SELESAI!";
-    statusBadge.textContent = "COMPLETED";
-    statusBadge.className = "badge success";
-    statusText.textContent = `Berhasil mengimpor ${importedCount} toko dari total ${total} toko ke CicalengkaGO!${failedCount > 0 ? ` (${failedCount} gagal)` : ''}`;
-
-    scrapeBtn.disabled = false;
-    batchScrapeBtn.disabled = false;
+    // Send task to background service worker
+    chrome.runtime.sendMessage({
+      action: 'START_BATCH_SCRAPE',
+      stores: listingStores,
+      apiUrl: apiUrl
+    });
   });
 
   async function processScrapedData(data, apiUrl) {
@@ -251,7 +204,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     try {
-      const resp = await sendToApi(apiUrl, data);
+      const resp = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+
       const resText = await resp.text();
       let json = null;
       try {
