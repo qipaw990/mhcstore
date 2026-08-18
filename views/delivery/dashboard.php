@@ -153,12 +153,24 @@
             <!-- Batch Header -->
             <div class="active-task-header">
                 <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="badge rounded-pill px-2.5 py-1 text-white" style="background: rgba(255,255,255,0.15); font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">
-                        <i class="bi bi-bicycle me-1 text-warning"></i> TRIP BERLANGSUNG
-                    </span>
-                    <span class="badge bg-warning text-dark fw-bold px-2.5 py-1 rounded-pill" style="font-size: 10px;">
-                        <?= $deliveredCount ?>/<?= $batchCount ?> Terselesaikan
-                    </span>
+                    <div class="d-flex align-items-center gap-1.5">
+                        <span class="badge rounded-pill px-2.5 py-1 text-white" style="background: rgba(255,255,255,0.15); font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">
+                            <i class="bi bi-bicycle me-1 text-warning"></i> TRIP BERLANGSUNG
+                        </span>
+                        <span class="badge bg-warning text-dark fw-bold px-2 py-0.5 rounded-pill" style="font-size: 10px;">
+                            <?= $deliveredCount ?>/<?= $batchCount ?> Terselesaikan
+                        </span>
+                    </div>
+
+                    <?php if ($firstActiveOrder): ?>
+                    <button type="button"
+                            onclick="openDriverChatModal('<?= htmlspecialchars($firstActiveOrder['order_code']) ?>')"
+                            class="btn btn-sm rounded-pill px-3 py-1 fw-bold text-white shadow-xs d-flex align-items-center gap-1.5 position-relative"
+                            style="background: #EE2737; border: 1px solid rgba(255,255,255,0.3); font-size: 11px; white-space: nowrap;">
+                        <i class="bi bi-chat-dots-fill"></i> Chat Pembeli
+                        <span class="ccg-unread-dot d-none" id="driverChatUnreadDot1"></span>
+                    </button>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Progress Bar -->
@@ -218,15 +230,12 @@
                     <!-- Order Mini Header -->
                     <div class="px-3 py-2 d-flex align-items-center justify-content-between"
                          style="background: <?= $bIsDelivered ? '#D1FAE5' : ($bIsPickedUp ? '#FEF3C7' : '#FEE2E2') ?>;">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge rounded-pill fw-bold text-white px-2 py-0.5"
-                                  style="font-size: 9px; background: <?= $bIsDelivered ? '#10B981' : ($bIsPickedUp ? '#F59E0B' : '#EE2737') ?>;">
-                                <?= $seqLabel ?>
-                            </span>
-                            <span class="fw-bold text-dark" style="font-size: 11.5px;">#<?= htmlspecialchars($bOrd['order_code']) ?></span>
-                        </div>
-                        <span class="badge rounded-pill px-2 py-0.5 fw-bold"
-                              style="font-size: 9px; background: <?= $bIsDelivered ? '#D1FAE5' : ($bIsPickedUp ? '#FEF3C7' : '#FEE2E2') ?>; color: <?= $bIsDelivered ? '#059669' : ($bIsPickedUp ? '#D97706' : '#DC2626') ?>;">
+                        <span class="badge rounded-pill text-white fw-bold px-2 py-0.5"
+                              style="font-size: 9.5px; background: <?= $bIsDelivered ? '#10B981' : ($bIsPickedUp ? '#F59E0B' : '#EE2737') ?>;">
+                            <?= $seqLabel ?>
+                        </span>
+                        <span class="fw-bold text-dark" style="font-size: 11px;">#<?= htmlspecialchars($bOrd['order_code']) ?></span>
+                        <span class="fw-bold" style="font-size: 10px; color: <?= $bIsDelivered ? '#047857' : ($bIsPickedUp ? '#B45309' : '#B91C1C') ?>;">
                             <?= $bIsDelivered ? '✓ Selesai' : ($bIsPickedUp ? '🏍 Mengantar' : '⏳ Belum Dijemput') ?>
                         </span>
                     </div>
@@ -251,23 +260,12 @@
                         </div>
 
                         <!-- Customer info row -->
-                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
-                            <div class="d-flex align-items-center gap-2" style="min-width: 0; flex: 1;">
-                                <i class="bi bi-geo-alt-fill text-success flex-shrink-0" style="font-size: 14px;"></i>
-                                <div style="min-width: 0; flex: 1;">
-                                    <div class="fw-bold text-dark text-truncate" style="font-size: 11.5px;"><?= htmlspecialchars($bOrd['customer_name'] ?? 'Pelanggan') ?></div>
-                                    <div class="text-muted text-truncate" style="font-size: 10px;"><?= htmlspecialchars($bOrd['delivery_address']['address'] ?? 'Cicalengka') ?></div>
-                                </div>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="bi bi-geo-alt-fill text-success flex-shrink-0" style="font-size: 14px;"></i>
+                            <div style="min-width: 0; flex: 1;">
+                                <div class="fw-bold text-dark text-truncate" style="font-size: 11.5px;"><?= htmlspecialchars($bOrd['customer_name'] ?? 'Pelanggan') ?></div>
+                                <div class="text-muted text-truncate" style="font-size: 10px;"><?= htmlspecialchars($bOrd['delivery_address']['address'] ?? 'Cicalengka') ?></div>
                             </div>
-                            <?php if (!$bIsDelivered): ?>
-                            <button type="button"
-                                    onclick="openDriverChatModal('<?= htmlspecialchars($bOrd['order_code']) ?>')"
-                                    class="btn btn-outline-danger btn-sm rounded-pill px-2.5 py-1 fw-bold flex-shrink-0 d-flex align-items-center gap-1 shadow-xs position-relative"
-                                    style="font-size: 10.5px; white-space: nowrap;">
-                                <i class="bi bi-chat-dots-fill"></i> Chat Pembeli
-                                <span class="ccg-unread-dot d-none" id="driverChatUnreadDot_<?= $bOrd['id'] ?>"></span>
-                            </button>
-                            <?php endif; ?>
                         </div>
 
                         <!-- Items list in active order card -->
@@ -292,21 +290,15 @@
                         <div class="d-flex gap-2 mt-2 pt-2 align-items-center" style="border-top: 1px dashed #E2E8F0;">
                             <?php if (!$bIsPickedUp): ?>
                                 <button onclick="updateDeliveryStep(<?= $bOrd['id'] ?>, 'picked_up')"
-                                        class="btn fw-bold flex-grow-1 text-dark rounded-pill py-2 d-flex align-items-center justify-content-center gap-1 shadow-xs"
+                                        class="btn fw-bold w-100 text-dark rounded-pill py-2 d-flex align-items-center justify-content-center gap-1 shadow-xs"
                                         style="background:#F59E0B; border:none; font-size: 11px;">
                                     <i class="bi bi-box-seam-fill"></i> Sudah Dijemput dari <?= $seqLabel ?>
                                 </button>
                             <?php else: ?>
-                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill py-2 px-3 flex-grow-1 d-flex align-items-center justify-content-center gap-1" style="font-size: 10.5px;">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill py-2 px-3 w-100 d-flex align-items-center justify-content-center gap-1" style="font-size: 10.5px;">
                                     <i class="bi bi-check-circle-fill"></i> Barang <?= $seqLabel ?> Terjemput
                                 </span>
                             <?php endif; ?>
-                            <button type="button"
-                                    onclick="openDriverChatModal('<?= htmlspecialchars($bOrd['order_code']) ?>')"
-                                    class="btn btn-danger btn-sm rounded-pill px-3 py-1.5 d-flex align-items-center gap-1 shadow-xs position-relative flex-shrink-0"
-                                    style="background:#EE2737; border:none; color:white; font-size: 11px;">
-                                <i class="bi bi-chat-dots-fill"></i> Chat
-                            </button>
                         </div>
                         <?php else: ?>
                             <div class="d-flex align-items-center gap-1 text-success mt-2 pt-2" style="border-top: 1px dashed #E2E8F0; font-size: 11px; font-weight: 700;">
