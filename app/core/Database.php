@@ -83,6 +83,14 @@ class Database
                 $this->pdo->exec("ALTER TABLE `orders` MODIFY COLUMN `payment_status` VARCHAR(30) NOT NULL DEFAULT 'unpaid'");
             } catch (Exception $e) {}
 
+            // Guarantee stores table grab_url column existence
+            try {
+                $stmtCol = $this->pdo->query("SHOW COLUMNS FROM `stores` LIKE 'grab_url'");
+                if ($stmtCol && !$stmtCol->fetch()) {
+                    $this->pdo->exec("ALTER TABLE `stores` ADD COLUMN `grab_url` VARCHAR(500) NULL AFTER `address`");
+                }
+            } catch (Exception $e) {}
+
             // Guarantee chats table existence
             try {
                 $this->pdo->exec("CREATE TABLE IF NOT EXISTS `chats` (
