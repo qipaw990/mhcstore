@@ -7,10 +7,10 @@
     <h6 class="fw-bold m-0 text-dark" style="font-size: 13.5px; letter-spacing: -0.2px;">Dompet Digital CicalengkaPay</h6>
 </div>
 
-<div class="px-2.5 py-2.5 pb-5">
+<div class="px-3 py-3 pb-5" style="background: #F8FAFC; min-height: calc(100vh - 60px);">
     <!-- CicalengkaPay Ultra-Premium Red Banner Card -->
-    <div class="text-white mb-2.5 position-relative overflow-hidden" 
-         style="background: linear-gradient(135deg, #EE2737 0%, #B91C1C 100%); border-radius: 16px; box-shadow: 0 5px 16px rgba(238, 39, 55, 0.2); padding: 14px 14px 12px 14px;">
+    <div class="text-white mb-3 position-relative overflow-hidden" 
+         style="background: linear-gradient(135deg, #EE2737 0%, #B91C1C 100%); border-radius: 20px; box-shadow: 0 8px 24px rgba(238, 39, 55, 0.22); padding: 18px 18px 16px 18px;">
         <!-- Watermark Pattern Background -->
         <div class="position-absolute" style="right: -10px; bottom: -20px; font-size: 80px; opacity: 0.08; line-height: 1; pointer-events: none;">
             <i class="bi bi-wallet2"></i>
@@ -33,24 +33,24 @@
                 </div>
             </div>
 
-            <!-- Ringkasan Aktivitas Saldo (Compact & Super Crisp) -->
-            <div class="row g-1.5 my-2">
+            <!-- Ringkasan Aktivitas Saldo -->
+            <div class="row g-2 my-2.5">
                 <div class="col-4">
-                    <div class="py-1 px-1 rounded-3 text-center" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.22);">
-                        <div class="text-white-50" style="font-size: 8px; font-weight: 600;">Topup</div>
-                        <div class="fw-bold text-white mt-0.5" style="font-size: 11px;"><?= $topup_stats['success_count'] ?? 0 ?>x</div>
+                    <div class="py-1.5 px-1 rounded-3 text-center" style="background: rgba(255,255,255,0.18); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.25);">
+                        <div class="text-white-50" style="font-size: 9px; font-weight: 600;">Topup</div>
+                        <div class="fw-bold text-white mt-0.5" style="font-size: 12px;"><?= $topup_stats['success_count'] ?? 0 ?>x</div>
                     </div>
                 </div>
                 <div class="col-4">
-                    <div class="py-1 px-1 rounded-3 text-center" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.22);">
-                        <div class="text-white-50" style="font-size: 8px; font-weight: 600;">Menunggu</div>
-                        <div class="fw-bold text-warning mt-0.5" style="font-size: 11px;"><?= $topup_stats['pending_count'] ?? 0 ?>x</div>
+                    <div class="py-1.5 px-1 rounded-3 text-center" style="background: rgba(255,255,255,0.18); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.25);">
+                        <div class="text-white-50" style="font-size: 9px; font-weight: 600;">Menunggu</div>
+                        <div class="fw-bold text-warning mt-0.5" style="font-size: 12px;"><?= $topup_stats['pending_count'] ?? 0 ?>x</div>
                     </div>
                 </div>
                 <div class="col-4">
-                    <div class="py-1 px-1 rounded-3 text-center" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.22);">
-                        <div class="text-white-50" style="font-size: 8px; font-weight: 600;">Refund</div>
-                        <div class="fw-bold text-info mt-0.5" style="font-size: 11px;"><?= count(array_filter($transactions ?? [], fn($t) => in_array($t['category'] ?? '', ['refund', 'order_refund']))) ?>x</div>
+                    <div class="py-1.5 px-1 rounded-3 text-center" style="background: rgba(255,255,255,0.18); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.25);">
+                        <div class="text-white-50" style="font-size: 9px; font-weight: 600;">Refund</div>
+                        <div class="fw-bold text-info mt-0.5" style="font-size: 12px;"><?= count(array_filter($transactions ?? [], fn($t) => in_array($t['category'] ?? '', ['refund', 'order_refund']))) ?>x</div>
                     </div>
                 </div>
             </div>
@@ -62,24 +62,24 @@
         </div>
     </div>
 
-    <!-- Quick Top Up Amount Selector (Compact ShopeePay Style) -->
-    <div class="p-2.5 mb-2.5 bg-white border" style="border-radius: 16px; border-color: #E2E8F0 !important; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <div class="d-flex align-items-center gap-1.5">
-                <div class="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center flex-shrink-0" style="width: 22px; height: 22px; font-size: 11px; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.25);">
+    <!-- Quick Top Up Amount Selector -->
+    <div class="p-3 mb-3 bg-white border" style="border-radius: 20px; border-color: #E2E8F0 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.03);">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center flex-shrink-0 shadow-2xs" style="width: 28px; height: 28px; font-size: 13px;">
                     <i class="bi bi-lightning-fill"></i>
                 </div>
                 <div>
-                    <h6 class="fw-bold m-0 text-dark" style="font-size: 11.5px; letter-spacing: -0.2px;">Isi Saldo Instan</h6>
-                    <div class="text-muted" style="font-size: 8px;">Bebas Biaya Admin • Langsung Masuk</div>
+                    <h6 class="fw-bold m-0 text-dark" style="font-size: 13px; letter-spacing: -0.2px;">Isi Saldo Instan</h6>
+                    <div class="text-muted" style="font-size: 9.5px; font-weight: 500;">Bebas Biaya Admin • Langsung Masuk</div>
                 </div>
             </div>
-            <span class="badge text-white px-1.5 py-0.5" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); font-size: 7px; font-weight: 700; border-radius: 5px;">
+            <span class="badge text-white px-2 py-1" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); font-size: 8px; font-weight: 700; border-radius: 6px;">
                 QRIS & E-WALLET
             </span>
         </div>
 
-        <div class="row g-1.5">
+        <div class="row g-2.5">
             <?php
             $quickNominals = [
                 ['amount' => 20000,  'label' => '20.000',  'tag' => 'Hemat'],
@@ -91,13 +91,13 @@
             ?>
             <div class="col-6">
                 <button type="button" onclick="quickTopUp(<?= $item['amount'] ?>)" 
-                        class="btn w-100 p-1.5 border text-start position-relative overflow-hidden transition-all" 
-                        style="border-radius: 10px !important; background: #FFFFFF; border: 1px solid #E2E8F0 !important; min-height: 42px;">
-                    <div class="d-flex justify-content-between align-items-center mb-0.5">
-                        <span class="text-muted" style="font-size: 8px; font-weight: 600;">Rp</span>
-                        <span class="badge bg-danger-subtle text-danger fw-bold" style="font-size: 6.5px; padding: 1px 3px; border-radius: 3px;"><?= $item['tag'] ?></span>
+                        class="btn w-100 p-2.5 border text-start position-relative overflow-hidden transition-all shadow-2xs" 
+                        style="border-radius: 14px !important; background: #F8FAFC; border: 1px solid #CBD5E1 !important; min-height: 52px;">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted" style="font-size: 9px; font-weight: 600;">Rp</span>
+                        <span class="badge bg-danger-subtle text-danger fw-bold" style="font-size: 7.5px; padding: 2px 5px; border-radius: 4px;"><?= $item['tag'] ?></span>
                     </div>
-                    <div class="fw-extrabold text-dark" style="font-size: 12px; letter-spacing: -0.3px; color: #0F172A !important;">
+                    <div class="fw-extrabold text-dark" style="font-size: 13.5px; letter-spacing: -0.3px; color: #0F172A !important;">
                         <?= $item['label'] ?>
                     </div>
                 </button>
@@ -105,37 +105,37 @@
             <?php endforeach; ?>
         </div>
 
-        <div class="mt-2">
-            <button type="button" onclick="customTopUpDialog()" class="btn btn-light border w-100 py-1.5 rounded-pill fw-bold text-danger d-flex align-items-center justify-content-center gap-1" style="font-size: 10px; background: #FFF5F5; border-color: #FECDD3 !important;">
-                <i class="bi bi-pencil-square" style="font-size: 10px;"></i>
+        <div class="mt-2.5">
+            <button type="button" onclick="customTopUpDialog()" class="btn btn-light border w-100 py-2 rounded-pill fw-bold text-danger d-flex align-items-center justify-content-center gap-1.5" style="font-size: 11px; background: #FFF5F5; border-color: #FECDD3 !important;">
+                <i class="bi bi-pencil-square" style="font-size: 12px;"></i>
                 <span>Masukkan Nominal Lainnya</span>
             </button>
         </div>
     </div>
 
-    <!-- Navigation Tabs (Compact Bootstrap 5 HTML) -->
-    <ul class="nav nav-pills nav-fill bg-light p-1 border mb-3 rounded-3" id="walletTabs" role="tablist" style="background: #F1F5F9 !important; border-color: #E2E8F0 !important;">
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-pills nav-fill bg-white p-1 border mb-3 rounded-3 shadow-2xs" id="walletTabs" role="tablist" style="border-color: #E2E8F0 !important; border-radius: 14px !important;">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active fw-bold py-1.5 px-2 d-flex align-items-center justify-content-center gap-1" 
-                    id="mutation-tab" data-bs-toggle="tab" data-bs-target="#mutation-pane" type="button" role="tab" aria-controls="mutation-pane" aria-selected="true" style="font-size: 10.5px; border-radius: 8px !important;">
+            <button class="nav-link active fw-bold py-2 px-2 d-flex align-items-center justify-content-center gap-1.5" 
+                    id="mutation-tab" data-bs-toggle="tab" data-bs-target="#mutation-pane" type="button" role="tab" aria-controls="mutation-pane" aria-selected="true" style="font-size: 11px; border-radius: 10px !important;">
                 <i class="bi bi-receipt-cutoff text-danger"></i>
                 <span>Mutasi Saldo & Refund</span>
-                <span class="badge bg-danger text-white rounded-pill px-1.5" style="font-size: 8.5px;"><?= count($transactions ?? []) ?></span>
+                <span class="badge bg-danger text-white rounded-pill px-1.5" style="font-size: 9px;"><?= count($transactions ?? []) ?></span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link fw-bold py-1.5 px-2 d-flex align-items-center justify-content-center gap-1 text-secondary" 
-                    id="topup-tab" data-bs-toggle="tab" data-bs-target="#topup-pane" type="button" role="tab" aria-controls="topup-pane" aria-selected="false" style="font-size: 10.5px; border-radius: 8px !important;">
+            <button class="nav-link fw-bold py-2 px-2 d-flex align-items-center justify-content-center gap-1.5 text-secondary" 
+                    id="topup-tab" data-bs-toggle="tab" data-bs-target="#topup-pane" type="button" role="tab" aria-controls="topup-pane" aria-selected="false" style="font-size: 11px; border-radius: 10px !important;">
                 <i class="bi bi-journal-check"></i>
                 <span>Tiket Top Up Midtrans</span>
-                <span class="badge bg-secondary-subtle text-secondary rounded-pill px-1.5" style="font-size: 8.5px;"><?= count($topup_logs ?? []) ?></span>
+                <span class="badge bg-secondary-subtle text-secondary rounded-pill px-1.5" style="font-size: 9px;"><?= count($topup_logs ?? []) ?></span>
             </button>
         </li>
     </ul>
 
     <!-- Tab Contents -->
     <div class="tab-content" id="walletTabContent">
-        <!-- PANE 1 (DEFAULT): Riwayat Mutasi Saldo & Refund -->
+        <!-- PANE 1: Riwayat Mutasi Saldo & Refund -->
         <div class="tab-pane fade show active" id="mutation-pane" role="tabpanel">
             <?php
                 $refundCount = 0;
@@ -149,19 +149,19 @@
                 }
             ?>
 
-            <!-- Filter Pills (Compact) -->
-            <div class="d-flex gap-1.5 mb-3 overflow-auto pb-0.5 px-0.5" style="scrollbar-width: none;">
-                <button type="button" onclick="filterMutationList('all')" class="btn btn-sm btn-dark rounded-pill px-2.5 py-1 fw-bold mutation-filter-btn active" data-mfilter="all" style="font-size: 9.5px;">
+            <!-- Filter Pills -->
+            <div class="d-flex gap-2 mb-3 overflow-auto pb-1 px-0.5" style="scrollbar-width: none;">
+                <button type="button" onclick="filterMutationList('all')" class="btn btn-sm btn-dark rounded-pill px-3 py-1.5 fw-bold mutation-filter-btn active flex-shrink-0" data-mfilter="all" style="font-size: 10.5px;">
                     Semua (<?= count($transactions) ?>)
                 </button>
-                <button type="button" onclick="filterMutationList('refund')" class="btn btn-sm btn-light border rounded-pill px-2.5 py-1 fw-bold mutation-filter-btn text-primary" data-mfilter="refund" style="font-size: 9.5px;">
-                    <i class="bi bi-arrow-counterclockwise me-0.5"></i> Refund (<?= $refundCount ?>)
+                <button type="button" onclick="filterMutationList('refund')" class="btn btn-sm btn-light border rounded-pill px-3 py-1.5 fw-bold mutation-filter-btn text-primary flex-shrink-0" data-mfilter="refund" style="font-size: 10.5px;">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> Refund (<?= $refundCount ?>)
                 </button>
-                <button type="button" onclick="filterMutationList('topup')" class="btn btn-sm btn-light border rounded-pill px-2.5 py-1 fw-bold mutation-filter-btn text-success" data-mfilter="topup" style="font-size: 9.5px;">
-                    <i class="bi bi-plus-circle-fill me-0.5"></i> Top Up (<?= $topupCount ?>)
+                <button type="button" onclick="filterMutationList('topup')" class="btn btn-sm btn-light border rounded-pill px-3 py-1.5 fw-bold mutation-filter-btn text-success flex-shrink-0" data-mfilter="topup" style="font-size: 10.5px;">
+                    <i class="bi bi-plus-circle-fill me-1"></i> Top Up (<?= $topupCount ?>)
                 </button>
-                <button type="button" onclick="filterMutationList('order_payment')" class="btn btn-sm btn-light border rounded-pill px-2.5 py-1 fw-bold mutation-filter-btn text-danger" data-mfilter="order_payment" style="font-size: 9.5px;">
-                    <i class="bi bi-bag-check-fill me-0.5"></i> Belanja (<?= $orderCount ?>)
+                <button type="button" onclick="filterMutationList('order_payment')" class="btn btn-sm btn-light border rounded-pill px-3 py-1.5 fw-bold mutation-filter-btn text-danger flex-shrink-0" data-mfilter="order_payment" style="font-size: 10.5px;">
+                    <i class="bi bi-bag-check-fill me-1"></i> Belanja (<?= $orderCount ?>)
                 </button>
             </div>
 
