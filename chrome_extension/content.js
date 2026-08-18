@@ -84,7 +84,18 @@ function extractGrabFoodData() {
     if (Array.isArray(obj.categories)) {
       obj.categories.forEach(cat => {
         const catName = cat.name || 'Menu Utama';
-        if (cat.name && result.category === 'Kuliner & Snack') {
+        const catNameLower = catName.toLowerCase();
+
+        // Skip "Untukmu" / "Rekomendasi" / "For You" recommendation section
+        if (catNameLower.includes('untukmu') || 
+            catNameLower.includes('untuk mu') || 
+            catNameLower.includes('for you') || 
+            catNameLower.includes('rekomendasi') || 
+            catNameLower.includes('recommended')) {
+          return;
+        }
+
+        if (cat.name && (result.category === 'Kuliner & Snack' || result.category === 'Menu Utama')) {
           result.category = cat.name;
         }
 
@@ -101,7 +112,7 @@ function extractGrabFoodData() {
                 description: (p.description || '').trim(),
                 price: parseFloat(price) || 15000,
                 image: img,
-                is_recommended: (p.imgHref || p.isRecommended) ? 1 : 0,
+                is_recommended: 0,
                 category: catName
               });
             }
@@ -190,6 +201,16 @@ function extractGrabFoodData() {
   const domCards = document.querySelectorAll('[class*="itemCard"], [class*="menuItem"], [class*="item-"], [class*="MenuItem"], div[role="button"]');
   
   domCards.forEach(card => {
+    // Skip cards inside 'Untukmu' recommendation section
+    const parentSec = card.closest('section, [class*="category"], [class*="Category"], [class*="section"]');
+    if (parentSec) {
+      const headerText = (parentSec.querySelector('h1, h2, h3, h4, [class*="title"], [class*="header"]') || {}).textContent || '';
+      const htLower = headerText.toLowerCase();
+      if (htLower.includes('untukmu') || htLower.includes('untuk mu') || htLower.includes('for you') || htLower.includes('rekomendasi') || htLower.includes('recommended')) {
+        return;
+      }
+    }
+
     const nameEl = card.querySelector('h3, h4, [class*="name"], [class*="title"], [class*="itemName"]');
     const priceEl = card.querySelector('[class*="price"], [class*="Price"]');
     const descEl = card.querySelector('p, [class*="desc"], [class*="Description"]');
