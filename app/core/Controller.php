@@ -19,6 +19,10 @@ abstract class Controller
             session_write_close();
         }
 
+        if (ob_get_length()) {
+            @ob_clean();
+        }
+
         http_response_code($statusCode);
         header('Content-Type: application/json; charset=utf-8');
         header("Content-Security-Policy: default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' blob: data: https: http:; script-src-elem * 'unsafe-inline' 'unsafe-eval' blob: data: https: http:; style-src * 'unsafe-inline' https: http:; style-src-elem * 'unsafe-inline' https: http:; img-src * data: blob: https: http:; connect-src * https: http: ws: wss:; font-src * data: https: http:; frame-src *; child-src * blob:; worker-src * blob:;");

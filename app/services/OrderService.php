@@ -122,7 +122,7 @@ class OrderService
             }
 
             $orderCode   = 'CCG-' . strtoupper(substr(uniqid(), -6)) . rand(10, 99);
-            $otp         = str_pad((string)rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+            $otp         = !empty($data['shared_otp']) ? $data['shared_otp'] : str_pad((string)rand(1000, 9999), 4, '0', STR_PAD_LEFT);
             $isCodOrPaid = ($paymentMethod === 'cod' || $paymentStatus === 'paid');
             $orderStatus = $isCodOrPaid ? 'confirmed' : 'pending';
             $confirmedAt = $isCodOrPaid ? date('Y-m-d H:i:s') : null;

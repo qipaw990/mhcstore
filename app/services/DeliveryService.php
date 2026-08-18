@@ -127,9 +127,11 @@ class DeliveryService
                 $updateData['order_status']  = 'on_the_way';
 
             } elseif ($status === 'delivered') {
-                // Verify OTP
-                if (empty($otp) || trim($otp) !== trim($order['otp'])) {
-                    throw new Exception("Kode OTP pengantaran salah!");
+                // Verify OTP for single non-batch order (batch orders verify inside batch block)
+                if (empty($order['delivery_batch_id'])) {
+                    if (empty($otp) || trim($otp) !== trim($order['otp'])) {
+                        throw new Exception("Kode OTP pengantaran salah!");
+                    }
                 }
                 $updateData['delivered_at']     = $now;
                 $updateData['payment_status']   = 'paid';
@@ -160,10 +162,23 @@ class DeliveryService
                         [$batchId]
                     );
 
-                    foreach ($remainingOrders as $bOrdToDel) {
-                        if (empty($otp) || trim($otp) !== trim($bOrdToDel['otp'])) {
-                            throw new Exception("Kode OTP pengantaran salah!");
+                    // Check if OTP matches target order or any order in the batch
+                    $validOtp = false;
+                    if (!empty($otp)) {
+                        if (trim($otp) === trim($order['otp'])) {
+                            $validOtp = true;
+                        } else {
+                            foreach ($remainingOrders as $bCheck) {
+                                if (trim($otp) === trim($bCheck['otp'])) {
+                                    $validOtp = true;
+                                    break;
+                                }
+                            }
                         }
+                    }
+
+                    if (!$validOtp) {
+                        throw new Exception("Kode OTP pengantaran salah!");
                     }
 
                     foreach ($remainingOrders as $bOrdToDel) {

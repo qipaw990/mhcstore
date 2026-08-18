@@ -90,6 +90,7 @@ class OrderController extends Controller
             $allOrderCodes = [];
             $grandTotal    = 0.0;
             $batchId       = (count($stores) > 1) ? ('BATCH-' . strtoupper(substr(uniqid(), -6)) . rand(10, 99)) : null;
+            $sharedOtp     = str_pad((string)rand(1000, 9999), 4, '0', STR_PAD_LEFT);
             $seq           = 1;
 
             // Create one order per store
@@ -103,6 +104,7 @@ class OrderController extends Controller
                     'order_type'        => $data['order_type'] ?? 'delivery',
                     'store_id'          => $storeGroup['store_id'],   // scoped to this store
                     'delivery_batch_id' => $batchId,
+                    'shared_otp'        => $sharedOtp,
                     'pickup_sequence'   => $seq++,
                 ]);
 
