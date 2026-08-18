@@ -6,7 +6,7 @@
 
 let trackingMap = null;
 let driverMarker = null;
-let storeMarker = null;
+let storeMarkers = [];
 let customerMarker = null;
 let routePolyline = null;
 let currentTrackingData = null;
@@ -54,6 +54,30 @@ function createDriverIcon() {
   });
 }
 
+function createStoreIcon(seq) {
+  const badgeHtml = seq ? `<circle cx="24" cy="8" r="7.5" fill="#1e293b" stroke="white" stroke-width="1.5"/><text x="24" y="11" font-size="9" font-weight="800" fill="white" text-anchor="middle">${seq}</text>` : '';
+  const storeSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
+    <defs>
+      <linearGradient id="sg_${seq || 0}" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#f87171"/>
+        <stop offset="100%" stop-color="#b91c1c"/>
+      </linearGradient>
+    </defs>
+    <path d="M16 2C9 2 3 8 3 15c0 10 13 29 13 29S29 25 29 15C29 8 23 2 16 2z" fill="url(#sg_${seq || 0})" stroke="white" stroke-width="2"/>
+    <path d="M9 14 L9 12 Q9 10 16 10 Q23 10 23 12 L23 14 Q19.5 17 16 16 Q12.5 17 9 14z" fill="white"/>
+    <rect x="11" y="14.5" width="10" height="6" rx="0.5" fill="white" opacity="0.25"/>
+    <rect x="13" y="15" width="6" height="5.5" fill="white"/>
+    <rect x="14.5" y="16" width="3" height="4.5" fill="#b91c1c"/>
+    ${badgeHtml}
+  </svg>`;
+  return L.icon({
+    iconUrl: 'data:image/svg+xml,' + encodeURIComponent(storeSvg),
+    iconSize: [32, 46],
+    iconAnchor: [16, 46],
+    popupAnchor: [0, -46]
+  });
+}
+
 function initOrderTrackingMap(orderCode, initialData) {
   currentTrackingData = initialData;
   if (initialData.order_status === 'delivered') {
@@ -82,27 +106,6 @@ function initOrderTrackingMap(orderCode, initialData) {
     maxZoom: 19
   }).addTo(trackingMap);
 
-  // Store Marker — Red teardrop with shop symbol
-  const storeSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
-    <defs>
-      <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#f87171"/>
-        <stop offset="100%" stop-color="#b91c1c"/>
-      </linearGradient>
-    </defs>
-    <path d="M16 2C9 2 3 8 3 15c0 10 13 29 13 29S29 25 29 15C29 8 23 2 16 2z" fill="url(#sg)" stroke="white" stroke-width="2"/>
-    <path d="M9 14 L9 12 Q9 10 16 10 Q23 10 23 12 L23 14 Q19.5 17 16 16 Q12.5 17 9 14z" fill="white"/>
-    <rect x="11" y="14.5" width="10" height="6" rx="0.5" fill="white" opacity="0.25"/>
-    <rect x="13" y="15" width="6" height="5.5" fill="white"/>
-    <rect x="14.5" y="16" width="3" height="4.5" fill="#b91c1c"/>
-  </svg>`;
-  const storeIcon = L.icon({
-    iconUrl: 'data:image/svg+xml,' + encodeURIComponent(storeSvg),
-    iconSize: [32, 46],
-    iconAnchor: [16, 46],
-    popupAnchor: [0, -46]
-  });
-
   // Customer Destination Marker — Green teardrop with person symbol
   const customerSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
     <defs>
@@ -122,10 +125,30 @@ function initOrderTrackingMap(orderCode, initialData) {
     popupAnchor: [0, -46]
   });
 
-  // Place Store Marker
-  if (initialData.store && initialData.store.lat) {
-    storeMarker = L.marker([initialData.store.lat, initialData.store.lng], { icon: storeIcon, zIndexOffset: 100 })
-      .bindPopup(`<div class="p-1"><b>${escapeHtml(initialData.store.name)}</b><br><span class="badge bg-danger-subtle text-danger small mt-1">Titik Penjemputan</span></div>`)
+  // Place Store Markers (Support Multi-Store)
+  storeMarkers.forEach(m => { if (trackingMap) trackingMap.removeLayer(m); });
+  storeMarkers = [];
+
+  const storesToRender = (initialData.batch_stores && initialData.batch_stores.length > 0)
+    ? initialData.batch_stores
+    : (initialData.store && initialData.store.lat ? [initialData.store] : []);
+
+  storesToRender.forEach((st, idx) => {
+    if (st && st.lat && st.lng) {
+      const isMulti = storesToRender.length > 1;
+      const seqNum = isMulti ? (idx + 1) : null;
+      const popupText = `<div class="p-1"><b>${escapeHtml(st.name)}</b><br><span class="badge bg-danger-subtle text-danger small mt-1">Penjemputan ${isMulti ? 'Toko #' + (idx + 1) : 'Toko'}</span></div>`;
+      const m = L.marker([st.lat, st.lng], { icon: createStoreIcon(seqNum), zIndexOffset: 100 + idx })
+        .bindPopup(popupText)
+        .addTo(trackingMap);
+      storeMarkers.push(m);
+    }
+  });
+
+  // Place Customer Destination Marker
+  if (initialData.destination && initialData.destination.lat) {
+    customerMarker = L.marker([initialData.destination.lat, initialData.destination.lng], { icon: customerIcon, zIndexOffset: 500 })
+      .bindPopup(`<div class="p-1"><b>Tujuan Pengantaran</b><br><small class="text-muted">${escapeHtml(initialData.destination.address || 'Cicalengka')}</small></div>`)
       .addTo(trackingMap);
   }
 
@@ -232,23 +255,28 @@ function drawRoutePolylines(data) {
 
   if (!trackingMap) return;
 
-  const sLat = data.store?.lat;
-  const sLng = data.store?.lng;
+  const points = [];
+  const dLat = data.driver?.lat;
+  const dLng = data.driver?.lng;
   const cLat = data.destination?.lat;
   const cLng = data.destination?.lng;
-  const dLat = data.driver?.lat || sLat;
-  const dLng = data.driver?.lng || sLng;
 
-  const points = [];
+  if (dLat && dLng) {
+    points.push([dLat, dLng]);
+  }
 
-  if (data.order_status === 'confirmed' || data.order_status === 'processing') {
-    if (dLat && sLat) {
-      points.push([dLat, dLng], [sLat, sLng]);
+  const storesToRender = (data.batch_stores && data.batch_stores.length > 0)
+    ? data.batch_stores
+    : (data.store && data.store.lat ? [data.store] : []);
+
+  storesToRender.forEach(st => {
+    if (st && st.lat && st.lng) {
+      points.push([st.lat, st.lng]);
     }
-  } else {
-    if (dLat && cLat) {
-      points.push([dLat, dLng], [cLat, cLng]);
-    }
+  });
+
+  if (cLat && cLng) {
+    points.push([cLat, cLng]);
   }
 
   if (points.length >= 2) {
@@ -306,6 +334,10 @@ async function pollLiveTracking(orderCode) {
     if (json.success && json.data) {
       const d = json.data;
       const prevStatus = currentTrackingData ? currentTrackingData.order_status : null;
+      
+      if (d.batch_info && d.batch_info.stores && d.batch_info.stores.length > 0) {
+        d.batch_stores = d.batch_info.stores;
+      }
       currentTrackingData = d;
 
       // Celebrate when transitioning to delivered state
@@ -319,6 +351,26 @@ async function pollLiveTracking(orderCode) {
             confirmButtonColor: '#EE2737'
           });
         }
+      }
+
+      // Sync store markers dynamically if count mismatch
+      const storesToRender = (d.batch_stores && d.batch_stores.length > 0)
+        ? d.batch_stores
+        : (d.store && d.store.lat ? [d.store] : []);
+
+      if (storesToRender.length !== storeMarkers.length && trackingMap) {
+        storeMarkers.forEach(m => trackingMap.removeLayer(m));
+        storeMarkers = [];
+        storesToRender.forEach((st, idx) => {
+          if (st && st.lat && st.lng) {
+            const isMulti = storesToRender.length > 1;
+            const seqNum = isMulti ? (idx + 1) : null;
+            const m = L.marker([st.lat, st.lng], { icon: createStoreIcon(seqNum), zIndexOffset: 100 + idx })
+              .bindPopup(`<div class="p-1"><b>${escapeHtml(st.name)}</b><br><span class="badge bg-danger-subtle text-danger small mt-1">Penjemputan ${isMulti ? 'Toko #' + (idx + 1) : 'Toko'}</span></div>`)
+              .addTo(trackingMap);
+            storeMarkers.push(m);
+          }
+        });
       }
 
       // Update Driver Marker smoothly
@@ -356,13 +408,13 @@ async function pollLiveTracking(orderCode) {
 function fitAllMarkers() {
   if (!trackingMap) return;
   const group = [];
-  if (storeMarker) group.push(storeMarker);
+  storeMarkers.forEach(m => group.push(m));
   if (customerMarker) group.push(customerMarker);
   if (driverMarker) group.push(driverMarker);
 
   if (group.length > 0) {
     const featureGroup = L.featureGroup(group);
-    trackingMap.fitBounds(featureGroup.getBounds().pad(0.2));
+    trackingMap.fitBounds(featureGroup.getBounds().pad(0.25));
   }
 }
 

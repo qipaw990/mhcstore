@@ -553,6 +553,7 @@ document.addEventListener('DOMContentLoaded', () => {
             echo $createdTs;
         ?>,
         remaining_seconds: <?= max(0, 60 - max(0, $serverNowTs - $createdTs)) ?>,
+        batch_stores: <?= json_encode($order['batch_stores'] ?? []) ?>,
         store: {
             name: "<?= htmlspecialchars($order['store_name'] ?? 'Penjemputan') ?>",
             lat: <?= (float)($order['store_lat'] ?? -6.9835) ?>,
