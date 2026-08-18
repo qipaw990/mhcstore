@@ -349,10 +349,28 @@ class ApiController extends Controller
             // 4. Products Handling
             $products = is_array($data['products'] ?? null) ? $data['products'] : [];
             $itemsImported = 0;
+            $categoryCache = [];
 
             foreach ($products as $p) {
                 $pName = trim($p['name'] ?? '');
                 if (empty($pName)) continue;
+
+                // Handle product specific category
+                $pCatName = !empty($p['category']) ? trim($p['category']) : $catName;
+                if (!isset($categoryCache[$pCatName])) {
+                    $stmtC = $pdo->prepare("SELECT id FROM categories WHERE name = ? LIMIT 1");
+                    $stmtC->execute([$pCatName]);
+                    $cRow = $stmtC->fetch(\PDO::FETCH_ASSOC);
+
+                    if ($cRow) {
+                        $categoryCache[$pCatName] = (int)$cRow['id'];
+                    } else {
+                        $stmtInsC = $pdo->prepare("INSERT INTO categories (module_id, name, icon, status) VALUES (1, ?, 'bi-shop-window', 1)");
+                        $stmtInsC->execute([$pCatName]);
+                        $categoryCache[$pCatName] = (int)$pdo->lastInsertId();
+                    }
+                }
+                $itemCatId = $categoryCache[$pCatName];
 
                 $pDesc     = trim($p['description'] ?? '');
                 $pPrice    = (float)($p['price'] ?? 0);
@@ -374,7 +392,7 @@ class ApiController extends Controller
                     ");
                     $stmtInsP->execute([
                         $storeId,
-                        $catId,
+                        $itemCatId,
                         $pName,
                         $pDesc,
                         $pImage,
@@ -382,14 +400,12 @@ class ApiController extends Controller
                         $pDisc,
                         $pRec
                     ]);
-                    $itemsImported++;
                 } else {
-                    if (!empty($pImage) && (empty($existingP['image']) || strpos($existingP['image'], 'unsplash') !== false)) {
-                        $stmtUpP = $pdo->prepare("UPDATE products SET image = ?, description = ?, price = ? WHERE id = ?");
-                        $stmtUpP->execute([$pImage, $pDesc, $pPrice, $existingP['id']]);
-                        $itemsImported++;
-                    }
+                    $imgToUpdate = (!empty($pImage) && (empty($existingP['image']) || strpos($existingP['image'], 'unsplash') !== false)) ? $pImage : $existingP['image'];
+                    $stmtUpP = $pdo->prepare("UPDATE products SET category_id = ?, description = ?, price = ?, image = ? WHERE id = ?");
+                    $stmtUpP->execute([$itemCatId, $pDesc, $pPrice, $imgToUpdate, $existingP['id']]);
                 }
+                $itemsImported++;
             }
 
             // Update stores count
