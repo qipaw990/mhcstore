@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
   const scrapeBtn = document.getElementById('scrapeBtn');
   const batchScrapeBtn = document.getElementById('batchScrapeBtn');
+  const stopBatchBtn = document.getElementById('stopBatchBtn');
   const storeCountEl = document.getElementById('storeCount');
   const downloadJsonBtn = document.getElementById('downloadJsonBtn');
   const apiUrlInput = document.getElementById('apiUrl');
