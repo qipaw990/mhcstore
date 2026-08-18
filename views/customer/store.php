@@ -99,10 +99,17 @@ document.addEventListener('DOMContentLoaded', () => {
         <div style="text-align: center; padding: 14px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; color: #64748B; font-size: 11px;">Belum ada menu yang ditampilkan.</div>
     <?php else: ?>
         <div style="display: flex; flex-direction: column; gap: 12px !important; margin-bottom: 16px !important;">
-            <?php foreach ($products as $prod): ?>
-                <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px !important; padding: 12px 14px !important; display: flex; align-items: center; justify-content: space-between; gap: 12px !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02); overflow: hidden;">
+            <?php foreach ($products as $prod):
+                $isOutOfStock = ((int)($prod['stock'] ?? 0) <= 0);
+            ?>
+                <div style="background: #FFFFFF; border: 1px solid <?= $isOutOfStock ? '#FEE2E2' : '#E2E8F0' ?>; border-radius: 14px !important; padding: 12px 14px !important; display: flex; align-items: center; justify-content: space-between; gap: 12px !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02); overflow: hidden; <?= $isOutOfStock ? 'opacity: 0.72;' : '' ?>">
                     <div style="flex-grow: 1; min-width: 0;">
-                        <div style="font-size: 12.5px; font-weight: 700; color: #0F172A; margin-bottom: 4px !important; line-height: 1.3; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="<?= htmlspecialchars($prod['name']) ?>"><?= htmlspecialchars($prod['name']) ?></div>
+                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px !important;">
+                            <div style="font-size: 12.5px; font-weight: 700; color: #0F172A; line-height: 1.3; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="<?= htmlspecialchars($prod['name']) ?>"><?= htmlspecialchars($prod['name']) ?></div>
+                            <?php if ($isOutOfStock): ?>
+                                <span style="font-size: 8.5px; padding: 2px 6px; border-radius: 10px; background: #FEE2E2; color: #DC2626; font-weight: 700; white-space: nowrap; flex-shrink: 0;">Stok Habis</span>
+                            <?php endif; ?>
+                        </div>
                         <div style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 10px; color: #64748B; line-height: 1.4; margin-bottom: 8px !important;">
                             <?= htmlspecialchars($prod['description']) ?>
                         </div>
@@ -118,13 +125,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="flex-shrink: 0; text-align: center;">
                         <img src="<?= $baseUrl ?>/<?= htmlspecialchars($prod['image'] ?? 'assets/images/products/default.jpg') ?>" alt="<?= htmlspecialchars($prod['name']) ?>" style="width: 70px; height: 70px; object-fit: cover; border-radius: 12px !important; margin-bottom: 6px !important; border: 1px solid #F1F5F9;">
                         <div>
-                            <?php if ($store['is_open']): ?>
+                            <?php if (!$store['is_open']): ?>
+                                <button type="button" class="btn btn-sm btn-secondary disabled" style="font-size: 10px; padding: 3px 10px !important; border-radius: 20px !important;">Tutup</button>
+                            <?php elseif ($isOutOfStock): ?>
+                                <button type="button" class="btn btn-sm disabled" style="font-size: 10px; padding: 3px 10px !important; border-radius: 20px !important; background:#FEE2E2; color:#DC2626; border: none; font-weight:700;">Habis</button>
+                            <?php else: ?>
                                 <button type="button" onclick="addToCart(<?= $prod['id'] ?>, 1)" style="background: linear-gradient(135deg, #EE2737, #C61524); color: #FFFFFF; font-size: 11px !important; font-weight: 700; padding: 5px 14px !important; border-radius: 20px !important; border: none; box-shadow: 0 2px 6px rgba(238, 39, 55, 0.25); display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
                                     <i class="bi bi-plus-lg" style="font-size: 11px;"></i> Tambah
-                                </button>
-                            <?php else: ?>
-                                <button type="button" class="btn btn-sm btn-secondary disabled" style="font-size: 10px; padding: 3px 10px !important; border-radius: 20px !important;">
-                                    Tutup
                                 </button>
                             <?php endif; ?>
                         </div>

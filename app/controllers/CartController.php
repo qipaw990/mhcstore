@@ -33,6 +33,15 @@ class CartController extends Controller
             return;
         }
 
+        // Validasi stok sebelum tambah ke keranjang
+        if ((int)($product['stock'] ?? 0) <= 0) {
+            $this->errorResponse('Maaf, stok produk "' . $product['name'] . '" sedang habis.');
+            return;
+        }
+        if ($quantity > (int)($product['stock'] ?? 0)) {
+            $quantity = (int)$product['stock'];
+        }
+
         $userId = auth_id();
         $sessionId = session_id();
 

@@ -51,6 +51,20 @@ class OrderService
                 throw new Exception("Toko tidak ditemukan.");
             }
 
+            // Validasi stok semua item sebelum order dibuat
+            foreach ($cartData['items'] as $item) {
+                $product = Database::fetchOne(
+                    "SELECT id, name, stock, status FROM `products` WHERE `id` = ? LIMIT 1",
+                    [(int)$item['product_id']]
+                );
+                if (!$product || !$product['status']) {
+                    throw new Exception("Produk \"" . ($product['name'] ?? 'Tidak diketahui') . "\" sudah tidak tersedia.");
+                }
+                if ((int)$product['stock'] < (int)$item['quantity']) {
+                    throw new Exception("Stok produk \"" . $product['name'] . "\" tidak mencukupi. Sisa: " . $product['stock'] . ", diminta: " . $item['quantity'] . ".");
+                }
+            }
+
             $orderAmount = (float)$cartData['subtotal'];
             
             // Calculate accurate distance from GPS Coordinates
@@ -146,8 +160,15 @@ class OrderService
                     'total_price'     => $item['item_total']
                 ]);
 
-                // Increment product & store order counter
-                Database::execute("UPDATE `products` SET `order_count` = `order_count` + 1 WHERE `id` = ?", [$item['product_id']]);
+                // Decrement product stock (prevent negative stock)
+                Database::execute(
+                    "UPDATE `products` SET 
+                        `stock` = GREATEST(0, `stock` - ?),
+                        `order_count` = `order_count` + 1,
+                        `status` = IF(`stock` - ? <= 0, 0, `status`)
+                     WHERE `id` = ?",
+                    [$item['quantity'], $item['quantity'], $item['product_id']]
+                );
             }
             Database::execute("UPDATE `stores` SET `order_count` = `order_count` + 1 WHERE `id` = ?", [$storeId]);
 

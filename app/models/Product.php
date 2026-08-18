@@ -48,11 +48,12 @@ class Product extends Model
 
     public function getByStore(int $storeId): array
     {
+        // Ambil semua produk aktif + produk stock habis (agar customer lihat badge Habis)
         $sql = "SELECT p.*, c.name as category_name
                 FROM `products` p
                 JOIN `categories` c ON p.category_id = c.id
-                WHERE p.store_id = ? AND p.status = 1
-                ORDER BY c.priority ASC, p.id DESC";
+                WHERE p.store_id = ?
+                ORDER BY p.status DESC, p.stock DESC, c.priority ASC, p.id DESC";
         $products = Database::query($sql, [$storeId]);
         foreach ($products as &$p) {
             $p['final_price'] = $this->calculateFinalPrice($p);
