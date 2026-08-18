@@ -70,8 +70,8 @@ $unreadNotifs = $user ? (new \App\Models\Notification())->getUnreadCount($user['
                 <a href="<?= $baseUrl ?>/cart" class="gojek-icon-btn position-relative" title="Keranjang Belanja">
                     <i class="bi bi-cart3"></i>
                     <?php if (!empty($cartSummary['count']) && $cartSummary['count'] > 0): ?>
-                        <span id="header-cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 7.5px; padding: 2px 3.5px; border: 1.5px solid #FFFFFF;">
-                            <?= $cartSummary['count'] ?>
+                        <span id="header-cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-flex align-items-center justify-content-center" style="font-size: 7px; min-width: 16px; max-width: 24px; height: 16px; padding: 0 4px; border: 1.5px solid #FFFFFF; line-height: 1; overflow: hidden; white-space: nowrap; text-overflow: clip;">
+                            <?= $cartSummary['count'] > 99 ? '99+' : $cartSummary['count'] ?>
                         </span>
                     <?php endif; ?>
                 </a>
