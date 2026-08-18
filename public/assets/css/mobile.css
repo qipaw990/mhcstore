@@ -785,8 +785,28 @@ i.bi, [class^="bi-"], [class*=" bi-"] {
   transform: scale(0.88) !important;
 }
 
-.gofood-btn-add:active {
-  transform: scale(0.88);
+.gofood-btn-add-block {
+  width: 100% !important;
+  height: 28px !important;
+  border-radius: 9999px !important;
+  background: linear-gradient(135deg, #EE2737, #C61524) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 6px rgba(238, 39, 55, 0.25) !important;
+  transition: transform 0.15s ease, background 0.2s ease !important;
+  margin-top: 6px !important;
+  text-decoration: none !important;
+}
+
+.gofood-btn-add-block:active {
+  transform: scale(0.96) !important;
 }
 
 /* =========================================================================

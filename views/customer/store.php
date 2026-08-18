@@ -135,16 +135,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
 
-                    <div style="flex-shrink: 0; text-align: center;">
-                        <img src="<?= $baseUrl ?>/<?= htmlspecialchars($prod['image'] ?? 'assets/images/products/default.jpg') ?>" alt="<?= htmlspecialchars($prod['name']) ?>" style="width: 70px; height: 70px; object-fit: cover; border-radius: 12px !important; margin-bottom: 6px !important; border: 1px solid #F1F5F9;">
+                    <div style="flex-shrink: 0; text-align: center; width: 76px;">
+                        <img src="<?= $baseUrl ?>/<?= htmlspecialchars($prod['image'] ?? 'assets/images/products/default.jpg') ?>" alt="<?= htmlspecialchars($prod['name']) ?>" style="width: 76px; height: 76px; object-fit: cover; border-radius: 12px !important; margin-bottom: 4px !important; border: 1px solid #F1F5F9;">
                         <div>
                             <?php if (!$store['is_open']): ?>
-                                <button type="button" class="btn btn-sm btn-secondary disabled" style="font-size: 10px; padding: 3px 10px !important; border-radius: 20px !important;">Tutup</button>
+                                <button type="button" class="btn btn-sm btn-secondary disabled w-100" style="font-size: 10px; padding: 3px 0 !important; border-radius: 20px !important;">Tutup</button>
                             <?php elseif ($isOutOfStock): ?>
-                                <button type="button" class="btn btn-sm disabled" style="font-size: 10px; padding: 3px 10px !important; border-radius: 20px !important; background:#FEE2E2; color:#DC2626; border: none; font-weight:700;">Habis</button>
+                                <button type="button" class="btn btn-sm disabled w-100" style="font-size: 10px; padding: 3px 0 !important; border-radius: 20px !important; background:#FEE2E2; color:#DC2626; border: none; font-weight:700;">Habis</button>
                             <?php else: ?>
-                                <button type="button" onclick="addToCart(<?= $prod['id'] ?>, 1)" style="background: linear-gradient(135deg, #EE2737, #C61524); color: #FFFFFF; font-size: 11px !important; font-weight: 700; padding: 5px 14px !important; border-radius: 20px !important; border: none; box-shadow: 0 2px 6px rgba(238, 39, 55, 0.25); display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
-                                    <i class="bi bi-plus-lg" style="font-size: 11px;"></i> Tambah
+                                <button type="button" class="gofood-btn-add-block m-0" onclick="addToCart(<?= $prod['id'] ?>, 1)">
+                                    <i class="bi bi-plus-lg" style="font-size: 10px;"></i> Tambah
                                 </button>
                             <?php endif; ?>
                         </div>

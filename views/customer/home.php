@@ -193,15 +193,15 @@
             <div class="gofood-prod-body">
                 <div class="gofood-prod-store text-truncate"><?= htmlspecialchars($prod['store_name'] ?? 'Mitra GoFood') ?></div>
                 <div class="gofood-prod-name text-truncate"><?= htmlspecialchars($prod['name']) ?></div>
-                <div class="gofood-price-row mt-1 d-flex align-items-center justify-content-between gap-1">
+                <div class="gofood-price-row mt-1 d-flex flex-column gap-0.5">
                     <div class="min-w-0">
                         <div class="gofood-price text-truncate"><?= format_rupiah($prod['final_price']) ?></div>
                         <?php if (!empty($prod['discount']) && (float)$prod['discount'] > 0 && (float)$prod['price'] > (float)$prod['final_price']): ?>
                             <span class="text-muted text-decoration-line-through text-truncate d-block" style="font-size: 9px;"><?= format_rupiah($prod['price']) ?></span>
                         <?php endif; ?>
                     </div>
-                    <button type="button" class="gofood-btn-add shadow-2xs flex-shrink-0" onclick="addToCart(<?= $prod['id'] ?>, 1)" title="Tambah ke Keranjang">
-                        <i class="bi bi-plus-lg"></i>
+                    <button type="button" class="gofood-btn-add-block" onclick="addToCart(<?= $prod['id'] ?>, 1)" title="Tambah ke Keranjang">
+                        <i class="bi bi-plus-lg" style="font-size: 10px;"></i> Tambah
                     </button>
                 </div>
             </div>
