@@ -13,7 +13,7 @@ class DeliveryService
     private DeliveryMan $dmModel;
     private Wallet $walletModel;
 
-    const MAX_BATCH_ORDERS = 3; // Max orders a driver can carry in one trip
+    const MAX_BATCH_ORDERS = 10; // Max orders a driver can carry in one trip
 
     public function __construct()
     {
