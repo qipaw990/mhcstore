@@ -111,12 +111,12 @@ function attach_store_schedule_data(&$store, bool $allowLiveCurl = false): void
     if (empty($store['id'])) return;
     $storeId = (int)$store['id'];
     
-    // Master Toggle Switch from Merchant App (1 = BUKA, 0 = TUTUP)
+    // Master Toggle Switch from Merchant App / Database (1 = BUKA, 0 = TUTUP)
     $vendorToggle = (int)($store['is_open'] ?? 1);
 
     $scheduleData = get_store_schedule_status($storeId, $vendorToggle);
 
-    // If merchant manually toggled OFF (0) in merchant app, store MUST show TUTUP (0)!
+    // 1. If merchant/admin manually toggled OFF (0), store is TUTUP (0)!
     if ($vendorToggle === 0) {
         $store['is_open']         = 0;
         $store['opening_time']    = $scheduleData['opening_time'];
@@ -125,16 +125,8 @@ function attach_store_schedule_data(&$store, bool $allowLiveCurl = false): void
         return;
     }
 
-    // If merchant manually toggled ON (1) in merchant app:
-    $isOpen = true;
-
-    // Optional Grab live cache sync if present
-    if (!empty($store['grab_url'])) {
-        $liveStatus = check_grab_url_is_open($store['grab_url'], $allowLiveCurl);
-        if ($liveStatus !== null) {
-            $isOpen = $liveStatus;
-        }
-    }
+    // 2. If vendorToggle is 1 (BUKA), verify against operating hours schedule
+    $isOpen = $scheduleData['is_within_hours'];
 
     $store['is_open']         = $isOpen ? 1 : 0;
     $store['opening_time']    = $scheduleData['opening_time'];
