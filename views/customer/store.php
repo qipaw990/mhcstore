@@ -121,10 +121,13 @@ if (!empty($products)) {
 ?>
 
 <!-- Search Bar inside Store & Sticky Category Pills -->
-<div class="px-3 sticky-top bg-white py-2 shadow-2xs" style="z-index: 10; top: 0;">
+<div class="px-3 sticky-top bg-white py-2 border-bottom shadow-2xs" style="z-index: 10; top: 0;">
     <div class="position-relative mb-2">
-        <input type="text" id="storeMenuSearchInput" class="form-control rounded-pill border ps-4 pe-4 py-1.5" style="font-size: 11.5px; background: #F8FAFC;" placeholder="Cari menu di <?= htmlspecialchars($store['name']) ?>...">
-        <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-2.5 text-muted" style="font-size: 12px;"></i>
+        <i class="bi bi-search position-absolute top-50 translate-middle-y text-muted" style="left: 14px; font-size: 13px; z-index: 5; pointer-events: none;"></i>
+        <input type="text" id="storeMenuSearchInput" class="form-control rounded-pill" style="font-size: 12px; font-weight: 500; background: #F1F5F9; border: 1px solid #CBD5E1; padding-left: 36px !important; padding-right: 36px !important; height: 38px; color: #0F172A; transition: all 0.2s ease;" placeholder="Cari menu di <?= htmlspecialchars($store['name']) ?>..." autocomplete="off">
+        <button type="button" id="clearStoreMenuSearch" class="btn btn-link p-0 position-absolute top-50 translate-middle-y d-none" style="right: 12px; z-index: 5; color: #94A3B8; text-decoration: none;" title="Bersihkan">
+            <i class="bi bi-x-circle-fill" style="font-size: 14px;"></i>
+        </button>
     </div>
 
     <!-- Category Pills Filter -->
@@ -270,8 +273,40 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const clearSearchBtn = document.getElementById('clearStoreMenuSearch');
+
     if (searchInput) {
-        searchInput.addEventListener('input', filterMenu);
+        searchInput.addEventListener('input', () => {
+            if (clearSearchBtn) {
+                if (searchInput.value.trim().length > 0) {
+                    clearSearchBtn.classList.remove('d-none');
+                } else {
+                    clearSearchBtn.classList.add('d-none');
+                }
+            }
+            filterMenu();
+        });
+
+        searchInput.addEventListener('focus', () => {
+            searchInput.style.background = '#FFFFFF';
+            searchInput.style.borderColor = '#EE2737';
+            searchInput.style.boxShadow = '0 0 0 3px rgba(238, 39, 55, 0.12)';
+        });
+
+        searchInput.addEventListener('blur', () => {
+            searchInput.style.background = '#F1F5F9';
+            searchInput.style.borderColor = '#CBD5E1';
+            searchInput.style.boxShadow = 'none';
+        });
+    }
+
+    if (clearSearchBtn && searchInput) {
+        clearSearchBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            clearSearchBtn.classList.add('d-none');
+            filterMenu();
+            searchInput.focus();
+        });
     }
 
     catBtns.forEach(btn => {

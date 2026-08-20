@@ -40,10 +40,8 @@
 <!-- Quick Search & Trending Chips Bar -->
 <div class="px-3 mb-3">
     <form action="<?= $baseUrl ?>/search" method="GET" class="position-relative mb-2">
-        <input type="text" name="q" class="form-control rounded-pill border-0 shadow-2xs ps-4 pe-5 py-2" style="font-size: 12px; background: #F1F5F9; color: #0F172A;" placeholder="Cari seblak, bento cake, nasi goreng, martabak...">
-        <button type="submit" class="btn btn-link position-absolute top-50 end-0 translate-middle-y text-success pe-3 border-0 bg-transparent">
-            <i class="bi bi-search" style="font-size: 14px;"></i>
-        </button>
+        <i class="bi bi-search position-absolute top-50 translate-middle-y text-muted" style="left: 14px; font-size: 13px; z-index: 5; pointer-events: none;"></i>
+        <input type="text" name="q" class="form-control rounded-pill" style="font-size: 12px; font-weight: 500; background: #F1F5F9; border: 1px solid #CBD5E1; padding-left: 36px !important; padding-right: 36px !important; height: 38px; color: #0F172A; transition: all 0.2s ease;" placeholder="Cari seblak, bento cake, nasi goreng, martabak..." autocomplete="off">
     </form>
     
     <!-- Trending Chips -->

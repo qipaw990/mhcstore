@@ -25,10 +25,15 @@
         <?php if ($active_filter !== 'all'): ?>
             <input type="hidden" name="filter" value="<?= htmlspecialchars($active_filter) ?>">
         <?php endif; ?>
-        <input type="text" name="q" value="<?= htmlspecialchars($search ?? '') ?>" class="form-control rounded-pill border-0 ps-4 pe-5 py-2 shadow-2xs" style="font-size: 11.5px; background: #F1F5F9;" placeholder="Cari nama resto, alamat, atau makanan di Cicalengka...">
-        <button type="submit" class="btn btn-link position-absolute top-50 end-0 translate-middle-y text-danger pe-3 border-0 bg-transparent">
-            <i class="bi bi-search" style="font-size: 13px;"></i>
-        </button>
+        <div class="position-relative">
+            <i class="bi bi-search position-absolute top-50 translate-middle-y text-muted" style="left: 14px; font-size: 13px; z-index: 5; pointer-events: none;"></i>
+            <input type="text" name="q" value="<?= htmlspecialchars($search ?? '') ?>" class="form-control rounded-pill" style="font-size: 12px; font-weight: 500; background: #F1F5F9; border: 1px solid #CBD5E1; padding-left: 36px !important; padding-right: 36px !important; height: 38px; color: #0F172A; transition: all 0.2s ease;" placeholder="Cari nama resto, alamat, atau makanan di Cicalengka..." autocomplete="off">
+            <?php if (!empty($search)): ?>
+                <a href="<?= $baseUrl ?>/explore-stores<?= $selected_module ? '?module_id='.$selected_module : '' ?>" class="position-absolute top-50 translate-middle-y text-muted text-decoration-none" style="right: 12px; z-index: 5;" title="Hapus">
+                    <i class="bi bi-x-circle-fill" style="font-size: 14px;"></i>
+                </a>
+            <?php endif; ?>
+        </div>
     </form>
 
     <!-- Filter Pills Navigation -->
