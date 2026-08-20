@@ -94,7 +94,7 @@ function get_store_schedule_status(int $storeId, int $vendorIsOpen = 1): array
     }
 
     $operatingHours  = implode(', ', $formattedShifts);
-    $isCurrentlyOpen = ($isWithinHours && (int)$vendorIsOpen === 1);
+    $isCurrentlyOpen = ((int)$vendorIsOpen === 1);
 
     return [
         'is_open'          => $isCurrentlyOpen,
@@ -110,15 +110,29 @@ function attach_store_schedule_data(&$store, bool $allowLiveCurl = false): void
 {
     if (empty($store['id'])) return;
     $storeId = (int)$store['id'];
-    $scheduleData = get_store_schedule_status($storeId, (int)($store['is_open'] ?? 1));
     
-    $isOpen = $scheduleData['is_open'];
+    // Master Toggle Switch from Merchant App (1 = BUKA, 0 = TUTUP)
+    $vendorToggle = (int)($store['is_open'] ?? 1);
 
-    // Read Grab status with fast file caching and non-blocking execution during listing render
-    if (!empty($store['grab_url']) && $scheduleData['is_within_hours']) {
+    $scheduleData = get_store_schedule_status($storeId, $vendorToggle);
+
+    // If merchant manually toggled OFF (0) in merchant app, store MUST show TUTUP (0)!
+    if ($vendorToggle === 0) {
+        $store['is_open']         = 0;
+        $store['opening_time']    = $scheduleData['opening_time'];
+        $store['closing_time']    = $scheduleData['closing_time'];
+        $store['operating_hours'] = $scheduleData['operating_hours'];
+        return;
+    }
+
+    // If merchant manually toggled ON (1) in merchant app:
+    $isOpen = true;
+
+    // Optional Grab live cache sync if present
+    if (!empty($store['grab_url'])) {
         $liveStatus = check_grab_url_is_open($store['grab_url'], $allowLiveCurl);
         if ($liveStatus !== null) {
-            $isOpen = $liveStatus && ((int)($store['is_open'] ?? 1) === 1);
+            $isOpen = $liveStatus;
         }
     }
 
