@@ -106,7 +106,7 @@ function get_store_schedule_status(int $storeId, int $vendorIsOpen = 1): array
     ];
 }
 
-function attach_store_schedule_data(&$store): void
+function attach_store_schedule_data(&$store, bool $allowLiveCurl = false): void
 {
     if (empty($store['id'])) return;
     $storeId = (int)$store['id'];
@@ -114,9 +114,9 @@ function attach_store_schedule_data(&$store): void
     
     $isOpen = $scheduleData['is_open'];
 
-    // If store has a Grab URL and is within normal operating hours, perform live Grab check with 5-minute session caching
+    // Read Grab status with fast file caching and non-blocking execution during listing render
     if (!empty($store['grab_url']) && $scheduleData['is_within_hours']) {
-        $liveStatus = check_grab_url_is_open($store['grab_url']);
+        $liveStatus = check_grab_url_is_open($store['grab_url'], $allowLiveCurl);
         if ($liveStatus !== null) {
             $isOpen = $liveStatus && ((int)($store['is_open'] ?? 1) === 1);
         }
@@ -128,21 +128,36 @@ function attach_store_schedule_data(&$store): void
     $store['operating_hours'] = $scheduleData['operating_hours'];
 }
 
-function check_grab_url_is_open(string $url): ?bool
+function check_grab_url_is_open(string $url, bool $allowLiveCurl = false): ?bool
 {
     if (!filter_var($url, FILTER_VALIDATE_URL)) return null;
 
-    $cacheKey = 'grab_live_status_' . md5($url);
-    if (isset($_SESSION[$cacheKey]) && isset($_SESSION[$cacheKey . '_time']) && (time() - $_SESSION[$cacheKey . '_time']) < 300) {
-        return (bool)$_SESSION[$cacheKey];
+    $cacheFile = sys_get_temp_dir() . '/cgo_grab_' . md5($url) . '.json';
+
+    // 1. Read from fast disk cache (valid for 10 minutes / 600s)
+    if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < 600) {
+        $cachedData = json_decode(@file_get_contents($cacheFile), true);
+        if (isset($cachedData['is_open'])) {
+            return (bool)$cachedData['is_open'];
+        }
     }
 
+    // 2. If live cURL is disabled for this call (e.g. listing pages), return cache or null instantly!
+    if (!$allowLiveCurl) {
+        if (file_exists($cacheFile)) {
+            $cachedData = json_decode(@file_get_contents($cacheFile), true);
+            if (isset($cachedData['is_open'])) return (bool)$cachedData['is_open'];
+        }
+        return null; // Fast fallback to internal schedule without blocking page render!
+    }
+
+    // 3. Fast single-store live cURL check (tight 1.2s timeout)
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 1);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 1);
     curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
@@ -151,7 +166,7 @@ function check_grab_url_is_open(string $url): ?bool
     curl_close($ch);
 
     if ($httpCode !== 200 || empty($html)) {
-        return null;
+        return file_exists($cacheFile) ? (bool)(json_decode(@file_get_contents($cacheFile), true)['is_open'] ?? null) : null;
     }
 
     $htmlLower = strtolower($html);
@@ -180,10 +195,7 @@ function check_grab_url_is_open(string $url): ?bool
         $isOpen = false;
     }
 
-    if (session_status() === PHP_SESSION_ACTIVE) {
-        $_SESSION[$cacheKey] = $isOpen;
-        $_SESSION[$cacheKey . '_time'] = time();
-    }
+    @file_put_contents($cacheFile, json_encode(['is_open' => $isOpen, 'updated_at' => time()]));
 
     return $isOpen;
 }

@@ -226,16 +226,13 @@ class CustomerController extends Controller
             return;
         }
 
-        attach_store_schedule_data($store);
-
-        $products = $this->productModel->getByStore($id);
-        $cartSummary = $this->cartModel->getUserCart(auth_id(), session_id());
-        
         $reviewModel = new \App\Models\Review();
         $reviewModel->recalculateStoreRating($id);
         $store = $this->storeModel->findWithDetails($id);
-        attach_store_schedule_data($store);
+        attach_store_schedule_data($store, true);
         
+        $products = $this->productModel->getByStore($id);
+        $cartSummary = $this->cartModel->getUserCart(auth_id(), session_id());
         $reviews = $reviewModel->getStoreReviews($id, 15);
 
         $this->view('customer.store', [
