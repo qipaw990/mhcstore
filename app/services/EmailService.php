@@ -253,13 +253,13 @@ class EmailService
             . "Jika Anda tidak meminta kode ini, mohon abaikan email ini.\n\n"
             . "Salam,\n"
             . "Tim Keamanan CicalengkaGO\n"
-            . "https://cicago.smkmuthiaharapanclk.com";
+            . "https://cicago.store";
     }
 
     private static function buildOtpEmailHtml(string $userName, string $otpCode): string
     {
         $year = date('Y');
-        $siteUrl = 'https://cicago.smkmuthiaharapanclk.com';
+        $siteUrl = 'https://cicago.store';
 
         return "<!DOCTYPE html>
 <html lang='id'>
