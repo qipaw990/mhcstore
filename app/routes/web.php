@@ -33,6 +33,10 @@ Router::post('/delivery/verify-otp', [AuthController::class, 'handleVerifyOtp'])
 Router::post('/resend-otp', [AuthController::class, 'handleResendOtp']);
 Router::get('/register', [AuthController::class, 'showRegister']);
 Router::post('/register', [AuthController::class, 'handleRegister']);
+Router::get('/forgot-password', [AuthController::class, 'showForgotPassword']);
+Router::post('/forgot-password', [AuthController::class, 'handleForgotPassword']);
+Router::get('/reset-password', [AuthController::class, 'showResetPassword']);
+Router::post('/reset-password', [AuthController::class, 'handleResetPassword']);
 Router::get('/logout', [AuthController::class, 'logout']);
 
 // ==========================================

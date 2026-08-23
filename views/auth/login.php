@@ -17,7 +17,10 @@
 
     <!-- Kata Sandi -->
     <div style="margin-bottom: 20px;">
-        <label for="password" style="display: block; font-size: 11.5px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">Kata Sandi</label>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label for="password" style="font-size: 11.5px; font-weight: 700; color: #0F172A; margin: 0;">Kata Sandi</label>
+            <a href="<?= $baseUrl ?>/forgot-password" style="font-size: 11px; font-weight: 600; color: #EE2737; text-decoration: none;">Lupa Sandi?</a>
+        </div>
         <div style="display: flex; align-items: center; background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 12px; overflow: hidden; transition: border-color 0.15s;" id="pass-wrapper">
             <span style="padding: 0 12px; color: #94A3B8; flex-shrink: 0; display: flex; align-items: center;">
                 <i class="bi bi-lock-fill" style="font-size: 14px;"></i>

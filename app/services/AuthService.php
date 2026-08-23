@@ -347,4 +347,73 @@ class AuthService
                 break;
         }
     }
+
+    public function requestPasswordReset(string $emailOrPhone): void
+    {
+        $sql = "SELECT * FROM `users` WHERE (`email` = ? OR `phone` = ?) AND `is_active` = 1 LIMIT 1";
+        $user = Database::fetchOne($sql, [$emailOrPhone, $emailOrPhone]);
+
+        if (!$user) {
+            throw new Exception("Nomor WhatsApp atau Email tidak terdaftar dalam sistem.");
+        }
+
+        $otpMode = BusinessSetting::get('otp_mode', 'real');
+        $isDemo = ($otpMode === 'demo');
+        $otp = $isDemo ? '123456' : sprintf("%06d", rand(100000, 999999));
+
+        $_SESSION['pending_reset_otp'] = [
+            'user_id'    => $user['id'],
+            'name'       => $user['name'],
+            'email'      => $user['email'],
+            'phone'      => $user['phone'] ?? '',
+            'otp'        => $otp,
+            'expires_at' => time() + 600,
+        ];
+        $_SESSION['otp_last_sent'] = time();
+
+        $this->dispatchOtp($user['phone'] ?? '', $user['email'] ?? '', $user['name'], $otp);
+    }
+
+    public function verifyResetOtp(string $otp): void
+    {
+        $pending = $_SESSION['pending_reset_otp'] ?? null;
+        if (!$pending) {
+            throw new Exception("Sesi permintaan reset password telah kedaluwarsa. Silakan coba lagi.");
+        }
+
+        if (time() > $pending['expires_at']) {
+            unset($_SESSION['pending_reset_otp']);
+            throw new Exception("Kode OTP telah kedaluwarsa. Silakan minta kode baru.");
+        }
+
+        if ($otp !== $pending['otp']) {
+            throw new Exception("Kode OTP yang Anda masukkan salah.");
+        }
+
+        $_SESSION['reset_password_verified'] = true;
+    }
+
+    public function executePasswordReset(string $newPassword, string $confirmPassword): void
+    {
+        $pending = $_SESSION['pending_reset_otp'] ?? null;
+        $verified = $_SESSION['reset_password_verified'] ?? false;
+
+        if (!$pending || !$verified) {
+            throw new Exception("Sesi reset password tidak valid. Silakan ulangi langkah pertama.");
+        }
+
+        if (strlen($newPassword) < 6) {
+            throw new Exception("Kata sandi minimal 6 karakter.");
+        }
+
+        if ($newPassword !== $confirmPassword) {
+            throw new Exception("Konfirmasi kata sandi tidak cocok.");
+        }
+
+        $hash = password_hash($newPassword, PASSWORD_BCRYPT);
+        $sql = "UPDATE `users` SET `password` = ?, `updated_at` = NOW() WHERE `id` = ?";
+        Database::query($sql, [$hash, $pending['user_id']]);
+
+        unset($_SESSION['pending_reset_otp'], $_SESSION['reset_password_verified']);
+    }
 }

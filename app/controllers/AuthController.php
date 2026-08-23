@@ -134,6 +134,13 @@ class AuthController extends Controller
         }
 
         try {
+            if (!empty($_SESSION['is_password_reset_flow'])) {
+                $this->authService->verifyResetOtp($otp);
+                $_SESSION['success'] = 'Kode OTP terverifikasi! Silakan buat kata sandi baru Anda.';
+                $this->redirect('reset-password');
+                return;
+            }
+
             $isProfileUpdate = !empty($_SESSION['pending_profile_update']);
             $isPasswordUpdate = !empty($_SESSION['pending_profile_update']['password']);
             $user = $this->authService->verifyOtp($otp);
@@ -195,12 +202,72 @@ class AuthController extends Controller
         }
     }
 
+    public function showForgotPassword(): void
+    {
+        if ($this->isAuth()) {
+            $this->redirect('');
+            return;
+        }
+        $this->view('auth.forgot_password', ['title' => 'Lupa Kata Sandi - CicalengkaGO'], 'auth_layout');
+    }
+
+    public function handleForgotPassword(): void
+    {
+        $data = $this->getPost();
+        $emailOrPhone = trim($data['username'] ?? $data['email'] ?? '');
+
+        if (empty($emailOrPhone)) {
+            $_SESSION['error'] = 'Masukkan nomor WhatsApp atau Email terdaftar Anda.';
+            $this->redirect('forgot-password');
+            return;
+        }
+
+        try {
+            $this->authService->requestPasswordReset($emailOrPhone);
+            $_SESSION['pending_otp'] = $_SESSION['pending_reset_otp'];
+            $_SESSION['is_password_reset_flow'] = true;
+            $_SESSION['info'] = 'Kode OTP reset password telah dikirimkan via WhatsApp.';
+            $this->redirect('verify-otp');
+        } catch (Exception $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirect('forgot-password');
+        }
+    }
+
+    public function showResetPassword(): void
+    {
+        if (empty($_SESSION['reset_password_verified']) || empty($_SESSION['pending_reset_otp'])) {
+            $_SESSION['error'] = 'Silakan lakukan verifikasi OTP terlebih dahulu.';
+            $this->redirect('forgot-password');
+            return;
+        }
+
+        $this->view('auth.reset_password', ['title' => 'Buat Kata Sandi Baru - CicalengkaGO'], 'auth_layout');
+    }
+
+    public function handleResetPassword(): void
+    {
+        $data = $this->getPost();
+        $newPassword = $data['password'] ?? '';
+        $confirmPassword = $data['confirm_password'] ?? '';
+
+        try {
+            $this->authService->executePasswordReset($newPassword, $confirmPassword);
+            unset($_SESSION['is_password_reset_flow']);
+            $_SESSION['success'] = 'Kata sandi Anda berhasil diperbarui! Silakan masuk dengan kata sandi baru.';
+            $this->redirect('login');
+        } catch (Exception $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirect('reset-password');
+        }
+    }
+
     public function logout(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
-        unset($_SESSION['user'], $_SESSION['pending_otp'], $_SESSION['pending_profile_update']);
+        unset($_SESSION['user'], $_SESSION['pending_otp'], $_SESSION['pending_profile_update'], $_SESSION['pending_reset_otp'], $_SESSION['reset_password_verified'], $_SESSION['is_password_reset_flow']);
         session_destroy();
         $appConfig = require APP_PATH . '/config/app.php';
         $this->redirect($appConfig['public_url'] . '/login');
