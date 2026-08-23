@@ -1749,18 +1749,30 @@ class AdminController extends Controller
         $phone = sanitize(trim($data['phone'] ?? ''));
 
         if (empty($phone)) {
-            $this->errorResponse('Nomor HP wajib diisi.');
+            $this->json(['success' => false, 'message' => 'Nomor HP wajib diisi.']);
             return;
         }
 
         $otp = sprintf('%06d', rand(100000, 999999));
         $wa  = new \App\Services\WhatsAppService();
-        $ok  = $wa->sendOtp($phone, 'Admin Test', $otp);
+
+        if (!$wa->isReady()) {
+            $this->json([
+                'success' => false,
+                'message' => 'Gateway belum terhubung/belum scan QR. Silakan scan QR Code terlebih dahulu di dashboard admin.'
+            ]);
+            return;
+        }
+
+        $ok = $wa->sendOtp($phone, 'Admin Test', $otp);
 
         if ($ok) {
             $this->json(['success' => true, 'message' => "OTP test ({$otp}) berhasil dikirim ke {$phone}."]);
         } else {
-            $this->errorResponse('Gagal mengirim OTP. Pastikan gateway online dan nomor valid.');
+            $this->json([
+                'success' => false, 
+                'message' => 'Gagal mengirim OTP. Periksa log atau pastikan Secret Key & URL Gateway sudah benar.'
+            ]);
         }
     }
 
@@ -1771,7 +1783,7 @@ class AdminController extends Controller
         $message = trim($data['message'] ?? '');
 
         if (empty($phone) || empty($message)) {
-            $this->errorResponse('Nomor HP dan pesan wajib diisi.');
+            $this->json(['success' => false, 'message' => 'Nomor HP dan pesan wajib diisi.']);
             return;
         }
 
@@ -1781,7 +1793,7 @@ class AdminController extends Controller
         if ($ok) {
             $this->json(['success' => true, 'message' => "Pesan berhasil dikirim ke {$phone}."]);
         } else {
-            $this->errorResponse('Gagal mengirim pesan. Pastikan gateway online.');
+            $this->json(['success' => false, 'message' => 'Gagal mengirim pesan. Pastikan gateway online dan terhubung.']);
         }
     }
 
