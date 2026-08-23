@@ -917,6 +917,9 @@
             stopRingtone();
             document.getElementById('ccgCallSubtext').innerText = 'Menghubungkan...';
 
+            // Unlock audio element on user click gesture
+            unlockAudioElement();
+
             localStream = await this.ensureMicPermission();
             if (!localStream) {
                 this.resetCall();
@@ -1165,7 +1168,7 @@
                         if (currentCallId) this.resetCall();
                     }
                 } catch (e) {}
-            }, 2500);
+            }, 1200);
         }
     };
 
