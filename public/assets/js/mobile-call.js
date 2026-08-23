@@ -355,9 +355,16 @@
             remoteAudio.style.display = 'none';
             document.body.appendChild(remoteAudio);
         }
-        try {
-            remoteAudio.play().catch(() => {});
-        } catch (e) {}
+        if (!remoteAudio.srcObject) {
+            try {
+                // Silent 1-sec WAV data URI to unlock HTML Audio playback pipeline on mobile browsers
+                remoteAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+                const p = remoteAudio.play();
+                if (p !== undefined) {
+                    p.catch(() => {});
+                }
+            } catch (e) {}
+        }
     }
 
     function attachAndPlayRemoteStream(event) {
@@ -375,12 +382,18 @@
                 document.body.appendChild(remoteAudio);
             }
 
+            // Ensure all remote audio tracks are active
+            event.streams[0].getAudioTracks().forEach(t => { t.enabled = true; });
+
             remoteAudio.srcObject = event.streams[0];
             remoteAudio.volume = 1.0;
+            remoteAudio.muted = false;
 
             const promise = remoteAudio.play();
             if (promise !== undefined) {
-                promise.catch(err => {
+                promise.then(() => {
+                    console.log('[VoiceCall] Remote audio playing successfully!');
+                }).catch(err => {
                     console.warn('[VoiceCall] Remote audio autoplay play catch:', err);
                     const retryHandler = () => {
                         remoteAudio.play().catch(() => {});
@@ -737,7 +750,8 @@
             isCaller = true;
             processedCandidates.clear();
 
-            // Immediately trigger UI and sound inside user click gesture!
+            // Immediately trigger UI, unlock audio element, and sound inside user click gesture!
+            unlockAudioElement();
             injectCallUI();
 
             const modal = document.getElementById('ccgVoiceCallModal');
