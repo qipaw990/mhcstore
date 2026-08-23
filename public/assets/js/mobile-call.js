@@ -403,12 +403,22 @@
         stopRingtone();
         isRingtoneActive = true;
 
+        // Synchronously unlock AudioContext on user gesture!
+        try {
+            if (!audioContext || audioContext.state === 'closed') {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        } catch (e) {}
+
         try {
             const baseUrl = (window.BASE_URL && window.BASE_URL !== '') ? window.BASE_URL : window.location.origin;
             const dialtoneUrl = baseUrl + '/assets/audio/dialtone.wav?v=' + Date.now();
             outgoingAudio = new Audio(dialtoneUrl);
             outgoingAudio.loop = true;
-            outgoingAudio.volume = 0.15; // Soft 15% volume
+            outgoingAudio.volume = 0.20; // Clear 20% volume
             const p = outgoingAudio.play();
             if (p !== undefined) {
                 p.catch(() => {
@@ -419,20 +429,29 @@
             playSynthDialTone();
         }
 
-        // Safety fallback if HTML audio doesn't start playing within 350ms
+        // Safety fallback if HTML audio doesn't start playing within 300ms
         setTimeout(() => {
             if (isRingtoneActive && (!outgoingAudio || outgoingAudio.paused || outgoingAudio.currentTime === 0)) {
                 playSynthDialTone();
             }
-        }, 350);
+        }, 300);
     }
 
     function playSynthDialTone() {
         if (!isRingtoneActive || ringtoneTimer) return;
         try {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (!audioContext || audioContext.state === 'closed') {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
             function ringPulse() {
                 if (!audioContext || !isRingtoneActive) return;
+                if (audioContext.state === 'suspended') {
+                    try { audioContext.resume(); } catch(e) {}
+                }
 
                 const osc = audioContext.createOscillator();
                 const filter = audioContext.createBiquadFilter();
@@ -446,8 +465,8 @@
 
                 const now = audioContext.currentTime;
                 gain.gain.setValueAtTime(0.0001, now);
-                gain.gain.linearRampToValueAtTime(0.008, now + 0.05);
-                gain.gain.setValueAtTime(0.008, now + 0.95);
+                gain.gain.linearRampToValueAtTime(0.015, now + 0.05);
+                gain.gain.setValueAtTime(0.015, now + 0.95);
                 gain.gain.linearRampToValueAtTime(0.0001, now + 1.0);
 
                 osc.connect(filter);

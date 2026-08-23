@@ -42,7 +42,7 @@ class CallController extends Controller
             return;
         }
 
-        $isDriver   = ($userRole === 'delivery_man');
+        $isDriver   = in_array($userRole, ['delivery_man', 'driver', 'delivery'], true) || ((int)($order['dm_user_id'] ?? 0) === $userId);
         $isCustomer = ($userId > 0 && (int)$order['cust_user_id'] === $userId) || ($userId === 0 && !$isDriver);
 
         if (!$isDriver && !$isCustomer) {
