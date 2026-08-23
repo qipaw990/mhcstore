@@ -27,15 +27,30 @@ class AuthController extends Controller
             return;
         }
 
+        if (empty($_SESSION['login_captcha'])) {
+            $_SESSION['login_captcha'] = (string) rand(1000, 9999);
+        }
+
         $appConfig = require APP_PATH . '/config/app.php';
-        $this->view('auth.login', ['title' => 'Masuk - CicalengkaGO'], 'auth_layout');
+        $this->view('auth.login', [
+            'title'   => 'Masuk - CicalengkaGO',
+            'captcha' => $_SESSION['login_captcha']
+        ], 'auth_layout');
+    }
+
+    public function refreshCaptcha(): void
+    {
+        $code = (string) rand(1000, 9999);
+        $_SESSION['login_captcha'] = $code;
+        $this->json(['success' => true, 'captcha' => $code]);
     }
 
     public function handleLogin(): void
     {
         $data = $this->getPost();
         $emailOrPhone = trim($data['username'] ?? $data['email'] ?? '');
-        $password = trim($data['password'] ?? '');
+        $password     = trim($data['password'] ?? '');
+        $captcha      = trim($data['captcha'] ?? '');
 
         if (empty($emailOrPhone) || empty($password)) {
             $_SESSION['error'] = 'Email/No HP dan password wajib diisi.';
@@ -43,12 +58,24 @@ class AuthController extends Controller
             return;
         }
 
+        // Validate Captcha
+        $sessionCaptcha = $_SESSION['login_captcha'] ?? '';
+        if (empty($captcha) || $captcha !== $sessionCaptcha) {
+            $_SESSION['login_captcha'] = (string) rand(1000, 9999); // Acak ulang captcha jika salah
+            $_SESSION['error'] = 'Kode Captcha tidak sesuai. Silakan coba lagi.';
+            $this->redirect('login');
+            return;
+        }
+
+        // Reset captcha setelah validasi berhasil
+        $_SESSION['login_captcha'] = (string) rand(1000, 9999);
+
         try {
             $user = $this->authService->login($emailOrPhone, $password);
 
             // If pending_otp is set, OTP verification is required
             if (!empty($_SESSION['pending_otp'])) {
-                $_SESSION['info'] = 'Kode verifikasi OTP telah dikirimkan ke email Anda.';
+                $_SESSION['info'] = 'Kode verifikasi OTP telah dikirimkan.';
                 $this->redirect('verify-otp');
                 return;
             }

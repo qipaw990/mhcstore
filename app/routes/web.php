@@ -19,6 +19,7 @@ use App\Controllers\ChatController;
 // ==========================================
 Router::get('/login', [AuthController::class, 'showLogin']);
 Router::post('/login', [AuthController::class, 'handleLogin']);
+Router::get('/refresh-captcha', [AuthController::class, 'refreshCaptcha']);
 Router::get('/verify-otp', [AuthController::class, 'showVerifyOtp']);
 Router::post('/verify-otp', [AuthController::class, 'handleVerifyOtp']);
 Router::get('/profile/verify-otp', [AuthController::class, 'showVerifyOtp']);
