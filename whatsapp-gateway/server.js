@@ -33,6 +33,7 @@ let waStatus   = 'INITIALIZING'; // INITIALIZING | QR_READY | AUTHENTICATED | RE
 let currentQR  = null;
 let waClient   = null;
 let qrBase64   = null;
+let lastError  = null;
 
 // ─── WhatsApp Client Init ─────────────────────────────────────────────────────
 function initWhatsApp() {
@@ -51,11 +52,15 @@ function initWhatsApp() {
         '--disable-gpu'
     ];
 
-    // Use system Chrome if available on Windows
+    // Detect Chrome/Chromium across Linux (Docker/CasaOS) and Windows
     const chromePaths = [
+        process.env.PUPPETEER_EXECUTABLE_PATH,
+        process.env.CHROMIUM_PATH,
+        '/usr/bin/chromium',
+        '/usr/bin/chromium-browser',
+        '/usr/bin/google-chrome',
         'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-        'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-        process.env.CHROMIUM_PATH
+        'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
     ].filter(Boolean);
 
     const puppeteerOptions = {
@@ -63,14 +68,18 @@ function initWhatsApp() {
         args: puppeteerArgs
     };
 
-    // Try to find Chrome
+    // Try to find Chrome executable
     const fs = require('fs');
     for (const cp of chromePaths) {
         if (cp && fs.existsSync(cp)) {
             puppeteerOptions.executablePath = cp;
-            console.log(`[WA-Gateway] Menggunakan Chrome: ${cp}`);
+            console.log(`[WA-Gateway] Menggunakan Chromium/Chrome: ${cp}`);
             break;
         }
+    }
+
+    if (!puppeteerOptions.executablePath) {
+        console.warn('[WA-Gateway] ⚠️ Path Chromium tidak ditemukan secara eksplisit, mengandalkan Puppeteer default...');
     }
 
     waClient = new Client({
@@ -78,6 +87,10 @@ function initWhatsApp() {
             clientId: 'cicago-gateway',
             dataPath: path.join(__dirname, '.wwebjs_auth')
         }),
+        webVersionCache: {
+            type: 'remote',
+            remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
+        },
         puppeteer: puppeteerOptions
     });
 
@@ -118,7 +131,8 @@ function initWhatsApp() {
 
     waClient.initialize().catch(err => {
         console.error('[WA-Gateway] ❌ Gagal init:', err.message);
-        waStatus = 'ERROR';
+        waStatus  = 'ERROR';
+        lastError = err.message;
     });
 }
 
@@ -291,7 +305,8 @@ app.get('/status', (req, res) => {
         success : true,
         status  : waStatus,
         ready   : waStatus === 'READY',
-        message : waStatus === 'READY' ? 'Gateway siap mengirim pesan.' : 'Gateway belum siap.'
+        error   : lastError,
+        message : waStatus === 'READY' ? 'Gateway siap mengirim pesan.' : (lastError || 'Gateway belum siap.')
     });
 });
 
