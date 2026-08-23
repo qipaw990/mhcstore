@@ -1002,7 +1002,10 @@
                 }
             }
 
-            this.startTimer();
+            // Only start timer if not already running!
+            if (!callTimerInterval) {
+                this.startTimer();
+            }
         },
 
         // Toggle Microphone Mute
@@ -1029,9 +1032,10 @@
 
         // Start Call Timer
         startTimer: function () {
-            this.stopTimer();
+            if (callTimerInterval) return; // Prevent resetting running timer
             callDurationSeconds = 0;
             const timerEl = document.getElementById('ccgCallTimer');
+            if (timerEl) timerEl.innerText = '00:00';
 
             callTimerInterval = setInterval(() => {
                 callDurationSeconds++;
