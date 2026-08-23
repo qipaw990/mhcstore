@@ -52,7 +52,7 @@
                 </span>
                 <input type="text" name="captcha" id="captcha" maxlength="4" autocomplete="off"
                        style="flex: 1; border: none; background: transparent; padding: 10px 10px 10px 0; font-size: 13px; font-weight: 700; color: #0F172A; outline: none; letter-spacing: 2px;"
-                       placeholder="Masukkan Kode" required
+                       required
                        onfocus="document.getElementById('captcha-wrapper').style.borderColor='#EE2737'"
                        onblur="document.getElementById('captcha-wrapper').style.borderColor='#E2E8F0'">
             </div>
