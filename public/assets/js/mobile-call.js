@@ -10,14 +10,14 @@
     let localStream = null;
     let currentCallId = null;
     let currentOrderCode = null;
+    let currentCallOffer = null;
+    let processedCandidates = new Set();
     let pollInterval = null;
     let callTimerInterval = null;
     let callDurationSeconds = 0;
     let isCaller = false;
     let isMuted = false;
     let audioContext = null;
-    let ringtoneOscillator = null;
-    let ringtoneGain = null;
     let ringtoneTimer = null;
 
     const rtcConfig = {
@@ -326,9 +326,24 @@
     // Public Voice Call Engine API
     window.CCGCall = {
         init: function (orderCode) {
-            currentOrderCode = orderCode;
+            if (orderCode) currentOrderCode = orderCode;
             injectCallUI();
             this.startPolling();
+        },
+
+        // Send ICE candidate to backend
+        sendIceCandidate: async function (candidate) {
+            if (!currentCallId || !candidate) return;
+            try {
+                await fetch((window.BASE_URL || '') + '/calls/ice-candidate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        call_id: currentCallId,
+                        candidate: JSON.stringify(candidate)
+                    })
+                });
+            } catch (e) {}
         },
 
         // Start Voice Call (Outgoing)
@@ -336,6 +351,7 @@
             currentOrderCode = orderCode || currentOrderCode;
             injectCallUI();
             isCaller = true;
+            processedCandidates.clear();
 
             const modal = document.getElementById('ccgVoiceCallModal');
             document.getElementById('ccgCallName').innerText = partnerName || 'Mitra Kurir';
@@ -356,29 +372,35 @@
             playRingtone();
 
             try {
-                // Request microphone permissions
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
             } catch (err) {
-                console.warn('[VoiceCall] Mic access failed/denied, proceeding in voice-simulated mode:', err);
+                console.warn('[VoiceCall] Mic access failed:', err);
             }
 
             // Create WebRTC Offer
             let offerSdp = null;
+            peerConnection = new RTCPeerConnection(rtcConfig);
+
             if (localStream) {
-                peerConnection = new RTCPeerConnection(rtcConfig);
                 localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-                peerConnection.ontrack = (event) => {
-                    const remoteAudio = document.getElementById('ccgRemoteAudio');
-                    if (remoteAudio && event.streams[0]) {
-                        remoteAudio.srcObject = event.streams[0];
-                    }
-                };
-
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-                offerSdp = JSON.stringify(offer);
             }
+
+            peerConnection.ontrack = (event) => {
+                const remoteAudio = document.getElementById('ccgRemoteAudio');
+                if (remoteAudio && event.streams[0]) {
+                    remoteAudio.srcObject = event.streams[0];
+                }
+            };
+
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    this.sendIceCandidate(event.candidate);
+                }
+            };
+
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            offerSdp = JSON.stringify(offer);
 
             // Call Backend initiate API
             try {
@@ -405,7 +427,9 @@
         // Incoming Call Received
         showIncomingCall: function (callData) {
             currentCallId = callData.id;
+            currentCallOffer = callData.offer;
             isCaller = false;
+            processedCandidates.clear();
             injectCallUI();
 
             const modal = document.getElementById('ccgVoiceCallModal');
@@ -427,7 +451,7 @@
             playRingtone();
         },
 
-        // Answer Call
+        // Answer Call (Receiver side)
         answerCall: async function () {
             stopRingtone();
             document.getElementById('ccgCallSubtext').innerText = 'Menghubungkan...';
@@ -435,24 +459,40 @@
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
             } catch (err) {
-                console.warn('[VoiceCall] Mic access denied:', err);
+                console.warn('[VoiceCall] Mic access failed/denied:', err);
             }
 
             let answerSdp = null;
+            peerConnection = new RTCPeerConnection(rtcConfig);
+
             if (localStream) {
-                peerConnection = new RTCPeerConnection(rtcConfig);
                 localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            }
 
-                peerConnection.ontrack = (event) => {
-                    const remoteAudio = document.getElementById('ccgRemoteAudio');
-                    if (remoteAudio && event.streams[0]) {
-                        remoteAudio.srcObject = event.streams[0];
-                    }
-                };
+            peerConnection.ontrack = (event) => {
+                const remoteAudio = document.getElementById('ccgRemoteAudio');
+                if (remoteAudio && event.streams[0]) {
+                    remoteAudio.srcObject = event.streams[0];
+                }
+            };
 
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-                answerSdp = JSON.stringify(answer);
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    this.sendIceCandidate(event.candidate);
+                }
+            };
+
+            // Set Remote Offer FIRST before calling createAnswer!
+            if (currentCallOffer) {
+                try {
+                    const offerObj = typeof currentCallOffer === 'string' ? JSON.parse(currentCallOffer) : currentCallOffer;
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(offerObj));
+                    const answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+                    answerSdp = JSON.stringify(answer);
+                } catch (e) {
+                    console.error('[VoiceCall] Error creating answer from remote offer:', e);
+                }
             }
 
             // Post answer to backend
@@ -570,6 +610,8 @@
             }
 
             currentCallId = null;
+            currentCallOffer = null;
+            processedCandidates.clear();
             isMuted = false;
 
             const modal = document.getElementById('ccgVoiceCallModal');
@@ -596,17 +638,42 @@
 
                     const activeCall = data.data.active_call;
 
-                    // Incoming call for current user
+                    // 1. Incoming call for receiver
                     if (activeCall.status === 'calling' && !isCaller && !currentCallId) {
                         this.showIncomingCall(activeCall);
                     }
 
-                    // Call accepted
-                    if (activeCall.status === 'connected' && isCaller && document.getElementById('ccgCallTimer') && document.getElementById('ccgCallTimer').classList.contains('d-none')) {
-                        this.setCallConnected();
+                    // 2. Caller receives Answer SDP from Receiver
+                    if (activeCall.status === 'connected' && isCaller && peerConnection) {
+                        if (activeCall.answer && peerConnection.signalingState === 'have-local-offer') {
+                            try {
+                                const answerObj = typeof activeCall.answer === 'string' ? JSON.parse(activeCall.answer) : activeCall.answer;
+                                await peerConnection.setRemoteDescription(new RTCSessionDescription(answerObj));
+                                this.setCallConnected();
+                            } catch (e) {
+                                console.error('[VoiceCall] Error setting remote answer:', e);
+                            }
+                        }
                     }
 
-                    // Call ended / rejected
+                    // 3. Process ICE Candidates
+                    if (activeCall.ice_candidates && peerConnection) {
+                        try {
+                            const candidates = typeof activeCall.ice_candidates === 'string' ? JSON.parse(activeCall.ice_candidates) : activeCall.ice_candidates;
+                            if (Array.isArray(candidates)) {
+                                for (const candStr of candidates) {
+                                    const candKey = typeof candStr === 'string' ? candStr : JSON.stringify(candStr);
+                                    if (!processedCandidates.has(candKey)) {
+                                        processedCandidates.add(candKey);
+                                        const candObj = typeof candStr === 'string' ? JSON.parse(candStr) : candStr;
+                                        await peerConnection.addIceCandidate(new RTCIceCandidate(candObj));
+                                    }
+                                }
+                            }
+                        } catch (e) {}
+                    }
+
+                    // 4. Call ended or rejected
                     if (activeCall.status === 'rejected' || activeCall.status === 'ended') {
                         if (currentCallId) this.resetCall();
                     }
