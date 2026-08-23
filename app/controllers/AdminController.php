@@ -368,12 +368,12 @@ class AdminController extends Controller
             LEFT JOIN (
                 SELECT store_id, COUNT(*) as product_count FROM products GROUP BY store_id
             ) pc ON s.id = pc.store_id
-            ORDER BY s.id DESC LIMIT 200
+            ORDER BY s.id DESC
         ");
 
         $modules = (new Module())->all();
         $zones = (new Zone())->all();
-        $vendors = Database::query("SELECT id, name, email, phone FROM users WHERE role = 'vendor' LIMIT 200");
+        $vendors = Database::query("SELECT id, name, email, phone FROM users WHERE role = 'vendor'");
 
         $this->view('admin.stores', [
             'title'      => 'Daftar Toko & Mitra Merchant',
