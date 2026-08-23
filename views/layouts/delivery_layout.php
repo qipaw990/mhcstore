@@ -123,6 +123,7 @@ if (!isset($driverRating)) {
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="<?= $baseUrl ?>/assets/js/delivery-pwa.js?v=<?= time() ?>"></script>
+<script src="<?= $baseUrl ?>/assets/js/mobile-call.js?v=<?= time() ?>"></script>
 
 <script>
 /* =====================================================

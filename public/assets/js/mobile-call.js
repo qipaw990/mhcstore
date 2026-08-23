@@ -326,12 +326,47 @@
         }
     }
 
-    // Public Voice Call Engine API
+        // Public Voice Call Engine API
     window.CCGCall = {
         init: function (orderCode) {
             if (orderCode) currentOrderCode = orderCode;
             injectCallUI();
+            this.requestNotificationPermission();
             this.startPolling();
+        },
+
+        requestNotificationPermission: function () {
+            if ("Notification" in window && Notification.permission === "default") {
+                Notification.requestPermission();
+            }
+        },
+
+        triggerSystemNotification: function (callData) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                const title = "📞 Panggilan Suara Masuk - CicalengkaGO";
+                const callerName = callData.caller_name || 'Pengguna';
+                const options = {
+                    body: `${callerName} sedang menelepon Anda di CicalengkaGO. Klik untuk menjawab!`,
+                    icon: callData.caller_avatar ? (window.BASE_URL + '/' + callData.caller_avatar) : (window.BASE_URL + '/assets/icons/icon-192.png'),
+                    badge: window.BASE_URL + '/assets/icons/icon-192.png',
+                    tag: 'ccg-incoming-call-' + callData.id,
+                    renotify: true,
+                    requireInteraction: true,
+                    vibrate: [300, 200, 300, 200, 300, 200]
+                };
+
+                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.ready.then(reg => reg.showNotification(title, options));
+                } else {
+                    try {
+                        const notif = new Notification(title, options);
+                        notif.onclick = function () {
+                            window.focus();
+                            notif.close();
+                        };
+                    } catch (e) {}
+                }
+            }
         },
 
         // Send ICE candidate to backend
@@ -472,6 +507,12 @@
             modal.classList.remove('d-none');
 
             playRingtone();
+
+            if ("vibrate" in navigator) {
+                try { navigator.vibrate([300, 200, 300, 200, 300, 200]); } catch (e) {}
+            }
+
+            this.triggerSystemNotification(callData);
         },
 
         // Answer Call (Receiver side)
