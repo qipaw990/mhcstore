@@ -52,15 +52,16 @@ class AuthService
             'user_id'    => $user['id'],
             'name'       => $user['name'],
             'email'      => $user['email'],
+            'phone'      => $user['phone'] ?? '',
             'role'       => $user['role'],
             'otp'        => $otp,
             'expires_at' => time() + 600, // 10 minutes
         ];
         $_SESSION['otp_last_sent'] = time();
 
-        // Send OTP Email only in real mode
+        // Send OTP: prioritaskan WhatsApp jika tersedia, fallback ke Email
         if (!$isDemo) {
-            EmailService::sendOtpEmail($user['email'], $user['name'], $otp);
+            $this->dispatchOtp($user['phone'] ?? '', $user['email'], $user['name'], $otp);
         }
 
         return $user;
@@ -168,7 +169,8 @@ class AuthService
             $_SESSION['otp_last_sent'] = time();
 
             if (!$isDemo) {
-                EmailService::sendOtpEmail(
+                $this->dispatchOtp(
+                    $_SESSION['pending_profile_update']['phone'] ?? '',
                     $_SESSION['pending_profile_update']['new_email'],
                     $_SESSION['pending_profile_update']['name'],
                     $newOtp
@@ -189,7 +191,8 @@ class AuthService
         $_SESSION['otp_last_sent'] = time();
 
         if (!$isDemo) {
-            EmailService::sendOtpEmail(
+            $this->dispatchOtp(
+                $_SESSION['pending_otp']['phone'] ?? '',
                 $_SESSION['pending_otp']['email'],
                 $_SESSION['pending_otp']['name'],
                 $newOtp
@@ -238,6 +241,7 @@ class AuthService
             'user_id'    => $user['id'],
             'name'       => $user['name'],
             'email'      => $user['email'],
+            'phone'      => $user['phone'] ?? '',
             'role'       => $user['role'],
             'otp'        => $otp,
             'expires_at' => time() + 600
@@ -245,10 +249,42 @@ class AuthService
         $_SESSION['otp_last_sent'] = time();
 
         if (!$isDemo) {
-            EmailService::sendOtpEmail($user['email'], $user['name'], $otp);
+            $this->dispatchOtp($user['phone'] ?? '', $user['email'], $user['name'], $otp);
         }
 
         return $user;
     }
-}
+
+    /**
+     * Kirim OTP via WhatsApp (utama) atau Email (fallback)
+     * Jika user punya nomor HP dan WA gateway aktif → kirim WA
+     * Jika tidak → kirim Email
+     */
+    private function dispatchOtp(string $phone, string $email, string $name, string $otp): void
+    {
+        $waEnabled = BusinessSetting::get('whatsapp_otp_enabled', '1') === '1';
+
+        if ($waEnabled && !empty(trim($phone))) {
+            try {
+                $wa = new WhatsAppService();
+                if ($wa->isReady()) {
+                    $sent = $wa->sendOtp($phone, $name, $otp);
+                    if ($sent) {
+                        // WA berhasil, simpan channel yang digunakan di session
+                        $_SESSION['otp_channel'] = 'whatsapp';
+                        $_SESSION['otp_phone_masked'] = preg_replace('/(?<=.{4}).(?=.{4})/', '*', $phone);
+                        error_log("[AuthService] OTP sent via WhatsApp to {$phone}");
+                        return; // sukses via WA, tidak perlu email
+                    }
+                }
+            } catch (\Throwable $e) {
+                error_log("[AuthService] WhatsApp OTP failed: " . $e->getMessage());
+            }
+        }
+
+        // Fallback: kirim via Email
+        $_SESSION['otp_channel'] = 'email';
+        EmailService::sendOtpEmail($email, $name, $otp);
+        error_log("[AuthService] OTP sent via Email to {$email}");
+    }
 
