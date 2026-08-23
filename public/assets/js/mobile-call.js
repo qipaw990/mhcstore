@@ -24,7 +24,10 @@
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' }
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478' }
         ]
     };
 
@@ -52,7 +55,7 @@
                 </div>
 
                 <!-- Hidden Remote Audio Player -->
-                <audio id="ccgRemoteAudio" autoplay playsinline></audio>
+                <audio id="ccgRemoteAudio" autoplay playsinline style="display:none;"></audio>
 
                 <!-- Incoming Call Actions (Answer / Reject) -->
                 <div id="ccgIncomingActions" class="ccg-call-actions d-none">
@@ -372,7 +375,14 @@
             playRingtone();
 
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    },
+                    video: false
+                });
             } catch (err) {
                 console.warn('[VoiceCall] Mic access failed:', err);
             }
@@ -382,23 +392,36 @@
             peerConnection = new RTCPeerConnection(rtcConfig);
 
             if (localStream) {
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+                localStream.getTracks().forEach(track => {
+                    track.enabled = true;
+                    peerConnection.addTrack(track, localStream);
+                });
             }
 
             peerConnection.ontrack = (event) => {
                 const remoteAudio = document.getElementById('ccgRemoteAudio');
-                if (remoteAudio && event.streams[0]) {
-                    remoteAudio.srcObject = event.streams[0];
+                if (remoteAudio) {
+                    if (event.streams && event.streams[0]) {
+                        remoteAudio.srcObject = event.streams[0];
+                    } else if (event.track) {
+                        remoteAudio.srcObject = new MediaStream([event.track]);
+                    }
+                    remoteAudio.muted = false;
+                    remoteAudio.volume = 1.0;
+                    remoteAudio.play().catch(e => console.warn('[VoiceCall] Play remote audio error:', e));
                 }
             };
 
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
-                    this.sendIceCandidate(event.candidate);
+                    window.CCGCall.sendIceCandidate(event.candidate);
                 }
             };
 
-            const offer = await peerConnection.createOffer();
+            const offer = await peerConnection.createOffer({
+                offerToReceiveAudio: true,
+                offerToReceiveVideo: false
+            });
             await peerConnection.setLocalDescription(offer);
             offerSdp = JSON.stringify(offer);
 
@@ -457,7 +480,14 @@
             document.getElementById('ccgCallSubtext').innerText = 'Menghubungkan...';
 
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    },
+                    video: false
+                });
             } catch (err) {
                 console.warn('[VoiceCall] Mic access failed/denied:', err);
             }
@@ -466,19 +496,29 @@
             peerConnection = new RTCPeerConnection(rtcConfig);
 
             if (localStream) {
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+                localStream.getTracks().forEach(track => {
+                    track.enabled = true;
+                    peerConnection.addTrack(track, localStream);
+                });
             }
 
             peerConnection.ontrack = (event) => {
                 const remoteAudio = document.getElementById('ccgRemoteAudio');
-                if (remoteAudio && event.streams[0]) {
-                    remoteAudio.srcObject = event.streams[0];
+                if (remoteAudio) {
+                    if (event.streams && event.streams[0]) {
+                        remoteAudio.srcObject = event.streams[0];
+                    } else if (event.track) {
+                        remoteAudio.srcObject = new MediaStream([event.track]);
+                    }
+                    remoteAudio.muted = false;
+                    remoteAudio.volume = 1.0;
+                    remoteAudio.play().catch(e => console.warn('[VoiceCall] Play remote audio error:', e));
                 }
             };
 
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
-                    this.sendIceCandidate(event.candidate);
+                    window.CCGCall.sendIceCandidate(event.candidate);
                 }
             };
 
@@ -548,6 +588,13 @@
             document.getElementById('ccgSoundVisualizer').classList.remove('d-none');
             document.getElementById('ccgIncomingActions').classList.add('d-none');
             document.getElementById('ccgActiveActions').classList.remove('d-none');
+
+            const remoteAudio = document.getElementById('ccgRemoteAudio');
+            if (remoteAudio) {
+                remoteAudio.muted = false;
+                remoteAudio.volume = 1.0;
+                remoteAudio.play().catch(e => console.warn('[VoiceCall] Connected audio play error:', e));
+            }
 
             this.startTimer();
         },
@@ -656,8 +703,8 @@
                         }
                     }
 
-                    // 3. Process ICE Candidates
-                    if (activeCall.ice_candidates && peerConnection) {
+                    // 3. Process ICE Candidates (Only when remoteDescription is set)
+                    if (activeCall.ice_candidates && peerConnection && peerConnection.remoteDescription) {
                         try {
                             const candidates = typeof activeCall.ice_candidates === 'string' ? JSON.parse(activeCall.ice_candidates) : activeCall.ice_candidates;
                             if (Array.isArray(candidates)) {
