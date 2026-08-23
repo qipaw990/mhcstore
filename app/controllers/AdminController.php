@@ -1721,9 +1721,34 @@ class AdminController extends Controller
         $current = \App\Models\BusinessSetting::get('whatsapp_otp_enabled', '1');
         $new     = $current === '1' ? '0' : '1';
         \App\Models\BusinessSetting::set('whatsapp_otp_enabled', $new);
+        \App\Models\BusinessSetting::set('otp_verification_channel', $new === '1' ? 'whatsapp_primary' : 'email_only');
         $_SESSION['success'] = $new === '1'
             ? 'OTP WhatsApp berhasil diaktifkan.'
             : 'OTP WhatsApp dinonaktifkan (akan fallback ke Email).';
+        $this->redirect('admin/whatsapp');
+    }
+
+    public function waSetOtpChannel(): void
+    {
+        $data    = $this->getPost();
+        $channel = sanitize(trim($data['otp_verification_channel'] ?? 'whatsapp_primary'));
+
+        $allowed = ['whatsapp_primary', 'email_primary', 'whatsapp_only', 'email_only'];
+        if (!in_array($channel, $allowed, true)) {
+            $channel = 'whatsapp_primary';
+        }
+
+        \App\Models\BusinessSetting::set('otp_verification_channel', $channel);
+        \App\Models\BusinessSetting::set('whatsapp_otp_enabled', $channel === 'email_only' ? '0' : '1');
+
+        $labels = [
+            'whatsapp_primary' => 'WhatsApp (Utama) + Fallback Email',
+            'email_primary'    => 'Email (Utama) + Fallback WhatsApp',
+            'whatsapp_only'   => 'Hanya WhatsApp (WhatsApp-Only)',
+            'email_only'      => 'Hanya Email (Email-Only)',
+        ];
+
+        $_SESSION['success'] = 'Mode channel verifikasi OTP diubah ke: ' . ($labels[$channel] ?? $channel);
         $this->redirect('admin/whatsapp');
     }
 

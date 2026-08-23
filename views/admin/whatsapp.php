@@ -2,6 +2,7 @@
 $waGatewayUrl = rtrim(\App\Models\BusinessSetting::get('whatsapp_gateway_url', 'http://localhost:3005'), '/');
 $waSecret     = \App\Models\BusinessSetting::get('whatsapp_gateway_secret', 'cicago_wa_secret_2024');
 $waEnabled    = \App\Models\BusinessSetting::get('whatsapp_otp_enabled', '1') === '1';
+$otpChannel   = \App\Models\BusinessSetting::get('otp_verification_channel', 'whatsapp_primary');
 $casaosUrl    = \App\Models\BusinessSetting::get('whatsapp_casaos_url', '');
 ?>
 
@@ -12,9 +13,9 @@ $casaosUrl    = \App\Models\BusinessSetting::get('whatsapp_casaos_url', '');
             <span class="rounded-3 p-2 d-inline-flex" style="background:#dcfce7">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="#16a34a"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
             </span>
-            WhatsApp Gateway
+            WhatsApp Gateway & OTP Settings
         </h4>
-        <p class="text-muted small mb-0">Monitor koneksi, scan QR Code, dan kirim OTP melalui WhatsApp.</p>
+        <p class="text-muted small mb-0">Monitor koneksi, scan QR Code, dan atur mode verifikasi OTP (WhatsApp / Email).</p>
     </div>
     <div class="d-flex gap-2">
         <button onclick="refreshStatus()" class="btn btn-outline-secondary btn-sm rounded-3">
@@ -39,7 +40,7 @@ $casaosUrl    = \App\Models\BusinessSetting::get('whatsapp_casaos_url', '');
                         <i class="bi bi-wifi-off text-muted"></i>
                     </div>
                     <div>
-                        <div class="text-muted small fw-semibold mb-1">Status Koneksi</div>
+                        <div class="text-muted small fw-semibold mb-1">Status Gateway WA</div>
                         <div id="status-badge" class="badge rounded-pill px-3 py-1 fw-bold" style="background:#e2e8f0;color:#64748b;font-size:12px">
                             Memeriksa...
                         </div>
@@ -60,7 +61,7 @@ $casaosUrl    = \App\Models\BusinessSetting::get('whatsapp_casaos_url', '');
         </div>
     </div>
 
-    <!-- OTP Setting Card -->
+    <!-- OTP Verification Mode Card -->
     <div class="col-md-4">
         <div class="card border-0 shadow-sm rounded-4 bg-white h-100">
             <div class="card-body p-4">
@@ -69,21 +70,40 @@ $casaosUrl    = \App\Models\BusinessSetting::get('whatsapp_casaos_url', '');
                         <i class="bi bi-shield-lock-fill"></i>
                     </div>
                     <div>
-                        <div class="text-muted small fw-semibold mb-1">OTP via WhatsApp</div>
-                        <div class="fw-bold <?= $waEnabled ? 'text-success' : 'text-danger' ?>">
-                            <?= $waEnabled ? '✅ Aktif' : '❌ Nonaktif' ?>
+                        <div class="text-muted small fw-semibold mb-1">Channel Verifikasi OTP</div>
+                        <div class="fw-bold text-success small">
+                            <?php
+                            echo match($otpChannel) {
+                                'whatsapp_primary' => '🟢 WA (Utama) + Email Fallback',
+                                'email_primary'    => '📧 Email (Utama) + WA Fallback',
+                                'whatsapp_only'   => '📱 Hanya WhatsApp (WA-Only)',
+                                'email_only'      => '✉️ Hanya Email (Email-Only)',
+                                default           => '🟢 WA (Utama) + Email Fallback'
+                            };
+                            ?>
                         </div>
                     </div>
                 </div>
-                <p class="small text-muted mb-3">
-                    Jika aktif, sistem akan mengirim kode OTP via WhatsApp ke nomor HP pengguna. Jika gagal, otomatis fallback ke Email.
-                </p>
-                <form method="POST" action="<?= $baseUrl ?>/admin/whatsapp/toggle-otp" class="d-inline">
-                    <button type="submit" class="btn btn-sm rounded-3 fw-bold <?= $waEnabled ? 'btn-outline-danger' : 'btn-success' ?>" style="font-size:12px">
-                        <i class="bi bi-<?= $waEnabled ? 'toggle-off' : 'toggle-on' ?> me-1"></i>
-                        <?= $waEnabled ? 'Nonaktifkan OTP WA' : 'Aktifkan OTP WA' ?>
-                    </button>
+                <form method="POST" action="<?= $baseUrl ?>/admin/whatsapp/set-channel">
+                    <label class="form-label fw-semibold small mb-2 text-muted">Pilih Mode Verifikasi:</label>
+                    <select name="otp_verification_channel" class="form-select form-select-sm rounded-3 mb-2" onchange="this.form.submit()" style="font-size:12.5px;font-weight:600">
+                        <option value="whatsapp_primary" <?= $otpChannel === 'whatsapp_primary' ? 'selected' : '' ?>>
+                            🟢 WhatsApp (Utama) + Fallback Email
+                        </option>
+                        <option value="email_primary" <?= $otpChannel === 'email_primary' ? 'selected' : '' ?>>
+                            📧 Email (Utama) + Fallback WhatsApp
+                        </option>
+                        <option value="whatsapp_only" <?= $otpChannel === 'whatsapp_only' ? 'selected' : '' ?>>
+                            📱 Hanya WhatsApp (WA-Only)
+                        </option>
+                        <option value="email_only" <?= $otpChannel === 'email_only' ? 'selected' : '' ?>>
+                            ✉️ Hanya Email (Email-Only)
+                        </option>
+                    </select>
                 </form>
+                <p class="small text-muted mb-0" style="font-size:11.5px">
+                    Perubahan opsi otomatis tersimpan dan langsung aktif untuk proses pendaftaran & reset password.
+                </p>
             </div>
         </div>
     </div>

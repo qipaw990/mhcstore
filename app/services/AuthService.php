@@ -256,35 +256,95 @@ class AuthService
     }
 
     /**
-     * Kirim OTP via WhatsApp (utama) atau Email (fallback)
-     * Jika user punya nomor HP dan WA gateway aktif → kirim WA
-     * Jika tidak → kirim Email
+     * Dispatch Kode OTP sesuai preferensi channel verifikasi yang diatur di Admin:
+     * - whatsapp_primary : Kirim WA utama -> Fallback ke Email
+     * - email_primary    : Kirim Email utama -> Fallback ke WA
+     * - whatsapp_only   : Kirim via WA saja
+     * - email_only      : Kirim via Email saja
      */
     private function dispatchOtp(string $phone, string $email, string $name, string $otp): void
     {
-        $waEnabled = BusinessSetting::get('whatsapp_otp_enabled', '1') === '1';
+        $channel  = BusinessSetting::get('otp_verification_channel', 'whatsapp_primary');
+        $hasPhone = !empty(trim($phone));
+        $hasEmail = !empty(trim($email));
+        $cleanPhone = trim($phone);
 
-        if ($waEnabled && !empty(trim($phone))) {
-            try {
-                $wa = new WhatsAppService();
-                if ($wa->isReady()) {
-                    $sent = $wa->sendOtp($phone, $name, $otp);
-                    if ($sent) {
-                        // WA berhasil, simpan channel yang digunakan di session
-                        $_SESSION['otp_channel'] = 'whatsapp';
-                        $_SESSION['otp_phone_masked'] = preg_replace('/(?<=.{4}).(?=.{4})/', '*', $phone);
-                        error_log("[AuthService] OTP sent via WhatsApp to {$phone}");
-                        return; // sukses via WA, tidak perlu email
+        switch ($channel) {
+            case 'email_only':
+                if ($hasEmail) {
+                    $_SESSION['otp_channel'] = 'email';
+                    EmailService::sendOtpEmail($email, $name, $otp);
+                    error_log("[AuthService] OTP sent via Email-Only to {$email}");
+                }
+                break;
+
+            case 'whatsapp_only':
+                if ($hasPhone) {
+                    try {
+                        $wa = new WhatsAppService();
+                        if ($wa->sendOtp($cleanPhone, $name, $otp)) {
+                            $_SESSION['otp_channel'] = 'whatsapp';
+                            $_SESSION['otp_phone_masked'] = preg_replace('/(?<=.{4}).(?=.{4})/', '*', $cleanPhone);
+                            error_log("[AuthService] OTP sent via WhatsApp-Only to {$cleanPhone}");
+                        } else {
+                            error_log("[AuthService] WhatsApp-Only OTP failed for {$cleanPhone}");
+                        }
+                    } catch (\Throwable $e) {
+                        error_log("[AuthService] WhatsApp-Only error: " . $e->getMessage());
                     }
                 }
-            } catch (\Throwable $e) {
-                error_log("[AuthService] WhatsApp OTP failed: " . $e->getMessage());
-            }
-        }
+                break;
 
-        // Fallback: kirim via Email
-        $_SESSION['otp_channel'] = 'email';
-        EmailService::sendOtpEmail($email, $name, $otp);
-        error_log("[AuthService] OTP sent via Email to {$email}");
+            case 'email_primary':
+                $sentEmail = false;
+                if ($hasEmail) {
+                    try {
+                        EmailService::sendOtpEmail($email, $name, $otp);
+                        $_SESSION['otp_channel'] = 'email';
+                        $sentEmail = true;
+                        error_log("[AuthService] OTP sent via Email (Primary) to {$email}");
+                    } catch (\Throwable $e) {
+                        error_log("[AuthService] Email Primary failed: " . $e->getMessage());
+                    }
+                }
+                if (!$sentEmail && $hasPhone) {
+                    try {
+                        $wa = new WhatsAppService();
+                        if ($wa->isReady() && $wa->sendOtp($cleanPhone, $name, $otp)) {
+                            $_SESSION['otp_channel'] = 'whatsapp';
+                            $_SESSION['otp_phone_masked'] = preg_replace('/(?<=.{4}).(?=.{4})/', '*', $cleanPhone);
+                            error_log("[AuthService] OTP sent via WhatsApp (Fallback) to {$cleanPhone}");
+                        }
+                    } catch (\Throwable $e) {
+                        error_log("[AuthService] WhatsApp Fallback error: " . $e->getMessage());
+                    }
+                }
+                break;
+
+            case 'whatsapp_primary':
+            default:
+                $sentWa = false;
+                if ($hasPhone) {
+                    try {
+                        $wa = new WhatsAppService();
+                        if ($wa->isReady()) {
+                            if ($wa->sendOtp($cleanPhone, $name, $otp)) {
+                                $_SESSION['otp_channel'] = 'whatsapp';
+                                $_SESSION['otp_phone_masked'] = preg_replace('/(?<=.{4}).(?=.{4})/', '*', $cleanPhone);
+                                $sentWa = true;
+                                error_log("[AuthService] OTP sent via WhatsApp (Primary) to {$cleanPhone}");
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        error_log("[AuthService] WhatsApp Primary error: " . $e->getMessage());
+                    }
+                }
+                if (!$sentWa && $hasEmail) {
+                    $_SESSION['otp_channel'] = 'email';
+                    EmailService::sendOtpEmail($email, $name, $otp);
+                    error_log("[AuthService] OTP sent via Email (Fallback) to {$email}");
+                }
+                break;
+        }
     }
 }
