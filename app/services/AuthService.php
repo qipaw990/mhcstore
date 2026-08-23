@@ -45,23 +45,44 @@ class AuthService
         $otpMode = BusinessSetting::get('otp_mode', 'real');
         $isDemo = ($otpMode === 'demo');
 
-        // Generate 6-digit OTP code for email verification
+        // Fetch driver phone if missing in users table
+        $phone = trim($user['phone'] ?? '');
+        if (empty($phone) && $role === 'delivery_man') {
+            $dm = Database::fetchOne("SELECT phone FROM `delivery_men` WHERE `user_id` = ? LIMIT 1", [$user['id']]);
+            if (!empty($dm['phone'])) {
+                $phone = trim($dm['phone']);
+                $user['phone'] = $phone;
+            }
+        }
+
+        // Generate 6-digit OTP code for verification
         $otp = $isDemo ? '123456' : sprintf("%06d", rand(100000, 999999));
 
         $_SESSION['pending_otp'] = [
             'user_id'    => $user['id'],
             'name'       => $user['name'],
             'email'      => $user['email'],
-            'phone'      => $user['phone'] ?? '',
+            'phone'      => $phone,
             'role'       => $user['role'],
             'otp'        => $otp,
             'expires_at' => time() + 600, // 10 minutes
         ];
         $_SESSION['otp_last_sent'] = time();
 
-        // Send OTP: prioritaskan WhatsApp jika tersedia, fallback ke Email
+        // Always set WhatsApp channel details for UI consistency
+        $otpChannelConfig = BusinessSetting::get('otp_verification_channel', 'whatsapp_only');
+        if ($otpChannelConfig !== 'email_only') {
+            $_SESSION['otp_channel'] = 'whatsapp';
+            $_SESSION['otp_phone_masked'] = !empty($phone) 
+                ? preg_replace('/(?<=.{4}).(?=.{4})/', '*', $phone) 
+                : (!empty($user['email']) ? $user['email'] : 'WhatsApp Terdaftar');
+        } else {
+            $_SESSION['otp_channel'] = 'email';
+        }
+
+        // Send OTP: dispatch via WhatsApp
         if (!$isDemo) {
-            $this->dispatchOtp($user['phone'] ?? '', $user['email'], $user['name'], $otp);
+            $this->dispatchOtp($phone, $user['email'], $user['name'], $otp);
         }
 
         return $user;
@@ -279,12 +300,12 @@ class AuthService
                 break;
 
             case 'whatsapp_only':
+                $_SESSION['otp_channel'] = 'whatsapp';
+                $_SESSION['otp_phone_masked'] = $hasPhone ? preg_replace('/(?<=.{4}).(?=.{4})/', '*', $cleanPhone) : 'WhatsApp Terdaftar';
                 if ($hasPhone) {
                     try {
                         $wa = new WhatsAppService();
                         if ($wa->sendOtp($cleanPhone, $name, $otp)) {
-                            $_SESSION['otp_channel'] = 'whatsapp';
-                            $_SESSION['otp_phone_masked'] = preg_replace('/(?<=.{4}).(?=.{4})/', '*', $cleanPhone);
                             error_log("[AuthService] OTP sent via WhatsApp-Only to {$cleanPhone}");
                         } else {
                             error_log("[AuthService] WhatsApp-Only OTP failed for {$cleanPhone}");

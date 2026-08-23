@@ -1,7 +1,7 @@
 <?php
-$otpChannel    = $_SESSION['otp_channel'] ?? 'email';
-$phoneMasked   = $_SESSION['otp_phone_masked'] ?? '';
-$isWaChannel   = ($otpChannel === 'whatsapp' && !empty($phoneMasked));
+$otpChannel    = $_SESSION['otp_channel'] ?? 'whatsapp';
+$phoneMasked   = $_SESSION['otp_phone_masked'] ?? (!empty($email) ? $email : 'Nomor WhatsApp');
+$isWaChannel   = ($otpChannel !== 'email');
 ?>
 <div class="text-center mb-3">
     <?php if ($isWaChannel): ?>
