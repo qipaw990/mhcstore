@@ -144,27 +144,73 @@ self.addEventListener('fetch', (event) => {
     }
 });
 
-// ─── Message Listener ────────────────────────────────────────────────────────
-self.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'SKIP_WAITING') {
-        self.skipWaiting();
-    }
-});
-
-// ─── Notification Click Handler ──────────────────────────────────────────────
+// ─── Notification Click & Action Handler (Android Call Popup) ───────────────
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
+
+    const action = event.action;
+    const notifData = event.notification.data || {};
+    const targetUrl = notifData.url || '/';
+
+    if (action === 'reject') {
+        // Send reject signal directly from background Service Worker
+        if (notifData.call_id) {
+            event.waitUntil(
+                fetch('/calls/reject', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ call_id: notifData.call_id })
+                }).catch(() => {})
+            );
+        }
+        return;
+    }
+
+    // For 'answer' or clicking the notification body: open/focus app window
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
             for (let i = 0; i < clientList.length; i++) {
                 let client = clientList[i];
                 if ('focus' in client) {
+                    if (action === 'answer') {
+                        client.postMessage({ type: 'AUTO_ANSWER_CALL', call_id: notifData.call_id });
+                    }
                     return client.focus();
                 }
             }
             if (clients.openWindow) {
-                return clients.openWindow('/');
+                const finalUrl = (action === 'answer' && targetUrl) 
+                    ? (targetUrl + (targetUrl.includes('?') ? '&' : '?') + 'auto_answer=true') 
+                    : targetUrl;
+                return clients.openWindow(finalUrl);
             }
         })
     );
+});
+
+// ─── Web Push Listener for Closed App Incoming Calls ─────────────────────────
+self.addEventListener('push', (event) => {
+    let data = {};
+    if (event.data) {
+        try { data = event.data.json(); } catch(e) { data = { title: event.data.text() }; }
+    }
+
+    const title = data.title || '📞 Panggilan Masuk - CicalengkaGO';
+    const options = {
+        body: data.body || 'Seseorang sedang menelepon Anda di CicalengkaGO.',
+        icon: data.icon || '/assets/icons/icon-192.png',
+        badge: '/assets/icons/icon-192.png',
+        tag: data.tag || 'ccg-incoming-call',
+        renotify: true,
+        requireInteraction: true,
+        priority: 'high',
+        vibrate: [500, 250, 500, 250, 500, 250, 500],
+        actions: [
+            { action: 'answer', title: '📞 Jawab Panggilan' },
+            { action: 'reject', title: '❌ Tolak' }
+        ],
+        data: data.data || { url: '/' }
+    };
+
+    event.waitUntil(self.registration.showNotification(title, options));
 });

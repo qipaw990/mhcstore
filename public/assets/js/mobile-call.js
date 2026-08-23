@@ -330,11 +330,37 @@
 
     // Public Voice Call Engine API
     window.CCGCall = {
+        pendingAutoAnswer: false,
+
         init: function (orderCode) {
             if (orderCode) currentOrderCode = orderCode;
             injectCallUI();
             this.requestNotificationPermission();
+            this.listenToServiceWorkerMessages();
+            this.checkAutoAnswerUrl();
             this.startPolling();
+        },
+
+        listenToServiceWorkerMessages: function () {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.addEventListener('message', (event) => {
+                    if (event.data && event.data.type === 'AUTO_ANSWER_CALL') {
+                        this.pendingAutoAnswer = true;
+                        if (currentCallId) {
+                            this.answerCall();
+                        }
+                    }
+                });
+            }
+        },
+
+        checkAutoAnswerUrl: function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('auto_answer') === 'true') {
+                this.pendingAutoAnswer = true;
+                const newUrl = window.location.pathname + window.location.search.replace(/[\?&]auto_answer=true/, '').replace(/^&/, '?');
+                window.history.replaceState({}, '', newUrl || window.location.pathname);
+            }
         },
 
         requestNotificationPermission: function () {
@@ -394,14 +420,24 @@
             if ("Notification" in window && Notification.permission === "granted") {
                 const title = "📞 Panggilan Suara Masuk - CicalengkaGO";
                 const callerName = callData.caller_name || 'Pengguna';
+                const currentUrl = window.location.href;
                 const options = {
-                    body: `${callerName} sedang menelepon Anda di CicalengkaGO. Klik untuk menjawab!`,
+                    body: `${callerName} sedang menelepon Anda di CicalengkaGO. Ketuk untuk menjawab!`,
                     icon: callData.caller_avatar ? (window.BASE_URL + '/' + callData.caller_avatar) : (window.BASE_URL + '/assets/icons/icon-192.png'),
                     badge: window.BASE_URL + '/assets/icons/icon-192.png',
                     tag: 'ccg-incoming-call-' + callData.id,
                     renotify: true,
                     requireInteraction: true,
-                    vibrate: [300, 200, 300, 200, 300, 200]
+                    priority: 'high',
+                    vibrate: [500, 250, 500, 250, 500, 250, 500],
+                    actions: [
+                        { action: 'answer', title: '📞 Jawab Panggilan' },
+                        { action: 'reject', title: '❌ Tolak' }
+                    ],
+                    data: {
+                        url: currentUrl,
+                        call_id: callData.id
+                    }
                 };
 
                 if (navigator.serviceWorker && navigator.serviceWorker.controller) {
@@ -581,6 +617,11 @@
             }
 
             this.triggerSystemNotification(callData);
+
+            if (this.pendingAutoAnswer) {
+                this.pendingAutoAnswer = false;
+                setTimeout(() => this.answerCall(), 400);
+            }
         },
 
         // Answer Call (Receiver side)
