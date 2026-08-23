@@ -71,6 +71,13 @@ $baseUrl = $appConfig['public_url'];
 <?php require_once dirname(__DIR__) . '/partials/preloader.php'; ?>
 
 <div class="auth-card">
+    <!-- Top Nav: Back to Home -->
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+        <a href="<?= $baseUrl ?>/" style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #475569; text-decoration: none; background: #F1F5F9; padding: 6px 12px; border-radius: 20px; transition: all 0.2s;" onmouseover="this.style.color='#EE2737';this.style.background='#FEE2E2'" onmouseout="this.style.color='#475569';this.style.background='#F1F5F9'">
+            <i class="bi bi-house-door-fill" style="font-size: 12px;"></i> Beranda Utama
+        </a>
+    </div>
+
     <!-- Logo & Brand -->
     <div style="text-align: center; margin-bottom: 24px;">
         <a href="<?= $baseUrl ?>/" style="display: inline-block; text-decoration: none; margin-bottom: 10px;">

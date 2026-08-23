@@ -72,10 +72,16 @@
     </button>
 </form>
 
-<!-- Link ke Login -->
-<div style="text-align: center; margin-bottom: 4px;">
+<!-- Link ke Login & Beranda -->
+<div style="text-align: center; margin-bottom: 8px;">
     <span style="font-size: 11.5px; color: #64748B;">Sudah memiliki akun?</span>
     <a href="<?= $baseUrl ?>/login" style="font-size: 11.5px; font-weight: 700; color: #EE2737; text-decoration: none; margin-left: 4px;">Masuk</a>
+</div>
+
+<div style="text-align: center; margin-top: 12px; padding-top: 10px; border-top: 1px dashed #E2E8F0;">
+    <a href="<?= $baseUrl ?>/" style="font-size: 11px; font-weight: 600; color: #64748B; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+        <i class="bi bi-house-door" style="font-size: 12px;"></i> Kembali ke Beranda Utama
+    </a>
 </div>
 
 <script>
