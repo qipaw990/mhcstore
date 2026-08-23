@@ -598,8 +598,11 @@
             ringtoneTimer = null;
         }
         if (audioContext) {
-            try { audioContext.close(); } catch (e) {}
-            audioContext = null;
+            try {
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+            } catch (e) {}
         }
     }
 
