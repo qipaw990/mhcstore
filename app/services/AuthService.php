@@ -264,7 +264,7 @@ class AuthService
      */
     private function dispatchOtp(string $phone, string $email, string $name, string $otp): void
     {
-        $channel  = BusinessSetting::get('otp_verification_channel', 'whatsapp_primary');
+        $channel  = BusinessSetting::get('otp_verification_channel', 'whatsapp_only');
         $hasPhone = !empty(trim($phone));
         $hasEmail = !empty(trim($email));
         $cleanPhone = trim($phone);

@@ -110,7 +110,7 @@ class AuthController extends Controller
         $demoOtp = ($otpMode === 'demo') ? ($pending['otp'] ?? '123456') : null;
 
         $this->view('auth.verify_otp', [
-            'title'   => 'Verifikasi Email OTP - CicalengkaGO',
+            'title'   => 'Verifikasi WhatsApp OTP - CicalengkaGO',
             'email'   => $email,
             'name'    => $pending['name'],
             'demoOtp' => $demoOtp,
@@ -141,7 +141,7 @@ class AuthController extends Controller
             if ($isPasswordUpdate) {
                 $_SESSION['success'] = 'Kata sandi dan profil berhasil diverifikasi & diperbarui!';
             } elseif ($isProfileUpdate) {
-                $_SESSION['success'] = 'Alamat email & profil berhasil diverifikasi!';
+                $_SESSION['success'] = 'Alamat WhatsApp & profil berhasil diverifikasi!';
             } else {
                 $_SESSION['success'] = 'Verifikasi OTP berhasil!';
             }
@@ -157,7 +157,7 @@ class AuthController extends Controller
     {
         try {
             $newOtp = $this->authService->resendOtp();
-            $_SESSION['success'] = 'Kode OTP baru telah dikirim ke email Anda.';
+            $_SESSION['success'] = 'Kode OTP baru telah dikirimkan via WhatsApp.';
         } catch (Exception $e) {
             $_SESSION['error'] = $e->getMessage();
         }
@@ -187,7 +187,7 @@ class AuthController extends Controller
 
         try {
             $this->authService->registerCustomer($data);
-            $_SESSION['info'] = 'Pendaftaran berhasil! Kode verifikasi OTP telah dikirim ke email Anda.';
+            $_SESSION['info'] = 'Pendaftaran berhasil! Kode verifikasi OTP telah dikirimkan via WhatsApp.';
             $this->redirect('verify-otp');
         } catch (Exception $e) {
             $_SESSION['error'] = $e->getMessage();

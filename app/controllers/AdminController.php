@@ -1721,21 +1721,21 @@ class AdminController extends Controller
         $current = \App\Models\BusinessSetting::get('whatsapp_otp_enabled', '1');
         $new     = $current === '1' ? '0' : '1';
         \App\Models\BusinessSetting::set('whatsapp_otp_enabled', $new);
-        \App\Models\BusinessSetting::set('otp_verification_channel', $new === '1' ? 'whatsapp_primary' : 'email_only');
+        \App\Models\BusinessSetting::set('otp_verification_channel', $new === '1' ? 'whatsapp_only' : 'email_only');
         $_SESSION['success'] = $new === '1'
             ? 'OTP WhatsApp berhasil diaktifkan.'
-            : 'OTP WhatsApp dinonaktifkan (akan fallback ke Email).';
+            : 'OTP WhatsApp dinonaktifkan.';
         $this->redirect('admin/whatsapp');
     }
 
     public function waSetOtpChannel(): void
     {
         $data    = $this->getPost();
-        $channel = sanitize(trim($data['otp_verification_channel'] ?? 'whatsapp_primary'));
+        $channel = sanitize(trim($data['otp_verification_channel'] ?? 'whatsapp_only'));
 
-        $allowed = ['whatsapp_primary', 'email_primary', 'whatsapp_only', 'email_only'];
+        $allowed = ['whatsapp_only', 'whatsapp_primary', 'email_primary', 'email_only'];
         if (!in_array($channel, $allowed, true)) {
-            $channel = 'whatsapp_primary';
+            $channel = 'whatsapp_only';
         }
 
         \App\Models\BusinessSetting::set('otp_verification_channel', $channel);
