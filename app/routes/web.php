@@ -203,6 +203,17 @@ Router::group(['prefix' => '/admin', 'middleware' => ['AdminMiddleware']], funct
     Router::post('/topups/sync-status', [AdminController::class, 'syncTopupStatus']);
     Router::post('/topups/manual-approve', [AdminController::class, 'manualApproveTopup']);
     Router::post('/topups/manual-cancel', [AdminController::class, 'manualCancelTopup']);
+
+    // WhatsApp Gateway Management
+    Router::get('/whatsapp', [AdminController::class, 'whatsapp']);
+    Router::get('/whatsapp/status', [AdminController::class, 'waStatus']);
+    Router::post('/whatsapp/toggle-otp', [AdminController::class, 'waToggleOtp']);
+    Router::post('/whatsapp/save-settings', [AdminController::class, 'waSaveSettings']);
+    Router::post('/whatsapp/send-test', [AdminController::class, 'waSendTest']);
+    Router::post('/whatsapp/send-message', [AdminController::class, 'waSendMessage']);
+    Router::post('/whatsapp/restart', [AdminController::class, 'waRestart']);
+    Router::get('/whatsapp/download-compose', [AdminController::class, 'waDownloadCompose']);
+    Router::get('/whatsapp/download-dockerfile', [AdminController::class, 'waDownloadDockerfile']);
 });
 
 // API Extension Scraper Import Route & Schedule Filler

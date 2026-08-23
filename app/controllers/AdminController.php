@@ -1679,4 +1679,160 @@ class AdminController extends Controller
         (new \App\Models\TopupLog())->markFailed($log['topup_code'], $adminNotes);
         $this->successResponse("Transaksi #{$log['topup_code']} berhasil dibatalkan.");
     }
+
+    // =========================================================================
+    // WhatsApp Gateway Management
+    // =========================================================================
+
+    public function whatsapp(): void
+    {
+        $this->view('admin.whatsapp', [
+            'title'      => 'WhatsApp Gateway - CicalengkaGO',
+            'active_tab' => 'whatsapp',
+        ], 'admin_layout');
+    }
+
+    /**
+     * Proxy status check dari PHP ke Node.js gateway
+     * Diakses oleh sidebar JS polling & halaman WA admin
+     */
+    public function waStatus(): void
+    {
+        $wa = new \App\Services\WhatsAppService();
+        $gatewayUrl = rtrim(\App\Models\BusinessSetting::get('whatsapp_gateway_url', 'http://localhost:3001'), '/');
+        $secret     = \App\Models\BusinessSetting::get('whatsapp_gateway_secret', 'cicago_wa_secret_2024');
+
+        $context = stream_context_create([
+            'http' => ['method' => 'GET', 'timeout' => 5, 'ignore_errors' => true]
+        ]);
+
+        $response = @file_get_contents($gatewayUrl . '/status', false, $context);
+        if ($response === false) {
+            $this->json(['success' => false, 'ready' => false, 'status' => 'OFFLINE', 'message' => 'Gateway tidak dapat dihubungi.']);
+            return;
+        }
+
+        $data = json_decode($response, true) ?? [];
+        $this->json($data);
+    }
+
+    public function waToggleOtp(): void
+    {
+        $current = \App\Models\BusinessSetting::get('whatsapp_otp_enabled', '1');
+        $new     = $current === '1' ? '0' : '1';
+        \App\Models\BusinessSetting::set('whatsapp_otp_enabled', $new);
+        $_SESSION['success'] = $new === '1'
+            ? 'OTP WhatsApp berhasil diaktifkan.'
+            : 'OTP WhatsApp dinonaktifkan (akan fallback ke Email).';
+        $this->redirect('admin/whatsapp');
+    }
+
+    public function waSaveSettings(): void
+    {
+        $data = $this->getPost();
+
+        $url    = sanitize(trim($data['whatsapp_gateway_url']    ?? 'http://localhost:3001'));
+        $secret = sanitize(trim($data['whatsapp_gateway_secret'] ?? 'cicago_wa_secret_2024'));
+        $casaos = sanitize(trim($data['whatsapp_casaos_url']     ?? ''));
+
+        \App\Models\BusinessSetting::set('whatsapp_gateway_url',    $url);
+        \App\Models\BusinessSetting::set('whatsapp_gateway_secret', $secret);
+        \App\Models\BusinessSetting::set('whatsapp_casaos_url',     $casaos);
+
+        $_SESSION['success'] = 'Konfigurasi WhatsApp Gateway berhasil disimpan.';
+        $this->redirect('admin/whatsapp');
+    }
+
+    public function waSendTest(): void
+    {
+        $data  = json_decode(file_get_contents('php://input'), true) ?? $this->getPost();
+        $phone = sanitize(trim($data['phone'] ?? ''));
+
+        if (empty($phone)) {
+            $this->errorResponse('Nomor HP wajib diisi.');
+            return;
+        }
+
+        $otp = sprintf('%06d', rand(100000, 999999));
+        $wa  = new \App\Services\WhatsAppService();
+        $ok  = $wa->sendOtp($phone, 'Admin Test', $otp);
+
+        if ($ok) {
+            $this->json(['success' => true, 'message' => "OTP test ({$otp}) berhasil dikirim ke {$phone}."]);
+        } else {
+            $this->errorResponse('Gagal mengirim OTP. Pastikan gateway online dan nomor valid.');
+        }
+    }
+
+    public function waSendMessage(): void
+    {
+        $data    = json_decode(file_get_contents('php://input'), true) ?? $this->getPost();
+        $phone   = sanitize(trim($data['phone']   ?? ''));
+        $message = trim($data['message'] ?? '');
+
+        if (empty($phone) || empty($message)) {
+            $this->errorResponse('Nomor HP dan pesan wajib diisi.');
+            return;
+        }
+
+        $wa = new \App\Services\WhatsAppService();
+        $ok = $wa->sendMessage($phone, $message);
+
+        if ($ok) {
+            $this->json(['success' => true, 'message' => "Pesan berhasil dikirim ke {$phone}."]);
+        } else {
+            $this->errorResponse('Gagal mengirim pesan. Pastikan gateway online.');
+        }
+    }
+
+    public function waRestart(): void
+    {
+        $gatewayUrl = rtrim(\App\Models\BusinessSetting::get('whatsapp_gateway_url', 'http://localhost:3001'), '/');
+        $secret     = \App\Models\BusinessSetting::get('whatsapp_gateway_secret', 'cicago_wa_secret_2024');
+
+        $context = stream_context_create([
+            'http' => [
+                'method'  => 'POST',
+                'header'  => "X-WA-Secret: {$secret}\r\nContent-Type: application/json\r\n",
+                'content' => '{}',
+                'timeout' => 8,
+                'ignore_errors' => true,
+            ]
+        ]);
+
+        $response = @file_get_contents($gatewayUrl . '/restart', false, $context);
+        $data     = $response ? (json_decode($response, true) ?? []) : [];
+
+        if (!empty($data['success'])) {
+            $this->json(['success' => true, 'message' => 'Gateway sedang di-restart.']);
+        } else {
+            $this->errorResponse('Gagal me-restart gateway.');
+        }
+    }
+
+    public function waDownloadCompose(): void
+    {
+        $file = ROOT_PATH . '/whatsapp-gateway/docker-compose.yml';
+        if (!file_exists($file)) {
+            die('File docker-compose.yml tidak ditemukan.');
+        }
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="cicago-wa-gateway-docker-compose.yml"');
+        header('Content-Length: ' . filesize($file));
+        readfile($file);
+        exit;
+    }
+
+    public function waDownloadDockerfile(): void
+    {
+        $file = ROOT_PATH . '/whatsapp-gateway/Dockerfile';
+        if (!file_exists($file)) {
+            die('File Dockerfile tidak ditemukan.');
+        }
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="Dockerfile"');
+        header('Content-Length: ' . filesize($file));
+        readfile($file);
+        exit;
+    }
 }

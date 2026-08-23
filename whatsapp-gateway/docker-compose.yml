@@ -1,0 +1,54 @@
+# ============================================================
+# CicalengkaGO WhatsApp Gateway - Docker Compose
+# Untuk CasaOS: App Store → Custom Install → Paste file ini
+# ============================================================
+version: "3.8"
+
+services:
+  cicago-wa-gateway:
+    build: .
+    # Atau jika sudah push ke Docker Hub:
+    # image: yourdockerhubuser/cicago-wa-gateway:latest
+    container_name: cicago-wa-gateway
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - WA_GATEWAY_SECRET=cicago_wa_secret_2024
+      - PUPPETEER_SKIP_DOWNLOAD=true
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+      # Ganti NODE_ENV jika perlu
+      - NODE_ENV=production
+    volumes:
+      # Persist sesi WhatsApp agar tidak perlu scan ulang setelah restart
+      - wa_auth_data:/app/.wwebjs_auth
+    networks:
+      - cicago-network
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+volumes:
+  wa_auth_data:
+    driver: local
+
+networks:
+  cicago-network:
+    driver: bridge
+
+# ============================================================
+# Cara Deploy di CasaOS:
+# 1. Buka CasaOS → App Store → Custom Install
+# 2. Klik "Import" atau paste seluruh isi file ini
+# 3. Sesuaikan WA_GATEWAY_SECRET (harus sama di Admin Settings)
+# 4. Klik Install
+# 5. Tunggu build selesai (~2-3 menit)
+# 6. Buka http://<ip-casaos>:3001/qr → Scan QR Code
+# 7. Di Admin CicalengkaGO → WhatsApp Gateway:
+#    URL Gateway: http://<ip-casaos>:3001
+# ============================================================
