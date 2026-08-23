@@ -347,58 +347,10 @@
     let outgoingAudio = null;
     let isRingtoneActive = false;
 
-    // Outgoing Dialing Tone for CALLER (Ultra-soft, pleasant WAV chime)
+    // Outgoing Dialing Tone for CALLER (Completely Silent — caller hears no ringtone)
     function playOutgoingTone() {
         stopRingtone();
-        isRingtoneActive = true;
-        try {
-            const outgoingUrl = (window.BASE_URL || '') + '/assets/audio/outgoing.wav?v=' + Date.now();
-            outgoingAudio = new Audio(outgoingUrl);
-            outgoingAudio.loop = true;
-            outgoingAudio.volume = 0.10; // Ultra soft 10% volume
-            const p = outgoingAudio.play();
-            if (p !== undefined) {
-                p.catch(() => {
-                    playSoftSynthOutgoingTone();
-                });
-            }
-        } catch (e) {
-            playSoftSynthOutgoingTone();
-        }
-    }
-
-    function playSoftSynthOutgoingTone() {
-        if (!isRingtoneActive) return;
-        try {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            function ringPulse() {
-                if (!audioContext || !isRingtoneActive) return;
-
-                const osc1 = audioContext.createOscillator();
-                const filter = audioContext.createBiquadFilter();
-                const gain = audioContext.createGain();
-
-                osc1.type = 'sine';
-                osc1.frequency.setValueAtTime(349, audioContext.currentTime);
-
-                filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(450, audioContext.currentTime);
-
-                const now = audioContext.currentTime;
-                gain.gain.setValueAtTime(0.0001, now);
-                gain.gain.linearRampToValueAtTime(0.002, now + 0.08);
-                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
-
-                osc1.connect(filter);
-                filter.connect(gain);
-                gain.connect(audioContext.destination);
-
-                osc1.start(now);
-                osc1.stop(now + 0.8);
-            }
-            ringPulse();
-            ringtoneTimer = setInterval(ringPulse, 3500);
-        } catch (e) {}
+        // Silent for caller
     }
 
     // Incoming AI Voice Ringtone for RECEIVER (Very soft & gentle 15% volume)
