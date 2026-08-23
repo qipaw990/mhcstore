@@ -714,8 +714,9 @@
         sendIceCandidate: async function (candidate) {
             if (!currentCallId || !candidate) return;
             try {
+                const candObj = candidate.toJSON ? candidate.toJSON() : candidate;
                 const payload = {
-                    candidate: candidate,
+                    candidate: candObj,
                     role: isCaller ? 'caller' : 'receiver'
                 };
                 await fetch((window.BASE_URL || '') + '/calls/ice-candidate', {
@@ -733,30 +734,49 @@
         flushIceCandidates: async function (iceCandidatesData) {
             if (!iceCandidatesData || !peerConnection || !peerConnection.remoteDescription) return;
             try {
-                const candidates = typeof iceCandidatesData === 'string' ? JSON.parse(iceCandidatesData) : iceCandidatesData;
-                if (Array.isArray(candidates)) {
-                    for (const candItem of candidates) {
-                        const candObj = typeof candItem === 'string' ? JSON.parse(candItem) : candItem;
-                        let rawCandidate = candObj;
-                        let senderRole = null;
+                let candidates = iceCandidatesData;
+                if (typeof candidates === 'string') {
+                    try { candidates = JSON.parse(candidates); } catch (e) { candidates = []; }
+                }
+                if (!Array.isArray(candidates)) return;
 
-                        if (candObj && candObj.candidate) {
-                            rawCandidate = candObj.candidate;
-                            senderRole = candObj.role;
+                for (const candItem of candidates) {
+                    try {
+                        let candObj = candItem;
+                        if (typeof candObj === 'string') {
+                            try { candObj = JSON.parse(candObj); } catch (e) {}
+                        }
+
+                        let senderRole = null;
+                        let actualCandidateObj = candObj;
+
+                        if (candObj && typeof candObj === 'object') {
+                            if ('role' in candObj && 'candidate' in candObj) {
+                                senderRole = candObj.role;
+                                actualCandidateObj = candObj.candidate;
+                            }
+                            if (typeof actualCandidateObj === 'string') {
+                                try { actualCandidateObj = JSON.parse(actualCandidateObj); } catch (e) {}
+                            }
                         }
 
                         // IGNORE OWN CANDIDATES so WebRTC connection doesn't reject
                         if (isCaller && senderRole === 'caller') continue;
                         if (!isCaller && senderRole === 'receiver') continue;
 
-                        const candKey = typeof rawCandidate === 'string' ? rawCandidate : JSON.stringify(rawCandidate);
+                        if (!actualCandidateObj || typeof actualCandidateObj !== 'object') continue;
+
+                        const candKey = JSON.stringify(actualCandidateObj);
                         if (!processedCandidates.has(candKey)) {
                             processedCandidates.add(candKey);
-                            const finalCand = typeof rawCandidate === 'string' ? JSON.parse(rawCandidate) : rawCandidate;
-                            await peerConnection.addIceCandidate(new RTCIceCandidate(finalCand)).catch(err => {
+                            await peerConnection.addIceCandidate(new RTCIceCandidate(actualCandidateObj)).then(() => {
+                                console.log('[VoiceCall] Remote ICE candidate added successfully.');
+                            }).catch(err => {
                                 console.warn('[VoiceCall] addIceCandidate warning:', err);
                             });
                         }
+                    } catch (itemErr) {
+                        console.warn('[VoiceCall] Candidate item error:', itemErr);
                     }
                 }
             } catch (e) {
