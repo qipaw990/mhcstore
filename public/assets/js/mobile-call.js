@@ -346,7 +346,7 @@
     let ringtoneAudio = null;
     let isRingtoneActive = false;
 
-    // Outgoing Dialing Tone for CALLER (Soft, gentle "tut... tut...")
+    // Outgoing Dialing Tone for CALLER (Very soft, gentle tone)
     function playOutgoingTone() {
         stopRingtone();
         isRingtoneActive = true;
@@ -360,9 +360,9 @@
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(425, audioContext.currentTime);
 
-                // Gentle low volume gain (0.025)
-                gain.gain.setValueAtTime(0.025, audioContext.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.0005, audioContext.currentTime + 1.0);
+                // Very soft volume gain (0.012)
+                gain.gain.setValueAtTime(0.012, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0002, audioContext.currentTime + 1.0);
 
                 osc.connect(gain);
                 gain.connect(audioContext.destination);
@@ -375,7 +375,7 @@
         } catch (e) {}
     }
 
-    // Incoming AI Voice Ringtone for RECEIVER (Soft & pleasant volume)
+    // Incoming AI Voice Ringtone for RECEIVER (Very soft & gentle 15% volume)
     function playIncomingRingtone() {
         stopRingtone();
         isRingtoneActive = true;
@@ -383,18 +383,17 @@
             const ringtoneUrl = (window.BASE_URL || '') + '/assets/audio/ringtone.mp3?v=' + Date.now();
             ringtoneAudio = new Audio(ringtoneUrl);
             ringtoneAudio.loop = true;
-            ringtoneAudio.volume = 0.35; // Soft pleasant volume (35%)
+            ringtoneAudio.volume = 0.15; // Very soft gentle volume (15%)
             const p = ringtoneAudio.play();
             if (p !== undefined) {
                 p.catch(() => {
+                    // Fallback to speech synthesis ONLY if MP3 play is blocked
                     playVoiceSpeechRingtone();
                 });
             }
         } catch (e) {
             playVoiceSpeechRingtone();
         }
-
-        playVoiceSpeechRingtone();
     }
 
     function playVoiceSpeechRingtone() {
@@ -406,7 +405,7 @@
                 utter.lang = 'id-ID';
                 utter.rate = 0.95;
                 utter.pitch = 1.05;
-                utter.volume = 0.45; // Soft gentle speech volume (45%)
+                utter.volume = 0.20; // Soft fallback speech volume (20%)
 
                 const voices = window.speechSynthesis.getVoices();
                 const idVoice = voices.find(v => v.lang && (v.lang.includes('id') || v.lang.includes('ID')));
@@ -418,7 +417,7 @@
                             if (isRingtoneActive) {
                                 try { window.speechSynthesis.speak(utter); } catch(e) {}
                             }
-                        }, 1800);
+                        }, 2000);
                     }
                 };
 
