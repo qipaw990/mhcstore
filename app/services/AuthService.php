@@ -221,12 +221,12 @@ class AuthService
             'api_token' => $apiToken
         ]);
 
-        // Init wallet with welcome bonus
+        // Init wallet with 0 initial balance
         (new Wallet())->create([
             'user_id'          => $userId,
             'user_type'        => 'customer',
-            'balance'          => 25000.00, // Welcome gift Rp 25.000
-            'total_earned'     => 25000.00,
+            'balance'          => 0.00,
+            'total_earned'     => 0.00,
             'total_withdrawn'  => 0.00
         ]);
 

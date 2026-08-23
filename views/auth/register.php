@@ -64,11 +64,7 @@
         <div style="font-size: 10px; color: #94A3B8; margin-top: 4px; padding-left: 2px;">Gunakan minimal 6 karakter.</div>
     </div>
 
-    <!-- Bonus Banner -->
-    <div style="background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 10px; padding: 10px 14px; margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
-        <i class="bi bi-gift-fill" style="color: #EA580C; font-size: 15px; flex-shrink: 0;"></i>
-        <span style="font-size: 11px; color: #9A3412;">Bonus saldo <strong style="color: #EA580C;">Rp 25.000</strong> langsung di CicalengkaPay setelah mendaftar!</span>
-    </div>
+
 
     <!-- Tombol Daftar -->
     <button type="submit" style="width: 100%; background: linear-gradient(135deg, #EE2737 0%, #C61524 100%); color: #FFFFFF; border: none; border-radius: 9999px; padding: 12px 16px; font-size: 13px; font-weight: 700; letter-spacing: -0.2px; box-shadow: 0 4px 14px rgba(238, 39, 55, 0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
