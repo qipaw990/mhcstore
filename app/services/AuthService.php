@@ -287,4 +287,4 @@ class AuthService
         EmailService::sendOtpEmail($email, $name, $otp);
         error_log("[AuthService] OTP sent via Email to {$email}");
     }
-
+}
