@@ -24,7 +24,8 @@ class DeliveryService
 
     /**
      * Accept an order and add it to the driver's active batch.
-     * A driver can hold up to MAX_BATCH_ORDERS simultaneously.
+     * Uses SELECT ... FOR UPDATE inside a transaction to prevent race conditions
+     * when multiple drivers click the same order simultaneously.
      */
     public function acceptOrder(int $dmUserId, int $orderId): array
     {
@@ -33,44 +34,64 @@ class DeliveryService
             throw new Exception("Status driver harus online untuk menerima pesanan.");
         }
 
-        $order = $this->orderModel->find($orderId);
-        if (!$order) {
+        // Pre-flight check (quick, before acquiring lock) — saves DB time on obvious rejects
+        $preCheck = Database::fetchOne(
+            "SELECT id, delivery_man_id, order_status, delivery_batch_id FROM `orders` WHERE id = ? LIMIT 1",
+            [$orderId]
+        );
+        if (!$preCheck) {
             throw new Exception("Pesanan tidak ditemukan.");
         }
-        if (!empty($order['delivery_man_id'])) {
-            throw new Exception("Pesanan sudah diambil oleh driver lain.");
+        if (!empty($preCheck['delivery_man_id'])) {
+            throw new Exception("⚡ Pesanan sudah lebih dulu diambil oleh driver lain. Cari pesanan berikutnya!");
+        }
+        if (in_array($preCheck['order_status'], ['canceled', 'delivered'])) {
+            throw new Exception("Pesanan sudah tidak tersedia (status: {$preCheck['order_status']}).");
         }
 
-        // Check if this order is part of an unassigned multi-store batch
-        $batchIdToAccept = $order['delivery_batch_id'] ?? null;
-        $ordersToAccept  = [];
-
-        if ($batchIdToAccept) {
-            $ordersToAccept = Database::query(
-                "SELECT * FROM `orders` WHERE `delivery_batch_id` = ? AND (`delivery_man_id` IS NULL OR `delivery_man_id` = 0) AND `order_status` NOT IN ('canceled', 'delivered')",
-                [$batchIdToAccept]
+        return Database::transaction(function () use ($dm, $orderId, $preCheck) {
+            // ── ATOMIC LOCK: Kunci baris order ini agar tidak bisa diambil driver lain bersamaan ──
+            $order = Database::fetchOne(
+                "SELECT * FROM `orders` WHERE id = ? AND (delivery_man_id IS NULL OR delivery_man_id = 0) AND order_status NOT IN ('canceled', 'delivered') FOR UPDATE",
+                [$orderId]
             );
-        }
 
-        if (empty($ordersToAccept)) {
-            $ordersToAccept = [$order];
-        }
+            // Jika null = driver lain sudah berhasil mengunci order ini terlebih dahulu
+            if (!$order) {
+                throw new Exception("⚡ Pesanan sudah lebih dulu diambil oleh driver lain. Cari pesanan berikutnya!");
+            }
 
-        // Load current active batch orders
-        $activeBatchId  = $dm['active_batch_id'] ?? null;
-        $activeOrderIds = !empty($dm['active_order_ids']) ? json_decode($dm['active_order_ids'], true) : [];
+            // Check if this order is part of an unassigned multi-store batch
+            $batchIdToAccept = $order['delivery_batch_id'] ?? null;
+            $ordersToAccept  = [];
 
-        // Validate batch size
-        if (count($activeOrderIds) + count($ordersToAccept) > self::MAX_BATCH_ORDERS) {
-            throw new Exception("Jumlah pesanan melebihi batas maksimal trip driver (" . self::MAX_BATCH_ORDERS . " pesanan).");
-        }
+            if ($batchIdToAccept) {
+                // Lock all batch orders atomically
+                $ordersToAccept = Database::query(
+                    "SELECT * FROM `orders` WHERE `delivery_batch_id` = ? AND (`delivery_man_id` IS NULL OR `delivery_man_id` = 0) AND `order_status` NOT IN ('canceled', 'delivered') FOR UPDATE",
+                    [$batchIdToAccept]
+                );
+            }
 
-        return Database::transaction(function () use ($dm, $ordersToAccept, $batchIdToAccept, $activeBatchId, $activeOrderIds) {
+            if (empty($ordersToAccept)) {
+                $ordersToAccept = [$order];
+            }
+
+            // Load current active batch orders
+            $activeBatchId  = $dm['active_batch_id'] ?? null;
+            $activeOrderIds = !empty($dm['active_order_ids']) ? json_decode($dm['active_order_ids'], true) : [];
+
+            // Validate batch size
+            if (count($activeOrderIds) + count($ordersToAccept) > self::MAX_BATCH_ORDERS) {
+                throw new Exception("Jumlah pesanan melebihi batas maksimal trip driver (" . self::MAX_BATCH_ORDERS . " pesanan).");
+            }
+
             if (empty($activeBatchId)) {
                 $activeBatchId = $batchIdToAccept ?: ('BATCH-' . strtoupper(substr(uniqid(), -6)));
             }
 
             $lastAcceptedId = null;
+            $now            = date('Y-m-d H:i:s');
 
             foreach ($ordersToAccept as $ord) {
                 $ordId = (int)$ord['id'];
@@ -82,7 +103,7 @@ class DeliveryService
                 Database::update('orders', [
                     'delivery_man_id'   => $dm['id'],
                     'order_status'      => 'processing',
-                    'processing_at'     => date('Y-m-d H:i:s'),
+                    'processing_at'     => $now,
                     'delivery_batch_id' => $activeBatchId,
                     'pickup_sequence'   => $sequence,
                 ], 'id = ?', [$ordId]);
@@ -101,6 +122,7 @@ class DeliveryService
                 'order_count' => count($activeOrderIds),
                 'sequence'    => count($activeOrderIds),
                 'order_code'  => $ordersToAccept[0]['order_code'],
+                'winner'      => true,
             ];
         });
     }

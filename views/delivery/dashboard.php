@@ -830,6 +830,25 @@ if (typeof window.acceptDriverOrder === 'undefined') {
             if (!confirm('Ambil pesanan ini untuk diantar sekarang?')) return;
         }
 
+        // ── Disable all accept buttons to prevent double-click race ──
+        const allAcceptBtns = document.querySelectorAll('[onclick*="acceptDriverOrder"]');
+        allAcceptBtns.forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            btn.style.pointerEvents = 'none';
+        });
+
+        // Find the specific order card and show loading state
+        const orderCard = document.getElementById('avail-order-' + orderId);
+        let loadingOverlay = null;
+        if (orderCard) {
+            loadingOverlay = document.createElement('div');
+            loadingOverlay.style.cssText = 'position:absolute;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;border-radius:inherit;z-index:10;backdrop-filter:blur(2px);';
+            loadingOverlay.innerHTML = '<div class="d-flex align-items-center gap-2"><div class="spinner-border spinner-border-sm text-danger" role="status"></div><span style="font-size:12px;font-weight:700;color:#EE2737;">Memproses...</span></div>';
+            orderCard.style.position = 'relative';
+            orderCard.appendChild(loadingOverlay);
+        }
+
         try {
             const fd = new FormData();
             fd.append('order_id', orderId);
@@ -838,31 +857,98 @@ if (typeof window.acceptDriverOrder === 'undefined') {
                 body: fd
             });
             const json = await res.json();
+
             if (json.success) {
+                // ── WINNER: Driver berhasil mengambil orderan ──
                 if (typeof Swal !== 'undefined') {
                     await Swal.fire({
                         icon: 'success',
-                        title: 'Order Diambil!',
+                        title: '✅ Orderan Berhasil Diambil!',
                         text: json.message,
-                        timer: 1500,
-                        showConfirmButton: false
+                        timer: 1800,
+                        showConfirmButton: false,
+                        timerProgressBar: true
                     });
                 }
                 window.location.reload();
             } else {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal',
-                        text: json.message || 'Tidak dapat mengambil pesanan.',
-                        confirmButtonColor: '#EE2737'
-                    });
+                // Remove loading overlay first
+                if (loadingOverlay) loadingOverlay.remove();
+
+                const isRaceLost = json.message && (
+                    json.message.includes('sudah') ||
+                    json.message.includes('diambil') ||
+                    json.message.includes('driver lain')
+                );
+
+                if (isRaceLost) {
+                    // ── LOSER: Driver lain lebih cepat ── Show race-lost feedback
+                    if (orderCard) {
+                        // Flash the card red to signal it's gone
+                        orderCard.style.transition = 'all 0.3s ease';
+                        orderCard.style.background = '#FEE2E2';
+                        orderCard.style.borderColor = '#EF4444';
+
+                        // Add "Sudah Diambil" overlay
+                        const takenOverlay = document.createElement('div');
+                        takenOverlay.style.cssText = 'position:absolute;inset:0;background:rgba(239,68,68,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:inherit;z-index:10;color:white;';
+                        takenOverlay.innerHTML = `
+                            <div style="font-size:28px;margin-bottom:4px;">⚡</div>
+                            <div style="font-weight:800;font-size:13px;">SUDAH DIAMBIL DRIVER LAIN!</div>
+                            <div style="font-size:11px;opacity:0.9;margin-top:2px;">Cari pesanan lainnya</div>
+                        `;
+                        orderCard.appendChild(takenOverlay);
+
+                        // Auto-remove card after animation
+                        setTimeout(() => {
+                            orderCard.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                            orderCard.style.opacity = '0';
+                            orderCard.style.transform = 'scale(0.95)';
+                            setTimeout(() => orderCard.remove(), 500);
+                        }, 1800);
+                    }
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: '⚡ Kalah Cepat!',
+                            text: json.message,
+                            confirmButtonColor: '#F59E0B',
+                            confirmButtonText: 'Cari Order Lain'
+                        });
+                    }
                 } else {
-                    alert(json.message || 'Gagal mengambil order');
+                    // Other errors
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: json.message || 'Tidak dapat mengambil pesanan.',
+                            confirmButtonColor: '#EE2737'
+                        });
+                    } else {
+                        alert(json.message || 'Gagal mengambil order');
+                    }
+                    // Re-enable buttons on generic errors
+                    allAcceptBtns.forEach(btn => {
+                        btn.disabled = false;
+                        btn.style.opacity = '';
+                        btn.style.pointerEvents = '';
+                    });
                 }
             }
         } catch (e) {
+            if (loadingOverlay) loadingOverlay.remove();
             console.error('Accept order error:', e);
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'error', title: 'Koneksi Terputus', text: 'Gagal terhubung ke server.', confirmButtonColor: '#EE2737' });
+            }
+            // Re-enable buttons on network error
+            allAcceptBtns.forEach(btn => {
+                btn.disabled = false;
+                btn.style.opacity = '';
+                btn.style.pointerEvents = '';
+            });
         }
     };
 }
