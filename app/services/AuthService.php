@@ -122,9 +122,13 @@ class AuthService
 
             $this->userModel->update($userId, $updateData);
 
+            // Synchronize phone to related driver profile if applicable
             $user = $this->userModel->find($userId);
+            if (($user['role'] ?? '') === 'delivery_man') {
+                Database::execute("UPDATE `delivery_men` SET `phone` = ? WHERE `user_id` = ?", [$pending['phone'], $userId]);
+            }
 
-            unset($_SESSION['pending_profile_update'], $_SESSION['pending_otp']);
+            unset($_SESSION['pending_profile_update'], $_SESSION['pending_otp'], $_SESSION['otp_channel'], $_SESSION['otp_phone_masked']);
             $_SESSION['user'] = $user;
 
             return $user;

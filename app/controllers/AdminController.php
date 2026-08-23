@@ -1233,14 +1233,24 @@ class AdminController extends Controller
         }
 
         $currentUser = auth_user();
-        $isEmailChanged = (strtolower($email) !== strtolower($currentUser['email'] ?? ''));
+        $isEmailChanged    = (strtolower($email) !== strtolower($currentUser['email'] ?? ''));
+        $isPhoneChanged    = (trim($phone) !== trim($currentUser['phone'] ?? ''));
         $isPasswordChanged = !empty($passwordUpdate);
 
-        if ($isEmailChanged || $isPasswordChanged) {
+        if ($isEmailChanged || $isPhoneChanged || $isPasswordChanged) {
             if ($isEmailChanged) {
                 $existing = Database::fetchOne("SELECT id FROM users WHERE email = ? AND id != ? LIMIT 1", [$email, $userId]);
                 if ($existing) {
                     $_SESSION['error'] = 'Alamat email ini sudah terdaftar pada akun lain.';
+                    $this->redirect('admin/profile');
+                    return;
+                }
+            }
+
+            if ($isPhoneChanged) {
+                $existingPhone = Database::fetchOne("SELECT id FROM users WHERE phone = ? AND id != ? LIMIT 1", [$phone, $userId]);
+                if ($existingPhone) {
+                    $_SESSION['error'] = 'Nomor WhatsApp ini sudah terdaftar pada akun lain.';
                     $this->redirect('admin/profile');
                     return;
                 }
@@ -1264,21 +1274,37 @@ class AdminController extends Controller
                 'user_id'    => $userId,
                 'name'       => $name,
                 'email'      => $email,
+                'phone'      => $phone,
                 'role'       => $currentUser['role'],
                 'otp'        => $otp,
                 'expires_at' => time() + 600
             ];
             $_SESSION['otp_last_sent'] = time();
 
-            if (!$isDemo) {
-                \App\Services\EmailService::sendOtpEmail($email, $name, $otp);
+            // Set WhatsApp channel details for verify UI
+            $targetPhone = $isPhoneChanged ? $phone : ($currentUser['phone'] ?? $phone);
+            $_SESSION['otp_channel'] = 'whatsapp';
+            $_SESSION['otp_phone_masked'] = !empty($targetPhone)
+                ? preg_replace('/(?<=.{4}).(?=.{4})/', '*', $targetPhone)
+                : 'Nomor WhatsApp Baru';
+
+            if (!$isDemo && !empty($targetPhone)) {
+                try {
+                    $wa = new \App\Services\WhatsAppService();
+                    $wa->sendOtp($targetPhone, $name, $otp);
+                } catch (\Throwable $e) {
+                    error_log("[AdminController] Profile update WA OTP failed: " . $e->getMessage());
+                }
             }
 
-            $reason = ($isPasswordChanged && $isEmailChanged)
-                ? 'perubahan email dan kata sandi'
-                : ($isPasswordChanged ? 'perubahan kata sandi akun' : 'perubahan alamat email');
+            $reasons = [];
+            if ($isPhoneChanged) $reasons[] = 'nomor WhatsApp';
+            if ($isEmailChanged) $reasons[] = 'email';
+            if ($isPasswordChanged) $reasons[] = 'kata sandi';
+            $reasonStr = implode(' & ', $reasons);
 
-            $_SESSION['info'] = "Kode verifikasi OTP telah dikirimkan ke email ({$email}). Masukkan kode 6-digit untuk mengonfirmasi {$reason}.";
+            $maskedNotice = !empty($targetPhone) ? preg_replace('/(?<=.{4}).(?=.{4})/', '*', $targetPhone) : $targetPhone;
+            $_SESSION['info'] = "Kode verifikasi 6-digit telah dikirimkan via WhatsApp ke ({$maskedNotice}) untuk mengonfirmasi perubahan {$reasonStr}.";
             $this->redirect('verify-otp');
             return;
         }
