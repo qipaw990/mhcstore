@@ -152,29 +152,29 @@
         <div class="active-task-container mb-4">
             <!-- Batch Header -->
             <div class="active-task-header">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <div class="d-flex align-items-center gap-1.5">
-                        <span class="badge rounded-pill px-2.5 py-1 text-white" style="background: rgba(255,255,255,0.15); font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">
+                <div class="d-flex align-items-center justify-content-between gap-1 mb-2">
+                    <div class="d-flex align-items-center gap-1 flex-wrap min-w-0">
+                        <span class="badge rounded-pill px-2 py-1 text-white" style="background: rgba(255,255,255,0.15); font-size: 9.5px; font-weight: 700; letter-spacing: 0.3px; white-space: nowrap;">
                             <i class="bi bi-bicycle me-1 text-warning"></i> TRIP BERLANGSUNG
                         </span>
-                        <span class="badge bg-warning text-dark fw-bold px-2 py-0.5 rounded-pill" style="font-size: 10px;">
-                            <?= $deliveredCount ?>/<?= $batchCount ?> Terselesaikan
+                        <span class="badge bg-warning text-dark fw-bold px-2 py-1 rounded-pill" style="font-size: 9.5px; white-space: nowrap;">
+                            <?= $deliveredCount ?>/<?= $batchCount ?> Selesai
                         </span>
                     </div>
 
                     <?php if ($firstActiveOrder): ?>
-                    <div class="d-flex align-items-center gap-1.5">
+                    <div class="d-flex align-items-center gap-1.5 flex-shrink-0 ms-auto">
                         <button type="button"
                                 onclick="openDriverChatModal('<?= htmlspecialchars($firstActiveOrder['order_code']) ?>')"
-                                class="btn btn-sm rounded-pill px-3 py-1 fw-bold text-white shadow-xs d-flex align-items-center gap-1.5 position-relative"
-                                style="background: #EE2737; border: 1px solid rgba(255,255,255,0.3); font-size: 11px; white-space: nowrap;">
+                                class="btn btn-sm rounded-pill px-2.5 py-1 fw-bold text-white shadow-xs d-flex align-items-center gap-1 position-relative flex-shrink-0"
+                                style="background: #EE2737; border: 1px solid rgba(255,255,255,0.3); font-size: 10.5px; white-space: nowrap;">
                             <i class="bi bi-chat-dots-fill"></i> Chat
                             <span class="ccg-unread-dot d-none" id="driverChatUnreadDot1"></span>
                         </button>
                         <button type="button"
                                 onclick="window.CCGCall.makeCall('<?= htmlspecialchars($firstActiveOrder['order_code']) ?>', '<?= htmlspecialchars($firstActiveOrder['customer_name'] ?? 'Pelanggan') ?>', 'assets/images/users/customer.png')"
-                                class="btn btn-sm rounded-circle d-flex align-items-center justify-content-center text-white shadow-xs"
-                                style="width: 30px; height: 30px; background: #10B981; border: none;"
+                                class="btn btn-sm rounded-circle d-flex align-items-center justify-content-center text-white shadow-xs flex-shrink-0"
+                                style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; background: #10B981; border: none; padding: 0;"
                                 title="Telepon In-App Pelanggan">
                             <i class="bi bi-telephone-fill" style="font-size: 12px;"></i>
                         </button>

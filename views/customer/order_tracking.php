@@ -203,13 +203,13 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
                             </div>
                         </div>
                     </div>
-                    <div class="d-flex gap-2 align-items-center">
-                        <button type="button" onclick="openChatModal()" class="btn btn-danger btn-sm rounded-pill px-3 py-1.5 d-flex align-items-center justify-content-center shadow-xs position-relative gap-1.5 fw-bold" style="background:#EE2737; border:none; font-size: 10.5px;" title="Chat Driver">
+                    <div class="d-flex gap-2 align-items-center flex-shrink-0 ms-auto">
+                        <button type="button" onclick="openChatModal()" class="btn btn-danger btn-sm rounded-pill px-3 py-1.5 d-flex align-items-center justify-content-center shadow-xs position-relative gap-1.5 fw-bold flex-shrink-0" style="background:#EE2737; border:none; font-size: 10.5px;" title="Chat Driver">
                             <i class="bi bi-chat-dots-fill text-white" style="font-size: 12px;"></i>
                             <span>Chat</span>
                             <span id="chatUnreadDot" class="ccg-unread-dot d-none"></span>
                         </button>
-                        <button type="button" id="driver-call-btn" onclick="window.CCGCall.makeCall('<?= $order['order_code'] ?>', '<?= htmlspecialchars($order['dm_name'] ?? 'Mitra Kurir') ?>', '<?= htmlspecialchars($order['dm_avatar'] ?? 'assets/images/users/driver.png') ?>')" class="btn btn-success btn-sm rounded-circle border-0 d-flex align-items-center justify-content-center shadow-xs <?= empty($order['delivery_man_id']) ? 'd-none' : '' ?>" style="width: 34px; height: 34px; background: #10B981;" title="Telepon In-App Kurir">
+                        <button type="button" id="driver-call-btn" onclick="window.CCGCall.makeCall('<?= $order['order_code'] ?>', '<?= htmlspecialchars($order['dm_name'] ?? 'Mitra Kurir') ?>', '<?= htmlspecialchars($order['dm_avatar'] ?? 'assets/images/users/driver.png') ?>')" class="btn btn-success btn-sm rounded-circle border-0 d-flex align-items-center justify-content-center shadow-xs flex-shrink-0 <?= empty($order['delivery_man_id']) ? 'd-none' : '' ?>" style="width: 34px; height: 34px; min-width: 34px; min-height: 34px; background: #10B981; padding: 0;" title="Telepon In-App Kurir">
                             <i class="bi bi-telephone-fill text-white" style="font-size: 13px;"></i>
                         </button>
                     </div>
