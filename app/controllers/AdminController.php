@@ -1769,9 +1769,10 @@ class AdminController extends Controller
         if ($ok) {
             $this->json(['success' => true, 'message' => "OTP test ({$otp}) berhasil dikirim ke {$phone}."]);
         } else {
+            $err = $wa->getLastError() ?: 'Periksa log atau pastikan Secret Key & URL Gateway sudah benar.';
             $this->json([
                 'success' => false, 
-                'message' => 'Gagal mengirim OTP. Periksa log atau pastikan Secret Key & URL Gateway sudah benar.'
+                'message' => 'Gagal mengirim OTP: ' . $err
             ]);
         }
     }

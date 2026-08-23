@@ -14,6 +14,7 @@ class WhatsAppService
     private string $gatewayUrl;
     private string $secretKey;
     private int    $timeout;
+    private string $lastError = '';
 
     public function __construct()
     {
@@ -26,6 +27,11 @@ class WhatsAppService
             'cicago_wa_secret_2024'
         );
         $this->timeout = 8; // detik
+    }
+
+    public function getLastError(): string
+    {
+        return $this->lastError;
     }
 
     /**
@@ -71,6 +77,7 @@ class WhatsAppService
             $result = $this->get('/status');
             return !empty($result['ready']) && $result['ready'] === true;
         } catch (\Throwable $e) {
+            $this->lastError = $e->getMessage();
             return false;
         }
     }
@@ -136,58 +143,77 @@ class WhatsAppService
 
     private function post(string $endpoint, array $data): bool
     {
-        $url  = $this->gatewayUrl . $endpoint;
+        $urlsToTry = [
+            $this->gatewayUrl . $endpoint
+        ];
+
+        // Docker container hostname fallback if running inside Docker network
+        if (strpos($this->gatewayUrl, 'cicago_wa_gateway') === false) {
+            $urlsToTry[] = 'http://cicago_wa_gateway:3005' . $endpoint;
+        }
+
         $body = json_encode($data);
 
-        $context = stream_context_create([
-            'http' => [
-                'method'        => 'POST',
-                'header'        => implode("\r\n", [
-                    'Content-Type: application/json',
-                    'X-WA-Secret: ' . $this->secretKey,
-                    'Accept: application/json',
-                ]),
-                'content'       => $body,
-                'timeout'       => $this->timeout,
-                'ignore_errors' => true,
-            ],
-        ]);
+        foreach ($urlsToTry as $url) {
+            $context = stream_context_create([
+                'http' => [
+                    'method'        => 'POST',
+                    'header'        => implode("\r\n", [
+                        'Content-Type: application/json',
+                        'X-WA-Secret: ' . $this->secretKey,
+                        'Accept: application/json',
+                    ]),
+                    'content'       => $body,
+                    'timeout'       => $this->timeout,
+                    'ignore_errors' => true,
+                ],
+            ]);
 
-        $response = @file_get_contents($url, false, $context);
+            $response = @file_get_contents($url, false, $context);
 
-        if ($response === false) {
-            error_log("[WhatsAppService] Gagal menghubungi gateway: {$url}");
+            if ($response === false) {
+                $this->lastError = "Gagal terhubung ke {$url}";
+                continue;
+            }
+
+            $json = json_decode($response, true);
+            if (!empty($json['success']) && $json['success'] === true) {
+                $this->lastError = '';
+                return true;
+            }
+
+            $this->lastError = $json['message'] ?? 'Gateway merespon dengan error.';
             return false;
         }
 
-        $json = json_decode($response, true);
-        $ok   = !empty($json['success']) && $json['success'] === true;
-
-        if (!$ok) {
-            error_log("[WhatsAppService] Gateway error: " . ($json['message'] ?? 'Unknown'));
-        }
-
-        return $ok;
+        return false;
     }
 
     private function get(string $endpoint): array
     {
-        $url = $this->gatewayUrl . $endpoint;
+        $urlsToTry = [
+            $this->gatewayUrl . $endpoint
+        ];
 
-        $context = stream_context_create([
-            'http' => [
-                'method'        => 'GET',
-                'timeout'       => $this->timeout,
-                'ignore_errors' => true,
-            ],
-        ]);
-
-        $response = @file_get_contents($url, false, $context);
-
-        if ($response === false) {
-            return ['ready' => false];
+        if (strpos($this->gatewayUrl, 'cicago_wa_gateway') === false) {
+            $urlsToTry[] = 'http://cicago_wa_gateway:3005' . $endpoint;
         }
 
-        return json_decode($response, true) ?? ['ready' => false];
+        foreach ($urlsToTry as $url) {
+            $context = stream_context_create([
+                'http' => [
+                    'method'        => 'GET',
+                    'timeout'       => $this->timeout,
+                    'ignore_errors' => true,
+                ],
+            ]);
+
+            $response = @file_get_contents($url, false, $context);
+            if ($response !== false) {
+                return json_decode($response, true) ?? ['ready' => false];
+            }
+        }
+
+        return ['ready' => false];
     }
 }
