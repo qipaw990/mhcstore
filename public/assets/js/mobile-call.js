@@ -676,33 +676,52 @@
             }
         },
 
-        // Send ICE candidate to backend
+        // Send ICE candidate to backend with role tag
         sendIceCandidate: async function (candidate) {
             if (!currentCallId || !candidate) return;
             try {
+                const payload = {
+                    candidate: candidate,
+                    role: isCaller ? 'caller' : 'receiver'
+                };
                 await fetch((window.BASE_URL || '') + '/calls/ice-candidate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         call_id: currentCallId,
-                        candidate: JSON.stringify(candidate)
+                        candidate: JSON.stringify(payload)
                     })
                 });
             } catch (e) {}
         },
 
-        // Flush pending ICE candidates once remoteDescription is set
+        // Flush pending ICE candidates once remoteDescription is set (Filtering out own candidates)
         flushIceCandidates: async function (iceCandidatesData) {
             if (!iceCandidatesData || !peerConnection || !peerConnection.remoteDescription) return;
             try {
                 const candidates = typeof iceCandidatesData === 'string' ? JSON.parse(iceCandidatesData) : iceCandidatesData;
                 if (Array.isArray(candidates)) {
-                    for (const candStr of candidates) {
-                        const candKey = typeof candStr === 'string' ? candStr : JSON.stringify(candStr);
+                    for (const candItem of candidates) {
+                        const candObj = typeof candItem === 'string' ? JSON.parse(candItem) : candItem;
+                        let rawCandidate = candObj;
+                        let senderRole = null;
+
+                        if (candObj && candObj.candidate) {
+                            rawCandidate = candObj.candidate;
+                            senderRole = candObj.role;
+                        }
+
+                        // IGNORE OWN CANDIDATES so WebRTC connection doesn't reject
+                        if (isCaller && senderRole === 'caller') continue;
+                        if (!isCaller && senderRole === 'receiver') continue;
+
+                        const candKey = typeof rawCandidate === 'string' ? rawCandidate : JSON.stringify(rawCandidate);
                         if (!processedCandidates.has(candKey)) {
                             processedCandidates.add(candKey);
-                            const candObj = typeof candStr === 'string' ? JSON.parse(candStr) : candStr;
-                            await peerConnection.addIceCandidate(new RTCIceCandidate(candObj));
+                            const finalCand = typeof rawCandidate === 'string' ? JSON.parse(rawCandidate) : rawCandidate;
+                            await peerConnection.addIceCandidate(new RTCIceCandidate(finalCand)).catch(err => {
+                                console.warn('[VoiceCall] addIceCandidate warning:', err);
+                            });
                         }
                     }
                 }
@@ -1083,6 +1102,9 @@
                             } catch (e) {
                                 console.error('[VoiceCall] Error setting remote answer:', e);
                             }
+                        } else if (activeCall.answer && peerConnection.remoteDescription) {
+                            // Guarantee setCallConnected runs on caller side
+                            this.setCallConnected();
                         }
                     }
 
