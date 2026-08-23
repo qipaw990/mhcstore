@@ -90,6 +90,37 @@
         injectCallCSS();
     }
 
+    // Permanently unlock audio element autoplay via dummy Web Audio stream on user touch gesture
+    function unlockAudioElement() {
+        const remoteAudio = document.getElementById('ccgRemoteAudio');
+        if (!remoteAudio) return;
+
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const dst = ctx.createMediaStreamDestination();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(440, ctx.currentTime);
+            osc.connect(dst);
+            osc.start(0);
+
+            remoteAudio.srcObject = dst.stream;
+            remoteAudio.muted = false;
+            remoteAudio.volume = 1.0;
+
+            const p = remoteAudio.play();
+            if (p !== undefined) {
+                p.then(() => {
+                    console.log('[VoiceCall] Audio element unlocked via dummy stream!');
+                }).catch(err => {
+                    console.warn('[VoiceCall] Audio element unlock warning:', err);
+                });
+            }
+        } catch (e) {
+            console.warn('[VoiceCall] AudioContext unlock error:', e);
+        }
+    }
+
     // Attach and play remote audio stream
     function attachAndPlayRemoteStream(event) {
         const remoteAudio = document.getElementById('ccgRemoteAudio');
@@ -407,13 +438,8 @@
                 return null;
             }
 
-            // Pre-unlock remote audio element on user gesture
-            const remoteAudio = document.getElementById('ccgRemoteAudio');
-            if (remoteAudio) {
-                remoteAudio.muted = false;
-                remoteAudio.volume = 1.0;
-                remoteAudio.play().catch(() => {});
-            }
+            // Permanently unlock audio element on user gesture
+            unlockAudioElement();
 
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
