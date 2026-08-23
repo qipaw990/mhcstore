@@ -56,8 +56,8 @@
                     <span></span><span></span><span></span><span></span><span></span>
                 </div>
 
-                <!-- Hidden Remote Audio Player -->
-                <audio id="ccgRemoteAudio" autoplay playsinline style="display:none;"></audio>
+                <!-- Off-screen Remote Audio Player (Must NOT be display:none for mobile browser audio rendering!) -->
+                <audio id="ccgRemoteAudio" autoplay playsinline style="position:fixed; top:-9999px; left:-9999px; width:1px; height:1px; opacity:0.01; pointer-events:none;"></audio>
 
                 <!-- Incoming Call Actions (Answer / Reject) -->
                 <div id="ccgIncomingActions" class="ccg-call-actions d-none">
@@ -88,6 +88,38 @@
 
         document.body.insertAdjacentHTML('beforeend', modalHtml);
         injectCallCSS();
+    }
+
+    // Attach and play remote audio stream
+    function attachAndPlayRemoteStream(event) {
+        const remoteAudio = document.getElementById('ccgRemoteAudio');
+        if (!remoteAudio) return;
+
+        let remoteStream = null;
+        if (event.streams && event.streams[0]) {
+            remoteStream = event.streams[0];
+        } else if (event.track) {
+            remoteStream = new MediaStream([event.track]);
+        }
+
+        if (remoteStream) {
+            remoteStream.getAudioTracks().forEach(t => { t.enabled = true; });
+            remoteAudio.srcObject = remoteStream;
+            remoteAudio.muted = false;
+            remoteAudio.volume = 1.0;
+
+            const playAudio = () => {
+                remoteAudio.play().then(() => {
+                    console.log('[VoiceCall] Remote audio playing...');
+                }).catch(e => {
+                    console.warn('[VoiceCall] Remote audio play attempt error:', e);
+                });
+            };
+
+            playAudio();
+            setTimeout(playAudio, 300);
+            setTimeout(playAudio, 1000);
+        }
     }
 
     // Inject CSS styles for Voice Call UI
@@ -530,25 +562,7 @@
                 peerConnection.addTrack(track, localStream);
             });
 
-            peerConnection.ontrack = (event) => {
-                const remoteAudio = document.getElementById('ccgRemoteAudio');
-                if (remoteAudio) {
-                    if (event.streams && event.streams[0]) {
-                        remoteAudio.srcObject = event.streams[0];
-                    } else if (event.track) {
-                        remoteAudio.srcObject = new MediaStream([event.track]);
-                    }
-                    remoteAudio.muted = false;
-                    remoteAudio.volume = 1.0;
-                    const p = remoteAudio.play();
-                    if (p !== undefined) {
-                        p.catch(e => {
-                            console.warn('[VoiceCall] Play remote audio retry:', e);
-                            setTimeout(() => remoteAudio.play().catch(()=>{}), 300);
-                        });
-                    }
-                }
-            };
+            peerConnection.ontrack = attachAndPlayRemoteStream;
 
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
@@ -643,25 +657,7 @@
                 peerConnection.addTrack(track, localStream);
             });
 
-            peerConnection.ontrack = (event) => {
-                const remoteAudio = document.getElementById('ccgRemoteAudio');
-                if (remoteAudio) {
-                    if (event.streams && event.streams[0]) {
-                        remoteAudio.srcObject = event.streams[0];
-                    } else if (event.track) {
-                        remoteAudio.srcObject = new MediaStream([event.track]);
-                    }
-                    remoteAudio.muted = false;
-                    remoteAudio.volume = 1.0;
-                    const p = remoteAudio.play();
-                    if (p !== undefined) {
-                        p.catch(e => {
-                            console.warn('[VoiceCall] Play remote audio retry:', e);
-                            setTimeout(() => remoteAudio.play().catch(()=>{}), 300);
-                        });
-                    }
-                }
-            };
+            peerConnection.ontrack = attachAndPlayRemoteStream;
 
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
@@ -745,10 +741,30 @@
             if (remoteAudio) {
                 remoteAudio.muted = false;
                 remoteAudio.volume = 1.0;
-                remoteAudio.play().catch(e => {
-                    console.warn('[VoiceCall] Connected audio play error:', e);
-                    setTimeout(() => remoteAudio.play().catch(()=>{}), 400);
-                });
+                
+                // Attach tracks from receivers if ontrack didn't capture them
+                if (peerConnection) {
+                    const receivers = peerConnection.getReceivers();
+                    if (receivers && receivers.length > 0) {
+                        const tracks = receivers.map(r => r.track).filter(Boolean);
+                        if (tracks.length > 0) {
+                            tracks.forEach(t => { t.enabled = true; });
+                            remoteAudio.srcObject = new MediaStream(tracks);
+                        }
+                    }
+                }
+
+                const playAudio = () => {
+                    remoteAudio.play().then(() => {
+                        console.log('[VoiceCall] Connected remote audio playing...');
+                    }).catch(e => {
+                        console.warn('[VoiceCall] Connected audio play error:', e);
+                    });
+                };
+
+                playAudio();
+                setTimeout(playAudio, 300);
+                setTimeout(playAudio, 800);
             }
 
             this.startTimer();
