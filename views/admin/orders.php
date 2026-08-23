@@ -1,96 +1,108 @@
 <!-- Header & Filter Toolbar -->
 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
     <div>
-        <h4 class="fw-bold m-0 text-dark"><i class="bi bi-receipt-cutoff text-primary me-2"></i> Pusat Pemantauan & Dispatch Pesanan</h4>
-        <div class="text-muted small">Kelola penugasan kurir, lacak rute GPS real-time, dan pantau status seluruh transaksi di Cicalengka.</div>
+        <h4 class="page-title"><i class="bi bi-receipt-cutoff text-danger me-2"></i>Pusat Pemantauan & Dispatch Pesanan</h4>
+        <p class="page-subtitle">Kelola penugasan kurir, lacak rute GPS real-time, dan pantau status seluruh transaksi di Cicalengka.</p>
     </div>
     
     <div class="d-flex align-items-center gap-2">
-        <button onclick="window.location.reload()" class="btn btn-light border btn-sm px-3 rounded-3 shadow-xs">
-            <i class="bi bi-arrow-clockwise me-1"></i> Refresh Data
+        <button onclick="window.location.reload()" class="btn btn-light border btn-sm px-3 rounded-pill fw-bold shadow-2xs d-flex align-items-center gap-1.5" style="font-size: 12px;">
+            <i class="bi bi-arrow-clockwise"></i> Refresh Data
         </button>
     </div>
 </div>
 
-<!-- Status Filter Tabs -->
-<div class="card border-0 shadow-sm rounded-4 mb-4">
-    <div class="card-body p-2">
-        <div class="d-flex flex-wrap gap-2">
-            <a href="<?= $baseUrl ?>/admin/orders" class="btn btn-sm <?= empty($status_filter) ? 'btn-primary' : 'btn-light border' ?> rounded-pill px-3 fw-semibold">
-                Semua (<?= count($orders) ?>)
+<!-- Status Filter Tabs (Sleek Pill Bar) -->
+<div class="card mb-4 shadow-2xs">
+    <div class="card-body p-2.5">
+        <div class="filter-pill-bar">
+            <a href="<?= $baseUrl ?>/admin/orders" class="btn-filter-pill <?= empty($status_filter) ? 'active' : '' ?>">
+                <span>Semua</span>
+                <span class="badge-count"><?= count($orders) ?></span>
             </a>
-            <a href="<?= $baseUrl ?>/admin/orders?status=pending" class="btn btn-sm <?= ($status_filter === 'pending') ? 'btn-warning text-dark' : 'btn-light border' ?> rounded-pill px-3 fw-semibold">
-                Menunggu Konfirmasi
+            <a href="<?= $baseUrl ?>/admin/orders?status=pending" class="btn-filter-pill <?= ($status_filter === 'pending') ? 'active' : '' ?>">
+                <i class="bi bi-hourglass-split text-warning"></i>
+                <span>Menunggu Konfirmasi</span>
             </a>
-            <a href="<?= $baseUrl ?>/admin/orders?status=confirmed" class="btn btn-sm <?= ($status_filter === 'confirmed') ? 'btn-info text-white' : 'btn-light border' ?> rounded-pill px-3 fw-semibold">
-                Terkonfirmasi
+            <a href="<?= $baseUrl ?>/admin/orders?status=confirmed" class="btn-filter-pill <?= ($status_filter === 'confirmed') ? 'active' : '' ?>">
+                <i class="bi bi-check2-circle text-info"></i>
+                <span>Terkonfirmasi</span>
             </a>
-            <a href="<?= $baseUrl ?>/admin/orders?status=processing" class="btn btn-sm <?= ($status_filter === 'processing') ? 'btn-primary' : 'btn-light border' ?> rounded-pill px-3 fw-semibold">
-                Sedang Dimasak / Disiapkan
+            <a href="<?= $baseUrl ?>/admin/orders?status=processing" class="btn-filter-pill <?= ($status_filter === 'processing') ? 'active' : '' ?>">
+                <i class="bi bi-fire text-danger"></i>
+                <span>Sedang Dimasak / Disiapkan</span>
             </a>
-            <a href="<?= $baseUrl ?>/admin/orders?status=handover" class="btn btn-sm <?= ($status_filter === 'handover') ? 'btn-secondary text-white' : 'btn-light border' ?> rounded-pill px-3 fw-semibold">
-                Siap Diambil Kurir
+            <a href="<?= $baseUrl ?>/admin/orders?status=handover" class="btn-filter-pill <?= ($status_filter === 'handover') ? 'active' : '' ?>">
+                <i class="bi bi-box-seam text-secondary"></i>
+                <span>Siap Diambil Kurir</span>
             </a>
-            <a href="<?= $baseUrl ?>/admin/orders?status=on_the_way" class="btn btn-sm <?= ($status_filter === 'on_the_way') ? 'btn-dark' : 'btn-light border' ?> rounded-pill px-3 fw-semibold">
-                Sedang Diantar
+            <a href="<?= $baseUrl ?>/admin/orders?status=on_the_way" class="btn-filter-pill <?= ($status_filter === 'on_the_way') ? 'active' : '' ?>">
+                <i class="bi bi-bicycle text-primary"></i>
+                <span>Sedang Diantar</span>
             </a>
-            <a href="<?= $baseUrl ?>/admin/orders?status=delivered" class="btn btn-sm <?= ($status_filter === 'delivered') ? 'btn-success' : 'btn-light border' ?> rounded-pill px-3 fw-semibold">
-                Selesai (Delivered)
+            <a href="<?= $baseUrl ?>/admin/orders?status=delivered" class="btn-filter-pill <?= ($status_filter === 'delivered') ? 'active' : '' ?>">
+                <i class="bi bi-check-circle-fill text-success"></i>
+                <span>Selesai (Delivered)</span>
             </a>
-            <a href="<?= $baseUrl ?>/admin/orders?status=canceled" class="btn btn-sm <?= ($status_filter === 'canceled') ? 'btn-danger' : 'btn-light border' ?> rounded-pill px-3 fw-semibold">
-                Dibatalkan
+            <a href="<?= $baseUrl ?>/admin/orders?status=canceled" class="btn-filter-pill <?= ($status_filter === 'canceled') ? 'active' : '' ?>">
+                <i class="bi bi-x-circle text-danger"></i>
+                <span>Dibatalkan</span>
             </a>
         </div>
     </div>
 </div>
 
 <!-- Live Dispatch Fleet & Orders Radar Map -->
-<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-white">
-    <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
-        <div class="d-flex align-items-center gap-2">
-            <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                <i class="bi bi-radar"></i>
+<div class="card overflow-hidden mb-4 shadow-2xs">
+    <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-2.5">
+            <div class="rounded-3 bg-danger-subtle text-danger d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                <i class="bi bi-radar fs-5"></i>
             </div>
             <div>
-                <h6 class="fw-bold m-0">Live Dispatch & Fleet GPS Radar</h6>
+                <h6 class="fw-bold m-0 text-dark" style="font-size: 13.5px;">Live Dispatch & Fleet GPS Radar</h6>
                 <div class="text-muted" style="font-size: 11px;">Pemantauan persebaran kurir aktif dan lokasi pesanan berjalan di Cicalengka</div>
             </div>
         </div>
         <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-dot"></i> <?= count($drivers) ?> Driver Aktif</span>
-            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"><i class="bi bi-dot"></i> <?= count($stores) ?> Mitra Resto</span>
+            <span class="badge bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-pill fw-bold" style="font-size: 11px; background:#ECFDF5; color:#047857; border-color:#A7F3D0;">
+                <i class="bi bi-bicycle me-1"></i> <?= count($drivers) ?> Driver Aktif
+            </span>
+            <span class="badge bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-pill fw-bold" style="font-size: 11px; background:#EFF6FF; color:#1D4ED8; border-color:#BFDBFE;">
+                <i class="bi bi-shop me-1"></i> <?= count($stores) ?> Mitra Resto
+            </span>
         </div>
     </div>
     <div class="position-relative">
-        <div id="admin-dispatch-map" style="width: 100%; height: 320px;"></div>
-        <div class="position-absolute bottom-0 start-0 m-3 z-3 bg-white p-2 rounded-3 shadow-sm border small" style="font-size: 11px;">
+        <div id="admin-dispatch-map" style="width: 100%; height: 340px;"></div>
+        <div class="position-absolute bottom-0 start-0 m-3 z-3 bg-white p-2.5 rounded-3 shadow-sm border small" style="font-size: 11px;">
             <div class="d-flex align-items-center gap-3">
-                <span class="d-flex align-items-center gap-1"><span style="width:10px;height:10px;background:#ef4444;border-radius:50%;display:inline-block;"></span> Toko / Resto</span>
-                <span class="d-flex align-items-center gap-1"><span style="width:10px;height:10px;background:#2563eb;border-radius:50%;display:inline-block;"></span> Driver Online</span>
-                <span class="d-flex align-items-center gap-1"><span style="width:10px;height:10px;background:#10b981;border-radius:50%;display:inline-block;"></span> Tujuan Pengantaran</span>
+                <span class="d-flex align-items-center gap-1.5"><span style="width:10px;height:10px;background:#ef4444;border-radius:50%;display:inline-block;"></span> Toko / Resto</span>
+                <span class="d-flex align-items-center gap-1.5"><span style="width:10px;height:10px;background:#2563eb;border-radius:50%;display:inline-block;"></span> Driver Online</span>
+                <span class="d-flex align-items-center gap-1.5"><span style="width:10px;height:10px;background:#10b981;border-radius:50%;display:inline-block;"></span> Tujuan Pengantaran</span>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Orders Table Card -->
-<div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
-    <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
-        <h6 class="fw-bold m-0"><i class="bi bi-table me-1 text-primary"></i> Daftar Transaksi Pesanan (<?= count($orders) ?>)</h6>
-        <div class="text-muted small">Data terurut dari yang terbaru</div>
+<div class="card overflow-hidden shadow-2xs">
+    <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
+        <h6 class="fw-bold m-0 text-dark" style="font-size: 13.5px;"><i class="bi bi-table me-2 text-danger"></i>Daftar Transaksi Pesanan (<?= count($orders) ?>)</h6>
+        <div class="text-muted" style="font-size: 11.5px;">Data terurut dari transaksi paling baru</div>
     </div>
 
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
+        <table class="table align-middle mb-0">
+            <thead>
                 <tr>
-                    <th class="ps-3">Kode Order</th>
+                    <th class="ps-3.5">Kode Order</th>
                     <th>Tipe & Mitra</th>
                     <th>Pelanggan</th>
                     <th>Total Biaya</th>
                     <th>Kurir Ditugaskan</th>
                     <th>Status</th>
-                    <th class="text-end pe-3">Aksi</th>
+                    <th class="text-end pe-3.5">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -106,28 +118,28 @@
                         <?php
                             $delAddr = json_decode($o['delivery_address_json'] ?? '{}', true) ?: [];
                             $statusBadge = match($o['order_status']) {
-                                'pending'     => 'bg-warning text-dark',
-                                'confirmed'   => 'bg-info text-white',
-                                'processing'  => 'bg-primary',
-                                'handover'    => 'bg-secondary',
-                                'picked_up', 'on_the_way' => 'bg-dark',
-                                'delivered'   => 'bg-success',
-                                'canceled'    => 'bg-danger',
+                                'pending'     => 'badge-soft-warning',
+                                'confirmed'   => 'badge-soft-info',
+                                'processing'  => 'badge-soft-purple',
+                                'handover'    => 'badge-soft-info',
+                                'picked_up', 'on_the_way' => 'badge-soft-primary',
+                                'delivered'   => 'badge-soft-success',
+                                'canceled'    => 'badge-soft-danger',
                                 default       => 'bg-light text-dark border'
                             };
                             $isParcel = ($o['order_type'] === 'parcel');
                         ?>
                         <tr>
-                            <td class="ps-3">
-                                <div class="fw-bold text-primary">#<?= htmlspecialchars($o['order_code']) ?></div>
+                            <td class="ps-3.5">
+                                <a href="javascript:void(0)" onclick="viewOrderDetail(<?= $o['id'] ?>)" class="fw-bold text-danger text-decoration-none d-block">#<?= htmlspecialchars($o['order_code']) ?></a>
                                 <div class="text-muted" style="font-size: 11px;"><?= date('d M Y, H:i', strtotime($o['created_at'])) ?></div>
                             </td>
                             <td>
                                 <?php if ($isParcel): ?>
-                                    <span class="badge bg-purple-subtle text-purple fw-bold mb-1" style="background:#f3e8ff;color:#7e22ce;"><i class="bi bi-box-seam me-1"></i> Cicalengka Parcel</span>
+                                    <span class="badge badge-soft-purple fw-bold mb-1" style="font-size: 10px;"><i class="bi bi-box-seam me-1"></i> Cicalengka Parcel</span>
                                     <div class="small fw-semibold text-dark">Kirim Paket Kilat</div>
                                 <?php else: ?>
-                                    <span class="badge bg-primary-subtle text-primary fw-bold mb-1"><i class="bi bi-shop me-1"></i> Food & Mart</span>
+                                    <span class="badge badge-soft-primary fw-bold mb-1" style="font-size: 10px;"><i class="bi bi-shop me-1"></i> Food & Mart</span>
                                     <div class="small fw-bold text-dark"><?= htmlspecialchars($o['store_name'] ?? 'Mitra Toko') ?></div>
                                 <?php endif; ?>
                             </td>
@@ -142,15 +154,15 @@
                             </td>
                             <td>
                                 <div class="fw-bold text-dark"><?= format_rupiah($o['total_amount']) ?></div>
-                                <span class="badge <?= $o['payment_status'] === 'paid' ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning' ?> py-0 px-2" style="font-size: 10px;">
+                                <span class="badge <?= $o['payment_status'] === 'paid' ? 'badge-soft-success' : 'badge-soft-warning' ?> py-0.5 px-2" style="font-size: 10px; font-weight: 700;">
                                     <?= strtoupper($o['payment_method']) ?> • <?= $o['payment_status'] === 'paid' ? 'LUNAS' : 'BELUM BAYAR' ?>
                                 </span>
                             </td>
                             <td>
                                 <?php if (!empty($o['dm_name'])): ?>
                                     <div class="d-flex align-items-center gap-2">
-                                        <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 12px;">
-                                            <i class="bi bi-bicycle"></i>
+                                        <div class="rounded-circle bg-light border text-primary d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; font-size: 13px;">
+                                            <i class="bi bi-bicycle text-danger"></i>
                                         </div>
                                         <div>
                                             <div class="small fw-bold text-dark"><?= htmlspecialchars($o['dm_name']) ?></div>
@@ -158,66 +170,66 @@
                                         </div>
                                     </div>
                                 <?php else: ?>
-                                    <button onclick="openAssignDriverModal(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>')" class="btn btn-outline-primary btn-sm rounded-pill py-1 px-2 fw-semibold" style="font-size: 11px;">
+                                    <button onclick="openAssignDriverModal(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>')" class="btn btn-outline-danger btn-sm rounded-pill py-1 px-2.5 fw-bold" style="font-size: 10.5px;">
                                         <i class="bi bi-person-plus me-1"></i> Tugaskan Kurir
                                     </button>
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <span class="badge <?= $statusBadge ?> text-uppercase py-1 px-2" style="font-size: 10px;">
+                                <span class="badge <?= $statusBadge ?> text-uppercase py-1 px-2.5" style="font-size: 10.5px; font-weight: 700;">
                                     <?= str_replace('_', ' ', $o['order_status']) ?>
                                 </span>
                                 <?php if (!empty($o['delivery_otp']) && $o['order_status'] !== 'delivered'): ?>
-                                    <div class="text-muted fw-semibold mt-1" style="font-size: 10px;">OTP: <span class="text-primary fw-bold"><?= $o['delivery_otp'] ?></span></div>
+                                    <div class="text-muted fw-semibold mt-1" style="font-size: 10.5px;">OTP: <span class="text-danger fw-bold"><?= $o['delivery_otp'] ?></span></div>
                                 <?php endif; ?>
                             </td>
-                            <td class="text-end pe-3">
-                                <div class="d-flex align-items-center justify-content-end gap-1">
+                            <td class="text-end pe-3.5">
+                                <div class="d-flex align-items-center justify-content-end gap-1.5">
                                     <div class="dropdown">
-                                        <button class="btn btn-light btn-sm border dropdown-toggle fw-semibold" type="button" data-bs-toggle="dropdown">
-                                            Kelola
+                                        <button class="btn btn-light btn-sm border fw-bold px-2.5 py-1 rounded-pill" type="button" data-bs-toggle="dropdown" style="font-size: 11.5px;">
+                                            Kelola <i class="bi bi-chevron-down ms-1" style="font-size: 9px;"></i>
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                             <li>
-                                                <button class="dropdown-item small py-2" onclick="viewOrderDetail(<?= $o['id'] ?>)">
+                                                <button class="dropdown-item py-2" onclick="viewOrderDetail(<?= $o['id'] ?>)">
                                                     <i class="bi bi-eye text-primary me-2"></i> Rincian Pesanan
                                                 </button>
                                             </li>
                                             <li>
-                                                <button class="dropdown-item small py-2 text-danger fw-semibold" onclick="viewMidtransDetail('<?= htmlspecialchars($o['order_code']) ?>')">
+                                                <button class="dropdown-item py-2 text-danger fw-semibold" onclick="viewMidtransDetail('<?= htmlspecialchars($o['order_code']) ?>')">
                                                     <i class="bi bi-credit-card-2-front-fill me-2"></i> Detail Midtrans API
                                                 </button>
                                             </li>
                                             <li>
-                                                <a class="dropdown-item small py-2" href="<?= $baseUrl ?>/admin/orders/invoice/<?= $o['id'] ?>" target="_blank">
+                                                <a class="dropdown-item py-2" href="<?= $baseUrl ?>/admin/orders/invoice/<?= $o['id'] ?>" target="_blank">
                                                     <i class="bi bi-printer text-success me-2"></i> Cetak Faktur / Nota
                                                 </a>
                                             </li>
                                             <li><hr class="dropdown-divider"></li>
                                             <li>
-                                                <button class="dropdown-item small py-2 text-primary" onclick="openAssignDriverModal(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>')">
+                                                <button class="dropdown-item py-2 text-primary" onclick="openAssignDriverModal(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>')">
                                                     <i class="bi bi-bicycle me-2"></i> Ganti / Tugaskan Driver
                                                 </button>
                                             </li>
                                             <li>
-                                                <button class="dropdown-item small py-2 text-info text-dark" onclick="promptUpdateStatus(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>', '<?= $o['order_status'] ?>')">
+                                                <button class="dropdown-item py-2 text-dark" onclick="promptUpdateStatus(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>', '<?= $o['order_status'] ?>')">
                                                     <i class="bi bi-arrow-repeat me-2 text-info"></i> Update Status Pesanan
                                                 </button>
                                             </li>
                                             <li>
-                                                <button class="dropdown-item small py-2 text-warning" onclick="promptCancelOrder(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>')">
+                                                <button class="dropdown-item py-2 text-warning" onclick="promptCancelOrder(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>')">
                                                     <i class="bi bi-x-circle me-2"></i> Batalkan Pesanan
                                                 </button>
                                             </li>
                                             <li><hr class="dropdown-divider"></li>
                                             <li>
-                                                <button class="dropdown-item small py-2 text-danger fw-bold" onclick="deleteOrder(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>')">
+                                                <button class="dropdown-item py-2 text-danger fw-bold" onclick="deleteOrder(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>')">
                                                     <i class="bi bi-trash3-fill me-2"></i> Hapus Pesanan Permanen
                                                 </button>
                                             </li>
                                         </ul>
                                     </div>
-                                    <button type="button" class="btn btn-outline-danger btn-sm border-0 rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Hapus Pesanan #<?= htmlspecialchars($o['order_code']) ?>" onclick="deleteOrder(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>')">
+                                    <button type="button" class="btn btn-light btn-sm border-0 rounded-circle d-flex align-items-center justify-content-center text-muted text-hover-danger" style="width: 32px; height: 32px;" title="Hapus Pesanan #<?= htmlspecialchars($o['order_code']) ?>" onclick="deleteOrder(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>')">
                                         <i class="bi bi-trash3"></i>
                                     </button>
                                 </div>
@@ -233,17 +245,17 @@
 <!-- Assign Driver Modal -->
 <div class="modal fade" id="assignDriverModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header border-0 pb-0">
-                <h6 class="modal-title fw-bold"><i class="bi bi-bicycle text-primary me-2"></i>Tugaskan Kurir ke Pesanan</h6>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold text-dark"><i class="bi bi-bicycle text-danger me-2"></i>Tugaskan Kurir ke Pesanan</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <p class="text-muted small mb-3">Pilih mitra kurir aktif untuk mengantarkan order <span id="assign-order-code" class="fw-bold text-primary"></span></p>
+            <div class="modal-body p-4">
+                <p class="text-muted small mb-3">Pilih mitra kurir aktif untuk mengantarkan order <span id="assign-order-code" class="fw-bold text-danger"></span></p>
                 <form id="assignDriverForm" onsubmit="submitAssignDriver(event)">
                     <input type="hidden" name="order_id" id="assign_order_id">
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">Pilih Mitra Kurir</label>
+                        <label class="form-label small fw-bold text-dark">Pilih Mitra Kurir</label>
                         <select name="delivery_man_id" id="delivery_man_select" class="form-select rounded-3 py-2" required>
                             <option value="">-- Pilih Kurir Aktif --</option>
                             <?php foreach ($drivers as $d): ?>
@@ -254,8 +266,8 @@
                         </select>
                     </div>
                     <div class="d-flex justify-content-end gap-2 pt-2">
-                        <button type="button" class="btn btn-light btn-sm px-3 rounded-3" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary btn-sm px-4 rounded-3 fw-bold">Tugaskan Sekarang</button>
+                        <button type="button" class="btn btn-light btn-sm px-3 rounded-pill fw-semibold" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-danger btn-sm px-4 rounded-pill fw-bold" style="background: linear-gradient(135deg, #EE2737, #C61524);">Tugaskan Sekarang</button>
                     </div>
                 </form>
             </div>
@@ -266,14 +278,14 @@
 <!-- Order Detail Modal -->
 <div class="modal fade" id="orderDetailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold" id="modal-order-title">Rincian Pesanan</h5>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold text-dark" id="modal-order-title">Rincian Pesanan</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="modal-order-content">
+            <div class="modal-body p-4" id="modal-order-content">
                 <div class="text-center py-4">
-                    <div class="spinner-border text-primary" role="status"></div>
+                    <div class="spinner-border text-danger" role="status"></div>
                 </div>
             </div>
         </div>
@@ -283,10 +295,10 @@
 <!-- Midtrans Transaction Detail Modal -->
 <div class="modal fade" id="midtransDetailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header border-0 pb-0">
-                <div class="d-flex align-items-center gap-2">
-                    <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="d-flex align-items-center gap-2.5">
+                    <div class="rounded-3 bg-danger-subtle text-danger d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
                         <i class="bi bi-credit-card-2-front-fill fs-5"></i>
                     </div>
                     <div>
@@ -475,7 +487,7 @@ async function viewOrderDetail(orderId) {
     modal.show();
 
     const contentEl = document.getElementById('modal-order-content');
-    contentEl.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>';
+    contentEl.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-danger" role="status"></div></div>';
 
     try {
         const res = await fetch(window.BASE_URL + '/admin/orders/detail/' + orderId);
@@ -486,15 +498,15 @@ async function viewOrderDetail(orderId) {
             let itemsHtml = '';
             if (o.items && o.items.length > 0) {
                 itemsHtml = `
-                    <table class="table table-sm align-middle mt-2">
-                        <thead class="table-light"><tr><th>Produk</th><th class="text-center">Qty</th><th class="text-end">Harga</th><th class="text-end">Subtotal</th></tr></thead>
+                    <table class="table align-middle mt-2">
+                        <thead><tr><th>Produk</th><th class="text-center">Qty</th><th class="text-end">Harga</th><th class="text-end">Subtotal</th></tr></thead>
                         <tbody>
                             ${o.items.map(it => `
                                 <tr>
-                                    <td>${it.item_name}</td>
+                                    <td class="fw-semibold text-dark">${it.item_name}</td>
                                     <td class="text-center">${it.quantity}</td>
                                     <td class="text-end">Rp ${Number(it.price).toLocaleString('id-ID')}</td>
-                                    <td class="text-end fw-bold">Rp ${Number(it.total_price).toLocaleString('id-ID')}</td>
+                                    <td class="text-end fw-bold text-dark">Rp ${Number(it.total_price).toLocaleString('id-ID')}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -505,47 +517,47 @@ async function viewOrderDetail(orderId) {
             contentEl.innerHTML = `
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <div class="p-3 bg-light rounded-4">
-                            <div class="text-muted small">INFORMASI PESANAN</div>
-                            <div class="fw-bold fs-6 text-primary">#${o.order_code}</div>
-                            <div class="small">Tipe: <b class="text-uppercase">${o.order_type}</b></div>
-                            <div class="small">Status: <span class="badge bg-primary text-uppercase">${o.order_status}</span></div>
-                            <div class="small">Metode Bayar: <b>${(o.payment_method || '').toUpperCase()} (${(o.payment_status || '').toUpperCase()})</b></div>
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="text-muted small fw-bold">INFORMASI PESANAN</div>
+                            <div class="fw-bold fs-6 text-danger">#${o.order_code}</div>
+                            <div class="small mt-1">Tipe: <b class="text-uppercase">${o.order_type}</b></div>
+                            <div class="small mt-1">Status: <span class="badge badge-soft-primary text-uppercase">${o.order_status}</span></div>
+                            <div class="small mt-1">Metode Bayar: <b>${(o.payment_method || '').toUpperCase()} (${(o.payment_status || '').toUpperCase()})</b></div>
                             <div class="small mt-2">OTP Pengantaran: <span class="badge bg-dark fs-6">${o.delivery_otp || '-'}</span></div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="p-3 bg-light rounded-4">
-                            <div class="text-muted small">PELANGGAN & ALAMAT</div>
-                            <div class="fw-bold">${o.customer_name}</div>
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="text-muted small fw-bold">PELANGGAN & ALAMAT</div>
+                            <div class="fw-bold text-dark mt-1">${o.customer_name}</div>
                             <div class="small text-muted"><i class="bi bi-telephone me-1"></i>${o.customer_phone || '-'}</div>
-                            <div class="small text-dark mt-1"><i class="bi bi-geo-alt-fill text-danger me-1"></i>${o.delivery_address ? o.delivery_address.address : '-'}</div>
+                            <div class="small text-dark mt-2"><i class="bi bi-geo-alt-fill text-danger me-1"></i>${o.delivery_address ? o.delivery_address.address : '-'}</div>
                         </div>
                     </div>
                     <div class="col-12">
-                        <div class="p-3 bg-light rounded-4">
-                            <div class="fw-bold small mb-1">Rincian Item / Barang:</div>
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="fw-bold small mb-1 text-dark">Rincian Item / Barang:</div>
                             ${itemsHtml || '<div class="text-muted small">Order Parcel / Layanan Ekspedisi</div>'}
                             <div class="d-flex justify-content-between border-top pt-2 mt-2 fw-bold">
                                 <span>Total Tagihan:</span>
-                                <span class="text-primary fs-6">Rp ${Number(o.total_amount).toLocaleString('id-ID')}</span>
+                                <span class="text-danger fs-6">Rp ${Number(o.total_amount).toLocaleString('id-ID')}</span>
                             </div>
                         </div>
                     </div>
                     <div class="col-12 border-top pt-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
                         <div class="d-flex flex-wrap gap-2">
-                            <a href="${window.BASE_URL}/admin/orders/invoice/${o.id}" target="_blank" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold">
+                            <a href="${window.BASE_URL}/admin/orders/invoice/${o.id}" target="_blank" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold">
                                 <i class="bi bi-printer me-1"></i> Cetak Faktur
                             </a>
-                            <button type="button" onclick="promptUpdateStatus(${o.id}, '${o.order_code}', '${o.order_status}')" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">
+                            <button type="button" onclick="promptUpdateStatus(${o.id}, '${o.order_code}', '${o.order_status}')" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold">
                                 <i class="bi bi-arrow-repeat me-1"></i> Ubah Status
                             </button>
                         </div>
                         <div class="d-flex flex-wrap gap-2">
-                            <button type="button" onclick="promptCancelOrder(${o.id}, '${o.order_code}')" class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-semibold">
+                            <button type="button" onclick="promptCancelOrder(${o.id}, '${o.order_code}')" class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-bold">
                                 <i class="bi bi-x-circle me-1"></i> Batalkan
                             </button>
-                            <button type="button" onclick="deleteOrder(${o.id}, '${o.order_code}')" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold shadow-xs">
+                            <button type="button" onclick="deleteOrder(${o.id}, '${o.order_code}')" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold">
                                 <i class="bi bi-trash3-fill me-1"></i> Hapus Pesanan
                             </button>
                         </div>
@@ -564,7 +576,7 @@ async function viewOrderDetail(orderId) {
 function deleteOrder(orderId, orderCode) {
     Swal.fire({
         title: 'Hapus Pesanan?',
-        html: `Apakah Anda yakin ingin menghapus pesanan <strong>#${orderCode}</strong> secara permanen?<br><div class="alert alert-danger p-2 mt-3 mb-0 text-start small"><i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Perhatian:</strong> Seluruh data rincian item, riwayat GPS kurir, ulasan, dan relasi pesanan ini akan dihapus dari sistem.</div>`,
+        html: `Apakah Anda yakin ingin menghapus pesanan <strong>#${orderCode}</strong> secara permanen?<br><div class="alert alert-danger p-2.5 mt-3 mb-0 text-start small"><i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Perhatian:</strong> Seluruh data rincian item, riwayat GPS kurir, ulasan, dan relasi pesanan ini akan dihapus dari sistem.</div>`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#dc2626',
@@ -592,7 +604,6 @@ function deleteOrder(orderId, orderCode) {
                 const data = await res.json();
 
                 if (data.success) {
-                    // Close detail modal if open
                     const detailModalEl = document.getElementById('orderDetailModal');
                     const modalInst = bootstrap.Modal.getInstance(detailModalEl);
                     if (modalInst) modalInst.hide();
@@ -731,7 +742,7 @@ async function viewMidtransDetail(orderCode) {
                     <i class="bi bi-exclamation-triangle-fill text-warning fs-1 d-block mb-2"></i>
                     <h6 class="fw-bold text-dark mb-1">Transaksi Belum Terdaftar di Midtrans</h6>
                     <p class="text-muted small mb-3">Order #${orderCode} mungkin menggunakan metode pembayaran Cash / COD, atau belum membuka popup Snap.</p>
-                    <div class="p-3 bg-light rounded-3 text-start small">
+                    <div class="p-3 bg-light rounded-3 text-start small border">
                         <div><b>Metode Bayar di DB:</b> ${dbOrder.payment_method ? dbOrder.payment_method.toUpperCase() : '-'}</div>
                         <div><b>Status Bayar di DB:</b> ${dbOrder.payment_status ? dbOrder.payment_status.toUpperCase() : '-'}</div>
                         <div><b>Pesan API:</b> ${mt.message || '-'}</div>
@@ -766,7 +777,7 @@ async function viewMidtransDetail(orderCode) {
                 </div>
 
                 <div class="col-md-6">
-                    <div class="p-3 bg-light rounded-3 h-100">
+                    <div class="p-3 bg-light rounded-3 h-100 border">
                         <div class="fw-bold text-dark small mb-2"><i class="bi bi-receipt me-1 text-danger"></i> Rincian Midtrans</div>
                         <div class="small mb-1"><b>Order ID:</b> <code>${d.order_id || orderCode}</code></div>
                         <div class="small mb-1"><b>Transaction ID:</b> <code style="font-size: 10px;">${d.transaction_id || '-'}</code></div>
@@ -777,7 +788,7 @@ async function viewMidtransDetail(orderCode) {
                 </div>
 
                 <div class="col-md-6">
-                    <div class="p-3 bg-light rounded-3 h-100">
+                    <div class="p-3 bg-light rounded-3 h-100 border">
                         <div class="fw-bold text-dark small mb-2"><i class="bi bi-currency-dollar me-1 text-danger"></i> Nominal & Waktu</div>
                         <div class="small mb-1"><b>Gross Amount:</b> <span class="fw-bold text-danger fs-6">Rp ${Number(d.gross_amount || 0).toLocaleString('id-ID')}</span></div>
                         <div class="small mb-1"><b>Waktu Transaksi:</b> ${d.transaction_time || '-'}</div>
@@ -786,7 +797,7 @@ async function viewMidtransDetail(orderCode) {
                     </div>
                 </div>
 
-                ${vaInfo ? `<div class="col-12"><div class="p-3 bg-light rounded-3"><div class="fw-bold small mb-2">Instruksi Pembayaran VA:</div>${vaInfo}</div></div>` : ''}
+                ${vaInfo ? `<div class="col-12"><div class="p-3 bg-light rounded-3 border"><div class="fw-bold small mb-2">Instruksi Pembayaran VA:</div>${vaInfo}</div></div>` : ''}
 
                 <div class="col-12 pt-2">
                     <button class="btn btn-sm btn-outline-secondary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#rawMidtransJson">

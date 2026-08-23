@@ -1,49 +1,74 @@
+<!-- Page Header -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h4 class="page-title"><i class="bi bi-speedometer2 text-danger me-2"></i>Ringkasan Eksekutif</h4>
+        <p class="page-subtitle">Performa platform delivery, statistik omset, dan aktivitas multi-vendor CicalengkaGO.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <a href="<?= $baseUrl ?>/admin/orders" class="btn btn-danger btn-sm rounded-pill px-3 fw-bold shadow-2xs d-flex align-items-center gap-1.5" style="background: linear-gradient(135deg, #EE2737, #C61524);">
+            <i class="bi bi-crosshair"></i> Pusat Dispatch Radar
+        </a>
+    </div>
+</div>
+
 <!-- Executive Summary Metrics -->
 <div class="row g-3 mb-4">
     <div class="col-md-3 col-sm-6">
         <div class="stat-card">
-            <div class="stat-icon bg-primary-subtle text-primary">
-                <i class="bi bi-wallet2"></i>
+            <div class="min-w-0">
+                <div class="stat-label">Total Omset Platform</div>
+                <h5 class="stat-value text-danger"><?= format_rupiah($total_revenue ?? 0) ?></h5>
+                <div class="stat-trend text-emerald-600">
+                    <i class="bi bi-arrow-up-right me-0.5"></i> Transaksi Terverifikasi
+                </div>
             </div>
-            <div>
-                <div class="text-muted small fw-semibold">Total Omset Platform</div>
-                <h5 class="fw-bold text-primary m-0"><?= format_rupiah($total_revenue ?? 0) ?></h5>
+            <div class="stat-icon bg-danger-subtle text-danger">
+                <i class="bi bi-wallet2"></i>
             </div>
         </div>
     </div>
 
     <div class="col-md-3 col-sm-6">
         <div class="stat-card">
+            <div class="min-w-0">
+                <div class="stat-label">Total Transaksi</div>
+                <h5 class="stat-value text-dark"><?= number_format($total_orders ?? 0) ?></h5>
+                <div class="stat-trend text-muted">
+                    <i class="bi bi-bag-check me-1"></i> Pesanan Terproses
+                </div>
+            </div>
             <div class="stat-icon bg-success-subtle text-success">
                 <i class="bi bi-bag-check-fill"></i>
             </div>
-            <div>
-                <div class="text-muted small fw-semibold">Total Transaksi</div>
-                <h5 class="fw-bold text-success m-0"><?= $total_orders ?? 0 ?> Pesanan</h5>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="min-w-0">
+                <div class="stat-label">Mitra Toko Terdaftar</div>
+                <h5 class="stat-value text-dark"><?= number_format($total_stores ?? 0) ?></h5>
+                <div class="stat-trend text-primary">
+                    <i class="bi bi-shop me-1"></i> Merchant Aktif
+                </div>
+            </div>
+            <div class="stat-icon bg-primary-subtle text-primary">
+                <i class="bi bi-shop-window"></i>
             </div>
         </div>
     </div>
 
     <div class="col-md-3 col-sm-6">
         <div class="stat-card">
-            <div class="stat-icon bg-warning-subtle text-warning">
-                <i class="bi bi-shop"></i>
+            <div class="min-w-0">
+                <div class="stat-label">Armada Driver Kurir</div>
+                <h5 class="stat-value text-dark"><?= number_format($total_drivers ?? 0) ?></h5>
+                <div class="stat-trend text-purple">
+                    <i class="bi bi-bicycle me-1"></i> Kurir Siap Dispatch
+                </div>
             </div>
-            <div>
-                <div class="text-muted small fw-semibold">Mitra Toko Terdaftar</div>
-                <h5 class="fw-bold text-dark m-0"><?= $total_stores ?? 0 ?> Mitra</h5>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-3 col-sm-6">
-        <div class="stat-card">
-            <div class="stat-icon bg-info-subtle text-info">
+            <div class="stat-icon bg-purple-subtle text-purple">
                 <i class="bi bi-bicycle"></i>
-            </div>
-            <div>
-                <div class="text-muted small fw-semibold">Armada Driver Kurir</div>
-                <h5 class="fw-bold text-dark m-0"><?= $total_drivers ?? 0 ?> Driver Aktif</h5>
             </div>
         </div>
     </div>
@@ -52,48 +77,50 @@
 <!-- Business Modules Overview & Live Orders Table -->
 <div class="row g-4 mb-4">
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
-            <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
-                <h6 class="fw-bold m-0"><i class="bi bi-grid-3x3-gap-fill me-2 text-primary"></i>Modul Multi-Vendor</h6>
-                <a href="<?= $baseUrl ?>/admin/modules" class="small fw-semibold text-primary text-decoration-none">Kelola</a>
+        <div class="card h-100 shadow-2xs">
+            <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
+                <h6 class="fw-bold m-0 text-dark" style="font-size: 13.5px;"><i class="bi bi-grid-3x3-gap-fill me-2 text-danger"></i>Modul Multi-Vendor</h6>
+                <a href="<?= $baseUrl ?>/admin/modules" class="badge bg-light text-dark border fw-bold text-decoration-none px-2.5 py-1.5 rounded-pill">Kelola</a>
             </div>
             <div class="card-body p-0">
-                <ul class="list-group list-group-flush">
+                <div class="list-group list-group-flush border-0">
                     <?php foreach ($modules as $m): ?>
                         <?php
                             $mIcon = $m['icon'] ?? 'box';
                             $mIconClass = (str_starts_with($mIcon, 'bi-') || str_starts_with($mIcon, 'bi ')) ? $mIcon : 'bi-' . $mIcon;
                         ?>
-                        <li class="list-group-item d-flex align-items-center justify-content-between py-3 px-3">
+                        <div class="list-group-item d-flex align-items-center justify-content-between py-3 px-3.5 border-bottom">
                             <div class="d-flex align-items-center gap-3">
-                                <span class="badge bg-primary-subtle text-primary border-0 p-2 fs-6 rounded-3"><i class="bi <?= htmlspecialchars($mIconClass) ?>"></i></span>
+                                <div class="rounded-3 bg-light border p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                                    <i class="bi <?= htmlspecialchars($mIconClass) ?> text-danger fs-5"></i>
+                                </div>
                                 <div>
                                     <span class="fw-bold small text-dark d-block"><?= htmlspecialchars($m['name']) ?></span>
-                                    <span class="text-muted" style="font-size: 11px;">Status: Aktif</span>
+                                    <span class="text-muted" style="font-size: 11px;"><i class="bi bi-check-circle-fill text-success me-1"></i>Modul Aktif</span>
                                 </div>
                             </div>
-                            <span class="badge bg-light text-dark border px-3 py-1"><?= $m['store_count'] ?? 0 ?> Toko</span>
-                        </li>
+                            <span class="badge bg-light text-dark border px-2.5 py-1.5 rounded-pill fw-bold" style="font-size: 11px;"><?= number_format($m['store_count'] ?? 0) ?> Toko</span>
+                        </div>
                     <?php endforeach; ?>
-                </ul>
+                </div>
             </div>
         </div>
     </div>
 
     <div class="col-lg-8">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
-            <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
-                <h6 class="fw-bold m-0"><i class="bi bi-receipt-cutoff me-2 text-primary"></i>10 Transaksi Pesanan Terkini</h6>
-                <a href="<?= $baseUrl ?>/admin/orders" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">Buka Dispatch</a>
+        <div class="card h-100 shadow-2xs">
+            <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
+                <h6 class="fw-bold m-0 text-dark" style="font-size: 13.5px;"><i class="bi bi-receipt-cutoff me-2 text-danger"></i>10 Transaksi Pesanan Terkini</h6>
+                <a href="<?= $baseUrl ?>/admin/orders" class="btn btn-sm btn-outline-dark rounded-pill px-3 fw-bold" style="font-size: 11.5px;">Buka Dispatch Radar</a>
             </div>
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table align-middle mb-0">
                     <thead>
                         <tr>
                             <th>Order Code</th>
                             <th>Pelanggan</th>
-                            <th>Toko / Parcel</th>
-                            <th>Total</th>
+                            <th>Toko / Vendor</th>
+                            <th>Total Tagihan</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -106,21 +133,23 @@
                             <?php foreach ($recent_orders as $o): ?>
                                 <?php
                                     $st = $o['order_status'];
-                                    $stBadge = 'bg-primary';
-                                    if ($st === 'pending') $stBadge = 'bg-secondary';
-                                    if ($st === 'confirmed') $stBadge = 'bg-info text-dark';
-                                    if ($st === 'processing') $stBadge = 'bg-warning text-dark';
-                                    if ($st === 'on_the_way') $stBadge = 'bg-primary';
-                                    if ($st === 'delivered') $stBadge = 'bg-success';
-                                    if ($st === 'canceled') $stBadge = 'bg-danger';
+                                    $stClass = 'badge-soft-primary';
+                                    if ($st === 'pending') $stClass = 'badge-soft-warning';
+                                    if ($st === 'confirmed') $stClass = 'badge-soft-info';
+                                    if ($st === 'processing') $stClass = 'badge-soft-purple';
+                                    if ($st === 'on_the_way') $stClass = 'badge-soft-primary';
+                                    if ($st === 'delivered') $stClass = 'badge-soft-success';
+                                    if ($st === 'canceled') $stClass = 'badge-soft-danger';
                                 ?>
                                 <tr>
-                                    <td class="fw-bold text-primary small">#<?= htmlspecialchars($o['order_code']) ?></td>
-                                    <td class="small fw-semibold"><?= htmlspecialchars($o['customer_name']) ?></td>
-                                    <td class="small text-muted"><?= htmlspecialchars($o['store_name'] ?? 'Cicalengka Parcel') ?></td>
-                                    <td class="fw-bold small"><?= format_rupiah($o['total_amount']) ?></td>
                                     <td>
-                                        <span class="badge <?= $stBadge ?> text-uppercase px-2 py-1" style="font-size: 10px;"><?= $o['order_status'] ?></span>
+                                        <a href="<?= $baseUrl ?>/admin/orders?search=<?= urlencode($o['order_code']) ?>" class="fw-bold text-danger text-decoration-none">#<?= htmlspecialchars($o['order_code']) ?></a>
+                                    </td>
+                                    <td class="fw-semibold text-dark"><?= htmlspecialchars($o['customer_name']) ?></td>
+                                    <td class="text-muted"><?= htmlspecialchars($o['store_name'] ?? 'Cicalengka Parcel Hub') ?></td>
+                                    <td class="fw-bold text-dark"><?= format_rupiah($o['total_amount']) ?></td>
+                                    <td>
+                                        <span class="badge <?= $stClass ?> px-2.5 py-1 text-uppercase" style="font-size: 10px; font-weight: 700;"><?= str_replace('_', ' ', $o['order_status']) ?></span>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
