@@ -346,7 +346,7 @@
     let ringtoneAudio = null;
     let isRingtoneActive = false;
 
-    // Outgoing Dialing Tone for CALLER (Very soft, gentle tone)
+    // Outgoing Dialing Tone for CALLER (Warm, soft, low-pass filtered chime — NO screeching/denging)
     function playOutgoingTone() {
         stopRingtone();
         isRingtoneActive = true;
@@ -354,24 +354,38 @@
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
             function ringPulse() {
                 if (!audioContext || !isRingtoneActive) return;
-                const osc = audioContext.createOscillator();
+
+                const osc1 = audioContext.createOscillator();
+                const osc2 = audioContext.createOscillator();
+                const filter = audioContext.createBiquadFilter();
                 const gain = audioContext.createGain();
 
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(425, audioContext.currentTime);
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(330, audioContext.currentTime);
 
-                // Very soft volume gain (0.012)
-                gain.gain.setValueAtTime(0.012, audioContext.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.0002, audioContext.currentTime + 1.0);
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(440, audioContext.currentTime);
 
-                osc.connect(gain);
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(500, audioContext.currentTime);
+
+                const now = audioContext.currentTime;
+                gain.gain.setValueAtTime(0.0001, now);
+                gain.gain.linearRampToValueAtTime(0.006, now + 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.9);
+
+                osc1.connect(filter);
+                osc2.connect(filter);
+                filter.connect(gain);
                 gain.connect(audioContext.destination);
 
-                osc.start(audioContext.currentTime);
-                osc.stop(audioContext.currentTime + 1.0);
+                osc1.start(now);
+                osc2.start(now);
+                osc1.stop(now + 0.9);
+                osc2.stop(now + 0.9);
             }
             ringPulse();
-            ringtoneTimer = setInterval(ringPulse, 3200);
+            ringtoneTimer = setInterval(ringPulse, 3500);
         } catch (e) {}
     }
 
