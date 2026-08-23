@@ -345,57 +345,60 @@
 
     let ringtoneAudio = null;
 
-    // Play Ringtone Audio File (with Web Audio API fallback)
+    // Play AI Voice Ringtone ("Ada panggilan telepon masuk dari Cicalengka GO")
     function playRingtone() {
         stopRingtone();
         try {
-            const ringtoneUrl = (window.BASE_URL || '') + '/assets/audio/ringtone.wav';
+            const ringtoneUrl = (window.BASE_URL || '') + '/assets/audio/ringtone.mp3?v=' + Date.now();
             ringtoneAudio = new Audio(ringtoneUrl);
             ringtoneAudio.loop = true;
             ringtoneAudio.volume = 1.0;
             const p = ringtoneAudio.play();
             if (p !== undefined) {
                 p.catch(() => {
-                    playWebAudioRingtone();
+                    playVoiceSpeechRingtone();
                 });
             }
         } catch (e) {
-            playWebAudioRingtone();
+            playVoiceSpeechRingtone();
+        }
+
+        playVoiceSpeechRingtone();
+    }
+
+    function playVoiceSpeechRingtone() {
+        if ('speechSynthesis' in window) {
+            try {
+                window.speechSynthesis.cancel();
+                const utter = new SpeechSynthesisUtterance('Ada panggilan telepon masuk dari Cicalengka GO');
+                utter.lang = 'id-ID';
+                utter.rate = 0.95;
+                utter.pitch = 1.1;
+                utter.volume = 1.0;
+
+                const voices = window.speechSynthesis.getVoices();
+                const idVoice = voices.find(v => v.lang && (v.lang.includes('id') || v.lang.includes('ID')));
+                if (idVoice) utter.voice = idVoice;
+
+                utter.onend = function() {
+                    if (ringtoneAudio || ringtoneTimer) {
+                        setTimeout(() => {
+                            if (ringtoneAudio || ringtoneTimer) {
+                                try { window.speechSynthesis.speak(utter); } catch(e) {}
+                            }
+                        }, 1200);
+                    }
+                };
+
+                window.speechSynthesis.speak(utter);
+            } catch (e) {}
         }
     }
 
-    function playWebAudioRingtone() {
-        try {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            function ringPulse() {
-                if (!audioContext) return;
-                const osc1 = audioContext.createOscillator();
-                const osc2 = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-
-                osc1.type = 'sine';
-                osc2.type = 'sine';
-                osc1.frequency.setValueAtTime(659.25, audioContext.currentTime); // E5
-                osc2.frequency.setValueAtTime(830.61, audioContext.currentTime); // G#5
-
-                gain.gain.setValueAtTime(0.2, audioContext.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.6);
-
-                osc1.connect(gain);
-                osc2.connect(gain);
-                gain.connect(audioContext.destination);
-
-                osc1.start(audioContext.currentTime);
-                osc2.start(audioContext.currentTime);
-                osc1.stop(audioContext.currentTime + 1.6);
-                osc2.stop(audioContext.currentTime + 1.6);
-            }
-            ringPulse();
-            ringtoneTimer = setInterval(ringPulse, 2500);
-        } catch (e) {}
-    }
-
     function stopRingtone() {
+        if ('speechSynthesis' in window) {
+            try { window.speechSynthesis.cancel(); } catch (e) {}
+        }
         if (ringtoneAudio) {
             try { ringtoneAudio.pause(); ringtoneAudio.currentTime = 0; } catch (e) {}
             ringtoneAudio = null;
