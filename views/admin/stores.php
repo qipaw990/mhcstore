@@ -1,8 +1,8 @@
 <?php
-    $countTotalStores = count($stores);
-    $countOpenStores = count(array_filter($stores, fn($s) => !empty($s['is_open'])));
-    $countClosedStores = count(array_filter($stores, fn($s) => empty($s['is_open'])));
-    $countSuspendedStores = count(array_filter($stores, fn($s) => $s['status'] === 'suspended'));
+    $countTotalStores = $total_stores ?? count($stores);
+    $countOpenStores = $total_open_stores ?? 0;
+    $countClosedStores = $total_closed_stores ?? 0;
+    $countSuspendedStores = $total_suspended_stores ?? 0;
 ?>
 
 <!-- Stores KPI Summary Cards -->
@@ -12,7 +12,7 @@
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <small class="text-muted fw-semibold">Total Toko Mitra</small>
-                    <h4 class="fw-black text-dark mb-0 mt-1"><?= $countTotalStores ?></h4>
+                    <h4 class="fw-black text-dark mb-0 mt-1"><?= number_format($countTotalStores) ?></h4>
                 </div>
                 <div style="width:42px;height:42px;border-radius:12px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#475569;font-size:20px;">
                     <i class="bi bi-shop"></i>
@@ -25,7 +25,7 @@
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <small class="text-success fw-semibold">Mitra Buka</small>
-                    <h4 class="fw-black text-success mb-0 mt-1"><?= $countOpenStores ?></h4>
+                    <h4 class="fw-black text-success mb-0 mt-1"><?= number_format($countOpenStores) ?></h4>
                 </div>
                 <div style="width:42px;height:42px;border-radius:12px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;color:#16a34a;font-size:20px;">
                     <i class="bi bi-door-open-fill"></i>
@@ -38,7 +38,7 @@
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <small class="text-secondary fw-semibold">Mitra Tutup</small>
-                    <h4 class="fw-black text-secondary mb-0 mt-1"><?= $countClosedStores ?></h4>
+                    <h4 class="fw-black text-secondary mb-0 mt-1"><?= number_format($countClosedStores) ?></h4>
                 </div>
                 <div style="width:42px;height:42px;border-radius:12px;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:20px;">
                     <i class="bi bi-door-closed-fill"></i>
@@ -51,10 +51,10 @@
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <small class="text-danger fw-semibold">Mitra Suspended</small>
-                    <h4 class="fw-black text-danger mb-0 mt-1"><?= $countSuspendedStores ?></h4>
+                    <h4 class="fw-black text-danger mb-0 mt-1"><?= number_format($countSuspendedStores) ?></h4>
                 </div>
                 <div style="width:42px;height:42px;border-radius:12px;background:#fef2f2;display:flex;align-items:center;justify-content:center;color:#ef4444;font-size:20px;">
-                    <i class="bi bi-shield-x"></i>
+                    <i class="bi bi-x-circle-fill"></i>
                 </div>
             </div>
         </div>
@@ -67,10 +67,10 @@
         <div class="card border-0 shadow-sm rounded-4">
             <div class="card-body p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <div class="d-flex align-items-center gap-3 flex-grow-1" style="max-width: 400px;">
-                    <div class="input-group input-group-sm">
+                    <form method="GET" action="<?= $baseUrl ?>/admin/stores" class="input-group input-group-sm w-100">
                         <span class="input-group-text bg-light border-end-0 rounded-start-pill"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" id="storeSearchInput" onkeyup="filterStoreTable()" class="form-control bg-light border-start-0 rounded-end-pill" placeholder="Cari Nama Toko, Modul, Alamat...">
-                    </div>
+                        <input type="text" name="search" value="<?= htmlspecialchars($search ?? '') ?>" class="form-control bg-light border-start-0 rounded-end-pill" placeholder="Cari Nama Toko, Modul, Alamat... (Tekan Enter)">
+                    </form>
                 </div>
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <button type="button" id="bulkDeleteBtn" class="btn btn-outline-danger rounded-pill px-3 fw-bold btn-sm" style="display: none;" onclick="bulkDeleteStores()">
@@ -196,6 +196,40 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Stores Table Pagination Footer -->
+            <?php if (($total_pages ?? 1) > 1): ?>
+                <div class="card-footer bg-white border-top py-2.5 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <small class="text-muted fw-semibold">
+                        Menampilkan Halaman <span class="text-dark fw-bold"><?= $current_page ?></span> dari <span class="text-dark fw-bold"><?= $total_pages ?></span> (<span class="text-primary fw-bold"><?= number_format($total_stores ?? 0) ?></span> Total Toko)
+                    </small>
+                    <nav aria-label="Stores pagination">
+                        <ul class="pagination pagination-sm m-0 gap-1">
+                            <li class="page-item <?= ($current_page <= 1) ? 'disabled' : '' ?>">
+                                <a class="page-link px-2.5 py-1 rounded-2 border text-decoration-none small fw-semibold <?= ($current_page <= 1) ? 'text-muted bg-light' : 'text-dark bg-white' ?>" href="?page=<?= max(1, $current_page - 1) ?>&search=<?= urlencode($search ?? '') ?>">
+                                    <i class="bi bi-chevron-left me-1"></i> Prev
+                                </a>
+                            </li>
+                            <?php 
+                                $startP = max(1, $current_page - 2);
+                                $endP = min($total_pages, $current_page + 2);
+                                for ($p = $startP; $p <= $endP; $p++): 
+                            ?>
+                                <li class="page-item">
+                                    <a class="page-link px-2.5 py-1 rounded-2 border text-decoration-none small fw-bold <?= ($p == $current_page) ? 'bg-primary text-white border-primary' : 'bg-white text-dark' ?>" href="?page=<?= $p ?>&search=<?= urlencode($search ?? '') ?>">
+                                        <?= $p ?>
+                                    </a>
+                                </li>
+                            <?php endfor; ?>
+                            <li class="page-item <?= ($current_page >= $total_pages) ? 'disabled' : '' ?>">
+                                <a class="page-link px-2.5 py-1 rounded-2 border text-decoration-none small fw-semibold <?= ($current_page >= $total_pages) ? 'text-muted bg-light' : 'text-dark bg-white' ?>" href="?page=<?= min($total_pages, $current_page + 1) ?>&search=<?= urlencode($search ?? '') ?>">
+                                    Next <i class="bi bi-chevron-right ms-1"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>

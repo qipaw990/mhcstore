@@ -358,7 +358,36 @@ class AdminController extends Controller
     // =========================================================================
     public function stores(): void
     {
-        $stores = Database::query("
+        $page = max(1, (int)($this->getQuery('page') ?? 1));
+        $search = trim(sanitize($this->getQuery('search') ?? ''));
+        $perPage = 50;
+
+        $whereConditions = [];
+        $params = [];
+
+        if (!empty($search)) {
+            $whereConditions[] = "(s.name LIKE ? OR u.name LIKE ? OR s.address LIKE ?)";
+            $params[] = "%{$search}%";
+            $params[] = "%{$search}%";
+            $params[] = "%{$search}%";
+        }
+
+        $whereClause = !empty($whereConditions) ? " WHERE " . implode(" AND ", $whereConditions) : "";
+
+        // 1. Total counts for KPI Cards
+        $totalStoresCount = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM stores s LEFT JOIN users u ON s.vendor_id = u.id {$whereClause}", $params)['c'] ?? 0);
+        $totalOpenStores = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM stores s LEFT JOIN users u ON s.vendor_id = u.id " . ($whereClause ? $whereClause . " AND s.is_open = 1" : "WHERE s.is_open = 1"), $params)['c'] ?? 0);
+        $totalClosedStores = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM stores s LEFT JOIN users u ON s.vendor_id = u.id " . ($whereClause ? $whereClause . " AND s.is_open = 0" : "WHERE s.is_open = 0"), $params)['c'] ?? 0);
+        $totalSuspendedStores = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM stores s LEFT JOIN users u ON s.vendor_id = u.id " . ($whereClause ? $whereClause . " AND s.status = 'suspended'" : "WHERE s.status = 'suspended'"), $params)['c'] ?? 0);
+
+        $totalPages = max(1, (int)ceil($totalStoresCount / $perPage));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+        }
+        $offset = ($page - 1) * $perPage;
+
+        // 2. Fetch paginated stores
+        $sql = "
             SELECT s.*, m.name as module_name, u.name as vendor_name, u.email as vendor_email, z.name as zone_name,
                    COALESCE(pc.product_count, 0) as product_count
             FROM `stores` s
@@ -368,20 +397,31 @@ class AdminController extends Controller
             LEFT JOIN (
                 SELECT store_id, COUNT(*) as product_count FROM products GROUP BY store_id
             ) pc ON s.id = pc.store_id
+            {$whereClause}
             ORDER BY s.id DESC
-        ");
+            LIMIT {$perPage} OFFSET {$offset}
+        ";
 
+        $stores = Database::query($sql, $params);
         $modules = (new Module())->all();
         $zones = (new Zone())->all();
         $vendors = Database::query("SELECT id, name, email, phone FROM users WHERE role = 'vendor'");
 
         $this->view('admin.stores', [
-            'title'      => 'Daftar Toko & Mitra Merchant',
-            'stores'     => $stores,
-            'modules'    => $modules,
-            'zones'      => $zones,
-            'vendors'    => $vendors,
-            'active_tab' => 'stores'
+            'title'                 => 'Daftar Toko & Mitra Merchant',
+            'stores'                => $stores,
+            'modules'               => $modules,
+            'zones'                 => $zones,
+            'vendors'               => $vendors,
+            'active_tab'            => 'stores',
+            'total_stores'          => $totalStoresCount,
+            'total_open_stores'     => $totalOpenStores,
+            'total_closed_stores'   => $totalClosedStores,
+            'total_suspended_stores'=> $totalSuspendedStores,
+            'current_page'          => $page,
+            'total_pages'           => $totalPages,
+            'per_page'              => $perPage,
+            'search'                => $search
         ], 'admin_layout');
     }
 
@@ -522,31 +562,68 @@ class AdminController extends Controller
     public function products(): void
     {
         $storeFilter = (int)($this->getQuery('store_id') ?? 0);
+        $search = trim(sanitize($this->getQuery('search') ?? ''));
+        $page = max(1, (int)($this->getQuery('page') ?? 1));
+        $perPage = 50;
 
+        $whereConditions = [];
+        $params = [];
+
+        if ($storeFilter > 0) {
+            $whereConditions[] = "p.store_id = ?";
+            $params[] = $storeFilter;
+        }
+
+        if (!empty($search)) {
+            $whereConditions[] = "(p.name LIKE ? OR s.name LIKE ?)";
+            $params[] = "%{$search}%";
+            $params[] = "%{$search}%";
+        }
+
+        $whereClause = !empty($whereConditions) ? " WHERE " . implode(" AND ", $whereConditions) : "";
+
+        // 1. Total counts for KPI Cards
+        $totalProductsCount = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM products p JOIN stores s ON p.store_id = s.id {$whereClause}", $params)['c'] ?? 0);
+        $totalActiveProducts = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM products p JOIN stores s ON p.store_id = s.id " . ($whereClause ? $whereClause . " AND p.status = 1" : "WHERE p.status = 1"), $params)['c'] ?? 0);
+        $totalDiscountProducts = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM products p JOIN stores s ON p.store_id = s.id " . ($whereClause ? $whereClause . " AND p.discount > 0" : "WHERE p.discount > 0"), $params)['c'] ?? 0);
+        $totalLowStockProducts = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM products p JOIN stores s ON p.store_id = s.id " . ($whereClause ? $whereClause . " AND p.stock < 10" : "WHERE p.stock < 10"), $params)['c'] ?? 0);
+
+        $totalPages = max(1, (int)ceil($totalProductsCount / $perPage));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+        }
+        $offset = ($page - 1) * $perPage;
+
+        // 2. Fetch paginated products
         $sql = "
             SELECT p.*, s.name as store_name, m.name as module_name
             FROM `products` p
             JOIN `stores` s ON p.store_id = s.id
             JOIN `modules` m ON p.module_id = m.id
+            {$whereClause}
+            ORDER BY p.id DESC
+            LIMIT {$perPage} OFFSET {$offset}
         ";
 
-        if ($storeFilter > 0) {
-            $sql .= " WHERE p.store_id = {$storeFilter}";
-        }
-
-        $sql .= " ORDER BY p.id DESC LIMIT 250";
-
-        $products = Database::query($sql);
-        $stores = Database::query("SELECT id, name FROM stores LIMIT 200");
+        $products = Database::query($sql, $params);
+        $stores = Database::query("SELECT id, name FROM stores ORDER BY name ASC");
         $modules = (new Module())->all();
 
         $this->view('admin.products', [
-            'title'        => 'Katalog Semua Produk Platform',
-            'products'     => $products,
-            'stores'       => $stores,
-            'modules'      => $modules,
-            'store_filter' => $storeFilter,
-            'active_tab'   => 'products'
+            'title'                  => 'Katalog Semua Produk Platform',
+            'products'               => $products,
+            'stores'                 => $stores,
+            'modules'                => $modules,
+            'store_filter'           => $storeFilter,
+            'active_tab'             => 'products',
+            'total_products'         => $totalProductsCount,
+            'total_active_products'  => $totalActiveProducts,
+            'total_discount_products'=> $totalDiscountProducts,
+            'total_low_stock_products'=> $totalLowStockProducts,
+            'current_page'           => $page,
+            'total_pages'            => $totalPages,
+            'per_page'               => $perPage,
+            'search'                 => $search
         ], 'admin_layout');
     }
 

@@ -1,8 +1,8 @@
 <?php
-    $countTotalProds = count($products);
-    $countActiveProds = count(array_filter($products, fn($p) => !empty($p['status'])));
-    $countDiscountProds = count(array_filter($products, fn($p) => $p['discount'] > 0));
-    $countLowStockProds = count(array_filter($products, fn($p) => $p['stock'] < 10));
+    $countTotalProds = $total_products ?? count($products);
+    $countActiveProds = $total_active_products ?? 0;
+    $countDiscountProds = $total_discount_products ?? 0;
+    $countLowStockProds = $total_low_stock_products ?? 0;
 ?>
 
 <!-- Products KPI Summary Cards -->
@@ -12,7 +12,7 @@
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <small class="text-muted fw-semibold">Total Menu & Produk</small>
-                    <h4 class="fw-black text-dark mb-0 mt-1"><?= $countTotalProds ?></h4>
+                    <h4 class="fw-black text-dark mb-0 mt-1"><?= number_format($countTotalProds) ?></h4>
                 </div>
                 <div style="width:42px;height:42px;border-radius:12px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#475569;font-size:20px;">
                     <i class="bi bi-box-seam"></i>
@@ -25,7 +25,7 @@
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <small class="text-success fw-semibold">Produk Aktif Jual</small>
-                    <h4 class="fw-black text-success mb-0 mt-1"><?= $countActiveProds ?></h4>
+                    <h4 class="fw-black text-success mb-0 mt-1"><?= number_format($countActiveProds) ?></h4>
                 </div>
                 <div style="width:42px;height:42px;border-radius:12px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;color:#16a34a;font-size:20px;">
                     <i class="bi bi-check-circle-fill"></i>
@@ -38,7 +38,7 @@
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <small class="text-danger fw-semibold">Produk Diskon Promo</small>
-                    <h4 class="fw-black text-danger mb-0 mt-1"><?= $countDiscountProds ?></h4>
+                    <h4 class="fw-black text-danger mb-0 mt-1"><?= number_format($countDiscountProds) ?></h4>
                 </div>
                 <div style="width:42px;height:42px;border-radius:12px;background:#fef2f2;display:flex;align-items:center;justify-content:center;color:#ef4444;font-size:20px;">
                     <i class="bi bi-tag-fill"></i>
@@ -51,7 +51,7 @@
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <small class="text-warning fw-semibold">Stok Menipis (&lt; 10)</small>
-                    <h4 class="fw-black text-warning mb-0 mt-1"><?= $countLowStockProds ?></h4>
+                    <h4 class="fw-black text-warning mb-0 mt-1"><?= number_format($countLowStockProds) ?></h4>
                 </div>
                 <div style="width:42px;height:42px;border-radius:12px;background:#fffbeb;display:flex;align-items:center;justify-content:center;color:#d97706;font-size:20px;">
                     <i class="bi bi-exclamation-triangle-fill"></i>
@@ -67,10 +67,14 @@
         <div class="card border-0 shadow-sm rounded-4">
             <div class="card-body p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <div class="d-flex align-items-center gap-3 flex-grow-1" style="max-width: 400px;">
-                    <div class="input-group input-group-sm">
+                    <form method="GET" action="<?= $baseUrl ?>/admin/products" class="input-group input-group-sm w-100">
+                        <?php if (!empty($store_filter)): ?>
+                            <input type="hidden" name="store_id" value="<?= (int)$store_filter ?>">
+                        <?php endif; ?>
                         <span class="input-group-text bg-light border-end-0 rounded-start-pill"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" id="productSearchInput" onkeyup="filterProductTable()" class="form-control bg-light border-start-0 rounded-end-pill" placeholder="Cari Menu, Toko, Modul...">
-                    </div>
+                        <input type="text" name="search" value="<?= htmlspecialchars($search ?? '') ?>" class="form-control bg-light border-start-0 rounded-end-pill" placeholder="Cari Menu, Toko, Modul... (Tekan Enter)">
+                    </form>
+                </div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <form method="GET" action="<?= $baseUrl ?>/admin/products" class="d-flex align-items-center gap-2">
@@ -196,6 +200,40 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Products Table Pagination Footer -->
+            <?php if (($total_pages ?? 1) > 1): ?>
+                <div class="card-footer bg-white border-top py-2.5 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <small class="text-muted fw-semibold">
+                        Menampilkan Halaman <span class="text-dark fw-bold"><?= $current_page ?></span> dari <span class="text-dark fw-bold"><?= $total_pages ?></span> (<span class="text-primary fw-bold"><?= number_format($total_products ?? 0) ?></span> Total Produk)
+                    </small>
+                    <nav aria-label="Products pagination">
+                        <ul class="pagination pagination-sm m-0 gap-1">
+                            <li class="page-item <?= ($current_page <= 1) ? 'disabled' : '' ?>">
+                                <a class="page-link px-2.5 py-1 rounded-2 border text-decoration-none small fw-semibold <?= ($current_page <= 1) ? 'text-muted bg-light' : 'text-dark bg-white' ?>" href="?page=<?= max(1, $current_page - 1) ?>&store_id=<?= (int)($store_filter ?? 0) ?>&search=<?= urlencode($search ?? '') ?>">
+                                    <i class="bi bi-chevron-left me-1"></i> Prev
+                                </a>
+                            </li>
+                            <?php 
+                                $startP = max(1, $current_page - 2);
+                                $endP = min($total_pages, $current_page + 2);
+                                for ($p = $startP; $p <= $endP; $p++): 
+                            ?>
+                                <li class="page-item">
+                                    <a class="page-link px-2.5 py-1 rounded-2 border text-decoration-none small fw-bold <?= ($p == $current_page) ? 'bg-primary text-white border-primary' : 'bg-white text-dark' ?>" href="?page=<?= $p ?>&store_id=<?= (int)($store_filter ?? 0) ?>&search=<?= urlencode($search ?? '') ?>">
+                                        <?= $p ?>
+                                    </a>
+                                </li>
+                            <?php endfor; ?>
+                            <li class="page-item <?= ($current_page >= $total_pages) ? 'disabled' : '' ?>">
+                                <a class="page-link px-2.5 py-1 rounded-2 border text-decoration-none small fw-semibold <?= ($current_page >= $total_pages) ? 'text-muted bg-light' : 'text-dark bg-white' ?>" href="?page=<?= min($total_pages, $current_page + 1) ?>&store_id=<?= (int)($store_filter ?? 0) ?>&search=<?= urlencode($search ?? '') ?>">
+                                    Next <i class="bi bi-chevron-right ms-1"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
