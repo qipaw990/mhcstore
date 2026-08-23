@@ -40,5 +40,22 @@ services:
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
       - ./database/seeders.sql:/docker-entrypoint-initdb.d/02_seeders.sql:ro
 
+  cicago_wa_gateway:
+    build:
+      context: ./whatsapp-gateway
+      dockerfile: Dockerfile
+    container_name: cicago_wa_gateway
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - WA_GATEWAY_SECRET=cicago_wa_secret_2024
+      - PUPPETEER_SKIP_DOWNLOAD=true
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+    volumes:
+      - cicago_wa_auth_data:/app/.wwebjs_auth
+
 volumes:
   cicalengkago_db_data:
+  cicago_wa_auth_data:

@@ -20,12 +20,14 @@ mkdir -p public/uploads/profiles \
 
 chmod -R 777 public/uploads
 
-# Rebuild dan jalankan ulang container Docker
+# Rebuild dan jalankan ulang container Docker (App, DB, & WhatsApp Gateway)
 docker compose up -d --build
 
 # Pastikan permission di dalam container dan host aman
 docker compose exec -u root cicalengkago_app chmod -R 777 /var/www/html/public/uploads 2>/dev/null || true
 
 echo "======================================================="
-echo " ✅ UPDATE SELESAI! CicalengkaGO Siap Akses di Port 8090"
+echo " ✅ UPDATE SELESAI!"
+echo " 🌐 CicalengkaGO Web App  : Port 8090 (https://cicago.store)"
+echo " 📱 WhatsApp Gateway     : Port 3001 (http://<ip-casaos>:3001/qr)"
 echo "======================================================="
