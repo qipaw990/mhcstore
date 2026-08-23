@@ -1,0 +1,36 @@
+{
+  "appId": "com.cicalengkago.app",
+  "appName": "CicalengkaGO",
+  "webDir": "public",
+  "server": {
+    "url": "https://cicago.store",
+    "cleartext": true,
+    "allowNavigation": [
+      "cicago.store",
+      "*.cicago.store",
+      "*.midtrans.com",
+      "*.gopay.co.id",
+      "192.168.*.*",
+      "10.0.2.2",
+      "localhost"
+    ]
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "launchAutoHide": true,
+      "backgroundColor": "#EE2737",
+      "androidSplashResourceName": "splash",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#EE2737"
+    }
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true
+  }
+}

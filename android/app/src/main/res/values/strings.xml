@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CicalengkaGO</string>
+    <string name="title_activity_main">CicalengkaGO</string>
+    <string name="package_name">com.cicalengkago.app</string>
+    <string name="custom_url_scheme">com.cicalengkago.app</string>
+</resources>
