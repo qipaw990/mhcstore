@@ -343,6 +343,57 @@
         document.head.appendChild(styleTag);
     }
 
+    function unlockAudioElement() {
+        let remoteAudio = document.getElementById('ccgRemoteAudio');
+        if (!remoteAudio) {
+            remoteAudio = document.createElement('audio');
+            remoteAudio.id = 'ccgRemoteAudio';
+            remoteAudio.autoplay = true;
+            remoteAudio.playsInline = true;
+            remoteAudio.setAttribute('playsinline', '');
+            remoteAudio.setAttribute('webkit-playsinline', '');
+            remoteAudio.style.display = 'none';
+            document.body.appendChild(remoteAudio);
+        }
+        try {
+            remoteAudio.play().catch(() => {});
+        } catch (e) {}
+    }
+
+    function attachAndPlayRemoteStream(event) {
+        console.log('[VoiceCall] Remote voice stream received:', event.streams);
+        if (event.streams && event.streams[0]) {
+            let remoteAudio = document.getElementById('ccgRemoteAudio');
+            if (!remoteAudio) {
+                remoteAudio = document.createElement('audio');
+                remoteAudio.id = 'ccgRemoteAudio';
+                remoteAudio.autoplay = true;
+                remoteAudio.playsInline = true;
+                remoteAudio.setAttribute('playsinline', '');
+                remoteAudio.setAttribute('webkit-playsinline', '');
+                remoteAudio.style.display = 'none';
+                document.body.appendChild(remoteAudio);
+            }
+
+            remoteAudio.srcObject = event.streams[0];
+            remoteAudio.volume = 1.0;
+
+            const promise = remoteAudio.play();
+            if (promise !== undefined) {
+                promise.catch(err => {
+                    console.warn('[VoiceCall] Remote audio autoplay play catch:', err);
+                    const retryHandler = () => {
+                        remoteAudio.play().catch(() => {});
+                        document.removeEventListener('click', retryHandler);
+                        document.removeEventListener('touchstart', retryHandler);
+                    };
+                    document.addEventListener('click', retryHandler);
+                    document.addEventListener('touchstart', retryHandler);
+                });
+            }
+        }
+    }
+
     let ringtoneAudio = null;
     let outgoingAudio = null;
     let isRingtoneActive = false;
