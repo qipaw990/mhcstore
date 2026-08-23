@@ -400,9 +400,17 @@ function getCurrentLocation(isSilent = false) {
 
 async function handlePlaceOrder(e) {
     e.preventDefault();
+
+    if (window.isOrderSubmitting) return;
+    window.isOrderSubmitting = true;
+
     const btn = document.getElementById('btnPlaceOrder');
+    const form = document.getElementById('checkoutForm');
+
     btn.disabled = true;
+    btn.style.opacity = '0.7';
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Memproses Pesanan...';
+    if (form) form.style.pointerEvents = 'none';
 
     const formData = new FormData(document.getElementById('checkoutForm'));
 
@@ -455,7 +463,10 @@ async function handlePlaceOrder(e) {
                     },
                     onError: function(result) {
                         Swal.fire('Pembayaran Gagal', 'Terjadi kendala saat memproses pembayaran online.', 'error');
+                        window.isOrderSubmitting = false;
                         btn.disabled = false;
+                        btn.style.opacity = '';
+                        if (form) form.style.pointerEvents = '';
                         btn.innerHTML = '<i class="bi bi-shield-check"></i> <span>Coba Bayar Lagi</span>';
                     },
                     onClose: function() {
@@ -477,13 +488,19 @@ async function handlePlaceOrder(e) {
             });
         } else {
             Swal.fire('Gagal', data.message || 'Terjadi kesalahan.', 'error');
+            window.isOrderSubmitting = false;
             btn.disabled = false;
+            btn.style.opacity = '';
+            if (form) form.style.pointerEvents = '';
             btn.innerHTML = '<i class="bi bi-shield-check"></i> <span>Pesan & Antar Sekarang</span>';
         }
     } catch (err) {
         console.error(err);
         Swal.fire('Error', 'Terjadi kesalahan sistem.', 'error');
+        window.isOrderSubmitting = false;
         btn.disabled = false;
+        btn.style.opacity = '';
+        if (form) form.style.pointerEvents = '';
         btn.innerHTML = '<i class="bi bi-shield-check"></i> <span>Pesan & Antar Sekarang</span>';
     }
 }

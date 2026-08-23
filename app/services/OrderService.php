@@ -28,15 +28,27 @@ class OrderService
     public function createOrderFromCart(int $customerId, array $data): array
     {
         return Database::transaction(function () use ($customerId, $data) {
+            // ── ATOMIC MUTEX LOCK: Kunci baris user agar transaksi checkout pengguna ini tidak bisa berjalan bersamaan ──
+            Database::fetchOne("SELECT id FROM `users` WHERE `id` = ? FOR UPDATE", [$customerId]);
+
             // Auto cancel any unclaimed orders older than 60 seconds
             \App\Models\Order::autoCancelUnclaimedOrders();
+
+            // Cek pencegahan pesanan ganda (idempotency: jika ada order persis sama baru saja dibuat < 4 detik lalu)
+            $recentDuplicate = Database::fetchOne(
+                "SELECT id, order_code FROM `orders` WHERE `customer_id` = ? AND `created_at` >= (NOW() - INTERVAL 4 SECOND) LIMIT 1",
+                [$customerId]
+            );
+            if ($recentDuplicate) {
+                throw new Exception("⚡ Pesanan Anda (#{$recentDuplicate['order_code']}) baru saja berhasil diproses! Silakan periksa daftar pesanan.");
+            }
 
             // Determine which store this sub-order is for
             $targetStoreId = isset($data['store_id']) ? (int)$data['store_id'] : null;
 
             $cartData = $this->cartModel->getUserCart($customerId);
             if (empty($cartData['items'])) {
-                throw new Exception("Keranjang belanja kosong.");
+                throw new Exception("Keranjang belanja Anda sudah diproses atau kosong.");
             }
 
             // Filter items to only the target store
@@ -203,8 +215,20 @@ class OrderService
     public function createParcelOrder(int $customerId, array $data): array
     {
         return Database::transaction(function () use ($customerId, $data) {
+            // ── ATOMIC MUTEX LOCK: Kunci baris user agar transaksi parcel pengguna ini tidak bisa berjalan bersamaan ──
+            Database::fetchOne("SELECT id FROM `users` WHERE `id` = ? FOR UPDATE", [$customerId]);
+
             // Auto cancel any unclaimed orders older than 60 seconds
             \App\Models\Order::autoCancelUnclaimedOrders();
+
+            // Cek pencegahan pesanan ganda
+            $recentDuplicate = Database::fetchOne(
+                "SELECT id, order_code FROM `orders` WHERE `customer_id` = ? AND `created_at` >= (NOW() - INTERVAL 4 SECOND) LIMIT 1",
+                [$customerId]
+            );
+            if ($recentDuplicate) {
+                throw new Exception("⚡ Pesanan parcel Anda (#{$recentDuplicate['order_code']}) baru saja berhasil diproses! Silakan periksa daftar pesanan.");
+            }
 
             // Restrict 1 active order per customer
             $activeOrder = Database::fetchOne(

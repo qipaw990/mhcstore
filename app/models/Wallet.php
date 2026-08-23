@@ -34,21 +34,20 @@ class Wallet extends Model
         }
 
         $wallet = $this->getOrCreate($userId, 'customer');
-        $newBalance = (float)$wallet['balance'] + $amount;
-        $newEarned = (float)$wallet['total_earned'] + $amount;
 
-        Database::update('wallets', [
-            'balance' => $newBalance,
-            'total_earned' => $newEarned
-        ], 'id = ?', [$wallet['id']]);
+        // Atomic calculation in MySQL
+        Database::execute(
+            "UPDATE `wallets` SET `balance` = `balance` + ?, `total_earned` = `total_earned` + ? WHERE `id` = ?",
+            [$amount, $amount, $wallet['id']]
+        );
 
         Database::insert('wallet_transactions', [
-            'wallet_id' => $wallet['id'],
-            'amount' => $amount,
-            'type' => 'credit',
-            'category' => $category,
+            'wallet_id'    => $wallet['id'],
+            'amount'       => $amount,
+            'type'         => 'credit',
+            'category'     => $category,
             'reference_id' => $refId,
-            'description' => $description
+            'description'  => $description
         ]);
 
         return true;
@@ -62,23 +61,24 @@ class Wallet extends Model
         }
 
         $wallet = $this->getOrCreate($userId, 'customer');
-        if ((float)$wallet['balance'] < $amount) {
-            throw new Exception("Saldo dompet tidak mencukupi.");
+
+        // Atomic UPDATE with balance condition check to prevent race conditions & double debiting
+        $affected = Database::execute(
+            "UPDATE `wallets` SET `balance` = `balance` - ? WHERE `id` = ? AND `balance` >= ?",
+            [$amount, $wallet['id'], $amount]
+        );
+
+        if (!$affected) {
+            throw new Exception("Saldo CicalengkaPay tidak mencukupi untuk melakukan transaksi ini.");
         }
 
-        $newBalance = (float)$wallet['balance'] - $amount;
-
-        Database::update('wallets', [
-            'balance' => $newBalance
-        ], 'id = ?', [$wallet['id']]);
-
         Database::insert('wallet_transactions', [
-            'wallet_id' => $wallet['id'],
-            'amount' => $amount,
-            'type' => 'debit',
-            'category' => $category,
+            'wallet_id'    => $wallet['id'],
+            'amount'       => $amount,
+            'type'         => 'debit',
+            'category'     => $category,
             'reference_id' => $refId,
-            'description' => $description
+            'description'  => $description
         ]);
 
         return true;
