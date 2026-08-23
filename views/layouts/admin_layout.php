@@ -166,15 +166,6 @@ $user = auth_user();
             </li>
 
             <li class="mt-3 pt-2 border-top border-secondary-subtle">
-                <a href="<?= $baseUrl ?>/" target="_blank" class="menu-link text-info">
-                    <div class="menu-link-inner">
-                        <i class="bi bi-house-door-fill"></i>
-                        <span>Lihat Beranda Utama</span>
-                        <i class="bi bi-box-arrow-up-right ms-auto" style="font-size: 10px;"></i>
-                    </div>
-                </a>
-            </li>
-            <li>
                 <a href="<?= $baseUrl ?>/logout" class="menu-link text-danger">
                     <div class="menu-link-inner">
                         <i class="bi bi-box-arrow-right"></i>

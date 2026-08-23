@@ -57,31 +57,25 @@
                     </div>
                 </div>
 
-                <!-- 2. SETUP INTEGRASI WHATSAPP GATEWAY API (BABLAST / FONNTE) -->
+                <!-- 2. SETUP INTEGRASI WHATSAPP GATEWAY API & OTP -->
                 <div class="col-lg-6">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 p-4">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 p-4" style="background: linear-gradient(145deg, #f0fdf4 0%, #ffffff 100%); border: 1px solid #bbf7d0 !important;">
                         <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
-                            <h6 class="fw-bold text-dark m-0"><i class="bi bi-whatsapp me-2 text-success"></i>Setup WhatsApp Gateway API (OTP & Notifikasi)</h6>
-                            <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1" style="font-size: 10px;">WA Gateway</span>
+                            <h6 class="fw-bold text-dark m-0"><i class="bi bi-whatsapp me-2 text-success"></i>WhatsApp Gateway & OTP Center</h6>
+                            <span class="badge bg-success text-white rounded-pill px-2.5 py-1" style="font-size: 10px;">Terpusat</span>
                         </div>
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <label class="form-label small fw-bold">API Endpoint Provider</label>
-                                <input type="text" name="wa_gateway_endpoint" class="form-control rounded-3" value="<?= htmlspecialchars($settings['wa_gateway_endpoint'] ?? 'https://api.bablast.id/send-message') ?>" placeholder="https://api.bablast.id/send-message">
-                                <small class="text-muted" style="font-size: 10px;">URL API untuk pengiriman pesan otomatis (Bablast / Fonnte / WooWA).</small>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label small fw-bold">Secret API Key / Token WA</label>
-                                <input type="password" name="wa_api_key" class="form-control rounded-3" value="<?= htmlspecialchars($settings['wa_api_key'] ?? '') ?>" placeholder="Masukkan Secret API Token">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">Nomor Pengirim (Sender)</label>
-                                <input type="text" name="wa_sender_number" class="form-control rounded-3" value="<?= htmlspecialchars($settings['wa_sender_number'] ?? '081234567890') ?>" placeholder="0812xxxx">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">No WA Target CS / Admin</label>
-                                <input type="text" name="support_whatsapp" class="form-control rounded-3" value="<?= htmlspecialchars($settings['support_whatsapp'] ?? '081234567890') ?>" required>
-                            </div>
+                        <p class="small text-muted mb-3" style="line-height: 1.5;">
+                            Pengaturan WhatsApp Gateway, QR Code scanner, Secret Key, dan mode pengiriman OTP (WhatsApp Only / Multi-Channel) telah dikelola terpusat pada menu WhatsApp Gateway agar tidak terjadi duplikasi konfigurasi.
+                        </p>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark">No WA Target CS / Admin Helpdesk</label>
+                            <input type="text" name="support_whatsapp" class="form-control rounded-3" value="<?= htmlspecialchars($settings['support_whatsapp'] ?? '081234567890') ?>" required>
+                        </div>
+                        <div class="mt-auto pt-2">
+                            <a href="<?= $baseUrl ?>/admin/whatsapp" class="btn btn-success btn-sm rounded-pill w-100 fw-bold py-2 shadow-sm d-flex align-items-center justify-content-center gap-2">
+                                <i class="bi bi-sliders"></i> Buka Control Center WhatsApp Gateway
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
