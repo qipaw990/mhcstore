@@ -351,15 +351,63 @@
     function playOutgoingTone() {
         stopRingtone();
         isRingtoneActive = true;
+
         try {
-            const dialtoneUrl = (window.BASE_URL || '') + '/assets/audio/dialtone.wav?v=' + Date.now();
+            const baseUrl = (window.BASE_URL && window.BASE_URL !== '') ? window.BASE_URL : window.location.origin;
+            const dialtoneUrl = baseUrl + '/assets/audio/dialtone.wav?v=' + Date.now();
             outgoingAudio = new Audio(dialtoneUrl);
             outgoingAudio.loop = true;
-            outgoingAudio.volume = 0.12; // Soft, gentle 12% volume
+            outgoingAudio.volume = 0.15; // Soft 15% volume
             const p = outgoingAudio.play();
             if (p !== undefined) {
-                p.catch(() => {});
+                p.catch(() => {
+                    playSynthDialTone();
+                });
             }
+        } catch (e) {
+            playSynthDialTone();
+        }
+
+        // Safety fallback if HTML audio doesn't start playing within 350ms
+        setTimeout(() => {
+            if (isRingtoneActive && (!outgoingAudio || outgoingAudio.paused || outgoingAudio.currentTime === 0)) {
+                playSynthDialTone();
+            }
+        }, 350);
+    }
+
+    function playSynthDialTone() {
+        if (!isRingtoneActive || ringtoneTimer) return;
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            function ringPulse() {
+                if (!audioContext || !isRingtoneActive) return;
+
+                const osc = audioContext.createOscillator();
+                const filter = audioContext.createBiquadFilter();
+                const gain = audioContext.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(425, audioContext.currentTime);
+
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(550, audioContext.currentTime);
+
+                const now = audioContext.currentTime;
+                gain.gain.setValueAtTime(0.0001, now);
+                gain.gain.linearRampToValueAtTime(0.008, now + 0.05);
+                gain.gain.setValueAtTime(0.008, now + 0.95);
+                gain.gain.linearRampToValueAtTime(0.0001, now + 1.0);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioContext.destination);
+
+                osc.start(now);
+                osc.stop(now + 1.0);
+            }
+            ringPulse();
+            ringtoneTimer = setInterval(ringPulse, 3500);
         } catch (e) {}
     }
 
@@ -600,12 +648,7 @@
             isCaller = true;
             processedCandidates.clear();
 
-            // Explicitly request microphone stream on user click gesture!
-            localStream = await this.ensureMicPermission();
-            if (!localStream) {
-                return;
-            }
-
+            // Immediately trigger UI and sound inside user click gesture!
             injectCallUI();
 
             const modal = document.getElementById('ccgVoiceCallModal');
@@ -624,7 +667,15 @@
             document.getElementById('ccgActiveActions').classList.remove('d-none');
             modal.classList.remove('d-none');
 
+            // Play outgoing tone IMMEDIATELY on user click
             playOutgoingTone();
+
+            // Request microphone stream
+            localStream = await this.ensureMicPermission();
+            if (!localStream) {
+                this.resetCall();
+                return;
+            }
 
             // Create WebRTC Offer
             let offerSdp = null;
