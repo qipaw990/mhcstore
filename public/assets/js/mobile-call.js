@@ -11,6 +11,7 @@
     let currentCallId = null;
     let currentOrderCode = null;
     let currentCallOffer = null;
+    let currentCallData = null;
     let processedCandidates = new Set();
     let pollInterval = null;
     let callTimerInterval = null;
@@ -28,7 +29,8 @@
             { urls: 'stun:stun3.l.google.com:19302' },
             { urls: 'stun:stun4.l.google.com:19302' },
             { urls: 'stun:global.stun.twilio.com:3478' }
-        ]
+        ],
+        iceCandidatePoolSize: 10
     };
 
     // Inject Voice Call HTML Modal Container into DOM
@@ -346,6 +348,15 @@
                 alert('Browser Anda tidak mendukung fitur panggilan suara WebRTC.');
                 return null;
             }
+
+            // Pre-unlock remote audio element on user gesture
+            const remoteAudio = document.getElementById('ccgRemoteAudio');
+            if (remoteAudio) {
+                remoteAudio.muted = false;
+                remoteAudio.volume = 1.0;
+                remoteAudio.play().catch(() => {});
+            }
+
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     audio: {
@@ -355,6 +366,12 @@
                     },
                     video: false
                 });
+
+                // Ensure tracks are active
+                if (stream) {
+                    stream.getAudioTracks().forEach(t => { t.enabled = true; });
+                }
+
                 return stream;
             } catch (err) {
                 console.error('[VoiceCall] Mic access denied/error:', err);
@@ -416,6 +433,26 @@
             } catch (e) {}
         },
 
+        // Flush pending ICE candidates once remoteDescription is set
+        flushIceCandidates: async function (iceCandidatesData) {
+            if (!iceCandidatesData || !peerConnection || !peerConnection.remoteDescription) return;
+            try {
+                const candidates = typeof iceCandidatesData === 'string' ? JSON.parse(iceCandidatesData) : iceCandidatesData;
+                if (Array.isArray(candidates)) {
+                    for (const candStr of candidates) {
+                        const candKey = typeof candStr === 'string' ? candStr : JSON.stringify(candStr);
+                        if (!processedCandidates.has(candKey)) {
+                            processedCandidates.add(candKey);
+                            const candObj = typeof candStr === 'string' ? JSON.parse(candStr) : candStr;
+                            await peerConnection.addIceCandidate(new RTCIceCandidate(candObj));
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('[VoiceCall] Flush ICE candidates warning:', e);
+            }
+        },
+
         // Start Voice Call (Outgoing)
         makeCall: async function (orderCode, partnerName, partnerAvatar) {
             currentOrderCode = orderCode || currentOrderCode;
@@ -467,7 +504,13 @@
                     }
                     remoteAudio.muted = false;
                     remoteAudio.volume = 1.0;
-                    remoteAudio.play().catch(e => console.warn('[VoiceCall] Play remote audio error:', e));
+                    const p = remoteAudio.play();
+                    if (p !== undefined) {
+                        p.catch(e => {
+                            console.warn('[VoiceCall] Play remote audio retry:', e);
+                            setTimeout(() => remoteAudio.play().catch(()=>{}), 300);
+                        });
+                    }
                 }
             };
 
@@ -510,6 +553,7 @@
         showIncomingCall: function (callData) {
             currentCallId = callData.id;
             currentCallOffer = callData.offer;
+            currentCallData = callData;
             isCaller = false;
             processedCandidates.clear();
             injectCallUI();
@@ -568,7 +612,13 @@
                     }
                     remoteAudio.muted = false;
                     remoteAudio.volume = 1.0;
-                    remoteAudio.play().catch(e => console.warn('[VoiceCall] Play remote audio error:', e));
+                    const p = remoteAudio.play();
+                    if (p !== undefined) {
+                        p.catch(e => {
+                            console.warn('[VoiceCall] Play remote audio retry:', e);
+                            setTimeout(() => remoteAudio.play().catch(()=>{}), 300);
+                        });
+                    }
                 }
             };
 
@@ -583,6 +633,11 @@
                 try {
                     const offerObj = typeof currentCallOffer === 'string' ? JSON.parse(currentCallOffer) : currentCallOffer;
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(offerObj));
+                    
+                    if (currentCallData && currentCallData.ice_candidates) {
+                        await this.flushIceCandidates(currentCallData.ice_candidates);
+                    }
+
                     const answer = await peerConnection.createAnswer();
                     await peerConnection.setLocalDescription(answer);
                     answerSdp = JSON.stringify(answer);
@@ -649,7 +704,10 @@
             if (remoteAudio) {
                 remoteAudio.muted = false;
                 remoteAudio.volume = 1.0;
-                remoteAudio.play().catch(e => console.warn('[VoiceCall] Connected audio play error:', e));
+                remoteAudio.play().catch(e => {
+                    console.warn('[VoiceCall] Connected audio play error:', e);
+                    setTimeout(() => remoteAudio.play().catch(()=>{}), 400);
+                });
             }
 
             this.startTimer();
@@ -714,6 +772,7 @@
 
             currentCallId = null;
             currentCallOffer = null;
+            currentCallData = null;
             processedCandidates.clear();
             isMuted = false;
 
@@ -740,6 +799,7 @@
                     }
 
                     const activeCall = data.data.active_call;
+                    currentCallData = activeCall;
 
                     // 1. Incoming call for receiver
                     if (activeCall.status === 'calling' && !isCaller && !currentCallId) {
@@ -752,6 +812,7 @@
                             try {
                                 const answerObj = typeof activeCall.answer === 'string' ? JSON.parse(activeCall.answer) : activeCall.answer;
                                 await peerConnection.setRemoteDescription(new RTCSessionDescription(answerObj));
+                                await this.flushIceCandidates(activeCall.ice_candidates);
                                 this.setCallConnected();
                             } catch (e) {
                                 console.error('[VoiceCall] Error setting remote answer:', e);
@@ -761,19 +822,7 @@
 
                     // 3. Process ICE Candidates (Only when remoteDescription is set)
                     if (activeCall.ice_candidates && peerConnection && peerConnection.remoteDescription) {
-                        try {
-                            const candidates = typeof activeCall.ice_candidates === 'string' ? JSON.parse(activeCall.ice_candidates) : activeCall.ice_candidates;
-                            if (Array.isArray(candidates)) {
-                                for (const candStr of candidates) {
-                                    const candKey = typeof candStr === 'string' ? candStr : JSON.stringify(candStr);
-                                    if (!processedCandidates.has(candKey)) {
-                                        processedCandidates.add(candKey);
-                                        const candObj = typeof candStr === 'string' ? JSON.parse(candStr) : candStr;
-                                        await peerConnection.addIceCandidate(new RTCIceCandidate(candObj));
-                                    }
-                                }
-                            }
-                        } catch (e) {}
+                        await this.flushIceCandidates(activeCall.ice_candidates);
                     }
 
                     // 4. Call ended or rejected
