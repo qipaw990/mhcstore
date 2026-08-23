@@ -1255,13 +1255,12 @@ setInterval(async () => {
 </script>
 
 <script src="<?= $baseUrl ?>/assets/js/mobile-call.js?v=<?= time() ?>"></script>
-<?php if (!empty($firstActiveOrder)): ?>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    const driverOrderCode = '<?= !empty($active_order['order_code']) ? htmlspecialchars($active_order['order_code']) : (!empty($active_batch['orders'][0]['order_code']) ? htmlspecialchars($active_batch['orders'][0]['order_code']) : '') ?>';
     if (window.CCGCall) {
-        window.CCGCall.init("<?= htmlspecialchars($firstActiveOrder['order_code']) ?>");
+        window.CCGCall.init(driverOrderCode);
     }
 });
 </script>
-<?php endif; ?>
 

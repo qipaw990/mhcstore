@@ -24,14 +24,14 @@ class CallController extends Controller
             return;
         }
 
-        // Fetch order details
+        // Fetch order details with correct column names (customer_id & avatar)
         $order = Database::fetchOne("
-            SELECT o.id as order_id, o.order_code, o.user_id as cust_user_id, o.delivery_man_id,
+            SELECT o.id as order_id, o.order_code, o.customer_id as cust_user_id, o.delivery_man_id,
                    dm.user_id as dm_user_id, u_cust.name as cust_name, u_cust.phone as cust_phone,
-                   u_cust.image as cust_avatar, u_dm.name as dm_name, u_dm.phone as dm_phone,
-                   u_dm.image as dm_avatar
+                   u_cust.avatar as cust_avatar, u_dm.name as dm_name, u_dm.phone as dm_phone,
+                   u_dm.avatar as dm_avatar
             FROM orders o
-            LEFT JOIN users u_cust ON o.user_id = u_cust.id
+            LEFT JOIN users u_cust ON o.customer_id = u_cust.id
             LEFT JOIN delivery_men dm ON o.delivery_man_id = dm.id
             LEFT JOIN users u_dm ON dm.user_id = u_dm.id
             WHERE o.order_code = ? LIMIT 1
@@ -103,29 +103,39 @@ class CallController extends Controller
     }
 
     /**
-     * Poll active call status & signaling
+     * Poll active call status & signaling (by order_code or user_id)
      */
     public function poll(): void
     {
         $userId   = auth_id() ?: 0;
         $orderCode = sanitize(trim($_GET['order_code'] ?? ''));
 
-        if (empty($orderCode)) {
-            $this->errorResponse('Kode pesanan wajib diisi.');
+        $whereSql = "vc.created_at >= NOW() - INTERVAL 5 MINUTE AND vc.status IN ('calling', 'connected')";
+        $params = [];
+
+        if (!empty($orderCode)) {
+            $whereSql .= " AND vc.order_code = ?";
+            $params[] = $orderCode;
+        } elseif ($userId > 0) {
+            $whereSql .= " AND (vc.receiver_id = ? OR vc.caller_id = ?)";
+            $params[] = $userId;
+            $params[] = $userId;
+        } else {
+            $this->successResponse('Tidak ada panggilan aktif', ['active_call' => null]);
             return;
         }
 
-        // Fetch active call for order
+        // Fetch active call for order or user
         $call = Database::fetchOne("
             SELECT vc.*,
-                   u_caller.name as caller_name, u_caller.image as caller_avatar,
-                   u_recv.name as receiver_name, u_recv.image as receiver_avatar
+                   u_caller.name as caller_name, u_caller.avatar as caller_avatar,
+                   u_recv.name as receiver_name, u_recv.avatar as receiver_avatar
             FROM voice_calls vc
             LEFT JOIN users u_caller ON vc.caller_id = u_caller.id
             LEFT JOIN users u_recv ON vc.receiver_id = u_recv.id
-            WHERE vc.order_code = ? AND vc.created_at >= NOW() - INTERVAL 5 MINUTE
+            WHERE {$whereSql}
             ORDER BY vc.id DESC LIMIT 1
-        ", [$orderCode]);
+        ", $params);
 
         if (!$call) {
             $this->successResponse('Tidak ada panggilan aktif', ['active_call' => null]);

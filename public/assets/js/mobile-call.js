@@ -581,13 +581,15 @@
             if (pollInterval) clearInterval(pollInterval);
 
             pollInterval = setInterval(async () => {
-                if (!currentOrderCode) return;
+                const url = currentOrderCode
+                    ? ((window.BASE_URL || '') + `/calls/poll?order_code=${encodeURIComponent(currentOrderCode)}`)
+                    : ((window.BASE_URL || '') + `/calls/poll`);
 
                 try {
-                    const res = await fetch((window.BASE_URL || '') + `/calls/poll?order_code=${currentOrderCode}`);
+                    const res = await fetch(url);
                     const data = await res.json();
 
-                    if (!data.success || !data.data.active_call) {
+                    if (!data.success || !data.data || !data.data.active_call) {
                         if (currentCallId) this.resetCall();
                         return;
                     }
@@ -600,7 +602,7 @@
                     }
 
                     // Call accepted
-                    if (activeCall.status === 'connected' && isCaller && document.getElementById('ccgCallTimer').classList.contains('d-none')) {
+                    if (activeCall.status === 'connected' && isCaller && document.getElementById('ccgCallTimer') && document.getElementById('ccgCallTimer').classList.contains('d-none')) {
                         this.setCallConnected();
                     }
 
@@ -612,4 +614,11 @@
             }, 2500);
         }
     };
+
+    // Auto-init call engine listener on DOMContentLoaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => window.CCGCall.init());
+    } else {
+        window.CCGCall.init();
+    }
 })();
