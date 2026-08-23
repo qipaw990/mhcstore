@@ -326,7 +326,7 @@
         }
     }
 
-        // Public Voice Call Engine API
+    // Public Voice Call Engine API
     window.CCGCall = {
         init: function (orderCode) {
             if (orderCode) currentOrderCode = orderCode;
@@ -338,6 +338,38 @@
         requestNotificationPermission: function () {
             if ("Notification" in window && Notification.permission === "default") {
                 Notification.requestPermission();
+            }
+        },
+
+        ensureMicPermission: async function () {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert('Browser Anda tidak mendukung fitur panggilan suara WebRTC.');
+                return null;
+            }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    },
+                    video: false
+                });
+                return stream;
+            } catch (err) {
+                console.error('[VoiceCall] Mic access denied/error:', err);
+                const errMsg = 'Izin Mikrofon Dibutuhkan 🎙️\n\nBrowser Anda memblokir akses mikrofon.\nMohon klik ikon gembok 🔒 di sebelah alamat web (cicago.store) -> Setelan Situs / Izin -> Aktifkan Mikrofon.';
+                if (window.AppAlert) {
+                    window.AppAlert.show({
+                        type: 'warning',
+                        title: 'Izin Mikrofon Dibutuhkan 🎙️',
+                        message: 'Browser Anda memblokir akses mikrofon. Klik ikon gembok 🔒 di sebelah alamat web -> Setelan Situs -> Aktifkan Mikrofon.',
+                        confirmButtonText: 'Saya Mengerti'
+                    });
+                } else {
+                    alert(errMsg);
+                }
+                return null;
             }
         },
 
@@ -387,9 +419,16 @@
         // Start Voice Call (Outgoing)
         makeCall: async function (orderCode, partnerName, partnerAvatar) {
             currentOrderCode = orderCode || currentOrderCode;
-            injectCallUI();
             isCaller = true;
             processedCandidates.clear();
+
+            // Explicitly request microphone stream on user click gesture!
+            localStream = await this.ensureMicPermission();
+            if (!localStream) {
+                return;
+            }
+
+            injectCallUI();
 
             const modal = document.getElementById('ccgVoiceCallModal');
             document.getElementById('ccgCallName').innerText = partnerName || 'Mitra Kurir';
@@ -409,29 +448,14 @@
 
             playRingtone();
 
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true
-                    },
-                    video: false
-                });
-            } catch (err) {
-                console.warn('[VoiceCall] Mic access failed:', err);
-            }
-
             // Create WebRTC Offer
             let offerSdp = null;
             peerConnection = new RTCPeerConnection(rtcConfig);
 
-            if (localStream) {
-                localStream.getTracks().forEach(track => {
-                    track.enabled = true;
-                    peerConnection.addTrack(track, localStream);
-                });
-            }
+            localStream.getTracks().forEach(track => {
+                track.enabled = true;
+                peerConnection.addTrack(track, localStream);
+            });
 
             peerConnection.ontrack = (event) => {
                 const remoteAudio = document.getElementById('ccgRemoteAudio');
@@ -520,28 +544,19 @@
             stopRingtone();
             document.getElementById('ccgCallSubtext').innerText = 'Menghubungkan...';
 
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true
-                    },
-                    video: false
-                });
-            } catch (err) {
-                console.warn('[VoiceCall] Mic access failed/denied:', err);
+            localStream = await this.ensureMicPermission();
+            if (!localStream) {
+                this.resetCall();
+                return;
             }
 
             let answerSdp = null;
             peerConnection = new RTCPeerConnection(rtcConfig);
 
-            if (localStream) {
-                localStream.getTracks().forEach(track => {
-                    track.enabled = true;
-                    peerConnection.addTrack(track, localStream);
-                });
-            }
+            localStream.getTracks().forEach(track => {
+                track.enabled = true;
+                peerConnection.addTrack(track, localStream);
+            });
 
             peerConnection.ontrack = (event) => {
                 const remoteAudio = document.getElementById('ccgRemoteAudio');
