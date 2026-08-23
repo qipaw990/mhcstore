@@ -20,7 +20,7 @@ const cors       = require('cors');
 const path       = require('path');
 
 const app    = express();
-const PORT   = process.env.PORT || 3001;
+const PORT   = process.env.PORT || 3005;
 const SECRET = process.env.WA_GATEWAY_SECRET || 'cicago_wa_secret_2024';
 
 // ─── Middleware ───────────────────────────────────────────────────────────────

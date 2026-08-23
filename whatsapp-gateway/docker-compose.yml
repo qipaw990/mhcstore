@@ -12,9 +12,9 @@ services:
     container_name: cicago-wa-gateway
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "3005:3005"
     environment:
-      - PORT=3001
+      - PORT=3005
       - WA_GATEWAY_SECRET=cicago_wa_secret_2024
       - PUPPETEER_SKIP_DOWNLOAD=true
       - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
@@ -48,7 +48,7 @@ networks:
 # 3. Sesuaikan WA_GATEWAY_SECRET (harus sama di Admin Settings)
 # 4. Klik Install
 # 5. Tunggu build selesai (~2-3 menit)
-# 6. Buka http://<ip-casaos>:3001/qr → Scan QR Code
+# 6. Buka http://<ip-casaos>:3005/qr → Scan QR Code
 # 7. Di Admin CicalengkaGO → WhatsApp Gateway:
-#    URL Gateway: http://<ip-casaos>:3001
+#    URL Gateway: http://<ip-casaos>:3005
 # ============================================================

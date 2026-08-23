@@ -1,5 +1,5 @@
 <?php
-$waGatewayUrl = \App\Models\BusinessSetting::get('whatsapp_gateway_url', 'http://localhost:3001');
+$waGatewayUrl = \App\Models\BusinessSetting::get('whatsapp_gateway_url', 'http://localhost:3005');
 $waSecret     = \App\Models\BusinessSetting::get('whatsapp_gateway_secret', 'cicago_wa_secret_2024');
 $waEnabled    = \App\Models\BusinessSetting::get('whatsapp_otp_enabled', '1') === '1';
 $casaosUrl    = \App\Models\BusinessSetting::get('whatsapp_casaos_url', '');
@@ -156,8 +156,8 @@ $casaosUrl    = \App\Models\BusinessSetting::get('whatsapp_casaos_url', '');
                         <label class="form-label fw-semibold small">URL Gateway</label>
                         <input type="url" name="whatsapp_gateway_url" class="form-control rounded-3" 
                                value="<?= htmlspecialchars($waGatewayUrl) ?>"
-                               placeholder="http://localhost:3001">
-                        <div class="form-text">URL Node.js gateway yang berjalan. Lokal: <code>http://localhost:3001</code> | CasaOS: <code>http://&lt;ip-server&gt;:3001</code></div>
+                               placeholder="http://localhost:3005">
+                        <div class="form-text">URL Node.js gateway yang berjalan. Lokal: <code>http://localhost:3005</code> | CasaOS: <code>http://&lt;ip-server&gt;:3005</code></div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold small">Secret Key</label>
@@ -195,7 +195,7 @@ $casaosUrl    = \App\Models\BusinessSetting::get('whatsapp_casaos_url', '');
                     <strong class="text-white">1.</strong> Upload folder <code style="color:#38bdf8">whatsapp-gateway/</code> ke server CasaOS<br>
                     <strong class="text-white">2.</strong> Di CasaOS → App Store → <em>Custom Install</em><br>
                     <strong class="text-white">3.</strong> Paste docker-compose dari file <code style="color:#38bdf8">docker-compose.yml</code><br>
-                    <strong class="text-white">4.</strong> Ubah URL Gateway di atas menjadi <code style="color:#38bdf8">http://&lt;ip-casaos&gt;:3001</code><br>
+                    <strong class="text-white">4.</strong> Ubah URL Gateway di atas menjadi <code style="color:#38bdf8">http://&lt;ip-casaos&gt;:3005</code><br>
                     <strong class="text-white">5.</strong> Scan QR Code sekali → session tersimpan permanen
                 </div>
                 <div class="mt-3 d-flex gap-2 flex-wrap">

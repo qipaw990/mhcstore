@@ -7,7 +7,7 @@ use App\Models\BusinessSetting;
  * WhatsAppService
  * 
  * Service untuk mengirim pesan WhatsApp melalui self-hosted gateway
- * (whatsapp-web.js berbasis Node.js yang berjalan di localhost:3001)
+ * (whatsapp-web.js berbasis Node.js yang berjalan di localhost:3005)
  */
 class WhatsAppService
 {
@@ -18,7 +18,7 @@ class WhatsAppService
     public function __construct()
     {
         $this->gatewayUrl = rtrim(
-            BusinessSetting::get('whatsapp_gateway_url', 'http://localhost:3001'),
+            BusinessSetting::get('whatsapp_gateway_url', 'http://localhost:3005'),
             '/'
         );
         $this->secretKey = BusinessSetting::get(

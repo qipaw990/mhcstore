@@ -29,5 +29,5 @@ docker compose exec -u root cicalengkago_app chmod -R 777 /var/www/html/public/u
 echo "======================================================="
 echo " ✅ UPDATE SELESAI!"
 echo " 🌐 CicalengkaGO Web App  : Port 8090 (https://cicago.store)"
-echo " 📱 WhatsApp Gateway     : Port 3001 (http://<ip-casaos>:3001/qr)"
+echo " 📱 WhatsApp Gateway     : Port 3005 (http://<ip-casaos>:3005/qr)"
 echo "======================================================="

@@ -8,7 +8,7 @@ echo  ============================================
 echo.
 echo  [1] Memulai server gateway...
 echo  [2] Setelah QR muncul, buka browser:
-echo      http://localhost:3001/qr
+echo      http://localhost:3005/qr
 echo  [3] Scan QR Code dengan WhatsApp HP Anda
 echo.
 echo  Tekan CTRL+C untuk menghentikan server.
