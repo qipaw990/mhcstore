@@ -118,9 +118,8 @@
                                 <tr>
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
-                                            <div style="width: 44px; height: 44px; border-radius: 12px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #2563eb; overflow: hidden;">
-                                                <i class="bi bi-egg-fried"></i>
-                                            </div>
+                                            <?php $prodImg = asset_url($p['image'] ?? '', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&q=80'); ?>
+                                            <img src="<?= $prodImg ?>" alt="<?= htmlspecialchars($p['name']) ?>" class="rounded-3 border shadow-2xs object-fit-cover" style="width: 44px; height: 44px; flex-shrink: 0;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&q=80';">
                                             <div>
                                                 <div class="fw-bold small text-dark"><?= htmlspecialchars($p['name']) ?></div>
                                                 <small class="text-muted"><?= htmlspecialchars($p['unit'] ?: 'Item') ?></small>

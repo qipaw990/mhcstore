@@ -122,9 +122,8 @@
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
-                                            <div style="width: 44px; height: 44px; border-radius: 12px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #2563eb; overflow: hidden;">
-                                                <i class="bi bi-shop"></i>
-                                            </div>
+                                            <?php $storeLogo = asset_url($s['logo'] ?? '', 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=100&q=80'); ?>
+                                            <img src="<?= $storeLogo ?>" alt="<?= htmlspecialchars($s['name']) ?>" class="rounded-3 border shadow-2xs object-fit-cover" style="width: 44px; height: 44px; flex-shrink: 0;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=100&q=80';">
                                             <div>
                                                 <div class="fw-bold small text-dark"><?= htmlspecialchars($s['name']) ?></div>
                                                 <small class="text-muted"><?= htmlspecialchars($s['zone_name'] ?? 'Zona Cicalengka') ?></small>

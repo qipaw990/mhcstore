@@ -73,7 +73,7 @@ class AdminController extends Controller
             $sql .= " WHERE o.order_status = " . Database::getInstance()->quote($statusFilter);
         }
 
-        $sql .= " ORDER BY o.id DESC";
+        $sql .= " ORDER BY o.id DESC LIMIT 150";
 
         $orders = Database::query($sql);
 
@@ -84,7 +84,7 @@ class AdminController extends Controller
             WHERE dm.is_active = 1
         ");
 
-        $stores = Database::query("SELECT id, name, latitude, longitude, address, phone FROM `stores`");
+        $stores = Database::query("SELECT id, name, latitude, longitude, address, phone, logo FROM `stores` LIMIT 150");
 
         $this->view('admin.orders', [
             'title'          => 'Pusat Pemantauan & Dispatch Pesanan',
@@ -360,17 +360,20 @@ class AdminController extends Controller
     {
         $stores = Database::query("
             SELECT s.*, m.name as module_name, u.name as vendor_name, u.email as vendor_email, z.name as zone_name,
-                   (SELECT COUNT(*) FROM products p WHERE p.store_id = s.id) as product_count
+                   COALESCE(pc.product_count, 0) as product_count
             FROM `stores` s
             JOIN `modules` m ON s.module_id = m.id
             JOIN `users` u ON s.vendor_id = u.id
             LEFT JOIN `zones` z ON s.zone_id = z.id
-            ORDER BY s.id DESC
+            LEFT JOIN (
+                SELECT store_id, COUNT(*) as product_count FROM products GROUP BY store_id
+            ) pc ON s.id = pc.store_id
+            ORDER BY s.id DESC LIMIT 200
         ");
 
         $modules = (new Module())->all();
         $zones = (new Zone())->all();
-        $vendors = Database::query("SELECT id, name, email, phone FROM users WHERE role = 'vendor'");
+        $vendors = Database::query("SELECT id, name, email, phone FROM users WHERE role = 'vendor' LIMIT 200");
 
         $this->view('admin.stores', [
             'title'      => 'Daftar Toko & Mitra Merchant',
@@ -531,10 +534,10 @@ class AdminController extends Controller
             $sql .= " WHERE p.store_id = {$storeFilter}";
         }
 
-        $sql .= " ORDER BY p.id DESC";
+        $sql .= " ORDER BY p.id DESC LIMIT 250";
 
         $products = Database::query($sql);
-        $stores = Database::query("SELECT id, name FROM stores");
+        $stores = Database::query("SELECT id, name FROM stores LIMIT 200");
         $modules = (new Module())->all();
 
         $this->view('admin.products', [
@@ -621,11 +624,12 @@ class AdminController extends Controller
     {
         $drivers = Database::query("
             SELECT dm.*, u.name, u.email, u.phone, u.avatar, z.name as zone_name,
-                   (SELECT balance FROM wallets WHERE user_id = u.id AND user_type = 'delivery_man' LIMIT 1) as wallet_balance
+                   COALESCE(w.balance, 0) as wallet_balance
             FROM `delivery_men` dm
             JOIN `users` u ON dm.user_id = u.id
             LEFT JOIN `zones` z ON dm.zone_id = z.id
-            ORDER BY dm.id DESC
+            LEFT JOIN `wallets` w ON w.user_id = u.id AND w.user_type = 'delivery_man'
+            ORDER BY dm.id DESC LIMIT 200
         ");
 
         $zones = (new Zone())->all();
@@ -767,11 +771,15 @@ class AdminController extends Controller
     {
         $customers = Database::query("
             SELECT u.*,
-                   (SELECT COUNT(*) FROM orders WHERE customer_id = u.id) as order_count,
-                   (SELECT balance FROM wallets WHERE user_id = u.id AND user_type = 'customer' LIMIT 1) as wallet_balance
+                   COALESCE(oc.order_count, 0) as order_count,
+                   COALESCE(w.balance, 0) as wallet_balance
             FROM `users` u
+            LEFT JOIN (
+                SELECT customer_id, COUNT(*) as order_count FROM orders GROUP BY customer_id
+            ) oc ON u.id = oc.customer_id
+            LEFT JOIN `wallets` w ON w.user_id = u.id AND w.user_type = 'customer'
             WHERE u.role = 'customer'
-            ORDER BY u.id DESC
+            ORDER BY u.id DESC LIMIT 200
         ");
 
         $this->view('admin.customers', [
