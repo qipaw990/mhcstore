@@ -345,8 +345,35 @@
 
     let ringtoneAudio = null;
 
-    // Play AI Voice Ringtone ("Ada panggilan telepon masuk dari Cicalengka GO")
-    function playRingtone() {
+    // Outgoing Dialing Tone for CALLER (Soft "tut... tut..." sound)
+    function playOutgoingTone() {
+        stopRingtone();
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            function ringPulse() {
+                if (!audioContext) return;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(425, audioContext.currentTime);
+
+                gain.gain.setValueAtTime(0.08, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.2);
+
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+
+                osc.start(audioContext.currentTime);
+                osc.stop(audioContext.currentTime + 1.2);
+            }
+            ringPulse();
+            ringtoneTimer = setInterval(ringPulse, 3000);
+        } catch (e) {}
+    }
+
+    // Incoming AI Voice Ringtone for RECEIVER ("Ada panggilan telepon masuk dari Cicalengka GO")
+    function playIncomingRingtone() {
         stopRingtone();
         try {
             const ringtoneUrl = (window.BASE_URL || '') + '/assets/audio/ringtone.mp3?v=' + Date.now();
@@ -600,7 +627,7 @@
             document.getElementById('ccgActiveActions').classList.remove('d-none');
             modal.classList.remove('d-none');
 
-            playRingtone();
+            playOutgoingTone();
 
             // Create WebRTC Offer
             let offerSdp = null;
@@ -673,7 +700,7 @@
             document.getElementById('ccgActiveActions').classList.add('d-none');
             modal.classList.remove('d-none');
 
-            playRingtone();
+            playIncomingRingtone();
 
             if ("vibrate" in navigator) {
                 try { navigator.vibrate([300, 200, 300, 200, 300, 200]); } catch (e) {}
