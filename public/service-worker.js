@@ -200,6 +200,7 @@ self.addEventListener('push', (event) => {
         body: data.body || 'Seseorang sedang menelepon Anda di CicalengkaGO.',
         icon: data.icon || '/assets/icons/icon-192.png',
         badge: '/assets/icons/icon-192.png',
+        sound: '/assets/audio/ringtone.wav',
         tag: data.tag || 'ccg-incoming-call',
         renotify: true,
         requireInteraction: true,

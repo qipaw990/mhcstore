@@ -343,12 +343,30 @@
         document.head.appendChild(styleTag);
     }
 
-    // Play Ringtone Tone via Web Audio API
+    let ringtoneAudio = null;
+
+    // Play Ringtone Audio File (with Web Audio API fallback)
     function playRingtone() {
         stopRingtone();
         try {
+            const ringtoneUrl = (window.BASE_URL || '') + '/assets/audio/ringtone.wav';
+            ringtoneAudio = new Audio(ringtoneUrl);
+            ringtoneAudio.loop = true;
+            ringtoneAudio.volume = 1.0;
+            const p = ringtoneAudio.play();
+            if (p !== undefined) {
+                p.catch(() => {
+                    playWebAudioRingtone();
+                });
+            }
+        } catch (e) {
+            playWebAudioRingtone();
+        }
+    }
+
+    function playWebAudioRingtone() {
+        try {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            
             function ringPulse() {
                 if (!audioContext) return;
                 const osc1 = audioContext.createOscillator();
@@ -357,11 +375,11 @@
 
                 osc1.type = 'sine';
                 osc2.type = 'sine';
-                osc1.frequency.setValueAtTime(440, audioContext.currentTime); // A4
-                osc2.frequency.setValueAtTime(480, audioContext.currentTime);
+                osc1.frequency.setValueAtTime(659.25, audioContext.currentTime); // E5
+                osc2.frequency.setValueAtTime(830.61, audioContext.currentTime); // G#5
 
-                gain.gain.setValueAtTime(0.15, audioContext.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.8);
+                gain.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.6);
 
                 osc1.connect(gain);
                 osc2.connect(gain);
@@ -369,18 +387,19 @@
 
                 osc1.start(audioContext.currentTime);
                 osc2.start(audioContext.currentTime);
-                osc1.stop(audioContext.currentTime + 1.8);
-                osc2.stop(audioContext.currentTime + 1.8);
+                osc1.stop(audioContext.currentTime + 1.6);
+                osc2.stop(audioContext.currentTime + 1.6);
             }
-
             ringPulse();
-            ringtoneTimer = setInterval(ringPulse, 3000);
-        } catch (e) {
-            console.warn('[VoiceCall] Web Audio API not supported:', e);
-        }
+            ringtoneTimer = setInterval(ringPulse, 2500);
+        } catch (e) {}
     }
 
     function stopRingtone() {
+        if (ringtoneAudio) {
+            try { ringtoneAudio.pause(); ringtoneAudio.currentTime = 0; } catch (e) {}
+            ringtoneAudio = null;
+        }
         if (ringtoneTimer) {
             clearInterval(ringtoneTimer);
             ringtoneTimer = null;
@@ -483,6 +502,7 @@
                     body: `${callerName} sedang menelepon Anda di CicalengkaGO. Ketuk untuk menjawab!`,
                     icon: callData.caller_avatar ? (window.BASE_URL + '/' + callData.caller_avatar) : (window.BASE_URL + '/assets/icons/icon-192.png'),
                     badge: window.BASE_URL + '/assets/icons/icon-192.png',
+                    sound: (window.BASE_URL || '') + '/assets/audio/ringtone.wav',
                     tag: 'ccg-incoming-call-' + callData.id,
                     renotify: true,
                     requireInteraction: true,
