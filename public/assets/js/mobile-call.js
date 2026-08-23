@@ -347,10 +347,20 @@
     let outgoingAudio = null;
     let isRingtoneActive = false;
 
-    // Outgoing Dialing Tone for CALLER (Completely Silent — caller hears no ringtone)
+    // Outgoing Dialing Tone for CALLER (Clean standard telephone "tuuut... tuuut..." dial tone)
     function playOutgoingTone() {
         stopRingtone();
-        // Silent for caller
+        isRingtoneActive = true;
+        try {
+            const dialtoneUrl = (window.BASE_URL || '') + '/assets/audio/dialtone.wav?v=' + Date.now();
+            outgoingAudio = new Audio(dialtoneUrl);
+            outgoingAudio.loop = true;
+            outgoingAudio.volume = 0.12; // Soft, gentle 12% volume
+            const p = outgoingAudio.play();
+            if (p !== undefined) {
+                p.catch(() => {});
+            }
+        } catch (e) {}
     }
 
     // Incoming AI Voice Ringtone for RECEIVER (Very soft & gentle 15% volume)
