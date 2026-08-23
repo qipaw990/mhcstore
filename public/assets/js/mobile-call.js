@@ -344,42 +344,46 @@
     }
 
     let ringtoneAudio = null;
+    let isRingtoneActive = false;
 
-    // Outgoing Dialing Tone for CALLER (Soft "tut... tut..." sound)
+    // Outgoing Dialing Tone for CALLER (Soft, gentle "tut... tut...")
     function playOutgoingTone() {
         stopRingtone();
+        isRingtoneActive = true;
         try {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
             function ringPulse() {
-                if (!audioContext) return;
+                if (!audioContext || !isRingtoneActive) return;
                 const osc = audioContext.createOscillator();
                 const gain = audioContext.createGain();
 
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(425, audioContext.currentTime);
 
-                gain.gain.setValueAtTime(0.08, audioContext.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.2);
+                // Gentle low volume gain (0.025)
+                gain.gain.setValueAtTime(0.025, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0005, audioContext.currentTime + 1.0);
 
                 osc.connect(gain);
                 gain.connect(audioContext.destination);
 
                 osc.start(audioContext.currentTime);
-                osc.stop(audioContext.currentTime + 1.2);
+                osc.stop(audioContext.currentTime + 1.0);
             }
             ringPulse();
-            ringtoneTimer = setInterval(ringPulse, 3000);
+            ringtoneTimer = setInterval(ringPulse, 3200);
         } catch (e) {}
     }
 
-    // Incoming AI Voice Ringtone for RECEIVER ("Ada panggilan telepon masuk dari Cicalengka GO")
+    // Incoming AI Voice Ringtone for RECEIVER (Soft & pleasant volume)
     function playIncomingRingtone() {
         stopRingtone();
+        isRingtoneActive = true;
         try {
             const ringtoneUrl = (window.BASE_URL || '') + '/assets/audio/ringtone.mp3?v=' + Date.now();
             ringtoneAudio = new Audio(ringtoneUrl);
             ringtoneAudio.loop = true;
-            ringtoneAudio.volume = 1.0;
+            ringtoneAudio.volume = 0.35; // Soft pleasant volume (35%)
             const p = ringtoneAudio.play();
             if (p !== undefined) {
                 p.catch(() => {
@@ -394,26 +398,27 @@
     }
 
     function playVoiceSpeechRingtone() {
+        if (!isRingtoneActive) return;
         if ('speechSynthesis' in window) {
             try {
                 window.speechSynthesis.cancel();
                 const utter = new SpeechSynthesisUtterance('Ada panggilan telepon masuk dari Cicalengka GO');
                 utter.lang = 'id-ID';
                 utter.rate = 0.95;
-                utter.pitch = 1.1;
-                utter.volume = 1.0;
+                utter.pitch = 1.05;
+                utter.volume = 0.45; // Soft gentle speech volume (45%)
 
                 const voices = window.speechSynthesis.getVoices();
                 const idVoice = voices.find(v => v.lang && (v.lang.includes('id') || v.lang.includes('ID')));
                 if (idVoice) utter.voice = idVoice;
 
                 utter.onend = function() {
-                    if (ringtoneAudio || ringtoneTimer) {
+                    if (isRingtoneActive) {
                         setTimeout(() => {
-                            if (ringtoneAudio || ringtoneTimer) {
+                            if (isRingtoneActive) {
                                 try { window.speechSynthesis.speak(utter); } catch(e) {}
                             }
-                        }, 1200);
+                        }, 1800);
                     }
                 };
 
@@ -423,6 +428,7 @@
     }
 
     function stopRingtone() {
+        isRingtoneActive = false;
         if ('speechSynthesis' in window) {
             try { window.speechSynthesis.cancel(); } catch (e) {}
         }
@@ -599,6 +605,7 @@
 
         // Start Voice Call (Outgoing)
         makeCall: async function (orderCode, partnerName, partnerAvatar) {
+            this.resetCall();
             currentOrderCode = orderCode || currentOrderCode;
             isCaller = true;
             processedCandidates.clear();
@@ -677,6 +684,10 @@
 
         // Incoming Call Received
         showIncomingCall: function (callData) {
+            if (currentCallId && currentCallId === callData.id) {
+                return; // Already handling this active incoming call
+            }
+            this.resetCall();
             currentCallId = callData.id;
             currentCallOffer = callData.offer;
             currentCallData = callData;
