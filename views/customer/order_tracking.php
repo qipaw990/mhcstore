@@ -209,9 +209,9 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
                             <span>Chat</span>
                             <span id="chatUnreadDot" class="ccg-unread-dot d-none"></span>
                         </button>
-                        <a id="driver-call-btn" href="tel:<?= htmlspecialchars($order['dm_phone'] ?? '') ?>" class="btn btn-light btn-sm rounded-circle border d-flex align-items-center justify-content-center shadow-xs <?= empty($order['dm_phone']) ? 'd-none' : '' ?>" style="width: 32px; height: 32px;" title="Telepon Kurir">
-                            <i class="bi bi-telephone-fill text-dark" style="font-size: 11px;"></i>
-                        </a>
+                        <button type="button" id="driver-call-btn" onclick="window.CCGCall.makeCall('<?= $order['order_code'] ?>', '<?= htmlspecialchars($order['dm_name'] ?? 'Mitra Kurir') ?>', '<?= htmlspecialchars($order['dm_avatar'] ?? 'assets/images/users/driver.png') ?>')" class="btn btn-success btn-sm rounded-circle border-0 d-flex align-items-center justify-content-center shadow-xs <?= empty($order['delivery_man_id']) ? 'd-none' : '' ?>" style="width: 34px; height: 34px; background: #10B981;" title="Telepon In-App Kurir">
+                            <i class="bi bi-telephone-fill text-white" style="font-size: 13px;"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -582,8 +582,12 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
 </div>
 
 <script src="<?= $baseUrl ?>/assets/js/tracking-map.js?v=<?= time() ?>"></script>
+<script src="<?= $baseUrl ?>/assets/js/mobile-call.js?v=<?= time() ?>"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    if (window.CCGCall) {
+        window.CCGCall.init("<?= $order['order_code'] ?>");
+    }
     const initialData = {
         order_code: "<?= $order['order_code'] ?>",
         order_status: "<?= $order['order_status'] ?>",
@@ -795,7 +799,12 @@ function cancelUnpaidOrder() {
                     </div>
                 </div>
             </div>
-            <button type="button" class="btn-close" onclick="closeChatModal()" aria-label="Close"></button>
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" onclick="window.CCGCall.makeCall('<?= $order['order_code'] ?>', '<?= htmlspecialchars($order['dm_name'] ?? 'Mitra Kurir') ?>', '<?= htmlspecialchars($order['dm_avatar'] ?? 'assets/images/users/driver.png') ?>')" class="btn btn-success btn-sm rounded-circle border-0 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #10B981;" title="Telepon In-App Kurir">
+                    <i class="bi bi-telephone-fill text-white" style="font-size: 13px;"></i>
+                </button>
+                <button type="button" class="btn-close" onclick="closeChatModal()" aria-label="Close"></button>
+            </div>
         </div>
 
         <!-- Chat Message Stream -->

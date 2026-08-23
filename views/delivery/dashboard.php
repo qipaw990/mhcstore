@@ -163,13 +163,22 @@
                     </div>
 
                     <?php if ($firstActiveOrder): ?>
-                    <button type="button"
-                            onclick="openDriverChatModal('<?= htmlspecialchars($firstActiveOrder['order_code']) ?>')"
-                            class="btn btn-sm rounded-pill px-3 py-1 fw-bold text-white shadow-xs d-flex align-items-center gap-1.5 position-relative"
-                            style="background: #EE2737; border: 1px solid rgba(255,255,255,0.3); font-size: 11px; white-space: nowrap;">
-                        <i class="bi bi-chat-dots-fill"></i> Chat Pembeli
-                        <span class="ccg-unread-dot d-none" id="driverChatUnreadDot1"></span>
-                    </button>
+                    <div class="d-flex align-items-center gap-1.5">
+                        <button type="button"
+                                onclick="openDriverChatModal('<?= htmlspecialchars($firstActiveOrder['order_code']) ?>')"
+                                class="btn btn-sm rounded-pill px-3 py-1 fw-bold text-white shadow-xs d-flex align-items-center gap-1.5 position-relative"
+                                style="background: #EE2737; border: 1px solid rgba(255,255,255,0.3); font-size: 11px; white-space: nowrap;">
+                            <i class="bi bi-chat-dots-fill"></i> Chat
+                            <span class="ccg-unread-dot d-none" id="driverChatUnreadDot1"></span>
+                        </button>
+                        <button type="button"
+                                onclick="window.CCGCall.makeCall('<?= htmlspecialchars($firstActiveOrder['order_code']) ?>', '<?= htmlspecialchars($firstActiveOrder['customer_name'] ?? 'Pelanggan') ?>', 'assets/images/users/customer.png')"
+                                class="btn btn-sm rounded-circle d-flex align-items-center justify-content-center text-white shadow-xs"
+                                style="width: 30px; height: 30px; background: #10B981; border: none;"
+                                title="Telepon In-App Pelanggan">
+                            <i class="bi bi-telephone-fill" style="font-size: 12px;"></i>
+                        </button>
+                    </div>
                     <?php endif; ?>
                 </div>
 
@@ -979,7 +988,12 @@ if (document.readyState === 'loading') {
                     </div>
                 </div>
             </div>
-            <button type="button" class="btn-close" onclick="closeDriverChatModal()" aria-label="Close"></button>
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" onclick="window.CCGCall.makeCall(currentDriverChatOrderCode, document.getElementById('dChatPartnerName')?.textContent || 'Pelanggan', 'assets/images/users/customer.png')" class="btn btn-success btn-sm rounded-circle border-0 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #10B981;" title="Telepon In-App Pelanggan">
+                    <i class="bi bi-telephone-fill text-white" style="font-size: 13px;"></i>
+                </button>
+                <button type="button" class="btn-close" onclick="closeDriverChatModal()" aria-label="Close"></button>
+            </div>
         </div>
 
         <!-- Chat Message Stream -->
@@ -1239,4 +1253,15 @@ setInterval(async () => {
 }, 8000);
 <?php endif; ?>
 </script>
+
+<script src="<?= $baseUrl ?>/assets/js/mobile-call.js?v=<?= time() ?>"></script>
+<?php if (!empty($firstActiveOrder)): ?>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.CCGCall) {
+        window.CCGCall.init("<?= htmlspecialchars($firstActiveOrder['order_code']) ?>");
+    }
+});
+</script>
+<?php endif; ?>
 

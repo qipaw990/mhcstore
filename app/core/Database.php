@@ -227,6 +227,28 @@ class Database
                 }
             } catch (Exception $e) {}
 
+            // Guarantee voice_calls table existence for in-app audio calling
+            try {
+                $this->pdo->exec("CREATE TABLE IF NOT EXISTS `voice_calls` (
+                  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                  `order_code` varchar(50) NOT NULL,
+                  `caller_id` bigint(20) unsigned NOT NULL,
+                  `receiver_id` bigint(20) unsigned NOT NULL,
+                  `caller_role` varchar(20) NOT NULL DEFAULT 'customer',
+                  `receiver_role` varchar(20) NOT NULL DEFAULT 'delivery_man',
+                  `status` enum('calling','connected','rejected','ended','no_answer') NOT NULL DEFAULT 'calling',
+                  `offer` longtext DEFAULT NULL,
+                  `answer` longtext DEFAULT NULL,
+                  `ice_candidates` longtext DEFAULT NULL,
+                  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+                  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+                  PRIMARY KEY (`id`),
+                  KEY `idx_vc_order` (`order_code`),
+                  KEY `idx_vc_receiver` (`receiver_id`),
+                  KEY `idx_vc_status` (`status`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+            } catch (Exception $e) {}
+
         } catch (Exception $e) {
             error_log("Auto Migration Error: " . $e->getMessage());
         }

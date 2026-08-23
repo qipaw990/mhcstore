@@ -86,6 +86,14 @@ Router::post('/chats/send', [ChatController::class, 'sendMessage']);
 Router::post('/chats/read', [ChatController::class, 'markAsRead']);
 Router::get('/chats/unread-count', [ChatController::class, 'unreadCount']);
 
+// In-App Voice Call Routes
+Router::post('/calls/initiate', [\App\Controllers\CallController::class, 'initiate']);
+Router::get('/calls/poll', [\App\Controllers\CallController::class, 'poll']);
+Router::post('/calls/answer', [\App\Controllers\CallController::class, 'answer']);
+Router::post('/calls/reject', [\App\Controllers\CallController::class, 'reject']);
+Router::post('/calls/end', [\App\Controllers\CallController::class, 'end']);
+Router::post('/calls/ice-candidate', [\App\Controllers\CallController::class, 'iceCandidate']);
+
 // ==========================================
 // 3. Delivery Man PWA Routes
 // ==========================================
