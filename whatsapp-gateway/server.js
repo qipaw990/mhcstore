@@ -68,8 +68,28 @@ function initWhatsApp() {
         args: puppeteerArgs
     };
 
-    // Try to find Chrome executable
+    // Clean up stale Chromium lock files if container crashed or restarted
     const fs = require('fs');
+    const authDir = path.join(__dirname, '.wwebjs_auth');
+    function removeSingletonLocks(dirPath) {
+        if (!fs.existsSync(dirPath)) return;
+        try {
+            const items = fs.readdirSync(dirPath, { withFileTypes: true });
+            for (const item of items) {
+                const fullPath = path.join(dirPath, item.name);
+                if (item.isDirectory()) {
+                    removeSingletonLocks(fullPath);
+                } else if (item.name.includes('Singleton')) {
+                    try {
+                        fs.unlinkSync(fullPath);
+                        console.log(`[WA-Gateway] 🧹 Lock file Chromium dibersihkan: ${item.name}`);
+                    } catch (e) { /* ignore */ }
+                }
+            }
+        } catch (e) { /* ignore */ }
+    }
+    removeSingletonLocks(authDir);
+
     for (const cp of chromePaths) {
         if (cp && fs.existsSync(cp)) {
             puppeteerOptions.executablePath = cp;
