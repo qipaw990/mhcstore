@@ -76,8 +76,8 @@ class CallController extends Controller
             return;
         }
 
-        // End previous active calls for this order
-        Database::execute("UPDATE voice_calls SET status = 'ended' WHERE order_code = ? AND status IN ('calling', 'connected')", [$orderCode]);
+        // End previous active calls for this order or user
+        Database::execute("UPDATE voice_calls SET status = 'ended' WHERE (order_code = ? OR caller_id = ? OR receiver_id = ?) AND status IN ('calling', 'connected')", [$orderCode, $callerId, $callerId]);
 
         // Insert new voice call entry
         $callId = Database::insert('voice_calls', [

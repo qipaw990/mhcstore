@@ -811,11 +811,18 @@
                 localStream = null;
             }
 
+            const remoteAudio = document.getElementById('ccgRemoteAudio');
+            if (remoteAudio) {
+                try { remoteAudio.pause(); remoteAudio.srcObject = null; } catch(e) {}
+            }
+
             currentCallId = null;
             currentCallOffer = null;
             currentCallData = null;
             processedCandidates.clear();
             isMuted = false;
+            isCaller = false;
+            this.pendingAutoAnswer = false;
 
             const modal = document.getElementById('ccgVoiceCallModal');
             if (modal) modal.classList.add('d-none');
