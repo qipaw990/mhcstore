@@ -58,6 +58,23 @@ class AdminController extends Controller
     {
         $statusFilter = sanitize($this->getQuery('status') ?? '');
 
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = 50;
+
+        $whereClause = "";
+        $params = [];
+        if ($statusFilter !== '') {
+            $whereClause = " WHERE o.order_status = ?";
+            $params[] = $statusFilter;
+        }
+
+        $totalOrdersCount = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM `orders` o {$whereClause}", $params)['c'] ?? 0);
+        $totalPages = max(1, (int)ceil($totalOrdersCount / $perPage));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+        }
+        $offset = ($page - 1) * $perPage;
+
         $sql = "
             SELECT o.*, s.name as store_name, s.latitude as store_lat, s.longitude as store_lng,
                    u.name as customer_name, u.phone as customer_phone,
@@ -67,15 +84,12 @@ class AdminController extends Controller
             JOIN `users` u ON o.customer_id = u.id
             LEFT JOIN `delivery_men` dm ON o.delivery_man_id = dm.id
             LEFT JOIN `users` dmu ON dm.user_id = dmu.id
+            {$whereClause}
+            ORDER BY o.id DESC
+            LIMIT {$perPage} OFFSET {$offset}
         ";
 
-        if ($statusFilter !== '') {
-            $sql .= " WHERE o.order_status = " . Database::getInstance()->quote($statusFilter);
-        }
-
-        $sql .= " ORDER BY o.id DESC LIMIT 150";
-
-        $orders = Database::query($sql);
+        $orders = Database::query($sql, $params);
 
         $drivers = Database::query("
             SELECT dm.*, u.name, u.phone, u.avatar
@@ -84,7 +98,7 @@ class AdminController extends Controller
             WHERE dm.is_active = 1
         ");
 
-        $stores = Database::query("SELECT id, name, latitude, longitude, address, phone, logo FROM `stores` LIMIT 150");
+        $stores = Database::query("SELECT id, name, latitude, longitude, address, phone, logo FROM `stores`");
 
         $this->view('admin.orders', [
             'title'          => 'Pusat Pemantauan & Dispatch Pesanan',
@@ -92,7 +106,11 @@ class AdminController extends Controller
             'drivers'        => $drivers,
             'stores'         => $stores,
             'status_filter'  => $statusFilter,
-            'active_tab'     => 'orders'
+            'active_tab'     => 'orders',
+            'total_orders'   => $totalOrdersCount,
+            'current_page'   => $page,
+            'total_pages'    => $totalPages,
+            'per_page'       => $perPage
         ], 'admin_layout');
     }
 
@@ -699,6 +717,25 @@ class AdminController extends Controller
     // =========================================================================
     public function deliveryMen(): void
     {
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $search = trim(sanitize($_GET['search'] ?? ''));
+        $perPage = 50;
+
+        $whereClause = "";
+        $params = [];
+
+        if (!empty($search)) {
+            $whereClause = " WHERE (u.name LIKE ? OR u.phone LIKE ? OR dm.vehicle_number LIKE ?)";
+            $params = ["%{$search}%", "%{$search}%", "%{$search}%"];
+        }
+
+        $totalDriversCount = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM `delivery_men` dm JOIN `users` u ON dm.user_id = u.id {$whereClause}", $params)['c'] ?? 0);
+        $totalPages = max(1, (int)ceil($totalDriversCount / $perPage));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+        }
+        $offset = ($page - 1) * $perPage;
+
         $drivers = Database::query("
             SELECT dm.*, u.name, u.email, u.phone, u.avatar, z.name as zone_name,
                    COALESCE(w.balance, 0) as wallet_balance
@@ -706,16 +743,23 @@ class AdminController extends Controller
             JOIN `users` u ON dm.user_id = u.id
             LEFT JOIN `zones` z ON dm.zone_id = z.id
             LEFT JOIN `wallets` w ON w.user_id = u.id AND w.user_type = 'delivery_man'
-            ORDER BY dm.id DESC LIMIT 200
-        ");
+            {$whereClause}
+            ORDER BY dm.id DESC
+            LIMIT {$perPage} OFFSET {$offset}
+        ", $params);
 
         $zones = (new Zone())->all();
 
         $this->view('admin.delivery_men', [
-            'title'      => 'Armada Driver & Kurir CicalengkaGO',
-            'drivers'    => $drivers,
-            'zones'      => $zones,
-            'active_tab' => 'drivers'
+            'title'         => 'Armada Driver & Kurir CicalengkaGO',
+            'drivers'       => $drivers,
+            'zones'         => $zones,
+            'active_tab'    => 'drivers',
+            'total_drivers' => $totalDriversCount,
+            'current_page'  => $page,
+            'total_pages'   => $totalPages,
+            'per_page'      => $perPage,
+            'search'        => $search
         ], 'admin_layout');
     }
 
@@ -846,6 +890,25 @@ class AdminController extends Controller
     // =========================================================================
     public function customers(): void
     {
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $search = trim(sanitize($_GET['search'] ?? ''));
+        $perPage = 50;
+
+        $whereClause = " WHERE u.role = 'customer'";
+        $params = [];
+
+        if (!empty($search)) {
+            $whereClause .= " AND (u.name LIKE ? OR u.email LIKE ? OR u.phone LIKE ?)";
+            $params = ["%{$search}%", "%{$search}%", "%{$search}%"];
+        }
+
+        $totalCustomersCount = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM `users` u {$whereClause}", $params)['c'] ?? 0);
+        $totalPages = max(1, (int)ceil($totalCustomersCount / $perPage));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+        }
+        $offset = ($page - 1) * $perPage;
+
         $customers = Database::query("
             SELECT u.*,
                    COALESCE(oc.order_count, 0) as order_count,
@@ -855,14 +918,20 @@ class AdminController extends Controller
                 SELECT customer_id, COUNT(*) as order_count FROM orders GROUP BY customer_id
             ) oc ON u.id = oc.customer_id
             LEFT JOIN `wallets` w ON w.user_id = u.id AND w.user_type = 'customer'
-            WHERE u.role = 'customer'
-            ORDER BY u.id DESC LIMIT 200
-        ");
+            {$whereClause}
+            ORDER BY u.id DESC
+            LIMIT {$perPage} OFFSET {$offset}
+        ", $params);
 
         $this->view('admin.customers', [
-            'title'      => 'Manajemen Pengguna & Pelanggan',
-            'customers'  => $customers,
-            'active_tab' => 'customers'
+            'title'           => 'Manajemen Pengguna & Pelanggan',
+            'customers'       => $customers,
+            'active_tab'      => 'customers',
+            'total_customers' => $totalCustomersCount,
+            'current_page'    => $page,
+            'total_pages'     => $totalPages,
+            'per_page'        => $perPage,
+            'search'          => $search
         ], 'admin_layout');
     }
 
@@ -1233,6 +1302,9 @@ class AdminController extends Controller
     public function withdrawals(): void
     {
         $statusFilter = sanitize($_GET['status'] ?? 'all');
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = 50;
+
         $whereSql = "1=1";
         $params = [];
 
@@ -1241,24 +1313,36 @@ class AdminController extends Controller
             $params[] = $statusFilter;
         }
 
+        $totalWithdrawals = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM `withdraw_requests` wr JOIN `users` u ON wr.user_id = u.id WHERE {$whereSql}", $params)['c'] ?? 0);
+        $totalPages = max(1, (int)ceil($totalWithdrawals / $perPage));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+        }
+        $offset = ($page - 1) * $perPage;
+
         $withdrawals = Database::query("
             SELECT wr.*, u.name as user_name, u.email as user_email, u.phone as user_phone
             FROM `withdraw_requests` wr
             JOIN `users` u ON wr.user_id = u.id
             WHERE {$whereSql}
             ORDER BY wr.id DESC
+            LIMIT {$perPage} OFFSET {$offset}
         ", $params);
 
         $pendingCount = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM `withdraw_requests` WHERE status = 'pending'")['c'] ?? 0);
         $totalPaid = (float)(Database::fetchOne("SELECT COALESCE(SUM(amount), 0) as s FROM `withdraw_requests` WHERE status = 'approved'")['s'] ?? 0);
 
         $this->view('admin.withdrawals', [
-            'title'         => 'Pencairan Dana (Withdrawal) Mitra - CicalengkaGO Admin',
-            'withdrawals'   => $withdrawals,
-            'pending_count' => $pendingCount,
-            'total_paid'    => $totalPaid,
-            'current_filter'=> $statusFilter,
-            'active_tab'    => 'withdrawals'
+            'title'            => 'Pencairan Dana (Withdrawal) Mitra - CicalengkaGO Admin',
+            'withdrawals'      => $withdrawals,
+            'pending_count'    => $pendingCount,
+            'total_paid'       => $totalPaid,
+            'current_filter'   => $statusFilter,
+            'active_tab'       => 'withdrawals',
+            'total_withdrawals'=> $totalWithdrawals,
+            'current_page'     => $page,
+            'total_pages'      => $totalPages,
+            'per_page'         => $perPage
         ], 'admin_layout');
     }
 
@@ -1360,6 +1444,16 @@ class AdminController extends Controller
 
         $whereClause = implode(' AND ', $where);
 
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = 50;
+
+        $totalTopupsFiltered = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM `topup_logs` tl JOIN `users` u ON tl.user_id = u.id WHERE {$whereClause}", $params)['c'] ?? 0);
+        $totalPages = max(1, (int)ceil($totalTopupsFiltered / $perPage));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+        }
+        $offset = ($page - 1) * $perPage;
+
         $topups = Database::query("
             SELECT tl.*, u.name as user_name, u.email as user_email, u.phone as user_phone, u.role as user_role, u.avatar as user_avatar,
                    COALESCE(w.balance, 0) as current_wallet_balance
@@ -1368,6 +1462,7 @@ class AdminController extends Controller
             LEFT JOIN `wallets` w ON w.user_id = u.id AND w.user_type = 'customer'
             WHERE {$whereClause}
             ORDER BY tl.id DESC
+            LIMIT {$perPage} OFFSET {$offset}
         ", $params);
 
         // Calculate KPI summaries
@@ -1415,7 +1510,11 @@ class AdminController extends Controller
             'current_search'        => $search,
             'current_period'        => $period,
             'users_list'            => $usersList,
-            'active_tab'            => 'topups'
+            'active_tab'            => 'topups',
+            'total_topups'          => $totalTopupsFiltered,
+            'current_page'          => $page,
+            'total_pages'           => $totalPages,
+            'per_page'              => $perPage
         ], 'admin_layout');
     }
 

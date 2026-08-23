@@ -46,7 +46,7 @@
                 </div>
                 <div>
                     <div class="text-muted small fw-semibold">Total Semua Pengajuan</div>
-                    <div class="fs-4 fw-bold text-dark mt-1"><?= count($withdrawals) ?> Data</div>
+                    <div class="fs-4 fw-bold text-dark mt-1"><?= number_format($total_withdrawals ?? count($withdrawals)) ?> Data</div>
                 </div>
             </div>
         </div>
@@ -58,7 +58,7 @@
     <div class="card-header bg-white border-0 py-3 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
         <div class="d-flex align-items-center gap-2">
             <a href="<?= $baseUrl ?>/admin/withdrawals" class="btn btn-sm rounded-pill <?= ($current_filter === 'all') ? 'btn-dark' : 'btn-outline-secondary' ?>">
-                Semua (<?= count($withdrawals) ?>)
+                Semua (<?= number_format($total_withdrawals ?? 0) ?>)
             </a>
             <a href="<?= $baseUrl ?>/admin/withdrawals?status=pending" class="btn btn-sm rounded-pill <?= ($current_filter === 'pending') ? 'btn-warning text-dark fw-bold' : 'btn-outline-secondary' ?>">
                 Pending (<?= $pending_count ?>)
@@ -165,6 +165,40 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Withdrawals Table Pagination Footer -->
+    <?php if (($total_pages ?? 1) > 1): ?>
+        <div class="card-footer bg-white border-top py-2.5 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <small class="text-muted fw-semibold">
+                Menampilkan Halaman <span class="text-dark fw-bold"><?= $current_page ?></span> dari <span class="text-dark fw-bold"><?= $total_pages ?></span> (<span class="text-primary fw-bold"><?= number_format($total_withdrawals ?? 0) ?></span> Total Pengajuan)
+            </small>
+            <nav aria-label="Withdrawals pagination">
+                <ul class="pagination pagination-sm m-0 gap-1">
+                    <li class="page-item <?= ($current_page <= 1) ? 'disabled' : '' ?>">
+                        <a class="page-link px-2.5 py-1 rounded-2 border text-decoration-none small fw-semibold <?= ($current_page <= 1) ? 'text-muted bg-light' : 'text-dark bg-white' ?>" href="?page=<?= max(1, $current_page - 1) ?>&status=<?= urlencode($current_filter ?? 'all') ?>">
+                            <i class="bi bi-chevron-left me-1"></i> Prev
+                        </a>
+                    </li>
+                    <?php
+                        $startP = max(1, $current_page - 2);
+                        $endP   = min($total_pages, $current_page + 2);
+                        for ($p = $startP; $p <= $endP; $p++):
+                    ?>
+                        <li class="page-item">
+                            <a class="page-link px-2.5 py-1 rounded-2 border text-decoration-none small fw-bold <?= ($p == $current_page) ? 'bg-primary text-white border-primary' : 'bg-white text-dark' ?>" href="?page=<?= $p ?>&status=<?= urlencode($current_filter ?? 'all') ?>">
+                                <?= $p ?>
+                            </a>
+                        </li>
+                    <?php endfor; ?>
+                    <li class="page-item <?= ($current_page >= $total_pages) ? 'disabled' : '' ?>">
+                        <a class="page-link px-2.5 py-1 rounded-2 border text-decoration-none small fw-semibold <?= ($current_page >= $total_pages) ? 'text-muted bg-light' : 'text-dark bg-white' ?>" href="?page=<?= min($total_pages, $current_page + 1) ?>&status=<?= urlencode($current_filter ?? 'all') ?>">
+                            Next <i class="bi bi-chevron-right ms-1"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    <?php endif; ?>
 </div>
 
 <script>
