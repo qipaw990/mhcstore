@@ -33,6 +33,9 @@ class DeliveryService
         if (!$dm || !$dm['is_online']) {
             throw new Exception("Status driver harus online untuk menerima pesanan.");
         }
+        if (!empty($dm['is_mocked'])) {
+            throw new Exception("⚠️ Terdeteksi aplikasi Fake GPS / Mock Location! Mohon matikan aplikasi lokasi palsu dan izinkan GPS fisik HP Anda.");
+        }
 
         // Pre-flight check (quick, before acquiring lock) — saves DB time on obvious rejects
         $preCheck = Database::fetchOne(

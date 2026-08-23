@@ -94,6 +94,15 @@ async function toggleDriverStatus() {
 
 // Accept Incoming Order
 async function acceptDriverOrder(orderId) {
+  if (typeof isFakeGpsDetected !== 'undefined' && isFakeGpsDetected) {
+    Toast.fire({
+      icon: 'error',
+      title: 'Akses Ditolak! ⚠️',
+      text: 'Matikan aplikasi Fake GPS / Mock Location terlebih dahulu untuk mengambil orderan.'
+    });
+    return;
+  }
+
   const cardEl = document.getElementById('avail-order-' + orderId);
   let btnEl = null;
   if (cardEl) {
@@ -213,14 +222,111 @@ window.toggleDriverStatus = toggleDriverStatus;
 window.acceptDriverOrder = acceptDriverOrder;
 window.updateDeliveryStep = updateDeliveryStep;
 
-// Background GPS Broadcasting with smart 12-second throttle
+// Anti-Fake GPS & Anomaly Detector Engine
+let prevGpsLat = null;
+let prevGpsLng = null;
+let prevGpsTime = null;
+let isFakeGpsDetected = false;
+
+function calculateHaversineDistanceMeter(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function detectFakeGpsAnomaly(pos) {
+  const coords = pos.coords || {};
+  const isMockedFlag = !!(pos.mocked || coords.mocked || coords.isFromMockProvider);
+  const accuracy = coords.accuracy || 0;
+  const lat = coords.latitude;
+  const lng = coords.longitude;
+  const now = Date.now();
+
+  let isMocked = isMockedFlag;
+  let reason = '';
+
+  if (isMockedFlag) {
+    isMocked = true;
+    reason = 'Aplikasi Lokasi Tiruan (Mock Location / Fake GPS) terdeteksi aktif di HP Anda.';
+  }
+
+  if (!isMocked && (accuracy > 0 && accuracy < 0.05)) {
+    isMocked = true;
+    reason = 'Apresiasi akurasi lokasi tidak alami (Fake Provider / Mock GPS).';
+  }
+
+  if (!isMocked && prevGpsLat !== null && prevGpsLng !== null && prevGpsTime !== null) {
+    const timeDeltaSec = (now - prevGpsTime) / 1000;
+    if (timeDeltaSec > 0.5 && timeDeltaSec < 15) {
+      const distMeters = calculateHaversineDistanceMeter(prevGpsLat, prevGpsLng, lat, lng);
+      const speedKmh = (distMeters / 1000) / (timeDeltaSec / 3600);
+
+      if (distMeters > 350 && speedKmh > 160) {
+        isMocked = true;
+        reason = `Lompatan lokasi tidak wajar (Perpindahan ${Math.round(distMeters)}m dalam ${Math.round(timeDeltaSec)}s).`;
+      }
+    }
+  }
+
+  if (!isMocked) {
+    prevGpsLat = lat;
+    prevGpsLng = lng;
+    prevGpsTime = now;
+  }
+
+  return { isMocked, reason };
+}
+
+// Background GPS Broadcasting with smart throttle & Anti-Fake GPS protection
 let lastGpsSentTime = 0;
 function startDriverGpsTracking() {
   if ('geolocation' in navigator) {
     navigator.geolocation.watchPosition((pos) => {
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
+      const accuracy = pos.coords.accuracy || 0;
       const now = Date.now();
+
+      const fakeCheck = detectFakeGpsAnomaly(pos);
+      if (fakeCheck.isMocked) {
+        isFakeGpsDetected = true;
+        console.warn('⚠️ [ANTI-FAKE GPS] Spoofed location detected:', fakeCheck.reason);
+
+        const bannerContainer = document.getElementById('driverRadarOrderSection') || document.body;
+        let warningEl = document.getElementById('fakeGpsWarningBanner');
+        if (!warningEl && bannerContainer) {
+          const warningBannerHtml = `
+            <div id="fakeGpsWarningBanner" class="alert alert-danger shadow-sm rounded-4 p-3 mb-3 d-flex align-items-center gap-2.5" style="font-size: 11.5px; border-left: 5px solid #dc3545;">
+              <i class="bi bi-shield-slash-fill text-danger fs-4 flex-shrink-0"></i>
+              <div>
+                <strong class="d-block text-dark fw-bold mb-0.5">⚠️ Fake GPS / Mock Location Terdeteksi!</strong>
+                <span class="text-secondary">${fakeCheck.reason} Mohon matikan aplikasi lokasi palsu untuk menerima orderan CicalengkaGO.</span>
+              </div>
+            </div>
+          `;
+          bannerContainer.insertAdjacentHTML('afterbegin', warningBannerHtml);
+        }
+
+        if (now - lastGpsSentTime >= 8000) {
+          lastGpsSentTime = now;
+          const fd = new FormData();
+          fd.append('lat', lat);
+          fd.append('lng', lng);
+          fd.append('accuracy', accuracy);
+          fd.append('is_mocked', '1');
+          fetch(API_BASE + '/delivery/update-location', { method: 'POST', body: fd }).catch(() => {});
+        }
+        return;
+      }
+
+      isFakeGpsDetected = false;
+      const warningEl = document.getElementById('fakeGpsWarningBanner');
+      if (warningEl) warningEl.remove();
 
       // Update in-memory driver coordinates for map
       if (typeof window.updateDriverLiveLocation === 'function') {
@@ -232,12 +338,13 @@ function startDriverGpsTracking() {
         window.driverLat = lat;
         window.driverLng = lng;
 
-        // Throttle server HTTP post to at most once per 8 seconds
         if (now - lastGpsSentTime >= 8000) {
           lastGpsSentTime = now;
           const fd = new FormData();
           fd.append('lat', lat);
           fd.append('lng', lng);
+          fd.append('accuracy', accuracy);
+          fd.append('is_mocked', '0');
           fetch(API_BASE + '/delivery/update-location', {
             method: 'POST',
             body: fd
@@ -248,7 +355,7 @@ function startDriverGpsTracking() {
       console.warn('Geolocation watch error:', err);
     }, {
       enableHighAccuracy: true,
-      maximumAge: 10000,
+      maximumAge: 5000,
       timeout: 8000
     });
   }

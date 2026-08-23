@@ -308,10 +308,44 @@ class DeliveryController extends Controller
         $data = $this->getPost();
         $lat = (float)($data['lat'] ?? 0);
         $lng = (float)($data['lng'] ?? 0);
+        $accuracy = (float)($data['accuracy'] ?? 0);
+        $isMocked = (int)($data['is_mocked'] ?? 0);
 
         $dm = $this->dmModel->findByUserId($userId);
-        if ($dm && $lat != 0 && $lng != 0) {
+        if (!$dm) {
+            $this->errorResponse('Driver tidak ditemukan.');
+            return;
+        }
+
+        // 1. Check client-side reported Mock Location flag
+        if ($isMocked === 1 || ($accuracy > 0 && $accuracy < 0.05)) {
+            Database::update('delivery_men', ['is_mocked' => 1], 'id = ?', [$dm['id']]);
+            $this->errorResponse('Aplikasi Fake GPS terdeteksi. Akses pembaruan lokasi ditolak.');
+            return;
+        }
+
+        // 2. Server-side Teleportation & Speed Jump Anomaly Check
+        $prevLat = (float)($dm['latitude'] ?? 0);
+        $prevLng = (float)($dm['longitude'] ?? 0);
+        $lastUpdate = !empty($dm['updated_at']) ? strtotime($dm['updated_at']) : 0;
+        $now = time();
+        $timeDeltaSec = $now - $lastUpdate;
+
+        if ($prevLat != 0 && $prevLng != 0 && $timeDeltaSec > 0 && $timeDeltaSec < 20) {
+            $distKm = haversine_distance($prevLat, $prevLng, $lat, $lng);
+            $distMeters = $distKm * 1000;
+            $speedKmh = $distKm / ($timeDeltaSec / 3600);
+
+            if ($distMeters > 350 && $speedKmh > 160) {
+                Database::update('delivery_men', ['is_mocked' => 1], 'id = ?', [$dm['id']]);
+                $this->errorResponse('Anomali lompatan lokasi tidak wajar terdeteksi (Fake GPS).');
+                return;
+            }
+        }
+
+        if ($lat != 0 && $lng != 0) {
             $this->dmModel->updateLocation($dm['id'], $lat, $lng, $dm['current_order_id']);
+            Database::update('delivery_men', ['is_mocked' => 0], 'id = ?', [$dm['id']]);
             $this->successResponse('Lokasi diperbarui.');
             return;
         }
