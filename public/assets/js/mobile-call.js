@@ -383,29 +383,48 @@
             document.body.appendChild(remoteAudio);
         }
 
-        // Enable all remote audio tracks
+        // Enable all remote audio tracks & listen for unmute event
         try {
-            streamToPlay.getAudioTracks().forEach(t => { t.enabled = true; });
+            streamToPlay.getAudioTracks().forEach(t => {
+                t.enabled = true;
+                t.onunmute = () => {
+                    console.log('[VoiceCall] Remote track unmuted, playing audio...');
+                    remoteAudio.play().catch(() => {});
+                };
+            });
+            if (event.track) {
+                event.track.enabled = true;
+                event.track.onunmute = () => {
+                    console.log('[VoiceCall] Remote event.track unmuted, playing audio...');
+                    remoteAudio.play().catch(() => {});
+                };
+            }
         } catch (e) {}
 
-        remoteAudio.srcObject = streamToPlay;
+        // Prevent re-assigning srcObject to avoid AbortError: play request interrupted
+        if (remoteAudio.srcObject !== streamToPlay) {
+            remoteAudio.srcObject = streamToPlay;
+        }
+
         remoteAudio.volume = 1.0;
         remoteAudio.muted = false;
 
-        const promise = remoteAudio.play();
-        if (promise !== undefined) {
-            promise.then(() => {
-                console.log('[VoiceCall] Remote audio playing successfully!');
-            }).catch(err => {
-                console.warn('[VoiceCall] Remote audio autoplay play catch:', err);
-                const retryHandler = () => {
-                    remoteAudio.play().catch(() => {});
-                    document.removeEventListener('click', retryHandler);
-                    document.removeEventListener('touchstart', retryHandler);
-                };
-                document.addEventListener('click', retryHandler);
-                document.addEventListener('touchstart', retryHandler);
-            });
+        if (remoteAudio.paused) {
+            const promise = remoteAudio.play();
+            if (promise !== undefined) {
+                promise.then(() => {
+                    console.log('[VoiceCall] Remote audio playing successfully!');
+                }).catch(err => {
+                    console.warn('[VoiceCall] Remote audio autoplay play catch:', err);
+                    const retryHandler = () => {
+                        remoteAudio.play().catch(() => {});
+                        document.removeEventListener('click', retryHandler);
+                        document.removeEventListener('touchstart', retryHandler);
+                    };
+                    document.addEventListener('click', retryHandler);
+                    document.addEventListener('touchstart', retryHandler);
+                });
+            }
         }
     }
 
@@ -792,7 +811,6 @@
             });
 
             peerConnection.ontrack = attachAndPlayRemoteStream;
-            peerConnection.addEventListener('track', attachAndPlayRemoteStream);
 
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
@@ -894,7 +912,6 @@
             });
 
             peerConnection.ontrack = attachAndPlayRemoteStream;
-            peerConnection.addEventListener('track', attachAndPlayRemoteStream);
 
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
