@@ -142,6 +142,83 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Global 2-Stage Progressive Geolocation Helper
+window.getAccuratePosition = function(onSuccess, onError, options = {}) {
+  const highAccuracyTimeout = options.highAccuracyTimeout || 8000;
+  const lowAccuracyTimeout  = options.lowAccuracyTimeout || 10000;
+
+  // 1. Capacitor Native Plugin Check
+  const capacitorGeo = window.Capacitor?.Plugins?.Geolocation;
+  if (capacitorGeo && typeof capacitorGeo.getCurrentPosition === 'function') {
+    if (typeof capacitorGeo.requestPermissions === 'function') {
+      capacitorGeo.requestPermissions().catch(() => {});
+    }
+    capacitorGeo.getCurrentPosition({ enableHighAccuracy: true, timeout: highAccuracyTimeout })
+      .then((pos) => {
+        if (pos && pos.coords) {
+          onSuccess(pos);
+        } else {
+          fallbackWebGeo();
+        }
+      })
+      .catch((err) => {
+        console.warn('[Capacitor Geo] Native failed/fallback to Web Geo:', err);
+        fallbackWebGeo();
+      });
+    return;
+  }
+
+  fallbackWebGeo();
+
+  function fallbackWebGeo() {
+    if (!navigator.geolocation) {
+      if (onError) onError({ code: 0, message: 'Geolocation tidak didukung peramban ini.' });
+      return;
+    }
+
+    // Stage 1: Try High Accuracy (GPS hardware)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        onSuccess(pos);
+      },
+      (err) => {
+        // Stage 2: Fallback to Low Accuracy (Cell/Wi-Fi Triangulation)
+        console.warn('[GPS Stage 1 High-Accuracy Failed]:', err ? err.message : '', '-> Trying Stage 2 Network Location...');
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            console.log('[GPS Stage 2 Network Location Succeeded]');
+            onSuccess(pos);
+          },
+          (err2) => {
+            console.warn('[GPS Stage 2 Network Location Failed]:', err2 ? err2.message : '');
+            if (onError) onError(err2);
+          },
+          { enableHighAccuracy: false, timeout: lowAccuracyTimeout, maximumAge: 60000 }
+        );
+      },
+      { enableHighAccuracy: true, timeout: highAccuracyTimeout, maximumAge: 10000 }
+    );
+  }
+};
+
+async function fetchAddressFromCoords(lat, lng) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    const geoData = await geoRes.json();
+    if (geoData && geoData.address) {
+      return geoData.address.road || geoData.address.suburb || geoData.address.village || geoData.address.county || 'Cicalengka (GPS)';
+    }
+  } catch (e) {
+    console.warn('[Geocode] Fallback to default label:', e);
+  }
+  return 'Cicalengka (GPS Aktif)';
+}
+
 function requestCustomerGpsLocation() {
   const btn = document.getElementById('btn-request-location');
   const origText = btn ? btn.innerHTML : '';
@@ -158,13 +235,7 @@ function requestCustomerGpsLocation() {
     return;
   }
 
-  if (!navigator.geolocation) {
-    showLocationDeniedInstructions('Browser Anda tidak mendukung Geolocation.');
-    if (btn) { btn.disabled = false; btn.innerHTML = origText; }
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(
+  window.getAccuratePosition(
     async (position) => {
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
@@ -173,17 +244,7 @@ function requestCustomerGpsLocation() {
       localStorage.setItem('user_gps_lat', lat);
       localStorage.setItem('user_gps_lng', lng);
 
-      let addrName = 'Cicalengka (GPS Aktif)';
-      try {
-        const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
-        const geoData = await geoRes.json();
-        if (geoData && geoData.address) {
-          const road = geoData.address.road || geoData.address.suburb || geoData.address.village || 'Cicalengka';
-          addrName = road;
-        }
-      } catch (e) {
-        console.log('Geocode fallback');
-      }
+      const addrName = await fetchAddressFromCoords(lat, lng);
 
       localStorage.setItem('user_gps_address', addrName);
       updateHeaderLocationText(addrName);
@@ -207,7 +268,7 @@ function requestCustomerGpsLocation() {
       showLocationDeniedInstructions();
       if (btn) { btn.disabled = false; btn.innerHTML = origText; }
     },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    { highAccuracyTimeout: 8000, lowAccuracyTimeout: 10000 }
   );
 }
 

@@ -284,80 +284,100 @@ function detectFakeGpsAnomaly(pos) {
 
 // Background GPS Broadcasting with smart throttle & Anti-Fake GPS protection
 let lastGpsSentTime = 0;
+let driverWatchId = null;
+
 function startDriverGpsTracking() {
-  if ('geolocation' in navigator) {
-    navigator.geolocation.watchPosition((pos) => {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-      const accuracy = pos.coords.accuracy || 0;
-      const now = Date.now();
+  if (!navigator.geolocation) return;
 
-      const fakeCheck = detectFakeGpsAnomaly(pos);
-      if (fakeCheck.isMocked) {
-        isFakeGpsDetected = true;
-        console.warn('⚠️ [ANTI-FAKE GPS] Spoofed location detected:', fakeCheck.reason);
+  function handleGpsSuccess(pos) {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    const accuracy = pos.coords.accuracy || 0;
+    const now = Date.now();
 
-        const bannerContainer = document.getElementById('driverRadarOrderSection') || document.body;
-        let warningEl = document.getElementById('fakeGpsWarningBanner');
-        if (!warningEl && bannerContainer) {
-          const warningBannerHtml = `
-            <div id="fakeGpsWarningBanner" class="alert alert-danger shadow-sm rounded-4 p-3 mb-3 d-flex align-items-center gap-2.5" style="font-size: 11.5px; border-left: 5px solid #dc3545;">
-              <i class="bi bi-shield-slash-fill text-danger fs-4 flex-shrink-0"></i>
-              <div>
-                <strong class="d-block text-dark fw-bold mb-0.5">⚠️ Fake GPS / Mock Location Terdeteksi!</strong>
-                <span class="text-secondary">${fakeCheck.reason} Mohon matikan aplikasi lokasi palsu untuk menerima orderan CicalengkaGO.</span>
-              </div>
+    const fakeCheck = detectFakeGpsAnomaly(pos);
+    if (fakeCheck.isMocked) {
+      isFakeGpsDetected = true;
+      console.warn('⚠️ [ANTI-FAKE GPS] Spoofed location detected:', fakeCheck.reason);
+
+      const bannerContainer = document.getElementById('driverRadarOrderSection') || document.body;
+      let warningEl = document.getElementById('fakeGpsWarningBanner');
+      if (!warningEl && bannerContainer) {
+        const warningBannerHtml = `
+          <div id="fakeGpsWarningBanner" class="alert alert-danger shadow-sm rounded-4 p-3 mb-3 d-flex align-items-center gap-2.5" style="font-size: 11.5px; border-left: 5px solid #dc3545;">
+            <i class="bi bi-shield-slash-fill text-danger fs-4 flex-shrink-0"></i>
+            <div>
+              <strong class="d-block text-dark fw-bold mb-0.5">⚠️ Fake GPS / Mock Location Terdeteksi!</strong>
+              <span class="text-secondary">${fakeCheck.reason} Mohon matikan aplikasi lokasi palsu untuk menerima orderan CicalengkaGO.</span>
             </div>
-          `;
-          bannerContainer.insertAdjacentHTML('afterbegin', warningBannerHtml);
-        }
-
-        if (now - lastGpsSentTime >= 8000) {
-          lastGpsSentTime = now;
-          const fd = new FormData();
-          fd.append('lat', lat);
-          fd.append('lng', lng);
-          fd.append('accuracy', accuracy);
-          fd.append('is_mocked', '1');
-          fetch(API_BASE + '/delivery/update-location', { method: 'POST', body: fd }).catch(() => {});
-        }
-        return;
+          </div>
+        `;
+        bannerContainer.insertAdjacentHTML('afterbegin', warningBannerHtml);
       }
 
-      isFakeGpsDetected = false;
-      const warningEl = document.getElementById('fakeGpsWarningBanner');
-      if (warningEl) warningEl.remove();
-
-      // Update in-memory driver coordinates for map
-      if (typeof window.updateDriverLiveLocation === 'function') {
-        window.updateDriverLiveLocation(lat, lng, false);
-      } else {
-        if (window.myDriverMarker) {
-          window.myDriverMarker.setLatLng([lat, lng]);
-        }
-        window.driverLat = lat;
-        window.driverLng = lng;
-
-        if (now - lastGpsSentTime >= 8000) {
-          lastGpsSentTime = now;
-          const fd = new FormData();
-          fd.append('lat', lat);
-          fd.append('lng', lng);
-          fd.append('accuracy', accuracy);
-          fd.append('is_mocked', '0');
-          fetch(API_BASE + '/delivery/update-location', {
-            method: 'POST',
-            body: fd
-          }).catch(() => {});
-        }
+      if (now - lastGpsSentTime >= 8000) {
+        lastGpsSentTime = now;
+        const fd = new FormData();
+        fd.append('lat', lat);
+        fd.append('lng', lng);
+        fd.append('accuracy', accuracy);
+        fd.append('is_mocked', '1');
+        fetch(API_BASE + '/delivery/update-location', { method: 'POST', body: fd }).catch(() => {});
       }
-    }, (err) => {
-      console.warn('Geolocation watch error:', err);
-    }, {
-      enableHighAccuracy: true,
-      maximumAge: 5000,
-      timeout: 8000
-    });
+      return;
+    }
+
+    isFakeGpsDetected = false;
+    const warningEl = document.getElementById('fakeGpsWarningBanner');
+    if (warningEl) warningEl.remove();
+
+    if (typeof window.updateDriverLiveLocation === 'function') {
+      window.updateDriverLiveLocation(lat, lng, false);
+    } else {
+      if (window.myDriverMarker) {
+        window.myDriverMarker.setLatLng([lat, lng]);
+      }
+      window.driverLat = lat;
+      window.driverLng = lng;
+    }
+
+    if (now - lastGpsSentTime >= 8000) {
+      lastGpsSentTime = now;
+      const fd = new FormData();
+      fd.append('lat', lat);
+      fd.append('lng', lng);
+      fd.append('accuracy', accuracy);
+      fd.append('is_mocked', '0');
+      fetch(API_BASE + '/delivery/update-location', {
+        method: 'POST',
+        body: fd
+      }).catch(() => {});
+    }
+  }
+
+  // Initial accurate single-shot calibration
+  if (typeof window.getAccuratePosition === 'function') {
+    window.getAccuratePosition(handleGpsSuccess, null, { highAccuracyTimeout: 7000, lowAccuracyTimeout: 8000 });
+  }
+
+  // High Accuracy Watcher with Low Accuracy fallback watcher
+  try {
+    if (driverWatchId !== null) navigator.geolocation.clearWatch(driverWatchId);
+    driverWatchId = navigator.geolocation.watchPosition(
+      handleGpsSuccess,
+      (err) => {
+        console.warn('Geolocation high accuracy watch error:', err ? err.message : '', '-> Switching to low accuracy watch');
+        if (driverWatchId !== null) navigator.geolocation.clearWatch(driverWatchId);
+        driverWatchId = navigator.geolocation.watchPosition(handleGpsSuccess, (e2) => console.warn('Low accuracy watch err:', e2), {
+          enableHighAccuracy: false,
+          maximumAge: 15000,
+          timeout: 12000
+        });
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+    );
+  } catch (e) {
+    console.warn('startDriverGpsTracking exception:', e);
   }
 }
 

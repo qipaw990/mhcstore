@@ -20,11 +20,23 @@ mkdir -p public/uploads/profiles \
 
 chmod -R 777 public/uploads
 
+# Matikan BuildKit gRPC daemon jika kehabisan memori / crash RPC EOF
+export DOCKER_BUILDKIT=0
+export COMPOSE_DOCKER_CLI_BUILD=0
+
 # Rebuild dan jalankan ulang container Docker (App, DB, & WhatsApp Gateway)
-docker compose up -d --build
+echo "📦 Membangun ulang container Docker..."
+if ! docker compose up -d --build; then
+    echo "⚠️ BuildKit RPC gagal, membersihkan cache builder dan menggunakan legacy builder..."
+    docker builder prune -f 2>/dev/null || true
+    DOCKER_BUILDKIT=0 docker compose up -d --build
+fi
 
 # Pastikan permission di dalam container dan host aman
 docker compose exec -u root cicalengkago_app chmod -R 777 /var/www/html/public/uploads 2>/dev/null || true
+
+# Auto-reconnect Cloudflare Tunnel jika service terhenti
+systemctl restart cloudflared 2>/dev/null || docker restart cloudflared 2>/dev/null || true
 
 echo "======================================================="
 echo " ✅ UPDATE SELESAI!"

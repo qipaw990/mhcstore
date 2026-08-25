@@ -777,19 +777,24 @@ function initDriverRadarMap() {
         <?php endforeach; ?>
     }
 
-    // Immediately fetch device physical GPS
-    if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition((pos) => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            window.updateDriverLiveLocation(lat, lng, true);
-        }, (err) => {
-            console.warn('Initial driver GPS error:', err);
-        }, {
-            enableHighAccuracy: true,
-            timeout: 6000
-        });
-    }
+    // Immediately fetch device physical GPS with 2-stage progressive fallback
+    const fetchDriverGps = (typeof window.getAccuratePosition === 'function') 
+        ? window.getAccuratePosition 
+        : function(onSuccess, onError, opts = {}) {
+            if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(onSuccess, () => {
+                    navigator.geolocation.getCurrentPosition(onSuccess, onError, { enableHighAccuracy: false, timeout: 8000 });
+                }, { enableHighAccuracy: true, timeout: opts.highAccuracyTimeout || 7000 });
+            } else if (onError) onError({ message: 'No geolocation' });
+        };
+
+    fetchDriverGps((pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        window.updateDriverLiveLocation(lat, lng, true);
+    }, (err) => {
+        console.warn('[Driver Radar GPS] Fallback to last known position:', err);
+    }, { highAccuracyTimeout: 7000, lowAccuracyTimeout: 8000 });
 
     setTimeout(() => {
         if (window.dRadarMap) {
@@ -799,26 +804,29 @@ function initDriverRadarMap() {
 }
 
 function centerDriverMap() {
-    if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition((pos) => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            window.updateDriverLiveLocation(lat, lng, true);
-            if (window.myDriverMarker) {
-                window.myDriverMarker.openPopup();
-            }
-        }, () => {
-            if (window.dRadarMap) {
-                window.dRadarMap.setView([window.driverLat, window.driverLng], 15);
-                if (window.myDriverMarker) window.myDriverMarker.openPopup();
-            }
-        }, { enableHighAccuracy: true });
-    } else if (window.dRadarMap) {
-        window.dRadarMap.setView([window.driverLat, window.driverLng], 15);
+    const fetchDriverGps = (typeof window.getAccuratePosition === 'function') 
+        ? window.getAccuratePosition 
+        : function(onSuccess, onError, opts = {}) {
+            if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(onSuccess, () => {
+                    navigator.geolocation.getCurrentPosition(onSuccess, onError, { enableHighAccuracy: false, timeout: 8000 });
+                }, { enableHighAccuracy: true, timeout: opts.highAccuracyTimeout || 7000 });
+            } else if (onError) onError({ message: 'No geolocation' });
+        };
+
+    fetchDriverGps((pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        window.updateDriverLiveLocation(lat, lng, true);
         if (window.myDriverMarker) {
             window.myDriverMarker.openPopup();
         }
-    }
+    }, () => {
+        if (window.dRadarMap) {
+            window.dRadarMap.setView([window.driverLat, window.driverLng], 15);
+            if (window.myDriverMarker) window.myDriverMarker.openPopup();
+        }
+    }, { highAccuracyTimeout: 7000, lowAccuracyTimeout: 8000 });
 }
 
 if (typeof window.acceptDriverOrder === 'undefined') {

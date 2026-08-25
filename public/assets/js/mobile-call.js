@@ -13,12 +13,14 @@
     let currentCallOffer = null;
     let currentCallData = null;
     let processedCandidates = new Set();
+    let pendingLocalCandidates = [];
     let pollInterval = null;
     let callTimerInterval = null;
     let callDurationSeconds = 0;
     let isCaller = false;
     let isMuted = false;
     let audioContext = null;
+    let remoteAudioSourceNode = null;
     let ringtoneTimer = null;
 
     const rtcConfig = {
@@ -29,6 +31,8 @@
             { urls: 'stun:stun3.l.google.com:19302' },
             { urls: 'stun:stun4.l.google.com:19302' },
             { urls: 'stun:global.stun.twilio.com:3478' },
+            { urls: 'stun:stun.nextcloud.com:443' },
+            { urls: 'stun:stun.cloudflare.com:3478' },
             {
                 urls: 'turn:openrelay.metered.ca:80',
                 username: 'openrelayproject',
@@ -72,7 +76,7 @@
                 </div>
 
                 <!-- Off-screen Remote Audio Player (Must NOT be display:none for mobile browser audio rendering!) -->
-                <audio id="ccgRemoteAudio" autoplay playsinline style="position:fixed; top:-9999px; left:-9999px; width:1px; height:1px; opacity:0.01; pointer-events:none;"></audio>
+                <audio id="ccgRemoteAudio" autoplay playsinline style="position:fixed; top:-9999px; left:-9999px; width:1px; height:1px; opacity:0.01; pointer-events:none; display:block;"></audio>
 
                 <!-- Incoming Call Actions (Answer / Reject) -->
                 <div id="ccgIncomingActions" class="ccg-call-actions d-none">
@@ -103,69 +107,6 @@
 
         document.body.insertAdjacentHTML('beforeend', modalHtml);
         injectCallCSS();
-    }
-
-    // Permanently unlock audio element autoplay via dummy Web Audio stream on user touch gesture
-    function unlockAudioElement() {
-        const remoteAudio = document.getElementById('ccgRemoteAudio');
-        if (!remoteAudio) return;
-
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const dst = ctx.createMediaStreamDestination();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(440, ctx.currentTime);
-            osc.connect(dst);
-            osc.start(0);
-
-            remoteAudio.srcObject = dst.stream;
-            remoteAudio.muted = false;
-            remoteAudio.volume = 1.0;
-
-            const p = remoteAudio.play();
-            if (p !== undefined) {
-                p.then(() => {
-                    console.log('[VoiceCall] Audio element unlocked via dummy stream!');
-                }).catch(err => {
-                    console.warn('[VoiceCall] Audio element unlock warning:', err);
-                });
-            }
-        } catch (e) {
-            console.warn('[VoiceCall] AudioContext unlock error:', e);
-        }
-    }
-
-    // Attach and play remote audio stream
-    function attachAndPlayRemoteStream(event) {
-        const remoteAudio = document.getElementById('ccgRemoteAudio');
-        if (!remoteAudio) return;
-
-        let remoteStream = null;
-        if (event.streams && event.streams[0]) {
-            remoteStream = event.streams[0];
-        } else if (event.track) {
-            remoteStream = new MediaStream([event.track]);
-        }
-
-        if (remoteStream) {
-            remoteStream.getAudioTracks().forEach(t => { t.enabled = true; });
-
-            if (remoteAudio.srcObject !== remoteStream) {
-                remoteAudio.srcObject = remoteStream;
-            }
-
-            remoteAudio.muted = false;
-            remoteAudio.volume = 1.0;
-
-            if (remoteAudio.paused) {
-                remoteAudio.play().then(() => {
-                    console.log('[VoiceCall] Remote audio playing smoothly.');
-                }).catch(e => {
-                    console.warn('[VoiceCall] Remote audio play error:', e);
-                });
-            }
-        }
     }
 
     // Inject CSS styles for Voice Call UI
@@ -358,7 +299,26 @@
         document.head.appendChild(styleTag);
     }
 
+    // Permanently unlock WebAudio context and ensure off-screen remote audio player exists
     function unlockAudioElement() {
+        try {
+            if (!audioContext || audioContext.state === 'closed') {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            // Silent WebAudio buffer to unlock browser audio graph
+            const buf = audioContext.createBuffer(1, 1, 22050);
+            const src = audioContext.createBufferSource();
+            src.buffer = buf;
+            src.connect(audioContext.destination);
+            src.start(0);
+            console.log('[VoiceCall] AudioContext unlocked successfully!');
+        } catch (e) {
+            console.warn('[VoiceCall] AudioContext unlock warning:', e);
+        }
+
         let remoteAudio = document.getElementById('ccgRemoteAudio');
         if (!remoteAudio) {
             remoteAudio = document.createElement('audio');
@@ -367,23 +327,21 @@
             remoteAudio.playsInline = true;
             remoteAudio.setAttribute('playsinline', '');
             remoteAudio.setAttribute('webkit-playsinline', '');
-            remoteAudio.style.display = 'none';
+            remoteAudio.style.position = 'fixed';
+            remoteAudio.style.top = '-9999px';
+            remoteAudio.style.left = '-9999px';
+            remoteAudio.style.width = '1px';
+            remoteAudio.style.height = '1px';
+            remoteAudio.style.opacity = '0.01';
+            remoteAudio.style.pointerEvents = 'none';
+            remoteAudio.style.display = 'block';
             document.body.appendChild(remoteAudio);
-        }
-        if (!remoteAudio.srcObject) {
-            try {
-                // Silent 1-sec WAV data URI to unlock HTML Audio playback pipeline on mobile browsers
-                remoteAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
-                const p = remoteAudio.play();
-                if (p !== undefined) {
-                    p.catch(() => {});
-                }
-            } catch (e) {}
         }
     }
 
+    // Attach and play remote audio stream (Dual output: HTML Audio + Web Audio API Destination)
     function attachAndPlayRemoteStream(event) {
-        console.log('[VoiceCall] Remote voice stream received:', event);
+        console.log('[VoiceCall] Remote voice stream event received:', event);
         const streamToPlay = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([event.track]);
         
         let remoteAudio = document.getElementById('ccgRemoteAudio');
@@ -394,29 +352,41 @@
             remoteAudio.playsInline = true;
             remoteAudio.setAttribute('playsinline', '');
             remoteAudio.setAttribute('webkit-playsinline', '');
-            remoteAudio.style.display = 'none';
+            remoteAudio.style.position = 'fixed';
+            remoteAudio.style.top = '-9999px';
+            remoteAudio.style.left = '-9999px';
+            remoteAudio.style.width = '1px';
+            remoteAudio.style.height = '1px';
+            remoteAudio.style.opacity = '0.01';
+            remoteAudio.style.pointerEvents = 'none';
+            remoteAudio.style.display = 'block';
             document.body.appendChild(remoteAudio);
         }
 
-        // Enable all remote audio tracks & listen for unmute event
+        // CRITICAL FIX: Clear any old 'src' attribute so 'srcObject' is never blocked!
+        if (remoteAudio.hasAttribute('src')) {
+            remoteAudio.removeAttribute('src');
+        }
+        remoteAudio.src = '';
+
+        // Enable all remote audio tracks & bind onunmute listeners
         try {
             streamToPlay.getAudioTracks().forEach(t => {
                 t.enabled = true;
                 t.onunmute = () => {
-                    console.log('[VoiceCall] Remote track unmuted, playing audio...');
+                    console.log('[VoiceCall] Remote audio track unmuted!');
                     remoteAudio.play().catch(() => {});
                 };
             });
             if (event.track) {
                 event.track.enabled = true;
                 event.track.onunmute = () => {
-                    console.log('[VoiceCall] Remote event.track unmuted, playing audio...');
+                    console.log('[VoiceCall] Remote event.track unmuted!');
                     remoteAudio.play().catch(() => {});
                 };
             }
         } catch (e) {}
 
-        // Prevent re-assigning srcObject to avoid AbortError: play request interrupted
         if (remoteAudio.srcObject !== streamToPlay) {
             remoteAudio.srcObject = streamToPlay;
         }
@@ -424,22 +394,42 @@
         remoteAudio.volume = 1.0;
         remoteAudio.muted = false;
 
-        if (remoteAudio.paused) {
-            const promise = remoteAudio.play();
-            if (promise !== undefined) {
-                promise.then(() => {
-                    console.log('[VoiceCall] Remote audio playing successfully!');
-                }).catch(err => {
-                    console.warn('[VoiceCall] Remote audio autoplay play catch:', err);
-                    const retryHandler = () => {
-                        remoteAudio.play().catch(() => {});
-                        document.removeEventListener('click', retryHandler);
-                        document.removeEventListener('touchstart', retryHandler);
-                    };
-                    document.addEventListener('click', retryHandler);
-                    document.addEventListener('touchstart', retryHandler);
-                });
+        // Channel 1: Play via HTML Audio Element
+        const promise = remoteAudio.play();
+        if (promise !== undefined) {
+            promise.then(() => {
+                console.log('[VoiceCall] Remote audio playing via HTMLAudioElement successfully!');
+            }).catch(err => {
+                console.warn('[VoiceCall] Remote audio play catch:', err);
+                const retryHandler = () => {
+                    remoteAudio.play().catch(() => {});
+                    document.removeEventListener('click', retryHandler);
+                    document.removeEventListener('touchstart', retryHandler);
+                };
+                document.addEventListener('click', retryHandler);
+                document.addEventListener('touchstart', retryHandler);
+            });
+        }
+
+        // Channel 2: Pipe directly into Web Audio API destination graph with volume gain!
+        try {
+            if (!audioContext || audioContext.state === 'closed') {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
             }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            if (remoteAudioSourceNode) {
+                try { remoteAudioSourceNode.disconnect(); } catch(e) {}
+            }
+            remoteAudioSourceNode = audioContext.createMediaStreamSource(streamToPlay);
+            const gainNode = audioContext.createGain();
+            gainNode.gain.setValueAtTime(1.5, audioContext.currentTime); // Boost voice volume by 150%
+            remoteAudioSourceNode.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            console.log('[VoiceCall] Remote voice stream connected to WebAudio destination graph with gain!');
+        } catch (e) {
+            console.warn('[VoiceCall] WebAudio destination connect error:', e);
         }
     }
 
@@ -447,12 +437,11 @@
     let outgoingAudio = null;
     let isRingtoneActive = false;
 
-    // Outgoing Dialing Tone for CALLER (Clean standard telephone "tuuut... tuuut..." dial tone)
+    // Outgoing Dialing Tone for CALLER
     function playOutgoingTone() {
         stopRingtone();
         isRingtoneActive = true;
 
-        // Synchronously unlock AudioContext on user gesture!
         try {
             if (!audioContext || audioContext.state === 'closed') {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -467,7 +456,7 @@
             const dialtoneUrl = baseUrl + '/assets/audio/dialtone.wav?v=' + Date.now();
             outgoingAudio = new Audio(dialtoneUrl);
             outgoingAudio.loop = true;
-            outgoingAudio.volume = 0.20; // Clear 20% volume
+            outgoingAudio.volume = 0.20;
             const p = outgoingAudio.play();
             if (p !== undefined) {
                 p.catch(() => {
@@ -478,7 +467,6 @@
             playSynthDialTone();
         }
 
-        // Safety fallback if HTML audio doesn't start playing within 300ms
         setTimeout(() => {
             if (isRingtoneActive && (!outgoingAudio || outgoingAudio.paused || outgoingAudio.currentTime === 0)) {
                 playSynthDialTone();
@@ -530,7 +518,7 @@
         } catch (e) {}
     }
 
-    // Incoming AI Voice Ringtone for RECEIVER (Very soft & gentle 15% volume)
+    // Incoming Voice Ringtone for RECEIVER
     function playIncomingRingtone() {
         stopRingtone();
         isRingtoneActive = true;
@@ -538,7 +526,7 @@
             const ringtoneUrl = (window.BASE_URL || '') + '/assets/audio/ringtone.mp3?v=' + Date.now();
             ringtoneAudio = new Audio(ringtoneUrl);
             ringtoneAudio.loop = true;
-            ringtoneAudio.volume = 0.15; // Very soft gentle volume (15%)
+            ringtoneAudio.volume = 0.15;
             const p = ringtoneAudio.play();
             if (p !== undefined) {
                 p.catch(() => {
@@ -559,7 +547,7 @@
                 utter.lang = 'id-ID';
                 utter.rate = 0.95;
                 utter.pitch = 1.05;
-                utter.volume = 0.20; // Soft fallback speech volume (20%)
+                utter.volume = 0.20;
 
                 const voices = window.speechSynthesis.getVoices();
                 const idVoice = voices.find(v => v.lang && (v.lang.includes('id') || v.lang.includes('ID')));
@@ -653,11 +641,11 @@
                 return null;
             }
 
-            // Permanently unlock audio element on user gesture
             unlockAudioElement();
 
+            let stream = null;
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({
+                stream = await navigator.mediaDevices.getUserMedia({
                     audio: {
                         echoCancellation: true,
                         noiseSuppression: true,
@@ -665,28 +653,32 @@
                     },
                     video: false
                 });
-
-                // Ensure tracks are active
-                if (stream) {
-                    stream.getAudioTracks().forEach(t => { t.enabled = true; });
+            } catch (err1) {
+                console.warn('[VoiceCall] Advanced audio constraints failed, falling back to basic audio:', err1);
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                } catch (err2) {
+                    console.error('[VoiceCall] Mic access denied/error:', err2);
+                    const errMsg = 'Izin Mikrofon Dibutuhkan 🎙️\n\nBrowser Anda memblokir akses mikrofon.\nMohon klik ikon gembok 🔒 di sebelah alamat web (cicago.store) -> Setelan Situs / Izin -> Aktifkan Mikrofon.';
+                    if (window.AppAlert) {
+                        window.AppAlert.show({
+                            type: 'warning',
+                            title: 'Izin Mikrofon Dibutuhkan 🎙️',
+                            message: 'Browser Anda memblokir akses mikrofon. Klik ikon gembok 🔒 di sebelah alamat web -> Setelan Situs -> Aktifkan Mikrofon.',
+                            confirmButtonText: 'Saya Mengerti'
+                        });
+                    } else {
+                        alert(errMsg);
+                    }
+                    return null;
                 }
-
-                return stream;
-            } catch (err) {
-                console.error('[VoiceCall] Mic access denied/error:', err);
-                const errMsg = 'Izin Mikrofon Dibutuhkan 🎙️\n\nBrowser Anda memblokir akses mikrofon.\nMohon klik ikon gembok 🔒 di sebelah alamat web (cicago.store) -> Setelan Situs / Izin -> Aktifkan Mikrofon.';
-                if (window.AppAlert) {
-                    window.AppAlert.show({
-                        type: 'warning',
-                        title: 'Izin Mikrofon Dibutuhkan 🎙️',
-                        message: 'Browser Anda memblokir akses mikrofon. Klik ikon gembok 🔒 di sebelah alamat web -> Setelan Situs -> Aktifkan Mikrofon.',
-                        confirmButtonText: 'Saya Mengerti'
-                    });
-                } else {
-                    alert(errMsg);
-                }
-                return null;
             }
+
+            if (stream) {
+                stream.getAudioTracks().forEach(t => { t.enabled = true; });
+            }
+
+            return stream;
         },
 
         triggerSystemNotification: function (callData) {
@@ -728,15 +720,22 @@
             }
         },
 
-        // Send ICE candidate to backend with role tag
+        // Send ICE candidate to backend (With local buffering if call_id is not yet available!)
         sendIceCandidate: async function (candidate) {
-            if (!currentCallId || !candidate) return;
+            if (!candidate) return;
+            const candObj = candidate.toJSON ? candidate.toJSON() : candidate;
+            const payload = {
+                candidate: candObj,
+                role: isCaller ? 'caller' : 'receiver'
+            };
+
+            if (!currentCallId) {
+                pendingLocalCandidates.push(payload);
+                console.log('[VoiceCall] Buffered local ICE candidate (waiting for call_id)');
+                return;
+            }
+
             try {
-                const candObj = candidate.toJSON ? candidate.toJSON() : candidate;
-                const payload = {
-                    candidate: candObj,
-                    role: isCaller ? 'caller' : 'receiver'
-                };
                 await fetch((window.BASE_URL || '') + '/calls/ice-candidate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -748,7 +747,28 @@
             } catch (e) {}
         },
 
-        // Flush pending ICE candidates once remoteDescription is set (Filtering out own candidates)
+        // Flush buffered local ICE candidates to backend once currentCallId is assigned
+        flushPendingLocalCandidates: async function () {
+            if (!currentCallId || pendingLocalCandidates.length === 0) return;
+            console.log('[VoiceCall] Flushing', pendingLocalCandidates.length, 'buffered local ICE candidates for call_id:', currentCallId);
+            const candidatesToSend = [...pendingLocalCandidates];
+            pendingLocalCandidates = [];
+
+            for (const payload of candidatesToSend) {
+                try {
+                    await fetch((window.BASE_URL || '') + '/calls/ice-candidate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            call_id: currentCallId,
+                            candidate: JSON.stringify(payload)
+                        })
+                    });
+                } catch (e) {}
+            }
+        },
+
+        // Flush remote ICE candidates once remoteDescription is set
         flushIceCandidates: async function (iceCandidatesData) {
             if (!iceCandidatesData || !peerConnection || !peerConnection.remoteDescription) return;
             try {
@@ -808,8 +828,8 @@
             currentOrderCode = orderCode || currentOrderCode;
             isCaller = true;
             processedCandidates.clear();
+            pendingLocalCandidates = [];
 
-            // Immediately trigger UI, unlock audio element, and sound inside user click gesture!
             unlockAudioElement();
             injectCallUI();
 
@@ -829,17 +849,14 @@
             document.getElementById('ccgActiveActions').classList.remove('d-none');
             modal.classList.remove('d-none');
 
-            // Play outgoing tone IMMEDIATELY on user click
             playOutgoingTone();
 
-            // Request microphone stream
             localStream = await this.ensureMicPermission();
             if (!localStream) {
                 this.resetCall();
                 return;
             }
 
-            // Create WebRTC Offer
             let offerSdp = null;
             peerConnection = new RTCPeerConnection(rtcConfig);
 
@@ -863,7 +880,6 @@
             await peerConnection.setLocalDescription(offer);
             offerSdp = JSON.stringify(offer);
 
-            // Call Backend initiate API
             try {
                 const res = await fetch((window.BASE_URL || '') + '/calls/initiate', {
                     method: 'POST',
@@ -876,6 +892,8 @@
                 const data = await res.json();
                 if (data.success) {
                     currentCallId = data.data.call_id;
+                    // Flush local ICE candidates gathered during setLocalDescription!
+                    await this.flushPendingLocalCandidates();
                 } else {
                     alert(data.message || 'Gagal memulai panggilan.');
                     this.resetCall();
@@ -888,7 +906,7 @@
         // Incoming Call Received
         showIncomingCall: function (callData) {
             if (currentCallId && currentCallId === callData.id) {
-                return; // Already handling this active incoming call
+                return;
             }
             this.resetCall();
             currentCallId = callData.id;
@@ -896,6 +914,7 @@
             currentCallData = callData;
             isCaller = false;
             processedCandidates.clear();
+            pendingLocalCandidates = [];
             injectCallUI();
 
             const modal = document.getElementById('ccgVoiceCallModal');
@@ -935,7 +954,6 @@
             stopRingtone();
             document.getElementById('ccgCallSubtext').innerText = 'Menghubungkan...';
 
-            // Unlock audio element on user click gesture
             unlockAudioElement();
 
             localStream = await this.ensureMicPermission();
@@ -960,7 +978,6 @@
                 }
             };
 
-            // Set Remote Offer FIRST before calling createAnswer!
             if (currentCallOffer) {
                 try {
                     const offerObj = typeof currentCallOffer === 'string' ? JSON.parse(currentCallOffer) : currentCallOffer;
@@ -970,15 +987,20 @@
                         await this.flushIceCandidates(currentCallData.ice_candidates);
                     }
 
-                    const answer = await peerConnection.createAnswer();
+                    const answerOptions = {
+                        offerToReceiveAudio: true,
+                        offerToReceiveVideo: false
+                    };
+                    const answer = await peerConnection.createAnswer(answerOptions);
                     await peerConnection.setLocalDescription(answer);
                     answerSdp = JSON.stringify(answer);
+
+                    await this.flushPendingLocalCandidates();
                 } catch (e) {
                     console.error('[VoiceCall] Error creating answer from remote offer:', e);
                 }
             }
 
-            // Post answer to backend
             try {
                 await fetch((window.BASE_URL || '') + '/calls/answer', {
                     method: 'POST',
@@ -1032,6 +1054,10 @@
             document.getElementById('ccgIncomingActions').classList.add('d-none');
             document.getElementById('ccgActiveActions').classList.remove('d-none');
 
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
             const remoteAudio = document.getElementById('ccgRemoteAudio');
             if (remoteAudio) {
                 remoteAudio.muted = false;
@@ -1052,7 +1078,6 @@
                 }
             }
 
-            // Only start timer if not already running!
             if (!callTimerInterval) {
                 this.startTimer();
             }
@@ -1082,7 +1107,7 @@
 
         // Start Call Timer
         startTimer: function () {
-            if (callTimerInterval) return; // Prevent resetting running timer
+            if (callTimerInterval) return;
             callDurationSeconds = 0;
             const timerEl = document.getElementById('ccgCallTimer');
             if (timerEl) timerEl.innerText = '00:00';
@@ -1107,6 +1132,11 @@
             stopRingtone();
             this.stopTimer();
 
+            if (remoteAudioSourceNode) {
+                try { remoteAudioSourceNode.disconnect(); } catch(e) {}
+                remoteAudioSourceNode = null;
+            }
+
             if (peerConnection) {
                 try { peerConnection.close(); } catch (e) {}
                 peerConnection = null;
@@ -1118,13 +1148,19 @@
 
             const remoteAudio = document.getElementById('ccgRemoteAudio');
             if (remoteAudio) {
-                try { remoteAudio.pause(); remoteAudio.srcObject = null; } catch(e) {}
+                try {
+                    remoteAudio.pause();
+                    remoteAudio.srcObject = null;
+                    remoteAudio.removeAttribute('src');
+                    remoteAudio.src = '';
+                } catch(e) {}
             }
 
             currentCallId = null;
             currentCallOffer = null;
             currentCallData = null;
             processedCandidates.clear();
+            pendingLocalCandidates = [];
             isMuted = false;
             isCaller = false;
             this.pendingAutoAnswer = false;
@@ -1171,12 +1207,11 @@
                                 console.error('[VoiceCall] Error setting remote answer:', e);
                             }
                         } else if (activeCall.answer && peerConnection.remoteDescription) {
-                            // Guarantee setCallConnected runs on caller side
                             this.setCallConnected();
                         }
                     }
 
-                    // 3. Process ICE Candidates (Only when remoteDescription is set)
+                    // 3. Process ICE Candidates
                     if (activeCall.ice_candidates && peerConnection && peerConnection.remoteDescription) {
                         await this.flushIceCandidates(activeCall.ice_candidates);
                     }

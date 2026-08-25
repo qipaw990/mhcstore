@@ -233,23 +233,49 @@ function initProfileStoreMap() {
 }
 
 function detectCurrentStoreGps() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
-                document.getElementById('storeLatInput').value = lat.toFixed(7);
-                document.getElementById('storeLngInput').value = lng.toFixed(7);
-                if (profileMap && profileMarker) {
-                    profileMap.setView([lat, lng], 16);
-                    profileMarker.setLatLng([lat, lng]);
-                }
-                showVendorToast('Pin GPS berhasil disesuaikan dengan posisi Anda.', 'success');
-            },
-            () => {
-                showVendorToast('Izin lokasi ditolak. Geser pin peta secara manual.', 'warning');
+    const fetchPosition = (typeof window.getAccuratePosition === 'function')
+        ? window.getAccuratePosition
+        : function(onSuccess, onError, opts = {}) {
+            if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    onSuccess,
+                    (err) => {
+                        console.warn('[Vendor GPS Stage 1 Fail]:', err ? err.message : '');
+                        navigator.geolocation.getCurrentPosition(onSuccess, onError, { enableHighAccuracy: false, timeout: 8000 });
+                    },
+                    { enableHighAccuracy: true, timeout: opts.highAccuracyTimeout || 7000 }
+                );
+            } else if (onError) {
+                onError({ message: 'Geolocation not supported' });
             }
-        );
-    }
+        };
+
+    fetchPosition(
+        (pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            document.getElementById('storeLatInput').value = lat.toFixed(7);
+            document.getElementById('storeLngInput').value = lng.toFixed(7);
+            if (profileMap && profileMarker) {
+                profileMap.setView([lat, lng], 16);
+                profileMarker.setLatLng([lat, lng]);
+                setTimeout(() => profileMap.invalidateSize(), 150);
+            }
+            if (typeof showVendorToast === 'function') {
+                showVendorToast('Pin GPS berhasil disesuaikan dengan posisi Anda.', 'success');
+            } else if (typeof AppAlert !== 'undefined') {
+                AppAlert.toast('Pin GPS berhasil disesuaikan', 'success');
+            }
+        },
+        (err) => {
+            console.warn('[Vendor GPS Error]:', err);
+            if (typeof showVendorToast === 'function') {
+                showVendorToast('Gagal membaca posisi GPS otomatis. Silakan geser pin peta secara manual.', 'warning');
+            } else if (typeof AppAlert !== 'undefined') {
+                AppAlert.toast('Gagal membaca GPS. Geser pin manual.', 'warning');
+            }
+        },
+        { highAccuracyTimeout: 7000, lowAccuracyTimeout: 8000 }
+    );
 }
 </script>

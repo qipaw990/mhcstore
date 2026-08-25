@@ -189,6 +189,27 @@ const BASE_DELIVERY_FEE = <?= (float)$cart_data['grand_delivery'] ?>;
 let map, customerMarker, storeMarkers = [], routeLine;
 let mapInitialized = false;
 
+function getSafeAccuratePosition(onSuccess, onError, opts = {}) {
+    if (typeof window.getAccuratePosition === 'function') {
+        window.getAccuratePosition(onSuccess, onError, opts);
+    } else {
+        const highTimeout = opts.highAccuracyTimeout || 8000;
+        const lowTimeout  = opts.lowAccuracyTimeout || 10000;
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                onSuccess,
+                (err) => {
+                    console.warn('[Checkout Stage 1 Fail]:', err ? err.message : '', '-> Stage 2 fallback');
+                    navigator.geolocation.getCurrentPosition(onSuccess, onError, { enableHighAccuracy: false, timeout: lowTimeout, maximumAge: 60000 });
+                },
+                { enableHighAccuracy: true, timeout: highTimeout, maximumAge: 10000 }
+            );
+        } else if (onError) {
+            onError({ message: 'No geolocation support' });
+        }
+    }
+}
+
 function initCheckoutMap() {
     if (mapInitialized) return;
     mapInitialized = true;
@@ -196,25 +217,16 @@ function initCheckoutMap() {
     const defaultLat = STORES_DATA[0]?.lat || -6.9835;
     const defaultLng = STORES_DATA[0]?.lng || 107.8335;
 
-    if ('geolocation' in navigator) {
-        const gpsTimeout = setTimeout(() => {
+    getSafeAccuratePosition(
+        (pos) => {
+            _buildMap(pos.coords.latitude, pos.coords.longitude, true);
+        },
+        (err) => {
+            console.warn('[initCheckoutMap] GPS fallback to store default:', err);
             _buildMap(defaultLat, defaultLng, false);
-        }, 5000);
-
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                clearTimeout(gpsTimeout);
-                _buildMap(pos.coords.latitude, pos.coords.longitude, true);
-            },
-            () => {
-                clearTimeout(gpsTimeout);
-                _buildMap(defaultLat, defaultLng, false);
-            },
-            { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
-        );
-    } else {
-        _buildMap(defaultLat, defaultLng, false);
-    }
+        },
+        { highAccuracyTimeout: 7000, lowAccuracyTimeout: 8000 }
+    );
 }
 
 function _buildMap(initLat, initLng, isGPS) {
@@ -290,9 +302,13 @@ function reverseGeocode(lat, lng, targetInputId) {
     if (geocodeTimer) clearTimeout(geocodeTimer);
     geocodeTimer = setTimeout(async () => {
         try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4000);
             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`, {
-                headers: { 'Accept-Language': 'id-ID,id;q=0.9' }
+                headers: { 'Accept-Language': 'id-ID,id;q=0.9' },
+                signal: controller.signal
             });
+            clearTimeout(timeoutId);
             const data = await res.json();
             if (data && data.display_name) {
                 const input = document.getElementById(targetInputId);
@@ -358,44 +374,45 @@ function updateRouteAndDistance(custLat, custLng) {
 }
 
 function getCurrentLocation(isSilent = false) {
-    if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
+    getSafeAccuratePosition(
+        (pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
 
-                if (!map) {
-                    // Peta belum dibuat (seharusnya sudah), build ulang
-                    _buildMap(lat, lng, true);
-                    return;
-                }
+            if (!map) {
+                _buildMap(lat, lng, true);
+                return;
+            }
 
-                if (customerMarker) customerMarker.setLatLng([lat, lng]);
-                const bounds = L.latLngBounds([[STORE_LAT, STORE_LNG], [lat, lng]]);
-                map.fitBounds(bounds, { padding: [40, 40] });
-                setTimeout(() => map.invalidateSize(), 100);
+            if (customerMarker) customerMarker.setLatLng([lat, lng]);
 
-                updateLocationData(lat, lng);
-                reverseGeocode(lat, lng, 'input-address');
+            const routePoints = STORES_DATA.map(s => [s.lat || -6.9835, s.lng || 107.8335]);
+            routePoints.push([lat, lng]);
+            const bounds = L.latLngBounds(routePoints);
+            map.fitBounds(bounds, { padding: [40, 40] });
+            setTimeout(() => map.invalidateSize(), 150);
 
-                if (!isSilent) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Lokasi Ditemukan!',
-                        text: 'Pin pengantaran disesuaikan ke posisi GPS Anda.',
-                        timer: 1500,
-                        showConfirmButton: false
-                    });
-                }
-            },
-            (err) => {
-                if (!isSilent) {
-                    Swal.fire('GPS Error', 'Gagal membaca koordinat GPS perangkat. Silakan klik manual pada peta.', 'warning');
-                }
-            },
-            { enableHighAccuracy: true, timeout: 7000 }
-        );
-    }
+            updateLocationData(lat, lng);
+            reverseGeocode(lat, lng, 'input-address');
+
+            if (!isSilent) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Lokasi Ditemukan!',
+                    text: 'Pin pengantaran disesuaikan ke posisi GPS Anda.',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            }
+        },
+        (err) => {
+            console.warn('[Checkout GPS] Failed:', err);
+            if (!isSilent) {
+                Swal.fire('GPS Warning', 'Gagal membaca koordinat GPS presisi. Lokasi default toko/alamat tetap digunakan.', 'warning');
+            }
+        },
+        { highAccuracyTimeout: 8000, lowAccuracyTimeout: 10000 }
+    );
 }
 
 async function handlePlaceOrder(e) {
