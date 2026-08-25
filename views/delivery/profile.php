@@ -18,49 +18,69 @@
             <i class="bi bi-bicycle me-1"></i> <?= htmlspecialchars($driver['vehicle_type'] ?? 'Motor') ?> (<?= htmlspecialchars($driver['vehicle_number'] ?? '-') ?>)
         </div>
     <!-- Driver Performance Rating Card -->
-    <div class="ccg-card mb-3">
-        <div class="d-flex align-items-center justify-content-between pb-2 border-bottom mb-2.5">
-            <div class="d-flex align-items-center gap-2">
-                <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 15px;">
-                    <i class="bi bi-star-fill"></i>
+    <div class="bg-white rounded-4 border p-3.5 mb-3 shadow-sm" style="border-color: #E2E8F0 !important;">
+        <div class="d-flex align-items-center justify-content-between mb-3 pb-2.5 border-bottom">
+            <div class="d-flex align-items-center gap-2.5">
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-white flex-shrink-0" style="width: 36px; height: 36px; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); box-shadow: 0 3px 10px rgba(245, 158, 11, 0.3);">
+                    <i class="bi bi-star-fill" style="font-size: 16px;"></i>
                 </div>
                 <div>
-                    <h6 class="fw-bold small m-0 text-dark">Rating & Performa Driver</h6>
-                    <span class="text-muted" style="font-size: 10px;">Akumulasi penilaian pelanggan CicalengkaGO</span>
+                    <h6 class="fw-extrabold m-0 text-dark" style="font-size: 13.5px; letter-spacing: -0.2px;">Rating Saya & Ulasan Pelanggan</h6>
+                    <span class="text-muted" style="font-size: 10.5px;">Penilaian kepuasan pengantaran dari pembeli</span>
                 </div>
             </div>
-            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-3 py-1 fw-extrabold" style="font-size: 12px;">
-                ⭐ <?= !empty($driver['reviews_count']) && (int)$driver['reviews_count'] > 0 ? number_format($driver['rating'], 1) : '5.0' ?>
-            </span>
+            <div class="text-end">
+                <span class="badge rounded-pill px-3 py-1.5 fw-extrabold d-inline-flex align-items-center gap-1" style="background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; font-size: 12px;">
+                    <i class="bi bi-star-fill text-warning" style="font-size: 11px;"></i>
+                    <?= !empty($driver['reviews_count']) && (int)$driver['reviews_count'] > 0 ? number_format($driver['rating'], 1) : '5.0' ?> <span class="text-muted fw-normal" style="font-size: 10px;">/ 5.0</span>
+                </span>
+            </div>
         </div>
 
         <?php if (empty($reviews)): ?>
-            <div class="text-center py-3 text-muted">
-                <i class="bi bi-chat-left-heart text-warning fs-3 mb-1 d-block opacity-75"></i>
-                <div class="fw-semibold text-dark" style="font-size: 11.5px;">Belum Ada Ulasan Driver</div>
-                <div style="font-size: 10px;">Ulasan bintang dari pelanggan akan tersimpan di sini.</div>
+            <div class="text-center py-4 text-muted bg-light rounded-4 border border-dashed my-1">
+                <div class="rounded-circle bg-warning-subtle text-warning d-inline-flex align-items-center justify-content-center mb-2" style="width: 44px; height: 44px;">
+                    <i class="bi bi-chat-heart-fill fs-4"></i>
+                </div>
+                <div class="fw-bold text-dark" style="font-size: 12.5px;">Belum Ada Ulasan Driver</div>
+                <div class="text-muted" style="font-size: 10.5px;">Penilaian dari pelanggan yang Anda antar orderannya akan muncul di sini.</div>
             </div>
         <?php else: ?>
-            <div class="d-flex flex-column gap-2" style="max-height: 280px; overflow-y: auto;">
+            <div class="d-flex flex-column gap-2.5" style="max-height: 360px; overflow-y: auto;">
                 <?php foreach ($reviews as $rev): ?>
-                    <div class="p-2.5 rounded-3 bg-light border">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <div class="d-flex align-items-center gap-2">
-                                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($rev['customer_avatar'] ?? 'assets/images/users/customer.png') ?>" alt="Customer" class="rounded-circle border" style="width: 26px; height: 26px; object-fit: cover;">
-                                <div>
-                                    <div class="fw-bold text-dark" style="font-size: 11px;"><?= htmlspecialchars($rev['customer_name'] ?? 'Pelanggan') ?></div>
-                                    <div class="text-muted" style="font-size: 9px;">Order #<?= htmlspecialchars($rev['order_code'] ?? '-') ?> • <?= date('d M Y', strtotime($rev['created_at'])) ?></div>
+                    <?php
+                    $orderLabel = 'Pesanan';
+                    if (!empty($rev['order_code']) && strpos($rev['order_code'], '#-') === false && $rev['order_code'] !== '-') {
+                        $orderLabel = '#' . ltrim($rev['order_code'], '#');
+                    } elseif (!empty($rev['order_id'])) {
+                        $orderLabel = '#ORD-' . $rev['order_id'];
+                    }
+                    $revDate = !empty($rev['created_at']) ? date('d M Y', strtotime($rev['created_at'])) : date('d M Y');
+                    $ratingVal = (int)($rev['rating'] ?? 5);
+                    ?>
+                    <div class="p-3 rounded-4" style="background: #F8FAFC; border: 1px solid #E2E8F0; transition: all 0.2s ease;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2.5 min-w-0">
+                                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($rev['customer_avatar'] ?? 'assets/images/users/customer.png') ?>" alt="Customer" class="rounded-circle border border-2 border-white shadow-2xs flex-shrink-0" style="width: 34px; height: 34px; object-fit: cover;">
+                                <div class="min-w-0">
+                                    <div class="fw-bold text-dark text-truncate" style="font-size: 12px; line-height: 1.2;"><?= htmlspecialchars($rev['customer_name'] ?? 'Pelanggan') ?></div>
+                                    <div class="d-flex align-items-center gap-1.5 mt-0.5" style="font-size: 10px;">
+                                        <span class="badge rounded-pill fw-semibold px-2 py-0.5" style="background: #E2E8F0; color: #334155; font-size: 9.5px;"><?= htmlspecialchars($orderLabel) ?></span>
+                                        <span class="text-muted">• <?= $revDate ?></span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="text-warning fw-bold" style="font-size: 10px;">
-                                <?php for ($s = 1; $s <= 5; $s++): ?>
-                                    <i class="bi <?= $s <= (int)$rev['rating'] ? 'bi-star-fill' : 'bi-star text-muted opacity-50' ?>"></i>
-                                <?php endfor; ?>
+                            <div class="flex-shrink-0 ms-2">
+                                <div class="d-inline-flex align-items-center gap-1 px-2.5 py-1 rounded-pill bg-warning-subtle text-warning-emphasis fw-bold" style="font-size: 11px; border: 1px solid rgba(245, 158, 11, 0.25);">
+                                    <i class="bi bi-star-fill text-warning" style="font-size: 10.5px;"></i> <?= number_format($ratingVal, 1) ?>
+                                </div>
                             </div>
                         </div>
+
                         <?php if (!empty($rev['comment'])): ?>
-                            <div class="p-2 bg-white rounded-2 text-dark mt-1 border" style="font-size: 10.5px; line-height: 1.35;">
-                                "<?= htmlspecialchars($rev['comment']) ?>"
+                            <div class="mt-2.5 p-2.5 rounded-3 position-relative" style="background: #FFFFFF; border-left: 3.5px solid #F59E0B; border-top: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; border-bottom: 1px solid #F1F5F9; font-size: 11.5px; color: #334155; line-height: 1.45;">
+                                <i class="bi bi-quote text-warning me-1 opacity-75" style="font-size: 13px;"></i>
+                                <span><?= htmlspecialchars($rev['comment']) ?></span>
                             </div>
                         <?php endif; ?>
                     </div>
