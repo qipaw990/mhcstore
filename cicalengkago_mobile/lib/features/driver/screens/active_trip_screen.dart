@@ -396,7 +396,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                                   Expanded(
                                     child: Text(
                                       sName,
-                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.extrabold, color: Color(0xFF0F172A)),
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
