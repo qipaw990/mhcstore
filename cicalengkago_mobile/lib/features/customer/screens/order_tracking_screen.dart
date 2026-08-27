@@ -1209,8 +1209,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         'Cicalengka, Kab. Bandung';
     final storePhone = order['store_phone']?.toString() ?? '';
 
-    final List items = (order['items'] as List?) ?? [];
-    final orderNotes = order['order_notes']?.toString() ?? '';
+    final List rawItems = (live['items'] as List?) ?? (order['items'] as List?) ?? [];
+    final orderNotes = (live['order_notes'] ?? order['order_notes'])?.toString() ?? '';
+    final orderType = (live['order_type'] ?? order['order_type'])?.toString() ?? 'delivery';
+    final parcelDetails = live['parcel_details'] is Map
+        ? (live['parcel_details'] as Map)
+        : (order['parcel_details'] is Map ? (order['parcel_details'] as Map) : {});
+
+    final isParcel = orderType == 'parcel' || parcelDetails.isNotEmpty;
 
     return Container(
       margin: const EdgeInsets.only(top: 14),
@@ -1239,7 +1245,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     color: AppTheme.inkBlack,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 20),
+                  child: Icon(isParcel ? Icons.local_shipping_rounded : Icons.storefront_rounded, color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -1247,14 +1253,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        storeName,
+                        isParcel ? (parcelDetails['pickup_address'] ?? 'Pengiriman Paket CicalengkaSend') : storeName,
                         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        storeAddress,
+                        isParcel ? 'Kurir CicalengkaGO' : storeAddress,
                         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1282,24 +1288,55 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'RINCIAN ITEM (${items.isEmpty ? 1 : items.length})',
+                      isParcel ? 'RINCIAN PAKET' : 'RINCIAN ITEM (${rawItems.isEmpty ? 1 : rawItems.length})',
                       style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 0.5),
                     ),
-                    const Icon(Icons.shopping_bag_outlined, size: 14, color: Color(0xFF64748B)),
+                    Icon(isParcel ? Icons.inventory_2_outlined : Icons.shopping_bag_outlined, size: 14, color: const Color(0xFF64748B)),
                   ],
                 ),
                 const SizedBox(height: 8),
 
-                if (items.isEmpty)
+                if (isParcel) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(color: AppTheme.inkBlack, borderRadius: BorderRadius.circular(6)),
+                          child: const Text('1x', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold)),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Pengiriman Paket Kilat (${parcelDetails['item_type'] ?? parcelDetails['package_type'] ?? 'Barang'})',
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                              ),
+                              if (parcelDetails['receiver_name'] != null)
+                                Text(
+                                  'Penerima: ${parcelDetails['receiver_name']} (${parcelDetails['receiver_phone'] ?? '-'})',
+                                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else if (rawItems.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 4),
                     child: Text('1x Pesanan CicalengkaGO', style: TextStyle(fontSize: 12, color: AppTheme.inkBlack, fontWeight: FontWeight.w600)),
                   )
                 else
-                  ...items.map((item) {
-                    final name = item['product_name'] ?? item['name'] ?? 'Menu Kuliner';
-                    final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
-                    final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
+                  ...rawItems.map((item) {
+                    final Map it = item is Map ? item : {};
+                    final name = (it['product_name'] ?? it['name'] ?? it['title'] ?? it['item_name'] ?? 'Menu Kuliner').toString();
+                    final qty = int.tryParse(it['quantity']?.toString() ?? '1') ?? 1;
+                    final price = double.tryParse(it['price']?.toString() ?? '0') ?? 0.0;
                     final itemTotal = price * qty;
 
                     return Padding(
@@ -1324,12 +1361,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  name.toString(),
+                                  name,
                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
                                 ),
-                                if (item['variant'] != null && item['variant'].toString().isNotEmpty)
+                                if (it['variant'] != null && it['variant'].toString().isNotEmpty)
                                   Text(
-                                    'Varian: ${item['variant']}',
+                                    'Varian: ${it['variant']}',
                                     style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
                                   ),
                               ],

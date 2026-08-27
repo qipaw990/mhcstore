@@ -578,6 +578,10 @@ class OrderController extends Controller
                 'batch_info'          => $batchInfo,
                 'total_amount'        => (float)($order['batch_total_amount'] ?? $order['total_amount'] ?? $order['order_amount'] ?? 0),
                 'order_amount'        => (float)($order['order_amount'] ?? $order['total_amount'] ?? 0),
+                'items'               => $order['items'] ?? [],
+                'order_type'          => $order['order_type'] ?? 'delivery',
+                'order_notes'         => $order['order_notes'] ?? '',
+                'parcel_details'      => $order['parcel_details'] ?? null,
                 'driver'         => [
                     'assigned' => $isDriverAssigned,
                     'name'     => $isDriverAssigned ? ($order['dm_name'] ?? 'Mitra Kurir Cicalengka') : 'Mencari Kurir...',
