@@ -310,84 +310,149 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             ),
           ),
 
-          // Items list
+          // Items list grouped per store
           if (items.isNotEmpty) ...[
-            Container(
-              padding: const EdgeInsets.all(14),
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Builder(
+              builder: (context) {
+                final Map<String, List<dynamic>> itemsByStore = {};
+                for (var item in items) {
+                  final String sName = (item['store_name'] ?? storeName).toString();
+                  if (!itemsByStore.containsKey(sName)) {
+                    itemsByStore[sName] = [];
+                  }
+                  itemsByStore[sName]!.add(item);
+                }
+
+                return Container(
+                  padding: const EdgeInsets.all(14),
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.restaurant_menu_rounded, size: 14, color: AppTheme.primaryRed),
-                          SizedBox(width: 6),
-                          Text(
-                            'Rincian Item Pesanan',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          const Row(
+                            children: [
+                              Icon(Icons.storefront_rounded, size: 16, color: AppTheme.primaryRed),
+                              SizedBox(width: 6),
+                              Text(
+                                'Rincian Item Per Toko',
+                                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF2F2),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFFCA5A5)),
+                            ),
+                            child: Text(
+                              '${items.length} Menu • ${itemsByStore.length} Toko',
+                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+                            ),
                           ),
                         ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEF2F2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '${items.length} Menu',
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
-                        ),
-                      ),
+                      const SizedBox(height: 10),
+                      ...itemsByStore.entries.map((storeEntry) {
+                        final sName = storeEntry.key;
+                        final sItems = storeEntry.value;
+                        double storeTotal = 0;
+                        for (var it in sItems) {
+                          storeTotal += double.tryParse(it['total_price']?.toString() ?? it['price']?.toString() ?? '0') ?? 0;
+                        }
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 24,
+                                    height: 24,
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.primaryRed.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Icon(Icons.store_rounded, size: 14, color: AppTheme.primaryRed),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      sName,
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.extrabold, color: Color(0xFF0F172A)),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (storeTotal > 0)
+                                    Text(
+                                      CurrencyFormatter.formatRupiah(storeTotal),
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+                                    ),
+                                ],
+                              ),
+                              const Divider(height: 16, color: Color(0xFFF1F5F9)),
+                              ...sItems.map((item) {
+                                final pName = item['product_name'] ?? item['name'] ?? 'Menu';
+                                final qty = item['quantity'] ?? 1;
+                                final price = double.tryParse(item['total_price']?.toString() ?? item['price']?.toString() ?? '0') ?? 0;
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 6),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF1F5F9),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          '${qty}x',
+                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          pName,
+                                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                                        ),
+                                      ),
+                                      if (price > 0)
+                                        Text(
+                                          CurrencyFormatter.formatRupiah(price),
+                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
+                        );
+                      }),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  ...items.map((item) {
-                    final pName = item['product_name'] ?? item['name'] ?? 'Menu';
-                    final qty = item['quantity'] ?? 1;
-                    final price = double.tryParse(item['total_price']?.toString() ?? item['price']?.toString() ?? '0') ?? 0;
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE2E8F0),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              '${qty}x',
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              pName,
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
-                            ),
-                          ),
-                          if (price > 0)
-                            Text(
-                              CurrencyFormatter.formatRupiah(price),
-                              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
-                            ),
-                        ],
-                      ),
-                    );
-                  }),
-                ],
-              ),
+                );
+              },
             ),
           ],
         ],
@@ -404,7 +469,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             const Icon(Icons.layers_rounded, size: 16, color: Color(0xFF7C3AED)),
             const SizedBox(width: 6),
             Text(
-              'Batch Trip: ${batchOrders.length} Pesanan',
+              'Batch Trip Gabungan: ${batchOrders.length} Pesanan Multi-Toko',
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF7C3AED)),
             ),
           ],
@@ -413,32 +478,62 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
         ...batchOrders.asMap().entries.map((entry) {
           final i = entry.key;
           final order = entry.value as Map<String, dynamic>;
+          final sName = order['store_name'] ?? 'Toko ${i + 1}';
+          final cName = order['customer_name'] ?? 'Pelanggan';
+          final List bItems = (order['items'] as List?) ?? [];
+
           return Container(
-            margin: const EdgeInsets.only(bottom: 10),
+            margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: const Color(0xFFDDD6FE)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: const BoxDecoration(color: Color(0xFF7C3AED), shape: BoxShape.circle),
-                      child: Center(child: Text('${i + 1}', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))),
+                    Row(
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: const BoxDecoration(color: Color(0xFF7C3AED), shape: BoxShape.circle),
+                          child: Center(child: Text('${i + 1}', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))),
+                        ),
+                        const SizedBox(width: 8),
+                        Text('Order #${order['order_code'] ?? order['id']}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Text('Order #${order['order_code'] ?? order['id']}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(color: const Color(0xFFF3E8FF), borderRadius: BorderRadius.circular(8)),
+                      child: Text(sName, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF7C3AED))),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text('📍 ${order['store_name'] ?? 'Toko'} → ${order['customer_name'] ?? 'Pelanggan'}',
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF334155))),
+                Text('📍 Resto: $sName → Pelanggan: $cName', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                if (bItems.isNotEmpty) ...[
+                  const Divider(height: 16, color: Color(0xFFF1F5F9)),
+                  ...bItems.map((it) {
+                    final pName = it['product_name'] ?? it['name'] ?? 'Menu';
+                    final qty = it['quantity'] ?? 1;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.circle, size: 5, color: Color(0xFF7C3AED)),
+                          const SizedBox(width: 6),
+                          Text('${qty}x $pName', style: const TextStyle(fontSize: 11, color: Color(0xFF475569))),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
               ],
             ),
           );
