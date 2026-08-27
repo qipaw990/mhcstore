@@ -7,6 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/uber_pill_button.dart';
 import '../controllers/customer_controller.dart';
+import '../widgets/product_detail_modal.dart';
 import 'cart_screen.dart';
 
 class StoreDetailScreen extends StatefulWidget {
@@ -345,8 +346,10 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                   final imgUrl = _getFoodImage(product);
                   final bool hasDiscount = price > finalPrice;
 
-                  return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                  return GestureDetector(
+                    onTap: () => ProductDetailModal.show(context, product),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -488,7 +491,8 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                         ),
                       ],
                     ),
-                  );
+                  ),
+                );
                 },
                 childCount: _products.length,
               ),

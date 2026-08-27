@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/uber_pill_button.dart';
 import '../controllers/customer_controller.dart';
+import '../widgets/product_detail_modal.dart';
 import 'checkout_screen.dart';
 
 class CartScreen extends StatefulWidget {
@@ -503,8 +504,10 @@ class _CartScreenState extends State<CartScreen> {
               final String rating = food['rating']?.toString() ?? '4.8';
               final String imgUrl = _getFoodImage(food);
 
-              return Container(
-                width: 160,
+              return GestureDetector(
+                onTap: () => ProductDetailModal.show(context, food),
+                child: Container(
+                  width: 160,
                 margin: const EdgeInsets.only(right: 14),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -627,7 +630,8 @@ class _CartScreenState extends State<CartScreen> {
                     ),
                   ],
                 ),
-              );
+              ),
+            );
             },
           ),
         ),
