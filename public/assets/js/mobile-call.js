@@ -822,6 +822,14 @@
             }
         },
 
+        initiateCall: function (orderCode, partnerName, partnerAvatar) {
+            return this.makeCall(orderCode, partnerName, partnerAvatar);
+        },
+
+        startCall: function (orderCode, partnerName, partnerAvatar) {
+            return this.makeCall(orderCode, partnerName, partnerAvatar);
+        },
+
         // Start Voice Call (Outgoing)
         makeCall: async function (orderCode, partnerName, partnerAvatar) {
             this.resetCall();

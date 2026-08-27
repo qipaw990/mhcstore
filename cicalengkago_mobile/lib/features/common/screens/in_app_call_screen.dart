@@ -71,19 +71,21 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   }
 
   void _initWebView() {
-    final webUrl = '${ApiConstants.baseUrl}/orders/${widget.orderCode}?app_call=1';
+    final webUrl = '${ApiConstants.baseUrl}/orders/${widget.orderCode}/tracking?app_call=1';
     
     _webViewController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFF0F172A))
-      ..setOnConsoleMessage((message) {})
+      ..setOnConsoleMessage((message) {
+        debugPrint('[VoiceCallWebView] ${message.message}');
+      })
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (url) {
-            if (widget.isIncoming && _callId != null) {
+            if (widget.isIncoming) {
               _webViewController.runJavaScript('if(window.CCGCall) window.CCGCall.init("${widget.orderCode}");');
             } else {
-              _webViewController.runJavaScript('if(window.CCGCall) { window.CCGCall.init("${widget.orderCode}"); window.CCGCall.initiateCall("${widget.orderCode}"); }');
+              _webViewController.runJavaScript('if(window.CCGCall) { window.CCGCall.init("${widget.orderCode}"); window.CCGCall.makeCall("${widget.orderCode}"); }');
             }
           },
         ),
@@ -122,7 +124,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
             } else if (st == 'rejected' || st == 'ended') {
               _handleCallEnded('Panggilan Diakhiri');
             }
-          } else if (_isConnected || !widget.isIncoming) {
+          } else if (_isConnected) {
             _handleCallEnded('Panggilan Selesai');
           }
         }
@@ -141,48 +143,23 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     });
   }
 
-  void _answerCall() async {
-    if (_callId != null) {
-      try {
-        await http.post(
-          Uri.parse('${ApiConstants.baseUrl}/calls/answer'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'call_id': _callId}),
-        );
-      } catch (_) {}
-    }
+  void _answerCall() {
     _webViewController.runJavaScript('if(window.CCGCall) window.CCGCall.answerCall();');
-    setState(() {
-      _isConnected = true;
-      _statusText = 'Terhubung';
-    });
+    if (mounted) {
+      setState(() {
+        _isConnected = true;
+        _statusText = 'Terhubung';
+      });
+    }
     _startTimer();
   }
 
-  void _rejectCall() async {
-    if (_callId != null) {
-      try {
-        await http.post(
-          Uri.parse('${ApiConstants.baseUrl}/calls/reject'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'call_id': _callId}),
-        );
-      } catch (_) {}
-    }
+  void _rejectCall() {
     _webViewController.runJavaScript('if(window.CCGCall) window.CCGCall.rejectCall();');
     _handleCallEnded('Panggilan Ditolak');
   }
 
-  void _endCall() async {
-    if (_callId != null) {
-      try {
-        await http.post(
-          Uri.parse('${ApiConstants.baseUrl}/calls/end'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'call_id': _callId}),
-        );
-      } catch (_) {}
-    }
+  void _endCall() {
     _webViewController.runJavaScript('if(window.CCGCall) window.CCGCall.endCall();');
     _handleCallEnded('Panggilan Diakhiri');
   }
