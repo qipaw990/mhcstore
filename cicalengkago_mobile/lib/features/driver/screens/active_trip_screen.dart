@@ -4,6 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/services/global_call_service.dart';
+import '../../common/screens/in_app_chat_modal.dart';
+import '../../auth/controllers/auth_controller.dart';
 import '../controllers/driver_controller.dart';
 
 class ActiveTripScreen extends StatefulWidget {
@@ -105,7 +108,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           const SizedBox(height: 20),
 
           // Action Buttons
-          _buildActionSection(context, driverCtrl, orderId, status, customerPhone),
+          _buildActionSection(context, driverCtrl, orderId, status, customerPhone, orderCode),
         ],
       ),
     );
@@ -555,7 +558,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     );
   }
 
-  Widget _buildActionSection(BuildContext context, DriverController driverCtrl, int orderId, String status, String customerPhone) {
+  Widget _buildActionSection(BuildContext context, DriverController driverCtrl, int orderId, String status, String customerPhone, String orderCode) {
     return Column(
       children: [
         // Main action button
@@ -639,39 +642,66 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           ),
         ],
 
-        // Secondary actions
+        // Secondary actions (Voice Call, Chat, Phone, Refresh)
         const SizedBox(height: 12),
         Row(
           children: [
-            if (customerPhone.isNotEmpty) ...[
-              Expanded(
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.call_rounded, size: 16),
-                  label: const Text('Hubungi', style: TextStyle(fontSize: 12)),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    side: const BorderSide(color: Color(0xFF059669)),
-                    foregroundColor: const Color(0xFF059669),
-                  ),
-                  onPressed: () => launchUrl(Uri.parse('tel:$customerPhone')),
-                ),
-              ),
-              const SizedBox(width: 10),
-            ],
             Expanded(
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.refresh_rounded, size: 16),
-                label: const Text('Refresh', style: TextStyle(fontSize: 12)),
-                style: OutlinedButton.styleFrom(
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.phone_in_talk_rounded, size: 16),
+                label: const Text('Voice Call', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  side: const BorderSide(color: Color(0xFF94A3B8)),
-                  foregroundColor: const Color(0xFF64748B),
+                  elevation: 1,
                 ),
-                onPressed: () => driverCtrl.fetchRadarData(),
+                onPressed: () {
+                  GlobalCallService.instance.openCallScreen(
+                    context,
+                    orderCode: orderCode,
+                    isIncoming: false,
+                  );
+                },
               ),
             ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.chat_bubble_rounded, size: 16),
+                label: const Text('Chat', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryRed,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 1,
+                ),
+                onPressed: () {
+                  final authCtrl = context.read<AuthController>();
+                  final uid = int.tryParse(authCtrl.user?['id']?.toString() ?? '0') ?? 0;
+                  InAppChatModal.show(
+                    context,
+                    orderCode: orderCode,
+                    currentUserId: uid,
+                    currentUserRole: 'delivery_man',
+                  );
+                },
+              ),
+            ),
+            if (customerPhone.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              IconButton(
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0xFFECFDF5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.all(10),
+                ),
+                icon: const Icon(Icons.call_rounded, color: Color(0xFF059669), size: 18),
+                onPressed: () => launchUrl(Uri.parse('tel:$customerPhone')),
+              ),
+            ],
           ],
         ),
       ],

@@ -4,10 +4,14 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/services/global_call_service.dart';
+import '../../common/screens/in_app_chat_modal.dart';
+import '../../auth/controllers/auth_controller.dart';
 import 'customer_wallet_screen.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
@@ -925,22 +929,41 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           ),
                           Row(
                             children: [
+                              // Voice Call Button
+                              IconButton(
+                                onPressed: () {
+                                  GlobalCallService.instance.openCallScreen(
+                                    context,
+                                    orderCode: widget.orderCode,
+                                    isIncoming: false,
+                                  );
+                                },
+                                icon: const Icon(Icons.phone_in_talk_rounded, color: Color(0xFF2563EB), size: 20),
+                              ),
+                              // In-App Chat Button
                               Stack(
                                 children: [
                                   IconButton(
                                     onPressed: () {
-                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fitur Chat siap digunakan')));
+                                      final authCtrl = context.read<AuthController>();
+                                      final uid = int.tryParse(authCtrl.user?['id']?.toString() ?? '0') ?? 0;
+                                      InAppChatModal.show(
+                                        context,
+                                        orderCode: widget.orderCode,
+                                        currentUserId: uid,
+                                        currentUserRole: 'customer',
+                                      );
                                     },
                                     icon: const Icon(Icons.chat_bubble_rounded, color: AppTheme.primaryRed, size: 20),
                                   ),
                                   if (unreadChats > 0)
                                     Positioned(
-                                      right: 8,
-                                      top: 8,
+                                      right: 6,
+                                      top: 6,
                                       child: Container(
                                         padding: const EdgeInsets.all(4),
                                         decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                                        child: Text('$unreadChats', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                                        child: Text('$unreadChats', style: const TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold)),
                                       ),
                                     ),
                                 ],

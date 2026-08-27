@@ -9,6 +9,7 @@ import 'features/driver/controllers/driver_controller.dart';
 import 'features/driver/screens/driver_dashboard_screen.dart';
 import 'features/merchant/controllers/merchant_controller.dart';
 import 'features/merchant/screens/merchant_dashboard_screen.dart';
+import 'core/services/global_call_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -305,12 +306,32 @@ class LocationPermissionScreen extends StatelessWidget {
   }
 }
 
-class RoleRouter extends StatelessWidget {
+class RoleRouter extends StatefulWidget {
   const RoleRouter({super.key});
+
+  @override
+  State<RoleRouter> createState() => _RoleRouterState();
+}
+
+class _RoleRouterState extends State<RoleRouter> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authCtrl = context.read<AuthController>();
+      final uId = int.tryParse(authCtrl.user?['id']?.toString() ?? '0');
+      GlobalCallService.instance.init(context, userId: uId);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final authCtrl = context.watch<AuthController>();
+    final uId = int.tryParse(authCtrl.user?['id']?.toString() ?? '0');
+    GlobalCallService.instance.updateContext(context);
+    if (uId != null && uId > 0) {
+      GlobalCallService.instance.setUserAndOrder(userId: uId);
+    }
 
     // If not logged in, open CustomerHomeScreen directly in Guest Mode (matching Web PWA)
     if (!authCtrl.isLoggedIn) {

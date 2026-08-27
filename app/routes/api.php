@@ -31,6 +31,20 @@ Router::group(['prefix' => '/api/v1'], function () {
         Router::get('/notifications', [ApiController::class, 'notifications']);
         Router::post('/delivery/location', [ApiController::class, 'updateDriverLocation']);
         Router::post('/delivery/update-location', [ApiController::class, 'updateDriverLocation']);
+
+        // Chat API
+        Router::get('/chats/messages', [\App\Controllers\ChatController::class, 'getMessages']);
+        Router::post('/chats/send', [\App\Controllers\ChatController::class, 'sendMessage']);
+        Router::post('/chats/read', [\App\Controllers\ChatController::class, 'markAsRead']);
+        Router::get('/chats/unread-count', [\App\Controllers\ChatController::class, 'unreadCount']);
+
+        // Call API
+        Router::post('/calls/initiate', [\App\Controllers\CallController::class, 'initiate']);
+        Router::get('/calls/poll', [\App\Controllers\CallController::class, 'poll']);
+        Router::post('/calls/answer', [\App\Controllers\CallController::class, 'answer']);
+        Router::post('/calls/reject', [\App\Controllers\CallController::class, 'reject']);
+        Router::post('/calls/end', [\App\Controllers\CallController::class, 'end']);
+        Router::post('/calls/ice-candidate', [\App\Controllers\CallController::class, 'iceCandidate']);
     });
 });
 
@@ -53,4 +67,18 @@ Router::group(['prefix' => '/api'], function () {
     Router::get('/notifications', [ApiController::class, 'notifications']);
     Router::post('/delivery/location', [ApiController::class, 'updateDriverLocation']);
     Router::post('/delivery/update-location', [ApiController::class, 'updateDriverLocation']);
+
+    // Chat API
+    Router::get('/chats/messages', [\App\Controllers\ChatController::class, 'getMessages']);
+    Router::post('/chats/send', [\App\Controllers\ChatController::class, 'sendMessage']);
+    Router::post('/chats/read', [\App\Controllers\ChatController::class, 'markAsRead']);
+    Router::get('/chats/unread-count', [\App\Controllers\ChatController::class, 'unreadCount']);
+
+    // Call API
+    Router::post('/calls/initiate', [\App\Controllers\CallController::class, 'initiate']);
+    Router::get('/calls/poll', [\App\Controllers\CallController::class, 'poll']);
+    Router::post('/calls/answer', [\App\Controllers\CallController::class, 'answer']);
+    Router::post('/calls/reject', [\App\Controllers\CallController::class, 'reject']);
+    Router::post('/calls/end', [\App\Controllers\CallController::class, 'end']);
+    Router::post('/calls/ice-candidate', [\App\Controllers\CallController::class, 'iceCandidate']);
 });

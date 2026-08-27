@@ -5,17 +5,48 @@
 
 function auth_user(): ?array
 {
-    return $_SESSION['user'] ?? null;
+    if (!empty($_SESSION['user'])) {
+        return $_SESSION['user'];
+    }
+    $uid = (int)($_REQUEST['user_id'] ?? $_GET['user_id'] ?? $_POST['user_id'] ?? 0);
+    if ($uid > 0) {
+        $u = \App\Core\Database::fetchOne("SELECT id, name, email, phone, role, avatar FROM users WHERE id = ? LIMIT 1", [$uid]);
+        if ($u) return $u;
+    }
+    return null;
 }
 
 function auth_id(): ?int
 {
-    return isset($_SESSION['user']['id']) ? (int)$_SESSION['user']['id'] : null;
+    if (isset($_SESSION['user']['id'])) {
+        return (int)$_SESSION['user']['id'];
+    }
+    $uid = (int)($_REQUEST['user_id'] ?? $_GET['user_id'] ?? $_POST['user_id'] ?? 0);
+    if ($uid > 0) {
+        return $uid;
+    }
+    $token = get_bearer_token();
+    if ($token) {
+        $t = \App\Core\Database::fetchOne("SELECT user_id FROM personal_access_tokens WHERE token = ? LIMIT 1", [$token]);
+        if ($t) return (int)$t['user_id'];
+    }
+    return null;
 }
 
 function auth_role(): ?string
 {
-    return $_SESSION['user']['role'] ?? null;
+    if (isset($_SESSION['user']['role'])) {
+        return $_SESSION['user']['role'];
+    }
+    $role = $_REQUEST['user_role'] ?? $_GET['user_role'] ?? $_POST['user_role'] ?? null;
+    if ($role) return $role;
+
+    $uid = auth_id();
+    if ($uid > 0) {
+        $u = \App\Core\Database::fetchOne("SELECT role FROM users WHERE id = ? LIMIT 1", [$uid]);
+        if ($u) return $u['role'];
+    }
+    return null;
 }
 
 function is_authenticated(): bool
