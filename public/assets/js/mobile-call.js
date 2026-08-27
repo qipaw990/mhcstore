@@ -1340,29 +1340,26 @@
                         this.showIncomingCall(activeCall);
                     }
 
-                    // 2. Caller receives Answer SDP from Receiver
-                    if (activeCall.status === 'connected' && isCaller && peerConnection) {
-                        if (activeCall.answer && peerConnection.signalingState === 'have-local-offer') {
+                    // 2. Caller receives Answer signal from Receiver
+                    if (activeCall.status === 'connected' && isCaller) {
+                        this.setCallConnected();
+
+                        if (peerConnection && activeCall.answer && peerConnection.signalingState === 'have-local-offer') {
                             try {
                                 let answerObj = typeof activeCall.answer === 'string' ? JSON.parse(activeCall.answer) : activeCall.answer;
                                 if (typeof answerObj === 'string') {
                                     try { answerObj = JSON.parse(answerObj); } catch (e) {}
                                 }
-                                if (answerObj) {
+                                if (answerObj && answerObj.sdp) {
                                     if (!answerObj.type || answerObj.type === 'null') {
                                         answerObj.type = 'answer';
                                     }
-                                    if (answerObj.sdp) {
-                                        await peerConnection.setRemoteDescription(new RTCSessionDescription(answerObj));
-                                        await this.flushIceCandidates(activeCall.ice_candidates);
-                                        this.setCallConnected();
-                                    }
+                                    await peerConnection.setRemoteDescription(new RTCSessionDescription(answerObj));
+                                    await this.flushIceCandidates(activeCall.ice_candidates);
                                 }
                             } catch (e) {
-                                console.error('[VoiceCall] Error setting remote answer:', e);
+                                console.warn('[VoiceCall] Setting remote answer info:', e);
                             }
-                        } else if (activeCall.answer && peerConnection.remoteDescription) {
-                            this.setCallConnected();
                         }
                     }
 

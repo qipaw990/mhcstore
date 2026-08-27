@@ -34,7 +34,6 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   bool _isConnected = false;
   bool _isEnded = false;
   bool _isMuted = false;
-  bool _isSpeakerOn = true;
   String _statusText = 'Memanggil...';
   int? _callId;
 
@@ -168,8 +167,17 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     });
   }
 
-  void _answerCall() {
+  void _answerCall() async {
     _webViewController.runJavaScript('if(window.CCGCall) window.CCGCall.answerCall();');
+    if (_callId != null) {
+      try {
+        await http.post(
+          Uri.parse('${ApiConstants.baseUrl}/calls/answer'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'call_id': _callId}),
+        );
+      } catch (_) {}
+    }
     if (mounted) {
       setState(() {
         _isConnected = true;
