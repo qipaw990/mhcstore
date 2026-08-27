@@ -104,73 +104,84 @@ class _LoginScreenState extends State<LoginScreen> {
     final authController = context.watch<AuthController>();
 
     return Scaffold(
-      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 30),
+              const SizedBox(height: 12),
               // Brand Logo Header
               Center(
                 child: Column(
                   children: [
-                    const CicalengkaGoLogo(size: 80, borderRadius: 24),
-                    const SizedBox(height: 16),
+                    const CicalengkaGoLogo(size: 60, borderRadius: 18),
+                    const SizedBox(height: 10),
                     Text(
                       'CicalengkaGO',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                             color: const Color(0xFFEE2737),
+                            fontWeight: FontWeight.bold,
                           ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       'Layanan On-Demand Multi-Vendor Terdepan',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontSize: 12,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontSize: 11,
+                            color: const Color(0xFF64748B),
                           ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 24),
 
               Text(
                 'Selamat Datang Kembali 👋',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontSize: 20,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Text(
                 'Masuk ke akun Pelanggan, Driver, atau Merchant Anda',
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: 12,
+                      color: const Color(0xFF64748B),
+                    ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
               // Username Input
               TextField(
                 controller: _usernameController,
                 keyboardType: TextInputType.emailAddress,
+                style: const TextStyle(fontSize: 13),
                 decoration: const InputDecoration(
-                  labelText: 'Email / Nomot Telepon / WA',
-                  prefixIcon: Icon(Icons.person_outline),
+                  labelText: 'Email / Nomor Telepon / WA',
+                  isDense: true,
+                  prefixIcon: Icon(Icons.person_outline, size: 20),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // Password Input
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
+                style: const TextStyle(fontSize: 13),
                 decoration: InputDecoration(
                   labelText: 'Kata Sandi',
-                  prefixIcon: const Icon(Icons.lock_outline),
+                  isDense: true,
+                  prefixIcon: const Icon(Icons.lock_outline, size: 20),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      size: 20,
                     ),
                     onPressed: () {
                       setState(() {
@@ -180,34 +191,38 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 18),
 
               // Submit Button
               SizedBox(
                 width: double.infinity,
+                height: 46,
                 child: ElevatedButton(
                   onPressed: authController.isLoading ? null : _handleLogin,
                   child: authController.isLoading
                       ? const SizedBox(
-                          width: 24,
-                          height: 24,
+                          width: 20,
+                          height: 20,
                           child: CircularProgressIndicator(
                             color: Colors.white,
-                            strokeWidth: 2.5,
+                            strokeWidth: 2,
                           ),
                         )
                       : const Text(
                           'MASUK SEKARANG',
-                          style: TextStyle(fontSize: 15, letterSpacing: 0.5),
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                         ),
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Belum memiliki akun CicalengkaGO? '),
+                  const Text(
+                    'Belum memiliki akun CicalengkaGO? ',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  ),
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -220,6 +235,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text(
                       'Daftar Baru',
                       style: TextStyle(
+                        fontSize: 12,
                         color: Color(0xFFEE2737),
                         fontWeight: FontWeight.bold,
                       ),
