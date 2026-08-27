@@ -93,6 +93,11 @@ class DeliveryController extends Controller
                     $activeOrder['store_phone'] = $store['phone'] ?? '';
                 }
             }
+            // Fetch and attach order items list for mobile driver UI
+            $activeOrder['items'] = Database::query(
+                "SELECT id, order_id, product_id, product_name, price, quantity, total_price FROM `order_items` WHERE `order_id` = ?",
+                [$activeOrder['id']]
+            );
         }
 
         // Available nearby orders in driver zone

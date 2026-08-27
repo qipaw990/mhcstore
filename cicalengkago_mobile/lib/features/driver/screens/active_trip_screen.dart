@@ -313,35 +313,79 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           // Items list
           if (items.isNotEmpty) ...[
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               decoration: BoxDecoration(
                 color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFF1F5F9)),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Item Pesanan', style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 6),
-                  ...items.take(5).map((item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 3),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.circle, size: 6, color: AppTheme.primaryRed),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            '${item['quantity'] ?? 1}x ${item['product_name'] ?? item['name'] ?? 'Menu'}',
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF334155)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.restaurant_menu_rounded, size: 14, color: AppTheme.primaryRed),
+                          SizedBox(width: 6),
+                          Text(
+                            'Rincian Item Pesanan',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                           ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                      ],
-                    ),
-                  )),
-                  if (items.length > 5)
-                    Text('+ ${items.length - 5} lainnya', style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                        child: Text(
+                          '${items.length} Menu',
+                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ...items.map((item) {
+                    final pName = item['product_name'] ?? item['name'] ?? 'Menu';
+                    final qty = item['quantity'] ?? 1;
+                    final price = double.tryParse(item['total_price']?.toString() ?? item['price']?.toString() ?? '0') ?? 0;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE2E8F0),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '${qty}x',
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              pName,
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                            ),
+                          ),
+                          if (price > 0)
+                            Text(
+                              CurrencyFormatter.formatRupiah(price),
+                              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+                            ),
+                        ],
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),
