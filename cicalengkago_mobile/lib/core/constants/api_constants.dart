@@ -9,10 +9,14 @@ class ApiConstants {
   static const String register = '$baseUrl/register';
 
   // Customer Endpoints
+  static const String homeData = '$baseUrl/home-data';
+  static const String banners = '$baseUrl/banners';
+  static const String categories = '$baseUrl/categories';
   static const String modules = '$baseUrl/modules';
   static const String stores = '$baseUrl/stores';
   static const String products = '$baseUrl/products';
   static const String cart = '$baseUrl/cart';
+  static const String cartAdd = '$domainUrl/cart/add';
   static const String checkout = '$baseUrl/checkout';
   static const String orders = '$baseUrl/orders';
   static const String wallet = '$baseUrl/wallet';

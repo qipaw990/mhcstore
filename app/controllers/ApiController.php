@@ -80,6 +80,83 @@ class ApiController extends Controller
         $this->successResponse('Daftar modul berhasil diambil', $modules);
     }
 
+    public function homeData(): void
+    {
+        $selectedModuleId = !empty($_GET['module_id']) ? (int)$_GET['module_id'] : 1;
+
+        $moduleModel = new Module();
+        $bannerModel = new \App\Models\Banner();
+        $storeModel  = new Store();
+        $productModel= new Product();
+
+        $modules = $moduleModel->activeModules();
+        $banners = $bannerModel->getActiveBanners($selectedModuleId);
+        $categories = (new Category())->getByModule($selectedModuleId);
+
+        $topRatedStores = \App\Core\Database::query("
+            SELECT s.*, m.name as module_name
+            FROM `stores` s
+            LEFT JOIN `modules` m ON s.module_id = m.id
+            WHERE s.status = 'approved'
+            ORDER BY s.rating DESC, s.order_count DESC
+            LIMIT 12
+        ");
+        foreach ($topRatedStores as &$s) {
+            attach_store_schedule_data($s);
+        }
+        unset($s);
+
+        $recommendedProducts = $productModel->getRecommended(12);
+        if (empty($recommendedProducts)) {
+            $recommendedProducts = \App\Core\Database::query("
+                SELECT p.*, s.name as store_name, s.is_open as store_is_open 
+                FROM `products` p 
+                JOIN `stores` s ON p.store_id = s.id 
+                WHERE p.status = 1 AND s.status = 'approved' 
+                ORDER BY p.id DESC LIMIT 12
+            ");
+        }
+        foreach ($recommendedProducts as &$p) {
+            $p['final_price'] = $productModel->calculateFinalPrice($p);
+        }
+        unset($p);
+
+        $discountedProducts = \App\Core\Database::query("
+            SELECT p.*, s.name as store_name, s.is_open as store_is_open
+            FROM `products` p
+            JOIN `stores` s ON p.store_id = s.id
+            WHERE p.status = 1 AND s.status = 'approved' AND p.discount > 0
+            ORDER BY p.discount DESC LIMIT 10
+        ");
+        foreach ($discountedProducts as &$p) {
+            $p['final_price'] = $productModel->calculateFinalPrice($p);
+        }
+        unset($p);
+
+        $this->successResponse('Home data berhasil diambil', [
+            'modules'             => $modules,
+            'banners'             => $banners,
+            'categories'          => $categories,
+            'top_rated_stores'    => $topRatedStores,
+            'recommended_products'=> $recommendedProducts,
+            'discounted_products' => $discountedProducts,
+        ]);
+    }
+
+    public function banners(): void
+    {
+        $selectedModuleId = !empty($_GET['module_id']) ? (int)$_GET['module_id'] : 1;
+        $banners = (new \App\Models\Banner())->getActiveBanners($selectedModuleId);
+        $this->successResponse('Daftar banner berhasil diambil', $banners);
+    }
+
+    public function categories(): void
+    {
+        $selectedModuleId = !empty($_GET['module_id']) ? (int)$_GET['module_id'] : 1;
+        $categories = (new Category())->getByModule($selectedModuleId);
+        $this->successResponse('Daftar kategori berhasil diambil', $categories);
+    }
+
     public function stores(): void
     {
         $moduleId = !empty($_GET['module_id']) ? (int)$_GET['module_id'] : 1;
