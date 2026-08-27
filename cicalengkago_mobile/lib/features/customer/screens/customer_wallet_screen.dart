@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/constants/api_constants.dart';
+import '../../../core/network/api_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../controllers/customer_controller.dart';
+import 'in_app_payment_screen.dart';
 
 class CustomerWalletScreen extends StatefulWidget {
   const CustomerWalletScreen({super.key});
@@ -428,12 +431,65 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
     );
   }
 
-  void _initiateTopUp(BuildContext context, int amount) {
-    // Open web wallet for Midtrans payment
-    launchUrl(
-      Uri.parse('https://cicago.store/wallet?topup=$amount'),
-      mode: LaunchMode.externalApplication,
+  Future<void> _initiateTopUp(BuildContext context, int amount) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: AppTheme.primaryRed),
+      ),
     );
+
+    try {
+      final res = await ApiService.post(ApiConstants.paymentTopupSnap, {
+        'amount': amount,
+      });
+
+      if (context.mounted) {
+        Navigator.pop(context); // Dismiss loading dialog
+      }
+
+      if (res['success'] == true && res['data'] != null) {
+        final redirectUrl = res['data']['redirect_url']?.toString() ??
+            'https://app.sandbox.midtrans.com/snap/v2/vtweb/${res['data']['snap_token']}';
+        final orderId = res['data']['order_id']?.toString() ?? '';
+
+        if (context.mounted) {
+          final completed = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => InAppPaymentScreen(
+                paymentUrl: redirectUrl,
+                orderId: orderId,
+                amount: amount.toDouble(),
+                title: 'Top Up CicalengkaPay',
+                onPaymentComplete: () {
+                  context.read<CustomerController>().fetchWallet();
+                },
+              ),
+            ),
+          );
+
+          if (completed == true && context.mounted) {
+            context.read<CustomerController>().fetchWallet();
+          }
+        }
+        return;
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(res['message'] ?? 'Gagal membuat tiket pembayaran Top-Up.')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Terjadi kesalahan: $e')),
+        );
+      }
+    }
   }
 
   Widget _buildMutasiTab(List<dynamic> transactions) {
