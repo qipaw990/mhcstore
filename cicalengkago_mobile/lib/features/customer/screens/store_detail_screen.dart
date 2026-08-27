@@ -28,11 +28,12 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
   }
 
   Future<void> _fetchStoreDetail() async {
-    final res = await ApiService.get('${ApiConstants.stores}/${widget.storeId}');
+    final res = await ApiService.get('${ApiConstants.storeDetail}/${widget.storeId}');
     if (res['success'] == true && res['data'] != null) {
+      final data = res['data'];
       setState(() {
-        _storeData = res['data']['store'];
-        _products = res['data']['products'] ?? [];
+        _storeData = data['store'] is Map<String, dynamic> ? data['store'] : (data is Map<String, dynamic> ? data : {});
+        _products = data['products'] is List ? data['products'] : [];
         _isLoading = false;
       });
     } else {
@@ -54,7 +55,11 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     }
 
     final store = _storeData ?? {};
-    final coverUrl = ApiConstants.formatImageUrl(store['cover_photo']?.toString() ?? store['logo']?.toString());
+    final rawCover = store['cover_photo']?.toString();
+    final rawLogo = store['logo']?.toString();
+    final coverUrl = ApiConstants.formatImageUrl(
+      (rawCover != null && rawCover.trim().isNotEmpty) ? rawCover : rawLogo
+    );
     final isOpen = store['is_open'] == 1 || store['is_open'] == true || store['is_open'] == '1';
 
     return Scaffold(
@@ -67,7 +72,10 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
               background: CachedNetworkImage(
                 imageUrl: coverUrl,
                 fit: BoxFit.cover,
-                errorWidget: (_, url, error) => Container(color: AppTheme.primaryRed),
+                errorWidget: (_, url, error) => Container(
+                  color: AppTheme.primaryRed,
+                  child: const Center(child: Icon(Icons.storefront_rounded, size: 60, color: Colors.white70)),
+                ),
               ),
             ),
           ),
@@ -78,14 +86,33 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      if (rawLogo != null && rawLogo.trim().isNotEmpty) ...[
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: CachedNetworkImage(
+                            imageUrl: ApiConstants.formatImageUrl(rawLogo),
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.cover,
+                            errorWidget: (_, __, ___) => Container(
+                              width: 48,
+                              height: 48,
+                              color: Colors.grey[200],
+                              child: const Icon(Icons.store, size: 24, color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
                       Expanded(
                         child: Text(
                           store['name'] ?? 'Mitra Resto',
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
