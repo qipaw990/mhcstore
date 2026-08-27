@@ -54,6 +54,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final authController = context.watch<AuthController>();
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Buat Akun Pelanggan'),
@@ -91,7 +92,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(
                   labelText: 'Alamat Email',
-                  prefixIcon: Icon(Icons.email_outline),
+                  prefixIcon: Icon(Icons.email_outlined),
                 ),
               ),
               const SizedBox(height: 16),
