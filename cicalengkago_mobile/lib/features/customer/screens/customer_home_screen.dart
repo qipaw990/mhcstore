@@ -32,14 +32,14 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   Timer? _bannerTimer;
 
   final List<Map<String, dynamic>> _categoriesGrid = const [
-    {'name': 'CicaFood', 'icon': Icons.restaurant_rounded, 'color': Color(0xFF000000), 'bgColor': Color(0xFFEFEFEF), 'query': 'Ayam'},
-    {'name': 'CicaMart', 'icon': Icons.shopping_bag_rounded, 'color': Color(0xFF059669), 'bgColor': Color(0xFFE6F4EA), 'query': 'Sembako'},
-    {'name': 'CicaRide', 'icon': Icons.two_wheeler_rounded, 'color': Color(0xFF0F172A), 'bgColor': Color(0xFFF1F5F9), 'query': 'Ojek'},
-    {'name': 'CicaSend', 'icon': Icons.local_shipping_rounded, 'color': Color(0xFFEA580C), 'bgColor': Color(0xFFFFF7ED), 'query': 'Kurir'},
-    {'name': 'Seblak Pedas', 'icon': Icons.local_fire_department_rounded, 'color': Color(0xFFDC2626), 'bgColor': Color(0xFFFEF2F2), 'query': 'Seblak'},
-    {'name': 'Bakso & Mie', 'icon': Icons.soup_kitchen_rounded, 'color': Color(0xFF0284C7), 'bgColor': Color(0xFFF0F9FF), 'query': 'Bakso'},
-    {'name': 'Kopi & Cafe', 'icon': Icons.local_cafe_rounded, 'color': Color(0xFF78350F), 'bgColor': Color(0xFFFEF3C7), 'query': 'Kopi'},
-    {'name': 'Promo Heboh', 'icon': Icons.local_offer_rounded, 'color': Color(0xFFD97706), 'bgColor': Color(0xFFFFFBEB), 'query': 'Promo'},
+    {'name': 'Ayam & Bebek', 'icon': Icons.restaurant_rounded, 'color': Color(0xFF000000), 'bgColor': Color(0xFFF3F3F3), 'query': 'Ayam'},
+    {'name': 'Seblak & Pedas', 'icon': Icons.local_fire_department_rounded, 'color': Color(0xFF000000), 'bgColor': Color(0xFFF3F3F3), 'query': 'Seblak'},
+    {'name': 'Bakso & Mie', 'icon': Icons.soup_kitchen_rounded, 'color': Color(0xFF000000), 'bgColor': Color(0xFFF3F3F3), 'query': 'Bakso'},
+    {'name': 'Nasi & Lauk', 'icon': Icons.rice_bowl_rounded, 'color': Color(0xFF000000), 'bgColor': Color(0xFFF3F3F3), 'query': 'Nasi Goreng'},
+    {'name': 'Kopi & Cafe', 'icon': Icons.local_cafe_rounded, 'color': Color(0xFF000000), 'bgColor': Color(0xFFF3F3F3), 'query': 'Kopi'},
+    {'name': 'Snack & Boba', 'icon': Icons.fastfood_rounded, 'color': Color(0xFF000000), 'bgColor': Color(0xFFF3F3F3), 'query': 'Snack'},
+    {'name': 'Sate & Bakaran', 'icon': Icons.kebab_dining_rounded, 'color': Color(0xFF000000), 'bgColor': Color(0xFFF3F3F3), 'query': 'Sate'},
+    {'name': 'Aneka Minuman', 'icon': Icons.local_drink_rounded, 'color': Color(0xFF000000), 'bgColor': Color(0xFFF3F3F3), 'query': 'Minuman'},
   ];
 
   final List<Map<String, String>> _trendingChips = const [
@@ -188,7 +188,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
 
           return BottomNavigationBar(
             currentIndex: _currentIndex,
-            selectedItemColor: AppTheme.primaryRed,
+            selectedItemColor: AppTheme.inkBlack,
             unselectedItemColor: const Color(0xFF94A3B8),
             selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
             unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
@@ -203,17 +203,17 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             items: [
               const BottomNavigationBarItem(
                 icon: Icon(Icons.grid_view_rounded),
-                activeIcon: Icon(Icons.grid_view_rounded, color: AppTheme.primaryRed),
+                activeIcon: Icon(Icons.grid_view_rounded, color: AppTheme.inkBlack),
                 label: 'Beranda',
               ),
               const BottomNavigationBarItem(
                 icon: Icon(Icons.receipt_long_outlined),
-                activeIcon: Icon(Icons.receipt_long_rounded, color: AppTheme.primaryRed),
+                activeIcon: Icon(Icons.receipt_long_rounded, color: AppTheme.inkBlack),
                 label: 'Pesanan',
               ),
               const BottomNavigationBarItem(
                 icon: Icon(Icons.account_balance_wallet_outlined),
-                activeIcon: Icon(Icons.account_balance_wallet_rounded, color: AppTheme.primaryRed),
+                activeIcon: Icon(Icons.account_balance_wallet_rounded, color: AppTheme.inkBlack),
                 label: 'Dompet',
               ),
               BottomNavigationBarItem(
@@ -228,12 +228,12 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                         child: Container(
                           width: 10,
                           height: 10,
-                          decoration: const BoxDecoration(color: AppTheme.primaryRed, shape: BoxShape.circle),
+                          decoration: const BoxDecoration(color: AppTheme.inkBlack, shape: BoxShape.circle),
                         ),
                       ),
                   ],
                 ),
-                activeIcon: const Icon(Icons.person_rounded, color: AppTheme.primaryRed),
+                activeIcon: const Icon(Icons.person_rounded, color: AppTheme.inkBlack),
                 label: 'Profil',
               ),
             ],
@@ -529,10 +529,10 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: AppTheme.primaryRed.withOpacity(0.08),
+              color: const Color(0xFFF3F3F3),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: AppTheme.primaryRed, size: 20),
+            child: Icon(icon, color: AppTheme.inkBlack, size: 20),
           ),
           const SizedBox(height: 5),
           Text(
@@ -575,7 +575,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               ),
               child: Row(
                 children: const [
-                  Icon(Icons.search_rounded, size: 20, color: AppTheme.primaryRed),
+                  Icon(Icons.search_rounded, size: 20, color: AppTheme.inkBlack),
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -596,7 +596,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               children: [
                 const Text(
                   '🔥 TRENDING: ',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTheme.primaryRed),
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTheme.inkBlack),
                 ),
                 ..._trendingChips.map((chip) {
                   return Padding(
@@ -645,10 +645,10 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             children: [
               Row(
                 children: const [
-                  Icon(Icons.widgets_rounded, size: 18, color: AppTheme.primaryRed),
+                  Icon(Icons.restaurant_rounded, size: 18, color: AppTheme.inkBlack),
                   SizedBox(width: 6),
                   Text(
-                    'Layanan Utama',
+                    'Kategori Kuliner',
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                 ],
@@ -658,7 +658,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 onPressed: () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerSearchScreen()));
                 },
-                child: const Text('Semua Layanan', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryRed)),
+                child: const Text('Semua Kuliner', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.inkBlack)),
               ),
             ],
           ),
