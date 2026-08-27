@@ -23,7 +23,6 @@
     let remoteAudioSourceNode = null;
     let ringtoneTimer = null;
 
-    const AGORA_APP_ID = "3a5525c3fa5c4c9597edb132e0e092ec";
     let agoraClient = null;
     let localAgoraTrack = null;
 
@@ -33,7 +32,11 @@
             return false;
         }
 
+        const activeAgoraAppId = window.AGORA_APP_ID || "aab8282fe78a485f9c4e4390fb8e6473";
+
         try {
+            try { AgoraRTC.setLogLevel(3); } catch (e) {}
+
             if (agoraClient) {
                 try { await agoraClient.leave(); } catch (e) {}
                 agoraClient = null;
@@ -70,7 +73,7 @@
 
             const cleanChannel = (channelName || 'default_room').replace(/[^a-zA-Z0-9_\-]/g, '');
             console.log('[AgoraVoice] Joining Agora channel:', cleanChannel);
-            await agoraClient.join(AGORA_APP_ID, cleanChannel, null, null);
+            await agoraClient.join(activeAgoraAppId, cleanChannel, null, null);
             console.log('[AgoraVoice] Joined Agora channel successfully!');
 
             localAgoraTrack = await AgoraRTC.createMicrophoneAudioTrack({
@@ -81,7 +84,7 @@
             console.log('[AgoraVoice] Published local microphone track to Agora channel!');
             return true;
         } catch (err) {
-            console.error('[AgoraVoice] Agora join error:', err);
+            console.warn('[AgoraVoice] Agora join info (using WebRTC stream fallback):', err.message || err);
             return false;
         }
     }

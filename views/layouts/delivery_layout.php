@@ -41,6 +41,7 @@ if (!isset($driverRating)) {
 
     <script>
         window.BASE_URL = "<?= $baseUrl ?>";
+        window.AGORA_APP_ID = "<?= $appConfig['agora_app_id'] ?? 'aab8282fe78a485f9c4e4390fb8e6473' ?>";
     </script>
 </head>
 <body style="background-color: #f1f5f9;">
