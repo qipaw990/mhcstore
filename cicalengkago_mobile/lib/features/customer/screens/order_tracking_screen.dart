@@ -253,9 +253,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         ],
       ),
       body: isCanceled
-          ? _buildCanceledView(order, cancellationReason, paymentMethod, paymentStatus, totalAmount)
+          ? _buildCanceledView(order, live, cancellationReason, paymentMethod, paymentStatus, totalAmount)
           : (isUnpaidOnline
-              ? _buildUnpaidView(totalAmount)
+              ? _buildUnpaidView(order, live, totalAmount)
               : _buildActiveTrackingView(
                   centerPoint: centerPoint,
                   storeLat: storeLat,
@@ -278,6 +278,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   totalAmount: totalAmount,
                   batchInfo: batchInfo,
                   order: order,
+                  live: live,
                 )),
     );
   }
@@ -323,7 +324,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     );
   }
 
-  Widget _buildUnpaidView(double totalAmount) {
+  Widget _buildUnpaidView(Map<String, dynamic> order, Map<String, dynamic> live, double totalAmount) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -374,6 +375,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 14),
+
+                // Store & Items Card
+                _buildStoreAndItemsCard(order, live),
+
                 const SizedBox(height: 14),
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -443,6 +449,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
   Widget _buildCanceledView(
     Map<String, dynamic> order,
+    Map<String, dynamic> live,
     String cancellationReason,
     String paymentMethod,
     String paymentStatus,
@@ -501,6 +508,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               ],
             ),
           ),
+
+          // Store & Purchased Items Card
+          _buildStoreAndItemsCard(order, live),
+
+          const SizedBox(height: 14),
 
           // Refund Status Body
           Container(
@@ -613,6 +625,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     required double totalAmount,
     required Map<String, dynamic>? batchInfo,
     required Map<String, dynamic> order,
+    required Map<String, dynamic> live,
   }) {
     // Calculate live distance and estimated ETA
     final distKm = const Distance().as(LengthUnit.Kilometer, LatLng(driverLat, driverLng), LatLng(custLat, custLng));
@@ -1032,6 +1045,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   // Delivery Stepper Progress (4 Steps matching order_tracking.php)
                   _buildFourStepStepper(status),
 
+                  // Store & Purchased Items Details Card
+                  _buildStoreAndItemsCard(order, live),
+
                   const SizedBox(height: 16),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
                   const SizedBox(height: 14),
@@ -1180,6 +1196,183 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           );
         }),
       ],
+    );
+  }
+
+  Widget _buildStoreAndItemsCard(Map<String, dynamic> order, Map<String, dynamic> live) {
+    final liveStore = live['store'] is Map ? (live['store'] as Map) : {};
+    final storeName = liveStore['name']?.toString() ??
+        order['store_name']?.toString() ??
+        'Mitra Resto CicalengkaGO';
+    final storeAddress = liveStore['address']?.toString() ??
+        order['store_address']?.toString() ??
+        'Cicalengka, Kab. Bandung';
+    final storePhone = order['store_phone']?.toString() ?? '';
+
+    final List items = (order['items'] as List?) ?? [];
+    final orderNotes = order['order_notes']?.toString() ?? '';
+
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Store Header
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppTheme.inkBlack,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        storeName,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        storeAddress,
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                if (storePhone.isNotEmpty)
+                  IconButton(
+                    onPressed: () => launchUrl(Uri.parse('tel:$storePhone')),
+                    icon: const Icon(Icons.call_rounded, color: Color(0xFF16A34A), size: 18),
+                    tooltip: 'Hubungi Toko',
+                  ),
+              ],
+            ),
+          ),
+
+          // Items Purchased List
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'RINCIAN ITEM (${items.isEmpty ? 1 : items.length})',
+                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF64748B), letterSpacing: 0.5),
+                    ),
+                    const Icon(Icons.shopping_bag_outlined, size: 14, color: Color(0xFF64748B)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+
+                if (items.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 4),
+                    child: Text('1x Pesanan CicalengkaGO', style: TextStyle(fontSize: 12, color: AppTheme.inkBlack, fontWeight: FontWeight.w600)),
+                  )
+                else
+                  ...items.map((item) {
+                    final name = item['product_name'] ?? item['name'] ?? 'Menu Kuliner';
+                    final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
+                    final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
+                    final itemTotal = price * qty;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppTheme.inkBlack,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '${qty}x',
+                              style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name.toString(),
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                                ),
+                                if (item['variant'] != null && item['variant'].toString().isNotEmpty)
+                                  Text(
+                                    'Varian: ${item['variant']}',
+                                    style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          if (price > 0)
+                            Text(
+                              CurrencyFormatter.formatRupiah(itemTotal),
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.inkBlack),
+                            ),
+                        ],
+                      ),
+                    );
+                  }),
+
+                if (orderNotes.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFBEB),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFFCD34D)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.edit_note_rounded, size: 16, color: Color(0xFFD97706)),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Catatan: $orderNotes',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF92400E), fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
