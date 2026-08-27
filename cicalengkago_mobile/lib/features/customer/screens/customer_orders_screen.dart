@@ -231,6 +231,7 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
 
     final List items = (order['items'] as List?) ?? [];
     final storeName = order['store_name']?.toString() ?? 'Mitra Resto CicalengkaGO';
+    final bool isParcel = order['order_type']?.toString() == 'parcel';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
