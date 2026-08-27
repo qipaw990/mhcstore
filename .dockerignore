@@ -7,3 +7,11 @@ docker-compose.yml
 update.sh
 tmp/
 database/backups/
+cicalengkago_mobile/
+public/uploads/
+node_modules/
+vendor/
+.wwebjs_auth/
+.idea/
+.vscode/
+scratch/
