@@ -110,7 +110,7 @@ class CallController extends Controller
         $userId   = auth_id() ?: 0;
         $orderCode = sanitize(trim($_GET['order_code'] ?? ''));
 
-        $whereSql = "vc.created_at >= NOW() - INTERVAL 5 MINUTE AND vc.status IN ('calling', 'connected')";
+        $whereSql = "vc.created_at >= NOW() - INTERVAL 5 MINUTE AND vc.status IN ('calling', 'connected', 'ended', 'rejected')";
         $params = [];
 
         if (!empty($orderCode)) {
@@ -191,13 +191,13 @@ class CallController extends Controller
     {
         $data   = $this->getPostData();
         $callId = (int)($data['call_id'] ?? 0);
+        $orderCode = sanitize(trim($data['order_code'] ?? ''));
 
-        if (!$callId) {
-            $this->errorResponse('ID panggilan tidak valid.');
-            return;
+        if ($callId) {
+            Database::update('voice_calls', ['status' => 'rejected'], 'id = ?', [$callId]);
+        } elseif (!empty($orderCode)) {
+            Database::execute("UPDATE voice_calls SET status = 'rejected' WHERE order_code = ? AND status IN ('calling', 'connected')", [$orderCode]);
         }
-
-        Database::update('voice_calls', ['status' => 'rejected'], 'id = ?', [$callId]);
         $this->successResponse('Panggilan ditolak');
     }
 
@@ -208,13 +208,13 @@ class CallController extends Controller
     {
         $data   = $this->getPostData();
         $callId = (int)($data['call_id'] ?? 0);
+        $orderCode = sanitize(trim($data['order_code'] ?? ''));
 
-        if (!$callId) {
-            $this->errorResponse('ID panggilan tidak valid.');
-            return;
+        if ($callId) {
+            Database::update('voice_calls', ['status' => 'ended'], 'id = ?', [$callId]);
+        } elseif (!empty($orderCode)) {
+            Database::execute("UPDATE voice_calls SET status = 'ended' WHERE order_code = ? AND status IN ('calling', 'connected')", [$orderCode]);
         }
-
-        Database::update('voice_calls', ['status' => 'ended'], 'id = ?', [$callId]);
         $this->successResponse('Panggilan diakhiri');
     }
 

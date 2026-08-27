@@ -1161,12 +1161,12 @@
         // Reject Call
         rejectCall: async function () {
             stopRingtone();
-            if (currentCallId) {
+            if (currentCallId || currentOrderCode) {
                 try {
                     await fetch((window.BASE_URL || '') + '/calls/reject', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ call_id: currentCallId })
+                        body: JSON.stringify({ call_id: currentCallId, order_code: currentOrderCode })
                     });
                 } catch (e) {}
             }
@@ -1176,12 +1176,12 @@
         // End Call
         endCall: async function () {
             stopRingtone();
-            if (currentCallId) {
+            if (currentCallId || currentOrderCode) {
                 try {
                     await fetch((window.BASE_URL || '') + '/calls/end', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ call_id: currentCallId })
+                        body: JSON.stringify({ call_id: currentCallId, order_code: currentOrderCode })
                     });
                 } catch (e) {}
             }

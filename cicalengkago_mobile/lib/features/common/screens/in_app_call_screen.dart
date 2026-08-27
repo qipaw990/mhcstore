@@ -102,7 +102,9 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       );
 
     if (_webViewController.platform is AndroidWebViewController) {
-      (_webViewController.platform as AndroidWebViewController).setOnPlatformPermissionRequest(
+      final androidController = _webViewController.platform as AndroidWebViewController;
+      androidController.setMediaPlaybackRequiresUserGesture(false);
+      androidController.setOnPlatformPermissionRequest(
         (request) {
           debugPrint('[VoiceCallWebView] Granting Android mic permission: ${request.types}');
           request.grant();
@@ -116,7 +118,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   void _startStatusPolling() {
     _statusTimer?.cancel();
     _pollCount = 0;
-    _statusTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
+    _statusTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
       if (_isEnded) return;
       _pollCount++;
       try {
@@ -146,9 +148,9 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
               _handleCallEnded('Panggilan Diakhiri');
             }
           } else {
-            // Only end call if it was previously connected or after at least 5 poll attempts (10s) if callId was established
-            if (_isConnected || (_callId != null && _pollCount > 5)) {
-              _handleCallEnded('Panggilan Selesai');
+            // Call cleared or ended on server
+            if (_isConnected || _callId != null || _pollCount > 1) {
+              _handleCallEnded('Panggilan Diakhiri');
             }
           }
         }
@@ -187,13 +189,27 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     _startTimer();
   }
 
-  void _rejectCall() {
+  void _rejectCall() async {
     _webViewController.runJavaScript('if(window.CCGCall) window.CCGCall.rejectCall();');
+    try {
+      await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/calls/reject'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'call_id': _callId, 'order_code': widget.orderCode}),
+      );
+    } catch (_) {}
     _handleCallEnded('Panggilan Ditolak');
   }
 
-  void _endCall() {
+  void _endCall() async {
     _webViewController.runJavaScript('if(window.CCGCall) window.CCGCall.endCall();');
+    try {
+      await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/calls/end'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'call_id': _callId, 'order_code': widget.orderCode}),
+      );
+    } catch (_) {}
     _handleCallEnded('Panggilan Diakhiri');
   }
 
