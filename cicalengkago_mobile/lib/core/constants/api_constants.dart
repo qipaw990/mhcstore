@@ -1,24 +1,26 @@
 class ApiConstants {
   // Base domain — sesuai cicago.store production
   static const String domainUrl    = 'https://cicago.store';
-  static const String imageBaseUrl = '$domainUrl/public';
+  static const String imageBaseUrl = domainUrl;
 
   /// Helper pintar untuk memformat URL Gambar agar selalu valid
   static String formatImageUrl(String? rawUrl) {
     if (rawUrl == null || rawUrl.trim().isEmpty) {
       return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80';
     }
-    final path = rawUrl.trim();
+    String path = rawUrl.trim();
     if (path.startsWith('http://') || path.startsWith('https://')) {
       return path;
     }
-    if (path.startsWith('/')) {
-      return '$domainUrl$path';
-    }
     if (path.startsWith('public/')) {
-      return '$domainUrl/$path';
+      path = path.substring(7);
+    } else if (path.startsWith('/public/')) {
+      path = path.substring(8);
     }
-    return '$domainUrl/public/$path';
+    if (!path.startsWith('/')) {
+      path = '/$path';
+    }
+    return '$domainUrl$path';
   }
 
   // ==========================================

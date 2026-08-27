@@ -290,12 +290,17 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                         );
                       },
                       child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(Icons.location_on_rounded, size: 13, color: Colors.amberAccent),
                           const SizedBox(width: 3),
-                          Text(
-                            'Cicalengka, Kab. Bandung ▾',
-                            style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 11, fontWeight: FontWeight.w600),
+                          Flexible(
+                            child: Text(
+                              'Cicalengka, Kab. Bandung ▾',
+                              style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 11, fontWeight: FontWeight.w600),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
                           ),
                         ],
                       ),
