@@ -111,6 +111,17 @@ class DriverController extends ChangeNotifier {
         final availList = (data['available_orders'] as List<dynamic>?) ?? [];
         _availableOrders = availList;
 
+        if (data['driver'] != null) {
+          _driverProfile = data['driver'] as Map<String, dynamic>;
+        }
+
+        if (data['wallet'] != null) {
+          _earnings = {
+            'wallet': data['wallet'],
+            'driver': data['driver'],
+          };
+        }
+
         // Sync online status from server
         final serverOnline = data['driver']?['is_online'];
         if (serverOnline != null) {
