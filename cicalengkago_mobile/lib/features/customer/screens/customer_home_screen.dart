@@ -434,11 +434,14 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           GridView.builder(
-                            crossAxisCount: 4,
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 10,
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 4,
+                              mainAxisSpacing: 12,
+                              crossAxisSpacing: 10,
+                              childAspectRatio: 0.9,
+                            ),
                             itemCount: _categoriesGrid.length,
                             itemBuilder: (context, index) {
                               final cat = _categoriesGrid[index];
