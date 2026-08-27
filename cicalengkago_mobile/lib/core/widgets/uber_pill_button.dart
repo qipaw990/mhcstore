@@ -12,6 +12,10 @@ class UberPillButton extends StatelessWidget {
   final bool fullWidth;
   final double paddingVertical;
   final double paddingHorizontal;
+  final Color? bgColor;
+  final Color? backgroundColor;
+  final Color? textColor;
+  final Color? fgColor;
 
   const UberPillButton({
     super.key,
@@ -22,6 +26,10 @@ class UberPillButton extends StatelessWidget {
     this.fullWidth = false,
     this.paddingVertical = 14,
     this.paddingHorizontal = 20,
+    this.bgColor,
+    this.backgroundColor,
+    this.textColor,
+    this.fgColor,
   });
 
   @override
@@ -57,6 +65,9 @@ class UberPillButton extends StatelessWidget {
         fg = AppTheme.onPrimary;
         break;
     }
+
+    bg = bgColor ?? backgroundColor ?? bg;
+    fg = textColor ?? fgColor ?? fg;
 
     final childWidget = Row(
       mainAxisSize: fullWidth ? MainAxisSize.max : MainAxisSize.min,
