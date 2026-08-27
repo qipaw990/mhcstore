@@ -86,7 +86,15 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         NavigationDelegate(
           onPageFinished: (url) {
             if (widget.isIncoming) {
-              _webViewController.runJavaScript('if(window.CCGCall) window.CCGCall.init("${widget.orderCode}");');
+              final callDataStr = widget.callData != null ? jsonEncode(widget.callData) : 'null';
+              _webViewController.runJavaScript('''
+                if (window.CCGCall) {
+                  window.CCGCall.init("${widget.orderCode}");
+                  if ($callDataStr) {
+                    window.CCGCall.setIncomingCallData($callDataStr);
+                  }
+                }
+              ''');
             } else {
               _webViewController.runJavaScript('if(window.CCGCall) { window.CCGCall.init("${widget.orderCode}"); window.CCGCall.makeCall("${widget.orderCode}"); }');
             }

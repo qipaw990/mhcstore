@@ -960,12 +960,39 @@
             }
         },
 
+        setIncomingCallData: function (callData) {
+            if (!callData) return;
+            if (typeof callData === 'string') {
+                try { callData = JSON.parse(callData); } catch (e) {}
+            }
+            currentCallId = callData.id || currentCallId;
+            currentCallOffer = callData.offer || currentCallOffer;
+            currentCallData = callData || currentCallData;
+            isCaller = false;
+        },
+
         // Answer Call (Receiver side)
         answerCall: async function () {
             stopRingtone();
             document.getElementById('ccgCallSubtext').innerText = 'Menghubungkan...';
 
             unlockAudioElement();
+
+            if (!currentCallOffer && (currentOrderCode || currentCallId)) {
+                try {
+                    const pollUrl = currentOrderCode
+                        ? ((window.BASE_URL || '') + `/calls/poll?order_code=${encodeURIComponent(currentOrderCode)}`)
+                        : ((window.BASE_URL || '') + `/calls/poll`);
+                    const pollRes = await fetch(pollUrl);
+                    const pollJson = await pollRes.json();
+                    if (pollJson.success && pollJson.data && pollJson.data.active_call) {
+                        const activeCall = pollJson.data.active_call;
+                        currentCallId = activeCall.id;
+                        currentCallOffer = activeCall.offer;
+                        currentCallData = activeCall;
+                    }
+                } catch (e) {}
+            }
 
             localStream = await this.ensureMicPermission();
             if (!localStream) {
