@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
-import '../../auth/controllers/auth_controller.dart';
 import '../controllers/driver_controller.dart';
 
 class DriverEarningsScreen extends StatefulWidget {
@@ -140,7 +139,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: Colors.amber.withOpacity(0.15),
+                          color: Colors.amber.withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.star_rounded, color: Colors.amber, size: 20),
@@ -186,7 +185,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: const Color(0xFFEE2737).withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8)),
+          BoxShadow(color: const Color(0xFFEE2737).withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8)),
         ],
       ),
       child: Column(
@@ -201,7 +200,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Text('DOMPET MITRA DRIVER', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
@@ -217,7 +216,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 22),
@@ -234,7 +233,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
                 child: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Column(
@@ -251,7 +250,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
                 child: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Column(
@@ -365,7 +364,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -393,7 +392,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
               Container(
                 margin: const EdgeInsets.only(top: 3),
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
                 child: Row(
                   children: [
                     Icon(icon, color: color, size: 10),

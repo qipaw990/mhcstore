@@ -119,7 +119,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
       decoration: BoxDecoration(
         color: statusInfo['bgColor'] as Color,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: (statusInfo['color'] as Color).withOpacity(0.3)),
+        border: Border.all(color: (statusInfo['color'] as Color).withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -127,7 +127,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              color: (statusInfo['color'] as Color).withOpacity(0.15),
+              color: (statusInfo['color'] as Color).withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: Icon(statusInfo['icon'] as IconData, color: statusInfo['color'] as Color, size: 24),
@@ -151,7 +151,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: (statusInfo['color'] as Color).withOpacity(0.15),
+              color: (statusInfo['color'] as Color).withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
