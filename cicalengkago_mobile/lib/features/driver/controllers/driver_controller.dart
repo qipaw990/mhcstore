@@ -99,8 +99,12 @@ class DriverController extends ChangeNotifier {
       final res = await ApiService.get(ApiConstants.driverDashboard);
       if (res['success'] == true && res['data'] != null) {
         final data = res['data'] as Map<String, dynamic>;
-        _availableOrders = (data['available_orders'] as List<dynamic>?) ?? [];
-        _activeTrip = data['active_trip'] as Map<String, dynamic>?;
+        final activeData = data['active_trip'] ?? data['active_order'];
+        if (activeData is Map<String, dynamic>) {
+          _activeTrip = activeData;
+        } else {
+          _activeTrip = null;
+        }
         
         // Sync online status from server
         final serverOnline = data['driver']?['is_online'];

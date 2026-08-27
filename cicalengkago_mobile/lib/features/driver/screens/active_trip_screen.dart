@@ -30,11 +30,26 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     final orderId = int.tryParse(trip['id']?.toString() ?? '0') ?? 0;
     final status = trip['order_status'] ?? 'accepted';
     final orderCode = trip['order_code'] ?? orderId.toString();
-    final storeName = trip['store_name'] ?? 'Mitra Resto';
+    final storeName = trip['store_name'] ?? 'Mitra Resto Cicalengka';
     final storeAddress = trip['store_address'] ?? 'Cicalengka';
-    final customerName = trip['customer_name'] ?? 'Pelanggan';
-    final deliveryAddress = trip['delivery_address'] ?? 'Cicalengka';
-    final customerPhone = trip['customer_phone'] ?? '';
+
+    final rawDeliv = trip['delivery_address'];
+    String deliveryAddress = 'Cicalengka';
+    String customerName = trip['customer_name'] ?? 'Pelanggan Cicalengka';
+    String customerPhone = trip['customer_phone'] ?? '';
+
+    if (rawDeliv is Map) {
+      deliveryAddress = rawDeliv['address']?.toString() ?? 'Cicalengka';
+      if (rawDeliv['contact_person_name'] != null && rawDeliv['contact_person_name'].toString().isNotEmpty) {
+        customerName = rawDeliv['contact_person_name'].toString();
+      }
+      if (rawDeliv['contact_person_number'] != null && rawDeliv['contact_person_number'].toString().isNotEmpty) {
+        customerPhone = rawDeliv['contact_person_number'].toString();
+      }
+    } else if (rawDeliv is String) {
+      deliveryAddress = rawDeliv;
+    }
+
     final deliveryCharge = double.tryParse(trip['delivery_charge']?.toString() ?? '0') ?? 0;
 
     // Items list

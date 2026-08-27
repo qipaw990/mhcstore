@@ -70,6 +70,29 @@ class DeliveryController extends Controller
                     $activeOrder = null;
                 }
             }
+            if (empty($activeOrder)) {
+                $activeOrder = Database::fetchOne(
+                    "SELECT * FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` IN ('confirmed', 'processing', 'handover', 'picked_up', 'on_the_way') ORDER BY id DESC LIMIT 1",
+                    [$dm['id']]
+                );
+            }
+        }
+
+        if (!empty($activeOrder)) {
+            if (!empty($activeOrder['delivery_address_json']) && empty($activeOrder['delivery_address'])) {
+                $activeOrder['delivery_address'] = json_decode($activeOrder['delivery_address_json'], true);
+            }
+            if (!empty($activeOrder['store_id'])) {
+                $storeModel = new \App\Models\Store();
+                $store = $storeModel->find($activeOrder['store_id']);
+                if ($store) {
+                    $activeOrder['store_name'] = $store['name'] ?? 'Toko Mitra';
+                    $activeOrder['store_address'] = $store['address'] ?? 'Cicalengka';
+                    $activeOrder['store_lat'] = $store['latitude'] ?? -6.9835;
+                    $activeOrder['store_lng'] = $store['longitude'] ?? 107.8345;
+                    $activeOrder['store_phone'] = $store['phone'] ?? '';
+                }
+            }
         }
 
         // Available nearby orders in driver zone
@@ -133,6 +156,7 @@ class DeliveryController extends Controller
             $this->successResponse('Dashboard driver berhasil diambil', [
                 'driver'            => $dm,
                 'active_order'      => $activeOrder,
+                'active_trip'       => $activeOrder,
                 'active_batch'      => $activeBatch,
                 'available_orders'  => $availableOrders,
                 'wallet'            => $wallet,
