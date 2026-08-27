@@ -165,8 +165,15 @@ class ApiController extends Controller
 
     public function stores(): void
     {
+        $query = trim($_GET['q'] ?? '');
         $moduleId = !empty($_GET['module_id']) ? (int)$_GET['module_id'] : 1;
-        $stores = (new Store())->getByModule($moduleId);
+
+        if (!empty($query)) {
+            $stores = (new Store())->search($query, $moduleId);
+        } else {
+            $stores = (new Store())->getByModule($moduleId);
+        }
+
         $this->successResponse('Daftar toko berhasil diambil', $stores);
     }
 

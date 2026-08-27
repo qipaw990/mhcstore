@@ -56,4 +56,21 @@ class Store extends Model
     {
         return $this->firstWhere('vendor_id', $vendorId);
     }
+
+    public function search(string $query, ?int $moduleId = null): array
+    {
+        $params = ["%{$query}%", "%{$query}%"];
+        $moduleSql = '';
+        if ($moduleId) {
+            $moduleSql = " AND s.module_id = ?";
+            $params[] = $moduleId;
+        }
+
+        $sql = "SELECT s.*, m.name as module_name, m.module_type
+                FROM `stores` s
+                JOIN `modules` m ON s.module_id = m.id
+                WHERE s.status = 'approved' AND (s.name LIKE ? OR s.address LIKE ?) {$moduleSql}
+                ORDER BY s.is_open DESC, s.rating DESC LIMIT 20";
+        return Database::query($sql, $params);
+    }
 }
