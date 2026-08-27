@@ -654,8 +654,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                   backgroundColor: const Color(0xFF2563EB),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 1,
+                  shape: const StadiumBorder(),
+                  elevation: 0,
                 ),
                 onPressed: () {
                   GlobalCallService.instance.openCallScreen(
@@ -675,8 +675,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                   backgroundColor: AppTheme.primaryRed,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 1,
+                  shape: const StadiumBorder(),
+                  elevation: 0,
                 ),
                 onPressed: () {
                   final authCtrl = context.read<AuthController>();
@@ -714,9 +714,10 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
+          foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          elevation: 2,
+          shape: const StadiumBorder(),
+          elevation: 0,
         ),
         onPressed: onTap,
         child: Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),

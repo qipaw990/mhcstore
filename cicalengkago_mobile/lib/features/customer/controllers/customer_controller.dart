@@ -11,7 +11,7 @@ class CustomerController extends ChangeNotifier {
   List<dynamic> _topRatedStores = [];
   List<dynamic> _recommendedProducts = [];
   List<dynamic> _discountedProducts = [];
-  List<dynamic> _products = [];
+  final List<dynamic> _products = [];
   Map<String, dynamic>? _cart;
   List<dynamic> _orders = [];
   Map<String, dynamic>? _wallet;
@@ -105,7 +105,7 @@ class CustomerController extends ChangeNotifier {
       final res = await ApiService.postForm(ApiConstants.cartAdd, {
         'product_id': productId.toString(),
         'quantity': quantity.toString(),
-        if (notes != null) 'notes': notes,
+        'notes': ?notes,
       });
 
       if (res['success'] == true) {
@@ -174,7 +174,7 @@ class CustomerController extends ChangeNotifier {
         'lat': lat.toString(),
         'lng': lng.toString(),
         'payment_method': paymentMethod,
-        if (note != null) 'order_note': note,
+        'order_note': ?note,
       });
 
       if (res['success'] == true) {

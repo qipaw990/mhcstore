@@ -673,11 +673,11 @@ class DriverRadarScreen extends StatelessWidget {
             width: double.infinity,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryRed,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 11),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                elevation: 2,
+                backgroundColor: AppTheme.inkBlack,
+                foregroundColor: AppTheme.onPrimary,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: const StadiumBorder(),
+                elevation: 0,
               ),
               onPressed: () async {
                 final ok = await driverCtrl.acceptOrder(orderId);

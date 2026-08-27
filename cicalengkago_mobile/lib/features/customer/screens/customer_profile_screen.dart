@@ -243,7 +243,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                   onPressed: () => setState(() => _isEditing = false),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: const StadiumBorder(),
                   ),
                   child: const Text('Batal'),
                 ),
@@ -264,11 +264,13 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryRed,
+                    backgroundColor: AppTheme.inkBlack,
+                    foregroundColor: AppTheme.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: const StadiumBorder(),
+                    elevation: 0,
                   ),
-                  child: const Text('Simpan', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text('Simpan', style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ),
             ],
@@ -371,12 +373,14 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryRed,
+                    backgroundColor: AppTheme.inkBlack,
+                    foregroundColor: AppTheme.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: const StadiumBorder(),
+                    elevation: 0,
                   ),
                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
-                  child: const Text('Masuk / Daftar', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                  child: const Text('Masuk / daftar', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                 ),
               ),
             ],

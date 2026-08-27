@@ -117,10 +117,11 @@ class _CartScreenState extends State<CartScreen> {
                     ),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryRed,
+                        backgroundColor: AppTheme.inkBlack,
+                        foregroundColor: AppTheme.onPrimary,
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        elevation: 2,
+                        shape: const StadiumBorder(),
+                        elevation: 0,
                       ),
                       onPressed: () {
                         Navigator.push(
@@ -130,7 +131,7 @@ class _CartScreenState extends State<CartScreen> {
                       },
                       child: const Row(
                         children: [
-                          Text('LANJUT CHECKOUT', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
+                          Text('Lanjut checkout', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
                           SizedBox(width: 6),
                           Icon(Icons.arrow_forward_rounded, size: 16, color: Colors.white),
                         ],
@@ -184,7 +185,7 @@ class _CartScreenState extends State<CartScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

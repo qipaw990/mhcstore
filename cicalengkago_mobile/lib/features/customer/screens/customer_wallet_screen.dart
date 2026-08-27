@@ -406,9 +406,11 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryRed,
+                    backgroundColor: AppTheme.inkBlack,
+                    foregroundColor: AppTheme.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: const StadiumBorder(),
+                    elevation: 0,
                   ),
                   onPressed: () {
                     final amount = int.tryParse(amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
@@ -421,7 +423,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                     Navigator.pop(ctx);
                     _initiateTopUp(context, amount);
                   },
-                  child: const Text('Lanjut Bayar', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  child: const Text('Lanjut bayar', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                 ),
               ),
             ],

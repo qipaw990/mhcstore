@@ -8,6 +8,7 @@ import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../auth/screens/login_screen.dart';
+import '../../auth/screens/register_screen.dart';
 import '../controllers/customer_controller.dart';
 import 'store_detail_screen.dart';
 import 'cart_screen.dart';
@@ -371,10 +372,10 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    foregroundColor: AppTheme.primaryRed,
-                    elevation: 2,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    foregroundColor: AppTheme.inkBlack,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    shape: const StadiumBorder(),
                   ),
                   onPressed: () {
                     Navigator.push(
@@ -1331,10 +1332,11 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                           height: 28,
                           child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryRed,
-                              foregroundColor: Colors.white,
+                              backgroundColor: AppTheme.inkBlack,
+                              foregroundColor: AppTheme.onPrimary,
                               padding: EdgeInsets.zero,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              shape: const StadiumBorder(),
+                              elevation: 0,
                             ),
                             onPressed: () async {
                               final ok = await customerCtrl.addToCart(int.parse(prod['id'].toString()), 1);

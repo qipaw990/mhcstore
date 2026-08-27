@@ -497,11 +497,11 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
         child: SafeArea(
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryRed,
-              foregroundColor: Colors.white,
-              elevation: 2,
+              backgroundColor: AppTheme.inkBlack,
+              foregroundColor: AppTheme.onPrimary,
+              elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: const StadiumBorder(),
             ),
             onPressed: () {
               Navigator.push(

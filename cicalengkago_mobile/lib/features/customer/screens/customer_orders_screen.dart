@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
-import '../../auth/controllers/auth_controller.dart';
 import '../controllers/customer_controller.dart';
 import 'order_tracking_screen.dart';
 
@@ -205,7 +204,7 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> {
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -253,9 +252,9 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.12),
+                        color: statusColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: statusColor.withOpacity(0.3)),
+                        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                       ),
                       child: Text(
                         statusLabel,
@@ -362,7 +361,7 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> {
                   _actionButton(
                     icon: Icons.credit_card_rounded,
                     label: 'Bayar',
-                    color: AppTheme.primaryRed,
+                    color: AppTheme.inkBlack,
                     onTap: () => _openTracking(context, orderCode),
                   )
                 else if (isCanceled)
@@ -373,14 +372,14 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> {
                   _actionButton(
                     icon: Icons.location_on_rounded,
                     label: 'Lacak Live',
-                    color: AppTheme.primaryRed,
+                    color: AppTheme.inkBlack,
                     onTap: () => _openTracking(context, orderCode),
                   )
                 else
                   _actionButton(
                     icon: Icons.search_rounded,
                     label: 'Detail',
-                    color: AppTheme.primaryRed,
+                    color: AppTheme.inkBlack,
                     onTap: () => _openTracking(context, orderCode),
                   ),
               ],
@@ -414,15 +413,15 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [color, color.withRed((color.red - 20).clamp(0, 255))]),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: color.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 3))],
+          color: color,
+          borderRadius: BorderRadius.circular(999),
+          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.15), blurRadius: 6, offset: const Offset(0, 2))],
         ),
         child: Row(
           children: [
             Icon(icon, color: Colors.white, size: 13),
             const SizedBox(width: 5),
-            Text(label, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            Text(label, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
           ],
         ),
       ),
@@ -436,10 +435,10 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(999),
           border: Border.all(color: const Color(0xFFCBD5E1)),
         ),
-        child: Text(label, style: const TextStyle(color: Color(0xFF334155), fontSize: 12, fontWeight: FontWeight.bold)),
+        child: Text(label, style: const TextStyle(color: Color(0xFF334155), fontSize: 12, fontWeight: FontWeight.w600)),
       ),
     );
   }

@@ -60,7 +60,7 @@ class UberPillButton extends StatelessWidget {
 
     final childWidget = Row(
       mainAxisSize: fullWidth ? MainAxisSize.max : MainAxisSize.min,
-      main: MainAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (icon != null) ...[
           Icon(icon, size: 18, color: fg),
@@ -80,7 +80,7 @@ class UberPillButton extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-        shadows: shadows,
+        boxShadow: shadows,
       ),
       child: Material(
         color: bg,

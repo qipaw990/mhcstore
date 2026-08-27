@@ -297,10 +297,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryRed,
+                  backgroundColor: AppTheme.inkBlack,
+                  foregroundColor: AppTheme.onPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                  elevation: 2,
+                  shape: const StadiumBorder(),
+                  elevation: 0,
                 ),
                 onPressed: (_isSubmitting || _isFetchingLocation) ? null : _handleCheckout,
                 child: _isSubmitting
@@ -309,7 +310,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         height: 24,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                       )
-                    : const Text('BUAT PESANAN SEKARANG', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Colors.white)),
+                    : const Text('Buat Pesanan Sekarang', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
               ),
             ),
           ],
