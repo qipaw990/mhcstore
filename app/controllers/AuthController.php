@@ -53,8 +53,8 @@ class AuthController extends Controller
         $captcha      = trim($data['captcha'] ?? '');
 
         $isJsonRequest = (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
-            || isset($_SERVER['HTTP_X_REQUESTED_WITH'])
-            || empty($captcha);
+            || (isset($_SERVER['CONTENT_TYPE']) && str_contains($_SERVER['CONTENT_TYPE'], 'application/json'))
+            || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
 
         if (empty($emailOrPhone) || empty($password)) {
             if ($isJsonRequest) {
@@ -67,15 +67,11 @@ class AuthController extends Controller
         }
 
         // Validate Captcha for Web requests only
-        if (!empty($captcha)) {
+        if (!$isJsonRequest) {
             $sessionCaptcha = $_SESSION['login_captcha'] ?? '';
-            if ($captcha !== $sessionCaptcha) {
+            if (empty($captcha) || $captcha !== $sessionCaptcha) {
                 $_SESSION['login_captcha'] = (string) rand(1000, 9999);
-                if ($isJsonRequest) {
-                    $this->json(['success' => false, 'message' => 'Kode Captcha tidak sesuai.'], 400);
-                    return;
-                }
-                $_SESSION['error'] = 'Kode Captcha tidak sesuai. Silakan coba lagi.';
+                $_SESSION['error'] = 'Kode Captcha tidak sesuai atau belum diisi. Silakan coba lagi.';
                 $this->redirect('login');
                 return;
             }
