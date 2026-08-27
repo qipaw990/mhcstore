@@ -269,19 +269,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 children: [
                   RadioListTile<String>(
                     value: 'wallet',
+                    // ignore: deprecated_member_use
                     groupValue: _paymentMethod,
                     title: const Text('CicalengkaPay (Saldo E-Wallet)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     subtitle: const Text('Bebas biaya penanganan', style: TextStyle(fontSize: 11)),
                     secondary: const Icon(Icons.account_balance_wallet_rounded, color: AppTheme.primaryRed),
+                    // ignore: deprecated_member_use
                     onChanged: (val) => setState(() => _paymentMethod = val!),
                   ),
                   const Divider(height: 1),
                   RadioListTile<String>(
                     value: 'cod',
+                    // ignore: deprecated_member_use
                     groupValue: _paymentMethod,
                     title: const Text('Bayar Tunai / COD', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     subtitle: const Text('Bayar langsung ke Kurir saat sampai', style: TextStyle(fontSize: 11)),
                     secondary: const Icon(Icons.payments_rounded, color: Color(0xFF059669)),
+                    // ignore: deprecated_member_use
                     onChanged: (val) => setState(() => _paymentMethod = val!),
                   ),
                 ],
