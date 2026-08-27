@@ -94,6 +94,19 @@ class VendorController extends Controller
         $store = $this->storeModel->find($storeId);
         $reviews = $reviewModel->getStoreReviews($storeId, 10);
 
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Dashboard merchant berhasil diambil', [
+                'store'          => $store,
+                'orders'         => array_slice($orders, 0, 10),
+                'total_orders'   => (int)($stats['total_orders'] ?? count($orders)),
+                'stats'          => $stats,
+                'reviews'        => $reviews,
+                'products_count' => $productsCount,
+                'wallet'         => $wallet,
+            ]);
+            return;
+        }
+
         $this->view('vendor.dashboard', [
             'title'          => 'Dashboard Mitra Toko - ' . $store['name'],
             'store'          => $store,
@@ -129,6 +142,14 @@ class VendorController extends Controller
         $userId = auth_id();
         $store = $this->storeModel->findByVendorId($userId);
         $orders = $store ? $this->orderModel->getStoreOrders($store['id']) : [];
+
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Daftar pesanan toko berhasil diambil', [
+                'store'  => $store,
+                'orders' => $orders,
+            ]);
+            return;
+        }
 
         $this->view('vendor.orders', [
             'title'      => 'Manajemen Pesanan - CicalengkaGO Vendor',
@@ -170,6 +191,14 @@ class VendorController extends Controller
         $userId = auth_id();
         $store = $this->storeModel->findByVendorId($userId);
         $products = $store ? $this->productModel->getByStore($store['id']) : [];
+
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Daftar produk toko berhasil diambil', [
+                'store'    => $store,
+                'products' => $products,
+            ]);
+            return;
+        }
 
         $this->view('vendor.products', [
             'title'      => 'Katalog Produk & Menu - ' . ($store['name'] ?? ''),
@@ -309,6 +338,17 @@ class VendorController extends Controller
         $totalWithdrawn = $this->withdrawModel->getTotalWithdrawn($userId, 'vendor');
         $pendingWithdrawn = $this->withdrawModel->getPendingWithdrawn($userId, 'vendor');
 
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Data dompet toko berhasil diambil', [
+                'wallet'            => $wallet,
+                'transactions'      => $transactions,
+                'withdraw_requests' => $withdrawRequests,
+                'total_withdrawn'   => $totalWithdrawn,
+                'pending_withdrawn' => $pendingWithdrawn,
+            ]);
+            return;
+        }
+
         $this->view('vendor.wallet', [
             'title'             => 'Dompet & Pendapatan Toko',
             'wallet'            => $wallet,
@@ -367,6 +407,14 @@ class VendorController extends Controller
         $userId = auth_id();
         $user = auth_user();
         $store = $this->storeModel->findByVendorId($userId);
+
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Data profil toko berhasil diambil', [
+                'user'  => $user,
+                'store' => $store,
+            ]);
+            return;
+        }
 
         $this->view('vendor.profile', [
             'title'      => 'Profil Pemilik & Pengaturan Toko',
