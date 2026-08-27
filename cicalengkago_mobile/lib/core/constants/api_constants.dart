@@ -1,7 +1,8 @@
 class ApiConstants {
-  // Production URL default; fallback to localhost/dev when testing
-  static const String baseUrl = 'https://cicago.store/api';
-  static const String imageBaseUrl = 'https://cicago.store';
+  // Production Base Domain URL
+  static const String domainUrl = 'https://cicago.store';
+  static const String baseUrl = '$domainUrl/api';
+  static const String imageBaseUrl = domainUrl;
 
   // Auth Endpoints
   static const String login = '$baseUrl/login';
