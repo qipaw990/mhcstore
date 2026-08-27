@@ -397,6 +397,51 @@ class DeliveryController extends Controller
     public function earnings(): void
     {
         $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Unauthorized', 401);
+            return;
+        }
+
+        $dm = $this->dmModel->findByUserId($userId);
+        if (!$dm) {
+            $this->errorResponse('Driver tidak ditemukan');
+            return;
+        }
+
+        // Auto-credit any pending delivered orders
+        $driverWallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
+        $deliveredDriverOrders = Database::query(
+            "SELECT id, order_code, delivery_charge, delivery_batch_id FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` = 'delivered'",
+            [$dm['id']]
+        );
+        $processedBatches = [];
+        $deliveryService = new \App\Services\DeliveryService();
+
+        foreach ($deliveredDriverOrders as $dOrder) {
+            $batchId = $dOrder['delivery_batch_id'] ?? null;
+            if (!empty($batchId)) {
+                if (!in_array($batchId, $processedBatches)) {
+                    $processedBatches[] = $batchId;
+                    $deliveryService->creditBatchCommission($dm, $batchId);
+                }
+            } else {
+                $alreadyCredited = Database::fetchOne(
+                    "SELECT id FROM `wallet_transactions` WHERE `wallet_id` = ? AND `category` = 'order_earning' AND `reference_id` = ? LIMIT 1",
+                    [$driverWallet['id'], (string)$dOrder['id']]
+                );
+                if (!$alreadyCredited) {
+                    $driverEarning = (float)$dOrder['delivery_charge'] * 0.85;
+                    $this->walletModel->credit(
+                        $userId,
+                        $driverEarning,
+                        'order_earning',
+                        "Komisi pengantaran pesanan #{$dOrder['order_code']}",
+                        (string)$dOrder['id']
+                    );
+                }
+            }
+        }
+
         $wallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
         $transactions = $this->walletModel->getTransactions($userId, 50);
         $withdrawRequests = $this->withdrawModel->getByUser($userId, 'delivery_man', 50);
@@ -404,8 +449,9 @@ class DeliveryController extends Controller
         $pendingWithdrawn = $this->withdrawModel->getPendingWithdrawn($userId, 'delivery_man');
 
         if ($this->isJsonRequest()) {
-            $this->successResponse('Data pendapatan berhasil diambil', [
+            $this->successResponse('Data pendapatan driver berhasil diambil', [
                 'wallet'            => $wallet,
+                'driver'            => $dm,
                 'transactions'      => $transactions,
                 'withdraw_requests' => $withdrawRequests,
                 'total_withdrawn'   => $totalWithdrawn,
@@ -417,6 +463,7 @@ class DeliveryController extends Controller
         $this->view('delivery.earnings', [
             'title'             => 'Pendapatan & Saldo Driver',
             'wallet'            => $wallet,
+            'driver'            => $dm,
             'transactions'      => $transactions,
             'withdraw_requests' => $withdrawRequests,
             'total_withdrawn'   => $totalWithdrawn,
@@ -661,113 +708,5 @@ class DeliveryController extends Controller
 
         $_SESSION['success'] = 'Profil Mitra Driver berhasil diperbarui!';
         $this->redirect('delivery/profile');
-    }
-
-    public function earnings(): void
-    {
-        $userId = auth_id();
-        if (!$userId) {
-            $this->errorResponse('Unauthorized', 401);
-            return;
-        }
-
-        $dm = $this->dmModel->findByUserId($userId);
-        if (!$dm) {
-            $this->errorResponse('Driver tidak ditemukan');
-            return;
-        }
-
-        // Auto-credit any pending delivered orders
-        $driverWallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
-        $deliveredDriverOrders = Database::query(
-            "SELECT id, order_code, delivery_charge, delivery_batch_id FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` = 'delivered'",
-            [$dm['id']]
-        );
-        $processedBatches = [];
-        $deliveryService = new \App\Services\DeliveryService();
-
-        foreach ($deliveredDriverOrders as $dOrder) {
-            $batchId = $dOrder['delivery_batch_id'] ?? null;
-            if (!empty($batchId)) {
-                if (!in_array($batchId, $processedBatches)) {
-                    $processedBatches[] = $batchId;
-                    $deliveryService->creditBatchCommission($dm, $batchId);
-                }
-            } else {
-                $alreadyCredited = Database::fetchOne(
-                    "SELECT id FROM `wallet_transactions` WHERE `wallet_id` = ? AND `category` = 'order_earning' AND `reference_id` = ? LIMIT 1",
-                    [$driverWallet['id'], (string)$dOrder['id']]
-                );
-                if (!$alreadyCredited) {
-                    $driverEarning = (float)$dOrder['delivery_charge'] * 0.85;
-                    $this->walletModel->credit(
-                        $userId,
-                        $driverEarning,
-                        'order_earning',
-                        "Komisi pengantaran pesanan #{$dOrder['order_code']}",
-                        (string)$dOrder['id']
-                    );
-                }
-            }
-        }
-
-        $wallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
-        $transactions = $this->walletModel->getTransactions($userId, 30);
-
-        if ($this->isJsonRequest()) {
-            $this->successResponse('Data pendapatan driver berhasil diambil', [
-                'wallet'       => $wallet,
-                'driver'       => $dm,
-                'transactions' => $transactions,
-            ]);
-            return;
-        }
-
-        $this->view('delivery.earnings', [
-            'title'        => 'Pendapatan Kurir - CicalengkaGO',
-            'wallet'       => $wallet,
-            'driver'       => $dm,
-            'transactions' => $transactions,
-        ]);
-    }
-
-    public function requestWithdraw(): void
-    {
-        $userId = auth_id();
-        if (!$userId) {
-            $this->errorResponse('Unauthorized', 401);
-            return;
-        }
-
-        $data = $this->getPost();
-        $amount        = (float)($data['amount'] ?? 0);
-        $bankName      = sanitize($data['bank_name'] ?? '');
-        $accountNumber = sanitize($data['account_number'] ?? '');
-        $accountHolder = sanitize($data['account_holder'] ?? '');
-
-        if ($amount < 10000) {
-            $this->errorResponse('Minimal penarikan saldo adalah Rp 10.000');
-            return;
-        }
-
-        if (empty($bankName) || empty($accountNumber) || empty($accountHolder)) {
-            $this->errorResponse('Data rekening penarikan tidak lengkap');
-            return;
-        }
-
-        try {
-            $description = "Penarikan Saldo ke {$bankName} {$accountNumber} a.n {$accountHolder}";
-            $this->walletModel->debit($userId, $amount, 'withdraw', $description);
-
-            if ($this->isJsonRequest()) {
-                $this->successResponse('Permintaan penarikan saldo berhasil diajukan');
-                return;
-            }
-
-            $_SESSION['success'] = 'Permintaan penarikan saldo berhasil diajukan!';
-            $this->redirect('delivery/earnings');
-        } catch (\Exception $e) {
-            $this->errorResponse($e->getMessage());
-        }
     }
 }
