@@ -70,6 +70,8 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     _startStatusPolling();
   }
 
+  int _pollCount = 0;
+
   void _initWebView() {
     final webUrl = '${ApiConstants.baseUrl}/orders/${widget.orderCode}/tracking?app_call=1';
     
@@ -78,6 +80,10 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       ..setBackgroundColor(const Color(0xFF0F172A))
       ..setOnConsoleMessage((message) {
         debugPrint('[VoiceCallWebView] ${message.message}');
+      })
+      ..setOnPlatformPermissionRequest((request) {
+        debugPrint('[VoiceCallWebView] Granting permission: ${request.types}');
+        request.grant();
       })
       ..setNavigationDelegate(
         NavigationDelegate(
@@ -96,8 +102,10 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
   void _startStatusPolling() {
     _statusTimer?.cancel();
+    _pollCount = 0;
     _statusTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
       if (_isEnded) return;
+      _pollCount++;
       try {
         final res = await http.get(Uri.parse('${ApiConstants.baseUrl}/calls/poll?order_code=${widget.orderCode}'));
         if (res.statusCode == 200) {
@@ -124,8 +132,11 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
             } else if (st == 'rejected' || st == 'ended') {
               _handleCallEnded('Panggilan Diakhiri');
             }
-          } else if (_isConnected) {
-            _handleCallEnded('Panggilan Selesai');
+          } else {
+            // Only end call if it was previously connected or after at least 5 poll attempts (10s) if callId was established
+            if (_isConnected || (_callId != null && _pollCount > 5)) {
+              _handleCallEnded('Panggilan Selesai');
+            }
           }
         }
       } catch (_) {}
