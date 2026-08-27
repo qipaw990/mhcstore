@@ -20,10 +20,10 @@ class OrderTrackingScreen extends StatefulWidget {
 class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   bool _isLoading = true;
   Map<String, dynamic>? _orderData;
+  Map<String, dynamic>? _liveData;
   String? _snapUrl;
   Timer? _refreshTimer;
-  Timer? _countdownTimer;
-  int _remainingSeconds = 60;
+  final MapController _mapController = MapController();
 
   final List<Map<String, dynamic>> _statusSteps = [
     {'key': 'pending', 'label': 'Pesanan Diterima', 'icon': Icons.receipt_long_rounded},
@@ -38,32 +38,19 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchTracking();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) => _fetchTracking(silent: true));
+    _fetchFullOrderDetails();
+    _pollLiveTracking();
+    // Live polling every 3 seconds for real-time driver & status updates
+    _refreshTimer = Timer.periodic(const Duration(seconds: 3), (_) => _pollLiveTracking());
   }
 
   @override
   void dispose() {
     _refreshTimer?.cancel();
-    _countdownTimer?.cancel();
     super.dispose();
   }
 
-  void _startCountdown(int initialSeconds) {
-    _countdownTimer?.cancel();
-    setState(() => _remainingSeconds = initialSeconds);
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_remainingSeconds <= 1) {
-        timer.cancel();
-        _fetchTracking(silent: true);
-      } else {
-        setState(() => _remainingSeconds--);
-      }
-    });
-  }
-
-  Future<void> _fetchTracking({bool silent = false}) async {
-    if (!silent) setState(() => _isLoading = true);
+  Future<void> _fetchFullOrderDetails() async {
     try {
       final res = await ApiService.get('${ApiConstants.orders}/${widget.orderCode}');
       if (res['success'] == true && res['data'] != null) {
@@ -72,29 +59,46 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             ? (data['order'] as Map<String, dynamic>)
             : (data is Map<String, dynamic> ? data : <String, dynamic>{});
 
-        setState(() {
-          _orderData = orderMap;
-          _snapUrl = data['snap_url']?.toString();
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _orderData = orderMap;
+            _snapUrl = data['snap_url']?.toString();
+          });
+        }
+      }
+    } catch (_) {}
+  }
 
-        // Handle countdown for unclaimed orders
-        final createdStr = orderMap['created_at']?.toString();
-        if (createdStr != null && orderMap['delivery_man_id'] == null && orderMap['order_status'] != 'canceled') {
-          final createdTime = DateTime.tryParse(createdStr);
-          if (createdTime != null) {
-            final elapsed = DateTime.now().difference(createdTime).inSeconds;
-            final rem = (60 - elapsed).clamp(0, 60);
-            if (rem > 0 && (_countdownTimer == null || !_countdownTimer!.isActive)) {
-              _startCountdown(rem);
-            }
+  Future<void> _pollLiveTracking() async {
+    try {
+      final res = await ApiService.get('${ApiConstants.orders}/${widget.orderCode}/live-tracking');
+      if (res['success'] == true && res['data'] != null) {
+        final live = res['data'] as Map<String, dynamic>;
+        if (mounted) {
+          setState(() {
+            _liveData = live;
+            _isLoading = false;
+          });
+
+          // Move map to driver location if driver is assigned & lat/lng updated
+          final driverMap = live['driver'] is Map ? (live['driver'] as Map) : {};
+          final driverLat = double.tryParse(driverMap['lat']?.toString() ?? '');
+          final driverLng = double.tryParse(driverMap['lng']?.toString() ?? '');
+          if (driverLat != null && driverLng != null && driverLat != 0 && driverLng != 0) {
+            try {
+              _mapController.move(LatLng(driverLat, driverLng), _mapController.camera.zoom);
+            } catch (_) {}
           }
         }
       } else {
-        setState(() => _isLoading = false);
+        if (mounted && _isLoading) {
+          setState(() => _isLoading = false);
+        }
       }
     } catch (_) {
-      setState(() => _isLoading = false);
+      if (mounted && _isLoading) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -121,7 +125,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         'order_code': widget.orderCode,
       });
       if (res['success'] == true) {
-        _fetchTracking();
+        _pollLiveTracking();
+        _fetchFullOrderDetails();
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -170,38 +175,46 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     }
 
     final order = _orderData ?? {};
-    final status = order['order_status']?.toString() ?? 'pending';
-    final paymentMethod = order['payment_method']?.toString() ?? 'cod';
-    final paymentStatus = order['payment_status']?.toString() ?? 'unpaid';
+    final live = _liveData ?? {};
+
+    // Live synced values from server live-tracking endpoint
+    final status = live['order_status']?.toString() ?? order['order_status']?.toString() ?? 'pending';
+    final paymentMethod = live['payment_method']?.toString() ?? order['payment_method']?.toString() ?? 'cod';
+    final paymentStatus = live['payment_status']?.toString() ?? order['payment_status']?.toString() ?? 'unpaid';
+    final remainingSeconds = (live['remaining_seconds'] as num?)?.toInt() ?? 60;
 
     final bool isCanceled = status == 'canceled';
     final bool isUnpaidOnline = paymentMethod == 'midtrans' && paymentStatus != 'paid' && !isCanceled;
     final bool isDelivered = status == 'delivered';
-    final bool hasDriver = order['delivery_man_id'] != null;
+
+    final driverMap = live['driver'] is Map ? (live['driver'] as Map) : {};
+    final bool hasDriver = (driverMap['assigned'] == true) || (order['delivery_man_id'] != null && !isCanceled);
 
     final currentStep = _getCurrentStepIndex(status);
 
-    // Map Coordinates
-    final storeLat = double.tryParse(order['store_lat']?.toString() ?? '') ?? -6.9835;
-    final storeLng = double.tryParse(order['store_lng']?.toString() ?? '') ?? 107.8335;
+    // Map Coordinates live sync
+    final storeMap = live['store'] is Map ? (live['store'] as Map) : {};
+    final destMap = live['destination'] is Map ? (live['destination'] as Map) : {};
 
-    final destAddressMap = order['delivery_address'] is Map ? (order['delivery_address'] as Map) : {};
-    final custLat = double.tryParse(destAddressMap['lat']?.toString() ?? order['delivery_lat']?.toString() ?? '') ?? -6.9855;
-    final custLng = double.tryParse(destAddressMap['lng']?.toString() ?? order['delivery_lng']?.toString() ?? '') ?? 107.8350;
+    final storeLat = double.tryParse(storeMap['lat']?.toString() ?? order['store_lat']?.toString() ?? '') ?? -6.9835;
+    final storeLng = double.tryParse(storeMap['lng']?.toString() ?? order['store_lng']?.toString() ?? '') ?? 107.8335;
 
-    final driverLat = double.tryParse(order['dm_lat']?.toString() ?? order['driver_lat']?.toString() ?? '') ?? storeLat;
-    final driverLng = double.tryParse(order['dm_lng']?.toString() ?? order['driver_lng']?.toString() ?? '') ?? storeLng;
+    final custLat = double.tryParse(destMap['lat']?.toString() ?? order['delivery_lat']?.toString() ?? '') ?? -6.9855;
+    final custLng = double.tryParse(destMap['lng']?.toString() ?? order['delivery_lng']?.toString() ?? '') ?? 107.8350;
+
+    final driverLat = double.tryParse(driverMap['lat']?.toString() ?? order['dm_lat']?.toString() ?? '') ?? storeLat;
+    final driverLng = double.tryParse(driverMap['lng']?.toString() ?? order['dm_lng']?.toString() ?? '') ?? storeLng;
 
     final LatLng centerPoint = hasDriver
         ? LatLng((driverLat + custLat) / 2, (driverLng + custLng) / 2)
         : LatLng((storeLat + custLat) / 2, (storeLng + custLng) / 2);
 
     final totalAmount = double.tryParse(order['total_amount']?.toString() ?? '0') ?? 0.0;
-    final driverName = order['dm_name']?.toString() ?? order['delivery_man_name']?.toString() ?? 'Kurir CicalengkaGO';
-    final driverPhone = order['dm_phone']?.toString() ?? order['delivery_man_phone']?.toString() ?? '';
-    final driverAvatar = order['dm_avatar']?.toString();
-    final vehicleType = order['vehicle_type']?.toString() ?? 'Motor';
-    final vehiclePlate = order['vehicle_number']?.toString() ?? '';
+    final driverName = driverMap['name']?.toString() ?? order['dm_name']?.toString() ?? 'Kurir CicalengkaGO';
+    final driverPhone = driverMap['phone']?.toString() ?? order['dm_phone']?.toString() ?? '';
+    final driverAvatar = driverMap['avatar']?.toString() ?? order['dm_avatar']?.toString();
+    final vehicleType = driverMap['vehicle']?.toString() ?? order['vehicle_type']?.toString() ?? 'Motor';
+    final vehiclePlate = driverMap['plate']?.toString() ?? order['vehicle_number']?.toString() ?? '';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -251,6 +264,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   vehiclePlate: vehiclePlate,
                   driverPhone: driverPhone,
                   currentStep: currentStep,
+                  remainingSeconds: remainingSeconds,
                   totalAmount: totalAmount,
                   order: order,
                 )),
@@ -403,7 +417,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         ),
-                        onPressed: () => _fetchTracking(),
+                        onPressed: () => _pollLiveTracking(),
                         icon: const Icon(Icons.refresh_rounded, size: 16),
                         label: const Text('Cek Status', style: TextStyle(fontSize: 11.5)),
                       ),
@@ -448,6 +462,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     required String vehiclePlate,
     required String driverPhone,
     required int currentStep,
+    required int remainingSeconds,
     required double totalAmount,
     required Map<String, dynamic> order,
   }) {
@@ -459,6 +474,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           child: Stack(
             children: [
               FlutterMap(
+                mapController: _mapController,
                 options: MapOptions(
                   initialCenter: centerPoint,
                   initialZoom: 14.5,
@@ -549,7 +565,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
                               ),
                               Text(
-                                'Sisa waktu pencarian: $_remainingSeconds detik',
+                                'Sisa waktu pencarian: $remainingSeconds detik',
                                 style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
                               ),
                             ],
