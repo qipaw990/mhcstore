@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/widgets/uber_pill_button.dart';
 import '../controllers/customer_controller.dart';
 import 'checkout_screen.dart';
 
@@ -25,11 +28,11 @@ class _CartScreenState extends State<CartScreen> {
   Widget build(BuildContext context) {
     final customerCtrl = context.watch<CustomerController>();
     final cart = customerCtrl.cart;
-    
+
     // Support flat items list or grouped stores list
     final rawItems = cart?['items'] as List<dynamic>? ?? [];
     final stores = cart?['stores'] as List<dynamic>? ?? [];
-    
+
     final bool isEmpty = rawItems.isEmpty && stores.isEmpty;
 
     double subtotal = 0.0;
@@ -55,23 +58,25 @@ class _CartScreenState extends State<CartScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        foregroundColor: const Color(0xFF0F172A),
+        scrolledUnderElevation: 0.5,
+        foregroundColor: AppTheme.inkBlack,
         title: const Text(
           'Keranjang Belanja',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
         ),
         actions: [
           if (!isEmpty)
             IconButton(
               tooltip: 'Kosongkan Keranjang',
-              icon: const Icon(Icons.delete_sweep_rounded, color: AppTheme.primaryRed),
+              icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444)),
               onPressed: () => _confirmClearCart(context, customerCtrl),
             ),
         ],
       ),
       body: isEmpty
-          ? _buildEmptyState()
+          ? _buildEmptyState(context)
           : RefreshIndicator(
+              color: AppTheme.inkBlack,
               onRefresh: () => customerCtrl.fetchCart(),
               child: ListView(
                 padding: const EdgeInsets.all(16),
@@ -80,18 +85,23 @@ class _CartScreenState extends State<CartScreen> {
                     ...stores.map((store) => _buildStoreCard(context, customerCtrl, store))
                   else
                     _buildFlatItemsCard(context, customerCtrl, rawItems),
+                  const SizedBox(height: 80),
                 ],
               ),
             ),
       bottomNavigationBar: isEmpty
           ? null
           : Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                 boxShadow: [
-                  BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2)),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 16,
+                    offset: const Offset(0, -4),
+                  ),
                 ],
               ),
               child: SafeArea(
@@ -102,40 +112,31 @@ class _CartScreenState extends State<CartScreen> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Total Pembelian', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                          const Text(
+                            'Total Pembelian',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                          ),
                           const SizedBox(height: 2),
                           Text(
                             CurrencyFormatter.formatRupiah(subtotal),
                             style: const TextStyle(
                               fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryRed,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.inkBlack,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.inkBlack,
-                        foregroundColor: AppTheme.onPrimary,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                        shape: const StadiumBorder(),
-                        elevation: 0,
-                      ),
+                    UberPillButton(
+                      label: 'Lanjut Checkout',
+                      icon: Icons.arrow_forward_rounded,
                       onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (_) => const CheckoutScreen()),
                         );
                       },
-                      child: const Row(
-                        children: [
-                          Text('Lanjut checkout', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
-                          SizedBox(width: 6),
-                          Icon(Icons.arrow_forward_rounded, size: 16, color: Colors.white),
-                        ],
-                      ),
                     ),
                   ],
                 ),
@@ -144,7 +145,7 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
@@ -152,24 +153,32 @@ class _CartScreenState extends State<CartScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 100,
-              height: 100,
+              width: 90,
+              height: 90,
               decoration: const BoxDecoration(
-                color: Color(0xFFFEE2E2),
+                color: Color(0xFFEFEFEF),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.shopping_bag_outlined, size: 48, color: AppTheme.primaryRed),
+              child: const Icon(Icons.shopping_bag_outlined, size: 44, color: AppTheme.inkBlack),
             ),
             const SizedBox(height: 20),
             const Text(
               'Keranjang Belanja Kosong',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
             ),
             const SizedBox(height: 8),
             const Text(
-              'Yuk, temukan makanan dan produk terbaik\ndi CicalengkaGO dan tambahkan ke keranjang!',
-              style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              'Yuk, temukan makanan dan kuliner favoritmu\ndi CicalengkaGO dan tambahkan ke keranjang!',
+              style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.4),
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            UberPillButton(
+              label: 'Mulai Jelajah Kuliner',
+              icon: Icons.restaurant_menu_rounded,
+              onPressed: () {
+                Navigator.pop(context);
+              },
             ),
           ],
         ),
@@ -185,35 +194,62 @@ class _CartScreenState extends State<CartScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8)],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(14.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEE2E2),
-                    borderRadius: BorderRadius.circular(8),
+                    color: const Color(0xFFEFEFEF),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.storefront_rounded, color: AppTheme.primaryRed, size: 18),
+                  child: const Icon(Icons.storefront_rounded, color: AppTheme.inkBlack, size: 18),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     store['store_name'] ?? store['name'] ?? 'Mitra Resto',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.inkBlack),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${items.length} Menu',
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
                   ),
                 ),
               ],
             ),
           ),
           const Divider(height: 1, color: Color(0xFFF1F5F9)),
-          ...items.map((item) => _buildCartItemTile(context, customerCtrl, item)),
+          ...items.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final item = entry.value;
+            final isLast = idx == items.length - 1;
+            return Column(
+              children: [
+                _buildCartItemTile(context, customerCtrl, item),
+                if (!isLast) const Divider(height: 1, indent: 16, endIndent: 16, color: Color(0xFFF8FAFC)),
+              ],
+            );
+          }),
         ],
       ),
     );
@@ -225,9 +261,26 @@ class _CartScreenState extends State<CartScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
-        children: items.map((item) => _buildCartItemTile(context, customerCtrl, item)).toList(),
+        children: items.asMap().entries.map((entry) {
+          final idx = entry.key;
+          final item = entry.value;
+          final isLast = idx == items.length - 1;
+          return Column(
+            children: [
+              _buildCartItemTile(context, customerCtrl, item),
+              if (!isLast) const Divider(height: 1, indent: 16, endIndent: 16, color: Color(0xFFF8FAFC)),
+            ],
+          );
+        }).toList(),
       ),
     );
   }
@@ -237,57 +290,77 @@ class _CartScreenState extends State<CartScreen> {
     final itemPrice = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
     final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
 
+    final imageUrl = item['image'] != null && item['image'].toString().isNotEmpty
+        ? ApiConstants.formatImageUrl(item['image'].toString())
+        : null;
+
     return Padding(
       padding: const EdgeInsets.all(14.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Item Image / Icon
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
+          // Product Thumbnail Image
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: 58,
+              height: 58,
               color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(10),
+              child: imageUrl != null
+                  ? CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      fit: BoxFit.cover,
+                      errorWidget: (context, url, error) => const Icon(Icons.fastfood_rounded, color: AppTheme.inkBlack, size: 26),
+                    )
+                  : const Icon(Icons.fastfood_rounded, color: AppTheme.inkBlack, size: 26),
             ),
-            child: const Icon(Icons.fastfood_rounded, color: AppTheme.primaryRed, size: 24),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
 
-          // Details
+          // Product Details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   item['product_name'] ?? item['name'] ?? 'Produk',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.inkBlack),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
-                  CurrencyFormatter.formatRupiah(itemPrice),
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                  '${CurrencyFormatter.formatRupiah(itemPrice)} / porsi',
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   CurrencyFormatter.formatRupiah(itemPrice * qty),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.primaryRed),
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppTheme.inkBlack),
                 ),
               ],
             ),
           ),
 
-          // Quantity controls
+          const SizedBox(width: 8),
+
+          // Quantity Stepper Controls
           Container(
+            height: 36,
             decoration: BoxDecoration(
               color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.remove, size: 16),
+                  icon: Icon(
+                    qty == 1 ? Icons.delete_outline_rounded : Icons.remove_rounded,
+                    size: 16,
+                    color: qty == 1 ? const Color(0xFFEF4444) : AppTheme.inkBlack,
+                  ),
                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   padding: EdgeInsets.zero,
                   onPressed: () async {
@@ -298,12 +371,15 @@ class _CartScreenState extends State<CartScreen> {
                     }
                   },
                 ),
-                Text(
-                  '$qty',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Text(
+                    '$qty',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.inkBlack),
+                  ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.add, size: 16),
+                  icon: const Icon(Icons.add_rounded, size: 16, color: AppTheme.inkBlack),
                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   padding: EdgeInsets.zero,
                   onPressed: () async {
@@ -322,20 +398,22 @@ class _CartScreenState extends State<CartScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Kosongkan Keranjang?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Kosongkan Keranjang?', style: TextStyle(fontWeight: FontWeight.bold)),
         content: const Text('Apakah Anda yakin ingin menghapus seluruh isi keranjang belanja?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+            child: const Text('Batal', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryRed),
+          UberPillButton(
+            label: 'Kosongkan',
+            bgColor: const Color(0xFFEF4444),
+            textColor: Colors.white,
             onPressed: () async {
               Navigator.pop(ctx);
               await customerCtrl.clearCart();
             },
-            child: const Text('Kosongkan'),
           ),
         ],
       ),
