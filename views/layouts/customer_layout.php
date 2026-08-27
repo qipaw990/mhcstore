@@ -29,7 +29,7 @@ $unreadNotifs = $user ? (new \App\Models\Notification())->getUnreadCount($user['
 
     <script>
         window.BASE_URL = "<?= $baseUrl ?>";
-        window.AGORA_APP_ID = "<?= $appConfig['agora_app_id'] ?? 'aab8282fe78a485f9c4e4390fb8e6473' ?>";
+        window.AGORA_APP_ID = "<?= htmlspecialchars($appConfig['agora_app_id'] ?? '') ?>";
     </script>
 </head>
 <body>

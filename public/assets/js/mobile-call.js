@@ -32,7 +32,12 @@
             return false;
         }
 
-        const activeAgoraAppId = window.AGORA_APP_ID || "aab8282fe78a485f9c4e4390fb8e6473";
+        const activeAgoraAppId = (window.AGORA_APP_ID || "").trim();
+
+        if (!activeAgoraAppId || activeAgoraAppId.length !== 32) {
+            console.log('[AgoraVoice] Dynamic Agora App ID not configured or invalid length. Using WebRTC audio pipeline.');
+            return false;
+        }
 
         try {
             try { AgoraRTC.setLogLevel(3); } catch (e) {}
