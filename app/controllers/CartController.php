@@ -99,7 +99,19 @@ class CartController extends Controller
     {
         $data = $this->getPost();
         $cartId = (int)($data['cart_id'] ?? 0);
+        $productId = (int)($data['product_id'] ?? 0);
+        $quantity = isset($data['quantity']) ? (int)$data['quantity'] : null;
         $delta = (int)($data['delta'] ?? 0);
+
+        $userId = auth_id();
+        $sessionId = session_id();
+
+        if ($cartId <= 0 && $productId > 0) {
+            $findItem = Database::fetchOne("SELECT id, quantity FROM cart WHERE product_id = ? AND ((user_id IS NOT NULL AND user_id = ?) OR session_id = ?) ORDER BY id DESC LIMIT 1", [$productId, $userId, $sessionId]);
+            if ($findItem) {
+                $cartId = (int)$findItem['id'];
+            }
+        }
 
         $item = $this->cartModel->find($cartId);
         if (!$item) {
@@ -107,16 +119,21 @@ class CartController extends Controller
             return;
         }
 
-        $newQty = (int)$item['quantity'] + $delta;
+        if ($quantity !== null) {
+            $newQty = $quantity;
+        } else {
+            $newQty = (int)$item['quantity'] + $delta;
+        }
+
         if ($newQty <= 0) {
             $this->cartModel->delete($cartId);
         } else {
             $this->cartModel->update($cartId, ['quantity' => $newQty]);
         }
 
-        $userId = auth_id();
-        $updatedCart = $this->cartModel->getUserCart($userId, session_id());
+        $updatedCart = $this->cartModel->getUserCart($userId, $sessionId);
         $this->successResponse('Keranjang diperbarui', [
+            'cart'       => $updatedCart,
             'cart_count' => $updatedCart['count'],
             'subtotal'   => $updatedCart['subtotal'],
             'subtotal_fmt' => format_rupiah($updatedCart['subtotal'])
@@ -127,10 +144,25 @@ class CartController extends Controller
     {
         $data = $this->getPost();
         $cartId = (int)($data['cart_id'] ?? 0);
-        $this->cartModel->delete($cartId);
+        $productId = (int)($data['product_id'] ?? 0);
 
-        $updatedCart = $this->cartModel->getUserCart(auth_id(), session_id());
+        $userId = auth_id();
+        $sessionId = session_id();
+
+        if ($cartId <= 0 && $productId > 0) {
+            $findItem = Database::fetchOne("SELECT id FROM cart WHERE product_id = ? AND ((user_id IS NOT NULL AND user_id = ?) OR session_id = ?) ORDER BY id DESC LIMIT 1", [$productId, $userId, $sessionId]);
+            if ($findItem) {
+                $cartId = (int)$findItem['id'];
+            }
+        }
+
+        if ($cartId > 0) {
+            $this->cartModel->delete($cartId);
+        }
+
+        $updatedCart = $this->cartModel->getUserCart($userId, $sessionId);
         $this->successResponse('Item dihapus dari keranjang', [
+            'cart'       => $updatedCart,
             'cart_count' => $updatedCart['count'],
             'subtotal'   => $updatedCart['subtotal'],
             'subtotal_fmt' => format_rupiah($updatedCart['subtotal'])
@@ -147,6 +179,12 @@ class CartController extends Controller
     {
         $userId = auth_id();
         $cartSummary = $this->cartModel->getUserCart($userId, session_id());
+
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Data keranjang belanja', $cartSummary);
+            return;
+        }
+
         $this->view('customer.cart', [
             'title'        => 'Keranjang Belanja - CicalengkaGO',
             'cart_summary' => $cartSummary,

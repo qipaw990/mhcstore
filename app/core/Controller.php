@@ -90,6 +90,13 @@ abstract class Controller
         return $_POST;
     }
 
+    protected function isJsonRequest(): bool
+    {
+        return (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
+            || isset($_SERVER['HTTP_X_REQUESTED_WITH'])
+            || (isset($_SERVER['REQUEST_URI']) && str_contains($_SERVER['REQUEST_URI'], '/api/'));
+    }
+
     protected function getQuery(?string $key = null, $default = null)
     {
         if ($key === null) {

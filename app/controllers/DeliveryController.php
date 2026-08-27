@@ -129,6 +129,18 @@ class DeliveryController extends Controller
         $dm['total_orders'] = $realDeliveredCount;
         $reviews = $reviewModel->getDmReviews((int)$dm['id'], 15);
 
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Dashboard driver berhasil diambil', [
+                'driver'            => $dm,
+                'active_order'      => $activeOrder,
+                'active_batch'      => $activeBatch,
+                'available_orders'  => $availableOrders,
+                'wallet'            => $wallet,
+                'reviews'           => $reviews,
+            ]);
+            return;
+        }
+
         $this->view('delivery.dashboard', [
             'title'            => 'Kurir Dashboard - CicalengkaGO',
             'driver'           => $dm,

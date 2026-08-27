@@ -247,7 +247,12 @@ Router::get('/api/banners', [\App\Controllers\ApiController::class, 'banners']);
 Router::get('/api/categories', [\App\Controllers\ApiController::class, 'categories']);
 Router::get('/api/clear-stores', [\App\Controllers\ApiController::class, 'clearStores']);
 Router::post('/api/clear-stores', [\App\Controllers\ApiController::class, 'clearStores']);
-Router::get('/clear-stores', [\App\Controllers\ApiController::class, 'clearStores']);
+Router::get('/api/explore-stores', [CustomerController::class, 'exploreStores']);
+Router::get('/api/search', [CustomerController::class, 'search']);
+Router::get('/api/stores/{id}', [CustomerController::class, 'storeDetail']);
+Router::get('/api/wallet', [CustomerController::class, 'wallet']);
+Router::get('/api/profile', [CustomerController::class, 'profile']);
+Router::get('/api/notifications', [CustomerController::class, 'notifications']);
 
 
 

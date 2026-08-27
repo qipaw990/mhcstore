@@ -236,11 +236,20 @@ class OrderController extends Controller
     {
         $userId = auth_id();
         if (!$userId) {
+            if ($this->isJsonRequest()) {
+                $this->errorResponse('Silakan login terlebih dahulu.', null, 401);
+                return;
+            }
             $this->redirect('login');
             return;
         }
 
         $orders = $this->orderModel->getCustomerOrders($userId);
+
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Daftar pesanan berhasil diambil', $orders);
+            return;
+        }
 
         $this->view('customer.orders', [
             'title'      => 'Pesanan Saya - CicalengkaGO',
@@ -271,6 +280,10 @@ class OrderController extends Controller
 
         $order = $this->orderModel->findByIdOrCode($code);
         if (!$order) {
+            if ($this->isJsonRequest()) {
+                $this->errorResponse("Pesanan #{$code} tidak ditemukan.", null, 404);
+                return;
+            }
             $this->notFound("Pesanan #{$code} tidak ditemukan.");
             return;
         }
@@ -331,6 +344,17 @@ class OrderController extends Controller
             } catch (\Exception $e) {
                 // Keep snapToken null, client can request later
             }
+        }
+
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Tracking pesanan berhasil diambil', [
+                'order'      => $order,
+                'snap_token' => $snapToken,
+                'client_key' => $clientKey,
+                'snap_url'   => $snapUrl,
+                'is_sandbox' => $this->midtransService->isSandbox(),
+            ]);
+            return;
         }
 
         $this->view('customer.order_tracking', [

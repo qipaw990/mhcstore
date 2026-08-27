@@ -160,6 +160,11 @@ class CustomerController extends Controller
             }));
         }
 
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Daftar toko berhasil diambil', $stores);
+            return;
+        }
+
         $modules = $this->moduleModel->activeModules();
 
         $this->view('customer.explore_stores', [
@@ -185,7 +190,7 @@ class CustomerController extends Controller
 
         if (!empty($query)) {
             $products = $this->productModel->search($query, $moduleId);
-            $stores = Database::query("SELECT * FROM `stores` WHERE `name` LIKE ? OR `address` LIKE ?", ["%{$query}%", "%{$query}%"]);
+            $stores = Database::query("SELECT * FROM `stores` WHERE (`name` LIKE ? OR `address` LIKE ?) AND `status` = 'approved'", ["%{$query}%", "%{$query}%"]);
             foreach ($stores as &$s) {
                 attach_store_schedule_data($s);
             }
@@ -200,11 +205,21 @@ class CustomerController extends Controller
 
             $recommendProducts = $this->productModel->getRecommended(10);
             if (empty($recommendProducts)) {
-                $recommendProducts = Database::query("SELECT p.*, s.name as store_name, s.is_open as store_is_open FROM `products` p JOIN `stores` s ON p.store_id = s.id WHERE p.status = 1 ORDER BY p.id DESC LIMIT 10");
+                $recommendProducts = Database::query("SELECT p.*, s.name as store_name, s.is_open as store_is_open FROM `products` p JOIN `stores` s ON p.store_id = s.id WHERE p.status = 1 AND s.status = 'approved' ORDER BY p.id DESC LIMIT 10");
                 foreach ($recommendProducts as &$p) {
                     $p['final_price'] = $this->productModel->calculateFinalPrice($p);
                 }
             }
+        }
+
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Hasil pencarian berhasil diambil', [
+                'products'           => $products,
+                'stores'             => $stores,
+                'popular_stores'     => $popularStores,
+                'recommend_products' => $recommendProducts,
+            ]);
+            return;
         }
 
         $this->view('customer.search', [
@@ -222,6 +237,10 @@ class CustomerController extends Controller
     {
         $store = $this->storeModel->findWithDetails($id);
         if (!$store) {
+            if ($this->isJsonRequest()) {
+                $this->errorResponse('Toko tidak ditemukan', null, 404);
+                return;
+            }
             $this->redirect('404');
             return;
         }
@@ -234,6 +253,16 @@ class CustomerController extends Controller
         $products = $this->productModel->getByStore($id);
         $cartSummary = $this->cartModel->getUserCart(auth_id(), session_id());
         $reviews = $reviewModel->getStoreReviews($id, 15);
+
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Detail toko berhasil diambil', [
+                'store'        => $store,
+                'products'     => $products,
+                'reviews'      => $reviews,
+                'cart_summary' => $cartSummary,
+            ]);
+            return;
+        }
 
         $this->view('customer.store', [
             'title'        => $store['name'] . ' - CicalengkaGO',
@@ -262,6 +291,15 @@ class CustomerController extends Controller
             $addresses = Database::query("SELECT * FROM `customer_addresses` WHERE `user_id` = ? ORDER BY `is_default` DESC", [$userId]);
         }
 
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Data profil berhasil diambil', [
+                'user'      => $user,
+                'wallet'    => $wallet,
+                'addresses' => $addresses,
+            ]);
+            return;
+        }
+
         $this->view('customer.profile', [
             'title'      => 'Akun Saya - CicalengkaGO',
             'user'       => $user,
@@ -275,6 +313,10 @@ class CustomerController extends Controller
     {
         $userId = auth_id();
         if (!$userId) {
+            if ($this->isJsonRequest()) {
+                $this->errorResponse('Silakan login terlebih dahulu', null, 401);
+                return;
+            }
             $this->redirect('login');
             return;
         }
@@ -313,6 +355,17 @@ class CustomerController extends Controller
         $topupLogs = $topupLogModel->getByUser($userId, null, 50);
         $topupStats = $topupLogModel->getStats($userId);
 
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Data dompet digital berhasil diambil', [
+                'wallet'       => $wallet,
+                'transactions' => $transactions,
+                'topup_logs'   => $topupLogs,
+                'topup_stats'  => $topupStats,
+                'balance'      => (float)($wallet['balance'] ?? 0),
+            ]);
+            return;
+        }
+
         $this->view('customer.wallet', [
             'title'        => 'Dompet Digital CicalengkaPay',
             'wallet'       => $wallet,
@@ -330,6 +383,10 @@ class CustomerController extends Controller
     {
         $userId = auth_id();
         if (!$userId) {
+            if ($this->isJsonRequest()) {
+                $this->errorResponse('Silakan login terlebih dahulu', null, 401);
+                return;
+            }
             $this->redirect('login');
             return;
         }
@@ -352,6 +409,14 @@ class CustomerController extends Controller
             WHERE o.customer_id = ? AND o.order_status IN ('confirmed', 'processing', 'handover', 'picked_up', 'on_the_way')
             ORDER BY o.id DESC
         ", [$userId, $userId]);
+
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Notifikasi berhasil diambil', [
+                'notifications' => $notifications,
+                'active_chats'  => $activeChats,
+            ]);
+            return;
+        }
 
         $this->view('customer.notifications', [
             'title'         => 'Chat & Notifikasi',
@@ -510,6 +575,18 @@ class CustomerController extends Controller
 
         $_SESSION['user']['name'] = $name;
         $_SESSION['user']['phone'] = $phone;
+
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Profil berhasil diperbarui!', [
+                'user' => [
+                    'id'    => $userId,
+                    'name'  => $name,
+                    'phone' => $phone,
+                    'email' => $email,
+                ]
+            ]);
+            return;
+        }
 
         $_SESSION['success'] = 'Profil Anda berhasil diperbarui!';
         $this->redirect('profile');
