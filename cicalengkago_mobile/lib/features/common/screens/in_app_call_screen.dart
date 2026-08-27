@@ -89,11 +89,6 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         ),
       );
 
-    // Grant audio/microphone permissions automatically for WebRTC
-    _webViewController.setPlatformNavigationDelegate(
-      _webViewController.platform,
-    );
-
     _webViewController.loadRequest(Uri.parse(webUrl));
   }
 

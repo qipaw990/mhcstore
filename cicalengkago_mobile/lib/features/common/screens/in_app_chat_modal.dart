@@ -275,7 +275,7 @@ class _InAppChatModalState extends State<InAppChatModal> {
                                 ),
                               ),
                               child: Column(
-                                crossAxisAlignment: isMe ? CrossAlignment.end : CrossAlignment.start,
+                                crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     msgText,

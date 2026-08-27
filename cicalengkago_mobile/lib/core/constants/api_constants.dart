@@ -1,6 +1,7 @@
 class ApiConstants {
   // Base domain — sesuai cicago.store production
   static const String domainUrl    = 'https://cicago.store';
+  static const String baseUrl      = domainUrl;
   static const String imageBaseUrl = domainUrl;
 
   /// Helper pintar untuk memformat URL Gambar agar selalu valid
