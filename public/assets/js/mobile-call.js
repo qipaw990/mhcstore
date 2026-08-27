@@ -878,7 +878,10 @@
                 offerToReceiveVideo: false
             });
             await peerConnection.setLocalDescription(offer);
-            offerSdp = JSON.stringify(offer);
+            offerSdp = JSON.stringify({
+                type: offer.type || 'offer',
+                sdp: offer.sdp
+            });
 
             try {
                 const res = await fetch((window.BASE_URL || '') + '/calls/initiate', {
@@ -980,8 +983,16 @@
 
             if (currentCallOffer) {
                 try {
-                    const offerObj = typeof currentCallOffer === 'string' ? JSON.parse(currentCallOffer) : currentCallOffer;
-                    await peerConnection.setRemoteDescription(new RTCSessionDescription(offerObj));
+                    let offerObj = typeof currentCallOffer === 'string' ? JSON.parse(currentCallOffer) : currentCallOffer;
+                    if (typeof offerObj === 'string') {
+                        try { offerObj = JSON.parse(offerObj); } catch (e) {}
+                    }
+                    if (offerObj) {
+                        if (!offerObj.type || offerObj.type === 'null') {
+                            offerObj.type = 'offer';
+                        }
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(offerObj));
+                    }
                     
                     if (currentCallData && currentCallData.ice_candidates) {
                         await this.flushIceCandidates(currentCallData.ice_candidates);
@@ -993,7 +1004,10 @@
                     };
                     const answer = await peerConnection.createAnswer(answerOptions);
                     await peerConnection.setLocalDescription(answer);
-                    answerSdp = JSON.stringify(answer);
+                    answerSdp = JSON.stringify({
+                        type: answer.type || 'answer',
+                        sdp: answer.sdp
+                    });
 
                     await this.flushPendingLocalCandidates();
                 } catch (e) {
@@ -1199,10 +1213,20 @@
                     if (activeCall.status === 'connected' && isCaller && peerConnection) {
                         if (activeCall.answer && peerConnection.signalingState === 'have-local-offer') {
                             try {
-                                const answerObj = typeof activeCall.answer === 'string' ? JSON.parse(activeCall.answer) : activeCall.answer;
-                                await peerConnection.setRemoteDescription(new RTCSessionDescription(answerObj));
-                                await this.flushIceCandidates(activeCall.ice_candidates);
-                                this.setCallConnected();
+                                let answerObj = typeof activeCall.answer === 'string' ? JSON.parse(activeCall.answer) : activeCall.answer;
+                                if (typeof answerObj === 'string') {
+                                    try { answerObj = JSON.parse(answerObj); } catch (e) {}
+                                }
+                                if (answerObj) {
+                                    if (!answerObj.type || answerObj.type === 'null') {
+                                        answerObj.type = 'answer';
+                                    }
+                                    if (answerObj.sdp) {
+                                        await peerConnection.setRemoteDescription(new RTCSessionDescription(answerObj));
+                                        await this.flushIceCandidates(activeCall.ice_candidates);
+                                        this.setCallConnected();
+                                    }
+                                }
                             } catch (e) {
                                 console.error('[VoiceCall] Error setting remote answer:', e);
                             }
