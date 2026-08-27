@@ -576,6 +576,8 @@ class OrderController extends Controller
                 'otp'                 => $order['otp'],
                 'unread_chats'        => $unreadChatCount,
                 'batch_info'          => $batchInfo,
+                'total_amount'        => (float)($order['batch_total_amount'] ?? $order['total_amount'] ?? $order['order_amount'] ?? 0),
+                'order_amount'        => (float)($order['order_amount'] ?? $order['total_amount'] ?? 0),
                 'driver'         => [
                     'assigned' => $isDriverAssigned,
                     'name'     => $isDriverAssigned ? ($order['dm_name'] ?? 'Mitra Kurir Cicalengka') : 'Mencari Kurir...',

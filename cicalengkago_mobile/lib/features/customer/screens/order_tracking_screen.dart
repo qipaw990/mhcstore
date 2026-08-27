@@ -202,7 +202,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         ? LatLng((driverLat + custLat) / 2, (driverLng + custLng) / 2)
         : LatLng((storeLat + custLat) / 2, (storeLng + custLng) / 2);
 
-    final totalAmount = double.tryParse(order['total_amount']?.toString() ?? '0') ?? 0.0;
+    final totalAmount = double.tryParse(
+      live['total_amount']?.toString() ??
+      order['total_amount']?.toString() ??
+      order['order_amount']?.toString() ??
+      order['grand_total']?.toString() ??
+      (live['batch_info'] is Map ? (live['batch_info'] as Map)['total_amount']?.toString() : null) ??
+      '0'
+    ) ?? 0.0;
     final driverName = driverMap['name']?.toString() ?? order['dm_name']?.toString() ?? 'Mitra Kurir Cicalengka';
     final driverPhone = driverMap['phone']?.toString() ?? order['dm_phone']?.toString() ?? '';
     final driverAvatar = driverMap['avatar']?.toString() ?? order['dm_avatar']?.toString();
