@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -81,10 +82,6 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       ..setOnConsoleMessage((message) {
         debugPrint('[VoiceCallWebView] ${message.message}');
       })
-      ..setOnPlatformPermissionRequest((request) {
-        debugPrint('[VoiceCallWebView] Granting permission: ${request.types}');
-        request.grant();
-      })
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (url) {
@@ -96,6 +93,15 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
           },
         ),
       );
+
+    if (_webViewController.platform is AndroidWebViewController) {
+      (_webViewController.platform as AndroidWebViewController).setOnPlatformPermissionRequest(
+        (AndroidWebViewPermissionRequest request) {
+          debugPrint('[VoiceCallWebView] Granting Android mic permission: ${request.types}');
+          request.grant();
+        },
+      );
+    }
 
     _webViewController.loadRequest(Uri.parse(webUrl));
   }
