@@ -209,7 +209,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final vehicleType = driverMap['vehicle']?.toString() ?? order['vehicle_type']?.toString() ?? 'Motor';
     final vehiclePlate = driverMap['plate']?.toString() ?? order['vehicle_number']?.toString() ?? '';
 
-    final batchInfo = live['batch_info'] is Map ? (live['batch_info'] as Map) : (order['batch_stores'] != null ? {'is_multi_pickup': true} : null);
+    final Map<String, dynamic>? batchInfo = live['batch_info'] is Map
+        ? Map<String, dynamic>.from(live['batch_info'] as Map)
+        : (order['batch_stores'] != null ? <String, dynamic>{'is_multi_pickup': true} : null);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
