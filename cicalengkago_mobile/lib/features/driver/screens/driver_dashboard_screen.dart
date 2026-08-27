@@ -23,7 +23,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<DriverController>().fetchRadarData();
+      final ctrl = context.read<DriverController>();
+      ctrl.fetchRadarData();
+      ctrl.startRadarPolling();
     });
   }
 
