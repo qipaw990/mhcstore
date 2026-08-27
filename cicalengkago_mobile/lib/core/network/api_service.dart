@@ -24,6 +24,7 @@ class ApiService {
     try {
       final token = await getToken();
       final headers = <String, String>{
+        'Content-Type': 'application/json',
         'Accept': 'application/json',
         if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
       };
@@ -31,7 +32,7 @@ class ApiService {
       final response = await http.post(
         Uri.parse(url),
         headers: headers,
-        body: body,
+        body: jsonEncode(body),
       );
 
       final decoded = jsonDecode(response.body);

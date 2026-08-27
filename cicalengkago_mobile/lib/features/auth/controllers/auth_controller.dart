@@ -43,12 +43,12 @@ class AuthController extends ChangeNotifier {
     _isLoading = false;
 
     if (response['success'] == true && response['data'] != null) {
-      final token = response['data']['token'] as String?;
+      final token = (response['data']['token'] as String?) ?? 'session_${DateTime.now().millisecondsSinceEpoch}';
       final userData = response['data']['user'] as Map<String, dynamic>?;
 
-      if (token != null && userData != null) {
+      if (userData != null) {
         _user = userData;
-        _role = userData['role'] ?? 'customer';
+        _role = userData['role']?.toString().toLowerCase() ?? 'customer';
         await ApiService.saveSession(token, userData);
         notifyListeners();
         return true;

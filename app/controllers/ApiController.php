@@ -26,8 +26,15 @@ class ApiController extends Controller
 
         try {
             $user = (new AuthService())->login($username, $password);
+            
+            $token = $user['api_token'] ?? null;
+            if (empty($token)) {
+                $token = bin2hex(random_bytes(32));
+                (new \App\Models\User())->update($user['id'], ['api_token' => $token]);
+            }
+
             $this->successResponse('Login berhasil', [
-                'token' => $user['api_token'],
+                'token' => $token,
                 'user'  => [
                     'id'    => $user['id'],
                     'name'  => $user['name'],
