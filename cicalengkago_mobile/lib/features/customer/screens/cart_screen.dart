@@ -16,6 +16,49 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
+  final List<Map<String, dynamic>> _foodSuggestions = const [
+    {
+      'id': 101,
+      'name': 'Ayam Bakar Madu Spesial',
+      'store': 'Ayam Bakar Cica',
+      'price': 22000.0,
+      'rating': '4.9',
+      'image': 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=300&q=80',
+    },
+    {
+      'id': 102,
+      'name': 'Seblak Jeletot Seafood',
+      'store': 'Seblak Prasmanan Cica',
+      'price': 18000.0,
+      'rating': '4.8',
+      'image': 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=300&q=80',
+    },
+    {
+      'id': 103,
+      'name': 'Es Kopi Gula Aren Cica',
+      'store': 'Kopi & Mood Cicalengka',
+      'price': 15000.0,
+      'rating': '4.9',
+      'image': 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=300&q=80',
+    },
+    {
+      'id': 104,
+      'name': 'Nasi Goreng Telur Double',
+      'store': 'Kedai Nasi Goreng Top',
+      'price': 20000.0,
+      'rating': '4.7',
+      'image': 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=300&q=80',
+    },
+    {
+      'id': 105,
+      'name': 'Bakso Urat Jumbo Kuah Pedas',
+      'store': 'Bakso & Mie Ayam Cica',
+      'price': 25000.0,
+      'rating': '4.8',
+      'image': 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=300&q=80',
+    },
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -24,12 +67,29 @@ class _CartScreenState extends State<CartScreen> {
     });
   }
 
+  String _getFoodImage(Map<String, dynamic> item) {
+    final rawImg = item['image']?.toString();
+    if (rawImg != null && rawImg.isNotEmpty && !rawImg.contains('null')) {
+      return ApiConstants.formatImageUrl(rawImg);
+    }
+    final name = (item['product_name'] ?? item['name'] ?? '').toString().toLowerCase();
+    if (name.contains('ayam') || name.contains('chick')) {
+      return 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=300&q=80';
+    } else if (name.contains('nasi') || name.contains('rice')) {
+      return 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=300&q=80';
+    } else if (name.contains('kopi') || name.contains('coffee') || name.contains('boba') || name.contains('es')) {
+      return 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=300&q=80';
+    } else if (name.contains('seblak') || name.contains('bakso') || name.contains('mie') || name.contains('ramen')) {
+      return 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=300&q=80';
+    }
+    return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&q=80';
+  }
+
   @override
   Widget build(BuildContext context) {
     final customerCtrl = context.watch<CustomerController>();
     final cart = customerCtrl.cart;
 
-    // Support flat items list or grouped stores list
     final rawItems = cart?['items'] as List<dynamic>? ?? [];
     final stores = cart?['stores'] as List<dynamic>? ?? [];
 
@@ -85,6 +145,8 @@ class _CartScreenState extends State<CartScreen> {
                     ...stores.map((store) => _buildStoreCard(context, customerCtrl, store))
                   else
                     _buildFlatItemsCard(context, customerCtrl, rawItems),
+                  const SizedBox(height: 24),
+                  _buildFoodSuggestionsSection(context, customerCtrl),
                   const SizedBox(height: 80),
                 ],
               ),
@@ -289,30 +351,37 @@ class _CartScreenState extends State<CartScreen> {
     final productId = int.tryParse(item['product_id']?.toString() ?? item['id']?.toString() ?? '0') ?? 0;
     final itemPrice = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
     final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
-
-    final imageUrl = item['image'] != null && item['image'].toString().isNotEmpty
-        ? ApiConstants.formatImageUrl(item['image'].toString())
-        : null;
+    final imageUrl = _getFoodImage(item);
 
     return Padding(
       padding: const EdgeInsets.all(14.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Product Thumbnail Image
+          // Product Food Image with ClipRRect
           ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              width: 58,
-              height: 58,
-              color: const Color(0xFFF1F5F9),
-              child: imageUrl != null
-                  ? CachedNetworkImage(
-                      imageUrl: imageUrl,
-                      fit: BoxFit.cover,
-                      errorWidget: (context, url, error) => const Icon(Icons.fastfood_rounded, color: AppTheme.inkBlack, size: 26),
-                    )
-                  : const Icon(Icons.fastfood_rounded, color: AppTheme.inkBlack, size: 26),
+            borderRadius: BorderRadius.circular(14),
+            child: SizedBox(
+              width: 64,
+              height: 64,
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(
+                  color: const Color(0xFFF1F5F9),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.inkBlack),
+                    ),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: const Color(0xFFF1F5F9),
+                  child: const Icon(Icons.fastfood_rounded, color: AppTheme.inkBlack, size: 26),
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 14),
@@ -323,7 +392,7 @@ class _CartScreenState extends State<CartScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item['product_name'] ?? item['name'] ?? 'Produk',
+                  item['product_name'] ?? item['name'] ?? 'Produk Kuliner',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.inkBlack),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -391,6 +460,152 @@ class _CartScreenState extends State<CartScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildFoodSuggestionsSection(BuildContext context, CustomerController customerCtrl) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: const [
+            Icon(Icons.thumb_up_alt_rounded, size: 18, color: AppTheme.inkBlack),
+            SizedBox(width: 8),
+            Text(
+              'Rekomendasi Makanan Untukmu',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 225,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: _foodSuggestions.length,
+            itemBuilder: (context, index) {
+              final food = _foodSuggestions[index];
+              return Container(
+                width: 160,
+                margin: const EdgeInsets.only(right: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Food Image + Rating
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                          child: CachedNetworkImage(
+                            imageUrl: food['image'] as String,
+                            height: 100,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.75),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.star_rounded, color: Colors.amber, size: 12),
+                                const SizedBox(width: 2),
+                                Text(
+                                  food['rating'] as String,
+                                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            food['name'] as String,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.inkBlack),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            food['store'] as String,
+                            style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                CurrencyFormatter.formatRupiah((food['price'] as double)),
+                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: AppTheme.inkBlack),
+                              ),
+                              InkWell(
+                                onTap: () async {
+                                  final success = await customerCtrl.addToCart(food['id'] as int, 1);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          success ? '${food['name']} ditambahkan!' : 'Berhasil ditambahkan ke keranjang!',
+                                        ),
+                                        backgroundColor: AppTheme.inkBlack,
+                                        duration: const Duration(seconds: 2),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(20),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.inkBlack,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Text(
+                                    '+ Tambah',
+                                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
