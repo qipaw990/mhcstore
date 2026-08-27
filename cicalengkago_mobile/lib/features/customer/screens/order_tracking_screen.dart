@@ -8,6 +8,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
+import 'customer_wallet_screen.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
   final String orderCode;
@@ -25,22 +26,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   Timer? _refreshTimer;
   final MapController _mapController = MapController();
 
-  final List<Map<String, dynamic>> _statusSteps = [
-    {'key': 'pending', 'label': 'Pesanan Diterima', 'icon': Icons.receipt_long_rounded},
-    {'key': 'confirmed', 'label': 'Dikonfirmasi Resto', 'icon': Icons.verified_rounded},
-    {'key': 'processing', 'label': 'Sedang Diproses', 'icon': Icons.soup_kitchen_rounded},
-    {'key': 'handover', 'label': 'Diserahkan ke Kurir', 'icon': Icons.handshake_rounded},
-    {'key': 'picked_up', 'label': 'Diambil Kurir', 'icon': Icons.two_wheeler_rounded},
-    {'key': 'on_the_way', 'label': 'Kurir Menuju Lokasi Anda', 'icon': Icons.delivery_dining_rounded},
-    {'key': 'delivered', 'label': 'Pesanan Tiba', 'icon': Icons.task_alt_rounded},
-  ];
-
   @override
   void initState() {
     super.initState();
     _fetchFullOrderDetails();
     _pollLiveTracking();
-    // Live polling every 3 seconds for real-time driver & status updates
+    // Real-time polling every 3 seconds matching order_tracking.php
     _refreshTimer = Timer.periodic(const Duration(seconds: 3), (_) => _pollLiveTracking());
   }
 
@@ -80,7 +71,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             _isLoading = false;
           });
 
-          // Move map to driver location if driver is assigned & lat/lng updated
+          // Smoothly animate map camera to driver position if driver assigned
           final driverMap = live['driver'] is Map ? (live['driver'] as Map) : {};
           final driverLat = double.tryParse(driverMap['lat']?.toString() ?? '');
           final driverLng = double.tryParse(driverMap['lng']?.toString() ?? '');
@@ -151,12 +142,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     }
   }
 
-  int _getCurrentStepIndex(String status) {
-    for (int i = 0; i < _statusSteps.length; i++) {
-      if (_statusSteps[i]['key'] == status) return i;
+  Future<void> _openGoogleMapsNav(double destLat, double destLng) async {
+    final url = 'https://www.google.com/maps/dir/?api=1&destination=$destLat,$destLng';
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
-    if (status == 'picked_up') return 4;
-    return 0;
   }
 
   @override
@@ -177,22 +168,24 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final order = _orderData ?? {};
     final live = _liveData ?? {};
 
-    // Live synced values from server live-tracking endpoint
+    // Live synced state fields matching order_tracking.php
     final status = live['order_status']?.toString() ?? order['order_status']?.toString() ?? 'pending';
     final paymentMethod = live['payment_method']?.toString() ?? order['payment_method']?.toString() ?? 'cod';
     final paymentStatus = live['payment_status']?.toString() ?? order['payment_status']?.toString() ?? 'unpaid';
     final remainingSeconds = (live['remaining_seconds'] as num?)?.toInt() ?? 60;
+    final otpCode = live['otp']?.toString() ?? order['otp']?.toString() ?? '----';
+    final unreadChats = (live['unread_chats'] as num?)?.toInt() ?? 0;
+    final cancellationReason = live['cancellation_reason']?.toString() ?? order['cancellation_reason']?.toString() ?? '';
 
     final bool isCanceled = status == 'canceled';
     final bool isUnpaidOnline = paymentMethod == 'midtrans' && paymentStatus != 'paid' && !isCanceled;
     final bool isDelivered = status == 'delivered';
 
     final driverMap = live['driver'] is Map ? (live['driver'] as Map) : {};
-    final bool hasDriver = (driverMap['assigned'] == true) || (order['delivery_man_id'] != null && !isCanceled);
+    final bool isDriverValid = (driverMap['assigned'] == true) ||
+        (order['delivery_man_id'] != null && !isCanceled && ['processing', 'handover', 'on_the_way', 'delivered'].contains(status));
 
-    final currentStep = _getCurrentStepIndex(status);
-
-    // Map Coordinates live sync
+    // Map Coordinates
     final storeMap = live['store'] is Map ? (live['store'] as Map) : {};
     final destMap = live['destination'] is Map ? (live['destination'] as Map) : {};
 
@@ -205,16 +198,18 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final driverLat = double.tryParse(driverMap['lat']?.toString() ?? order['dm_lat']?.toString() ?? '') ?? storeLat;
     final driverLng = double.tryParse(driverMap['lng']?.toString() ?? order['dm_lng']?.toString() ?? '') ?? storeLng;
 
-    final LatLng centerPoint = hasDriver
+    final LatLng centerPoint = isDriverValid
         ? LatLng((driverLat + custLat) / 2, (driverLng + custLng) / 2)
         : LatLng((storeLat + custLat) / 2, (storeLng + custLng) / 2);
 
     final totalAmount = double.tryParse(order['total_amount']?.toString() ?? '0') ?? 0.0;
-    final driverName = driverMap['name']?.toString() ?? order['dm_name']?.toString() ?? 'Kurir CicalengkaGO';
+    final driverName = driverMap['name']?.toString() ?? order['dm_name']?.toString() ?? 'Mitra Kurir Cicalengka';
     final driverPhone = driverMap['phone']?.toString() ?? order['dm_phone']?.toString() ?? '';
     final driverAvatar = driverMap['avatar']?.toString() ?? order['dm_avatar']?.toString();
     final vehicleType = driverMap['vehicle']?.toString() ?? order['vehicle_type']?.toString() ?? 'Motor';
     final vehiclePlate = driverMap['plate']?.toString() ?? order['vehicle_number']?.toString() ?? '';
+
+    final batchInfo = live['batch_info'] is Map ? (live['batch_info'] as Map) : (order['batch_stores'] != null ? {'is_multi_pickup': true} : null);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -245,10 +240,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         ],
       ),
       body: isCanceled
-          ? _buildCanceledView()
+          ? _buildCanceledView(order, cancellationReason, paymentMethod, paymentStatus, totalAmount)
           : (isUnpaidOnline
               ? _buildUnpaidView(totalAmount)
-              : _buildLiveTrackingView(
+              : _buildActiveTrackingView(
                   centerPoint: centerPoint,
                   storeLat: storeLat,
                   storeLng: storeLng,
@@ -256,16 +251,19 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   custLng: custLng,
                   driverLat: driverLat,
                   driverLng: driverLng,
-                  hasDriver: hasDriver,
+                  isDriverValid: isDriverValid,
                   isDelivered: isDelivered,
                   driverAvatar: driverAvatar,
                   driverName: driverName,
                   vehicleType: vehicleType,
                   vehiclePlate: vehiclePlate,
                   driverPhone: driverPhone,
-                  currentStep: currentStep,
+                  status: status,
+                  otpCode: otpCode,
+                  unreadChats: unreadChats,
                   remainingSeconds: remainingSeconds,
                   totalAmount: totalAmount,
+                  batchInfo: batchInfo,
                   order: order,
                 )),
     );
@@ -288,12 +286,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     }
     final labels = {
       'pending': 'Mencari Driver',
-      'confirmed': 'Dikonfirmasi',
-      'processing': 'Diproses Resto',
+      'confirmed': 'Dikonfirmasi Resto',
+      'processing': 'Sedang Disiapkan',
       'handover': 'Diserahkan ke Kurir',
-      'picked_up': 'Pesanan Diambil',
-      'on_the_way': 'Dalam Pengantaran',
-      'delivered': 'Pesanan Tiba',
+      'picked_up': 'Pesanan Diambil Kurir',
+      'on_the_way': 'Kurir Menuju Lokasi',
+      'delivered': 'Pesanan Selesai',
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -307,39 +305,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           color: status == 'delivered' ? const Color(0xFF15803D) : const Color(0xFF1D4ED8),
           fontSize: 9.5,
           fontWeight: FontWeight.w900,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCanceledView() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(color: Color(0xFFFEE2E2), shape: BoxShape.circle),
-              child: const Icon(Icons.cancel_rounded, size: 48, color: AppTheme.primaryRed),
-            ),
-            const SizedBox(height: 16),
-            const Text('Pesanan Telah Dibatalkan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-            const SizedBox(height: 6),
-            const Text('Pesanan ini tidak lagi diproses.', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryRed,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              ),
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Pesan Kembali', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-            ),
-          ],
         ),
       ),
     );
@@ -396,6 +361,23 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: const Color(0xFFFFFBEB), borderRadius: BorderRadius.circular(12)),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706), size: 18),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Pesanan belum diproses. Silakan klik tombol Bayar Sekarang di bawah.',
+                          style: TextStyle(fontSize: 10.5, color: Color(0xFFB45309), fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
@@ -446,7 +428,157 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     );
   }
 
-  Widget _buildLiveTrackingView({
+  Widget _buildCanceledView(
+    Map<String, dynamic> order,
+    String cancellationReason,
+    String paymentMethod,
+    String paymentStatus,
+    double totalAmount,
+  ) {
+    final bool isRefundable = ['wallet', 'midtrans', 'online', 'qris', 'va', 'credit_card'].contains(paymentMethod) && paymentStatus == 'refunded';
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          // Red Header Banner
+          Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFEE2737), Color(0xFF9B1C1C)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              boxShadow: [BoxShadow(color: AppTheme.primaryRed.withValues(alpha: 0.2), blurRadius: 12)],
+            ),
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle),
+                      child: const Icon(Icons.cancel_rounded, color: Colors.white, size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Pesanan Dibatalkan Otomatis', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                          Text('Tidak mendapatkan kurir dalam waktu 1 menit', style: TextStyle(color: Colors.white70, fontSize: 10.5)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(10)),
+                  child: Text(
+                    cancellationReason.isNotEmpty ? cancellationReason : 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 1 menit',
+                    style: const TextStyle(color: Colors.white70, fontSize: 10.5, height: 1.4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Refund Status Body
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                if (isRefundable)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDCFCE7),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFBBF7D0)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(color: Color(0xFF16A34A), shape: BoxShape.circle),
+                          child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 16),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Dana Berhasil Dikembalikan 💚', style: TextStyle(color: Color(0xFF15803D), fontSize: 11.5, fontWeight: FontWeight.bold)),
+                              Text('${CurrencyFormatter.formatRupiah(totalAmount)} telah masuk ke CicalengkaPay Anda', style: const TextStyle(fontSize: 10, color: Color(0xFF475569))),
+                            ],
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerWalletScreen())),
+                          child: const Text('Lihat Mutasi', style: TextStyle(color: Color(0xFF16A34A), fontWeight: FontWeight.bold, fontSize: 10.5)),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline_rounded, color: Color(0xFF64748B), size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            paymentMethod == 'cod' ? 'Metode COD: tidak ada dana yang telah keluar.' : 'Pesanan belum dibayar. Tidak ada dana yang dipotong.',
+                            style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryRed,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.refresh_rounded, size: 16),
+                        label: const Text('Pesan Lagi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActiveTrackingView({
     required LatLng centerPoint,
     required double storeLat,
     required double storeLng,
@@ -454,21 +586,28 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     required double custLng,
     required double driverLat,
     required double driverLng,
-    required bool hasDriver,
+    required bool isDriverValid,
     required bool isDelivered,
     required String? driverAvatar,
     required String driverName,
     required String vehicleType,
     required String vehiclePlate,
     required String driverPhone,
-    required int currentStep,
+    required String status,
+    required String otpCode,
+    required int unreadChats,
     required int remainingSeconds,
     required double totalAmount,
+    required Map<String, dynamic>? batchInfo,
     required Map<String, dynamic> order,
   }) {
+    // Calculate live distance and estimated ETA
+    final distKm = const Distance().as(LengthUnit.Kilometer, LatLng(driverLat, driverLng), LatLng(custLat, custLng));
+    final etaMin = (distKm * 3 + 5).round();
+
     return Column(
       children: [
-        // Live Map Header
+        // Live Map Container with Floating HUD
         Expanded(
           flex: 4,
           child: Stack(
@@ -515,7 +654,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         ),
                       ),
                       // Driver Pin
-                      if (hasDriver)
+                      if (isDriverValid)
                         Marker(
                           point: LatLng(driverLat, driverLng),
                           width: 44,
@@ -534,47 +673,97 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 ],
               ),
 
-              // Driver Search Radar Overlay
-              if (!hasDriver && !isDelivered)
-                Positioned(
-                  bottom: 12,
-                  left: 14,
-                  right: 14,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12)],
-                    ),
-                    child: Row(
+              // Top Floating HUD (Live Radar Status)
+              Positioned(
+                top: 10,
+                left: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.75),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.radar_rounded, color: Colors.greenAccent, size: 14),
+                      SizedBox(width: 6),
+                      Text('Live GPS Radar', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Bottom Floating Telemetry HUD (ETA & Controls)
+              Positioned(
+                bottom: 12,
+                left: 12,
+                right: 12,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2.5, color: AppTheme.primaryRed),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)]),
+                          child: Row(
                             children: [
-                              const Text(
-                                'Mencari Driver Terdekat...',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
-                              ),
-                              Text(
-                                'Sisa waktu pencarian: $remainingSeconds detik',
-                                style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-                              ),
+                              const Icon(Icons.pin_drop_rounded, color: AppTheme.primaryRed, size: 14),
+                              const SizedBox(width: 4),
+                              Text('${distKm.toStringAsFixed(1)} km', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(color: AppTheme.primaryRed, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)]),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.timer_rounded, color: Colors.white, size: 14),
+                              const SizedBox(width: 4),
+                              Text('Est. Tiba ~$etaMin min', style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        if (isDriverValid)
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: AppTheme.primaryRed,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              elevation: 2,
+                            ),
+                            onPressed: () {
+                              _mapController.move(LatLng(driverLat, driverLng), 15.5);
+                            },
+                            icon: const Icon(Icons.my_location_rounded, size: 14),
+                            label: const Text('Fokus Kurir', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                          ),
+                        const SizedBox(width: 8),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryRed,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            elevation: 2,
+                          ),
+                          onPressed: () => _openGoogleMapsNav(custLat, custLng),
+                          icon: const Icon(Icons.navigation_rounded, size: 14),
+                          label: const Text('Maps Nav', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
+              ),
             ],
           ),
         ),
@@ -593,8 +782,97 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Driver Information Card
-                  if (hasDriver) ...[
+                  // Order Delivered Celebration Card
+                  if (isDelivered) ...[
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF047857)]),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.check_circle_rounded, color: Colors.white, size: 30),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Pesanan Selesai Diantar! 🎉', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                                Text('Terima kasih telah memesan melalui CicalengkaGO.', style: TextStyle(color: Colors.white70, fontSize: 10.5)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+
+                  // OTP Code Banner Card
+                  if (!isDelivered) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [Color(0xFF101820), Color(0xFF1E293B)]),
+                        borderRadius: BorderRadius.circular(16),
+                        border: const Border(left: BorderSide(color: AppTheme.primaryRed, width: 4)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('KODE OTP PENERIMAAN', style: TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                              SizedBox(height: 2),
+                              Text('Berikan 4-digit ini kepada kurir', style: TextStyle(color: Colors.white70, fontSize: 10)),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                            decoration: BoxDecoration(color: AppTheme.primaryRed.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
+                            child: Text(
+                              otpCode,
+                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppTheme.primaryRed, letterSpacing: 3),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+
+                  // Multi-Store Batch Pickup Notice Card
+                  if (batchInfo != null && batchInfo['is_multi_pickup'] == true) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFBEB),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFFCD34D)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.store_rounded, color: Color(0xFFD97706), size: 22),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Penjemputan Multi-Toko (Ke-${batchInfo['pickup_sequence'] ?? 1})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5, color: Color(0xFF92400E))),
+                                const Text('Kurir mengambil pesanan dari beberapa toko dalam satu rute.', style: TextStyle(fontSize: 10, color: Color(0xFFB45309))),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+
+                  // Driver Card (Assigned or Searching)
+                  if (isDriverValid)
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -624,46 +902,109 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  driverName,
-                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                Row(
+                                  children: [
+                                    Text(driverName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                                    const SizedBox(width: 4),
+                                    const Icon(Icons.verified_rounded, color: AppTheme.primaryRed, size: 14),
+                                  ],
                                 ),
                                 const SizedBox(height: 2),
-                                Text(
-                                  '$vehicleType ${vehiclePlate.isNotEmpty ? "• $vehiclePlate" : ""}',
-                                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
-                                ),
+                                Text('$vehicleType ${vehiclePlate.isNotEmpty ? "• $vehiclePlate" : ""}', style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
                               ],
                             ),
                           ),
-                          if (driverPhone.isNotEmpty) ...[
-                            InkWell(
-                              onTap: () => launchUrl(Uri.parse('tel:$driverPhone')),
-                              borderRadius: BorderRadius.circular(20),
-                              child: Container(
-                                padding: const EdgeInsets.all(9),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFDCFCE7),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.call_rounded, color: Color(0xFF16A34A), size: 18),
+                          Row(
+                            children: [
+                              Stack(
+                                children: [
+                                  IconButton(
+                                    onPressed: () {
+                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fitur Chat siap digunakan')));
+                                    },
+                                    icon: const Icon(Icons.chat_bubble_rounded, color: AppTheme.primaryRed, size: 20),
+                                  ),
+                                  if (unreadChats > 0)
+                                    Positioned(
+                                      right: 8,
+                                      top: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                        child: Text('$unreadChats', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                                      ),
+                                    ),
+                                ],
                               ),
+                              if (driverPhone.isNotEmpty)
+                                IconButton(
+                                  onPressed: () => launchUrl(Uri.parse('tel:$driverPhone')),
+                                  icon: const Icon(Icons.call_rounded, color: Color(0xFF16A34A), size: 20),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (!isDelivered)
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)],
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2.5, color: AppTheme.primaryRed),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Mencari Kurir Terdekat...', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                                    Text('Sisa waktu pencarian: $remainingSeconds detik', style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(10)),
+                                child: Text('00:${remainingSeconds.toString().padLeft(2, '0')}', style: const TextStyle(color: AppTheme.primaryRed, fontWeight: FontWeight.w800, fontSize: 11)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: (remainingSeconds / 60).clamp(0.0, 1.0),
+                              backgroundColor: const Color(0xFFF1F5F9),
+                              color: AppTheme.primaryRed,
+                              minHeight: 4,
                             ),
-                          ],
+                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
-                  ],
 
-                  // Status Stepper
-                  _buildStatusStepper(currentStep, isDelivered),
+                  const SizedBox(height: 16),
+
+                  // Delivery Stepper Progress (4 Steps matching order_tracking.php)
+                  _buildFourStepStepper(status),
 
                   const SizedBox(height: 16),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
                   const SizedBox(height: 14),
 
-                  // Order Summary Row
+                  // Order Summary & Rating Row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -700,23 +1041,57 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     );
   }
 
-  Widget _buildStatusStepper(int currentStep, bool isDelivered) {
+  Widget _buildFourStepStepper(String status) {
+    final bool isStep1Done = true;
+    final bool isStep2Done = ['processing', 'handover', 'picked_up', 'on_the_way', 'delivered'].contains(status);
+    final bool isStep2Active = status == 'confirmed';
+
+    final bool isStep3Done = ['on_the_way', 'delivered'].contains(status);
+    final bool isStep3Active = ['processing', 'handover', 'picked_up'].contains(status);
+
+    final bool isStep4Done = status == 'delivered';
+    final bool isStep4Active = status == 'on_the_way';
+
+    final steps = [
+      {
+        'title': 'Pesanan Dikonfirmasi',
+        'sub': 'Resto/Mitra menerima pesanan Anda',
+        'done': isStep1Done,
+        'active': false,
+        'icon': Icons.receipt_long_rounded
+      },
+      {
+        'title': 'Diproses & Disiapkan',
+        'sub': 'Makanan sedang dimasak / dikemas',
+        'done': isStep2Done,
+        'active': isStep2Active,
+        'icon': Icons.soup_kitchen_rounded
+      },
+      {
+        'title': 'Kurir Menuju Lokasi Anda',
+        'sub': 'Kurir dalam perjalanan pengantaran',
+        'done': isStep3Done,
+        'active': isStep3Active,
+        'icon': Icons.two_wheeler_rounded
+      },
+      {
+        'title': 'Pesanan Selesai',
+        'sub': 'Barang sampai dengan aman',
+        'done': isStep4Done,
+        'active': isStep4Active,
+        'icon': Icons.task_alt_rounded
+      },
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          isDelivered ? '✅ Pesanan Selesai!' : '🚀 Status Pengantaran Live',
-          style: TextStyle(
-            fontSize: 14.5,
-            fontWeight: FontWeight.w800,
-            color: isDelivered ? const Color(0xFF16A34A) : const Color(0xFF0F172A),
-          ),
-        ),
+        const Text('Status Pengantaran', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
         const SizedBox(height: 12),
-        ...List.generate(_statusSteps.length, (i) {
-          final step = _statusSteps[i];
-          final isDone = i <= currentStep;
-          final isActive = i == currentStep;
+        ...List.generate(steps.length, (i) {
+          final s = steps[i];
+          final bool done = s['done'] as bool;
+          final bool active = s['active'] as bool;
 
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -724,39 +1099,48 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               Column(
                 children: [
                   Container(
-                    width: 28,
-                    height: 28,
+                    width: 26,
+                    height: 26,
                     decoration: BoxDecoration(
-                      color: isDone
-                          ? (isActive ? AppTheme.primaryRed : const Color(0xFF16A34A))
-                          : const Color(0xFFF1F5F9),
+                      color: done
+                          ? const Color(0xFF16A34A)
+                          : (active ? AppTheme.primaryRed : const Color(0xFFF1F5F9)),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      step['icon'] as IconData,
-                      color: isDone ? Colors.white : const Color(0xFFCBD5E1),
-                      size: 14,
+                      done ? Icons.check_rounded : (s['icon'] as IconData),
+                      color: (done || active) ? Colors.white : const Color(0xFFCBD5E1),
+                      size: 13,
                     ),
                   ),
-                  if (i < _statusSteps.length - 1)
+                  if (i < steps.length - 1)
                     Container(
                       width: 2,
-                      height: 20,
-                      color: i < currentStep ? const Color(0xFF16A34A) : const Color(0xFFF1F5F9),
+                      height: 22,
+                      color: done ? const Color(0xFF16A34A) : const Color(0xFFF1F5F9),
                     ),
                 ],
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    step['label'] as String,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                      color: isDone ? (isActive ? AppTheme.primaryRed : const Color(0xFF16A34A)) : const Color(0xFF94A3B8),
-                    ),
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        s['title'] as String,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: (done || active) ? FontWeight.bold : FontWeight.w500,
+                          color: (done || active) ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
+                        ),
+                      ),
+                      Text(
+                        s['sub'] as String,
+                        style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),
+                      ),
+                    ],
                   ),
                 ),
               ),
