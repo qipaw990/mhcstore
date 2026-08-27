@@ -32,7 +32,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   Timer? _bannerTimer;
 
   final List<Map<String, dynamic>> _categoriesGrid = const [
-    {'name': 'CicaFood', 'icon': Icons.restaurant_rounded, 'color': Color(0xFFEE2737), 'bgColor': Color(0xFFFFEAEA), 'query': 'Ayam'},
+    {'name': 'CicaFood', 'icon': Icons.restaurant_rounded, 'color': Color(0xFF000000), 'bgColor': Color(0xFFEFEFEF), 'query': 'Ayam'},
     {'name': 'CicaMart', 'icon': Icons.shopping_bag_rounded, 'color': Color(0xFF059669), 'bgColor': Color(0xFFE6F4EA), 'query': 'Sembako'},
     {'name': 'CicaRide', 'icon': Icons.two_wheeler_rounded, 'color': Color(0xFF0F172A), 'bgColor': Color(0xFFF1F5F9), 'query': 'Ojek'},
     {'name': 'CicaSend', 'icon': Icons.local_shipping_rounded, 'color': Color(0xFFEA580C), 'bgColor': Color(0xFFFFF7ED), 'query': 'Kurir'},
@@ -263,7 +263,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
       padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 12, 16, 42),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFEE2737), Color(0xFFC21827)],
+          colors: [Color(0xFF262626), Color(0xFF000000)],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),

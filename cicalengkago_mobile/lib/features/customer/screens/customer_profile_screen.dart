@@ -67,7 +67,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
               background: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xFFEE2737), Color(0xFFC21827)],
+                    colors: [Color(0xFF262626), Color(0xFF000000)],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),

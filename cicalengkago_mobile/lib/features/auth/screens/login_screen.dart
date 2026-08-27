@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../../main.dart';
 import '../controllers/auth_controller.dart';
@@ -122,7 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       'CicalengkaGO',
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: const Color(0xFFEE2737),
+                            color: AppTheme.inkBlack,
                             fontWeight: FontWeight.bold,
                           ),
                     ),
@@ -236,7 +237,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       'Daftar Baru',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFFEE2737),
+                        color: AppTheme.inkBlack,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

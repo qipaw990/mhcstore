@@ -458,12 +458,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           Container(
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFFEE2737), Color(0xFF9B1C1C)],
+                colors: [Color(0xFF262626), Color(0xFF000000)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-              boxShadow: [BoxShadow(color: AppTheme.primaryRed.withValues(alpha: 0.2), blurRadius: 12)],
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 12)],
             ),
             padding: const EdgeInsets.all(18),
             child: Column(

@@ -102,7 +102,7 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [Color(0xFFEE2737), Color(0xFFC61524)]),
+                      gradient: const LinearGradient(colors: [Color(0xFF262626), Color(0xFF000000)]),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -225,7 +225,7 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> {
                       width: 28,
                       height: 28,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFFEE2737), Color(0xFFC61524)]),
+                        gradient: const LinearGradient(colors: [Color(0xFF262626), Color(0xFF000000)]),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(_getStatusIcon(status), color: Colors.white, size: 14),

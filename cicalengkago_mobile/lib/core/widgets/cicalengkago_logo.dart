@@ -24,14 +24,14 @@ class CicalengkaGoLogo extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFFFF3848),
-            Color(0xFFC61524),
+            Color(0xFF262626),
+            Color(0xFF000000),
           ],
         ),
         boxShadow: showShadow
             ? [
                 BoxShadow(
-                  color: const Color(0xFFC61524).withValues(alpha: 0.35),
+                  color: Colors.black.withValues(alpha: 0.35),
                   blurRadius: size * 0.25,
                   offset: Offset(0, size * 0.1),
                 ),

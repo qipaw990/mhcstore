@@ -179,13 +179,13 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFFEE2737), Color(0xFFB91C1C)],
+          colors: [Color(0xFF262626), Color(0xFF000000)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: const Color(0xFFEE2737).withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8)),
         ],
       ),
       child: Column(

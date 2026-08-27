@@ -5,8 +5,8 @@ class AppTheme {
   // DESIGN (1).md Color System (Black & White Duet with Red Brand Accent)
   static const Color inkBlack = Color(0xFF000000);
   static const Color onPrimary = Color(0xFFFFFFFF);
-  static const Color primaryRed = Color(0xFFEE2737);
-  static const Color primaryDarkRed = Color(0xFFDC2626);
+  static const Color primaryRed = Color(0xFF000000);
+  static const Color primaryDarkRed = Color(0xFF1E1E1E);
   static const Color secondaryEmerald = Color(0xFF059669);
   static const Color warningAmber = Color(0xFFF59E0B);
   
