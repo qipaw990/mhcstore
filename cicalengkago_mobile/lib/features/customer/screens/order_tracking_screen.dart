@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
-import '../controllers/customer_controller.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
   final String orderCode;
@@ -21,7 +20,6 @@ class OrderTrackingScreen extends StatefulWidget {
 class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   bool _isLoading = true;
   Map<String, dynamic>? _orderData;
-  String? _snapToken;
   String? _snapUrl;
   Timer? _refreshTimer;
   Timer? _countdownTimer;
@@ -76,7 +74,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
         setState(() {
           _orderData = orderMap;
-          _snapToken = data['snap_token']?.toString();
           _snapUrl = data['snap_url']?.toString();
           _isLoading = false;
         });
@@ -238,237 +235,25 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           ? _buildCanceledView()
           : (isUnpaidOnline
               ? _buildUnpaidView(totalAmount)
-              : Column(
-                  children: [
-                    // Live Map Header
-                    Expanded(
-                      flex: 4,
-                      child: Stack(
-                        children: [
-                          FlutterMap(
-                            options: MapOptions(
-                              initialCenter: centerPoint,
-                              initialZoom: 14.5,
-                            ),
-                            children: [
-                              TileLayer(
-                                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                userAgentPackageName: 'com.cicalengkago.mobile',
-                              ),
-                              MarkerLayer(
-                                markers: [
-                                  // Store Pin
-                                  Marker(
-                                    point: LatLng(storeLat, storeLng),
-                                    width: 42,
-                                    height: 42,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF16A34A),
-                                        shape: BoxShape.circle,
-                                        boxShadow: [BoxShadow(color: const Color(0xFF16A34A).withValues(alpha: 0.4), blurRadius: 10)],
-                                      ),
-                                      child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 20),
-                                    ),
-                                  ),
-                                  // Customer Pin
-                                  Marker(
-                                    point: LatLng(custLat, custLng),
-                                    width: 42,
-                                    height: 42,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.primaryRed,
-                                        shape: BoxShape.circle,
-                                        boxShadow: [BoxShadow(color: AppTheme.primaryRed.withValues(alpha: 0.4), blurRadius: 10)],
-                                      ),
-                                      child: const Icon(Icons.home_rounded, color: Colors.white, size: 20),
-                                    ),
-                                  ),
-                                  // Driver Pin
-                                  if (hasDriver)
-                                    Marker(
-                                      point: LatLng(driverLat, driverLng),
-                                      width: 44,
-                                      height: 44,
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF2563EB),
-                                          shape: BoxShape.circle,
-                                          boxShadow: [BoxShadow(color: const Color(0xFF2563EB).withValues(alpha: 0.4), blurRadius: 12)],
-                                        ),
-                                        child: const Icon(Icons.delivery_dining_rounded, color: Colors.white, size: 22),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-
-                          // Driver Search Radar Overlay
-                          if (!hasDriver && !isDelivered)
-                            Positioned(
-                              bottom: 12,
-                              left: 14,
-                              right: 14,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12)],
-                                ),
-                                child: Row(
-                                  children: [
-                                    const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2.5, color: AppTheme.primaryRed),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Text(
-                                            'Mencari Driver Terdekat...',
-                                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
-                                          ),
-                                          Text(
-                                            'Sisa waktu pencarian: $_remainingSeconds detik',
-                                            style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-
-                    // Tracking Details Bottom Sheet
-                    Expanded(
-                      flex: 6,
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-                          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, -4))],
-                        ),
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Driver Information Card
-                              if (hasDriver) ...[
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF8FAFC),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(24),
-                                        child: CachedNetworkImage(
-                                          imageUrl: ApiConstants.formatImageUrl(driverAvatar),
-                                          width: 46,
-                                          height: 46,
-                                          fit: BoxFit.cover,
-                                          errorWidget: (_, __, ___) => Container(
-                                            width: 46,
-                                            height: 46,
-                                            color: const Color(0xFFE2E8F0),
-                                            child: const Icon(Icons.motorcycle_rounded, color: Color(0xFF64748B), size: 24),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              driverName,
-                                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              '$vehicleType ${vehiclePlate.isNotEmpty ? "• $vehiclePlate" : ""}',
-                                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      if (driverPhone.isNotEmpty) ...[
-                                        InkWell(
-                                          onTap: () => launchUrl(Uri.parse('tel:$driverPhone')),
-                                          borderRadius: BorderRadius.circular(20),
-                                          child: Container(
-                                            padding: const EdgeInsets.all(9),
-                                            decoration: const BoxDecoration(
-                                              color: Color(0xFFDCFCE7),
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: const Icon(Icons.call_rounded, color: Color(0xFF16A34A), size: 18),
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                              ],
-
-                              // Status Stepper
-                              _buildStatusStepper(currentStep, isDelivered),
-
-                              const SizedBox(height: 16),
-                              const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                              const SizedBox(height: 14),
-
-                              // Order Summary Row
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text('Total Biaya', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600)),
-                                      Text(
-                                        CurrencyFormatter.formatRupiah(totalAmount),
-                                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
-                                      ),
-                                    ],
-                                  ),
-                                  if (isDelivered)
-                                    ElevatedButton.icon(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppTheme.primaryRed,
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                      ),
-                                      onPressed: () => _showReviewDialog(context, order),
-                                      icon: const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
-                                      label: const Text('Beri Rating', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              : _buildLiveTrackingView(
+                  centerPoint: centerPoint,
+                  storeLat: storeLat,
+                  storeLng: storeLng,
+                  custLat: custLat,
+                  custLng: custLng,
+                  driverLat: driverLat,
+                  driverLng: driverLng,
+                  hasDriver: hasDriver,
+                  isDelivered: isDelivered,
+                  driverAvatar: driverAvatar,
+                  driverName: driverName,
+                  vehicleType: vehicleType,
+                  vehiclePlate: vehiclePlate,
+                  driverPhone: driverPhone,
+                  currentStep: currentStep,
+                  totalAmount: totalAmount,
+                  order: order,
+                )),
     );
   }
 
@@ -644,6 +429,258 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildLiveTrackingView({
+    required LatLng centerPoint,
+    required double storeLat,
+    required double storeLng,
+    required double custLat,
+    required double custLng,
+    required double driverLat,
+    required double driverLng,
+    required bool hasDriver,
+    required bool isDelivered,
+    required String? driverAvatar,
+    required String driverName,
+    required String vehicleType,
+    required String vehiclePlate,
+    required String driverPhone,
+    required int currentStep,
+    required double totalAmount,
+    required Map<String, dynamic> order,
+  }) {
+    return Column(
+      children: [
+        // Live Map Header
+        Expanded(
+          flex: 4,
+          child: Stack(
+            children: [
+              FlutterMap(
+                options: MapOptions(
+                  initialCenter: centerPoint,
+                  initialZoom: 14.5,
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.cicalengkago.mobile',
+                  ),
+                  MarkerLayer(
+                    markers: [
+                      // Store Pin
+                      Marker(
+                        point: LatLng(storeLat, storeLng),
+                        width: 42,
+                        height: 42,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF16A34A),
+                            shape: BoxShape.circle,
+                            boxShadow: [BoxShadow(color: const Color(0xFF16A34A).withValues(alpha: 0.4), blurRadius: 10)],
+                          ),
+                          child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 20),
+                        ),
+                      ),
+                      // Customer Pin
+                      Marker(
+                        point: LatLng(custLat, custLng),
+                        width: 42,
+                        height: 42,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryRed,
+                            shape: BoxShape.circle,
+                            boxShadow: [BoxShadow(color: AppTheme.primaryRed.withValues(alpha: 0.4), blurRadius: 10)],
+                          ),
+                          child: const Icon(Icons.home_rounded, color: Colors.white, size: 20),
+                        ),
+                      ),
+                      // Driver Pin
+                      if (hasDriver)
+                        Marker(
+                          point: LatLng(driverLat, driverLng),
+                          width: 44,
+                          height: 44,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2563EB),
+                              shape: BoxShape.circle,
+                              boxShadow: [BoxShadow(color: const Color(0xFF2563EB).withValues(alpha: 0.4), blurRadius: 12)],
+                            ),
+                            child: const Icon(Icons.delivery_dining_rounded, color: Colors.white, size: 22),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+
+              // Driver Search Radar Overlay
+              if (!hasDriver && !isDelivered)
+                Positioned(
+                  bottom: 12,
+                  left: 14,
+                  right: 14,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12)],
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2.5, color: AppTheme.primaryRed),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                'Mencari Driver Terdekat...',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                              ),
+                              Text(
+                                'Sisa waktu pencarian: $_remainingSeconds detik',
+                                style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+
+        // Tracking Details Bottom Sheet
+        Expanded(
+          flex: 6,
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, -4))],
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Driver Information Card
+                  if (hasDriver) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: CachedNetworkImage(
+                              imageUrl: ApiConstants.formatImageUrl(driverAvatar),
+                              width: 46,
+                              height: 46,
+                              fit: BoxFit.cover,
+                              errorWidget: (_, __, ___) => Container(
+                                width: 46,
+                                height: 46,
+                                color: const Color(0xFFE2E8F0),
+                                child: const Icon(Icons.motorcycle_rounded, color: Color(0xFF64748B), size: 24),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  driverName,
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '$vehicleType ${vehiclePlate.isNotEmpty ? "• $vehiclePlate" : ""}',
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (driverPhone.isNotEmpty) ...[
+                            InkWell(
+                              onTap: () => launchUrl(Uri.parse('tel:$driverPhone')),
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                padding: const EdgeInsets.all(9),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFDCFCE7),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.call_rounded, color: Color(0xFF16A34A), size: 18),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Status Stepper
+                  _buildStatusStepper(currentStep, isDelivered),
+
+                  const SizedBox(height: 16),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  const SizedBox(height: 14),
+
+                  // Order Summary Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Total Biaya', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600)),
+                          Text(
+                            CurrencyFormatter.formatRupiah(totalAmount),
+                            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                          ),
+                        ],
+                      ),
+                      if (isDelivered)
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryRed,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          ),
+                          onPressed: () => _showReviewDialog(context, order),
+                          icon: const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                          label: const Text('Beri Rating', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
