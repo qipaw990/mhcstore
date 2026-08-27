@@ -202,6 +202,43 @@ class DriverController extends ChangeNotifier {
     return false;
   }
 
+  Future<bool> updateProfile({
+    required String name,
+    required String email,
+    required String phone,
+    required String vehicleType,
+    required String vehicleNumber,
+    String? currentPassword,
+    String? newPassword,
+    String? confirmPassword,
+  }) async {
+    try {
+      final fields = <String, String>{
+        'name': name,
+        'email': email,
+        'phone': phone,
+        'vehicle_type': vehicleType,
+        'vehicle_number': vehicleNumber,
+      };
+      if (currentPassword != null && currentPassword.isNotEmpty) {
+        fields['current_password'] = currentPassword;
+      }
+      if (newPassword != null && newPassword.isNotEmpty) {
+        fields['new_password'] = newPassword;
+      }
+      if (confirmPassword != null && confirmPassword.isNotEmpty) {
+        fields['confirm_password'] = confirmPassword;
+      }
+
+      final res = await ApiService.postForm(ApiConstants.driverUpdateProfile, fields);
+      if (res['success'] == true) {
+        await fetchProfile();
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
   @override
   void dispose() {
     stopGpsBroadcaster();

@@ -374,6 +374,17 @@ class DeliveryController extends Controller
         $totalWithdrawn = $this->withdrawModel->getTotalWithdrawn($userId, 'delivery_man');
         $pendingWithdrawn = $this->withdrawModel->getPendingWithdrawn($userId, 'delivery_man');
 
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Data pendapatan berhasil diambil', [
+                'wallet'            => $wallet,
+                'transactions'      => $transactions,
+                'withdraw_requests' => $withdrawRequests,
+                'total_withdrawn'   => $totalWithdrawn,
+                'pending_withdrawn' => $pendingWithdrawn,
+            ]);
+            return;
+        }
+
         $this->view('delivery.earnings', [
             'title'             => 'Pendapatan & Saldo Driver',
             'wallet'            => $wallet,
@@ -439,6 +450,15 @@ class DeliveryController extends Controller
             $reviewModel->recalculateDmRating((int)$dm['id']);
             $dm = $this->dmModel->find($dm['id']);
             $reviews = $reviewModel->getDmReviews((int)$dm['id'], 20);
+        }
+
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Profil driver berhasil diambil', [
+                'user'    => $user,
+                'driver'  => $dm,
+                'reviews' => $reviews,
+            ]);
+            return;
         }
 
         $this->view('delivery.profile', [

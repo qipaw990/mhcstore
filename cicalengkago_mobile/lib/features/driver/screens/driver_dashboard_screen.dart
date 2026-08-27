@@ -78,43 +78,31 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           ],
         ),
         actions: [
-          // Online toggle
-          Row(
-            children: [
-              Text(
-                driverCtrl.isOnline ? 'ON' : 'OFF',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: driverCtrl.isOnline ? const Color(0xFF16A34A) : const Color(0xFF94A3B8),
-                ),
-              ),
-              Switch(
-                value: driverCtrl.isOnline,
-                activeColor: const Color(0xFF16A34A),
-                onChanged: (val) => driverCtrl.toggleOnline(val),
-              ),
-            ],
-          ),
-
           // Wallet balance mini chip
           if (driverCtrl.walletBalance > 0)
-            Container(
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFD1FAE5),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF059669), size: 12),
-                  const SizedBox(width: 4),
-                  Text(
-                    CurrencyFormatter.formatRupiah(driverCtrl.walletBalance),
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
-                  ),
-                ],
+            GestureDetector(
+              onTap: () {
+                setState(() => _currentIndex = 1);
+                context.read<DriverController>().fetchEarnings();
+              },
+              child: Container(
+                margin: const EdgeInsets.only(right: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD1FAE5),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFA7F3D0)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF059669), size: 13),
+                    const SizedBox(width: 5),
+                    Text(
+                      CurrencyFormatter.formatRupiah(driverCtrl.walletBalance),
+                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+                    ),
+                  ],
+                ),
               ),
             ),
         ],
@@ -126,10 +114,19 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
 
       body: IndexedStack(
         index: _currentIndex,
-        children: const [
-          DriverRadarScreen(),
-          DriverEarningsScreen(),
-          DriverProfileScreen(),
+        children: [
+          DriverRadarScreen(
+            onNavigateTab: (idx) {
+              setState(() => _currentIndex = idx);
+              if (idx == 1) {
+                context.read<DriverController>().fetchEarnings();
+              } else if (idx == 2) {
+                context.read<DriverController>().fetchProfile();
+              }
+            },
+          ),
+          const DriverEarningsScreen(),
+          const DriverProfileScreen(),
         ],
       ),
 
