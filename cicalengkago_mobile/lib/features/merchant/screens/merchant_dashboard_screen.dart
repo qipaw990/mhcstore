@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/merchant_controller.dart';
 import 'merchant_orders_screen.dart';
@@ -35,14 +36,7 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.orange[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.storefront, color: Colors.orange, size: 24),
-            ),
+            const CicalengkaGoLogo(size: 34, borderRadius: 10, showShadow: false),
             const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,

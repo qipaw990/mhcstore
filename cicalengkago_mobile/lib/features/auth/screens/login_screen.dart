@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/widgets/cicalengkago_logo.dart';
 import '../controllers/auth_controller.dart';
 import 'register_screen.dart';
 
@@ -57,26 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Center(
                 child: Column(
                   children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEE2737),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFEE2737).withOpacity(0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.delivery_dining,
-                        color: Colors.white,
-                        size: 48,
-                      ),
-                    ),
+                    const CicalengkaGoLogo(size: 80, borderRadius: 24),
                     const SizedBox(height: 16),
                     Text(
                       'CicalengkaGO',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/driver_controller.dart';
 import 'driver_radar_screen.dart';
@@ -34,14 +35,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.amber[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.two_wheeler, color: Colors.amber, size: 24),
-            ),
+            const CicalengkaGoLogo(size: 34, borderRadius: 10, showShadow: false),
             const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/customer_controller.dart';
 import 'store_detail_screen.dart';
@@ -45,15 +46,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
         titleSpacing: 16,
         title: Row(
           children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: AppTheme.primaryRed,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.delivery_dining, color: Colors.white, size: 24),
-            ),
+            const CicalengkaGoLogo(size: 34, borderRadius: 10, showShadow: false),
             const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
