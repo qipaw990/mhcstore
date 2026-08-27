@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/controllers/auth_controller.dart';
-import 'features/auth/screens/login_screen.dart';
 import 'features/customer/controllers/customer_controller.dart';
 import 'features/customer/screens/customer_home_screen.dart';
 import 'features/driver/controllers/driver_controller.dart';
@@ -46,8 +45,9 @@ class RoleRouter extends StatelessWidget {
   Widget build(BuildContext context) {
     final authCtrl = context.watch<AuthController>();
 
+    // If not logged in, open CustomerHomeScreen directly in Guest Mode (matching Web PWA)
     if (!authCtrl.isLoggedIn) {
-      return const LoginScreen();
+      return const CustomerHomeScreen();
     }
 
     final role = authCtrl.role?.toLowerCase() ?? 'customer';

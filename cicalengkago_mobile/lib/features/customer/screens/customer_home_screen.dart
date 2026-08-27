@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../auth/screens/login_screen.dart';
 import '../controllers/customer_controller.dart';
 import 'store_detail_screen.dart';
 import 'cart_screen.dart';
@@ -79,10 +80,32 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => authCtrl.logout(),
-          ),
+          if (authCtrl.isLoggedIn)
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () => authCtrl.logout(),
+              tooltip: 'Keluar',
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryRed,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  );
+                },
+                icon: const Icon(Icons.login, size: 16),
+                label: const Text('Masuk', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              ),
+            ),
         ],
       ),
       body: _currentIndex == 0
