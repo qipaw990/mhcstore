@@ -328,6 +328,7 @@ $resolvedSnapUrl = $snap_url ?? $midtransServiceInst->getSnapUrl() ?? 'https://a
 <script type="text/javascript" src="<?= $resolvedSnapUrl ?>" data-client-key="<?= htmlspecialchars($resolvedSnapKey) ?>"></script>
 <script src="<?= $baseUrl ?>/assets/js/pwa-install.js"></script>
 <script src="<?= $baseUrl ?>/assets/js/customer-pwa.js?v=<?= time() ?>"></script>
+<script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.20.0.js"></script>
 <script src="<?= $baseUrl ?>/assets/js/mobile-call.js?v=<?= time() ?>"></script>
 
 <?php if (!empty($_SESSION['success'])): ?>

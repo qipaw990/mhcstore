@@ -23,6 +23,86 @@
     let remoteAudioSourceNode = null;
     let ringtoneTimer = null;
 
+    const AGORA_APP_ID = "3a5525c3fa5c4c9597edb132e0e092ec";
+    let agoraClient = null;
+    let localAgoraTrack = null;
+
+    async function joinAgoraVoiceChannel(channelName) {
+        if (typeof AgoraRTC === 'undefined') {
+            console.warn('[AgoraVoice] AgoraRTC not defined yet');
+            return false;
+        }
+
+        try {
+            if (agoraClient) {
+                try { await agoraClient.leave(); } catch (e) {}
+                agoraClient = null;
+            }
+
+            agoraClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+
+            agoraClient.on("user-published", async (user, mediaType) => {
+                console.log('[AgoraVoice] Remote user published track:', user.uid, mediaType);
+                await agoraClient.subscribe(user, mediaType);
+                if (mediaType === "audio") {
+                    const remoteAudioTrack = user.audioTrack;
+                    remoteAudioTrack.play();
+                    console.log('[AgoraVoice] Remote audio playing via Agora Web SDK!');
+
+                    stopRingtone();
+                    const subtextEl = document.getElementById('ccgCallSubtext');
+                    if (subtextEl) subtextEl.innerText = 'Panggilan Berlangsung (Agora Voice)';
+                    const timerEl = document.getElementById('ccgCallTimer');
+                    if (timerEl) timerEl.classList.remove('d-none');
+                    const visEl = document.getElementById('ccgSoundVisualizer');
+                    if (visEl) visEl.classList.remove('d-none');
+                    const incEl = document.getElementById('ccgIncomingActions');
+                    if (incEl) incEl.classList.add('d-none');
+                    const actEl = document.getElementById('ccgActiveActions');
+                    if (actEl) actEl.classList.remove('d-none');
+                    window.CCGCall.startTimer();
+                }
+            });
+
+            agoraClient.on("user-unpublished", (user) => {
+                console.log('[AgoraVoice] Remote user unpublished audio track:', user.uid);
+            });
+
+            const cleanChannel = (channelName || 'default_room').replace(/[^a-zA-Z0-9_\-]/g, '');
+            console.log('[AgoraVoice] Joining Agora channel:', cleanChannel);
+            await agoraClient.join(AGORA_APP_ID, cleanChannel, null, null);
+            console.log('[AgoraVoice] Joined Agora channel successfully!');
+
+            localAgoraTrack = await AgoraRTC.createMicrophoneAudioTrack({
+                encoderConfig: "speech_standard"
+            });
+
+            await agoraClient.publish([localAgoraTrack]);
+            console.log('[AgoraVoice] Published local microphone track to Agora channel!');
+            return true;
+        } catch (err) {
+            console.error('[AgoraVoice] Agora join error:', err);
+            return false;
+        }
+    }
+
+    async function leaveAgoraVoiceChannel() {
+        try {
+            if (localAgoraTrack) {
+                localAgoraTrack.stop();
+                localAgoraTrack.close();
+                localAgoraTrack = null;
+            }
+            if (agoraClient) {
+                await agoraClient.leave();
+                agoraClient = null;
+            }
+            console.log('[AgoraVoice] Agora channel left successfully');
+        } catch (err) {
+            console.warn('[AgoraVoice] Error leaving Agora channel:', err);
+        }
+    }
+
     const rtcConfig = {
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
@@ -865,6 +945,9 @@
                 return;
             }
 
+            // Join Agora RTC voice channel
+            joinAgoraVoiceChannel(currentOrderCode);
+
             let offerSdp = null;
             peerConnection = new RTCPeerConnection(rtcConfig);
 
@@ -1000,6 +1083,9 @@
                 return;
             }
 
+            // Join Agora RTC voice channel
+            joinAgoraVoiceChannel(currentOrderCode || (currentCallData ? currentCallData.order_code : ''));
+
             let answerSdp = null;
             peerConnection = new RTCPeerConnection(rtcConfig);
 
@@ -1134,23 +1220,23 @@
 
         // Toggle Microphone Mute
         toggleMute: function () {
+            isMuted = !isMuted;
+            if (localAgoraTrack) {
+                localAgoraTrack.setEnabled(!isMuted);
+            }
             if (localStream) {
-                const audioTrack = localStream.getAudioTracks()[0];
-                if (audioTrack) {
-                    audioTrack.enabled = !audioTrack.enabled;
-                    isMuted = !audioTrack.enabled;
+                localStream.getAudioTracks().forEach(t => { t.enabled = !isMuted; });
+            }
 
-                    const btn = document.getElementById('ccgBtnMute');
-                    const label = document.getElementById('ccgMuteLabel');
+            const btn = document.getElementById('ccgBtnMute');
+            const label = document.getElementById('ccgMuteLabel');
 
-                    if (isMuted) {
-                        btn.classList.add('active');
-                        label.innerText = 'Unmute';
-                    } else {
-                        btn.classList.remove('active');
-                        label.innerText = 'Mute';
-                    }
-                }
+            if (isMuted) {
+                if (btn) btn.classList.add('active');
+                if (label) label.innerText = 'Unmute';
+            } else {
+                if (btn) btn.classList.remove('active');
+                if (label) label.innerText = 'Mute';
             }
         },
 
@@ -1180,6 +1266,8 @@
         resetCall: function () {
             stopRingtone();
             this.stopTimer();
+
+            leaveAgoraVoiceChannel();
 
             if (remoteAudioSourceNode) {
                 try { remoteAudioSourceNode.disconnect(); } catch(e) {}
