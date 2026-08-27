@@ -11,6 +11,10 @@
 </IfModule>
 
 <IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE, PATCH"
+    Header set Access-Control-Allow-Headers "*"
+
     Header set Content-Security-Policy "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' blob: https: http:; style-src * 'unsafe-inline' https: http:; img-src * data: blob: https: http:; connect-src * https: http: ws: wss:; font-src * data: https: http:; frame-src *;"
 
     # Local JS and CSS: always revalidate with server (no hard refresh needed)
