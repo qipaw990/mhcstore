@@ -80,7 +80,7 @@ class DriverController extends ChangeNotifier {
 
   void startRadarPolling() {
     _radarPollTimer?.cancel();
-    _radarPollTimer = Timer.periodic(const Duration(seconds: 8), (_) async {
+    _radarPollTimer = Timer.periodic(const Duration(seconds: 4), (_) async {
       if (_isOnline) await fetchRadarData(silent: true);
     });
   }
@@ -105,7 +105,11 @@ class DriverController extends ChangeNotifier {
         } else {
           _activeTrip = null;
         }
-        
+
+        // Available orders for grabs
+        final availList = (data['available_orders'] as List<dynamic>?) ?? [];
+        _availableOrders = availList;
+
         // Sync online status from server
         final serverOnline = data['driver']?['is_online'];
         if (serverOnline != null) {

@@ -76,8 +76,8 @@ function is_delivery(): bool
 
 function get_bearer_token(): ?string
 {
-    $headers = getallheaders();
-    $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
+    $headers = function_exists('getallheaders') ? getallheaders() : [];
+    $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
     if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
         return $matches[1];
     }
