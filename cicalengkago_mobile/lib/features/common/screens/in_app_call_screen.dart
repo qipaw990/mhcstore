@@ -96,7 +96,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
     if (_webViewController.platform is AndroidWebViewController) {
       (_webViewController.platform as AndroidWebViewController).setOnPlatformPermissionRequest(
-        (AndroidWebViewPermissionRequest request) {
+        (request) {
           debugPrint('[VoiceCallWebView] Granting Android mic permission: ${request.types}');
           request.grant();
         },
