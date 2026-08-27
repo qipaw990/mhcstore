@@ -63,7 +63,11 @@ class _CartScreenState extends State<CartScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CustomerController>().fetchCart();
+      final ctrl = context.read<CustomerController>();
+      ctrl.fetchCart();
+      if (ctrl.recommendedProducts.isEmpty) {
+        ctrl.fetchHomeData();
+      }
     });
   }
 
@@ -464,6 +468,9 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildFoodSuggestionsSection(BuildContext context, CustomerController customerCtrl) {
+    final List<dynamic> realProducts = customerCtrl.recommendedProducts;
+    final itemsToDisplay = realProducts.isNotEmpty ? realProducts : _foodSuggestions;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -482,9 +489,20 @@ class _CartScreenState extends State<CartScreen> {
           height: 225,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: _foodSuggestions.length,
+            itemCount: itemsToDisplay.length,
             itemBuilder: (context, index) {
-              final food = _foodSuggestions[index];
+              final rawItem = itemsToDisplay[index];
+              final Map<String, dynamic> food = rawItem is Map<String, dynamic>
+                  ? rawItem
+                  : Map<String, dynamic>.from(rawItem as Map);
+
+              final int foodId = int.tryParse(food['id']?.toString() ?? food['product_id']?.toString() ?? '0') ?? 0;
+              final String foodName = (food['name'] ?? food['product_name'] ?? 'Menu Kuliner').toString();
+              final String storeName = (food['store_name'] ?? food['store'] ?? 'Mitra CicalengkaGO').toString();
+              final double foodPrice = double.tryParse(food['final_price']?.toString() ?? food['price']?.toString() ?? '0') ?? 0.0;
+              final String rating = food['rating']?.toString() ?? '4.8';
+              final String imgUrl = _getFoodImage(food);
+
               return Container(
                 width: 160,
                 margin: const EdgeInsets.only(right: 14),
@@ -509,10 +527,15 @@ class _CartScreenState extends State<CartScreen> {
                         ClipRRect(
                           borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                           child: CachedNetworkImage(
-                            imageUrl: food['image'] as String,
+                            imageUrl: imgUrl,
                             height: 100,
                             width: double.infinity,
                             fit: BoxFit.cover,
+                            errorWidget: (_, __, ___) => Container(
+                              height: 100,
+                              color: const Color(0xFFF1F5F9),
+                              child: const Icon(Icons.fastfood_rounded, color: AppTheme.inkBlack),
+                            ),
                           ),
                         ),
                         Positioned(
@@ -530,7 +553,7 @@ class _CartScreenState extends State<CartScreen> {
                                 const Icon(Icons.star_rounded, color: Colors.amber, size: 12),
                                 const SizedBox(width: 2),
                                 Text(
-                                  food['rating'] as String,
+                                  rating,
                                   style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                                 ),
                               ],
@@ -545,14 +568,14 @@ class _CartScreenState extends State<CartScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            food['name'] as String,
+                            foodName,
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.inkBlack),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            food['store'] as String,
+                            storeName,
                             style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -561,18 +584,21 @@ class _CartScreenState extends State<CartScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                CurrencyFormatter.formatRupiah((food['price'] as double)),
-                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: AppTheme.inkBlack),
+                              Expanded(
+                                child: Text(
+                                  CurrencyFormatter.formatRupiah(foodPrice),
+                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: AppTheme.inkBlack),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                               InkWell(
                                 onTap: () async {
-                                  final success = await customerCtrl.addToCart(food['id'] as int, 1);
+                                  final success = await customerCtrl.addToCart(foodId, 1);
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
-                                          success ? '${food['name']} ditambahkan!' : 'Berhasil ditambahkan ke keranjang!',
+                                          success ? '$foodName ditambahkan!' : 'Berhasil ditambahkan ke keranjang!',
                                         ),
                                         backgroundColor: AppTheme.inkBlack,
                                         duration: const Duration(seconds: 2),

@@ -5,6 +5,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/widgets/uber_pill_button.dart';
 import '../controllers/customer_controller.dart';
 import 'cart_screen.dart';
 
@@ -43,6 +44,24 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     }
   }
 
+  String _getFoodImage(Map<String, dynamic> product) {
+    final rawImg = product['image']?.toString();
+    if (rawImg != null && rawImg.isNotEmpty && !rawImg.contains('null')) {
+      return ApiConstants.formatImageUrl(rawImg);
+    }
+    final name = (product['name'] ?? '').toString().toLowerCase();
+    if (name.contains('ayam') || name.contains('chick')) {
+      return 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=300&q=80';
+    } else if (name.contains('nasi') || name.contains('rice')) {
+      return 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=300&q=80';
+    } else if (name.contains('kopi') || name.contains('coffee') || name.contains('boba') || name.contains('es')) {
+      return 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=300&q=80';
+    } else if (name.contains('seblak') || name.contains('bakso') || name.contains('mie') || name.contains('ramen')) {
+      return 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=300&q=80';
+    }
+    return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&q=80';
+  }
+
   @override
   Widget build(BuildContext context) {
     final customerCtrl = context.watch<CustomerController>();
@@ -51,7 +70,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
       return const Scaffold(
         backgroundColor: Color(0xFFF8FAFC),
         body: Center(
-          child: CircularProgressIndicator(color: AppTheme.primaryRed),
+          child: CircularProgressIndicator(color: AppTheme.inkBlack),
         ),
       );
     }
@@ -70,14 +89,14 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
         slivers: [
           // Banner Cover Header
           SliverAppBar(
-            expandedHeight: 180,
+            expandedHeight: 190,
             pinned: true,
-            backgroundColor: AppTheme.primaryRed,
+            backgroundColor: AppTheme.inkBlack,
             elevation: 0,
             leading: Padding(
               padding: const EdgeInsets.all(8.0),
               child: CircleAvatar(
-                backgroundColor: Colors.black.withValues(alpha: 0.4),
+                backgroundColor: Colors.black.withValues(alpha: 0.5),
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
                   onPressed: () => Navigator.pop(context),
@@ -94,8 +113,8 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                     imageUrl: coverUrl,
                     fit: BoxFit.cover,
                     errorWidget: (_, url, error) => Container(
-                      color: AppTheme.primaryRed,
-                      child: const Center(child: Icon(Icons.storefront_rounded, size: 60, color: Colors.white70)),
+                      color: AppTheme.inkBlack,
+                      child: const Center(child: Icon(Icons.storefront_rounded, size: 60, color: Colors.white38)),
                     ),
                   ),
                   Container(
@@ -106,7 +125,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                         colors: [
                           Colors.black.withValues(alpha: 0.4),
                           Colors.transparent,
-                          Colors.black.withValues(alpha: 0.6),
+                          Colors.black.withValues(alpha: 0.7),
                         ],
                       ),
                     ),
@@ -125,10 +144,10 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 16,
                       offset: const Offset(0, 4),
                     ),
@@ -142,14 +161,14 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                       children: [
                         // Store Logo
                         Container(
-                          width: 54,
-                          height: 54,
+                          width: 58,
+                          height: 58,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(color: const Color(0xFFF1F5F9), width: 2),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
+                                color: Colors.black.withValues(alpha: 0.04),
                                 blurRadius: 8,
                               ),
                             ],
@@ -160,8 +179,8 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                               imageUrl: ApiConstants.formatImageUrl(rawLogo ?? rawCover),
                               fit: BoxFit.cover,
                               errorWidget: (context, url, error) => Container(
-                                color: const Color(0xFFFEF2F2),
-                                child: const Icon(Icons.storefront_rounded, size: 28, color: AppTheme.primaryRed),
+                                color: const Color(0xFFEFEFEF),
+                                child: const Icon(Icons.storefront_rounded, size: 28, color: AppTheme.inkBlack),
                               ),
                             ),
                           ),
@@ -180,7 +199,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                                       style: const TextStyle(
                                         fontSize: 17,
                                         fontWeight: FontWeight.w800,
-                                        color: Color(0xFF0F172A),
+                                        color: AppTheme.inkBlack,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -190,7 +209,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                     decoration: BoxDecoration(
-                                      color: isOpen ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
+                                      color: isOpen ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Row(
@@ -200,7 +219,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                                           width: 6,
                                           height: 6,
                                           decoration: BoxDecoration(
-                                            color: isOpen ? const Color(0xFF16A34A) : AppTheme.primaryRed,
+                                            color: isOpen ? const Color(0xFF16A34A) : const Color(0xFF64748B),
                                             shape: BoxShape.circle,
                                           ),
                                         ),
@@ -208,7 +227,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                                         Text(
                                           isOpen ? 'BUKA' : 'TUTUP',
                                           style: TextStyle(
-                                            color: isOpen ? const Color(0xFF15803D) : AppTheme.primaryRed,
+                                            color: isOpen ? const Color(0xFF15803D) : const Color(0xFF64748B),
                                             fontSize: 10,
                                             fontWeight: FontWeight.w800,
                                           ),
@@ -226,7 +245,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                                   const SizedBox(width: 2),
                                   Text(
                                     '${store['rating'] ?? '4.8'}',
-                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
                                   ),
                                   Text(
                                     ' (${store['reviews_count'] ?? '50+'} ulasan)',
@@ -248,7 +267,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     // Address Line
                     Row(
                       children: [
@@ -273,14 +292,14 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
           // Menu Section Header
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Row(
                 children: [
                   Container(
                     width: 4,
                     height: 18,
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryRed,
+                      color: AppTheme.inkBlack,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -290,7 +309,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A),
+                      color: AppTheme.inkBlack,
                     ),
                   ),
                   const Spacer(),
@@ -320,19 +339,22 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
             SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
-                  final product = _products[index];
+                  final product = _products[index] is Map<String, dynamic>
+                      ? _products[index] as Map<String, dynamic>
+                      : Map<String, dynamic>.from(_products[index] as Map);
+
                   final price = double.tryParse(product['price']?.toString() ?? '0') ?? 0.0;
                   final finalPrice = double.tryParse(product['final_price']?.toString() ?? price.toString()) ?? price;
-                  final imgUrl = ApiConstants.formatImageUrl(product['image']?.toString());
+                  final imgUrl = _getFoodImage(product);
                   final bool hasDiscount = price > finalPrice;
 
                   return Container(
                     margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFF1F5F9)),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.02),
@@ -348,17 +370,17 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                         Stack(
                           children: [
                             ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(14),
                               child: CachedNetworkImage(
                                 imageUrl: imgUrl,
-                                width: 72,
-                                height: 72,
+                                width: 76,
+                                height: 76,
                                 fit: BoxFit.cover,
                                 errorWidget: (_, url, error) => Container(
-                                  width: 72,
-                                  height: 72,
+                                  width: 76,
+                                  height: 76,
                                   color: const Color(0xFFF1F5F9),
-                                  child: const Icon(Icons.fastfood_rounded, size: 30, color: Color(0xFFCBD5E1)),
+                                  child: const Icon(Icons.fastfood_rounded, size: 30, color: AppTheme.inkBlack),
                                 ),
                               ),
                             ),
@@ -367,11 +389,11 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                                 top: 0,
                                 left: 0,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: const BoxDecoration(
-                                    color: AppTheme.primaryRed,
+                                    color: AppTheme.inkBlack,
                                     borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(12),
+                                      topLeft: Radius.circular(14),
                                       bottomRight: Radius.circular(8),
                                     ),
                                   ),
@@ -383,7 +405,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                               ),
                           ],
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 14),
 
                         // Product Details
                         Expanded(
@@ -391,11 +413,11 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                product['name'] ?? 'Menu',
+                                product['name'] ?? 'Menu Kuliner',
                                 style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13.5,
-                                  color: Color(0xFF0F172A),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: AppTheme.inkBlack,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -415,7 +437,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                                   Text(
                                     CurrencyFormatter.formatRupiah(finalPrice),
                                     style: const TextStyle(
-                                      color: AppTheme.primaryRed,
+                                      color: AppTheme.inkBlack,
                                       fontWeight: FontWeight.w800,
                                       fontSize: 13,
                                     ),
@@ -439,35 +461,32 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                         const SizedBox(width: 8),
 
                         // Add to Cart Button
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryRed,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          onPressed: () async {
-                            final ok = await customerCtrl.addToCart(
-                              int.parse(product['id'].toString()),
-                              1,
-                            );
+                        InkWell(
+                          onTap: () async {
+                            final productId = int.tryParse(product['id']?.toString() ?? '0') ?? 0;
+                            final ok = await customerCtrl.addToCart(productId, 1);
                             if (ok && context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('${product['name']} ditambahkan ke keranjang'),
                                   duration: const Duration(seconds: 1),
-                                  backgroundColor: const Color(0xFF1E293B),
+                                  backgroundColor: AppTheme.inkBlack,
                                   behavior: SnackBarBehavior.floating,
                                 ),
                               );
                             }
                           },
-                          child: const Text(
-                            '+ Tambah',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: AppTheme.inkBlack,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              '+ Tambah',
+                              style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                       ],
@@ -477,60 +496,64 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                 childCount: _products.length,
               ),
             ),
-          const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
+          const SliverPadding(padding: EdgeInsets.only(bottom: 90)),
         ],
       ),
 
       // Floating Cart Bottom Bar
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 16,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.inkBlack,
-              foregroundColor: AppTheme.onPrimary,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-              shape: const StadiumBorder(),
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CartScreen()),
-              );
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
+      bottomNavigationBar: customerCtrl.cartItems.isEmpty
+          ? null
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 16,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: Row(
                   children: [
-                    const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Lihat Keranjang (${customerCtrl.cartItems.length})',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${customerCtrl.cartCount} Item di keranjang',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            CurrencyFormatter.formatRupiah(customerCtrl.cartSubtotal),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.inkBlack,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    UberPillButton(
+                      label: 'Lihat Keranjang',
+                      icon: Icons.shopping_bag_outlined,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const CartScreen()),
+                        );
+                      },
                     ),
                   ],
                 ),
-                Text(
-                  CurrencyFormatter.formatRupiah(customerCtrl.cartSubtotal),
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 }
