@@ -250,7 +250,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                           SizedBox(width: 3),
                           Text(
                             'Cicalengka, Kab. Bandung ▾',
-                            style: TextStyle(color: Colors.white90, fontSize: 11, fontWeight: FontWeight.w600),
+                            style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 11, fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
@@ -385,7 +385,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                             ),
                             Text(
                               'Pay',
-                              style: TextStyle(color: AppTheme.primaryRed, fontWeight: FontWeight.extrabold, fontSize: 13),
+                              style: TextStyle(color: AppTheme.primaryRed, fontWeight: FontWeight.w900, fontSize: 13),
                             ),
                           ],
                         ),
@@ -779,7 +779,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 ),
                 child: const Text(
                   'PROMO SPESIAL',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.extrabold, color: AppTheme.primaryRed),
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppTheme.primaryRed),
                 ),
               ),
             ],
@@ -881,7 +881,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                             const SizedBox(height: 3),
                             Text(
                               CurrencyFormatter.formatRupiah(finalPrice),
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.extrabold, color: AppTheme.primaryRed),
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.primaryRed),
                             ),
                             if (price > finalPrice)
                               Text(
@@ -1016,7 +1016,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                                   const SizedBox(width: 4),
                                   Text(
                                     isOpen ? 'BUKA' : 'TUTUP',
-                                    style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.extrabold),
+                                    style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900),
                                   ),
                                 ],
                               ),
@@ -1195,7 +1195,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                         const SizedBox(height: 3),
                         Text(
                           CurrencyFormatter.formatRupiah(finalPrice),
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.extrabold, color: AppTheme.primaryRed),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.primaryRed),
                         ),
                         const SizedBox(height: 8),
                         SizedBox(
