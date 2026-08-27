@@ -1327,9 +1327,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     ),
                   ),
                 ] else if (rawItems.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 4),
-                    child: Text('1x Pesanan CicalengkaGO', style: TextStyle(fontSize: 12, color: AppTheme.inkBlack, fontWeight: FontWeight.w600)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text('1x Pesanan di $storeName', style: const TextStyle(fontSize: 12, color: AppTheme.inkBlack, fontWeight: FontWeight.w600)),
                   )
                 else
                   ...rawItems.map((item) {

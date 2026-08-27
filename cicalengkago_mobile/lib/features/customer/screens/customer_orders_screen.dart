@@ -312,9 +312,9 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (items.isEmpty)
-                    const Text(
-                      '1x Pesanan CicalengkaGO',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF475569)),
+                    Text(
+                      isParcel ? '1x Pengiriman Paket Parcel' : '1x Pesanan di $storeName',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF475569)),
                     )
                   else ...[
                     ...items.take(2).map((it) {
