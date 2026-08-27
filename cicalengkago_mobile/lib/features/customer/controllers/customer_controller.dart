@@ -45,6 +45,13 @@ class CustomerController extends ChangeNotifier {
     });
   }
 
+  List<dynamic> get cartItems => (_cart?['items'] as List<dynamic>?) ?? [];
+
+  double get cartSubtotal {
+    if (_cart == null) return 0.0;
+    return double.tryParse(_cart!['grand_total']?.toString() ?? _cart!['subtotal']?.toString() ?? '0') ?? 0.0;
+  }
+
   Future<void> fetchHomeData() async {
     _isLoading = true;
     notifyListeners();
