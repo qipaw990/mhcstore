@@ -60,7 +60,7 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
         actions: [
           Switch(
             value: merchantCtrl.isOpen,
-            activeColor: Colors.green,
+            activeThumbColor: Colors.green,
             onChanged: (val) => merchantCtrl.toggleStoreOpenStatus(val),
           ),
           IconButton(

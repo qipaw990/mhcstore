@@ -83,7 +83,7 @@ class ProductManagementScreen extends StatelessWidget {
                             ),
                             Switch(
                               value: isAvailable,
-                              activeColor: Colors.green,
+                              activeThumbColor: Colors.green,
                               onChanged: (val) {
                                 merchantCtrl.toggleProductStock(productId, val);
                               },

@@ -902,7 +902,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                               width: 46,
                               height: 46,
                               fit: BoxFit.cover,
-                              errorWidget: (_, __, ___) => Container(
+                              errorWidget: (context, url, error) => Container(
                                 width: 46,
                                 height: 46,
                                 color: const Color(0xFFE2E8F0),

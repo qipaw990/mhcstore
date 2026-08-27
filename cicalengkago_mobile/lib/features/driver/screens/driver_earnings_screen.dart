@@ -332,7 +332,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
     return ListView.separated(
       padding: const EdgeInsets.only(top: 12, bottom: 16),
       itemCount: requests.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      separatorBuilder: (context, index) => const SizedBox(height: 8),
       itemBuilder: (_, i) => _buildWithdrawCard(requests[i]),
     );
   }
@@ -415,7 +415,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
     return ListView.separated(
       padding: const EdgeInsets.only(top: 12, bottom: 16),
       itemCount: transactions.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      separatorBuilder: (context, index) => const SizedBox(height: 8),
       itemBuilder: (_, i) => _buildCommissionCard(transactions[i]),
     );
   }
@@ -544,7 +544,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
 
                   // Bank select
                   DropdownButtonFormField<String>(
-                    value: selectedBank,
+                    initialValue: selectedBank,
                     decoration: InputDecoration(
                       labelText: 'Tujuan Rekening / E-Wallet',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),

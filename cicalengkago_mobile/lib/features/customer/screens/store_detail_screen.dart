@@ -159,7 +159,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                             child: CachedNetworkImage(
                               imageUrl: ApiConstants.formatImageUrl(rawLogo ?? rawCover),
                               fit: BoxFit.cover,
-                              errorWidget: (_, __, ___) => Container(
+                              errorWidget: (context, url, error) => Container(
                                 color: const Color(0xFFFEF2F2),
                                 child: const Icon(Icons.storefront_rounded, size: 28, color: AppTheme.primaryRed),
                               ),
