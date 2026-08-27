@@ -207,63 +207,213 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     required List items,
     required String status,
   }) {
+    // Group items per store
+    final Map<String, List<dynamic>> itemsByStore = {};
+    for (var item in items) {
+      final String sName = (item['store_name'] ?? storeName).toString();
+      if (!itemsByStore.containsKey(sName)) {
+        itemsByStore[sName] = [];
+      }
+      itemsByStore[sName]!.add(item);
+    }
+    if (itemsByStore.isEmpty) {
+      itemsByStore[storeName] = items;
+    }
+
+    final storeEntries = itemsByStore.entries.toList();
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Store section
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+          // 1. Render each pickup store step with its items
+          ...storeEntries.asMap().entries.map((stepEntry) {
+            final int stepIdx = stepEntry.key;
+            final String sName = stepEntry.value.key;
+            final List sItems = stepEntry.value.value;
+            final String sAddr = (sName == storeName) ? storeAddress : 'Cicalengka, Jawa Barat';
+
+            return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEFF6FF),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.storefront_rounded, color: Color(0xFF2563EB), size: 18),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
+                Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Lokasi Pengambilan', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600)),
-                      Text(storeName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                      Text(storeAddress, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      // Step Badge & Store Info Header
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF6FF),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${stepIdx + 1}',
+                                style: const TextStyle(
+                                  color: Color(0xFF2563EB),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      'LANGKAH ${stepIdx + 1}: JEMPUT PESANAN',
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        color: Color(0xFF2563EB),
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFDBEAFE),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        '${sItems.length} Menu',
+                                        style: const TextStyle(
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF1D4ED8),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  sName,
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                ),
+                                Text(sAddr, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                              ],
+                            ),
+                          ),
+                          _mapBtn(sAddr),
+                        ],
+                      ),
+
+                      // Items list belonging strictly to this store step
+                      if (sItems.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.shopping_bag_rounded, size: 13, color: AppTheme.primaryRed),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      'Item yang diambil di $sName:',
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Divider(height: 14, color: Color(0xFFE2E8F0)),
+                              ...sItems.map((item) {
+                                final pName = item['product_name'] ?? item['name'] ?? 'Menu';
+                                final qty = item['quantity'] ?? 1;
+                                final price = double.tryParse(item['total_price']?.toString() ?? item['price']?.toString() ?? '0') ?? 0;
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 6),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFE2E8F0),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          '${qty}x',
+                                          style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          pName,
+                                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                                        ),
+                                      ),
+                                      if (price > 0)
+                                        Text(
+                                          CurrencyFormatter.formatRupiah(price),
+                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF059669)),
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
-                _mapBtn(storeAddress),
+
+                // Step Connector Line
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 32),
+                  height: 20,
+                  child: Column(
+                    children: List.generate(3, (_) => Container(
+                      margin: const EdgeInsets.only(bottom: 2),
+                      width: 2,
+                      height: 4,
+                      decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(1)),
+                    )),
+                  ),
+                ),
               ],
-            ),
-          ),
+            );
+          }),
 
-          // Connector line
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 34),
-            height: 24,
-            child: Column(
-              children: List.generate(4, (_) => Container(
-                margin: const EdgeInsets.only(bottom: 2),
-                width: 2,
-                height: 4,
-                decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(1)),
-              )),
-            ),
-          ),
-
-          // Customer section
+          // 2. Customer Destination Step
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: const EdgeInsets.all(16),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -281,7 +431,16 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Lokasi Pengantaran', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600)),
+                      const Text(
+                        'LANGKAH TERAKHIR: PENGANTARAN',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Color(0xFF059669),
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
                       Text(customerName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                       Text(deliveryAddress, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                     ],
@@ -309,152 +468,6 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
               ],
             ),
           ),
-
-          // Items list grouped per store
-          if (items.isNotEmpty) ...[
-            Builder(
-              builder: (context) {
-                final Map<String, List<dynamic>> itemsByStore = {};
-                for (var item in items) {
-                  final String sName = (item['store_name'] ?? storeName).toString();
-                  if (!itemsByStore.containsKey(sName)) {
-                    itemsByStore[sName] = [];
-                  }
-                  itemsByStore[sName]!.add(item);
-                }
-
-                return Container(
-                  padding: const EdgeInsets.all(14),
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Row(
-                            children: [
-                              Icon(Icons.storefront_rounded, size: 16, color: AppTheme.primaryRed),
-                              SizedBox(width: 6),
-                              Text(
-                                'Rincian Item Per Toko',
-                                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                              ),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFEF2F2),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFFCA5A5)),
-                            ),
-                            child: Text(
-                              '${items.length} Menu • ${itemsByStore.length} Toko',
-                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      ...itemsByStore.entries.map((storeEntry) {
-                        final sName = storeEntry.key;
-                        final sItems = storeEntry.value;
-                        double storeTotal = 0;
-                        for (var it in sItems) {
-                          storeTotal += double.tryParse(it['total_price']?.toString() ?? it['price']?.toString() ?? '0') ?? 0;
-                        }
-
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 24,
-                                    height: 24,
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.primaryRed.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: const Icon(Icons.store_rounded, size: 14, color: AppTheme.primaryRed),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      sName,
-                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  if (storeTotal > 0)
-                                    Text(
-                                      CurrencyFormatter.formatRupiah(storeTotal),
-                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
-                                    ),
-                                ],
-                              ),
-                              const Divider(height: 16, color: Color(0xFFF1F5F9)),
-                              ...sItems.map((item) {
-                                final pName = item['product_name'] ?? item['name'] ?? 'Menu';
-                                final qty = item['quantity'] ?? 1;
-                                final price = double.tryParse(item['total_price']?.toString() ?? item['price']?.toString() ?? '0') ?? 0;
-
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 6),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFF1F5F9),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Text(
-                                          '${qty}x',
-                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          pName,
-                                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
-                                        ),
-                                      ),
-                                      if (price > 0)
-                                        Text(
-                                          CurrencyFormatter.formatRupiah(price),
-                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
-                                        ),
-                                    ],
-                                  ),
-                                );
-                              }),
-                            ],
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ],
         ],
       ),
     );
