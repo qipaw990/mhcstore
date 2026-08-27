@@ -137,11 +137,9 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
 
           // Compact Store Details Card
           SliverToBoxAdapter(
-            child: Transform.translate(
-              offset: const Offset(0, -20),
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 14),
-                padding: const EdgeInsets.all(16),
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(14, 12, 14, 16),
+              padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
@@ -287,7 +285,6 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                 ),
               ),
             ),
-          ),
 
           // Menu Section Header
           SliverToBoxAdapter(
