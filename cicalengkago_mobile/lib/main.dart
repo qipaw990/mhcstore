@@ -79,23 +79,40 @@ class _LocationGuardState extends State<LocationGuard> with WidgetsBindingObserv
   Future<void> _checkLocationStatus() async {
     setState(() => _isChecking = true);
 
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    LocationPermission permission = await Geolocator.checkPermission();
+    bool serviceEnabled = false;
+    LocationPermission permission = LocationPermission.denied;
+    bool granted = false;
 
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
+    try {
+      serviceEnabled = await Geolocator.isLocationServiceEnabled().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => false,
+      );
+      permission = await Geolocator.checkPermission().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => LocationPermission.denied,
+      );
 
-    final bool granted = serviceEnabled &&
-        (permission == LocationPermission.always || permission == LocationPermission.whileInUse);
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission().timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => LocationPermission.denied,
+        );
+      }
 
-    if (mounted) {
-      setState(() {
-        _serviceEnabled = serviceEnabled;
-        _permission = permission;
-        _isGranted = granted;
-        _isChecking = false;
-      });
+      granted = serviceEnabled &&
+          (permission == LocationPermission.always || permission == LocationPermission.whileInUse);
+    } catch (_) {
+      granted = false;
+    } finally {
+      if (mounted) {
+        setState(() {
+          _serviceEnabled = serviceEnabled;
+          _permission = permission;
+          _isGranted = granted;
+          _isChecking = false;
+        });
+      }
     }
   }
 
