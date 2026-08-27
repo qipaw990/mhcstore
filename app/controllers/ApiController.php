@@ -27,6 +27,12 @@ class ApiController extends Controller
         try {
             $user = (new AuthService())->login($username, $password);
             
+            // Set session user so PHP $_SESSION is active
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            $_SESSION['user'] = $user;
+
             $token = $user['api_token'] ?? null;
             if (empty($token)) {
                 $token = bin2hex(random_bytes(32));

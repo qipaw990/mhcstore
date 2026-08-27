@@ -48,42 +48,86 @@ class AuthController extends Controller
     public function handleLogin(): void
     {
         $data = $this->getPost();
-        $emailOrPhone = trim($data['username'] ?? $data['email'] ?? '');
+        $emailOrPhone = trim($data['username'] ?? $data['email'] ?? $data['phone'] ?? '');
         $password     = trim($data['password'] ?? '');
         $captcha      = trim($data['captcha'] ?? '');
 
+        $isJsonRequest = (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
+            || isset($_SERVER['HTTP_X_REQUESTED_WITH'])
+            || empty($captcha);
+
         if (empty($emailOrPhone) || empty($password)) {
+            if ($isJsonRequest) {
+                $this->json(['success' => false, 'message' => 'Email/No HP dan password wajib diisi.'], 400);
+                return;
+            }
             $_SESSION['error'] = 'Email/No HP dan password wajib diisi.';
             $this->redirect('login');
             return;
         }
 
-        // Validate Captcha
-        $sessionCaptcha = $_SESSION['login_captcha'] ?? '';
-        if (empty($captcha) || $captcha !== $sessionCaptcha) {
-            $_SESSION['login_captcha'] = (string) rand(1000, 9999); // Acak ulang captcha jika salah
-            $_SESSION['error'] = 'Kode Captcha tidak sesuai. Silakan coba lagi.';
-            $this->redirect('login');
-            return;
+        // Validate Captcha for Web requests only
+        if (!empty($captcha)) {
+            $sessionCaptcha = $_SESSION['login_captcha'] ?? '';
+            if ($captcha !== $sessionCaptcha) {
+                $_SESSION['login_captcha'] = (string) rand(1000, 9999);
+                if ($isJsonRequest) {
+                    $this->json(['success' => false, 'message' => 'Kode Captcha tidak sesuai.'], 400);
+                    return;
+                }
+                $_SESSION['error'] = 'Kode Captcha tidak sesuai. Silakan coba lagi.';
+                $this->redirect('login');
+                return;
+            }
+            $_SESSION['login_captcha'] = (string) rand(1000, 9999);
         }
-
-        // Reset captcha setelah validasi berhasil
-        $_SESSION['login_captcha'] = (string) rand(1000, 9999);
 
         try {
             $user = $this->authService->login($emailOrPhone, $password);
 
-            // If pending_otp is set, OTP verification is required
+            // Directly ensure session user is stored
+            $_SESSION['user'] = $user;
+
+            $apiToken = $user['api_token'] ?? null;
+            if (empty($apiToken)) {
+                $apiToken = bin2hex(random_bytes(32));
+                (new \App\Models\User())->update($user['id'], ['api_token' => $apiToken]);
+                $user['api_token'] = $apiToken;
+            }
+
+            if ($isJsonRequest) {
+                $this->json([
+                    'success' => true,
+                    'message' => 'Login berhasil',
+                    'token'   => $apiToken,
+                    'data'    => [
+                        'token' => $apiToken,
+                        'user'  => [
+                            'id'    => $user['id'],
+                            'name'  => $user['name'],
+                            'email' => $user['email'],
+                            'phone' => $user['phone'],
+                            'role'  => $user['role']
+                        ]
+                    ],
+                    'user'    => $user
+                ]);
+                return;
+            }
+
             if (!empty($_SESSION['pending_otp'])) {
                 $_SESSION['info'] = 'Kode verifikasi OTP telah dikirimkan.';
                 $this->redirect('verify-otp');
                 return;
             }
 
-            // OTP not required — session already set in AuthService, go straight to dashboard
             $_SESSION['success'] = 'Selamat datang kembali, ' . htmlspecialchars($user['name']) . '!';
             $this->redirectToRoleDashboard($user['role']);
         } catch (Exception $e) {
+            if ($isJsonRequest) {
+                $this->json(['success' => false, 'message' => $e->getMessage()], 400);
+                return;
+            }
             $_SESSION['error'] = $e->getMessage();
             $this->redirect('login');
         }

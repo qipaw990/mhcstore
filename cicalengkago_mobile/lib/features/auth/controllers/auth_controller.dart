@@ -35,24 +35,34 @@ class AuthController extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    final response = await ApiService.post(ApiConstants.login, {
+    final response = await ApiService.postForm(ApiConstants.login, {
       'username': username,
       'password': password,
     });
 
     _isLoading = false;
 
-    if (response['success'] == true && response['data'] != null) {
-      final token = (response['data']['token'] as String?) ?? 'session_${DateTime.now().millisecondsSinceEpoch}';
-      final userData = response['data']['user'] as Map<String, dynamic>?;
+    if (response['success'] == true) {
+      final token = response['token']?.toString() ?? response['data']?['token']?.toString();
+      final userData = (response['data']?['user'] ?? response['data'] ?? response['user']) as Map<String, dynamic>?;
 
       if (userData != null) {
         _user = userData;
         _role = userData['role']?.toString().toLowerCase() ?? 'customer';
-        await ApiService.saveSession(token, userData);
+        await ApiService.saveSession(userData, token: token);
         notifyListeners();
         return true;
       }
+    }
+
+    if (response['user'] != null) {
+      final userData = response['user'] as Map<String, dynamic>;
+      final token = response['token']?.toString();
+      _user = userData;
+      _role = userData['role']?.toString().toLowerCase() ?? 'customer';
+      await ApiService.saveSession(userData, token: token);
+      notifyListeners();
+      return true;
     }
 
     _errorMessage = response['message'] ?? 'Login gagal. Periksa username dan password Anda.';
@@ -70,7 +80,7 @@ class AuthController extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    final response = await ApiService.post(ApiConstants.register, {
+    final response = await ApiService.postForm(ApiConstants.register, {
       'name': name,
       'email': email,
       'phone': phone,
@@ -79,14 +89,15 @@ class AuthController extends ChangeNotifier {
 
     _isLoading = false;
 
-    if (response['success'] == true && response['data'] != null) {
-      final token = response['data']['token'] as String?;
-      final userData = response['data']['user'] as Map<String, dynamic>?;
+    if (response['success'] == true) {
+      final token = response['token']?.toString() ?? response['data']?['token']?.toString();
+      final userData = (response['data']?['user'] ?? response['data'] ?? response['user'])
+          as Map<String, dynamic>?;
 
-      if (token != null && userData != null) {
+      if (userData != null) {
         _user = userData;
         _role = userData['role'] ?? 'customer';
-        await ApiService.saveSession(token, userData);
+        await ApiService.saveSession(userData, token: token);
         notifyListeners();
         return true;
       }
@@ -100,6 +111,10 @@ class AuthController extends ChangeNotifier {
   Future<void> logout() async {
     _user = null;
     _role = null;
+    // Panggil endpoint logout server agar session dihapus di PHP
+    try {
+      await ApiService.get(ApiConstants.logout);
+    } catch (_) {}
     await ApiService.clearSession();
     notifyListeners();
   }

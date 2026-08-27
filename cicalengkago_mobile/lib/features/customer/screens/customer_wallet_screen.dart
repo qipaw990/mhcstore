@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/constants/api_constants.dart';
-import '../../../core/network/api_service.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../controllers/customer_controller.dart';
 
@@ -12,175 +12,619 @@ class CustomerWalletScreen extends StatefulWidget {
   State<CustomerWalletScreen> createState() => _CustomerWalletScreenState();
 }
 
-class _CustomerWalletScreenState extends State<CustomerWalletScreen> {
-  final _amountController = TextEditingController();
-  bool _isTopupLoading = false;
+class _CustomerWalletScreenState extends State<CustomerWalletScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
 
-  void _handleTopup() async {
-    final amountText = _amountController.text.trim();
-    final amount = double.tryParse(amountText) ?? 0.0;
-
-    if (amount < 10000) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nominal top up minimal Rp 10.000')),
-      );
-      return;
-    }
-
-    setState(() {
-      _isTopupLoading = true;
-    });
-
-    final res = await ApiService.post('${ApiConstants.baseUrl}/payment/topup-snap', {
-      'amount': amount.toString(),
-    });
-
-    setState(() {
-      _isTopupLoading = false;
-    });
-
-    if (res['success'] == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Permintaan Top-Up berhasil dibuat! Silakan bayar via QRIS/Bank.')),
-      );
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CustomerController>().fetchWallet();
-      _amountController.clear();
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(res['message'] ?? 'Gagal memproses topup'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-    }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final customerCtrl = context.watch<CustomerController>();
-    final wallet = customerCtrl.wallet?['wallet'];
-    final transactions = (customerCtrl.wallet?['transactions'] as List<dynamic>?) ?? [];
-    final double balance = (wallet?['balance'] != null)
-        ? double.parse(wallet['balance'].toString())
-        : 0.0;
+    final ctrl = context.watch<CustomerController>();
+    final walletData = ctrl.wallet;
+    final balance = double.tryParse(
+            walletData?['wallet']?['balance']?.toString() ?? '0') ??
+        0.0;
+    final transactions =
+        (walletData?['transactions'] as List<dynamic>?) ?? [];
+    final topupLogs =
+        (walletData?['topup_logs'] as List<dynamic>?) ?? [];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dompet CicalengkaPay'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Balance Card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFEE2737), Color(0xFF991B1B)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: CustomScrollView(
+        slivers: [
+          // App Bar
+          SliverAppBar(
+            pinned: true,
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFF0F172A),
+            title: const Text('Dompet CicalengkaPay',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded, color: AppTheme.primaryRed),
+                onPressed: () => ctrl.fetchWallet(),
               ),
+            ],
+          ),
+
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Saldo Utama CicalengkaPay', style: TextStyle(color: Colors.white70, fontSize: 13)),
-                  const SizedBox(height: 6),
-                  Text(
-                    CurrencyFormatter.formatRupiah(balance),
-                    style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                  // Balance Card
+                  _buildBalanceCard(balance, context),
+                  const SizedBox(height: 16),
+
+                  // Quick TopUp Grid
+                  _buildQuickTopUpGrid(context),
+                  const SizedBox(height: 16),
+
+                  // Tabs
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      labelColor: AppTheme.primaryRed,
+                      unselectedLabelColor: const Color(0xFF64748B),
+                      indicator: BoxDecoration(
+                        color: const Color(0xFFFEE2E2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      dividerColor: Colors.transparent,
+                      padding: const EdgeInsets.all(4),
+                      labelStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                      tabs: [
+                        Tab(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.receipt_rounded, size: 14),
+                              const SizedBox(width: 5),
+                              Text('Mutasi (${transactions.length})'),
+                            ],
+                          ),
+                        ),
+                        Tab(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.history_rounded, size: 14),
+                              const SizedBox(width: 5),
+                              Text('Top Up (${topupLogs.length})'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+          ),
 
-            const Text('Isi Saldo CicalengkaPay', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 12),
-
-            TextField(
-              controller: _amountController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Nominal Isi Saldo (Rp)',
-                prefixText: 'Rp ',
-                hintText: '100000',
+          // Tab content area (fixed height within scroll)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(
+                height: transactions.isEmpty && topupLogs.isEmpty ? 200 : 600,
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildMutasiTab(transactions),
+                    _buildTopUpTab(topupLogs),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 12),
+          ),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [10000, 50000, 100000, 200000].map((val) {
-                return OutlinedButton(
-                  onPressed: () {
-                    _amountController.text = val.toString();
-                  },
-                  child: Text('${val ~/ 1000}rb'),
-                );
-              }).toList(),
+          const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBalanceCard(double balance, BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFEE2737), Color(0xFFB91C1C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFEE2737).withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text('Cicalengka',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15)),
+                      const Text('Pay',
+                          style: TextStyle(color: Color(0xFFFFE4E6), fontWeight: FontWeight.w900, fontSize: 15)),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text('E-WALLET',
+                            style: TextStyle(color: AppTheme.primaryRed, fontSize: 8, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text('SALDO UTAMA AKTIF',
+                      style: TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+                  const SizedBox(height: 2),
+                  Text(
+                    CurrencyFormatter.formatRupiah(balance),
+                    style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                  ),
+                ],
+              ),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.shield_rounded, color: Colors.white, size: 20),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(color: Colors.white24, height: 1),
+          const SizedBox(height: 12),
+          // Action buttons row
+          Row(
+            children: [
+              _walletAction(Icons.add_circle_outline_rounded, 'Top Up', () => _showTopUpSheet(context)),
+              _walletAction(Icons.qr_code_scanner_rounded, 'Bayar', () {}),
+              _walletAction(Icons.history_rounded, 'Riwayat', () => _tabController.animateTo(0)),
+              _walletAction(Icons.open_in_new_rounded, 'Web', () => launchUrl(Uri.parse('https://cicago.store/wallet'))),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _walletAction(IconData icon, String label, VoidCallback onTap) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Column(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: Colors.white, size: 20),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 4),
+            Text(label, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
+  }
 
-            SizedBox(
+  Widget _buildQuickTopUpGrid(BuildContext context) {
+    final nominals = [
+      {'amount': 20000, 'label': 'Rp 20.000', 'tag': 'Hemat', 'tagColor': const Color(0xFF16A34A)},
+      {'amount': 50000, 'label': 'Rp 50.000', 'tag': 'Populer', 'tagColor': const Color(0xFF2563EB)},
+      {'amount': 100000, 'label': 'Rp 100.000', 'tag': 'Favorit', 'tagColor': const Color(0xFFD97706)},
+      {'amount': 200000, 'label': 'Rp 200.000', 'tag': 'Sultan', 'tagColor': const Color(0xFF7C3AED)},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFD97706)]),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: 10),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Isi Saldo Instan', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  Text('Bebas biaya admin • Langsung masuk', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 2.6,
+            ),
+            itemCount: nominals.length,
+            itemBuilder: (_, i) {
+              final item = nominals[i];
+              final color = item['tagColor'] as Color;
+              return GestureDetector(
+                onTap: () => _initiateTopUp(context, item['amount'] as int),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: color.withOpacity(0.3)),
+                    boxShadow: [BoxShadow(color: color.withOpacity(0.05), blurRadius: 6)],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        item['label'] as String,
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          item['tag'] as String,
+                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 10),
+          GestureDetector(
+            onTap: () => _showTopUpSheet(context),
+            child: Container(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isTopupLoading ? null : _handleTopup,
-                child: _isTopupLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('PROSES TOP UP SALDO'),
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF5F5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFFECDD3), style: BorderStyle.values[1]),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.edit_rounded, color: AppTheme.primaryRed, size: 14),
+                  SizedBox(width: 6),
+                  Text('Masukkan Nominal Lainnya', style: TextStyle(color: AppTheme.primaryRed, fontSize: 12, fontWeight: FontWeight.bold)),
+                ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            const SizedBox(height: 28),
-            const Text('Riwayat Transaksi Dompet', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 12),
-
-            if (transactions.isEmpty)
-              const Center(child: Text('Belum ada transaksi dompet'))
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: transactions.length,
-                itemBuilder: (context, index) {
-                  final tx = transactions[index];
-                  final isCredit = tx['transaction_type'] == 'credit' || tx['transaction_type'] == 'topup';
-                  final amount = double.tryParse(tx['amount']?.toString() ?? '0') ?? 0.0;
-
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: isCredit ? Colors.green[50] : Colors.red[50],
-                        child: Icon(
-                          isCredit ? Icons.add_circle : Icons.remove_circle,
-                          color: isCredit ? Colors.green : Colors.red,
-                        ),
-                      ),
-                      title: Text(
-                        tx['description'] ?? (isCredit ? 'Topup Saldo' : 'Pembayaran Order'),
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                      ),
-                      subtitle: Text(
-                        CurrencyFormatter.formatDate(tx['created_at'] ?? ''),
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                      trailing: Text(
-                        '${isCredit ? '+' : '-'}${CurrencyFormatter.formatRupiah(amount)}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: isCredit ? Colors.green : Colors.red,
-                        ),
-                      ),
-                    ),
-                  );
-                },
+  void _showTopUpSheet(BuildContext context) {
+    final amountCtrl = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Isi Saldo CicalengkaPay', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+              const SizedBox(height: 4),
+              const Text('Minimal Rp 10.000', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+              const SizedBox(height: 16),
+              TextField(
+                controller: amountCtrl,
+                keyboardType: TextInputType.number,
+                autofocus: true,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                decoration: InputDecoration(
+                  prefixText: 'Rp ',
+                  prefixStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.primaryRed, width: 2)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.primaryRed, width: 2)),
+                ),
               ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryRed,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: () {
+                    final amount = int.tryParse(amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+                    if (amount < 10000) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Minimal top up Rp 10.000')),
+                      );
+                      return;
+                    }
+                    Navigator.pop(ctx);
+                    _initiateTopUp(context, amount);
+                  },
+                  child: const Text('Lanjut Bayar', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _initiateTopUp(BuildContext context, int amount) {
+    // Open web wallet for Midtrans payment
+    launchUrl(
+      Uri.parse('https://cicago.store/wallet?topup=$amount'),
+      mode: LaunchMode.externalApplication,
+    );
+  }
+
+  Widget _buildMutasiTab(List<dynamic> transactions) {
+    if (transactions.isEmpty) {
+      return _emptyState(Icons.receipt_outlined, 'Belum Ada Mutasi', 'Transaksi saldo akan tercatat di sini.');
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.only(top: 12, bottom: 16),
+      itemCount: transactions.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (_, i) => _buildTransactionCard(transactions[i]),
+    );
+  }
+
+  Widget _buildTopUpTab(List<dynamic> logs) {
+    if (logs.isEmpty) {
+      return _emptyState(Icons.wallet_outlined, 'Belum Ada Tiket Top Up', 'Pilih nominal di atas untuk isi saldo.');
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.only(top: 12, bottom: 16),
+      itemCount: logs.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (_, i) => _buildTopUpCard(logs[i]),
+    );
+  }
+
+  Widget _buildTransactionCard(Map<String, dynamic> tx) {
+    final category = tx['category'] ?? tx['type'] ?? 'credit';
+    final isCredit = tx['type'] == 'credit';
+    final amount = double.tryParse(tx['amount']?.toString() ?? '0') ?? 0;
+
+    Color color;
+    IconData icon;
+    String title;
+
+    if (category == 'topup') {
+      color = const Color(0xFF10B981);
+      icon = Icons.add_circle_rounded;
+      title = 'Top Up CicalengkaPay';
+    } else if (category == 'order_payment') {
+      color = AppTheme.primaryRed;
+      icon = Icons.shopping_bag_rounded;
+      title = 'Pembayaran Pesanan';
+    } else if (category == 'refund' || category == 'order_refund') {
+      color = const Color(0xFF2563EB);
+      icon = Icons.replay_rounded;
+      title = 'Refund Pengembalian Dana';
+    } else {
+      color = isCredit ? const Color(0xFF10B981) : AppTheme.primaryRed;
+      icon = isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded;
+      title = isCredit ? 'Saldo Masuk' : 'Saldo Keluar';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                Text(tx['description'] ?? '', style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${isCredit ? '+' : '-'}${CurrencyFormatter.formatRupiah(amount)}',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color),
+              ),
+              Container(
+                margin: const EdgeInsets.only(top: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  isCredit ? 'Masuk' : 'Keluar',
+                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopUpCard(Map<String, dynamic> log) {
+    final status = log['status'] ?? 'pending';
+    final amount = double.tryParse(log['amount']?.toString() ?? '0') ?? 0;
+
+    Color color;
+    String label;
+    IconData icon;
+
+    if (status == 'success') {
+      color = const Color(0xFF059669);
+      label = 'Berhasil';
+      icon = Icons.check_circle_rounded;
+    } else if (status == 'failed' || status == 'canceled') {
+      color = AppTheme.primaryRed;
+      label = status == 'canceled' ? 'Dibatalkan' : 'Gagal';
+      icon = Icons.cancel_rounded;
+    } else {
+      color = const Color(0xFFD97706);
+      label = 'Menunggu';
+      icon = Icons.hourglass_empty_rounded;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Top Up CicalengkaPay', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                Text(log['topup_code'] ?? '', style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontFamily: 'monospace')),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${status == 'success' ? '+' : ''}${CurrencyFormatter.formatRupiah(amount)}',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color),
+              ),
+              Container(
+                margin: const EdgeInsets.only(top: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                child: Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _emptyState(IconData icon, String title, String subtitle) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(30),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle),
+              child: Icon(icon, color: const Color(0xFF94A3B8), size: 28),
+            ),
+            const SizedBox(height: 12),
+            Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+            const SizedBox(height: 4),
+            Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)), textAlign: TextAlign.center),
           ],
         ),
       ),

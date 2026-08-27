@@ -14,6 +14,8 @@ import 'cart_screen.dart';
 import 'customer_wallet_screen.dart';
 import 'customer_search_screen.dart';
 import 'order_tracking_screen.dart';
+import 'customer_orders_screen.dart';
+import 'customer_profile_screen.dart';
 
 class CustomerHomeScreen extends StatefulWidget {
   const CustomerHomeScreen({super.key});
@@ -162,7 +164,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 ),
               ),
             )
-          : const CustomerOrdersListTab(),
+          : _buildTabBody(),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -174,35 +176,78 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             ),
           ],
         ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          selectedItemColor: AppTheme.primaryRed,
-          unselectedItemColor: const Color(0xFF94A3B8),
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
-          type: BottomNavigationBarType.fixed,
-          elevation: 0,
-          backgroundColor: Colors.white,
-          onTap: (idx) {
-            setState(() {
-              _currentIndex = idx;
-            });
-          },
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.grid_view_rounded),
-              activeIcon: Icon(Icons.grid_view_rounded, color: AppTheme.primaryRed),
-              label: 'Beranda',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.receipt_long_outlined),
-              activeIcon: Icon(Icons.receipt_long_rounded, color: AppTheme.primaryRed),
-              label: 'Pesanan Saya',
-            ),
-          ],
-        ),
+        child: Builder(builder: (context) {
+          final ctrl = context.watch<CustomerController>();
+          final unread = ctrl.unreadNotifCount;
+
+          return BottomNavigationBar(
+            currentIndex: _currentIndex,
+            selectedItemColor: AppTheme.primaryRed,
+            unselectedItemColor: const Color(0xFF94A3B8),
+            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
+            type: BottomNavigationBarType.fixed,
+            elevation: 0,
+            backgroundColor: Colors.white,
+            onTap: (idx) {
+              setState(() {
+                _currentIndex = idx;
+              });
+            },
+            items: [
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.grid_view_rounded),
+                activeIcon: Icon(Icons.grid_view_rounded, color: AppTheme.primaryRed),
+                label: 'Beranda',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.receipt_long_outlined),
+                activeIcon: Icon(Icons.receipt_long_rounded, color: AppTheme.primaryRed),
+                label: 'Pesanan',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.account_balance_wallet_outlined),
+                activeIcon: Icon(Icons.account_balance_wallet_rounded, color: AppTheme.primaryRed),
+                label: 'Dompet',
+              ),
+              BottomNavigationBarItem(
+                icon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.person_outline_rounded),
+                    if (unread > 0)
+                      Positioned(
+                        right: -4,
+                        top: -4,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: const BoxDecoration(color: AppTheme.primaryRed, shape: BoxShape.circle),
+                        ),
+                      ),
+                  ],
+                ),
+                activeIcon: const Icon(Icons.person_rounded, color: AppTheme.primaryRed),
+                label: 'Profil',
+              ),
+            ],
+          );
+        }),
       ),
     );
+  }
+
+  Widget _buildTabBody() {
+    switch (_currentIndex) {
+      case 1:
+        return const CustomerOrdersScreen();
+      case 2:
+        return const CustomerWalletScreen();
+      case 3:
+        return const CustomerProfileScreen();
+      default:
+        return const SizedBox();
+    }
   }
 
   // --- Gojek-Style Modern Red Header ---
@@ -245,9 +290,9 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                         );
                       },
                       child: Row(
-                        children: const [
-                          Icon(Icons.location_on_rounded, size: 13, color: Colors.amberAccent),
-                          SizedBox(width: 3),
+                        children: [
+                          const Icon(Icons.location_on_rounded, size: 13, color: Colors.amberAccent),
+                          const SizedBox(width: 3),
                           Text(
                             'Cicalengka, Kab. Bandung ▾',
                             style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 11, fontWeight: FontWeight.w600),
@@ -680,9 +725,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             itemCount: customerCtrl.banners.length,
             itemBuilder: (context, index) {
               final banner = customerCtrl.banners[index];
-              final imgUrl = banner['image'] != null && banner['image'].toString().startsWith('http')
-                  ? banner['image']
-                  : '${ApiConstants.imageBaseUrl}/${banner['image'] ?? ''}';
+              final imgUrl = ApiConstants.formatImageUrl(banner['image']?.toString());
 
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -796,9 +839,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               final prod = customerCtrl.discountedProducts[index];
               final double price = double.tryParse(prod['price']?.toString() ?? '0') ?? 0;
               final double finalPrice = double.tryParse(prod['final_price']?.toString() ?? price.toString()) ?? price;
-              final imgUrl = prod['image'] != null && prod['image'].toString().startsWith('http')
-                  ? prod['image']
-                  : '${ApiConstants.imageBaseUrl}/${prod['image'] ?? ''}';
+              final imgUrl = ApiConstants.formatImageUrl(prod['image']?.toString());
 
               return GestureDetector(
                 onTap: () {
@@ -953,9 +994,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemBuilder: (context, index) {
               final store = customerCtrl.topRatedStores[index];
-              final coverUrl = store['cover_photo'] != null && store['cover_photo'].toString().startsWith('http')
-                  ? store['cover_photo']
-                  : '${ApiConstants.imageBaseUrl}/${store['cover_photo'] ?? store['logo'] ?? ''}';
+              final coverUrl = ApiConstants.formatImageUrl(store['cover_photo']?.toString() ?? store['logo']?.toString());
               final isOpen = store['is_open'] == 1 || store['is_open'] == true || store['is_open'] == '1';
 
               return Container(
@@ -1145,9 +1184,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             final prod = customerCtrl.recommendedProducts[index];
             final double price = double.tryParse(prod['price']?.toString() ?? '0') ?? 0;
             final double finalPrice = double.tryParse(prod['final_price']?.toString() ?? price.toString()) ?? price;
-            final imgUrl = prod['image'] != null && prod['image'].toString().startsWith('http')
-                ? prod['image']
-                : '${ApiConstants.imageBaseUrl}/${prod['image'] ?? ''}';
+            final imgUrl = ApiConstants.formatImageUrl(prod['image']?.toString());
 
             return Container(
               decoration: BoxDecoration(

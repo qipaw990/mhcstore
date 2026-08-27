@@ -54,9 +54,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     }
 
     final store = _storeData ?? {};
-    final coverUrl = store['cover_photo'] != null && store['cover_photo'].toString().startsWith('http')
-        ? store['cover_photo']
-        : '${ApiConstants.imageBaseUrl}/${store['cover_photo'] ?? store['logo'] ?? ''}';
+    final coverUrl = ApiConstants.formatImageUrl(store['cover_photo']?.toString() ?? store['logo']?.toString());
     final isOpen = store['is_open'] == 1 || store['is_open'] == true || store['is_open'] == '1';
 
     return Scaffold(
@@ -150,9 +148,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                 final product = _products[index];
                 final price = double.tryParse(product['price']?.toString() ?? '0') ?? 0.0;
                 final finalPrice = double.tryParse(product['final_price']?.toString() ?? price.toString()) ?? price;
-                final imgUrl = product['image'] != null && product['image'].toString().startsWith('http')
-                    ? product['image']
-                    : '${ApiConstants.imageBaseUrl}/${product['image'] ?? ''}';
+                final imgUrl = ApiConstants.formatImageUrl(product['image']?.toString());
 
                 return Card(
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),

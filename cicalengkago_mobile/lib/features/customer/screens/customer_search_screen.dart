@@ -193,9 +193,7 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
                   itemCount: _stores.length,
                   itemBuilder: (context, index) {
                     final store = _stores[index];
-                    final logoUrl = store['logo'] != null && store['logo'].toString().startsWith('http')
-                        ? store['logo']
-                        : '${ApiConstants.imageBaseUrl}/${store['logo'] ?? ''}';
+                    final logoUrl = ApiConstants.formatImageUrl(store['logo']?.toString() ?? store['cover_photo']?.toString());
 
                     return Card(
                       margin: const EdgeInsets.only(bottom: 10),
@@ -277,9 +275,7 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
                     final prod = _products[index];
                     final double price = double.tryParse(prod['price']?.toString() ?? '0') ?? 0;
                     final double finalPrice = double.tryParse(prod['final_price']?.toString() ?? price.toString()) ?? price;
-                    final imgUrl = prod['image'] != null && prod['image'].toString().startsWith('http')
-                        ? prod['image']
-                        : '${ApiConstants.imageBaseUrl}/${prod['image'] ?? ''}';
+                    final imgUrl = ApiConstants.formatImageUrl(prod['image']?.toString());
 
                     return GestureDetector(
                       onTap: () {

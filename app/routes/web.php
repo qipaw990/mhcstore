@@ -237,6 +237,10 @@ Router::get('/api/fill-schedules', [\App\Controllers\ApiController::class, 'fill
 Router::get('/fill-schedules', [\App\Controllers\ApiController::class, 'fillSchedules']);
 Router::get('/api/fix-images', [\App\Controllers\ApiController::class, 'fixImages']);
 Router::get('/fix-images', [\App\Controllers\ApiController::class, 'fixImages']);
+Router::post('/api/login', [\App\Controllers\ApiController::class, 'login']);
+Router::options('/api/login', [\App\Controllers\ApiController::class, 'login']);
+Router::post('/api/register', [\App\Controllers\ApiController::class, 'register']);
+Router::options('/api/register', [\App\Controllers\ApiController::class, 'register']);
 Router::get('/api/home-data', [\App\Controllers\ApiController::class, 'homeData']);
 Router::get('/api/banners', [\App\Controllers\ApiController::class, 'banners']);
 Router::get('/api/categories', [\App\Controllers\ApiController::class, 'categories']);
