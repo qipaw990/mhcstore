@@ -80,7 +80,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
               background: CachedNetworkImage(
                 imageUrl: coverUrl,
                 fit: BoxFit.cover,
-                errorWidget: (_, __, ___) => Container(color: AppTheme.primaryRed),
+                errorWidget: (_, url, error) => Container(color: AppTheme.primaryRed),
               ),
             ),
           ),
@@ -128,7 +128,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                         width: 50,
                         height: 50,
                         fit: BoxFit.cover,
-                        errorWidget: (_, __, ___) => const Icon(Icons.fastfood),
+                        errorWidget: (_, url, error) => const Icon(Icons.fastfood),
                       ),
                     ),
                     title: Text(

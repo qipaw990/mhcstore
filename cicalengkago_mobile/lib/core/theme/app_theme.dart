@@ -15,7 +15,6 @@ class AppTheme {
     final baseTextTheme = GoogleFonts.plusJakartaSansTextTheme();
 
     return ThemeData(
-      useMaterialColor: false,
       useMaterial3: true,
       scaffoldBackgroundColor: lightBg,
       primaryColor: primaryRed,
@@ -56,7 +55,7 @@ class AppTheme {
           color: darkSlate,
         ),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(

@@ -4,7 +4,6 @@ import 'package:latlong2/latlong.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_service.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/utils/currency_formatter.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
   final String orderCode;

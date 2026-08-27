@@ -59,7 +59,7 @@ class ProductManagementScreen extends StatelessWidget {
                             width: 50,
                             height: 50,
                             fit: BoxFit.cover,
-                            errorWidget: (_, __, ___) => const Icon(Icons.fastfood),
+                            errorWidget: (_, url, error) => const Icon(Icons.fastfood),
                           ),
                         ),
                         title: Text(

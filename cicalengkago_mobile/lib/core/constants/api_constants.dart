@@ -30,4 +30,5 @@ class ApiConstants {
   static const String vendorProducts = '$baseUrl/vendor/products';
   static const String updateProductStock = '$baseUrl/vendor/update-stock';
   static const String toggleStoreStatus = '$baseUrl/vendor/toggle-open';
+  static const String updateStoreOrderStatus = '$baseUrl/vendor/orders/update-status';
 }

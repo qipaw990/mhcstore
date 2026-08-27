@@ -50,4 +50,17 @@ class MerchantController extends ChangeNotifier {
       fetchDashboardData();
     }
   }
+
+  Future<bool> updateOrderStatus(int orderId, String status) async {
+    final res = await ApiService.post(ApiConstants.updateStoreOrderStatus, {
+      'order_id': orderId.toString(),
+      'status': status,
+    });
+
+    if (res['success'] == true) {
+      await fetchDashboardData();
+      return true;
+    }
+    return false;
+  }
 }

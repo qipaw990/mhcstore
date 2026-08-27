@@ -194,7 +194,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                       crossAxisSpacing: 12,
                       children: [
                         _buildModuleItem(Icons.restaurant, 'CicaFood', Colors.orange),
-                        _buildModuleItem(Icons.storefront, 'CicaMart', Colors.emerald),
+                        _buildModuleItem(Icons.storefront, 'CicaMart', const Color(0xFF059669)),
                         _buildModuleItem(Icons.local_shipping, 'CicaExpress', Colors.blue),
                         _buildModuleItem(Icons.medical_services, 'CicaMed', Colors.purple),
                       ],
@@ -242,8 +242,8 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                                   width: 50,
                                   height: 50,
                                   fit: BoxFit.cover,
-                                  placeholder: (_, __) => Container(color: Colors.grey[200]),
-                                  errorWidget: (_, __, ___) => const Icon(Icons.store),
+                                  placeholder: (_, url) => Container(color: Colors.grey[200]),
+                                  errorWidget: (_, url, error) => const Icon(Icons.store),
                                 ),
                               ),
                               title: Text(

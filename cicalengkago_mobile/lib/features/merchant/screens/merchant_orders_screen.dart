@@ -75,17 +75,7 @@ class MerchantOrdersScreen extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                          onPressed: () {},
-                          child: const Text('PROSES PESANAN'),
-                        ),
-                      ),
-                    ],
-                  ),
+                  _buildActionButton(context, merchantCtrl, order),
                 ],
               ),
             ),
@@ -93,5 +83,94 @@ class MerchantOrdersScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Widget _buildActionButton(BuildContext context, MerchantController ctrl, Map<String, dynamic> order) {
+    final status = order['order_status']?.toString().toLowerCase() ?? 'pending';
+    final orderId = int.tryParse(order['id']?.toString() ?? '0') ?? 0;
+
+    if (status == 'pending' || status == 'confirmed') {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.amber[700],
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+          onPressed: () async {
+            final success = await ctrl.updateOrderStatus(orderId, 'processing');
+            if (context.mounted && success) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Pesanan berhasil diterima dan dalam proses masak!')),
+              );
+            }
+          },
+          icon: const Icon(Icons.soup_kitchen, size: 18),
+          label: const Text('Terima & Masak Pesanan', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+      );
+    } else if (status == 'processing') {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue[600],
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+          onPressed: () async {
+            final success = await ctrl.updateOrderStatus(orderId, 'handover');
+            if (context.mounted && success) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Pesanan disiapkan! Menunggu penjemputan kurir.')),
+              );
+            }
+          },
+          icon: const Icon(Icons.takeout_dining, size: 18),
+          label: const Text('Pesanan Siap Diambil Kurir', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+      );
+    } else if (status == 'handover' || status == 'picked_up') {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.blue[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.blue[200]!),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.two_wheeler, color: Colors.blue, size: 18),
+            SizedBox(width: 6),
+            Text('Menunggu kurir mengantar pesanan', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12)),
+          ],
+        ),
+      );
+    } else if (status == 'delivered') {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.green[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.green[200]!),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.check_circle, color: Colors.green, size: 18),
+            SizedBox(width: 6),
+            Text('Pesanan Selesai (Saldo Diterima)', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)),
+          ],
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
   }
 }
