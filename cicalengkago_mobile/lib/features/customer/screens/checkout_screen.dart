@@ -2,7 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/currency_formatter.dart';
+import '../../../core/widgets/uber_pill_button.dart';
 import '../../../core/services/location_service.dart';
 import '../controllers/customer_controller.dart';
 import 'order_tracking_screen.dart';
@@ -144,6 +148,26 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final customerCtrl = context.watch<CustomerController>();
+    final cart = customerCtrl.cart;
+    final stores = (cart?['stores'] as List<dynamic>?) ?? [];
+
+    double subtotal = customerCtrl.cartSubtotal;
+    double deliveryFee = 0.0;
+    if (cart?['grand_delivery'] != null) {
+      deliveryFee = double.tryParse(cart!['grand_delivery'].toString()) ?? 5000.0;
+    } else if (stores.isNotEmpty) {
+      for (var s in stores) {
+        deliveryFee += double.tryParse(s['delivery_fee']?.toString() ?? '5000') ?? 5000.0;
+      }
+    } else {
+      deliveryFee = 5000.0;
+    }
+    if (deliveryFee <= 0) deliveryFee = 5000.0;
+
+    const double serviceFee = 1000.0;
+    final double grandTotal = subtotal + deliveryFee + serviceFee;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -253,6 +277,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
             const SizedBox(height: 20),
 
+            // 1. Ringkasan Menu Pesanan Card
+            _buildOrderSummaryCard(customerCtrl),
+
+            const SizedBox(height: 16),
+
             const Text(
               'Metode Pembayaran',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
@@ -292,30 +321,341 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
             ),
 
-            const SizedBox(height: 30),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.inkBlack,
-                  foregroundColor: AppTheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: const StadiumBorder(),
-                  elevation: 0,
-                ),
-                onPressed: (_isSubmitting || _isFetchingLocation) ? null : _handleCheckout,
-                child: _isSubmitting
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                      )
-                    : const Text('Buat Pesanan Sekarang', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
-              ),
-            ),
+            const SizedBox(height: 20),
+
+            // 2. Rincian Pembayaran Card
+            _buildPaymentDetailCard(subtotal, deliveryFee, serviceFee, grandTotal),
+
+            const SizedBox(height: 40),
           ],
         ),
       ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Total Pembayaran',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      CurrencyFormatter.formatRupiah(grandTotal),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.inkBlack,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              UberPillButton(
+                label: _isSubmitting ? 'Memproses...' : 'Buat Pesanan',
+                icon: Icons.check_circle_rounded,
+                onPressed: (_isSubmitting || _isFetchingLocation) ? null : _handleCheckout,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrderSummaryCard(CustomerController customerCtrl) {
+    final cart = customerCtrl.cart;
+    final stores = (cart?['stores'] as List<dynamic>?) ?? [];
+    final rawItems = customerCtrl.cartItems;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Icon(Icons.receipt_long_rounded, color: AppTheme.primaryRed, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  'Ringkasan Pesanan',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+
+          if (stores.isNotEmpty) ...[
+            ...stores.map((s) {
+              final items = (s['items'] as List<dynamic>?) ?? [];
+              final rawLogo = s['logo'] ?? s['store_logo'];
+              final storeLogoUrl = (rawLogo != null && rawLogo.toString().isNotEmpty)
+                  ? ApiConstants.formatImageUrl(rawLogo.toString())
+                  : null;
+              final storeName = s['store_name'] ?? s['name'] ?? 'Mitra Resto Cicalengka';
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    color: const Color(0xFFF8FAFC),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            width: 28,
+                            height: 28,
+                            color: Colors.white,
+                            child: storeLogoUrl != null
+                                ? CachedNetworkImage(
+                                    imageUrl: storeLogoUrl,
+                                    fit: BoxFit.cover,
+                                    errorWidget: (_, __, ___) => const Icon(Icons.storefront_rounded, size: 16, color: AppTheme.inkBlack),
+                                  )
+                                : const Icon(Icons.storefront_rounded, size: 16, color: AppTheme.inkBlack),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            storeName,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.inkBlack),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ...items.map((item) => _buildCheckoutItemTile(item)),
+                ],
+              );
+            }),
+          ] else ...[
+            if (rawItems.isNotEmpty)
+              ...rawItems.map((item) => _buildCheckoutItemTile(item)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCheckoutItemTile(Map<String, dynamic> item) {
+    final name = (item['product_name'] ?? item['name'] ?? 'Menu Kuliner').toString();
+    final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
+    final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
+    final notes = item['item_notes'] ?? item['notes'];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '${qty}x',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.inkBlack),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppTheme.inkBlack),
+                ),
+                if (notes != null && notes.toString().trim().isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'Catatan: ${notes.toString().trim()}',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+                  ),
+                ],
+                const SizedBox(height: 2),
+                Text(
+                  CurrencyFormatter.formatRupiah(price),
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            CurrencyFormatter.formatRupiah(price * qty),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.inkBlack),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentDetailCard(double subtotal, double deliveryFee, double serviceFee, double grandTotal) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.account_balance_wallet_rounded, color: AppTheme.primaryRed, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Rincian Pembayaran',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          const SizedBox(height: 12),
+
+          // Subtotal produk
+          _buildPaymentRow('Subtotal Pesanan', CurrencyFormatter.formatRupiah(subtotal)),
+          const SizedBox(height: 10),
+
+          // Ongkir
+          _buildPaymentRow(
+            'Ongkos Kirim (Pengantaran)',
+            CurrencyFormatter.formatRupiah(deliveryFee),
+            subtitle: 'Jarak GPS Terdeteksi',
+          ),
+          const SizedBox(height: 10),
+
+          // Biaya Layanan
+          _buildPaymentRow(
+            'Biaya Layanan & Sistem',
+            CurrencyFormatter.formatRupiah(serviceFee),
+          ),
+          const SizedBox(height: 14),
+
+          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          const SizedBox(height: 14),
+
+          // Grand Total
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Total Pembayaran',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.inkBlack),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Termasuk seluruh pajak & biaya',
+                    style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryRed.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.primaryRed.withValues(alpha: 0.2)),
+                ),
+                child: Text(
+                  CurrencyFormatter.formatRupiah(grandTotal),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                    color: AppTheme.primaryRed,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentRow(String label, String value, {String? subtitle, bool isBold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+                color: const Color(0xFF475569),
+              ),
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+              ),
+            ],
+          ],
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+            color: AppTheme.inkBlack,
+          ),
+        ),
+      ],
     );
   }
 }
