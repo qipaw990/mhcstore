@@ -237,6 +237,7 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
             ? (order['all_items'] as List)
             : [];
     final storeName = order['store_name']?.toString() ?? 'Mitra Resto CicalengkaGO';
+    final bool isParcel = order['order_type']?.toString() == 'parcel';
     final rawStoreLogo = order['store_logo'] ?? order['logo'] ?? (order['store'] is Map ? order['store']['logo'] : null);
     final storeLogoUrl = (rawStoreLogo != null && rawStoreLogo.toString().isNotEmpty)
         ? ApiConstants.formatImageUrl(rawStoreLogo.toString())
