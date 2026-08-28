@@ -149,7 +149,7 @@ class _CartScreenState extends State<CartScreen> {
                   if (stores.isNotEmpty)
                     ...stores.map((store) => _buildStoreCard(context, customerCtrl, store))
                   else
-                    _buildFlatItemsCard(context, customerCtrl, rawItems),
+                    _buildFlatItemsCard(context, customerCtrl, rawItems, cart?['store'] as Map<String, dynamic>?),
                   const SizedBox(height: 24),
                   _buildFoodSuggestionsSection(context, customerCtrl),
                   const SizedBox(height: 80),
@@ -255,6 +255,11 @@ class _CartScreenState extends State<CartScreen> {
 
   Widget _buildStoreCard(BuildContext context, CustomerController customerCtrl, Map<String, dynamic> store) {
     final items = (store['items'] as List<dynamic>?) ?? [];
+    final rawLogo = store['logo'] ?? store['store_logo'] ?? (store['store'] is Map ? store['store']['logo'] : null);
+    final storeLogoUrl = (rawLogo != null && rawLogo.toString().isNotEmpty)
+        ? ApiConstants.formatImageUrl(rawLogo.toString())
+        : null;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -276,19 +281,53 @@ class _CartScreenState extends State<CartScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEFEFEF),
-                    borderRadius: BorderRadius.circular(10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    width: 38,
+                    height: 38,
+                    color: const Color(0xFFF1F5F9),
+                    child: (storeLogoUrl != null)
+                        ? CachedNetworkImage(
+                            imageUrl: storeLogoUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => const Center(
+                              child: SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.inkBlack),
+                              ),
+                            ),
+                            errorWidget: (_, __, ___) => const Icon(
+                              Icons.storefront_rounded,
+                              color: AppTheme.inkBlack,
+                              size: 20,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.storefront_rounded,
+                            color: AppTheme.inkBlack,
+                            size: 20,
+                          ),
                   ),
-                  child: const Icon(Icons.storefront_rounded, color: AppTheme.inkBlack, size: 18),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    store['store_name'] ?? store['name'] ?? 'Mitra Resto',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.inkBlack),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        store['store_name'] ?? store['name'] ?? 'Mitra Resto Cicalengka',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.5, color: AppTheme.inkBlack),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Mitra Resmi CicalengkaGO',
+                        style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                      ),
+                    ],
                   ),
                 ),
                 Container(
@@ -322,7 +361,13 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildFlatItemsCard(BuildContext context, CustomerController customerCtrl, List<dynamic> items) {
+  Widget _buildFlatItemsCard(BuildContext context, CustomerController customerCtrl, List<dynamic> items, Map<String, dynamic>? storeInfo) {
+    final rawStoreName = storeInfo?['name'] ?? (items.isNotEmpty ? items.first['store_name'] : null) ?? 'Mitra Resto Cicalengka';
+    final rawLogo = storeInfo?['logo'] ?? (items.isNotEmpty ? (items.first['store_logo'] ?? items.first['logo']) : null);
+    final storeLogoUrl = (rawLogo != null && rawLogo.toString().isNotEmpty)
+        ? ApiConstants.formatImageUrl(rawLogo.toString())
+        : null;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -337,17 +382,88 @@ class _CartScreenState extends State<CartScreen> {
         ],
       ),
       child: Column(
-        children: items.asMap().entries.map((entry) {
-          final idx = entry.key;
-          final item = entry.value;
-          final isLast = idx == items.length - 1;
-          return Column(
-            children: [
-              _buildCartItemTile(context, customerCtrl, item),
-              if (!isLast) const Divider(height: 1, indent: 16, endIndent: 16, color: Color(0xFFF8FAFC)),
-            ],
-          );
-        }).toList(),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    width: 38,
+                    height: 38,
+                    color: const Color(0xFFF1F5F9),
+                    child: (storeLogoUrl != null)
+                        ? CachedNetworkImage(
+                            imageUrl: storeLogoUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => const Center(
+                              child: SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.inkBlack),
+                              ),
+                            ),
+                            errorWidget: (_, __, ___) => const Icon(
+                              Icons.storefront_rounded,
+                              color: AppTheme.inkBlack,
+                              size: 20,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.storefront_rounded,
+                            color: AppTheme.inkBlack,
+                            size: 20,
+                          ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        rawStoreName,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.5, color: AppTheme.inkBlack),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Mitra Resmi CicalengkaGO',
+                        style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${items.length} Menu',
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          ...items.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final item = entry.value;
+            final isLast = idx == items.length - 1;
+            return Column(
+              children: [
+                _buildCartItemTile(context, customerCtrl, item),
+                if (!isLast) const Divider(height: 1, indent: 16, endIndent: 16, color: Color(0xFFF8FAFC)),
+              ],
+            );
+          }).toList(),
+        ],
       ),
     );
   }
