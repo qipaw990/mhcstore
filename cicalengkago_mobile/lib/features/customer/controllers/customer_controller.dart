@@ -38,29 +38,44 @@ class CustomerController extends ChangeNotifier {
   int get cartCount {
     if (_cart == null) return 0;
 
-    List<dynamic>? items = _cart!['items'] as List<dynamic>?;
-    if ((items == null || items.isEmpty) && _cart!['stores'] is List) {
+    final List<dynamic> allItems = [];
+
+    // 1. Direct items list
+    if (_cart!['items'] is List) {
+      allItems.addAll(_cart!['items'] as List);
+    }
+
+    // 2. Stores grouped list
+    if (_cart!['stores'] is List) {
       final List storesList = _cart!['stores'] as List;
-      final List<dynamic> extractedItems = [];
       for (var s in storesList) {
         if (s is Map && s['items'] is List) {
-          extractedItems.addAll(s['items'] as List);
+          final sItems = s['items'] as List;
+          for (var item in sItems) {
+            if (!allItems.contains(item)) {
+              allItems.add(item);
+            }
+          }
         }
       }
-      if (extractedItems.isNotEmpty) {
-        items = extractedItems;
-      }
     }
 
-    if (items != null && items.isNotEmpty) {
-      return items.fold<int>(0, (sum, item) {
+    // 3. Sum total quantity across items
+    if (allItems.isNotEmpty) {
+      int sumQty = 0;
+      for (var item in allItems) {
         final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
-        return sum + qty;
-      });
+        sumQty += qty;
+      }
+      return sumQty;
     }
 
+    // 4. Fallback count fields
     if (_cart!['count'] != null) {
       return int.tryParse(_cart!['count'].toString()) ?? 0;
+    }
+    if (_cart!['cart_count'] != null) {
+      return int.tryParse(_cart!['cart_count'].toString()) ?? 0;
     }
 
     return 0;
@@ -68,26 +83,47 @@ class CustomerController extends ChangeNotifier {
 
   List<dynamic> get cartItems {
     if (_cart == null) return [];
-    final items = _cart!['items'] as List<dynamic>?;
-    if (items != null && items.isNotEmpty) return items;
+
+    final List<dynamic> allItems = [];
+
+    if (_cart!['items'] is List && (_cart!['items'] as List).isNotEmpty) {
+      return _cart!['items'] as List<dynamic>;
+    }
 
     if (_cart!['stores'] is List) {
       final List storesList = _cart!['stores'] as List;
-      final List<dynamic> extractedItems = [];
       for (var s in storesList) {
         if (s is Map && s['items'] is List) {
-          extractedItems.addAll(s['items'] as List);
+          allItems.addAll(s['items'] as List);
         }
       }
-      return extractedItems;
     }
 
-    return [];
+    return allItems;
   }
 
   double get cartSubtotal {
     if (_cart == null) return 0.0;
-    return double.tryParse(_cart!['grand_total']?.toString() ?? _cart!['subtotal']?.toString() ?? '0') ?? 0.0;
+
+    final val = _cart!['grand_subtotal'] ?? _cart!['subtotal'] ?? _cart!['grand_total'] ?? _cart!['total'];
+    if (val != null) {
+      final parsed = double.tryParse(val.toString());
+      if (parsed != null && parsed > 0) return parsed;
+    }
+
+    final items = cartItems;
+    if (items.isNotEmpty) {
+      double sum = 0.0;
+      for (var item in items) {
+        final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
+        final qty = double.tryParse(item['quantity']?.toString() ?? '1') ?? 1.0;
+        final total = double.tryParse(item['item_total']?.toString() ?? '') ?? (price * qty);
+        sum += total;
+      }
+      return sum;
+    }
+
+    return 0.0;
   }
 
   Future<void> fetchHomeData() async {
@@ -116,9 +152,9 @@ class CustomerController extends ChangeNotifier {
           _stores = storeRes['data'] as List<dynamic>;
         }
       }
-
-      await Future.wait([fetchCart(), fetchWallet(), fetchNotifications()]);
     } catch (_) {}
+
+    await Future.wait([fetchCart(), fetchWallet(), fetchNotifications()]);
 
     _isLoading = false;
     notifyListeners();
@@ -129,15 +165,17 @@ class CustomerController extends ChangeNotifier {
   Future<void> fetchCart() async {
     try {
       final res = await ApiService.get(ApiConstants.cart);
-      if (res['success'] == true && res['data'] != null) {
-        if (res['data'] is Map<String, dynamic>) {
-          _cart = res['data'] as Map<String, dynamic>;
-        }
+      if (res['success'] == true && res['data'] != null && res['data'] is Map<String, dynamic>) {
+        _cart = res['data'] as Map<String, dynamic>;
       } else if (res['cart'] != null && res['cart'] is Map<String, dynamic>) {
         _cart = res['cart'] as Map<String, dynamic>;
+      } else if (res['data'] is Map<String, dynamic>) {
+        _cart = res['data'] as Map<String, dynamic>;
+      } else if (res is Map<String, dynamic> && (res.containsKey('items') || res.containsKey('stores') || res.containsKey('count'))) {
+        _cart = res;
       }
-      notifyListeners();
     } catch (_) {}
+    notifyListeners();
   }
 
   Future<bool> addToCart(int productId, int quantity, {String? notes}) async {
@@ -153,11 +191,14 @@ class CustomerController extends ChangeNotifier {
 
       final res = await ApiService.postForm(ApiConstants.cartAdd, fields);
 
-      if (res['success'] == true) {
-        await fetchCart();
+      await fetchCart();
+
+      if (res['success'] == true || res['status'] == 'success') {
         return true;
       }
     } catch (_) {}
+
+    await fetchCart();
     return false;
   }
 
@@ -168,11 +209,14 @@ class CustomerController extends ChangeNotifier {
         'quantity': quantity.toString(),
       });
 
-      if (res['success'] == true) {
-        await fetchCart();
+      await fetchCart();
+
+      if (res['success'] == true || res['status'] == 'success') {
         return true;
       }
     } catch (_) {}
+
+    await fetchCart();
     return false;
   }
 
@@ -182,23 +226,29 @@ class CustomerController extends ChangeNotifier {
         'product_id': productId.toString(),
       });
 
-      if (res['success'] == true) {
-        await fetchCart();
+      await fetchCart();
+
+      if (res['success'] == true || res['status'] == 'success') {
         return true;
       }
     } catch (_) {}
+
+    await fetchCart();
     return false;
   }
 
   Future<bool> clearCart() async {
     try {
       final res = await ApiService.postForm(ApiConstants.cartClear, {});
-      if (res['success'] == true) {
+      await fetchCart();
+      if (res['success'] == true || res['status'] == 'success') {
         _cart = null;
         notifyListeners();
         return true;
       }
     } catch (_) {}
+
+    await fetchCart();
     return false;
   }
 
