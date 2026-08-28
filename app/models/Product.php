@@ -64,7 +64,7 @@ class Product extends Model
 
     public function search(string $query, ?int $moduleId = null): array
     {
-        $params = ["%{$query}%", "%{$query}%"];
+        $params = ["%{$query}%", "%{$query}%", "%{$query}%", "%{$query}%"];
         $moduleSql = '';
         if ($moduleId) {
             $moduleSql = " AND p.module_id = ?";
@@ -74,8 +74,9 @@ class Product extends Model
         $sql = "SELECT p.*, s.name as store_name, s.is_open as store_is_open
                 FROM `products` p
                 JOIN `stores` s ON p.store_id = s.id
-                WHERE p.status = 1 AND (p.name LIKE ? OR p.description LIKE ?) {$moduleSql}
-                ORDER BY p.order_count DESC LIMIT 20";
+                LEFT JOIN `categories` c ON p.category_id = c.id
+                WHERE p.status = 1 AND s.status = 'approved' AND (p.name LIKE ? OR p.description LIKE ? OR s.name LIKE ? OR c.name LIKE ?) {$moduleSql}
+                ORDER BY s.is_open DESC, p.order_count DESC LIMIT 30";
         $products = Database::query($sql, $params);
         foreach ($products as &$p) {
             $p['final_price'] = $this->calculateFinalPrice($p);

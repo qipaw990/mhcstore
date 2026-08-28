@@ -74,15 +74,21 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
     });
 
     try {
-      final prodRes = await ApiService.get('${ApiConstants.products}?q=${Uri.encodeComponent(cleanQuery)}');
-      if (prodRes['success'] == true && prodRes['data'] != null) {
+      final results = await Future.wait([
+        ApiService.get('${ApiConstants.products}?q=${Uri.encodeComponent(cleanQuery)}'),
+        ApiService.get('${ApiConstants.stores}?q=${Uri.encodeComponent(cleanQuery)}'),
+      ]);
+
+      final prodRes = results[0];
+      final storeRes = results[1];
+
+      if (prodRes['success'] == true && prodRes['data'] is List) {
         _products = prodRes['data'] as List<dynamic>;
       } else {
         _products = [];
       }
 
-      final storeRes = await ApiService.get('${ApiConstants.stores}?q=${Uri.encodeComponent(cleanQuery)}');
-      if (storeRes['success'] == true && storeRes['data'] != null) {
+      if (storeRes['success'] == true && storeRes['data'] is List) {
         _stores = storeRes['data'] as List<dynamic>;
       } else {
         _stores = [];
