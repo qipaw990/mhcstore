@@ -469,6 +469,7 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildCartItemTile(BuildContext context, CustomerController customerCtrl, Map<String, dynamic> item) {
+    final cartId = int.tryParse(item['id']?.toString() ?? '0') ?? 0;
     final productId = int.tryParse(item['product_id']?.toString() ?? item['id']?.toString() ?? '0') ?? 0;
     final itemPrice = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
     final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
@@ -555,9 +556,9 @@ class _CartScreenState extends State<CartScreen> {
                   padding: EdgeInsets.zero,
                   onPressed: () async {
                     if (qty > 1) {
-                      await customerCtrl.updateCartQty(productId, qty - 1);
+                      await customerCtrl.updateCartQty(productId, qty - 1, cartId: cartId);
                     } else {
-                      await customerCtrl.removeFromCart(productId);
+                      await customerCtrl.removeFromCart(productId, cartId: cartId);
                     }
                   },
                 ),
@@ -573,7 +574,7 @@ class _CartScreenState extends State<CartScreen> {
                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   padding: EdgeInsets.zero,
                   onPressed: () async {
-                    await customerCtrl.updateCartQty(productId, qty + 1);
+                    await customerCtrl.updateCartQty(productId, qty + 1, cartId: cartId);
                   },
                 ),
               ],

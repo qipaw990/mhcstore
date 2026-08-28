@@ -43,7 +43,7 @@ class CartController extends Controller
         }
 
         $userId = auth_id();
-        $sessionId = session_id();
+        $sessionId = $_SERVER['HTTP_X_SESSION_ID'] ?? session_id();
 
         // Multi-store cart: no longer block adding from a different store
 
@@ -104,7 +104,7 @@ class CartController extends Controller
         $delta = (int)($data['delta'] ?? 0);
 
         $userId = auth_id();
-        $sessionId = session_id();
+        $sessionId = $_SERVER['HTTP_X_SESSION_ID'] ?? session_id();
 
         if ($cartId <= 0 && $productId > 0) {
             $findItem = Database::fetchOne("SELECT id, quantity FROM cart WHERE product_id = ? AND ((user_id IS NOT NULL AND user_id = ?) OR session_id = ?) ORDER BY id DESC LIMIT 1", [$productId, $userId, $sessionId]);
@@ -147,7 +147,7 @@ class CartController extends Controller
         $productId = (int)($data['product_id'] ?? 0);
 
         $userId = auth_id();
-        $sessionId = session_id();
+        $sessionId = $_SERVER['HTTP_X_SESSION_ID'] ?? session_id();
 
         if ($cartId <= 0 && $productId > 0) {
             $findItem = Database::fetchOne("SELECT id FROM cart WHERE product_id = ? AND ((user_id IS NOT NULL AND user_id = ?) OR session_id = ?) ORDER BY id DESC LIMIT 1", [$productId, $userId, $sessionId]);
@@ -171,14 +171,16 @@ class CartController extends Controller
 
     public function clear(): void
     {
-        $this->cartModel->clearCart(auth_id(), session_id());
+        $sessionId = $_SERVER['HTTP_X_SESSION_ID'] ?? session_id();
+        $this->cartModel->clearCart(auth_id(), $sessionId);
         $this->successResponse('Keranjang dikosongkan.');
     }
 
     public function viewCart(): void
     {
         $userId = auth_id();
-        $cartSummary = $this->cartModel->getUserCart($userId, session_id());
+        $sessionId = $_SERVER['HTTP_X_SESSION_ID'] ?? session_id();
+        $cartSummary = $this->cartModel->getUserCart($userId, $sessionId);
 
         if ($this->isJsonRequest()) {
             $this->successResponse('Data keranjang belanja', $cartSummary);

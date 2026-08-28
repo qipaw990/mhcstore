@@ -21,7 +21,7 @@ function auth_id(): ?int
     if (isset($_SESSION['user']['id'])) {
         return (int)$_SESSION['user']['id'];
     }
-    $uid = (int)($_REQUEST['user_id'] ?? $_GET['user_id'] ?? $_POST['user_id'] ?? 0);
+    $uid = (int)($_REQUEST['user_id'] ?? $_GET['user_id'] ?? $_POST['user_id'] ?? $_SERVER['HTTP_X_USER_ID'] ?? 0);
     if ($uid > 0) {
         return $uid;
     }

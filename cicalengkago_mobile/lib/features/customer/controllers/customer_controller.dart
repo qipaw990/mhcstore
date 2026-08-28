@@ -202,12 +202,16 @@ class CustomerController extends ChangeNotifier {
     return false;
   }
 
-  Future<bool> updateCartQty(int productId, int quantity) async {
+  Future<bool> updateCartQty(int productId, int quantity, {int? cartId}) async {
     try {
-      final res = await ApiService.postForm(ApiConstants.cartUpdateQty, {
+      final Map<String, String> fields = {
         'product_id': productId.toString(),
         'quantity': quantity.toString(),
-      });
+      };
+      if (cartId != null && cartId > 0) {
+        fields['cart_id'] = cartId.toString();
+      }
+      final res = await ApiService.postForm(ApiConstants.cartUpdateQty, fields);
 
       await fetchCart();
 
@@ -220,11 +224,15 @@ class CustomerController extends ChangeNotifier {
     return false;
   }
 
-  Future<bool> removeFromCart(int productId) async {
+  Future<bool> removeFromCart(int productId, {int? cartId}) async {
     try {
-      final res = await ApiService.postForm(ApiConstants.cartRemove, {
+      final Map<String, String> fields = {
         'product_id': productId.toString(),
-      });
+      };
+      if (cartId != null && cartId > 0) {
+        fields['cart_id'] = cartId.toString();
+      }
+      final res = await ApiService.postForm(ApiConstants.cartRemove, fields);
 
       await fetchCart();
 

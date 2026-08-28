@@ -38,16 +38,45 @@ class ApiService {
     return prefs.getString('api_token');
   }
 
+  static Future<String> _getGuestSessionId() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? guestId = prefs.getString('guest_session_id');
+    if (guestId == null || guestId.isEmpty) {
+      guestId = 'guest_${DateTime.now().millisecondsSinceEpoch}_${(DateTime.now().microsecondsSinceEpoch % 10000)}';
+      await prefs.setString('guest_session_id', guestId);
+    }
+    return guestId;
+  }
+
+  static Future<String?> _getSavedUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rawUser = prefs.getString(_userDataKey);
+    if (rawUser != null && rawUser.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(rawUser);
+        if (decoded is Map && decoded['id'] != null) {
+          return decoded['id'].toString();
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
   // ── Headers standar untuk semua request ───────────────────────────
   static Future<Map<String, String>> _buildHeaders({bool isJson = true}) async {
     final cookie = await _getSavedCookie();
     final token = await _getSavedToken();
+    final userId = await _getSavedUserId();
+    final guestSessionId = await _getGuestSessionId();
+
     return {
       if (isJson) 'Content-Type': 'application/json',
       'Accept': 'application/json',
       'X-Requested-With': 'XMLHttpRequest', // Agar backend tahu ini AJAX
       if (cookie != null && cookie.isNotEmpty) 'Cookie': cookie,
       if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+      if (userId != null && userId.isNotEmpty) 'X-User-ID': userId,
+      'X-Session-ID': guestSessionId,
     };
   }
 
@@ -79,9 +108,17 @@ class ApiService {
   // ── GET Request ───────────────────────────────────────────────────
   static Future<Map<String, dynamic>> get(String url) async {
     try {
+      final userId = await _getSavedUserId();
+      Uri uri = Uri.parse(url);
+      if (userId != null && userId.isNotEmpty && !uri.queryParameters.containsKey('user_id')) {
+        final Map<String, String> qParams = Map.from(uri.queryParameters);
+        qParams['user_id'] = userId;
+        uri = uri.replace(queryParameters: qParams);
+      }
+
       final headers = await _buildHeaders(isJson: false);
       final response = await http
-          .get(Uri.parse(url), headers: headers)
+          .get(uri, headers: headers)
           .timeout(const Duration(seconds: 20));
 
       await _saveCookiesFromResponse(response);
@@ -97,9 +134,15 @@ class ApiService {
     Map<String, dynamic> body,
   ) async {
     try {
+      final userId = await _getSavedUserId();
+      final Map<String, dynamic> updatedBody = Map.from(body);
+      if (userId != null && userId.isNotEmpty && !updatedBody.containsKey('user_id')) {
+        updatedBody['user_id'] = userId;
+      }
+
       final headers = await _buildHeaders(isJson: true);
       final response = await http
-          .post(Uri.parse(url), headers: headers, body: jsonEncode(body))
+          .post(Uri.parse(url), headers: headers, body: jsonEncode(updatedBody))
           .timeout(const Duration(seconds: 20));
 
       await _saveCookiesFromResponse(response);
@@ -117,14 +160,24 @@ class ApiService {
     try {
       final cookie = await _getSavedCookie();
       final token = await _getSavedToken();
+      final userId = await _getSavedUserId();
+      final guestSessionId = await _getGuestSessionId();
+
       final request = http.MultipartRequest('POST', Uri.parse(url));
       request.headers.addAll({
         'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
         if (cookie != null && cookie.isNotEmpty) 'Cookie': cookie,
         if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        if (userId != null && userId.isNotEmpty) 'X-User-ID': userId,
+        'X-Session-ID': guestSessionId,
       });
-      request.fields.addAll(fields);
+
+      final Map<String, String> updatedFields = Map.from(fields);
+      if (userId != null && userId.isNotEmpty && !updatedFields.containsKey('user_id')) {
+        updatedFields['user_id'] = userId;
+      }
+      request.fields.addAll(updatedFields);
 
       final streamed = await request.send().timeout(const Duration(seconds: 20));
       final response = await http.Response.fromStream(streamed);
