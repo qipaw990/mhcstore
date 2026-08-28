@@ -108,6 +108,16 @@ class AuthController extends ChangeNotifier {
     return false;
   }
 
+  Future<void> updateUser(Map<String, dynamic> updatedData) async {
+    if (_user != null) {
+      _user = {..._user!, ...updatedData};
+    } else {
+      _user = updatedData;
+    }
+    await ApiService.saveSession(_user!);
+    notifyListeners();
+  }
+
   Future<void> logout() async {
     _user = null;
     _role = null;
