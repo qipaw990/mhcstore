@@ -77,12 +77,16 @@ class UberPillButton extends StatelessWidget {
           Icon(icon, size: 18, color: fg),
           const SizedBox(width: 8),
         ],
-        Text(
-          label,
-          style: GoogleFonts.plusJakartaSans(
-            color: fg,
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
+        Flexible(
+          child: Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              color: fg,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
