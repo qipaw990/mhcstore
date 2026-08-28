@@ -39,28 +39,40 @@ class CustomerController extends ChangeNotifier {
     if (_cart == null) return 0;
 
     final List<dynamic> allItems = [];
+    final Set<String> seenKeys = {};
 
-    // 1. Direct items list
-    if (_cart!['items'] is List) {
-      allItems.addAll(_cart!['items'] as List);
+    void addItem(dynamic item) {
+      if (item is Map) {
+        final key = (item['id'] ?? item['cart_id'] ?? item['product_id'])?.toString();
+        if (key != null && key.isNotEmpty) {
+          if (!seenKeys.contains(key)) {
+            seenKeys.add(key);
+            allItems.add(item);
+          }
+        } else {
+          allItems.add(item);
+        }
+      }
     }
 
-    // 2. Stores grouped list
-    if (_cart!['stores'] is List) {
+    // 1. Direct items list
+    if (_cart!['items'] is List && (_cart!['items'] as List).isNotEmpty) {
+      for (var item in (_cart!['items'] as List)) {
+        addItem(item);
+      }
+    } else if (_cart!['stores'] is List) {
+      // 2. Stores grouped list (only if direct items list is empty)
       final List storesList = _cart!['stores'] as List;
       for (var s in storesList) {
         if (s is Map && s['items'] is List) {
-          final sItems = s['items'] as List;
-          for (var item in sItems) {
-            if (!allItems.contains(item)) {
-              allItems.add(item);
-            }
+          for (var item in (s['items'] as List)) {
+            addItem(item);
           }
         }
       }
     }
 
-    // 3. Sum total quantity across items
+    // 3. Sum total quantity across deduplicated items
     if (allItems.isNotEmpty) {
       int sumQty = 0;
       for (var item in allItems) {
