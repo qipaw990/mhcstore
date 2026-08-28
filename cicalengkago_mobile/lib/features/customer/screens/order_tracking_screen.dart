@@ -1235,6 +1235,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         ? (live['parcel_details'] as Map)
         : (order['parcel_details'] is Map ? (order['parcel_details'] as Map) : {});
 
+    final rawStoreLogo = liveStore['logo']?.toString() ??
+        order['store_logo']?.toString() ??
+        order['logo']?.toString();
+    final storeLogoUrl = (rawStoreLogo != null && rawStoreLogo.isNotEmpty)
+        ? ApiConstants.formatImageUrl(rawStoreLogo)
+        : null;
+
     final isParcel = orderType == 'parcel' || parcelDetails.isNotEmpty;
 
     return Container(
@@ -1258,13 +1265,27 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             child: Row(
               children: [
                 Container(
-                  width: 36,
-                  height: 36,
+                  width: 38,
+                  height: 38,
                   decoration: BoxDecoration(
                     color: AppTheme.inkBlack,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(isParcel ? Icons.local_shipping_rounded : Icons.storefront_rounded, color: Colors.white, size: 20),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: (!isParcel && storeLogoUrl != null)
+                        ? CachedNetworkImage(
+                            imageUrl: storeLogoUrl,
+                            width: 38,
+                            height: 38,
+                            fit: BoxFit.cover,
+                            errorWidget: (context, url, error) => Container(
+                              color: AppTheme.inkBlack,
+                              child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 20),
+                            ),
+                          )
+                        : Icon(isParcel ? Icons.local_shipping_rounded : Icons.storefront_rounded, color: Colors.white, size: 20),
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -1395,6 +1416,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                             context,
                             it,
                             storeName: it['store_name']?.toString() ?? storeName,
+                            storeLogo: rawStoreLogo,
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(8),

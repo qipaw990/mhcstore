@@ -7,19 +7,21 @@ import '../../../core/utils/currency_formatter.dart';
 class OrderItemDetailModal extends StatelessWidget {
   final Map<dynamic, dynamic> item;
   final String? storeName;
+  final String? storeLogo;
 
   const OrderItemDetailModal({
     super.key,
     required this.item,
     this.storeName,
+    this.storeLogo,
   });
 
-  static void show(BuildContext context, Map<dynamic, dynamic> item, {String? storeName}) {
+  static void show(BuildContext context, Map<dynamic, dynamic> item, {String? storeName, String? storeLogo}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => OrderItemDetailModal(item: item, storeName: storeName),
+      builder: (ctx) => OrderItemDetailModal(item: item, storeName: storeName, storeLogo: storeLogo),
     );
   }
 
@@ -46,6 +48,11 @@ class OrderItemDetailModal extends StatelessWidget {
     final rawImg = item['product_image'] ?? item['image'] ?? (item['product'] is Map ? item['product']['image'] : null);
     final imgUrl = rawImg != null && rawImg.toString().isNotEmpty
         ? ApiConstants.formatImageUrl(rawImg.toString())
+        : null;
+
+    final rawStoreLogo = storeLogo ?? item['store_logo'] ?? item['logo'];
+    final storeLogoUrl = (rawStoreLogo != null && rawStoreLogo.toString().isNotEmpty)
+        ? ApiConstants.formatImageUrl(rawStoreLogo.toString())
         : null;
 
     final notes = item['notes']?.toString() ?? item['order_notes']?.toString() ?? '';
@@ -120,7 +127,19 @@ class OrderItemDetailModal extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.storefront_rounded, size: 14, color: AppTheme.primaryRed),
+                      if (storeLogoUrl != null)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: CachedNetworkImage(
+                            imageUrl: storeLogoUrl,
+                            width: 20,
+                            height: 20,
+                            fit: BoxFit.cover,
+                            errorWidget: (_, __, ___) => const Icon(Icons.storefront_rounded, size: 14, color: AppTheme.primaryRed),
+                          ),
+                        )
+                      else
+                        const Icon(Icons.storefront_rounded, size: 14, color: AppTheme.primaryRed),
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(

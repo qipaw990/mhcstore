@@ -611,6 +611,7 @@ class OrderController extends Controller
                 'store'          => [
                     'name'    => $order['store_name'] ?? 'Titik Penjemputan',
                     'address' => $order['store_address'] ?? 'Cicalengka, Bandung',
+                    'logo'    => $order['store_logo'] ?? $order['logo'] ?? '',
                     'lat'     => $storeLat,
                     'lng'     => $storeLng
                 ],

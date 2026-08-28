@@ -237,7 +237,10 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
             ? (order['all_items'] as List)
             : [];
     final storeName = order['store_name']?.toString() ?? 'Mitra Resto CicalengkaGO';
-    final bool isParcel = order['order_type']?.toString() == 'parcel';
+    final rawStoreLogo = order['store_logo'] ?? order['logo'] ?? (order['store'] is Map ? order['store']['logo'] : null);
+    final storeLogoUrl = (rawStoreLogo != null && rawStoreLogo.toString().isNotEmpty)
+        ? ApiConstants.formatImageUrl(rawStoreLogo.toString())
+        : null;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -267,14 +270,33 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
               ),
               child: Row(
                 children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(_getStatusIcon(status), color: AppTheme.inkBlack, size: 16),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: (!isParcel && storeLogoUrl != null)
+                        ? CachedNetworkImage(
+                            imageUrl: storeLogoUrl,
+                            width: 32,
+                            height: 32,
+                            fit: BoxFit.cover,
+                            errorWidget: (_, __, ___) => Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(_getStatusIcon(status), color: AppTheme.inkBlack, size: 16),
+                            ),
+                          )
+                        : Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(_getStatusIcon(status), color: AppTheme.inkBlack, size: 16),
+                          ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -345,6 +367,7 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
                             context,
                             it is Map ? it as Map : {},
                             storeName: storeName,
+                            storeLogo: rawStoreLogo?.toString(),
                           ),
                           borderRadius: BorderRadius.circular(6),
                           child: Row(
