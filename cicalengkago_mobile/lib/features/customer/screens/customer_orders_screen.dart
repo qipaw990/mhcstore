@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../controllers/customer_controller.dart';
@@ -330,26 +332,57 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
                               'Menu Kuliner')
                           .toString();
                       final qty = it['quantity'] ?? 1;
+                      final rawImg = it['product_image'] ?? it['image'] ?? (it['product'] is Map ? it['product']['image'] : null);
+                      final imgUrl = rawImg != null && rawImg.toString().isNotEmpty
+                          ? ApiConstants.formatImageUrl(rawImg.toString())
+                          : null;
+
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 4.0),
+                        padding: const EdgeInsets.only(bottom: 6.0),
                         child: Row(
                           children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: imgUrl != null
+                                  ? CachedNetworkImage(
+                                      imageUrl: imgUrl,
+                                      width: 28,
+                                      height: 28,
+                                      fit: BoxFit.cover,
+                                      errorWidget: (context, url, error) => Container(
+                                        width: 28,
+                                        height: 28,
+                                        color: const Color(0xFFF1F5F9),
+                                        child: const Icon(Icons.fastfood_rounded, color: Color(0xFF94A3B8), size: 14),
+                                      ),
+                                    )
+                                  : Container(
+                                      width: 28,
+                                      height: 28,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFEF2F2),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Icon(Icons.restaurant_rounded, color: AppTheme.primaryRed, size: 14),
+                                    ),
+                            ),
+                            const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF1F5F9),
-                                borderRadius: BorderRadius.circular(6),
+                                borderRadius: BorderRadius.circular(5),
                               ),
                               child: Text(
                                 '${qty}x',
-                                style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
                               ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                name.toString(),
-                                style: const TextStyle(fontSize: 12, color: Color(0xFF334155), fontWeight: FontWeight.w500),
+                                name,
+                                style: const TextStyle(fontSize: 12, color: Color(0xFF334155), fontWeight: FontWeight.w600),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),

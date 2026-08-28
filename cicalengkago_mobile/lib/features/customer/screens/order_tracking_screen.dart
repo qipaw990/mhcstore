@@ -379,6 +379,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
                 // Store & Items Card
                 _buildStoreAndItemsCard(order, live),
+                _buildPaymentBreakdownCard(order, live),
 
                 const SizedBox(height: 14),
                 Container(
@@ -511,6 +512,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
           // Store & Purchased Items Card
           _buildStoreAndItemsCard(order, live),
+          _buildPaymentBreakdownCard(order, live),
 
           const SizedBox(height: 14),
 
@@ -1048,6 +1050,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   // Store & Purchased Items Details Card
                   _buildStoreAndItemsCard(order, live),
 
+                  // Detailed Payment Breakdown Card
+                  _buildPaymentBreakdownCard(order, live),
+
                   const SizedBox(height: 16),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
                   const SizedBox(height: 14),
@@ -1354,48 +1359,107 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         it['variation_name']?.toString() ??
                         '';
 
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppTheme.inkBlack,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              '${qty}x',
-                              style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
-                            ),
+                    final rawImg = it['product_image'] ?? it['image'] ?? (it['product'] is Map ? it['product']['image'] : null);
+                    final imgUrl = rawImg != null && rawImg.toString().isNotEmpty
+                        ? ApiConstants.formatImageUrl(rawImg.toString())
+                        : null;
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFF1F5F9)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
                           ),
-                          const SizedBox(width: 8),
+                        ],
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: imgUrl != null
+                                ? CachedNetworkImage(
+                                    imageUrl: imgUrl,
+                                    width: 44,
+                                    height: 44,
+                                    fit: BoxFit.cover,
+                                    errorWidget: (context, url, error) => Container(
+                                      width: 44,
+                                      height: 44,
+                                      color: const Color(0xFFF8FAFC),
+                                      child: const Icon(Icons.fastfood_rounded, color: Color(0xFF94A3B8), size: 20),
+                                    ),
+                                  )
+                                : Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFEF2F2),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(Icons.restaurant_rounded, color: AppTheme.primaryRed, size: 20),
+                                  ),
+                          ),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  name,
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.inkBlack,
+                                        borderRadius: BorderRadius.circular(5),
+                                      ),
+                                      child: Text(
+                                        '${qty}x',
+                                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        name,
+                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 if (variantText.isNotEmpty)
-                                  Text(
-                                    'Varian: $variantText',
-                                    style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text(
+                                      'Varian: $variantText',
+                                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                                    ),
                                   ),
                                 if (it['store_name'] != null && (order['is_multi_store_batch'] == true || order['batch_sub_orders'] != null))
-                                  Text(
-                                    'dari ${it['store_name']}',
-                                    style: const TextStyle(fontSize: 10, color: AppTheme.primaryRed, fontWeight: FontWeight.w600),
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text(
+                                      'dari ${it['store_name']}',
+                                      style: const TextStyle(fontSize: 9.5, color: AppTheme.primaryRed, fontWeight: FontWeight.w600),
+                                    ),
                                   ),
                               ],
                             ),
                           ),
+                          const SizedBox(width: 6),
                           if (price > 0)
                             Text(
                               CurrencyFormatter.formatRupiah(itemTotal),
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.inkBlack),
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.inkBlack),
                             ),
                         ],
                       ),
@@ -1427,6 +1491,177 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 ],
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentBreakdownCard(Map<String, dynamic> order, Map<String, dynamic> live) {
+    final List rawItems = (live['items'] is List && (live['items'] as List).isNotEmpty)
+        ? (live['items'] as List)
+        : (order['items'] is List && (order['items'] as List).isNotEmpty)
+            ? (order['items'] as List)
+            : (order['batch_sub_orders'] is List && (order['batch_sub_orders'] as List).isNotEmpty)
+                ? (order['batch_sub_orders'] as List).expand((sub) => (sub['items'] as List? ?? [])).toList()
+                : [];
+
+    double itemsSubtotal = 0.0;
+    for (var item in rawItems) {
+      if (item is Map) {
+        final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
+        final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
+        itemsSubtotal += price * qty;
+      }
+    }
+
+    double deliveryCharge = double.tryParse(live['delivery_charge']?.toString() ?? order['delivery_charge']?.toString() ?? '0') ?? 0.0;
+    final couponDiscount = double.tryParse(live['coupon_discount']?.toString() ?? order['coupon_discount']?.toString() ?? '0') ?? 0.0;
+    final taxAmount = double.tryParse(live['tax_amount']?.toString() ?? order['tax_amount']?.toString() ?? '0') ?? 0.0;
+
+    double totalAmount = double.tryParse(live['total_amount']?.toString() ?? order['total_amount']?.toString() ?? order['order_amount']?.toString() ?? '0') ?? 0.0;
+
+    if (deliveryCharge == 0.0 && totalAmount > itemsSubtotal && itemsSubtotal > 0) {
+      deliveryCharge = (totalAmount - itemsSubtotal + couponDiscount - taxAmount).clamp(0.0, double.infinity);
+    }
+    if (itemsSubtotal == 0.0 && totalAmount > 0.0) {
+      itemsSubtotal = (totalAmount - deliveryCharge + couponDiscount - taxAmount).clamp(0.0, double.infinity);
+    }
+    if (totalAmount == 0.0) {
+      totalAmount = itemsSubtotal + deliveryCharge + taxAmount - couponDiscount;
+    }
+
+    final paymentMethod = (live['payment_method'] ?? order['payment_method'] ?? 'cod').toString();
+    final paymentStatus = (live['payment_status'] ?? order['payment_status'] ?? 'unpaid').toString();
+
+    String methodLabel = 'Tunai (COD)';
+    IconData methodIcon = Icons.payments_rounded;
+
+    if (paymentMethod == 'wallet' || paymentMethod == 'cicalengkapay') {
+      methodLabel = 'CicalengkaPay';
+      methodIcon = Icons.account_balance_wallet_rounded;
+    } else if (paymentMethod == 'midtrans' || paymentMethod == 'online' || paymentMethod == 'qris') {
+      methodLabel = 'Midtrans QRIS / VA';
+      methodIcon = Icons.qr_code_2_rounded;
+    }
+
+    final isPaid = paymentStatus == 'paid';
+
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.receipt_long_rounded, size: 18, color: AppTheme.inkBlack),
+                  SizedBox(width: 8),
+                  Text(
+                    'RINCIAN PEMBAYARAN',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.inkBlack, letterSpacing: 0.5),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                decoration: BoxDecoration(
+                  color: isPaid ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(methodIcon, size: 12, color: isPaid ? const Color(0xFF15803D) : const Color(0xFFB45309)),
+                    const SizedBox(width: 4),
+                    Text(
+                      isPaid ? 'LUNAS ($methodLabel)' : 'BELUM DIBAYAR ($methodLabel)',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                        color: isPaid ? const Color(0xFF15803D) : const Color(0xFFB45309),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          const SizedBox(height: 10),
+
+          // Subtotal Items
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Subtotal Pesanan', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+              Text(CurrencyFormatter.formatRupiah(itemsSubtotal), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+            ],
+          ),
+          const SizedBox(height: 6),
+
+          // Delivery Fee
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Ongkos Kirim (Delivery)', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+              Text(CurrencyFormatter.formatRupiah(deliveryCharge), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+            ],
+          ),
+
+          // Tax / Service Fee if > 0
+          if (taxAmount > 0) ...[
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Biaya Layanan / Pajak', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                Text(CurrencyFormatter.formatRupiah(taxAmount), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+              ],
+            ),
+          ],
+
+          // Coupon Discount if > 0
+          if (couponDiscount > 0) ...[
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Diskon Kupon Promo', style: TextStyle(fontSize: 12, color: Color(0xFF16A34A), fontWeight: FontWeight.w600)),
+                Text('-${CurrencyFormatter.formatRupiah(couponDiscount)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
+              ],
+            ),
+          ],
+
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          const SizedBox(height: 10),
+
+          // Total Amount Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Total Pembayaran', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.inkBlack)),
+              Text(
+                CurrencyFormatter.formatRupiah(totalAmount),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppTheme.primaryRed),
+              ),
+            ],
           ),
         ],
       ),
