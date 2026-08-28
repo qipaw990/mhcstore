@@ -8,6 +8,8 @@ import '../../../core/widgets/uber_pill_button.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../auth/screens/login_screen.dart';
 import '../controllers/customer_controller.dart';
+import 'customer_orders_screen.dart';
+import 'customer_wallet_screen.dart';
 
 class CustomerProfileScreen extends StatefulWidget {
   const CustomerProfileScreen({super.key});
@@ -17,10 +19,18 @@ class CustomerProfileScreen extends StatefulWidget {
 }
 
 class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
-  bool _isEditing = false;
-  bool _isSaving = false;
   final _nameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+
+  final _currentPassCtrl = TextEditingController();
+  final _newPassCtrl = TextEditingController();
+  final _confirmPassCtrl = TextEditingController();
+
+  bool _showCurrentPass = false;
+  bool _showNewPass = false;
+  bool _showConfirmPass = false;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -28,6 +38,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final ctrl = context.read<CustomerController>();
       ctrl.fetchProfile();
+      ctrl.fetchWallet();
       ctrl.fetchNotifications();
     });
   }
@@ -35,8 +46,24 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _emailCtrl.dispose();
     _phoneCtrl.dispose();
+    _currentPassCtrl.dispose();
+    _newPassCtrl.dispose();
+    _confirmPassCtrl.dispose();
     super.dispose();
+  }
+
+  String _formatRupiah(num number) {
+    final str = number.toInt().toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < str.length; i++) {
+      if (i > 0 && (str.length - i) % 3 == 0) {
+        buffer.write('.');
+      }
+      buffer.write(str[i]);
+    }
+    return 'Rp ${buffer.toString()}';
   }
 
   @override
@@ -49,7 +76,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
       return _buildGuestView(context);
     }
 
-    final name = user?['name'] ?? user?['username'] ?? 'Pelanggan CicalengkaGO';
+    final name = user?['name'] ?? user?['username'] ?? 'Pengguna CicalengkaGO';
     final email = user?['email'] ?? '-';
     final phone = user?['phone'] ?? user?['no_hp'] ?? '-';
     final rawAvatar = user?['avatar'] ?? user?['profile_photo_url'];
@@ -57,167 +84,388 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         ? ApiConstants.formatImageUrl(rawAvatar.toString())
         : null;
 
-    if (_isEditing && _nameCtrl.text.isEmpty && name != 'Pelanggan CicalengkaGO') {
-      _nameCtrl.text = name;
-      _phoneCtrl.text = phone == '-' ? '' : phone;
-    }
+    final walletBalance = num.tryParse(ctrl.wallet?['balance']?.toString() ?? '0') ?? 0;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // Header Profile Bar
-          SliverAppBar(
-            pinned: true,
-            expandedHeight: 210,
-            backgroundColor: AppTheme.inkBlack,
-            elevation: 0,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        titleSpacing: 16,
+        title: const Text(
+          'Akun Saya',
+          style: TextStyle(
+            color: Color(0xFF0F172A),
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.3,
+          ),
+        ),
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFEE2737), Color(0xFFC61524)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFEE2737).withValues(alpha: 0.25),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 13),
+                SizedBox(width: 4),
+                Text(
+                  'CicalengkaClub',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                child: SafeArea(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 12),
-                      // Avatar Container
-                      Stack(
-                        children: [
-                          Container(
-                            width: 86,
-                            height: 86,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 3),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.25),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: ClipOval(
-                              child: avatarUrl != null
-                                  ? CachedNetworkImage(
-                                      imageUrl: avatarUrl,
-                                      fit: BoxFit.cover,
-                                      placeholder: (_, __) => _defaultAvatar(name),
-                                      errorWidget: (_, __, ___) => _defaultAvatar(name),
-                                    )
-                                  : _defaultAvatar(name),
-                            ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // ── 1. USER PROFILE CARD ──
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  // Avatar
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFFEE2737), width: 2),
+                    ),
+                    child: ClipOval(
+                      child: avatarUrl != null
+                          ? CachedNetworkImage(
+                              imageUrl: avatarUrl,
+                              fit: BoxFit.cover,
+                              placeholder: (_, __) => _defaultAvatar(name),
+                              errorWidget: (_, __, ___) => _defaultAvatar(name),
+                            )
+                          : _defaultAvatar(name),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+
+                  // Name, Phone, Email
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                            letterSpacing: -0.2,
                           ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _isEditing = true;
-                                  _nameCtrl.text = name;
-                                  _phoneCtrl.text = phone == '-' ? '' : phone;
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: const BoxDecoration(
-                                  color: AppTheme.primaryRed,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.edit_rounded,
-                                  color: Colors.white,
-                                  size: 14,
-                                ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            const Icon(Icons.phone_android_rounded, size: 11, color: Color(0xFF64748B)),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                phone,
+                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                          ],
+                        ),
+                        if (email.isNotEmpty && email != '-') ...[
+                          const SizedBox(height: 1.5),
+                          Row(
+                            children: [
+                              const Icon(Icons.email_outlined, size: 11, color: Color(0xFF94A3B8)),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  email,
+                                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 19,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          email,
-                          style: const TextStyle(color: Colors.white70, fontSize: 11.5, fontWeight: FontWeight.w500),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+
+                  // Edit Profile Icon Button
+                  Material(
+                    color: const Color(0xFFF1F5F9),
+                    shape: CircleBorder(side: BorderSide(color: const Color(0xFFCBD5E1))),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: () => _showEditProfileModal(context, user, ctrl, authCtrl),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.edit_rounded, color: AppTheme.primaryRed, size: 15),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.logout_rounded, color: Colors.white),
-                tooltip: 'Keluar',
-                onPressed: () => _confirmLogout(context, authCtrl),
+
+            const SizedBox(height: 12),
+
+            // ── 2. CICALENGKAPAY QUICK BALANCE CARD ──
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-            ],
-          ),
-
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              child: Column(
+              child: Row(
                 children: [
-                  if (_isEditing) ...[
-                    _buildEditForm(context, ctrl, authCtrl),
-                  ] else ...[
-                    _buildInfoCard(context, name, email, phone),
-                  ],
+                  // Wallet Icon Box
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFEE2737), Color(0xFFC61524)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 18),
+                  ),
+                  const SizedBox(width: 12),
 
-                  const SizedBox(height: 18),
-                  _buildMenuSection(context, ctrl, authCtrl),
-                  const SizedBox(height: 32),
-
-                  // App Version Info Footer
-                  Center(
+                  // Label & Amount
+                  Expanded(
                     child: Column(
-                      children: const [
-                        CicalengkaGoLogo(size: 32, borderRadius: 10),
-                        SizedBox(height: 8),
-                        Text(
-                          'CicalengkaGO App v2.4.0 (Production)',
-                          style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        RichText(
+                          text: const TextSpan(
+                            style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, letterSpacing: 0.5, color: Color(0xFF64748B)),
+                            children: [
+                              TextSpan(text: 'SALDO CICALENGKA'),
+                              TextSpan(text: 'PAY', style: TextStyle(color: AppTheme.primaryRed)),
+                            ],
+                          ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
-                          'Dibuat dengan ❤️ untuk Masyarakat Cicalengka',
-                          style: TextStyle(fontSize: 10, color: Color(0xFFCBD5E1)),
+                          _formatRupiah(walletBalance),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F172A),
+                            letterSpacing: -0.3,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(width: 8),
+
+                  // Topup Button
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const CustomerWalletScreen()),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFEE2737), Color(0xFFC61524)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFEE2737).withValues(alpha: 0.25),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Text(
+                        'Isi Saldo',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
-        ],
+
+            const SizedBox(height: 12),
+
+            // ── 3. MENU NAVIGATION LIST ──
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  // 1. Edit Profil & Kata Sandi
+                  _buildMenuItem(
+                    icon: Icons.manage_accounts_rounded,
+                    iconBg: const Color(0xFFFEE2E2),
+                    iconColor: const Color(0xFFEE2737),
+                    title: 'Edit Profil & Kata Sandi',
+                    subtitle: 'Ubah foto profil, nama & password',
+                    onTap: () => _showEditProfileModal(context, user, ctrl, authCtrl),
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+
+                  // 2. Riwayat Pesanan
+                  _buildMenuItem(
+                    icon: Icons.receipt_long_rounded,
+                    iconBg: const Color(0xFFE0F2FE),
+                    iconColor: const Color(0xFF0284C7),
+                    title: 'Riwayat Pesanan',
+                    subtitle: 'Cek daftar transaksi & status pengiriman',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const CustomerOrdersScreen()),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+
+                  // 3. Voucher & Promo Saya
+                  _buildMenuItem(
+                    icon: Icons.percent_rounded,
+                    iconBg: const Color(0xFFFEF3C7),
+                    iconColor: const Color(0xFFD97706),
+                    title: 'Voucher & Promo Saya',
+                    subtitle: 'Kupon diskon & penawaran menarik',
+                    onTap: () => _showNotificationsModal(context, ctrl),
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+
+                  // 4. Pusat Notifikasi
+                  _buildMenuItem(
+                    icon: Icons.notifications_rounded,
+                    iconBg: const Color(0xFFF3E8FF),
+                    iconColor: const Color(0xFF9333EA),
+                    title: 'Pusat Notifikasi',
+                    subtitle: 'Pesan masuk, update pesanan & promo',
+                    onTap: () => _showNotificationsModal(context, ctrl),
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+
+                  // 5. Bantuan & CS 24 Jam
+                  _buildMenuItem(
+                    icon: Icons.help_outline_rounded,
+                    iconBg: const Color(0xFFCCFBF1),
+                    iconColor: const Color(0xFF0D9488),
+                    title: 'Bantuan & CS 24 Jam',
+                    subtitle: 'Pertanyaan umum & bantuan kendala',
+                    onTap: () => _showFaqModal(context),
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+
+                  // 6. Keluar Akun
+                  _buildMenuItem(
+                    icon: Icons.logout_rounded,
+                    iconBg: const Color(0xFFFFE4E6),
+                    iconColor: const Color(0xFFE11D48),
+                    title: 'Keluar Akun',
+                    subtitle: 'Keluar dari sesi akun saat ini',
+                    isDanger: true,
+                    onTap: () => _confirmLogout(context, authCtrl),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // ── 4. FOOTER APP VERSION INFO ──
+            const Center(
+              child: Text(
+                'CicalengkaGO v3.6.0 • Platform Layanan Lokal Cicalengka',
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF94A3B8),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 32),
+          ],
+        ),
       ),
     );
   }
@@ -226,430 +474,381 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     final initial = name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : 'C';
     return Container(
       color: AppTheme.primaryRed,
-      child: Center(
-        child: Text(
-          initial,
-          style: const TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.bold),
+      alignment: Alignment.center,
+      child: Text(
+        initial,
+        style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  Widget _buildMenuItem({
+    required IconData icon,
+    required Color iconBg,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    bool isDanger = false,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+        onTap: onTap,
+        leading: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: iconBg,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: iconColor, size: 18),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: isDanger ? const Color(0xFFE11D48) : const Color(0xFF0F172A),
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+        ),
+        trailing: Icon(
+          Icons.chevron_right_rounded,
+          color: isDanger ? const Color(0xFFE11D48) : const Color(0xFF94A3B8),
+          size: 16,
         ),
       ),
     );
   }
 
-  Widget _buildInfoCard(BuildContext context, String name, String email, String phone) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _infoRow(Icons.person_outline_rounded, 'Nama Lengkap', name),
-          const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
-          _infoRow(Icons.email_outlined, 'Email Terdaftar', email),
-          const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
-          _infoRow(Icons.phone_android_rounded, 'No. Telepon / WhatsApp', phone),
-          const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: InkWell(
-              onTap: () {
-                setState(() {
-                  _isEditing = true;
-                  _nameCtrl.text = name == 'Pelanggan CicalengkaGO' ? '' : name;
-                  _phoneCtrl.text = phone == '-' ? '' : phone;
-                });
-              },
-              borderRadius: BorderRadius.circular(14),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.edit_rounded, color: AppTheme.inkBlack, size: 16),
-                    SizedBox(width: 8),
-                    Text(
-                      'Ubah Informasi Profil',
-                      style: TextStyle(color: AppTheme.inkBlack, fontSize: 13, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // ── MODAL: EDIT PROFIL & KATA SANDI ──
+  void _showEditProfileModal(
+    BuildContext context,
+    Map<String, dynamic>? user,
+    CustomerController ctrl,
+    AuthController authCtrl,
+  ) {
+    _nameCtrl.text = user?['name'] ?? user?['username'] ?? '';
+    _emailCtrl.text = user?['email'] ?? '';
+    _phoneCtrl.text = user?['phone'] ?? user?['no_hp'] ?? '';
 
-  Widget _infoRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: AppTheme.inkBlack, size: 19),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+    _currentPassCtrl.clear();
+    _newPassCtrl.clear();
+    _confirmPassCtrl.clear();
 
-  Widget _buildEditForm(BuildContext context, CustomerController ctrl, AuthController authCtrl) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.primaryRed.withValues(alpha: 0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: const [
-              Icon(Icons.edit_note_rounded, color: AppTheme.primaryRed, size: 22),
-              SizedBox(width: 8),
-              Text(
-                'Perbarui Data Profil',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _formField('Nama Lengkap', _nameCtrl, Icons.person_outline_rounded),
-          const SizedBox(height: 14),
-          _formField('No. Telepon / WhatsApp', _phoneCtrl, Icons.phone_android_rounded, keyboardType: TextInputType.phone),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _isSaving ? null : () => setState(() => _isEditing = false),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    side: const BorderSide(color: Color(0xFFCBD5E1)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                  child: const Text('Batal', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _isSaving
-                      ? null
-                      : () async {
-                          if (_nameCtrl.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Nama lengkap tidak boleh kosong.'),
-                                backgroundColor: AppTheme.primaryRed,
-                              ),
-                            );
-                            return;
-                          }
-
-                          setState(() => _isSaving = true);
-                          final ok = await ctrl.updateProfile({
-                            'name': _nameCtrl.text.trim(),
-                            'phone': _phoneCtrl.text.trim(),
-                          });
-                          setState(() => _isSaving = false);
-
-                          if (ok && context.mounted) {
-                            await authCtrl.updateUser({
-                              'name': _nameCtrl.text.trim(),
-                              'phone': _phoneCtrl.text.trim(),
-                            });
-
-                            setState(() => _isEditing = false);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Profil Anda berhasil diperbarui!'),
-                                backgroundColor: Color(0xFF10B981),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.inkBlack,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    elevation: 0,
-                  ),
-                  child: _isSaving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('Simpan Perubahan', style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _formField(String label, TextEditingController ctrl, IconData icon, {TextInputType? keyboardType}) {
-    return TextField(
-      controller: ctrl,
-      keyboardType: keyboardType,
-      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.inkBlack),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
-        prefixIcon: Icon(icon, color: AppTheme.inkBlack, size: 20),
-        filled: true,
-        fillColor: const Color(0xFFF8FAFC),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppTheme.inkBlack, width: 2),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMenuSection(BuildContext context, CustomerController ctrl, AuthController authCtrl) {
-    final menuItems = [
-      {
-        'icon': Icons.location_on_rounded,
-        'label': 'Alamat Pengantaran Saya',
-        'sub': 'Atur alamat utama pengiriman makanan & kurir',
-        'color': const Color(0xFF2563EB),
-        'onTap': () => _showDeliveryAddressModal(context),
-      },
-      {
-        'icon': Icons.notifications_rounded,
-        'label': 'Notifikasi & Info Promo',
-        'sub': 'Pemberitahuan status pesanan dan diskon',
-        'color': const Color(0xFFD97706),
-        'onTap': () => _showNotificationsModal(context, ctrl),
-      },
-      {
-        'icon': Icons.help_outline_rounded,
-        'label': 'Bantuan & FAQ',
-        'sub': 'Pertanyaan umum dan kontak Customer Service',
-        'color': const Color(0xFF059669),
-        'onTap': () => _showFaqModal(context),
-      },
-      {
-        'icon': Icons.info_outline_rounded,
-        'label': 'Tentang CicalengkaGO',
-        'sub': 'Informasi aplikasi, syarat & ketentuan',
-        'color': const Color(0xFF7C3AED),
-        'onTap': () => _showAboutModal(context),
-      },
-    ];
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          ...menuItems.asMap().entries.map((entry) {
-            final idx = entry.key;
-            final item = entry.value;
-            return Column(
-              children: [
-                Material(
-                  color: Colors.transparent,
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    onTap: item['onTap'] as VoidCallback,
-                    leading: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: (item['color'] as Color).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(item['icon'] as IconData, color: item['color'] as Color, size: 20),
-                    ),
-                    title: Text(
-                      item['label'] as String,
-                      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
-                    ),
-                    subtitle: Text(
-                      item['sub'] as String,
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                    ),
-                    trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFFCBD5E1), size: 20),
-                  ),
-                ),
-                if (idx < menuItems.length - 1) const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 64),
-              ],
-            );
-          }),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
-          // Logout Option
-          Material(
-            color: Colors.transparent,
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              onTap: () => _confirmLogout(context, authCtrl),
-              leading: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEE2E2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.logout_rounded, color: AppTheme.primaryRed, size: 20),
-              ),
-              title: const Text(
-                'Keluar dari Akun',
-                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
-              ),
-              subtitle: const Text('Keluar dari sesi aplikasi CicalengkaGO', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
-              trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFFFCA5A5), size: 20),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── MODAL: Alamat Pengantaran ───────────────────────────────────────
-  void _showDeliveryAddressModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(10)),
-              ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return Container(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Alamat Pengantaran Utama',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
-            const SizedBox(height: 4),
-            const Text(
-              'Alamat yang digunakan saat memesan makanan dan jasa di Cicalengka',
-              style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Row(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Pull indicator handle
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: const [
+                          Icon(Icons.manage_accounts_rounded, color: AppTheme.primaryRed, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Edit Profil Saya',
+                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF64748B)),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // 1. Nama Lengkap
+                  _inputLabel('Nama Lengkap'),
+                  const SizedBox(height: 4),
+                  _modalTextField(_nameCtrl, 'Nama lengkap Anda', Icons.person_outline_rounded),
+                  const SizedBox(height: 12),
+
+                  // 2. Alamat Email
+                  _inputLabel('Alamat Email'),
+                  const SizedBox(height: 4),
+                  _modalTextField(_emailCtrl, 'Alamat email aktif', Icons.email_outlined, keyboardType: TextInputType.emailAddress),
+                  const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: const Color(0xFFDBEAFE), borderRadius: BorderRadius.circular(12)),
-                    child: const Icon(Icons.location_on_rounded, color: Color(0xFF2563EB), size: 22),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: const [
-                        Text('Alamat Default (Cicalengka)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.inkBlack)),
-                        SizedBox(height: 2),
-                        Text(
-                          'Kecamatan Cicalengka, Kabupaten Bandung, Jawa Barat 40395',
-                          style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                        Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 15),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Perubahan email butuh verifikasi kode OTP ke email baru Anda.',
+                            style: TextStyle(fontSize: 10.5, color: Color(0xFF92400E), height: 1.35),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 22),
+                  const SizedBox(height: 12),
+
+                  // 3. No. WhatsApp
+                  _inputLabel('No. WhatsApp'),
+                  const SizedBox(height: 4),
+                  _modalTextField(_phoneCtrl, 'No. WhatsApp aktif', Icons.phone_android_rounded, keyboardType: TextInputType.phone),
+                  const SizedBox(height: 16),
+
+                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                  const SizedBox(height: 14),
+
+                  // 4. Section Ubah Kata Sandi (Opsional)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: const [
+                      Row(
+                        children: [
+                          Icon(Icons.key_rounded, color: AppTheme.primaryRed, size: 16),
+                          SizedBox(width: 6),
+                          Text(
+                            'Kata Sandi (Opsional)',
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        'Kosongkan jika tidak diubah',
+                        style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Pass 1: Current Password
+                  _passwordField(
+                    ctrl: _currentPassCtrl,
+                    hint: 'Kata sandi saat ini',
+                    isVisible: _showCurrentPass,
+                    onToggle: () => setModalState(() => _showCurrentPass = !_showCurrentPass),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Pass 2: New Password
+                  _passwordField(
+                    ctrl: _newPassCtrl,
+                    hint: 'Kata sandi baru (Min. 6)',
+                    isVisible: _showNewPass,
+                    onToggle: () => setModalState(() => _showNewPass = !_showNewPass),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Pass 3: Confirm New Password
+                  _passwordField(
+                    ctrl: _confirmPassCtrl,
+                    hint: 'Ulangi kata sandi baru',
+                    isVisible: _showConfirmPass,
+                    onToggle: () => setModalState(() => _showConfirmPass = !_showConfirmPass),
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  // Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _isSaving ? null : () => Navigator.pop(ctx),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            side: const BorderSide(color: Color(0xFFCBD5E1)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text('Batal', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold, fontSize: 12)),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.save_rounded, size: 16),
+                          label: _isSaving
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Text('Simpan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryRed,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
+                          ),
+                          onPressed: _isSaving
+                              ? null
+                              : () async {
+                                  if (_nameCtrl.text.trim().isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Nama lengkap tidak boleh kosong.'), backgroundColor: AppTheme.primaryRed),
+                                    );
+                                    return;
+                                  }
+
+                                  if (_newPassCtrl.text.isNotEmpty) {
+                                    if (_newPassCtrl.text.length < 6) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Kata sandi baru minimal 6 karakter.'), backgroundColor: AppTheme.primaryRed),
+                                      );
+                                      return;
+                                    }
+                                    if (_newPassCtrl.text != _confirmPassCtrl.text) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Konfirmasi kata sandi baru tidak cocok.'), backgroundColor: AppTheme.primaryRed),
+                                      );
+                                      return;
+                                    }
+                                  }
+
+                                  setModalState(() => _isSaving = true);
+                                  final payload = <String, String>{
+                                    'name': _nameCtrl.text.trim(),
+                                    'email': _emailCtrl.text.trim(),
+                                    'phone': _phoneCtrl.text.trim(),
+                                  };
+                                  if (_newPassCtrl.text.isNotEmpty) {
+                                    payload['current_password'] = _currentPassCtrl.text;
+                                    payload['new_password'] = _newPassCtrl.text;
+                                  }
+
+                                  final ok = await ctrl.updateProfile(payload);
+                                  setModalState(() => _isSaving = false);
+
+                                  if (ok && context.mounted) {
+                                    await authCtrl.updateUser({
+                                      'name': _nameCtrl.text.trim(),
+                                      'email': _emailCtrl.text.trim(),
+                                      'phone': _phoneCtrl.text.trim(),
+                                    });
+
+                                    Navigator.pop(ctx);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Profil Anda berhasil diperbarui!'),
+                                        backgroundColor: Color(0xFF10B981),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  }
+                                },
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            UberPillButton(
-              label: 'Tutup',
-              icon: Icons.close_rounded,
-              onPressed: () => Navigator.pop(ctx),
-            ),
-            const SizedBox(height: 10),
-          ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _inputLabel(String label) {
+    return Text(
+      label,
+      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+    );
+  }
+
+  Widget _modalTextField(TextEditingController ctrl, String hint, IconData icon, {TextInputType? keyboardType}) {
+    return TextField(
+      controller: ctrl,
+      keyboardType: keyboardType,
+      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+        prefixIcon: Icon(icon, color: const Color(0xFF64748B), size: 18),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        filled: true,
+        fillColor: const Color(0xFFF8FAFC),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.primaryRed, width: 1.5),
         ),
       ),
     );
   }
 
-  // ── MODAL: Notifikasi ──────────────────────────────────────────────
+  Widget _passwordField({
+    required TextEditingController ctrl,
+    required String hint,
+    required bool isVisible,
+    required VoidCallback onToggle,
+  }) {
+    return TextField(
+      controller: ctrl,
+      obscureText: !isVisible,
+      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+        prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF64748B), size: 17),
+        suffixIcon: IconButton(
+          icon: Icon(isVisible ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: const Color(0xFF94A3B8), size: 17),
+          onPressed: onToggle,
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        filled: true,
+        fillColor: const Color(0xFFF8FAFC),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppTheme.primaryRed, width: 1.5),
+        ),
+      ),
+    );
+  }
+
+  // ── MODAL: NOTIFIKASI ──
   void _showNotificationsModal(BuildContext context, CustomerController ctrl) {
     showModalBottomSheet(
       context: context,
@@ -660,7 +859,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -678,8 +877,8 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Notifikasi Saya',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                  'Notifikasi & Promo',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -741,7 +940,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     );
   }
 
-  // ── MODAL: Bantuan & FAQ ───────────────────────────────────────────
+  // ── MODAL: BANTUAN & FAQ ──
   void _showFaqModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -752,7 +951,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -767,19 +966,19 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Bantuan & Pertanyaan Umum',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+              'Bantuan & CS 24 Jam',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
             ),
             const SizedBox(height: 4),
-            const Text('Temukan jawaban cepat untuk pertanyaanmu tentang CicalengkaGO', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+            const Text('Pertanyaan umum & bantuan kendala aplikasi CicalengkaGO', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
             const SizedBox(height: 16),
             Expanded(
               child: ListView(
                 children: [
-                  _faqExpansionTile('Cara Memesan Kuliner & Produk', 'Pilih menu makanan atau produk mitra CicalengkaGO favoritmu, atur kuantitas, dan klik "Tambah ke Keranjang". Buka keranjang lalu tekan "Lanjut Checkout".'),
+                  _faqExpansionTile('Cara Memesan Makanan & Produk', 'Pilih menu makanan atau produk mitra CicalengkaGO favoritmu, atur kuantitas, dan klik "Tambah ke Keranjang". Buka keranjang lalu tekan "Lanjut Checkout".'),
                   _faqExpansionTile('Metode Pembayaran yang Tersedia', 'CicalengkaGO mendukung pembayaran Cash on Delivery (COD/Bayar di Tempat), Saldo Wallet CicalengkaPay, serta QRIS dan Transfer Bank.'),
                   _faqExpansionTile('Berapa Biaya Pengantaran Ongkir?', 'Biaya ongkir dihitung secara otomatis berdasarkan jarak lokasi mitra toko ke lokasi pengantaran Anda di wilayah Cicalengka.'),
-                  _faqExpansionTile('Hubungi Layanan Pelanggan (CS)', 'Butuh bantuan langsung? Tim Customer Service CicalengkaGO siap melayani Anda melalui WhatsApp atau telepon resmi CicalengkaGO.'),
+                  _faqExpansionTile('Layanan Pelanggan WhatsApp CS 24 Jam', 'Hubungi layanan pelanggan CicalengkaGO via WhatsApp di 0812-3456-7890 untuk bantuan pesanan atau komplain.'),
                 ],
               ),
             ),
@@ -805,7 +1004,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
       ),
       child: ExpansionTile(
         shape: const Border(),
-        title: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.inkBlack)),
+        title: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
         children: [
           Padding(
             padding: const EdgeInsets.only(left: 16, right: 16, bottom: 14),
@@ -816,85 +1015,147 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     );
   }
 
-  // ── MODAL: Tentang CicalengkaGO ─────────────────────────────────────
-  void _showAboutModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(10)),
-            ),
-            const SizedBox(height: 20),
-            const CicalengkaGoLogo(size: 64, borderRadius: 18),
-            const SizedBox(height: 14),
-            const Text(
-              'CicalengkaGO Mobile',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
-            ),
-            const Text(
-              'Versi 2.4.0 (Production Build)',
-              style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 14),
-            const Text(
-              'Platform Super App Layanan Antar Kuliner, Belanja Pasar, Kurir Pengiriman, dan Transportasi Lokal Terpercaya untuk Wilayah Cicalengka & Sekitarnya.',
-              style: TextStyle(fontSize: 12.5, color: Color(0xFF475569), height: 1.45),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            UberPillButton(
-              label: 'Tutup',
-              icon: Icons.close_rounded,
-              onPressed: () => Navigator.pop(ctx),
-            ),
-            const SizedBox(height: 10),
-          ],
-        ),
-      ),
-    );
-  }
-
+  // ── GUEST VIEW (Match PHP line 157-190) ──
   Widget _buildGuestView(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(36),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CicalengkaGoLogo(size: 76, borderRadius: 22),
-              const SizedBox(height: 24),
-              const Text(
-                'Masuk ke Akun CicalengkaGO',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Nikmati kemudahan pesan makanan, cek riwayat transaksi, dan simpan alamat impianmu.',
-                style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.4),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 28),
-              UberPillButton(
-                label: 'Masuk / Daftar Akun Baru',
-                icon: Icons.login_rounded,
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
-              ),
-            ],
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        title: const Text(
+          'Akun Saya',
+          style: TextStyle(
+            color: Color(0xFF0F172A),
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.3,
           ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  // Icon Squircle Illustration
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFEE2E2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.person_pin_rounded, color: AppTheme.primaryRed, size: 36),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Selamat Datang di CicalengkaGO!',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF0F172A),
+                      letterSpacing: -0.3,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Masuk ke akun Anda untuk menikmati transaksi pesan antar makanan, saldo CicalengkaPay, dan promo menarik setiap hari.',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: Color(0xFF64748B),
+                      height: 1.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Button 1: Masuk Sekarang
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
+                      icon: const Icon(Icons.login_rounded, size: 16),
+                      label: const Text('Masuk Sekarang', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryRed,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9999)),
+                        elevation: 2,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Button 2: Daftar Akun Baru
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
+                      icon: const Icon(Icons.person_add_rounded, size: 15, color: AppTheme.primaryRed),
+                      label: const Text('Daftar Akun Baru', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A))),
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF1F5F9),
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9999)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                  const SizedBox(height: 14),
+
+                  // Features Grid
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.bolt_rounded, color: Color(0xFFD97706), size: 14),
+                      SizedBox(width: 4),
+                      Text('Cepat', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        child: Text('•', style: TextStyle(color: Color(0xFFCBD5E1))),
+                      ),
+                      Icon(Icons.verified_user_rounded, color: Color(0xFF10B981), size: 14),
+                      SizedBox(width: 4),
+                      Text('Aman', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        child: Text('•', style: TextStyle(color: Color(0xFFCBD5E1))),
+                      ),
+                      Icon(Icons.local_offer_rounded, color: AppTheme.primaryRed, size: 14),
+                      SizedBox(width: 4),
+                      Text('Hemat', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'CicalengkaGO v3.6.0 • Platform Layanan Lokal Cicalengka',
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: Color(0xFF94A3B8)),
+            ),
+          ],
         ),
       ),
     );
@@ -905,7 +1166,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Konfirmasi Keluar', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.inkBlack)),
+        title: const Text('Konfirmasi Keluar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
         content: const Text('Apakah Anda yakin ingin keluar dari akun CicalengkaGO?'),
         actions: [
           TextButton(
