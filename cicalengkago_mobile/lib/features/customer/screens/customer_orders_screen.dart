@@ -6,6 +6,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../controllers/customer_controller.dart';
+import '../widgets/order_item_detail_modal.dart';
 import 'order_tracking_screen.dart';
 
 class CustomerOrdersScreen extends StatefulWidget {
@@ -339,55 +340,64 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 6.0),
-                        child: Row(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
-                              child: imgUrl != null
-                                  ? CachedNetworkImage(
-                                      imageUrl: imgUrl,
-                                      width: 28,
-                                      height: 28,
-                                      fit: BoxFit.cover,
-                                      errorWidget: (context, url, error) => Container(
+                        child: InkWell(
+                          onTap: () => OrderItemDetailModal.show(
+                            context,
+                            it is Map ? it as Map : {},
+                            storeName: storeName,
+                          ),
+                          borderRadius: BorderRadius.circular(6),
+                          child: Row(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(6),
+                                child: imgUrl != null
+                                    ? CachedNetworkImage(
+                                        imageUrl: imgUrl,
                                         width: 28,
                                         height: 28,
-                                        color: const Color(0xFFF1F5F9),
-                                        child: const Icon(Icons.fastfood_rounded, color: Color(0xFF94A3B8), size: 14),
+                                        fit: BoxFit.cover,
+                                        errorWidget: (context, url, error) => Container(
+                                          width: 28,
+                                          height: 28,
+                                          color: const Color(0xFFF1F5F9),
+                                          child: const Icon(Icons.fastfood_rounded, color: Color(0xFF94A3B8), size: 14),
+                                        ),
+                                      )
+                                    : Container(
+                                        width: 28,
+                                        height: 28,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFEF2F2),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: const Icon(Icons.restaurant_rounded, color: AppTheme.primaryRed, size: 14),
                                       ),
-                                    )
-                                  : Container(
-                                      width: 28,
-                                      height: 28,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFFEF2F2),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: const Icon(Icons.restaurant_rounded, color: AppTheme.primaryRed, size: 14),
-                                    ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF1F5F9),
-                                borderRadius: BorderRadius.circular(5),
                               ),
-                              child: Text(
-                                '${qty}x',
-                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                                child: Text(
+                                  '${qty}x',
+                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                name,
-                                style: const TextStyle(fontSize: 12, color: Color(0xFF334155), fontWeight: FontWeight.w600),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  name,
+                                  style: const TextStyle(fontSize: 12, color: Color(0xFF334155), fontWeight: FontWeight.w600),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                            ),
-                          ],
+                              const Icon(Icons.chevron_right_rounded, size: 14, color: Color(0xFF94A3B8)),
+                            ],
+                          ),
                         ),
                       );
                     }),

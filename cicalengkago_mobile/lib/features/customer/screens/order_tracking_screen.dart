@@ -12,6 +12,7 @@ import '../../../core/utils/currency_formatter.dart';
 import '../../../core/services/global_call_service.dart';
 import '../../common/screens/in_app_chat_modal.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../widgets/order_item_detail_modal.dart';
 import 'customer_wallet_screen.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
@@ -1366,7 +1367,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
@@ -1379,89 +1379,106 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           ),
                         ],
                       ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: imgUrl != null
-                                ? CachedNetworkImage(
-                                    imageUrl: imgUrl,
-                                    width: 44,
-                                    height: 44,
-                                    fit: BoxFit.cover,
-                                    errorWidget: (context, url, error) => Container(
-                                      width: 44,
-                                      height: 44,
-                                      color: const Color(0xFFF8FAFC),
-                                      child: const Icon(Icons.fastfood_rounded, color: Color(0xFF94A3B8), size: 20),
-                                    ),
-                                  )
-                                : Container(
-                                    width: 44,
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFEF2F2),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Icon(Icons.restaurant_rounded, color: AppTheme.primaryRed, size: 20),
-                                  ),
+                      child: Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () => OrderItemDetailModal.show(
+                            context,
+                            it,
+                            storeName: it['store_name']?.toString() ?? storeName,
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.inkBlack,
-                                        borderRadius: BorderRadius.circular(5),
-                                      ),
-                                      child: Text(
-                                        '${qty}x',
-                                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Text(
-                                        name,
-                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: imgUrl != null
+                                      ? CachedNetworkImage(
+                                          imageUrl: imgUrl,
+                                          width: 44,
+                                          height: 44,
+                                          fit: BoxFit.cover,
+                                          errorWidget: (context, url, error) => Container(
+                                            width: 44,
+                                            height: 44,
+                                            color: const Color(0xFFF8FAFC),
+                                            child: const Icon(Icons.fastfood_rounded, color: Color(0xFF94A3B8), size: 20),
+                                          ),
+                                        )
+                                      : Container(
+                                          width: 44,
+                                          height: 44,
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFEF2F2),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: const Icon(Icons.restaurant_rounded, color: AppTheme.primaryRed, size: 20),
+                                        ),
                                 ),
-                                if (variantText.isNotEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 2),
-                                    child: Text(
-                                      'Varian: $variantText',
-                                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-                                    ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                            decoration: BoxDecoration(
+                                              color: AppTheme.inkBlack,
+                                              borderRadius: BorderRadius.circular(5),
+                                            ),
+                                            child: Text(
+                                              '${qty}x',
+                                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Text(
+                                              name,
+                                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      if (variantText.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 2),
+                                          child: Text(
+                                            'Varian: $variantText',
+                                            style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                                          ),
+                                        ),
+                                      if (it['store_name'] != null && (order['is_multi_store_batch'] == true || order['batch_sub_orders'] != null))
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 2),
+                                          child: Text(
+                                            'dari ${it['store_name']}',
+                                            style: const TextStyle(fontSize: 9.5, color: AppTheme.primaryRed, fontWeight: FontWeight.w600),
+                                          ),
+                                        ),
+                                    ],
                                   ),
-                                if (it['store_name'] != null && (order['is_multi_store_batch'] == true || order['batch_sub_orders'] != null))
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 2),
-                                    child: Text(
-                                      'dari ${it['store_name']}',
-                                      style: const TextStyle(fontSize: 9.5, color: AppTheme.primaryRed, fontWeight: FontWeight.w600),
-                                    ),
+                                ),
+                                const SizedBox(width: 6),
+                                if (price > 0)
+                                  Text(
+                                    CurrencyFormatter.formatRupiah(itemTotal),
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.inkBlack),
                                   ),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFF94A3B8)),
                               ],
                             ),
                           ),
-                          const SizedBox(width: 6),
-                          if (price > 0)
-                            Text(
-                              CurrencyFormatter.formatRupiah(itemTotal),
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.inkBlack),
-                            ),
-                        ],
+                        ),
                       ),
                     );
                   }),
