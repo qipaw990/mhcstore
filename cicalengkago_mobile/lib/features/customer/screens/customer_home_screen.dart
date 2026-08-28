@@ -89,9 +89,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
         ? double.parse(walletData['balance'].toString())
         : 0.0;
 
-    final cartItemsCount = customerCtrl.cart?['items'] != null
-        ? (customerCtrl.cart!['items'] as List).length
-        : 0;
+    final cartItemsCount = customerCtrl.cartCount;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),

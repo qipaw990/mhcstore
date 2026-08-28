@@ -37,15 +37,53 @@ class CustomerController extends ChangeNotifier {
 
   int get cartCount {
     if (_cart == null) return 0;
-    final items = _cart!['items'] as List<dynamic>?;
-    if (items == null) return 0;
-    return items.fold<int>(0, (sum, item) {
-      final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
-      return sum + qty;
-    });
+
+    List<dynamic>? items = _cart!['items'] as List<dynamic>?;
+    if ((items == null || items.isEmpty) && _cart!['stores'] is List) {
+      final List storesList = _cart!['stores'] as List;
+      final List<dynamic> extractedItems = [];
+      for (var s in storesList) {
+        if (s is Map && s['items'] is List) {
+          extractedItems.addAll(s['items'] as List);
+        }
+      }
+      if (extractedItems.isNotEmpty) {
+        items = extractedItems;
+      }
+    }
+
+    if (items != null && items.isNotEmpty) {
+      return items.fold<int>(0, (sum, item) {
+        final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
+        return sum + qty;
+      });
+    }
+
+    if (_cart!['count'] != null) {
+      return int.tryParse(_cart!['count'].toString()) ?? 0;
+    }
+
+    return 0;
   }
 
-  List<dynamic> get cartItems => (_cart?['items'] as List<dynamic>?) ?? [];
+  List<dynamic> get cartItems {
+    if (_cart == null) return [];
+    final items = _cart!['items'] as List<dynamic>?;
+    if (items != null && items.isNotEmpty) return items;
+
+    if (_cart!['stores'] is List) {
+      final List storesList = _cart!['stores'] as List;
+      final List<dynamic> extractedItems = [];
+      for (var s in storesList) {
+        if (s is Map && s['items'] is List) {
+          extractedItems.addAll(s['items'] as List);
+        }
+      }
+      return extractedItems;
+    }
+
+    return [];
+  }
 
   double get cartSubtotal {
     if (_cart == null) return 0.0;
@@ -92,8 +130,10 @@ class CustomerController extends ChangeNotifier {
     try {
       final res = await ApiService.get(ApiConstants.cart);
       if (res['success'] == true && res['data'] != null) {
-        _cart = res['data'] as Map<String, dynamic>;
-      } else if (res['cart'] != null) {
+        if (res['data'] is Map<String, dynamic>) {
+          _cart = res['data'] as Map<String, dynamic>;
+        }
+      } else if (res['cart'] != null && res['cart'] is Map<String, dynamic>) {
         _cart = res['cart'] as Map<String, dynamic>;
       }
       notifyListeners();
@@ -102,11 +142,16 @@ class CustomerController extends ChangeNotifier {
 
   Future<bool> addToCart(int productId, int quantity, {String? notes}) async {
     try {
-      final res = await ApiService.postForm(ApiConstants.cartAdd, {
+      final Map<String, String> fields = {
         'product_id': productId.toString(),
         'quantity': quantity.toString(),
-        'notes': ?notes,
-      });
+      };
+      if (notes != null && notes.isNotEmpty) {
+        fields['item_notes'] = notes;
+        fields['notes'] = notes;
+      }
+
+      final res = await ApiService.postForm(ApiConstants.cartAdd, fields);
 
       if (res['success'] == true) {
         await fetchCart();
