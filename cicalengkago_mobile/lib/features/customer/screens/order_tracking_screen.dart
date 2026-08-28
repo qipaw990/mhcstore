@@ -933,7 +933,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                               children: [
                                 Row(
                                   children: [
-                                    Text(driverName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                                    Flexible(
+                                      child: Text(
+                                        driverName,
+                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
                                     const SizedBox(width: 4),
                                     const Icon(Icons.verified_rounded, color: AppTheme.primaryRed, size: 14),
                                   ],
@@ -1585,35 +1592,49 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.receipt_long_rounded, size: 18, color: AppTheme.inkBlack),
-                  SizedBox(width: 8),
-                  Text(
-                    'RINCIAN PEMBAYARAN',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.inkBlack, letterSpacing: 0.5),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-                decoration: BoxDecoration(
-                  color: isPaid ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(8),
-                ),
+              const Expanded(
                 child: Row(
                   children: [
-                    Icon(methodIcon, size: 12, color: isPaid ? const Color(0xFF15803D) : const Color(0xFFB45309)),
-                    const SizedBox(width: 4),
-                    Text(
-                      isPaid ? 'LUNAS ($methodLabel)' : 'BELUM DIBAYAR ($methodLabel)',
-                      style: TextStyle(
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.bold,
-                        color: isPaid ? const Color(0xFF15803D) : const Color(0xFFB45309),
+                    Icon(Icons.receipt_long_rounded, size: 18, color: AppTheme.inkBlack),
+                    SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        'RINCIAN PEMBAYARAN',
+                        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: AppTheme.inkBlack, letterSpacing: 0.3),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isPaid ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(methodIcon, size: 11, color: isPaid ? const Color(0xFF15803D) : const Color(0xFFB45309)),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          isPaid ? 'LUNAS ($methodLabel)' : 'BELUM DIBAYAR ($methodLabel)',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: isPaid ? const Color(0xFF15803D) : const Color(0xFFB45309),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
