@@ -122,9 +122,13 @@ class OrderItemDetailModal extends StatelessWidget {
                     children: [
                       const Icon(Icons.storefront_rounded, size: 14, color: AppTheme.primaryRed),
                       const SizedBox(width: 6),
-                      Text(
-                        originStore,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.primaryRed),
+                      Flexible(
+                        child: Text(
+                          originStore,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.primaryRed),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
@@ -225,12 +229,16 @@ class OrderItemDetailModal extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 12.5,
-            fontWeight: isBold ? FontWeight.w900 : FontWeight.w600,
-            color: isBold ? AppTheme.primaryRed : AppTheme.inkBlack,
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: isBold ? FontWeight.w900 : FontWeight.w600,
+              color: isBold ? AppTheme.primaryRed : AppTheme.inkBlack,
+            ),
           ),
         ),
       ],
