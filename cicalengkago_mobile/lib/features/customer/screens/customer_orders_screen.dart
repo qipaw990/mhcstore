@@ -223,13 +223,16 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
     final payStatus = order['payment_status']?.toString() ?? '';
     final isCanceled = status == 'canceled';
     final isUnpaid = payMethod == 'midtrans' && payStatus != 'paid' && !isCanceled;
-    final isDelivered = status == 'delivered';
     final isActive = ['pending', 'confirmed', 'processing', 'handover', 'picked_up', 'on_the_way'].contains(status);
     final statusLabel = _getStatusLabel(order);
     final statusColor = _getStatusColor(order);
     final totalAmount = double.tryParse(order['total_amount']?.toString() ?? '0') ?? 0;
 
-    final List items = (order['items'] as List?) ?? [];
+    final List items = (order['items'] is List && (order['items'] as List).isNotEmpty)
+        ? (order['items'] as List)
+        : (order['all_items'] is List && (order['all_items'] as List).isNotEmpty)
+            ? (order['all_items'] as List)
+            : [];
     final storeName = order['store_name']?.toString() ?? 'Mitra Resto CicalengkaGO';
     final bool isParcel = order['order_type']?.toString() == 'parcel';
 
@@ -319,7 +322,13 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
                     )
                   else ...[
                     ...items.take(2).map((it) {
-                      final name = it['product_name'] ?? it['name'] ?? 'Menu Kuliner';
+                      final name = (it['product_name'] ??
+                              it['name'] ??
+                              it['title'] ??
+                              it['item_name'] ??
+                              (it['product'] is Map ? it['product']['name'] : null) ??
+                              'Menu Kuliner')
+                          .toString();
                       final qty = it['quantity'] ?? 1;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 4.0),

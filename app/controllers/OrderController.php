@@ -562,6 +562,19 @@ class OrderController extends Controller
             ];
         }
 
+        $liveItems = $order['items'] ?? [];
+        if (!empty($order['batch_sub_orders'])) {
+            $liveItems = [];
+            foreach ($order['batch_sub_orders'] as $subOrd) {
+                if (!empty($subOrd['items'])) {
+                    foreach ($subOrd['items'] as $subIt) {
+                        $subIt['store_name'] = $subOrd['store_name'] ?? 'Toko';
+                        $liveItems[] = $subIt;
+                    }
+                }
+            }
+        }
+
         $this->json([
             'success' => true,
             'data'    => [
@@ -578,7 +591,7 @@ class OrderController extends Controller
                 'batch_info'          => $batchInfo,
                 'total_amount'        => (float)($order['batch_total_amount'] ?? $order['total_amount'] ?? $order['order_amount'] ?? 0),
                 'order_amount'        => (float)($order['order_amount'] ?? $order['total_amount'] ?? 0),
-                'items'               => $order['items'] ?? [],
+                'items'               => $liveItems,
                 'order_type'          => $order['order_type'] ?? 'delivery',
                 'order_notes'         => $order['order_notes'] ?? '',
                 'parcel_details'      => $order['parcel_details'] ?? null,

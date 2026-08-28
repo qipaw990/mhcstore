@@ -1209,7 +1209,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         'Cicalengka, Kab. Bandung';
     final storePhone = order['store_phone']?.toString() ?? '';
 
-    final List rawItems = (live['items'] as List?) ?? (order['items'] as List?) ?? [];
+    final List rawItems = (live['items'] is List && (live['items'] as List).isNotEmpty)
+        ? (live['items'] as List)
+        : (order['items'] is List && (order['items'] as List).isNotEmpty)
+            ? (order['items'] as List)
+            : (order['batch_sub_orders'] is List && (order['batch_sub_orders'] as List).isNotEmpty)
+                ? (order['batch_sub_orders'] as List).expand((sub) => (sub['items'] as List? ?? [])).toList()
+                : [];
     final orderNotes = (live['order_notes'] ?? order['order_notes'])?.toString() ?? '';
     final orderType = (live['order_type'] ?? order['order_type'])?.toString() ?? 'delivery';
     final parcelDetails = live['parcel_details'] is Map
@@ -1334,10 +1340,19 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 else
                   ...rawItems.map((item) {
                     final Map it = item is Map ? item : {};
-                    final name = (it['product_name'] ?? it['name'] ?? it['title'] ?? it['item_name'] ?? 'Menu Kuliner').toString();
+                    final name = (it['product_name'] ??
+                            it['name'] ??
+                            it['title'] ??
+                            it['item_name'] ??
+                            (it['product'] is Map ? it['product']['name'] : null) ??
+                            'Menu Kuliner')
+                        .toString();
                     final qty = int.tryParse(it['quantity']?.toString() ?? '1') ?? 1;
                     final price = double.tryParse(it['price']?.toString() ?? '0') ?? 0.0;
                     final itemTotal = price * qty;
+                    final variantText = it['variant']?.toString() ??
+                        it['variation_name']?.toString() ??
+                        '';
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8),
@@ -1364,10 +1379,15 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                   name,
                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
                                 ),
-                                if (it['variant'] != null && it['variant'].toString().isNotEmpty)
+                                if (variantText.isNotEmpty)
                                   Text(
-                                    'Varian: ${it['variant']}',
+                                    'Varian: $variantText',
                                     style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                                  ),
+                                if (it['store_name'] != null && (order['is_multi_store_batch'] == true || order['batch_sub_orders'] != null))
+                                  Text(
+                                    'dari ${it['store_name']}',
+                                    style: const TextStyle(fontSize: 10, color: AppTheme.primaryRed, fontWeight: FontWeight.w600),
                                   ),
                               ],
                             ),
