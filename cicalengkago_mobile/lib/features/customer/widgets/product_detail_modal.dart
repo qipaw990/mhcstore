@@ -5,6 +5,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/uber_pill_button.dart';
+import '../../../core/widgets/app_alert.dart';
 import '../controllers/customer_controller.dart';
 
 class ProductDetailModal extends StatefulWidget {
@@ -285,22 +286,17 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                         label: 'Tambah • ${CurrencyFormatter.formatRupiah(totalPrice)}',
                         icon: Icons.shopping_bag_outlined,
                         onPressed: () async {
-                          final ok = await customerCtrl.addToCart(
+                          await customerCtrl.addToCart(
                             productId,
                             _quantity,
                             notes: _notesController.text,
                           );
                           if (context.mounted) {
                             Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  ok ? '$_quantity $name ditambahkan ke keranjang!' : 'Berhasil ditambahkan ke keranjang!',
-                                ),
-                                backgroundColor: AppTheme.inkBlack,
-                                behavior: SnackBarBehavior.floating,
-                                duration: const Duration(seconds: 2),
-                              ),
+                            AppAlert.showCartAdded(
+                              context,
+                              productName: name,
+                              quantity: _quantity,
                             );
                           }
                         },

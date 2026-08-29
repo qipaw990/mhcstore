@@ -108,6 +108,26 @@ class Cart extends Model
 
         $finalPrice = $price ?? (float)$product['final_price'];
 
+        // Check if exact same item already exists in cart for this user/session
+        $whereUser = $userId ? "`user_id` = ?" : "`session_id` = ?";
+        $paramUser = $userId ?: $sessionId;
+
+        $varSql = $variationId ? "`variation_id` = ?" : "`variation_id` IS NULL";
+        $notesSql = !empty($notes) ? "`item_notes` = ?" : "(`item_notes` IS NULL OR `item_notes` = '')";
+
+        $sqlCheck = "SELECT id, quantity FROM `carts` WHERE {$whereUser} AND `product_id` = ? AND {$varSql} AND {$notesSql} LIMIT 1";
+        $paramsCheck = [$paramUser, $productId];
+        if ($variationId) $paramsCheck[] = $variationId;
+        if (!empty($notes)) $paramsCheck[] = $notes;
+
+        $existing = Database::fetchOne($sqlCheck, $paramsCheck);
+
+        if ($existing) {
+            $newQty = (int)$existing['quantity'] + $quantity;
+            Database::execute("UPDATE `carts` SET `quantity` = ? WHERE `id` = ?", [$newQty, $existing['id']]);
+            return $existing['id'];
+        }
+
         return $this->create([
             'user_id' => $userId,
             'session_id' => $sessionId,

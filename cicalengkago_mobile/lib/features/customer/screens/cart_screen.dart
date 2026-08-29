@@ -5,6 +5,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/uber_pill_button.dart';
+import '../../../core/widgets/app_alert.dart';
 import '../controllers/customer_controller.dart';
 import '../widgets/product_detail_modal.dart';
 import 'checkout_screen.dart';
@@ -775,6 +776,13 @@ class _CartScreenState extends State<CartScreen> {
             onPressed: () async {
               Navigator.pop(ctx);
               await customerCtrl.clearCart();
+              if (context.mounted) {
+                AppAlert.showInfo(
+                  context,
+                  title: 'Keranjang Dikosongkan',
+                  message: 'Seluruh isi keranjang belanja telah dibersihkan.',
+                );
+              }
             },
           ),
         ],

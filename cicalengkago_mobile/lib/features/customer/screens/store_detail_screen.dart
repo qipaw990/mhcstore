@@ -7,6 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/uber_pill_button.dart';
+import '../../../core/widgets/app_alert.dart';
 import '../controllers/customer_controller.dart';
 import '../widgets/product_detail_modal.dart';
 import 'cart_screen.dart';
@@ -464,13 +465,10 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                             final productId = int.tryParse(product['id']?.toString() ?? '0') ?? 0;
                             final ok = await customerCtrl.addToCart(productId, 1);
                             if (ok && context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('${product['name']} ditambahkan ke keranjang'),
-                                  duration: const Duration(seconds: 1),
-                                  backgroundColor: AppTheme.inkBlack,
-                                  behavior: SnackBarBehavior.floating,
-                                ),
+                              AppAlert.showCartAdded(
+                                context,
+                                productName: product['name'] ?? 'Menu',
+                                quantity: 1,
                               );
                             }
                           },

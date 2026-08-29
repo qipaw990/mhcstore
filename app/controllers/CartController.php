@@ -74,18 +74,37 @@ class CartController extends Controller
             $addonsJson = json_encode(['items' => $addonItems]);
         }
 
-        // Insert to cart
-        $cartId = $this->cartModel->create([
-            'user_id'      => $userId,
-            'session_id'   => $sessionId,
-            'store_id'     => $product['store_id'],
-            'product_id'   => $productId,
-            'variation_id' => $variationId,
-            'addons_json'  => $addonsJson,
-            'quantity'     => $quantity,
-            'price'        => $price,
-            'item_notes'   => $notes
-        ]);
+        // Check if item already exists in cart for this user/session to combine counter
+        $whereUser = $userId ? "`user_id` = ?" : "`session_id` = ?";
+        $paramUser = $userId ?: $sessionId;
+
+        $varSql = $variationId ? "`variation_id` = ?" : "`variation_id` IS NULL";
+        $notesSql = !empty($notes) ? "`item_notes` = ?" : "(`item_notes` IS NULL OR `item_notes` = '')";
+
+        $sqlCheck = "SELECT id, quantity FROM `carts` WHERE {$whereUser} AND `product_id` = ? AND {$varSql} AND {$notesSql} LIMIT 1";
+        $paramsCheck = [$paramUser, $productId];
+        if ($variationId) $paramsCheck[] = $variationId;
+        if (!empty($notes)) $paramsCheck[] = $notes;
+
+        $existing = Database::fetchOne($sqlCheck, $paramsCheck);
+
+        if ($existing) {
+            $newQty = (int)$existing['quantity'] + $quantity;
+            Database::execute("UPDATE `carts` SET `quantity` = ? WHERE `id` = ?", [$newQty, $existing['id']]);
+            $cartId = $existing['id'];
+        } else {
+            $cartId = $this->cartModel->create([
+                'user_id'      => $userId,
+                'session_id'   => $sessionId,
+                'store_id'     => $product['store_id'],
+                'product_id'   => $productId,
+                'variation_id' => $variationId,
+                'addons_json'  => $addonsJson,
+                'quantity'     => $quantity,
+                'price'        => $price,
+                'item_notes'   => $notes
+            ]);
+        }
 
         $updatedCart = $this->cartModel->getUserCart($userId, $sessionId);
         $this->successResponse('Produk berhasil ditambahkan ke keranjang!', [

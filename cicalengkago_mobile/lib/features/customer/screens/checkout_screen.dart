@@ -7,6 +7,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/uber_pill_button.dart';
+import '../../../core/widgets/app_alert.dart';
 import '../../../core/services/location_service.dart';
 import '../../../core/widgets/location_picker_modal.dart';
 import '../controllers/customer_controller.dart';
@@ -92,11 +93,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   void _handleCheckout() async {
     if (_addressController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Silakan masukkan alamat pengantaran lengkap.'),
-          backgroundColor: AppTheme.primaryRed,
-        ),
+      AppAlert.showWarning(
+        context,
+        title: 'Alamat Belum Lengkap',
+        message: 'Silakan masukkan alamat pengantaran lengkap Anda.',
       );
       return;
     }
@@ -126,13 +126,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final double walletBalance = double.tryParse(walletMap?['balance']?.toString() ?? '0') ?? 0.0;
 
       if (walletBalance < grandTotal) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Saldo CicalengkaPay Anda (${CurrencyFormatter.formatRupiah(walletBalance)}) tidak mencukupi untuk total tagihan ${CurrencyFormatter.formatRupiah(grandTotal)}. Silakan pilih metode pembayaran lain / Top Up.',
-            ),
-            backgroundColor: AppTheme.primaryRed,
-          ),
+        AppAlert.showError(
+          context,
+          title: 'Saldo CicalengkaPay Kurang',
+          message: 'Saldo Anda (${CurrencyFormatter.formatRupiah(walletBalance)}) kurang dari total tagihan (${CurrencyFormatter.formatRupiah(grandTotal)}). Gunakan COD / Top Up.',
         );
         return;
       }
@@ -159,11 +156,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (res['success'] == true) {
         final orderCode = res['data']?['order_code'] ?? res['data']?['order_id']?.toString() ?? res['order_code'] ?? '';
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('🎉 Pesanan Anda telah berhasil dibuat!'),
-            backgroundColor: Colors.green,
-          ),
+        AppAlert.showSuccess(
+          context,
+          title: 'Pesanan Berhasil Dibuat! 🎉',
+          message: 'Mencari driver terdekat untuk mengantar pesanan Anda.',
         );
 
         Navigator.pushAndRemoveUntil(
@@ -174,11 +170,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           (route) => route.isFirst,
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(res['message'] ?? 'Gagal membuat pesanan. Silakan coba lagi.'),
-            backgroundColor: AppTheme.primaryRed,
-          ),
+        AppAlert.showError(
+          context,
+          title: 'Gagal Membuat Pesanan',
+          message: res['message'] ?? 'Silakan periksa kembali rincian pesanan Anda.',
         );
       }
     }
@@ -404,13 +399,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     // ignore: deprecated_member_use
                     onChanged: (val) {
                       if (isWalletInsufficient) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Saldo CicalengkaPay Anda (${CurrencyFormatter.formatRupiah(walletBalance)}) tidak mencukupi untuk tagihan ${CurrencyFormatter.formatRupiah(grandTotal)}. Silakan gunakan Bayar Tunai (COD).',
-                            ),
-                            backgroundColor: AppTheme.primaryRed,
-                          ),
+                        AppAlert.showError(
+                          context,
+                          title: 'Saldo CicalengkaPay Kurang',
+                          message: 'Saldo Anda (${CurrencyFormatter.formatRupiah(walletBalance)}) kurang dari total tagihan (${CurrencyFormatter.formatRupiah(grandTotal)}). Silakan gunakan Bayar Tunai (COD).',
                         );
                         return;
                       }
