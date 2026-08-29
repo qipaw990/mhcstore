@@ -781,18 +781,25 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(24),
-                      child: CachedNetworkImage(
-                        imageUrl: ApiConstants.formatImageUrl(driverAvatar),
-                        width: 44,
-                        height: 44,
-                        fit: BoxFit.cover,
-                        errorWidget: (context, url, error) => Container(
-                          width: 44,
-                          height: 44,
-                          color: const Color(0xFFE2E8F0),
-                          child: const Icon(Icons.motorcycle_rounded, color: Color(0xFF64748B), size: 22),
-                        ),
-                      ),
+                      child: (driverAvatar.isNotEmpty)
+                          ? CachedNetworkImage(
+                              imageUrl: ApiConstants.formatImageUrl(driverAvatar),
+                              width: 44,
+                              height: 44,
+                              fit: BoxFit.cover,
+                              errorWidget: (context, url, error) => Image.asset(
+                                'assets/images/driver_bogo_avatar.png',
+                                width: 44,
+                                height: 44,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : Image.asset(
+                              'assets/images/driver_bogo_avatar.png',
+                              width: 44,
+                              height: 44,
+                              fit: BoxFit.cover,
+                            ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -984,18 +991,29 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                             child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 20),
                           ),
                         ),
-                      // Customer Pin
+                      // Customer Destination Pin (Custom Home 3D Marker)
                       Marker(
                         point: LatLng(custLat, custLng),
-                        width: 42,
-                        height: 42,
+                        width: 48,
+                        height: 48,
                         child: Container(
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryRed,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
                             shape: BoxShape.circle,
-                            boxShadow: [BoxShadow(color: AppTheme.primaryRed.withValues(alpha: 0.4), blurRadius: 10)],
+                            boxShadow: [
+                              BoxShadow(color: Color(0x44DC2626), blurRadius: 8, spreadRadius: 1),
+                            ],
                           ),
-                          child: const Icon(Icons.home_rounded, color: Colors.white, size: 20),
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/images/customer_home_marker.png',
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                decoration: const BoxDecoration(color: AppTheme.primaryRed, shape: BoxShape.circle),
+                                child: const Icon(Icons.home_rounded, color: Colors.white, size: 20),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                       // Driver Pin with Real-time Moving Coordinate Aura & Bogo Helmet Mascot
@@ -1184,10 +1202,19 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                               elevation: 2,
                             ),
                             onPressed: () {
-                              _mapController.move(LatLng(driverLat, driverLng), 15.5);
+                              final minLat = math.min(math.min(driverLat, storeLat), custLat);
+                              final maxLat = math.max(math.max(driverLat, storeLat), custLat);
+                              final minLng = math.min(math.min(driverLng, storeLng), custLng);
+                              final maxLng = math.max(math.max(driverLng, storeLng), custLng);
+                              _mapController.fitCamera(
+                                CameraFit.bounds(
+                                  bounds: LatLngBounds(LatLng(minLat, minLng), LatLng(maxLat, maxLng)),
+                                  padding: const EdgeInsets.all(40),
+                                ),
+                              );
                             },
-                            icon: const Icon(Icons.my_location_rounded, size: 14),
-                            label: const Text('Fokus Kurir', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                            icon: const Icon(Icons.zoom_out_map_rounded, size: 14),
+                            label: const Text('Rute Penuh', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                           ),
                         const SizedBox(width: 8),
                         ElevatedButton.icon(
@@ -1211,14 +1238,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           ),
         ),
 
-        // Tracking Details Bottom Sheet
+        // Bottom Details Container (Status, Driver info, Multi-store order timeline, items, etc)
         Expanded(
-          flex: 6,
+          flex: 5,
           child: Container(
             decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 12, offset: Offset(0, -4))],
+              color: Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2)),
+              ],
             ),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
@@ -1386,18 +1415,25 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(24),
-                            child: CachedNetworkImage(
-                              imageUrl: ApiConstants.formatImageUrl(driverAvatar),
-                              width: 46,
-                              height: 46,
-                              fit: BoxFit.cover,
-                              errorWidget: (context, url, error) => Container(
-                                width: 46,
-                                height: 46,
-                                color: const Color(0xFFE2E8F0),
-                                child: const Icon(Icons.motorcycle_rounded, color: Color(0xFF64748B), size: 24),
-                              ),
-                            ),
+                            child: (driverAvatar.isNotEmpty)
+                                ? CachedNetworkImage(
+                                    imageUrl: ApiConstants.formatImageUrl(driverAvatar),
+                                    width: 46,
+                                    height: 46,
+                                    fit: BoxFit.cover,
+                                    errorWidget: (context, url, error) => Image.asset(
+                                      'assets/images/driver_bogo_avatar.png',
+                                      width: 46,
+                                      height: 46,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : Image.asset(
+                                    'assets/images/driver_bogo_avatar.png',
+                                    width: 46,
+                                    height: 46,
+                                    fit: BoxFit.cover,
+                                  ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(

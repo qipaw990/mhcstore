@@ -431,16 +431,25 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
               ),
               const SizedBox(height: 2),
               Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF059669),
+                width: 38,
+                height: 38,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
                   shape: BoxShape.circle,
                   boxShadow: [
-                    BoxShadow(color: const Color(0xFF059669).withValues(alpha: 0.4), blurRadius: 8),
+                    BoxShadow(color: Color(0x44059669), blurRadius: 8),
                   ],
                 ),
-                child: const Icon(Icons.home_rounded, color: Colors.white, size: 18),
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/images/customer_home_marker.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      decoration: const BoxDecoration(color: Color(0xFF059669), shape: BoxShape.circle),
+                      child: const Icon(Icons.home_rounded, color: Colors.white, size: 18),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
