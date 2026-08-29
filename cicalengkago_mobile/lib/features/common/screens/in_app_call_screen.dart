@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -44,46 +44,9 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   String _partnerAvatar = 'assets/images/users/driver.png';
   String _partnerPhone = '';
 
-  RTCPeerConnection? _peerConnection;
-  MediaStream? _localStream;
-  MediaStream? _remoteStream;
-
-  bool _hasSetRemoteAnswer = false;
-  bool _hasSetRemoteOffer = false;
-  bool _remoteDescriptionSet = false;
-  final Set<String> _processedCandidates = {};
-  final List<Map<String, dynamic>> _pendingLocalCandidates = [];
-  final List<Map<String, dynamic>> _pendingRemoteCandidates = [];
+  RtcEngine? _agoraEngine;
+  bool _isAgoraInitialized = false;
   int _pollCount = 0;
-
-  static const Map<String, dynamic> _rtcConfiguration = {
-    'iceServers': [
-      {'urls': 'stun:stun.l.google.com:19302'},
-      {'urls': 'stun:stun1.l.google.com:19302'},
-      {'urls': 'stun:stun2.l.google.com:19302'},
-      {'urls': 'stun:stun3.l.google.com:19302'},
-      {'urls': 'stun:stun4.l.google.com:19302'},
-      {'urls': 'stun:global.stun.twilio.com:3478'},
-      {'urls': 'stun:stun.cloudflare.com:3478'},
-      {
-        'urls': 'turn:openrelay.metered.ca:80',
-        'username': 'openrelayproject',
-        'credential': 'openrelayproject'
-      },
-      {
-        'urls': 'turn:openrelay.metered.ca:443',
-        'username': 'openrelayproject',
-        'credential': 'openrelayproject'
-      },
-      {
-        'urls': 'turn:openrelay.metered.ca:443?transport=tcp',
-        'username': 'openrelayproject',
-        'credential': 'openrelayproject'
-      }
-    ],
-    'sdpSemantics': 'unified-plan',
-    'iceCandidatePoolSize': 10
-  };
 
   @override
   void initState() {
@@ -116,63 +79,8 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       _statusText = 'Panggilan Masuk...';
     }
 
-    _initNativeWebRTC();
+    _initCallSession();
     _startStatusPolling();
-  }
-
-  Map<String, dynamic>? _parseSdpMap(dynamic raw) {
-    if (raw == null) return null;
-    dynamic current = raw;
-    while (current is String) {
-      try {
-        current = jsonDecode(current);
-      } catch (_) {
-        break;
-      }
-    }
-    if (current is Map) {
-      return Map<String, dynamic>.from(current);
-    }
-    return null;
-  }
-
-  Map<String, dynamic>? _unpackCandidate(dynamic item) {
-    if (item == null) return null;
-    dynamic current = item;
-    while (current is String) {
-      try {
-        current = jsonDecode(current);
-      } catch (_) {
-        break;
-      }
-    }
-    if (current is! Map) return null;
-    final map = Map<String, dynamic>.from(current);
-
-    String? role = map['role']?.toString();
-    dynamic cand = map.containsKey('candidate') ? map['candidate'] : map;
-    while (cand is String) {
-      try {
-        cand = jsonDecode(cand);
-      } catch (_) {
-        break;
-      }
-    }
-    if (cand is! Map) return null;
-    final candMap = Map<String, dynamic>.from(cand);
-
-    final candidateStr = candMap['candidate']?.toString() ?? '';
-    final sdpMid = candMap['sdpMid']?.toString() ?? '';
-    final sdpMLineIndex = int.tryParse(candMap['sdpMLineIndex']?.toString() ?? '0') ?? 0;
-
-    if (candidateStr.isEmpty) return null;
-
-    return {
-      'role': role,
-      'candidate': candidateStr,
-      'sdpMid': sdpMid,
-      'sdpMLineIndex': sdpMLineIndex,
-    };
   }
 
   Future<bool> _requestMicrophonePermission() async {
@@ -183,49 +91,36 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       }
       return status.isGranted;
     } catch (e) {
-      debugPrint('[NativeWebRTC] Permission check error: $e');
+      debugPrint('[AgoraVoice] Permission check error: $e');
       return true;
     }
   }
 
-  Future<void> _initNativeWebRTC() async {
+  Future<void> _initCallSession() async {
     try {
+      final hasPermission = await _requestMicrophonePermission();
+      if (!hasPermission) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Izin mikrofon diperlukan untuk melakukan panggilan.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        _handleCallEnded('Izin mikrofon ditolak');
+        return;
+      }
+
+      await _setupAgoraEngine();
+
       if (!widget.isIncoming) {
-        // Outgoing Call: Setup PeerConnection and create Offer
-        final hasPermission = await _requestMicrophonePermission();
-        if (!hasPermission) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Izin mikrofon diperlukan untuk melakukan panggilan.'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          _handleCallEnded('Izin mikrofon ditolak');
-          return;
-        }
-
-        final setupSuccess = await _setupLocalMediaAndPeerConnection();
-        if (!setupSuccess || _peerConnection == null) {
-          _handleCallEnded('Gagal memuat media suara');
-          return;
-        }
-
-        final offer = await _peerConnection!.createOffer({
-          'offerToReceiveAudio': true,
-          'offerToReceiveVideo': false,
-        });
-        await _peerConnection!.setLocalDescription(offer);
-
-        final offerSdp = jsonEncode({'type': offer.type ?? 'offer', 'sdp': offer.sdp});
-
+        // Outgoing call: inform backend
         final res = await http.post(
           Uri.parse('${ApiConstants.baseUrl}/calls/initiate'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'order_code': widget.orderCode,
-            'offer': offerSdp,
             'caller_role': widget.callerRole ?? 'customer',
           }),
         );
@@ -234,7 +129,6 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
           final data = jsonDecode(res.body);
           if (data['success'] == true && data['data'] != null) {
             _callId = int.tryParse(data['data']['call_id']?.toString() ?? '');
-            await _flushPendingLocalCandidates();
             if (data['data']['partner_name'] != null && mounted) {
               setState(() {
                 _partnerName = data['data']['partner_name'];
@@ -258,208 +152,86 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
               );
             }
             _handleCallEnded(msg);
+            return;
           }
-        } else {
-          final msg = 'Gagal menghubungi server (${res.statusCode})';
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(msg), backgroundColor: Colors.red),
-            );
-          }
-          _handleCallEnded(msg);
         }
+        // Join Agora voice channel immediately for outgoing call
+        await _joinAgoraChannel();
       }
     } catch (e) {
-      debugPrint('[NativeWebRTC] Error initializing call: $e');
-      _handleCallEnded('Gagal memulai panggilan');
+      debugPrint('[AgoraVoice] Error initializing call: $e');
     }
   }
 
-  Future<bool> _setupLocalMediaAndPeerConnection() async {
-    if (_peerConnection != null) return true;
+  Future<void> _setupAgoraEngine() async {
+    if (_isAgoraInitialized && _agoraEngine != null) return;
 
     try {
-      try {
-        _localStream = await navigator.mediaDevices.getUserMedia({
-          'audio': true,
-          'video': false,
-        });
-      } catch (mediaErr) {
-        debugPrint('[NativeWebRTC] First getUserMedia attempt: $mediaErr');
-        _localStream = await navigator.mediaDevices.getUserMedia({
-          'audio': true,
-        });
-      }
+      _agoraEngine = createAgoraRtcEngine();
+      await _agoraEngine!.initialize(const RtcEngineContext(
+        appId: ApiConstants.agoraAppId,
+        channelProfile: ChannelProfileType.channelProfileCommunication,
+      ));
 
-      if (_localStream == null) {
-        debugPrint('[NativeWebRTC] LocalStream is null');
-        return false;
-      }
+      _agoraEngine!.registerEventHandler(
+        RtcEngineEventHandler(
+          onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
+            debugPrint('[AgoraVoice] Local user joined channel: ${connection.channelId}');
+            _agoraEngine?.setEnableSpeakerphone(_isSpeakerOn);
+          },
+          onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
+            debugPrint('[AgoraVoice] Remote user joined channel: $remoteUid');
+            if (mounted) {
+              setState(() {
+                _isConnected = true;
+                _statusText = 'Panggilan Berlangsung';
+              });
+              _startTimer();
+              _agoraEngine?.setEnableSpeakerphone(_isSpeakerOn);
+            }
+          },
+          onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
+            debugPrint('[AgoraVoice] Remote user left channel: $remoteUid');
+            _handleCallEnded('Panggilan Diakhiri');
+          },
+          onError: (ErrorCodeType err, String msg) {
+            debugPrint('[AgoraVoice] Agora error: $err, $msg');
+          },
+        ),
+      );
 
-      for (var track in _localStream!.getAudioTracks()) {
-        track.enabled = true;
-      }
+      await _agoraEngine!.enableAudio();
+      await _agoraEngine!.setAudioProfile(
+        profile: AudioProfileType.audioProfileSpeechStandard,
+        scenario: AudioScenarioType.audioScenarioGameStreaming,
+      );
+      await _agoraEngine!.setEnableSpeakerphone(_isSpeakerOn);
 
-      _peerConnection = await createPeerConnection(_rtcConfiguration);
-      if (_peerConnection == null) {
-        debugPrint('[NativeWebRTC] PeerConnection is null');
-        return false;
-      }
-
-      for (var track in _localStream!.getTracks()) {
-        track.enabled = true;
-        try {
-          await _peerConnection!.addTrack(track, _localStream!);
-        } catch (_) {}
-      }
-
-      _peerConnection!.onIceCandidate = (candidate) {
-        if (candidate.candidate != null && candidate.candidate!.isNotEmpty) {
-          _sendIceCandidate(candidate);
-        }
-      };
-
-      _peerConnection!.onTrack = (RTCTrackEvent event) {
-        debugPrint('[NativeWebRTC] onTrack received: ${event.track.kind}');
-        if (event.track.kind == 'audio') {
-          try {
-            event.track.enabled = true;
-          } catch (_) {}
-        }
-        if (event.streams.isNotEmpty) {
-          _remoteStream = event.streams[0];
-          for (var track in _remoteStream!.getAudioTracks()) {
-            track.enabled = true;
-          }
-        }
-        _applyAudioSettings();
-      };
-
-      _peerConnection!.onConnectionState = (state) {
-        debugPrint('[NativeWebRTC] Connection state: $state');
-        if (state == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
-          if (mounted && !_isConnected) {
-            setState(() {
-              _isConnected = true;
-              _statusText = 'Panggilan Berlangsung';
-            });
-            _startTimer();
-            _applyAudioSettings();
-          }
-        } else if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
-                   state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
-          debugPrint('[NativeWebRTC] Connection state disconnected/failed: $state');
-        }
-      };
-
-      _peerConnection!.onIceConnectionState = (state) {
-        debugPrint('[NativeWebRTC] ICE connection state: $state');
-        if (state == RTCIceConnectionState.RTCIceConnectionStateConnected ||
-            state == RTCIceConnectionState.RTCIceConnectionStateCompleted) {
-          if (mounted && !_isConnected) {
-            setState(() {
-              _isConnected = true;
-              _statusText = 'Panggilan Berlangsung';
-            });
-            _startTimer();
-            _applyAudioSettings();
-          }
-        }
-      };
-
-      _applyAudioSettings();
-      return true;
+      _isAgoraInitialized = true;
     } catch (e) {
-      debugPrint('[NativeWebRTC] Setup error: $e');
-      return false;
+      debugPrint('[AgoraVoice] Setup engine error: $e');
     }
   }
 
-  Future<void> _applyAudioSettings() async {
+  Future<void> _joinAgoraChannel() async {
+    if (_agoraEngine == null) return;
     try {
-      await Helper.setSpeakerphoneOn(_isSpeakerOn);
-    } catch (e) {
-      debugPrint('[NativeWebRTC] setSpeakerphoneOn error: $e');
-    }
-  }
+      final cleanChannel = widget.orderCode.replaceAll(RegExp(r'[^a-zA-Z0-9_\-]'), '');
+      final channelName = cleanChannel.isNotEmpty ? cleanChannel : 'cicalengkago_call';
 
-  Future<void> _sendIceCandidate(RTCIceCandidate candidate) async {
-    try {
-      final candData = {
-        'candidate': candidate.candidate,
-        'sdpMid': candidate.sdpMid,
-        'sdpMLineIndex': candidate.sdpMLineIndex,
-      };
-
-      final payload = {
-        'role': widget.isIncoming ? 'receiver' : 'caller',
-        'candidate': candData,
-      };
-
-      if (_callId == null || _callId == 0) {
-        _pendingLocalCandidates.add(payload);
-        return;
-      }
-
-      await http.post(
-        Uri.parse('${ApiConstants.baseUrl}/calls/ice-candidate'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'call_id': _callId,
-          'order_code': widget.orderCode,
-          'role': widget.isIncoming ? 'receiver' : 'caller',
-          'candidate': jsonEncode(candData),
-        }),
+      debugPrint('[AgoraVoice] Joining Agora Channel: $channelName');
+      await _agoraEngine!.joinChannel(
+        token: '',
+        channelId: channelName,
+        uid: 0,
+        options: const ChannelMediaOptions(
+          clientRoleType: ClientRoleType.clientRoleBroadcaster,
+          autoSubscribeAudio: true,
+          publishMicrophoneTrack: true,
+        ),
       );
     } catch (e) {
-      debugPrint('[NativeWebRTC] ICE candidate error: $e');
-    }
-  }
-
-  Future<void> _flushPendingLocalCandidates() async {
-    if (_callId == null || _callId == 0 || _pendingLocalCandidates.isEmpty) return;
-    final toFlush = List<Map<String, dynamic>>.from(_pendingLocalCandidates);
-    _pendingLocalCandidates.clear();
-
-    for (var payload in toFlush) {
-      try {
-        await http.post(
-          Uri.parse('${ApiConstants.baseUrl}/calls/ice-candidate'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'call_id': _callId,
-            'order_code': widget.orderCode,
-            'role': payload['role'] ?? (widget.isIncoming ? 'receiver' : 'caller'),
-            'candidate': jsonEncode(payload['candidate']),
-          }),
-        );
-      } catch (_) {}
-    }
-  }
-
-  Future<void> _flushPendingRemoteCandidates() async {
-    if (_peerConnection == null || !_remoteDescriptionSet || _pendingRemoteCandidates.isEmpty) return;
-    final toFlush = List<Map<String, dynamic>>.from(_pendingRemoteCandidates);
-    _pendingRemoteCandidates.clear();
-
-    for (var candMap in toFlush) {
-      final candStr = candMap['candidate']?.toString();
-      if (candStr == null || candStr.isEmpty) continue;
-      final key = jsonEncode(candMap);
-      if (!_processedCandidates.contains(key)) {
-        _processedCandidates.add(key);
-        try {
-          final rtcCand = RTCIceCandidate(
-            candStr,
-            candMap['sdpMid']?.toString() ?? '',
-            int.tryParse(candMap['sdpMLineIndex']?.toString() ?? '0') ?? 0,
-          );
-          await _peerConnection?.addCandidate(rtcCand);
-          debugPrint('[NativeWebRTC] Flushed remote ICE candidate successfully');
-        } catch (e) {
-          debugPrint('[NativeWebRTC] Error adding buffered remote candidate: $e');
-        }
-      }
+      debugPrint('[AgoraVoice] Join channel error: $e');
     }
   }
 
@@ -478,7 +250,6 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
             final call = data['data']['active_call'] as Map<String, dynamic>;
             final status = call['status'];
             _callId = int.tryParse(call['id']?.toString() ?? '');
-            await _flushPendingLocalCandidates();
 
             if (mounted) {
               setState(() {
@@ -492,66 +263,6 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
               });
             }
 
-            // Handle Answer for Outgoing Call
-            final answerMap = _parseSdpMap(call['answer']);
-            if (!widget.isIncoming && (status == 'connected' || status == 'calling') && answerMap != null && !_hasSetRemoteAnswer) {
-              _hasSetRemoteAnswer = true;
-              try {
-                final answerSdp = RTCSessionDescription(
-                  answerMap['sdp']?.toString(),
-                  answerMap['type']?.toString() ?? 'answer',
-                );
-                await _peerConnection?.setRemoteDescription(answerSdp);
-                _remoteDescriptionSet = true;
-                await _flushPendingRemoteCandidates();
-                _applyAudioSettings();
-              } catch (e) {
-                debugPrint('[NativeWebRTC] Error setting remote answer: $e');
-              }
-            }
-
-            // Process ICE Candidates from remote
-            if (call['ice_candidates'] != null) {
-              dynamic candList = call['ice_candidates'];
-              if (candList is String) {
-                try {
-                  candList = jsonDecode(candList);
-                } catch (_) {
-                  candList = [];
-                }
-              }
-              if (candList is List) {
-                final myRole = widget.isIncoming ? 'receiver' : 'caller';
-                for (var item in candList) {
-                  final unpacked = _unpackCandidate(item);
-                  if (unpacked == null) continue;
-
-                  // Ignore own candidates
-                  if (unpacked['role'] == myRole) continue;
-
-                  final keyStr = jsonEncode(unpacked);
-                  if (_processedCandidates.contains(keyStr)) continue;
-
-                  if (!_remoteDescriptionSet || _peerConnection == null) {
-                    _pendingRemoteCandidates.add(unpacked);
-                  } else {
-                    _processedCandidates.add(keyStr);
-                    try {
-                      final cand = RTCIceCandidate(
-                        unpacked['candidate'],
-                        unpacked['sdpMid'],
-                        unpacked['sdpMLineIndex'],
-                      );
-                      await _peerConnection?.addCandidate(cand);
-                      debugPrint('[NativeWebRTC] Added remote ICE candidate from polling');
-                    } catch (e) {
-                      debugPrint('[NativeWebRTC] Error adding ICE candidate: $e');
-                    }
-                  }
-                }
-              }
-            }
-
             if (status == 'connected' && !_isConnected) {
               if (mounted) {
                 setState(() {
@@ -560,7 +271,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                 });
               }
               _startTimer();
-              _applyAudioSettings();
+              _agoraEngine?.setEnableSpeakerphone(_isSpeakerOn);
             } else if (status == 'rejected') {
               _handleCallEnded('Panggilan Ditolak');
             } else if (status == 'ended') {
@@ -603,46 +314,8 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         return;
       }
 
-      final setupSuccess = await _setupLocalMediaAndPeerConnection();
-      if (!setupSuccess || _peerConnection == null) {
-        _handleCallEnded('Gagal memuat media suara');
-        return;
-      }
-
-      // Retrieve Offer from callData or poll
-      dynamic offerData;
-      if (widget.callData != null && widget.callData!['offer'] != null) {
-        offerData = widget.callData!['offer'];
-      }
-      if (offerData == null) {
-        final res = await http.get(Uri.parse('${ApiConstants.baseUrl}/calls/poll?order_code=${widget.orderCode}'));
-        if (res.statusCode == 200) {
-          final data = jsonDecode(res.body);
-          offerData = data['data']?['active_call']?['offer'];
-        }
-      }
-
-      final offerMap = _parseSdpMap(offerData);
-      if (offerMap != null && !_hasSetRemoteOffer) {
-        _hasSetRemoteOffer = true;
-        final offerSdp = RTCSessionDescription(
-          offerMap['sdp']?.toString(),
-          offerMap['type']?.toString() ?? 'offer',
-        );
-        await _peerConnection!.setRemoteDescription(offerSdp);
-        _remoteDescriptionSet = true;
-        await _flushPendingRemoteCandidates();
-      }
-
-      final answer = await _peerConnection!.createAnswer({
-        'offerToReceiveAudio': true,
-        'offerToReceiveVideo': false,
-      });
-      await _peerConnection!.setLocalDescription(answer);
-
-      final answerSdpStr = jsonEncode({'type': answer.type ?? 'answer', 'sdp': answer.sdp});
-
-      await _flushPendingLocalCandidates();
+      await _setupAgoraEngine();
+      await _joinAgoraChannel();
 
       if (_callId != null) {
         await http.post(
@@ -650,7 +323,6 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'call_id': _callId,
-            'answer': answerSdpStr,
           }),
         );
       }
@@ -662,9 +334,9 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         });
       }
       _startTimer();
-      _applyAudioSettings();
+      _agoraEngine?.setEnableSpeakerphone(_isSpeakerOn);
     } catch (e) {
-      debugPrint('[NativeWebRTC] Answer error: $e');
+      debugPrint('[AgoraVoice] Answer error: $e');
       _handleCallEnded('Gagal menjawab panggilan');
     }
   }
@@ -696,14 +368,9 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       _isMuted = !_isMuted;
     });
     try {
-      if (_localStream != null) {
-        for (var track in _localStream!.getAudioTracks()) {
-          track.enabled = !_isMuted;
-          Helper.setMicrophoneMute(_isMuted, track);
-        }
-      }
+      _agoraEngine?.muteLocalAudioStream(_isMuted);
     } catch (e) {
-      debugPrint('[NativeWebRTC] Toggle mute error: $e');
+      debugPrint('[AgoraVoice] Toggle mute error: $e');
     }
   }
 
@@ -711,7 +378,11 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     setState(() {
       _isSpeakerOn = !_isSpeakerOn;
     });
-    _applyAudioSettings();
+    try {
+      _agoraEngine?.setEnableSpeakerphone(_isSpeakerOn);
+    } catch (e) {
+      debugPrint('[AgoraVoice] Toggle speaker error: $e');
+    }
   }
 
   void _handleCallEnded(String message) {
@@ -720,7 +391,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     _statusTimer?.cancel();
     _durationTimer?.cancel();
 
-    _cleanupWebRTC();
+    _cleanupAgora();
 
     if (mounted) {
       setState(() {
@@ -732,17 +403,13 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     }
   }
 
-  void _cleanupWebRTC() {
+  Future<void> _cleanupAgora() async {
     try {
-      _localStream?.getTracks().forEach((track) => track.stop());
-      _localStream?.dispose();
-      _remoteStream?.dispose();
-      _peerConnection?.close();
-      _peerConnection?.dispose();
+      await _agoraEngine?.leaveChannel();
+      await _agoraEngine?.release();
     } catch (_) {}
-    _localStream = null;
-    _remoteStream = null;
-    _peerConnection = null;
+    _agoraEngine = null;
+    _isAgoraInitialized = false;
   }
 
   String _formatDuration(int seconds) {
@@ -756,7 +423,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     _statusTimer?.cancel();
     _durationTimer?.cancel();
     _pulseController.dispose();
-    _cleanupWebRTC();
+    _cleanupAgora();
     super.dispose();
   }
 
@@ -785,7 +452,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                     Icon(Icons.phone_in_talk_rounded, color: AppTheme.primaryRed, size: 14),
                     SizedBox(width: 6),
                     Text(
-                      'Panggilan Suara Native CicalengkaGO',
+                      'Panggilan Suara In-App CicalengkaGO',
                       style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -917,7 +584,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                               style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                             ),
                             Text(
-                              'Jika suara internet tidak terdengar',
+                              'Jika sinyal internet kurang stabil',
                               style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
                             ),
                           ],
@@ -1002,3 +669,4 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     );
   }
 }
+

@@ -49,5 +49,5 @@ return [
     'locale'      => 'id',
     'currency'    => 'IDR',
     'currency_symbol' => 'Rp',
-    'agora_app_id' => $_ENV['AGORA_APP_ID'] ?? '',
+    'agora_app_id' => $_ENV['AGORA_APP_ID'] ?? 'a34217d291644e47afe172d16c14d17b',
 ];
