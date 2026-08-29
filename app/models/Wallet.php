@@ -12,16 +12,9 @@ class Wallet extends Model
 
     public function getOrCreate(int $userId, string $userType = 'customer'): array
     {
-        $wallet = Database::fetchOne("SELECT * FROM `wallets` WHERE `user_id` = ? AND `user_type` = ? LIMIT 1", [$userId, $userType]);
+        $wallet = $this->firstWhere('user_id', $userId);
         if (!$wallet) {
-            $anyWallet = $this->firstWhere('user_id', $userId);
-            if ($anyWallet && ($anyWallet['user_type'] ?? '') === $userType) {
-                $wallet = $anyWallet;
-            } elseif ($anyWallet && $userType === 'delivery_man' && ($anyWallet['user_type'] ?? '') === 'customer') {
-                Database::update('wallets', ['user_type' => 'delivery_man'], 'id = ?', [$anyWallet['id']]);
-                $anyWallet['user_type'] = 'delivery_man';
-                $wallet = $anyWallet;
-            } else {
+            try {
                 $id = $this->create([
                     'user_id'         => $userId,
                     'user_type'       => $userType,
@@ -30,9 +23,24 @@ class Wallet extends Model
                     'total_withdrawn' => 0.00
                 ]);
                 $wallet = $this->find($id);
+            } catch (\Throwable $e) {
+                $wallet = $this->firstWhere('user_id', $userId);
             }
         }
-        return $wallet;
+
+        if ($wallet && $userType !== 'customer' && ($wallet['user_type'] ?? '') !== $userType) {
+            Database::update('wallets', ['user_type' => $userType], 'id = ?', [$wallet['id']]);
+            $wallet['user_type'] = $userType;
+        }
+
+        return $wallet ?: [
+            'id'              => 0,
+            'user_id'         => $userId,
+            'user_type'       => $userType,
+            'balance'         => 0.00,
+            'total_earned'    => 0.00,
+            'total_withdrawn' => 0.00
+        ];
     }
 
     public function credit(int $userId, float $amount, string $category, string $description, ?string $refId = null, ?string $userType = null): bool
