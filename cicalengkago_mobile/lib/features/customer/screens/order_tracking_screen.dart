@@ -749,7 +749,59 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             const SizedBox(height: 16),
 
             // 2. Driver Profile Summary Card (Without Live GPS)
-            _buildDriverDetailCard(driverAvatar, driverName, vehicleType, vehiclePlate, driverPhone, unreadChats),
+            if (driverName.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: CachedNetworkImage(
+                        imageUrl: ApiConstants.formatImageUrl(driverAvatar),
+                        width: 44,
+                        height: 44,
+                        fit: BoxFit.cover,
+                        errorWidget: (context, url, error) => Container(
+                          width: 44,
+                          height: 44,
+                          color: const Color(0xFFE2E8F0),
+                          child: const Icon(Icons.motorcycle_rounded, color: Color(0xFF64748B), size: 22),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            driverName,
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '$vehicleType ${vehiclePlate.isNotEmpty ? "• $vehiclePlate" : ""}',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDCFCE7),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text('Kurir Mitra', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
+                    ),
+                  ],
+                ),
+              ),
             const SizedBox(height: 16),
 
             // 3. Store & Purchased Items Breakdown
