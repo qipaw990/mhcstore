@@ -26,13 +26,29 @@ class DriverController extends ChangeNotifier {
   Map<String, dynamic>? get driverProfile => _driverProfile;
   List<dynamic> get reviews => _reviews;
 
-  // Derived stats from earnings
-  double get walletBalance => double.tryParse(_earnings?['wallet']?['balance']?.toString() ?? '0') ?? 0.0;
-  int get totalOrders => int.tryParse(_earnings?['wallet']?['total_orders']?.toString() ?? '0') ?? 0;
+  // Derived stats from earnings & dashboard
+  double get walletBalance {
+    final b1 = double.tryParse(_earnings?['wallet_balance']?.toString() ?? '');
+    final b2 = double.tryParse(_earnings?['wallet']?['balance']?.toString() ?? '');
+    return b1 ?? b2 ?? 0.0;
+  }
+
+  int get totalOrders {
+    final t1 = int.tryParse(_earnings?['total_orders']?.toString() ?? '');
+    final t2 = int.tryParse(_earnings?['wallet']?['total_orders']?.toString() ?? '');
+    final t3 = int.tryParse(_earnings?['driver']?['total_orders']?.toString() ?? '');
+    final t4 = int.tryParse(_driverProfile?['total_orders']?.toString() ?? '');
+    final t5 = int.tryParse(_driverProfile?['driver']?['total_orders']?.toString() ?? '');
+    return t1 ?? t2 ?? t3 ?? t4 ?? t5 ?? 0;
+  }
+
   double get driverRating {
-    final rc = int.tryParse(_earnings?['wallet']?['reviews_count']?.toString() ?? '0') ?? 0;
-    if (rc == 0) return 5.0;
-    return double.tryParse(_earnings?['wallet']?['rating']?.toString() ?? '5.0') ?? 5.0;
+    final rc = int.tryParse(_earnings?['reviews_count']?.toString() ?? _earnings?['wallet']?['reviews_count']?.toString() ?? '0') ?? 0;
+    if (rc == 0 && _reviews.isEmpty) return 5.0;
+    final r1 = double.tryParse(_earnings?['rating']?.toString() ?? '');
+    final r2 = double.tryParse(_earnings?['wallet']?['rating']?.toString() ?? '');
+    final r3 = double.tryParse(_driverProfile?['rating']?.toString() ?? '');
+    return r1 ?? r2 ?? r3 ?? 5.0;
   }
 
   void toggleOnline(bool status) {

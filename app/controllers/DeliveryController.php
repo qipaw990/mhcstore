@@ -133,17 +133,30 @@ class DeliveryController extends Controller
         // Auto-credit driver commission for delivered orders that haven't been credited yet
         $wallet = $this->ensureDriverDeliveredOrdersCredited($dm);
 
-        // Calculate REAL delivered orders count strictly from orders table
+        // Calculate REAL delivered orders count accurately from orders table, wallet transactions, and driver profile
         $realDeliveredCount = (int)Database::fetchColumn(
-            "SELECT COUNT(*) FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` = 'delivered'",
-            [$dm['id']]
+            "SELECT COUNT(DISTINCT id) FROM `orders` WHERE (`delivery_man_id` = ? OR `delivery_man_id` = ?) AND `order_status` = 'delivered'",
+            [(int)$dm['id'], (int)$dm['user_id']]
         );
+        if ($realDeliveredCount === 0) {
+            $walletOrdersCount = (int)Database::fetchColumn(
+                "SELECT COUNT(DISTINCT reference_id) FROM `wallet_transactions` WHERE `wallet_id` = ? AND `category` = 'order_earning'",
+                [(int)$wallet['id']]
+            );
+            $reviewsCount = (int)Database::fetchColumn(
+                "SELECT COUNT(*) FROM `reviews` WHERE `delivery_man_id` = ?",
+                [(int)$dm['id']]
+            );
+            $realDeliveredCount = max($walletOrdersCount, $reviewsCount, (int)($dm['total_orders'] ?? 0));
+        }
         Database::update('delivery_men', ['total_orders' => $realDeliveredCount], 'id = ?', [$dm['id']]);
+        $dm['total_orders'] = $realDeliveredCount;
 
         // Recalculate driver rating & fetch driver reviews
         $reviewModel = new \App\Models\Review();
         $reviewModel->recalculateDmRating((int)$dm['id']);
         $dm = $this->dmModel->find($dm['id']);
+        $dm['total_orders'] = $realDeliveredCount;
         $reviews = $reviewModel->getDmReviews((int)$dm['id'], 20);
 
         if ($this->isJsonRequest()) {
@@ -252,12 +265,24 @@ class DeliveryController extends Controller
         // Auto-credit any pending delivered orders
         $wallet = $this->ensureDriverDeliveredOrdersCredited($dm);
 
-        // Recalculate REAL delivered count strictly from orders table
+        // Recalculate REAL delivered count accurately
         $realDeliveredCount = (int)Database::fetchColumn(
-            "SELECT COUNT(*) FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` = 'delivered'",
-            [$dm['id']]
+            "SELECT COUNT(DISTINCT id) FROM `orders` WHERE (`delivery_man_id` = ? OR `delivery_man_id` = ?) AND `order_status` = 'delivered'",
+            [(int)$dm['id'], (int)$dm['user_id']]
         );
+        if ($realDeliveredCount === 0) {
+            $walletOrdersCount = (int)Database::fetchColumn(
+                "SELECT COUNT(DISTINCT reference_id) FROM `wallet_transactions` WHERE `wallet_id` = ? AND `category` = 'order_earning'",
+                [(int)$wallet['id']]
+            );
+            $reviewsCount = (int)Database::fetchColumn(
+                "SELECT COUNT(*) FROM `reviews` WHERE `delivery_man_id` = ?",
+                [(int)$dm['id']]
+            );
+            $realDeliveredCount = max($walletOrdersCount, $reviewsCount, (int)($dm['total_orders'] ?? 0));
+        }
         Database::update('delivery_men', ['total_orders' => $realDeliveredCount], 'id = ?', [$dm['id']]);
+        $dm['total_orders'] = $realDeliveredCount;
 
         // Unread chats
         $unreadChats = 0;
@@ -295,6 +320,73 @@ class DeliveryController extends Controller
                 'current_order_id' => $dm['current_order_id']
             ]
         ]);
+    }
+
+    public function earnings(): void
+    {
+        $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Silakan login terlebih dahulu', null, 401);
+            return;
+        }
+
+        $dm = $this->dmModel->findByUserId($userId);
+        if (!$dm) {
+            $this->errorResponse('Driver tidak ditemukan');
+            return;
+        }
+
+        $wallet = $this->ensureDriverDeliveredOrdersCredited($dm);
+        $realDeliveredCount = (int)Database::fetchColumn(
+            "SELECT COUNT(DISTINCT id) FROM `orders` WHERE (`delivery_man_id` = ? OR `delivery_man_id` = ?) AND `order_status` = 'delivered'",
+            [(int)$dm['id'], (int)$dm['user_id']]
+        );
+        if ($realDeliveredCount === 0) {
+            $walletOrdersCount = (int)Database::fetchColumn(
+                "SELECT COUNT(DISTINCT reference_id) FROM `wallet_transactions` WHERE `wallet_id` = ? AND `category` = 'order_earning'",
+                [(int)$wallet['id']]
+            );
+            $reviewsCount = (int)Database::fetchColumn(
+                "SELECT COUNT(*) FROM `reviews` WHERE `delivery_man_id` = ?",
+                [(int)$dm['id']]
+            );
+            $realDeliveredCount = max($walletOrdersCount, $reviewsCount, (int)($dm['total_orders'] ?? 0));
+        }
+
+        Database::update('delivery_men', ['total_orders' => $realDeliveredCount], 'id = ?', [$dm['id']]);
+        $dm['total_orders'] = $realDeliveredCount;
+
+        $reviewModel = new \App\Models\Review();
+        $reviews = $reviewModel->getDmReviews((int)$dm['id'], 20);
+
+        // Fetch recent transactions
+        $transactions = Database::query(
+            "SELECT * FROM `wallet_transactions` WHERE `wallet_id` = ? ORDER BY `id` DESC LIMIT 20",
+            [(int)$wallet['id']]
+        );
+
+        $wallet['total_orders'] = $realDeliveredCount;
+
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Data pendapatan driver berhasil diambil', [
+                'wallet'         => $wallet,
+                'wallet_balance' => (float)($wallet['balance'] ?? 0),
+                'total_orders'   => $realDeliveredCount,
+                'driver'         => $dm,
+                'reviews'        => $reviews,
+                'transactions'   => $transactions,
+            ]);
+            return;
+        }
+
+        $this->view('delivery.earnings', [
+            'title'        => 'Pendapatan Driver',
+            'dm'           => $dm,
+            'wallet'       => $wallet,
+            'reviews'      => $reviews,
+            'transactions' => $transactions,
+            'active_tab'   => 'earnings'
+        ], 'delivery_layout');
     }
 
     public function toggleOnline(): void
