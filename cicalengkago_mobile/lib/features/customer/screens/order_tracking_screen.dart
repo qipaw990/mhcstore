@@ -781,7 +781,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(24),
-                      child: (driverAvatar.isNotEmpty)
+                      child: (driverAvatar != null && driverAvatar.isNotEmpty)
                           ? CachedNetworkImage(
                               imageUrl: ApiConstants.formatImageUrl(driverAvatar),
                               width: 44,
@@ -1415,7 +1415,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(24),
-                            child: (driverAvatar.isNotEmpty)
+                            child: (driverAvatar != null && driverAvatar.isNotEmpty)
                                 ? CachedNetworkImage(
                                     imageUrl: ApiConstants.formatImageUrl(driverAvatar),
                                     width: 46,
