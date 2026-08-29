@@ -465,19 +465,27 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
                   if (isActive)
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.inkBlack,
+                        backgroundColor: const Color(0xFF16A34A),
                         foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        elevation: 1,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       ),
                       onPressed: () => _openTracking(context, orderCode),
-                      icon: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(color: Color(0xFF22C55E), shape: BoxShape.circle),
+                      icon: ClipOval(
+                        child: Image.asset(
+                          'assets/images/driver_bogo_marker.png',
+                          width: 18,
+                          height: 18,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                          ),
+                        ),
                       ),
-                      label: const Text('Lacak Live', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      label: const Text('Lacak Live Kurir', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                     )
                   else if (isUnpaid)
                     ElevatedButton(

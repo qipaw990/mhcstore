@@ -231,10 +231,26 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Icon(
-                          Icons.location_on_rounded,
-                          color: AppTheme.primaryRed,
-                          size: 44,
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(color: Color(0x44DC2626), blurRadius: 10, spreadRadius: 2),
+                            ],
+                          ),
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/images/customer_home_marker.png',
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => const Icon(
+                                Icons.location_on_rounded,
+                                color: AppTheme.primaryRed,
+                                size: 44,
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
