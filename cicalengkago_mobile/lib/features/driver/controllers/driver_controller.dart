@@ -147,10 +147,7 @@ class DriverController extends ChangeNotifier {
             }
             _earnings = updated;
           } else {
-            _earnings = {
-              'wallet': data['wallet'],
-              'driver': data['driver'],
-            };
+            fetchEarnings(silent: true);
           }
         } else if (data['wallet_balance'] != null) {
           if (_earnings != null && _earnings!['wallet'] is Map) {
@@ -163,13 +160,7 @@ class DriverController extends ChangeNotifier {
             updated['wallet'] = wMap;
             _earnings = updated;
           } else {
-            _earnings = {
-              'wallet': {
-                'balance': data['wallet_balance'],
-                'total_orders': data['total_orders'] ?? 0,
-              },
-              'driver': data['driver'] ?? _driverProfile,
-            };
+            fetchEarnings(silent: true);
           }
         }
 
@@ -202,9 +193,11 @@ class DriverController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fetchEarnings() async {
-    _isLoading = true;
-    notifyListeners();
+  Future<void> fetchEarnings({bool silent = false}) async {
+    if (!silent) {
+      _isLoading = true;
+      notifyListeners();
+    }
 
     try {
       final res = await ApiService.get(ApiConstants.driverEarnings);
@@ -216,7 +209,9 @@ class DriverController extends ChangeNotifier {
       }
     } catch (_) {}
 
-    _isLoading = false;
+    if (!silent) {
+      _isLoading = false;
+    }
     notifyListeners();
   }
 

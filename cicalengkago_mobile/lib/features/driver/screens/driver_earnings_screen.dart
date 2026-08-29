@@ -42,7 +42,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
     final transactions = (earnings?['transactions'] as List<dynamic>?) ?? [];
     final deliveredOrders = (earnings?['delivered_orders'] as List<dynamic>?) ?? ctrl.deliveredOrders;
     final reviews = ctrl.reviews;
-    final commissionCount = deliveredOrders.isNotEmpty ? deliveredOrders.length : transactions.length;
+    final commissionCount = transactions.isNotEmpty ? transactions.length : deliveredOrders.length;
 
     if (ctrl.isLoading && earnings == null) {
       return const Center(child: CircularProgressIndicator(color: AppTheme.primaryRed));
@@ -120,7 +120,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
                 controller: _tabController,
                 children: [
                   _buildWithdrawTab(withdrawRequests),
-                  _buildCommissionTab(deliveredOrders, transactions),
+                  _buildCommissionTab(transactions, deliveredOrders),
                 ],
               ),
             ),
@@ -410,133 +410,21 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
     );
   }
 
-  Widget _buildCommissionTab(List<dynamic> deliveredOrders, List<dynamic> transactions) {
-    if (deliveredOrders.isNotEmpty) {
-      return ListView.separated(
-        padding: const EdgeInsets.only(top: 12, bottom: 16),
-        itemCount: deliveredOrders.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 8),
-        itemBuilder: (_, i) {
-          final ord = deliveredOrders[i] is Map<String, dynamic>
-              ? deliveredOrders[i] as Map<String, dynamic>
-              : Map<String, dynamic>.from(deliveredOrders[i] as Map);
-          return _buildDeliveredOrderCard(ord);
-        },
-      );
-    }
-
-    if (transactions.isEmpty) {
+  Widget _buildCommissionTab(List<dynamic> transactions, List<dynamic> deliveredOrders) {
+    final list = transactions.isNotEmpty ? transactions : deliveredOrders;
+    if (list.isEmpty) {
       return _emptyState(Icons.two_wheeler_rounded, 'Belum Ada Komisi', 'Selesaikan orderan pertama untuk mengumpulkan saldo.');
     }
     return ListView.separated(
       padding: const EdgeInsets.only(top: 12, bottom: 16),
-      itemCount: transactions.length,
+      itemCount: list.length,
       separatorBuilder: (context, index) => const SizedBox(height: 8),
       itemBuilder: (_, i) {
-        final tx = transactions[i] is Map<String, dynamic>
-            ? transactions[i] as Map<String, dynamic>
-            : Map<String, dynamic>.from(transactions[i] as Map);
-        return _buildCommissionCard(tx);
+        final item = list[i] is Map<String, dynamic>
+            ? list[i] as Map<String, dynamic>
+            : Map<String, dynamic>.from(list[i] as Map);
+        return _buildCommissionCard(item);
       },
-    );
-  }
-
-  Widget _buildDeliveredOrderCard(Map<String, dynamic> ord) {
-    final orderCode = ord['order_code']?.toString() ?? ord['id']?.toString() ?? '-';
-    final amount = double.tryParse(ord['delivery_charge']?.toString() ?? '0') ?? 0;
-    final storeName = ord['store_name']?.toString() ?? 'Toko Mitra';
-    final customerName = ord['customer_name']?.toString() ?? 'Pelanggan';
-    final dateStr = ord['delivered_at'] ?? ord['created_at'] ?? '';
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: const BoxDecoration(
-              color: Color(0xFFD1FAE5),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.two_wheeler_rounded,
-              color: Color(0xFF059669),
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      '#$orderCode',
-                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDCFCE7),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        'Selesai',
-                        style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '$storeName → $customerName',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (dateStr.toString().isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    dateStr.toString(),
-                    style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '+${CurrencyFormatter.formatRupiah(amount)}',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF059669),
-                ),
-              ),
-              const Text(
-                'Komisi Ongkir',
-                style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8)),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 
