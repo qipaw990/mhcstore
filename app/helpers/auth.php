@@ -5,13 +5,16 @@
 
 function auth_user(): ?array
 {
-    if (!empty($_SESSION['user'])) {
-        return $_SESSION['user'];
-    }
-    $uid = (int)($_REQUEST['user_id'] ?? $_GET['user_id'] ?? $_POST['user_id'] ?? 0);
+    $uid = auth_id();
     if ($uid > 0) {
         $u = \App\Core\Database::fetchOne("SELECT id, name, email, phone, role, avatar FROM users WHERE id = ? LIMIT 1", [$uid]);
-        if ($u) return $u;
+        if ($u) {
+            $_SESSION['user'] = array_merge($_SESSION['user'] ?? [], $u);
+            return $_SESSION['user'];
+        }
+    }
+    if (!empty($_SESSION['user'])) {
+        return $_SESSION['user'];
     }
     return null;
 }

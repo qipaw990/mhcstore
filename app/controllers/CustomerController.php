@@ -573,12 +573,15 @@ class CustomerController extends Controller
             'phone' => $phone
         ]);
 
-        $_SESSION['user']['name'] = $name;
-        $_SESSION['user']['phone'] = $phone;
+        $freshUser = (new \App\Models\User())->find($userId);
+        if (!empty($freshUser)) {
+            unset($freshUser['password']);
+            $_SESSION['user'] = array_merge($_SESSION['user'] ?? [], $freshUser);
+        }
 
         if ($this->isJsonRequest()) {
             $this->successResponse('Profil berhasil diperbarui!', [
-                'user' => [
+                'user' => $freshUser ?? [
                     'id'    => $userId,
                     'name'  => $name,
                     'phone' => $phone,
