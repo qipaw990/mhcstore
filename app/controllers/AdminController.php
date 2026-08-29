@@ -1899,4 +1899,147 @@ class AdminController extends Controller
         readfile($file);
         exit;
     }
+
+    // =========================================================================
+    // IN-HOUSE AUTOMATED PAYMENT SETUP & MONITORING
+    // =========================================================================
+
+    public function paymentMethods(): void
+    {
+        \App\Models\PaymentInvoice::ensureTable();
+
+        $banks = \App\Models\PaymentInvoice::getAvailableBanks();
+        
+        $qrisSettings = [
+            'merchant_name'  => \App\Models\BusinessSetting::get('qris_merchant_name', 'CICALENGKAGO'),
+            'city'           => \App\Models\BusinessSetting::get('qris_city', 'KAB BANDUNG'),
+            'nmid'           => \App\Models\BusinessSetting::get('qris_nmid', 'ID1024328492048'),
+            'static_payload' => \App\Models\BusinessSetting::get('qris_static_payload', '00020101021226670014ID.GO.CICAGO.WWW01189360091800000000000215ID10243284920480303UMI51440014ID.CO.QRIS.WWW0215ID10243284920480303UMI5204581253033605802ID5914CICALENGKAGO6010KAB BANDUNG610540395'),
+        ];
+
+        $invoices = Database::query("
+            SELECT pi.*, u.name as user_name, u.phone as user_phone
+            FROM `payment_invoices` pi
+            LEFT JOIN `users` u ON pi.user_id = u.id
+            ORDER BY pi.id DESC
+            LIMIT 100
+        ");
+
+        $pendingCount = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM `payment_invoices` WHERE `status` = 'pending'")['c'] ?? 0);
+
+        $this->view('admin.payment_methods', [
+            'title'         => 'Setup Pembayaran Mandiri & Bank - CicalengkaGO Admin',
+            'active_tab'    => 'payment_methods',
+            'banks'         => $banks,
+            'qrisSettings'  => $qrisSettings,
+            'invoices'      => $invoices,
+            'pendingCount'  => $pendingCount
+        ], 'admin_layout');
+    }
+
+    public function savePaymentBank(): void
+    {
+        $code    = strtoupper(trim($this->getPost('code') ?? ''));
+        $name    = trim($this->getPost('name') ?? '');
+        $accNum  = trim($this->getPost('account_number') ?? '');
+        $accName = trim($this->getPost('account_name') ?? '');
+        $type    = trim($this->getPost('type') ?? 'bank');
+        $bankId  = trim($this->getPost('bank_id') ?? '');
+
+        if (empty($code) || empty($name) || empty($accNum) || empty($accName)) {
+            $_SESSION['flash_error'] = 'Semua field wajib diisi!';
+            $this->redirect('admin/payment-methods');
+            return;
+        }
+
+        $banks = \App\Models\PaymentInvoice::getAvailableBanks();
+        $updated = false;
+
+        foreach ($banks as &$b) {
+            if ($b['code'] === $code || (!empty($bankId) && $b['id'] === $bankId)) {
+                $b['code']           = $code;
+                $b['name']           = $name;
+                $b['account_number'] = $accNum;
+                $b['account_name']   = $accName;
+                $b['type']           = $type;
+                $updated = true;
+                break;
+            }
+        }
+        unset($b);
+
+        if (!$updated) {
+            $banks[] = [
+                'id'             => $code,
+                'name'           => $name,
+                'code'           => $code,
+                'account_number' => $accNum,
+                'account_name'   => $accName,
+                'type'           => $type,
+                'icon'           => 'bank.png',
+                'description'    => "Transfer ke rekening {$name} (Otomatis dicek)"
+            ];
+        }
+
+        \App\Models\BusinessSetting::set('inhouse_banks', json_encode($banks));
+
+        $_SESSION['flash_success'] = "Rekening {$name} berhasil disimpan!";
+        $this->redirect('admin/payment-methods');
+    }
+
+    public function savePaymentQris(): void
+    {
+        $merchant = trim($this->getPost('qris_merchant_name') ?? 'CICALENGKAGO');
+        $city     = trim($this->getPost('qris_city') ?? 'KAB BANDUNG');
+        $nmid     = trim($this->getPost('qris_nmid') ?? 'ID1024328492048');
+        $payload  = trim($this->getPost('qris_static_payload') ?? '');
+
+        \App\Models\BusinessSetting::set('qris_merchant_name', $merchant);
+        \App\Models\BusinessSetting::set('qris_city', $city);
+        \App\Models\BusinessSetting::set('qris_nmid', $nmid);
+        if (!empty($payload)) {
+            \App\Models\BusinessSetting::set('qris_static_payload', $payload);
+        }
+
+        $_SESSION['flash_success'] = "Pengaturan QRIS Dinamis berhasil diperbarui!";
+        $this->redirect('admin/payment-methods');
+    }
+
+    public function approvePaymentInvoice(): void
+    {
+        $code = trim($this->getPost('invoice_code') ?? '');
+        if (empty($code)) {
+            $_SESSION['flash_error'] = 'Invoice code tidak valid.';
+            $this->redirect('admin/payment-methods');
+            return;
+        }
+
+        $model = new \App\Models\PaymentInvoice();
+        $ok = $model->approveInvoice($code, 'Admin Manual Approval');
+
+        if ($ok) {
+            $_SESSION['flash_success'] = "Invoice {$code} berhasil dikonfirmasi dan saldo/pesanan telah diproses!";
+        } else {
+            $_SESSION['flash_error'] = "Gagal memproses invoice {$code}.";
+        }
+        $this->redirect('admin/payment-methods');
+    }
+
+    public function testPaymentWebhook(): void
+    {
+        $amount = (float)($this->getPost('amount') ?? 0);
+        $sender = trim($this->getPost('sender') ?? 'Admin Test');
+        $text   = trim($this->getPost('text') ?? '');
+
+        $model = new \App\Models\PaymentInvoice();
+        $res = $model->processWebhookData($amount, null, $sender, $text);
+
+        if ($res['success']) {
+            $_SESSION['flash_success'] = $res['message'];
+        } else {
+            $_SESSION['flash_error'] = $res['message'];
+        }
+
+        $this->redirect('admin/payment-methods');
+    }
 }

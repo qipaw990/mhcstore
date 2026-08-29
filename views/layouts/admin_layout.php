@@ -120,6 +120,14 @@ $user = auth_user();
                     </div>
                 </a>
             </li>
+            <li>
+                <a href="<?= $baseUrl ?>/admin/payment-methods" class="menu-link <?= ($active_tab ?? '') === 'payment_methods' ? 'active' : '' ?>">
+                    <div class="menu-link-inner">
+                        <i class="bi bi-bank2"></i>
+                        <span>Pembayaran Bank & QRIS</span>
+                    </div>
+                </a>
+            </li>
 
             <!-- Group 4: Users & Settings -->
             <li class="sidebar-group-title">Sistem & Pengaturan</li>

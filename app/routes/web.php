@@ -218,6 +218,13 @@ Router::group(['prefix' => '/admin', 'middleware' => ['AdminMiddleware']], funct
     Router::post('/topups/manual-approve', [AdminController::class, 'manualApproveTopup']);
     Router::post('/topups/manual-cancel', [AdminController::class, 'manualCancelTopup']);
 
+    // In-House Automated Payment & Bank Setup
+    Router::get('/payment-methods', [AdminController::class, 'paymentMethods']);
+    Router::post('/payment-methods/save-bank', [AdminController::class, 'savePaymentBank']);
+    Router::post('/payment-methods/save-qris', [AdminController::class, 'savePaymentQris']);
+    Router::post('/payment-invoices/approve', [AdminController::class, 'approvePaymentInvoice']);
+    Router::post('/payment-methods/test-webhook', [AdminController::class, 'testPaymentWebhook']);
+
     // WhatsApp Gateway Management
     Router::get('/whatsapp', [AdminController::class, 'whatsapp']);
     Router::get('/whatsapp/status', [AdminController::class, 'waStatus']);

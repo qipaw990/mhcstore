@@ -21,6 +21,14 @@ class PaymentInvoice extends Model
      */
     public static function getAvailableBanks(): array
     {
+        $custom = \App\Models\BusinessSetting::get('inhouse_banks');
+        if ($custom) {
+            $decoded = json_decode($custom, true);
+            if (is_array($decoded) && !empty($decoded)) {
+                return $decoded;
+            }
+        }
+
         return [
             [
                 'id'             => 'QRIS',
