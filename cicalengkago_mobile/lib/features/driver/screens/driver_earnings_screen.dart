@@ -48,87 +48,90 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
       return const Center(child: CircularProgressIndicator(color: AppTheme.primaryRed));
     }
 
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                // Driver wallet balance card
-                _buildWalletCard(balance, totalEarned, totalWithdrawn, context, ctrl),
-                const SizedBox(height: 12),
-
-                // Performance metrics
-                _buildPerformanceRow(ctrl),
-                const SizedBox(height: 12),
-
-                // Tabs header
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: TabBar(
-                    controller: _tabController,
-                    labelColor: AppTheme.primaryRed,
-                    unselectedLabelColor: const Color(0xFF64748B),
-                    indicator: BoxDecoration(
-                      color: const Color(0xFFFEE2E2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    dividerColor: Colors.transparent,
-                    padding: const EdgeInsets.all(4),
-                    labelStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
-                    tabs: [
-                      Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.account_balance_wallet_outlined, size: 14),
-                            const SizedBox(width: 4),
-                            Text('Penarikan (${withdrawRequests.length})'),
-                          ],
-                        ),
-                      ),
-                      Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.two_wheeler_rounded, size: 14),
-                            const SizedBox(width: 4),
-                            Text('Komisi ($commissionCount)'),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // Tab content
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: SizedBox(
-              height: 500,
-              child: TabBarView(
-                controller: _tabController,
+    return Container(
+      color: const Color(0xFF090D16),
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
                 children: [
-                  _buildWithdrawTab(withdrawRequests),
-                  _buildCommissionTab(transactions, deliveredOrders),
+                  // Driver wallet balance card
+                  _buildWalletCard(balance, totalEarned, totalWithdrawn, context, ctrl),
+                  const SizedBox(height: 12),
+
+                  // Performance metrics
+                  _buildPerformanceRow(ctrl),
+                  const SizedBox(height: 12),
+
+                  // Tabs header
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFF1E293B)),
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      labelColor: const Color(0xFFEF4444),
+                      unselectedLabelColor: const Color(0xFF94A3B8),
+                      indicator: BoxDecoration(
+                        color: const Color(0xFF450A0A),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      dividerColor: Colors.transparent,
+                      padding: const EdgeInsets.all(4),
+                      labelStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                      tabs: [
+                        Tab(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.account_balance_wallet_outlined, size: 14),
+                              const SizedBox(width: 4),
+                              Text('Penarikan (${withdrawRequests.length})'),
+                            ],
+                          ),
+                        ),
+                        Tab(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.two_wheeler_rounded, size: 14),
+                              const SizedBox(width: 4),
+                              Text('Komisi ($commissionCount)'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
-        ),
 
-        const SliverToBoxAdapter(child: SizedBox(height: 40)),
-      ],
+          // Tab content
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(
+                height: 500,
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildWithdrawTab(withdrawRequests),
+                    _buildCommissionTab(transactions, deliveredOrders),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          const SliverToBoxAdapter(child: SizedBox(height: 40)),
+        ],
+      ),
     );
   }
 
@@ -137,13 +140,14 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF262626), Color(0xFF000000)],
+          colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8)),
+        border: Border.all(color: const Color(0xFF334155)),
+        boxShadow: const [
+          BoxShadow(color: Colors.black45, blurRadius: 20, offset: Offset(0, 8)),
         ],
       ),
       child: Column(
@@ -158,10 +162,10 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Text('DOMPET MITRA DRIVER', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                    child: const Text('DOMPET MITRA DRIVER', style: TextStyle(color: Color(0xFFFCA5A5), fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -174,7 +178,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: Colors.white.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 22),
@@ -191,13 +195,14 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
                 child: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
+                    color: Colors.black.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Total Pendapatan', style: TextStyle(color: Colors.white60, fontSize: 10)),
+                      const Text('Total Pendapatan', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10)),
                       Text(CurrencyFormatter.formatRupiah(totalEarned), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
                   ),
@@ -208,14 +213,15 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
                 child: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
+                    color: Colors.black.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Total Ditarik', style: TextStyle(color: Colors.white60, fontSize: 10)),
-                      Text(CurrencyFormatter.formatRupiah(totalWithdrawn), style: const TextStyle(color: Colors.amber, fontSize: 12, fontWeight: FontWeight.bold)),
+                      const Text('Total Ditarik', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10)),
+                      Text(CurrencyFormatter.formatRupiah(totalWithdrawn), style: const TextStyle(color: Color(0xFFFBBF24), fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -224,7 +230,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
           ),
 
           const SizedBox(height: 14),
-          const Divider(color: Colors.white24, height: 1),
+          const Divider(color: Color(0xFF334155), height: 1),
           const SizedBox(height: 12),
 
           GestureDetector(
@@ -233,15 +239,15 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 11),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: const Color(0xFFEF4444),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.arrow_upward_rounded, color: AppTheme.primaryRed, size: 16),
+                  Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 16),
                   SizedBox(width: 8),
-                  Text('Tarik Dana Komisi', style: TextStyle(color: AppTheme.primaryRed, fontSize: 13, fontWeight: FontWeight.bold)),
+                  Text('Tarik Dana Komisi', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -255,11 +261,11 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
     return Row(
       children: [
         Expanded(
-          child: _metricCard('100% Bersih', 'Komisi Ongkir Utuh', const Color(0xFF059669)),
+          child: _metricCard('100% Bersih', 'Komisi Ongkir Utuh', const Color(0xFF34D399)),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: _metricCard('Gratis (Rp 0)', 'Biaya Penarikan', const Color(0xFF2563EB)),
+          child: _metricCard('Gratis (Rp 0)', 'Biaya Penarikan', const Color(0xFF60A5FA)),
         ),
       ],
     );
@@ -269,15 +275,15 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: const Color(0xFF1E293B)),
       ),
       child: Column(
         children: [
           Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color)),
           const SizedBox(height: 2),
-          Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+          Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
         ],
       ),
     );
@@ -304,15 +310,15 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
     IconData icon;
 
     if (status == 'approved') {
-      color = const Color(0xFF059669);
+      color = const Color(0xFF34D399);
       label = 'Berhasil Ditransfer';
       icon = Icons.check_circle_rounded;
     } else if (status == 'rejected') {
-      color = AppTheme.primaryRed;
+      color = const Color(0xFFF87171);
       label = 'Ditolak';
       icon = Icons.cancel_rounded;
     } else {
-      color = const Color(0xFFD97706);
+      color = const Color(0xFFFBBF24);
       label = 'Menunggu Transfer';
       icon = Icons.hourglass_empty_rounded;
     }
@@ -320,26 +326,26 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        border: Border.all(color: const Color(0xFF1E293B)),
       ),
       child: Row(
         children: [
           Container(
             width: 42,
             height: 42,
-            decoration: const BoxDecoration(color: Color(0xFFFEE2E2), shape: BoxShape.circle),
-            child: const Icon(Icons.account_balance_rounded, color: AppTheme.primaryRed, size: 20),
+            decoration: const BoxDecoration(color: Color(0xFF450A0A), shape: BoxShape.circle),
+            child: const Icon(Icons.account_balance_rounded, color: Color(0xFFEF4444), size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(wd['bank_name'] ?? 'Bank', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                Text(wd['bank_name'] ?? 'Bank', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
                 Text('${wd['account_number']} (${wd['account_holder']})',
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis),
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)), overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
@@ -350,7 +356,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
               Container(
                 margin: const EdgeInsets.only(top: 3),
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
                 child: Row(
                   children: [
                     Icon(icon, color: color, size: 10),
@@ -394,9 +400,9 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: const Color(0xFF1E293B)),
       ),
       child: Row(
         children: [
@@ -404,12 +410,12 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: isCredit ? const Color(0xFFD1FAE5) : const Color(0xFFFEE2E2),
+              color: isCredit ? const Color(0xFF064E3B) : const Color(0xFF450A0A),
               shape: BoxShape.circle,
             ),
             child: Icon(
               isCredit ? Icons.two_wheeler_rounded : Icons.arrow_upward_rounded,
-              color: isCredit ? const Color(0xFF059669) : AppTheme.primaryRed,
+              color: isCredit ? const Color(0xFF34D399) : const Color(0xFFF87171),
               size: 20,
             ),
           ),
@@ -420,20 +426,20 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
               children: [
                 Text(
                   orderCode != null ? '#$orderCode' : (tx['description'] ?? 'Komisi Pengantaran'),
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 if (storeName != null || customerName != null) ...[
                   const SizedBox(height: 2),
                   Text(
                     '${storeName ?? 'Toko'} → ${customerName ?? 'Pelanggan'}',
-                    style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                    style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ] else if (tx['created_at'] != null) ...[
                   const SizedBox(height: 2),
                   Text(
                     tx['created_at'].toString(),
-                    style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
+                    style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),
                   ),
                 ],
               ],
@@ -444,7 +450,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: isCredit ? const Color(0xFF059669) : AppTheme.primaryRed,
+              color: isCredit ? const Color(0xFF34D399) : const Color(0xFFF87171),
             ),
           ),
         ],
@@ -470,27 +476,34 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
-              color: Colors.white,
+              color: Color(0xFF0F172A),
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              border: Border(top: BorderSide(color: Color(0xFF1E293B))),
             ),
             child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(2)))),
+                  Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: const Color(0xFF334155), borderRadius: BorderRadius.circular(2)))),
                   const SizedBox(height: 16),
-                  const Text('Tarik Dana Driver', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  const Text('Tarik Dana Driver', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 4),
-                  Text('Saldo: ${CurrencyFormatter.formatRupiah(balance)}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                  Text('Saldo: ${CurrencyFormatter.formatRupiah(balance)}', style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
                   const SizedBox(height: 16),
 
                   // Bank select
                   DropdownButtonFormField<String>(
                     initialValue: selectedBank,
+                    dropdownColor: const Color(0xFF1E293B),
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
                     decoration: InputDecoration(
                       labelText: 'Tujuan Rekening / E-Wallet',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                      filled: true,
+                      fillColor: const Color(0xFF1E293B),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
                     ),
                     items: banks.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
                     onChanged: (v) => setModal(() => selectedBank = v ?? banks[0]),
@@ -499,19 +512,28 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
 
                   TextField(
                     controller: accCtrl,
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
                     decoration: InputDecoration(
-                      labelText: 'Nomor Rekening / No. HP Akun',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      labelText: 'Nomor Rekening / HP E-Wallet',
+                      labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                      filled: true,
+                      fillColor: const Color(0xFF1E293B),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
                     ),
-                    keyboardType: TextInputType.phone,
                   ),
                   const SizedBox(height: 12),
 
                   TextField(
                     controller: holderCtrl,
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
                     decoration: InputDecoration(
-                      labelText: 'Nama Pemilik Akun / Rekening',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      labelText: 'Nama Pemilik Rekening',
+                      labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                      filled: true,
+                      fillColor: const Color(0xFF1E293B),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -519,75 +541,61 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
                   TextField(
                     controller: amountCtrl,
                     keyboardType: TextInputType.number,
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
                     decoration: InputDecoration(
                       labelText: 'Nominal Penarikan (Rp)',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                      filled: true,
+                      fillColor: const Color(0xFF1E293B),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
                       suffixIcon: TextButton(
-                        onPressed: () => amountCtrl.text = balance.toStringAsFixed(0),
-                        child: const Text('Semua', style: TextStyle(color: AppTheme.primaryRed)),
+                        onPressed: () => amountCtrl.text = balance.toInt().toString(),
+                        child: const Text('SEMUA', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold, fontSize: 11)),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD1FAE5),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.shield_rounded, color: Color(0xFF059669), size: 16),
-                        SizedBox(width: 8),
-                        Text('Biaya transfer Rp 0 (Gratis). Diproses segera.', style: TextStyle(fontSize: 11, color: Color(0xFF059669))),
-                      ],
-                    ),
-                  ),
                   const SizedBox(height: 20),
+
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryRed,
+                        backgroundColor: const Color(0xFFEF4444),
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: () async {
-                        final acc = accCtrl.text.trim();
-                        final holder = holderCtrl.text.trim();
-                        final amount = double.tryParse(amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-
-                        if (acc.isEmpty || holder.isEmpty || amount < 10000) {
+                        final amt = double.tryParse(amountCtrl.text.trim()) ?? 0;
+                        if (amt < 10000) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Lengkapi semua field. Minimal Rp 10.000')),
+                            const SnackBar(content: Text('Minimal penarikan adalah Rp 10.000')),
                           );
                           return;
                         }
-                        if (amount > balance) {
+                        if (amt > balance) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Nominal melebihi saldo tersedia!')),
+                            const SnackBar(content: Text('Saldo dompet tidak mencukupi')),
                           );
                           return;
                         }
-
                         Navigator.pop(ctx);
                         final ok = await ctrl.submitWithdraw(
+                          amount: amt,
                           bankName: selectedBank,
-                          accountNumber: acc,
-                          accountHolder: holder,
-                          amount: amount,
+                          accountNumber: accCtrl.text.trim(),
+                          accountHolder: holderCtrl.text.trim(),
                         );
-
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(ok ? '✅ Pengajuan penarikan berhasil!' : 'Gagal mengajukan penarikan.'),
+                              content: Text(ok ? 'Permintaan penarikan berhasil dikirim!' : 'Gagal mengajukan penarikan'),
                               backgroundColor: ok ? Colors.green : Colors.red,
                             ),
                           );
                         }
                       },
-                      child: const Text('Ajukan Penarikan', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                      child: const Text('Kirim Pengajuan Penarikan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
                     ),
                   ),
                 ],
@@ -602,25 +610,26 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
   Widget _emptyState(IconData icon, String title, String subtitle) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(30),
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 60,
-              height: 60,
-              decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle),
-              child: Icon(icon, color: const Color(0xFF94A3B8), size: 28),
+              width: 64,
+              height: 64,
+              decoration: const BoxDecoration(
+                color: Color(0xFF1E293B),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 32, color: const Color(0xFF64748B)),
             ),
             const SizedBox(height: 12),
-            Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+            Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
             const SizedBox(height: 4),
-            Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)), textAlign: TextAlign.center),
+            Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)), textAlign: TextAlign.center),
           ],
         ),
       ),
     );
   }
 }
-
-

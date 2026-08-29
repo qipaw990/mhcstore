@@ -123,14 +123,14 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
+        border: Border.all(color: const Color(0xFF1E293B)),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black26,
             blurRadius: 10,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -140,10 +140,10 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             children: [
               CircleAvatar(
                 radius: 38,
-                backgroundColor: const Color(0xFFFEE2E2),
+                backgroundColor: const Color(0xFF450A0A),
                 backgroundImage: avatar != null ? NetworkImage(ApiConstants.formatImageUrl(avatar)) : null,
                 child: avatar == null
-                    ? const Icon(Icons.person_rounded, color: AppTheme.primaryRed, size: 40)
+                    ? const Icon(Icons.person_rounded, color: Color(0xFFEF4444), size: 40)
                     : null,
               ),
               Positioned(
@@ -153,9 +153,9 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                   width: 16,
                   height: 16,
                   decoration: BoxDecoration(
-                    color: driverCtrl.isOnline ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                    color: driverCtrl.isOnline ? const Color(0xFF22C55E) : const Color(0xFFEF4444),
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
+                    border: Border.all(color: const Color(0xFF0F172A), width: 2),
                   ),
                 ),
               ),
@@ -164,29 +164,29 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           const SizedBox(height: 10),
           Text(
             name,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 2),
           Text(
             phone,
-            style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+            style: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
           ),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
-              color: const Color(0xFFFEF2F2),
+              color: const Color(0xFF450A0A),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFFCA5A5)),
+              border: Border.all(color: const Color(0xFF7F1D1D)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.two_wheeler_rounded, color: AppTheme.primaryRed, size: 14),
+                const Icon(Icons.two_wheeler_rounded, color: Color(0xFFFCA5A5), size: 14),
                 const SizedBox(width: 6),
                 Text(
                   '$vehicleType ($vehicleNumber)',
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFFCA5A5)),
                 ),
               ],
             ),
@@ -200,14 +200,14 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
+        border: Border.all(color: const Color(0xFF1E293B)),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black26,
             blurRadius: 10,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -217,10 +217,10 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             width: 44,
             height: 44,
             decoration: const BoxDecoration(
-              color: Color(0xFFFEF3C7),
+              color: Color(0xFF451A03),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.star_rounded, color: Color(0xFFD97706), size: 24),
+            child: const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -231,21 +231,21 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                   children: [
                     Text(
                       '${rating.toStringAsFixed(1)} ★',
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFFDE68A)),
                     ),
                     const SizedBox(width: 6),
-                    const Text('Kepuasan Pelanggan', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                    const Text('Kepuasan Pelanggan', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white)),
                   ],
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '${reviews.length} Ulasan Terverifikasi',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8), size: 20),
+          const Icon(Icons.chevron_right_rounded, color: Color(0xFF64748B), size: 20),
         ],
       ),
     );
@@ -262,14 +262,14 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
   ) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
+        border: Border.all(color: const Color(0xFF1E293B)),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black26,
             blurRadius: 10,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -283,35 +283,35 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               children: [
                 const Text(
                   'Detail Informasi Driver',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
+                    color: const Color(0xFF1E293B),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                    border: Border.all(color: const Color(0xFF334155)),
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.lock_rounded, size: 11, color: Color(0xFF64748B)),
-                      SizedBox(width: 4),
-                      Text('Terkunci', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                      Icon(Icons.lock_rounded, size: 11, color: Color(0xFF94A3B8)),
+                      const SizedBox(width: 4),
+                      Text('Terkunci', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          const Divider(height: 1, color: Color(0xFF1E293B)),
           _infoTile(Icons.person_rounded, 'Nama Lengkap Driver', name),
-          const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 50),
+          const Divider(height: 1, color: Color(0xFF1E293B), indent: 50),
           _infoTile(Icons.email_rounded, 'Alamat Email', email),
-          const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 50),
+          const Divider(height: 1, color: Color(0xFF1E293B), indent: 50),
           _infoTile(Icons.phone_rounded, 'Nomor HP / WhatsApp', phone),
-          const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 50),
+          const Divider(height: 1, color: Color(0xFF1E293B), indent: 50),
           _infoTile(Icons.motorcycle_rounded, 'Tipe Kendaraan', vehicleType),
-          const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 50),
+          const Divider(height: 1, color: Color(0xFF1E293B), indent: 50),
           _infoTile(Icons.badge_rounded, 'Plat Nomor Kendaraan', vehicleNumber),
           const SizedBox(height: 10),
           
@@ -321,18 +321,18 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: const Color(0xFF1E293B),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: const Color(0xFF334155)),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.verified_user_rounded, color: Color(0xFF0284C7), size: 16),
+                  Icon(Icons.verified_user_rounded, color: Color(0xFF38BDF8), size: 16),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Data identitas & kendaraan diverifikasi resmi oleh Admin. Untuk ubah nomor/kendaraan, hubungi CS.',
-                      style: TextStyle(fontSize: 10, color: Color(0xFF475569)),
+                      style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
                     ),
                   ),
                 ],
@@ -347,10 +347,10 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0F172A),
+                  backgroundColor: const Color(0xFF1E293B),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Color(0xFF334155))),
                 ),
                 onPressed: () {
                   _currentPasswordCtrl.clear();
@@ -378,10 +378,10 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             width: 32,
             height: 32,
             decoration: const BoxDecoration(
-              color: Color(0xFFFEF2F2),
+              color: Color(0xFF450A0A),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: AppTheme.primaryRed, size: 16),
+            child: const Icon(icon, color: Color(0xFFEF4444), size: 16),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -389,7 +389,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
-                Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
               ],
             ),
           ),
@@ -406,14 +406,14 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
+        border: Border.all(color: const Color(0xFF1E293B)),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black26,
             blurRadius: 10,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -425,22 +425,22 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             children: [
               const Row(
                 children: [
-                  Icon(Icons.lock_reset_rounded, color: Color(0xFF0F172A), size: 20),
+                  Icon(Icons.lock_reset_rounded, color: Colors.white, size: 20),
                   SizedBox(width: 6),
-                  Text('Ganti Kata Sandi Driver', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  Text('Ganti Kata Sandi Driver', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
                 ],
               ),
               IconButton(
-                icon: const Icon(Icons.close_rounded, size: 20),
+                icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF94A3B8)),
                 onPressed: () => setState(() => _isEditing = false),
               ),
             ],
           ),
-          const Divider(height: 16),
+          const Divider(height: 16, color: Color(0xFF1E293B)),
 
           const Text(
             'Demi keamanan akun mitra, hanya kata sandi yang dapat diubah secara mandiri.',
-            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+            style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
           ),
           const SizedBox(height: 14),
 
@@ -463,17 +463,18 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
+                    side: const BorderSide(color: Color(0xFF334155)),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () => setState(() => _isEditing = false),
-                  child: const Text('Batal', style: TextStyle(color: Color(0xFF64748B))),
+                  child: const Text('Batal', style: TextStyle(color: Color(0xFF94A3B8))),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F172A),
+                    backgroundColor: const Color(0xFFEF4444),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -534,25 +535,26 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                               showDialog(
                                 context: context,
                                 builder: (ctx) => AlertDialog(
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                  backgroundColor: const Color(0xFF0F172A),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Color(0xFF1E293B))),
                                   title: const Row(
                                     children: [
-                                      Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 24),
+                                      Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444), size: 24),
                                       SizedBox(width: 8),
                                       Text(
                                         'Gagal Ubah Sandi',
-                                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                                       ),
                                     ],
                                   ),
                                   content: Text(
                                     errMsg,
-                                    style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
+                                    style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                                   ),
                                   actions: [
                                     ElevatedButton(
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFFDC2626),
+                                        backgroundColor: const Color(0xFFEF4444),
                                         foregroundColor: Colors.white,
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                       ),
@@ -582,12 +584,15 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
     return TextField(
       controller: ctrl,
       keyboardType: keyboardType,
-      style: const TextStyle(fontSize: 12.5),
+      style: const TextStyle(fontSize: 12.5, color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
-        prefixIcon: Icon(icon, color: AppTheme.primaryRed, size: 18),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        labelStyle: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+        prefixIcon: Icon(icon, color: const Color(0xFFEF4444), size: 18),
+        filled: true,
+        fillColor: const Color(0xFF1E293B),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
     );
@@ -597,16 +602,19 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
     return TextField(
       controller: ctrl,
       obscureText: obscure,
-      style: const TextStyle(fontSize: 12.5),
+      style: const TextStyle(fontSize: 12.5, color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
-        prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppTheme.primaryRed, size: 18),
+        labelStyle: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+        prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFFEF4444), size: 18),
+        filled: true,
+        fillColor: const Color(0xFF1E293B),
         suffixIcon: IconButton(
           icon: Icon(obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded, size: 18, color: const Color(0xFF94A3B8)),
           onPressed: onToggle,
         ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF334155))),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
     );
@@ -615,14 +623,14 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
   Widget _buildActionMenuCard(BuildContext context, AuthController authCtrl) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
+        border: Border.all(color: const Color(0xFF1E293B)),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black26,
             blurRadius: 10,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -637,35 +645,35 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               leading: Container(
                 width: 32,
                 height: 32,
-                decoration: const BoxDecoration(color: Color(0xFFDCFCE7), shape: BoxShape.circle),
-                child: const Icon(Icons.help_outline_rounded, color: Color(0xFF16A34A), size: 18),
+                decoration: const BoxDecoration(color: Color(0xFF064E3B), shape: BoxShape.circle),
+                child: const Icon(Icons.help_outline_rounded, color: Color(0xFF34D399), size: 18),
               ),
-              title: const Text('Bantuan & FAQ Kurir', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-              trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF94A3B8)),
+              title: const Text('Bantuan & FAQ Kurir', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white)),
+              trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF64748B)),
             ),
-            const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 50),
+            const Divider(height: 1, color: Color(0xFF1E293B), indent: 50),
             ListTile(
               onTap: () {},
               leading: Container(
                 width: 32,
                 height: 32,
-                decoration: const BoxDecoration(color: Color(0xFFDBEAFE), shape: BoxShape.circle),
-                child: const Icon(Icons.verified_user_rounded, color: Color(0xFF2563EB), size: 18),
+                decoration: const BoxDecoration(color: Color(0xFF1E3A8A), shape: BoxShape.circle),
+                child: const Icon(Icons.verified_user_rounded, color: Color(0xFF60A5FA), size: 18),
               ),
-              title: const Text('Ketentuan & Syarat Layanan', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-              trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF94A3B8)),
+              title: const Text('Ketentuan & Syarat Layanan', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white)),
+              trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF64748B)),
             ),
-            const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 50),
+            const Divider(height: 1, color: Color(0xFF1E293B), indent: 50),
             ListTile(
               onTap: () => _confirmLogout(context, authCtrl),
               leading: Container(
                 width: 32,
                 height: 32,
-                decoration: const BoxDecoration(color: Color(0xFFFEF2F2), shape: BoxShape.circle),
-                child: const Icon(Icons.logout_rounded, color: AppTheme.primaryRed, size: 18),
+                decoration: const BoxDecoration(color: Color(0xFF450A0A), shape: BoxShape.circle),
+                child: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 18),
               ),
-              title: const Text('Keluar dari Akun Driver', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.primaryRed)),
-              trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: AppTheme.primaryRed),
+              title: const Text('Keluar dari Akun Driver', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFFEF4444))),
+              trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFFEF4444)),
             ),
           ],
         ),
@@ -677,21 +685,22 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Konfirmasi Keluar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        content: const Text('Yakin ingin keluar dari akun Driver CicalengkaGO?', style: TextStyle(fontSize: 12.5)),
+        backgroundColor: const Color(0xFF0F172A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Color(0xFF1E293B))),
+        title: const Text('Konfirmasi Keluar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+        content: const Text('Yakin ingin keluar dari akun Driver CicalengkaGO?', style: TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8))),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal', style: TextStyle(color: Color(0xFF94A3B8)))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryRed,
+              backgroundColor: const Color(0xFFEF4444),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () {
               Navigator.pop(ctx);
               authCtrl.logout();
             },
-            child: const Text('Keluar', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('Keluar', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
           ),
         ],
       ),

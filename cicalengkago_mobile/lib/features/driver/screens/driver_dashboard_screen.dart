@@ -51,9 +51,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFF090D16),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF0F172A),
         elevation: 0,
         title: Row(
           children: [
@@ -65,17 +65,24 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 children: [
                   Text(
                     'Driver ${user?['name'] ?? ''}',
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
                     overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 2),
                   Row(
                     children: [
                       Container(
                         width: 7,
                         height: 7,
                         decoration: BoxDecoration(
-                          color: driverCtrl.isOnline ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                          color: driverCtrl.isOnline ? const Color(0xFF22C55E) : const Color(0xFFEF4444),
                           shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: (driverCtrl.isOnline ? const Color(0xFF22C55E) : const Color(0xFFEF4444)).withValues(alpha: 0.6),
+                              blurRadius: 6,
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(width: 5),
@@ -83,7 +90,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                         driverCtrl.isOnline ? 'ONLINE — Siap Terima Order' : 'OFFLINE',
                         style: TextStyle(
                           fontSize: 10,
-                          color: driverCtrl.isOnline ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                          color: driverCtrl.isOnline ? const Color(0xFF4ADE80) : const Color(0xFFF87171),
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -106,17 +113,17 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 margin: const EdgeInsets.only(right: 12),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFD1FAE5),
+                  color: const Color(0xFF064E3B),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFA7F3D0)),
+                  border: Border.all(color: const Color(0xFF059669)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF059669), size: 13),
+                    const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF34D399), size: 13),
                     const SizedBox(width: 5),
                     Text(
                       CurrencyFormatter.formatRupiah(driverCtrl.walletBalance),
-                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF34D399)),
                     ),
                   ],
                 ),
@@ -125,7 +132,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: const Color(0xFFF1F5F9)),
+          child: Container(height: 1, color: const Color(0xFF1E293B)),
         ),
       ),
 
@@ -139,6 +146,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 context.read<DriverController>().fetchEarnings();
               } else if (idx == 2) {
                 context.read<DriverController>().fetchProfile();
+                context.read<DriverController>().fetchEarnings();
+              } else if (idx == 3) {
+                context.read<DriverController>().fetchProfile();
               }
             },
           ),
@@ -149,19 +159,20 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       ),
 
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 15, offset: const Offset(0, -4))],
+        decoration: const BoxDecoration(
+          color: Color(0xFF0F172A),
+          border: Border(top: BorderSide(color: Color(0xFF1E293B))),
+          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 15, offset: Offset(0, -4))],
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
-          selectedItemColor: AppTheme.primaryRed,
+          selectedItemColor: const Color(0xFFEF4444),
           unselectedItemColor: const Color(0xFF94A3B8),
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
           unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
           type: BottomNavigationBarType.fixed,
           elevation: 0,
-          backgroundColor: Colors.white,
+          backgroundColor: const Color(0xFF0F172A),
           onTap: (idx) {
             setState(() => _currentIndex = idx);
             // Load respective data when tab is selected
@@ -188,7 +199,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                             width: 8,
                             height: 8,
                             decoration: const BoxDecoration(
-                              color: Color(0xFF16A34A),
+                              color: Color(0xFF22C55E),
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -200,7 +211,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   ? Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        const Icon(Icons.delivery_dining_rounded, color: AppTheme.primaryRed),
+                        const Icon(Icons.delivery_dining_rounded, color: Color(0xFFEF4444)),
                         Positioned(
                           top: -2,
                           right: -3,
@@ -208,29 +219,29 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                             width: 8,
                             height: 8,
                             decoration: const BoxDecoration(
-                              color: Color(0xFF16A34A),
+                              color: Color(0xFF22C55E),
                               shape: BoxShape.circle,
                             ),
                           ),
                         ),
                       ],
                     )
-                  : const Icon(Icons.radar_rounded, color: AppTheme.primaryRed),
+                  : const Icon(Icons.radar_rounded, color: Color(0xFFEF4444)),
               label: (driverCtrl.activeTrip != null) ? 'Trip Aktif' : 'Radar Order',
             ),
             const BottomNavigationBarItem(
               icon: Icon(Icons.account_balance_wallet_outlined),
-              activeIcon: Icon(Icons.account_balance_wallet_rounded, color: AppTheme.primaryRed),
+              activeIcon: Icon(Icons.account_balance_wallet_rounded, color: Color(0xFFEF4444)),
               label: 'Pendapatan',
             ),
             const BottomNavigationBarItem(
               icon: Icon(Icons.star_outline_rounded),
-              activeIcon: Icon(Icons.star_rounded, color: AppTheme.primaryRed),
+              activeIcon: Icon(Icons.star_rounded, color: Color(0xFFEF4444)),
               label: 'Ulasan',
             ),
             const BottomNavigationBarItem(
               icon: Icon(Icons.person_outline_rounded),
-              activeIcon: Icon(Icons.person_rounded, color: AppTheme.primaryRed),
+              activeIcon: Icon(Icons.person_rounded, color: Color(0xFFEF4444)),
               label: 'Profil Driver',
             ),
           ],

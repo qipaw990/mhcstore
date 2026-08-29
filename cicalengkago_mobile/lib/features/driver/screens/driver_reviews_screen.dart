@@ -56,7 +56,7 @@ class _DriverReviewsScreenState extends State<DriverReviewsScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFF090D16),
       appBar: AppBar(
         title: const Row(
           children: [
@@ -64,15 +64,15 @@ class _DriverReviewsScreenState extends State<DriverReviewsScreen> {
             SizedBox(width: 8),
             Text(
               'Ulasan Pelanggan',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ],
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF0F172A),
         elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: const Color(0xFFF1F5F9)),
+          child: Container(height: 1, color: const Color(0xFF1E293B)),
         ),
       ),
       body: RefreshIndicator(
@@ -148,13 +148,13 @@ class _DriverReviewsScreenState extends State<DriverReviewsScreen> {
                           _selectedFilter == 0
                               ? 'Belum Ada Ulasan'
                               : 'Tidak Ada Ulasan Sesuai Filter',
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                         const SizedBox(height: 6),
                         const Text(
                           'Tetap pertahankan layanan ramah, cepat, dan amanah untuk mendapatkan bintang 5 dari pelanggan!',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
+                          style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8), height: 1.4),
                         ),
                       ],
                     ),
@@ -186,13 +186,13 @@ class _DriverReviewsScreenState extends State<DriverReviewsScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0F172A) : Colors.white,
+          color: isSelected ? const Color(0xFFEF4444) : const Color(0xFF1E293B),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFF0F172A) : const Color(0xFFCBD5E1),
+            color: isSelected ? const Color(0xFFEF4444) : const Color(0xFF334155),
           ),
           boxShadow: isSelected
-              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4)]
+              ? [BoxShadow(color: const Color(0xFFEF4444).withValues(alpha: 0.3), blurRadius: 6)]
               : null,
         ),
         child: Text(
@@ -200,7 +200,7 @@ class _DriverReviewsScreenState extends State<DriverReviewsScreen> {
           style: TextStyle(
             fontSize: 11.5,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-            color: isSelected ? Colors.white : const Color(0xFF475569),
+            color: isSelected ? Colors.white : const Color(0xFF94A3B8),
           ),
         ),
       ),
@@ -221,14 +221,14 @@ class _DriverReviewsScreenState extends State<DriverReviewsScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
+        border: Border.all(color: const Color(0xFF1E293B)),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black26,
             blurRadius: 10,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -245,7 +245,7 @@ class _DriverReviewsScreenState extends State<DriverReviewsScreen> {
                   style: const TextStyle(
                     fontSize: 42,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF0F172A),
+                    color: Colors.white,
                     height: 1.0,
                   ),
                 ),
@@ -266,13 +266,13 @@ class _DriverReviewsScreenState extends State<DriverReviewsScreen> {
                 const SizedBox(height: 6),
                 Text(
                   '$totalReviews Ulasan Total',
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8)),
                 ),
               ],
             ),
           ),
 
-          Container(width: 1, height: 90, color: const Color(0xFFE2E8F0), margin: const EdgeInsets.symmetric(horizontal: 14)),
+          Container(width: 1, height: 90, color: const Color(0xFF1E293B), margin: const EdgeInsets.symmetric(horizontal: 14)),
 
           // Right: Star Distribution Bars
           Expanded(
@@ -299,7 +299,7 @@ class _DriverReviewsScreenState extends State<DriverReviewsScreen> {
   Widget _buildStarBar(int star, int count, double progress) {
     return Row(
       children: [
-        Text('$star', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+        Text('$star', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
         const SizedBox(width: 2),
         const Icon(Icons.star_rounded, color: Colors.amber, size: 11),
         const SizedBox(width: 6),
@@ -309,9 +309,9 @@ class _DriverReviewsScreenState extends State<DriverReviewsScreen> {
             child: LinearProgressIndicator(
               value: progress.clamp(0.0, 1.0),
               minHeight: 6,
-              backgroundColor: const Color(0xFFF1F5F9),
+              backgroundColor: const Color(0xFF1E293B),
               valueColor: AlwaysStoppedAnimation<Color>(
-                star >= 4 ? const Color(0xFF16A34A) : (star == 3 ? Colors.amber : const Color(0xFFEF4444)),
+                star >= 4 ? const Color(0xFF22C55E) : (star == 3 ? Colors.amber : const Color(0xFFEF4444)),
               ),
             ),
           ),
@@ -322,7 +322,7 @@ class _DriverReviewsScreenState extends State<DriverReviewsScreen> {
           child: Text(
             '$count',
             textAlign: TextAlign.right,
-            style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
+            style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
           ),
         ),
       ],
@@ -341,14 +341,14 @@ class _DriverReviewsScreenState extends State<DriverReviewsScreen> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
+        border: Border.all(color: const Color(0xFF1E293B)),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black26,
             blurRadius: 6,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -360,10 +360,10 @@ class _DriverReviewsScreenState extends State<DriverReviewsScreen> {
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: const Color(0xFFDCFCE7),
+                backgroundColor: const Color(0xFF064E3B),
                 child: Text(
                   customerName.isNotEmpty ? customerName[0].toUpperCase() : 'P',
-                  style: const TextStyle(color: Color(0xFF16A34A), fontWeight: FontWeight.bold, fontSize: 13),
+                  style: const TextStyle(color: Color(0xFF34D399), fontWeight: FontWeight.bold, fontSize: 13),
                 ),
               ),
               const SizedBox(width: 10),
@@ -373,14 +373,14 @@ class _DriverReviewsScreenState extends State<DriverReviewsScreen> {
                   children: [
                     Text(
                       customerName,
-                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (date.isNotEmpty)
                       Text(
                         _formatDate(date),
-                        style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                        style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
                       ),
                   ],
                 ),
@@ -388,18 +388,18 @@ class _DriverReviewsScreenState extends State<DriverReviewsScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7),
+                  color: const Color(0xFF451A03),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFFDE68A)),
+                  border: Border.all(color: const Color(0xFF78350F)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.star_rounded, color: Color(0xFFD97706), size: 14),
+                    const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 14),
                     const SizedBox(width: 3),
                     Text(
                       r.toStringAsFixed(1),
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFFDE68A)),
                     ),
                   ],
                 ),
@@ -413,12 +413,12 @@ class _DriverReviewsScreenState extends State<DriverReviewsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
+                color: const Color(0xFF1E293B),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
                 'Pesanan #$orderCode',
-                style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8)),
               ),
             ),
           ],
@@ -430,13 +430,13 @@ class _DriverReviewsScreenState extends State<DriverReviewsScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: const Color(0xFF1E293B),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: const Color(0xFF334155)),
               ),
               child: Text(
                 '“$comment”',
-                style: const TextStyle(fontSize: 11.5, color: Color(0xFF334155), fontStyle: FontStyle.italic, height: 1.3),
+                style: const TextStyle(fontSize: 11.5, color: Color(0xFFE2E8F0), fontStyle: FontStyle.italic, height: 1.3),
               ),
             ),
           ],

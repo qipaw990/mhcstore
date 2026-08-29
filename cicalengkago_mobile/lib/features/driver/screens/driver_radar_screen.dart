@@ -47,7 +47,7 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
 
     if (driverCtrl.isLoading && driverCtrl.driverProfile == null) {
       return const Scaffold(
-        backgroundColor: Color(0xFFF8FAFC),
+        backgroundColor: Color(0xFF090D16),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -56,7 +56,7 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
               SizedBox(height: 12),
               Text(
                 'Memeriksa status driver & pesanan aktif...',
-                style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -64,335 +64,403 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
       );
     }
 
-    return RefreshIndicator(
-      color: AppTheme.primaryRed,
-      onRefresh: () async {
-        await driverCtrl.refreshLocation();
-        await driverCtrl.fetchRadarData();
-      },
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Status Driver Online / Offline Switch Card
-              _buildStatusCard(driverCtrl),
-              const SizedBox(height: 10),
+    return Container(
+      color: const Color(0xFF090D16),
+      child: RefreshIndicator(
+        color: AppTheme.primaryRed,
+        onRefresh: () async {
+          await driverCtrl.refreshLocation();
+          await driverCtrl.fetchRadarData();
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. Status Driver Online / Offline Switch Card
+                _buildStatusCard(driverCtrl),
+                const SizedBox(height: 10),
 
-              // 2. Rating & Feedback Header Card
-              _buildRatingCard(context, driverCtrl),
-              const SizedBox(height: 10),
+                // 2. Rating & Feedback Header Card
+                _buildRatingCard(context, driverCtrl),
+                const SizedBox(height: 10),
 
-              // 3. Quick Stats Metric Cards Row
-              _buildMetricsRow(driverCtrl),
-              const SizedBox(height: 12),
+                // 3. Quick Stats Metric Cards Row
+                _buildMetricsRow(driverCtrl),
+                const SizedBox(height: 12),
 
-              // 4. Interactive Radar Map Card Header
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 30,
-                                height: 30,
-                                decoration: const BoxDecoration(
-                                  color: AppTheme.primaryRed,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.radar_rounded, color: Colors.white, size: 16),
-                              ),
-                              const SizedBox(width: 8),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Text(
-                                        'Radar Peta GPS Cicalengka',
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
-                                      ),
-                                      if (_autoFollow) ...[
-                                        const SizedBox(width: 6),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFDCFCE7),
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(color: const Color(0xFF86EFAC)),
-                                          ),
-                                          child: const Text('Live Ikuti GPS', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      Container(
-                                        width: 6,
-                                        height: 6,
-                                        margin: const EdgeInsets.only(right: 5),
-                                        decoration: const BoxDecoration(color: Color(0xFF16A34A), shape: BoxShape.circle),
-                                      ),
-                                      Text(
-                                        'Lat: ${driverCtrl.currentLocation.latitude.toStringAsFixed(6)} | Lng: ${driverCtrl.currentLocation.longitude.toStringAsFixed(6)}',
-                                        style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF047857), fontFamily: 'monospace'),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFEF2F2),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFFFCA5A5)),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.my_location_rounded, color: AppTheme.primaryRed, size: 12),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${driverCtrl.availableOrders.length} Order',
-                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                // 4. Interactive Radar Map Card Header
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFF1E293B)),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 10,
+                        offset: Offset(0, 2),
                       ),
-                    ),
-                    const Divider(height: 1, color: Color(0xFFF1F5F9)),
-
-                    // Map Container
-                    SizedBox(
-                      height: 230,
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
-                        child: Stack(
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            FlutterMap(
-                              mapController: _mapController,
-                              options: MapOptions(
-                                initialCenter: driverCtrl.currentLocation,
-                                initialZoom: 15.0,
-                                onPositionChanged: (camera, hasGesture) {
-                                  if (hasGesture && _autoFollow) {
-                                    setState(() => _autoFollow = false);
-                                  }
-                                },
-                              ),
+                            Row(
                               children: [
-                                TileLayer(
-                                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                  userAgentPackageName: 'com.cicalengkago.mobile',
-                                  errorTileCallback: (tile, error, stackTrace) {
-                                    // Silent handling for aborted/cancelled tile requests
-                                  },
-                                  evictErrorTileStrategy: EvictErrorTileStrategy.none,
+                                Container(
+                                  width: 30,
+                                  height: 30,
+                                  decoration: const BoxDecoration(
+                                    color: AppTheme.primaryRed,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.radar_rounded, color: Colors.white, size: 16),
                                 ),
-                                MarkerLayer(
-                                  markers: [
-                                    // Driver location marker with Bogo helmet mascot & live compass rotation
-                                    Marker(
-                                      point: driverCtrl.currentLocation,
-                                      width: 52,
-                                      height: 52,
-                                      child: Stack(
-                                        alignment: Alignment.center,
-                                        children: [
+                                const SizedBox(width: 8),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Text(
+                                          'Radar Peta GPS Cicalengka',
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.white),
+                                        ),
+                                        if (_autoFollow) ...[
+                                          const SizedBox(width: 6),
                                           Container(
-                                            width: 52,
-                                            height: 52,
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFF16A34A).withValues(alpha: 0.2),
-                                              shape: BoxShape.circle,
+                                              color: const Color(0xFF064E3B),
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: const Color(0xFF059669)),
                                             ),
-                                          ),
-                                          Transform.rotate(
-                                            angle: (driverCtrl.heading) * (3.141592653589793 / 180),
-                                            child: Container(
-                                              width: 42,
-                                              height: 42,
-                                              decoration: const BoxDecoration(
-                                                color: Colors.white,
-                                                shape: BoxShape.circle,
-                                                boxShadow: [
-                                                  BoxShadow(color: Color(0x4416A34A), blurRadius: 8, spreadRadius: 1),
-                                                ],
-                                              ),
-                                              child: ClipOval(
-                                                child: Image.asset(
-                                                  'assets/images/driver_bogo_marker.png',
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (context, error, stackTrace) => Container(
-                                                    color: const Color(0xFF16A34A),
-                                                    child: const Icon(Icons.navigation_rounded, color: Colors.white, size: 18),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
+                                            child: const Text('Live Ikuti GPS', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFF34D399))),
                                           ),
                                         ],
-                                      ),
+                                      ],
                                     ),
-
-                                    // Available Order Store Markers
-                                    ...driverCtrl.availableOrders.map((ord) {
-                                      final lat = double.tryParse(ord['store_lat']?.toString() ?? '') ?? driverCtrl.currentLocation.latitude + 0.002;
-                                      final lng = double.tryParse(ord['store_lng']?.toString() ?? '') ?? driverCtrl.currentLocation.longitude + 0.002;
-                                      return Marker(
-                                        point: LatLng(lat, lng),
-                                        width: 38,
-                                        height: 38,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.primaryRed,
-                                            shape: BoxShape.circle,
-                                            boxShadow: [
-                                              BoxShadow(color: AppTheme.primaryRed.withValues(alpha: 0.4), blurRadius: 8),
-                                            ],
-                                          ),
-                                          child: const Icon(Icons.store_rounded, color: Colors.white, size: 18),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 6,
+                                          height: 6,
+                                          margin: const EdgeInsets.only(right: 5),
+                                          decoration: const BoxDecoration(color: Color(0xFF22C55E), shape: BoxShape.circle),
                                         ),
-                                      );
-                                    }),
+                                        Text(
+                                          'Lat: ${driverCtrl.currentLocation.latitude.toStringAsFixed(6)} | Lng: ${driverCtrl.currentLocation.longitude.toStringAsFixed(6)}',
+                                          style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF34D399), fontFamily: 'monospace'),
+                                        ),
+                                      ],
+                                    ),
                                   ],
                                 ),
                               ],
                             ),
-
-                            // Top Map HUD (Live GPS Coordinate Stream Bar)
-                            Positioned(
-                              top: 8,
-                              left: 8,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.75),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.satellite_alt_rounded, color: Color(0xFF4ADE80), size: 12),
-                                    const SizedBox(width: 5),
-                                    Text(
-                                      '${driverCtrl.currentLocation.latitude.toStringAsFixed(6)}, ${driverCtrl.currentLocation.longitude.toStringAsFixed(6)}',
-                                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'monospace'),
-                                    ),
-                                    if (driverCtrl.heading > 0) ...[
-                                      const SizedBox(width: 5),
-                                      Text(
-                                        '(${driverCtrl.heading.toInt()}°)',
-                                        style: const TextStyle(fontSize: 9, color: Color(0xFF86EFAC)),
-                                      ),
-                                    ],
-                                  ],
-                                ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF450A0A),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFF7F1D1D)),
                               ),
-                            ),
-
-                            // Floating Re-center GPS Button with Auto-Follow Indicator
-                            Positioned(
-                              bottom: 10,
-                              right: 10,
-                              child: Material(
-                                elevation: 3,
-                                shape: const CircleBorder(),
-                                color: _autoFollow ? const Color(0xFF16A34A) : Colors.white,
-                                child: InkWell(
-                                  customBorder: const CircleBorder(),
-                                  onTap: () async {
-                                    setState(() => _autoFollow = true);
-                                    await driverCtrl.refreshLocation();
-                                    _mapController.move(driverCtrl.currentLocation, 15.5);
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('📍 Mode Ikuti GPS Driver Aktif!'),
-                                          duration: Duration(seconds: 1),
-                                          backgroundColor: Color(0xFF16A34A),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(10),
-                                    child: Icon(
-                                      Icons.my_location_rounded,
-                                      color: _autoFollow ? Colors.white : AppTheme.primaryRed,
-                                      size: 20,
-                                    ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.my_location_rounded, color: Color(0xFFFCA5A5), size: 12),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${driverCtrl.availableOrders.length} Order',
+                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFFCA5A5)),
                                   ),
-                                ),
+                                ],
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
+                      const Divider(height: 1, color: Color(0xFF1E293B)),
 
-              // 5. Available Orders Header & List
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.inventory_2_rounded, color: AppTheme.primaryRed, size: 18),
-                      SizedBox(width: 6),
-                      Text(
-                        'Daftar Orderan Siap Ambil',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                      // Map Container
+                      SizedBox(
+                        height: 230,
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                          child: Stack(
+                            children: [
+                              FlutterMap(
+                                mapController: _mapController,
+                                options: MapOptions(
+                                  initialCenter: driverCtrl.currentLocation,
+                                  initialZoom: 15.0,
+                                  minZoom: 11.0,
+                                  maxZoom: 18.0,
+                                  onPositionChanged: (pos, hasGesture) {
+                                    if (hasGesture && _autoFollow) {
+                                      setState(() => _autoFollow = false);
+                                    }
+                                  },
+                                ),
+                                children: [
+                                  TileLayer(
+                                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                    userAgentPackageName: 'com.cicalengkago.mobile',
+                                    maxZoom: 19,
+                                    evictErrorTileStrategy: EvictErrorTileStrategy.none,
+                                  ),
+                                  CircleLayer(
+                                    circles: [
+                                      CircleMarker(
+                                        point: driverCtrl.currentLocation,
+                                        radius: 55,
+                                        useRadiusInMeter: false,
+                                        color: const Color(0xFF16A34A).withValues(alpha: 0.15),
+                                        borderColor: const Color(0xFF16A34A),
+                                        borderStrokeWidth: 1.5,
+                                      ),
+                                    ],
+                                  ),
+                                  MarkerLayer(
+                                    markers: [
+                                      // Driver location marker with Bogo helmet mascot & live compass rotation
+                                      Marker(
+                                        point: driverCtrl.currentLocation,
+                                        width: 52,
+                                        height: 52,
+                                        child: Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            Container(
+                                              width: 52,
+                                              height: 52,
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF16A34A).withValues(alpha: 0.2),
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                            Transform.rotate(
+                                              angle: (driverCtrl.heading) * (3.141592653589793 / 180),
+                                              child: Container(
+                                                width: 42,
+                                                height: 42,
+                                                decoration: const BoxDecoration(
+                                                  color: Colors.white,
+                                                  shape: BoxShape.circle,
+                                                  boxShadow: [
+                                                    BoxShadow(color: Color(0x4416A34A), blurRadius: 8, spreadRadius: 1),
+                                                  ],
+                                                ),
+                                                child: ClipOval(
+                                                  child: Image.asset(
+                                                    'assets/images/driver_bogo_marker.png',
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (context, error, stackTrace) => Container(
+                                                      color: const Color(0xFF16A34A),
+                                                      child: const Icon(Icons.navigation_rounded, color: Colors.white, size: 18),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
+                                      // Available Order Store Markers
+                                      ...driverCtrl.availableOrders.map((ord) {
+                                        final lat = double.tryParse(ord['store_lat']?.toString() ?? '') ?? driverCtrl.currentLocation.latitude + 0.002;
+                                        final lng = double.tryParse(ord['store_lng']?.toString() ?? '') ?? driverCtrl.currentLocation.longitude + 0.002;
+                                        return Marker(
+                                          point: LatLng(lat, lng),
+                                          width: 70,
+                                          height: 45,
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFF1E293B),
+                                                  borderRadius: BorderRadius.circular(6),
+                                                ),
+                                                child: Text(
+                                                  ord['store_name'] ?? 'Toko',
+                                                  style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Container(
+                                                width: 22,
+                                                height: 22,
+                                                decoration: const BoxDecoration(
+                                                  color: AppTheme.primaryRed,
+                                                  shape: BoxShape.circle,
+                                                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                                                ),
+                                                child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 12),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }),
+                                    ],
+                                  ),
+                                ],
+                              ),
+
+                              // Radar Status Pill HUD
+                              Positioned(
+                                top: 10,
+                                left: 10,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0F172A).withValues(alpha: 0.85),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: BoxDecoration(
+                                          color: driverCtrl.isOnline ? const Color(0xFF22C55E) : const Color(0xFFEF4444),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        driverCtrl.isOnline ? 'Radar Scan Aktif' : 'GPS Offline',
+                                        style: TextStyle(
+                                          color: driverCtrl.isOnline ? const Color(0xFF4ADE80) : const Color(0xFFF87171),
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              // Dynamic Real-time Coordinates HUD
+                              Positioned(
+                                top: 10,
+                                right: 10,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0F172A).withValues(alpha: 0.85),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.satellite_alt_rounded, color: Color(0xFF4ADE80), size: 12),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        '${driverCtrl.currentLocation.latitude.toStringAsFixed(6)}, ${driverCtrl.currentLocation.longitude.toStringAsFixed(6)}',
+                                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'monospace'),
+                                      ),
+                                      if (driverCtrl.heading > 0) ...[
+                                        const SizedBox(width: 5),
+                                        Text(
+                                          '(${driverCtrl.heading.toInt()}°)',
+                                          style: const TextStyle(fontSize: 9, color: Color(0xFF86EFAC)),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              // Floating Re-center GPS Button with Auto-Follow Indicator
+                              Positioned(
+                                bottom: 10,
+                                right: 10,
+                                child: Material(
+                                  elevation: 3,
+                                  shape: const CircleBorder(),
+                                  color: _autoFollow ? const Color(0xFF16A34A) : const Color(0xFF1E293B),
+                                  child: InkWell(
+                                    customBorder: const CircleBorder(),
+                                    onTap: () async {
+                                      setState(() => _autoFollow = true);
+                                      await driverCtrl.refreshLocation();
+                                      _mapController.move(driverCtrl.currentLocation, 15.5);
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('📍 Mode Ikuti GPS Driver Aktif!'),
+                                            duration: Duration(seconds: 1),
+                                            backgroundColor: Color(0xFF16A34A),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10),
+                                      child: Icon(
+                                        Icons.my_location_rounded,
+                                        color: _autoFollow ? Colors.white : const Color(0xFF94A3B8),
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  if (driverCtrl.isLoading)
-                    const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryRed)),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              if (!driverCtrl.isOnline)
-                _buildOfflineWarning()
-              else if (driverCtrl.availableOrders.isEmpty)
-                _buildEmptyOrdersState()
-              else
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: driverCtrl.availableOrders.length,
-                  separatorBuilder: (ctx, index) => const SizedBox(height: 10),
-                  itemBuilder: (ctx, idx) => _buildOrderCard(ctx, driverCtrl, driverCtrl.availableOrders[idx]),
                 ),
-            ],
+                const SizedBox(height: 16),
+
+                // 5. Available Orders Header & List
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.inventory_2_rounded, color: Color(0xFFEF4444), size: 18),
+                        SizedBox(width: 6),
+                        Text(
+                          'Daftar Orderan Siap Ambil',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                    if (driverCtrl.isLoading)
+                      const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFEF4444))),
+                  ],
+                ),
+                const SizedBox(height: 8),
+
+                if (!driverCtrl.isOnline)
+                  _buildOfflineWarning()
+                else if (driverCtrl.availableOrders.isEmpty)
+                  _buildEmptyOrdersState()
+                else
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: driverCtrl.availableOrders.length,
+                    separatorBuilder: (ctx, index) => const SizedBox(height: 10),
+                    itemBuilder: (ctx, idx) => _buildOrderCard(ctx, driverCtrl, driverCtrl.availableOrders[idx]),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -403,14 +471,14 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
+        border: Border.all(color: const Color(0xFF1E293B)),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: Colors.black26,
             blurRadius: 8,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -420,12 +488,12 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: driverCtrl.isOnline ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
+              color: driverCtrl.isOnline ? const Color(0xFF064E3B) : const Color(0xFF1E293B),
               shape: BoxShape.circle,
             ),
             child: Icon(
               driverCtrl.isOnline ? Icons.sensors_rounded : Icons.pause_circle_rounded,
-              color: driverCtrl.isOnline ? const Color(0xFF16A34A) : const Color(0xFF64748B),
+              color: driverCtrl.isOnline ? const Color(0xFF34D399) : const Color(0xFF94A3B8),
               size: 22,
             ),
           ),
@@ -436,11 +504,11 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
               children: [
                 Row(
                   children: [
-                    const Text('Status Kurir: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A))),
+                    const Text('Status Kurir: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: driverCtrl.isOnline ? const Color(0xFF16A34A) : const Color(0xFF64748B),
+                        color: driverCtrl.isOnline ? const Color(0xFF16A34A) : const Color(0xFF334155),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -453,15 +521,17 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
                 const SizedBox(height: 2),
                 Text(
                   driverCtrl.isOnline ? 'GPS aktif: Memindai orderan Cicalengka' : 'Aktifkan status untuk menerima pesanan',
-                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
                 ),
               ],
             ),
           ),
           Switch(
             value: driverCtrl.isOnline,
-            activeTrackColor: const Color(0xFF16A34A).withValues(alpha: 0.5),
-            activeThumbColor: const Color(0xFF16A34A),
+            activeTrackColor: const Color(0xFF22C55E).withValues(alpha: 0.5),
+            activeThumbColor: const Color(0xFF22C55E),
+            inactiveThumbColor: const Color(0xFF64748B),
+            inactiveTrackColor: const Color(0xFF1E293B),
             onChanged: (val) => driverCtrl.toggleOnline(val),
           ),
         ],
@@ -476,14 +546,14 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
+        border: Border.all(color: const Color(0xFF1E293B)),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: Colors.black26,
             blurRadius: 8,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -492,11 +562,11 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEF3C7),
+            decoration: const BoxDecoration(
+              color: Color(0xFF451A03),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 22),
+            child: const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -505,18 +575,18 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
               children: [
                 Row(
                   children: [
-                    const Text('Rating Driver Anda', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A))),
+                    const Text('Rating Driver Anda', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.white)),
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFEF3C7),
+                        color: const Color(0xFF78350F),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFFCD34D)),
+                        border: Border.all(color: const Color(0xFFB45309)),
                       ),
                       child: Text(
                         '⭐ ${rating.toStringAsFixed(1)} / 5.0',
-                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
+                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFFDE68A)),
                       ),
                     ),
                   ],
@@ -524,7 +594,7 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
                 const SizedBox(height: 2),
                 Text(
                   'Total $reviewsCount ulasan kepuasan pengantaran',
-                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
                 ),
               ],
             ),
@@ -532,15 +602,15 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
           OutlinedButton(
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              side: const BorderSide(color: Color(0xFFFBBF24)),
-              backgroundColor: const Color(0xFFFFFBEB),
+              side: const BorderSide(color: Color(0xFFB45309)),
+              backgroundColor: const Color(0xFF451A03),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             ),
             onPressed: () => widget.onNavigateTab?.call(2),
             child: const Row(
               children: [
-                Text('Rincian', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF92400E))),
-                Icon(Icons.chevron_right_rounded, size: 14, color: Color(0xFF92400E)),
+                Text('Rincian', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFFFDE68A))),
+                Icon(Icons.chevron_right_rounded, size: 14, color: Color(0xFFFDE68A)),
               ],
             ),
           ),
@@ -559,9 +629,9 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: const Color(0xFF0F172A),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: const Color(0xFF1E293B)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -569,26 +639,26 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Dompet', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                      const Text('Dompet', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8))),
                       Container(
                         width: 20,
                         height: 20,
-                        decoration: const BoxDecoration(color: Color(0xFFFEE2E2), shape: BoxShape.circle),
-                        child: const Icon(Icons.account_balance_wallet_rounded, color: AppTheme.primaryRed, size: 11),
+                        decoration: const BoxDecoration(color: Color(0xFF450A0A), shape: BoxShape.circle),
+                        child: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFFF87171), size: 11),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
                     CurrencyFormatter.formatRupiah(driverCtrl.walletBalance),
-                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFFF87171)),
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   const Row(
                     children: [
-                      Text('Saldo ', style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B))),
-                      Icon(Icons.chevron_right_rounded, size: 10, color: AppTheme.primaryRed),
+                      Text('Saldo ', style: TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8))),
+                      Icon(Icons.chevron_right_rounded, size: 10, color: Color(0xFFF87171)),
                     ],
                   ),
                 ],
@@ -603,9 +673,9 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
           child: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: const Color(0xFF0F172A),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: const Color(0xFF1E293B)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -613,30 +683,30 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Selesai', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                    const Text('Selesai', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8))),
                     Container(
                       width: 20,
                       height: 20,
-                      decoration: const BoxDecoration(color: Color(0xFFDCFCE7), shape: BoxShape.circle),
-                      child: const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 11),
+                      decoration: const BoxDecoration(color: Color(0xFF064E3B), shape: BoxShape.circle),
+                      child: const Icon(Icons.check_circle_rounded, color: Color(0xFF34D399), size: 11),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Text('${driverCtrl.totalOrders} ', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                    const Text('Order', style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B))),
+                    Text('${driverCtrl.totalOrders} ', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const Text('Order', style: TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8))),
                   ],
                 ),
                 const SizedBox(height: 2),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFDCFCE7),
+                    color: const Color(0xFF064E3B),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text('100% Selesai', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
+                  child: const Text('100% Selesai', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFF34D399))),
                 ),
               ],
             ),
@@ -649,9 +719,9 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
           child: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: const Color(0xFF0F172A),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: const Color(0xFF1E293B)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -659,24 +729,24 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Rating', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                    const Text('Rating', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8))),
                     Container(
                       width: 20,
                       height: 20,
-                      decoration: const BoxDecoration(color: Color(0xFFFEF3C7), shape: BoxShape.circle),
-                      child: const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 11),
+                      decoration: const BoxDecoration(color: Color(0xFF451A03), shape: BoxShape.circle),
+                      child: const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 11),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Text('${driverCtrl.driverRating.toStringAsFixed(1)} ', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                    const Text('★', style: TextStyle(fontSize: 11, color: Color(0xFFF59E0B))),
+                    Text('${driverCtrl.driverRating.toStringAsFixed(1)} ', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const Text('★', style: TextStyle(fontSize: 11, color: Color(0xFFFBBF24))),
                   ],
                 ),
                 const SizedBox(height: 2),
-                Text('${driverCtrl.reviews.length} Ulasan', style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B))),
+                Text('${driverCtrl.reviews.length} Ulasan', style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8))),
               ],
             ),
           ),
@@ -689,23 +759,23 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: const Color(0xFF1E293B)),
       ),
       child: const Center(
         child: Column(
           children: [
-            Icon(Icons.pause_circle_filled_rounded, size: 48, color: Color(0xFF94A3B8)),
+            Icon(Icons.pause_circle_filled_rounded, size: 48, color: Color(0xFF64748B)),
             SizedBox(height: 10),
             Text(
               'Status Kurir Sedang Offline',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Colors.white),
             ),
             SizedBox(height: 4),
             Text(
               'Aktifkan sakelar ONLINE di atas untuk mulai menerima orderan baru.',
-              style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+              style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
               textAlign: TextAlign.center,
             ),
           ],
@@ -718,23 +788,23 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: const Color(0xFF1E293B)),
       ),
       child: const Center(
         child: Column(
           children: [
-            Icon(Icons.search_off_rounded, size: 44, color: Color(0xFF94A3B8)),
+            Icon(Icons.search_off_rounded, size: 44, color: Color(0xFF64748B)),
             SizedBox(height: 10),
             Text(
               'Mencari Orderan Terdekat...',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
             ),
             SizedBox(height: 4),
             Text(
               'Belum ada orderan baru yang masuk di zona Cicalengka saat ini. Tetap online!',
-              style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+              style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
               textAlign: TextAlign.center,
             ),
           ],
@@ -757,14 +827,14 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
+        border: Border.all(color: const Color(0xFF1E293B)),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black26,
             blurRadius: 8,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -778,23 +848,23 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEE2E2),
+                  color: const Color(0xFF450A0A),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   '#$orderCode',
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFFCA5A5)),
                 ),
               ),
               Row(
                 children: [
-                  const Icon(Icons.near_me_rounded, size: 12, color: Color(0xFF64748B)),
+                  const Icon(Icons.near_me_rounded, size: 12, color: Color(0xFF94A3B8)),
                   const SizedBox(width: 4),
-                  Text('$distance km', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                  Text('$distance km', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8))),
                   const SizedBox(width: 10),
                   Text(
                     CurrencyFormatter.formatRupiah(fee),
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF16A34A)),
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF4ADE80)),
                   ),
                 ],
               ),
@@ -805,14 +875,14 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
           // Pickup Location
           Row(
             children: [
-              const Icon(Icons.storefront_rounded, color: AppTheme.primaryRed, size: 16),
+              const Icon(Icons.storefront_rounded, color: Color(0xFFEF4444), size: 16),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(storeName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                    Text(storeAddress, style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis),
+                    Text(storeName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                    Text(storeAddress, style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)), overflow: TextOverflow.ellipsis),
                   ],
                 ),
               ),
@@ -823,14 +893,14 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
           // Dropoff Location
           Row(
             children: [
-              const Icon(Icons.location_on_rounded, color: Color(0xFF16A34A), size: 16),
+              const Icon(Icons.location_on_rounded, color: Color(0xFF22C55E), size: 16),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Alamat Pengantaran', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
-                    Text(deliveryAddress.toString(), style: const TextStyle(fontSize: 11, color: Color(0xFF0F172A)), overflow: TextOverflow.ellipsis),
+                    const Text('Alamat Pengantaran', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                    Text(deliveryAddress.toString(), style: const TextStyle(fontSize: 11, color: Colors.white), overflow: TextOverflow.ellipsis),
                   ],
                 ),
               ),
@@ -843,8 +913,8 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
             width: double.infinity,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.inkBlack,
-                foregroundColor: AppTheme.onPrimary,
+                backgroundColor: const Color(0xFFEF4444),
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: const StadiumBorder(),
                 elevation: 0,
