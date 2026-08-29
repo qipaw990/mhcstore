@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../controllers/customer_controller.dart';
 import 'in_app_payment_screen.dart';
@@ -673,12 +674,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle),
-              child: Icon(icon, color: const Color(0xFF94A3B8), size: 28),
-            ),
+            const CicalengkaGoLogo(size: 60, borderRadius: 18),
             const SizedBox(height: 12),
             Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
             const SizedBox(height: 4),

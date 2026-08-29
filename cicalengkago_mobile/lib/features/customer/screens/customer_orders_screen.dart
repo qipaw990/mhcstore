@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -179,15 +180,7 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(
-                              width: 76,
-                              height: 76,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFF1F5F9),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.receipt_long_rounded, color: AppTheme.inkBlack, size: 36),
-                            ),
+                            const CicalengkaGoLogo(size: 76, borderRadius: 24),
                             const SizedBox(height: 16),
                             Text(
                               _selectedFilterIndex == 0

@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../../core/widgets/uber_pill_button.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../auth/screens/login_screen.dart';
@@ -27,7 +28,12 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final ctrl = context.read<CustomerController>();
-      ctrl.fetchProfile();
+      final authCtrl = context.read<AuthController>();
+      ctrl.fetchProfile().then((_) {
+        if (mounted && ctrl.profile != null) {
+          authCtrl.updateUser(ctrl.profile!);
+        }
+      });
       ctrl.fetchWallet();
       ctrl.fetchNotifications();
     });
@@ -80,23 +86,31 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
       return _buildGuestView(context);
     }
 
-    final rawUser = authCtrl.user ?? ctrl.profile;
-    final user = (rawUser != null && rawUser.containsKey('user'))
-        ? (rawUser['user'] as Map<String, dynamic>?)
-        : rawUser;
+    final Map<String, dynamic> mergedUser = {};
+    if (authCtrl.user != null) {
+      if (authCtrl.user!.containsKey('user') && authCtrl.user!['user'] is Map) {
+        mergedUser.addAll(Map<String, dynamic>.from(authCtrl.user!['user'] as Map));
+      } else {
+        mergedUser.addAll(authCtrl.user!);
+      }
+    }
+    if (ctrl.profile != null) {
+      if (ctrl.profile!.containsKey('user') && ctrl.profile!['user'] is Map) {
+        mergedUser.addAll(Map<String, dynamic>.from(ctrl.profile!['user'] as Map));
+      } else {
+        mergedUser.addAll(ctrl.profile!);
+      }
+    }
 
-    final name = user?['name'] ?? user?['username'] ?? 'Pengguna CicalengkaGO';
-    final email = user?['email'] ?? '-';
-    final phone = user?['phone'] ?? user?['no_hp'] ?? '-';
-    final rawAvatar = user?['avatar'] ?? user?['profile_photo_url'];
+    final user = mergedUser;
+    final name = user['name'] ?? user['username'] ?? 'Pengguna CicalengkaGO';
+    final email = user['email'] ?? '-';
+    final phone = user['phone'] ?? user['no_hp'] ?? '-';
+    final rawAvatar = user['avatar'] ?? user['profile_photo_url'];
 
     String? avatarUrl;
-    if (rawAvatar != null &&
-        rawAvatar.toString().trim().isNotEmpty &&
-        !rawAvatar.toString().contains('default.png') &&
-        !rawAvatar.toString().contains('customer.png') &&
-        !rawAvatar.toString().contains('driver.png')) {
-      avatarUrl = ApiConstants.formatImageUrl(rawAvatar.toString());
+    if (rawAvatar != null && rawAvatar.toString().trim().isNotEmpty) {
+      avatarUrl = ApiConstants.formatImageUrl(rawAvatar.toString().trim());
     }
 
     final walletBalance = num.tryParse(ctrl.wallet?['balance']?.toString() ?? '0') ?? 0;
@@ -771,15 +785,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
               child: Column(
                 children: [
                   // Icon Squircle Illustration
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFEE2E2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.person_pin_rounded, color: AppTheme.primaryRed, size: 36),
-                  ),
+                  const CicalengkaGoLogo(size: 72, borderRadius: 22),
                   const SizedBox(height: 16),
                   const Text(
                     'Selamat Datang di CicalengkaGO!',
@@ -1100,20 +1106,36 @@ class _EditProfileModalSheetState extends State<_EditProfileModalSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final rawUser = widget.user;
-    final user = (rawUser != null && rawUser.containsKey('user'))
-        ? (rawUser['user'] as Map<String, dynamic>?)
-        : rawUser;
-    final name = user?['name'] ?? user?['username'] ?? 'Pengguna';
-    final rawAvatar = user?['avatar'] ?? user?['profile_photo_url'];
+    final Map<String, dynamic> mergedUser = {};
+    if (widget.authCtrl.user != null) {
+      if (widget.authCtrl.user!.containsKey('user') && widget.authCtrl.user!['user'] is Map) {
+        mergedUser.addAll(Map<String, dynamic>.from(widget.authCtrl.user!['user'] as Map));
+      } else {
+        mergedUser.addAll(widget.authCtrl.user!);
+      }
+    }
+    if (widget.ctrl.profile != null) {
+      if (widget.ctrl.profile!.containsKey('user') && widget.ctrl.profile!['user'] is Map) {
+        mergedUser.addAll(Map<String, dynamic>.from(widget.ctrl.profile!['user'] as Map));
+      } else {
+        mergedUser.addAll(widget.ctrl.profile!);
+      }
+    }
+    if (widget.user != null) {
+      if (widget.user!.containsKey('user') && widget.user!['user'] is Map) {
+        mergedUser.addAll(Map<String, dynamic>.from(widget.user!['user'] as Map));
+      } else {
+        mergedUser.addAll(widget.user!);
+      }
+    }
+
+    final user = mergedUser;
+    final name = user['name'] ?? user['username'] ?? 'Pengguna';
+    final rawAvatar = user['avatar'] ?? user['profile_photo_url'];
 
     String? avatarUrl;
-    if (rawAvatar != null &&
-        rawAvatar.toString().trim().isNotEmpty &&
-        !rawAvatar.toString().contains('default.png') &&
-        !rawAvatar.toString().contains('customer.png') &&
-        !rawAvatar.toString().contains('driver.png')) {
-      avatarUrl = ApiConstants.formatImageUrl(rawAvatar.toString());
+    if (rawAvatar != null && rawAvatar.toString().trim().isNotEmpty) {
+      avatarUrl = ApiConstants.formatImageUrl(rawAvatar.toString().trim());
     }
 
     return Container(
@@ -1422,12 +1444,14 @@ class _EditProfileModalSheetState extends State<_EditProfileModalSheet> {
                             }
 
                             if (ok && mounted) {
-                              final updatedUser = widget.ctrl.profile ?? {};
+                              final updatedProfile = widget.ctrl.profile ?? {};
+                              final avatarUrlStr = updatedProfile['avatar'] ?? updatedProfile['profile_photo_url'];
                               await widget.authCtrl.updateUser({
                                 'name': _nameCtrl.text.trim(),
                                 'email': _emailCtrl.text.trim(),
                                 'phone': _phoneCtrl.text.trim(),
-                                if (updatedUser['avatar'] != null) 'avatar': updatedUser['avatar'],
+                                if (avatarUrlStr != null && avatarUrlStr.toString().isNotEmpty)
+                                  'avatar': avatarUrlStr.toString(),
                               });
 
                               widget.onAvatarUpdated(null);

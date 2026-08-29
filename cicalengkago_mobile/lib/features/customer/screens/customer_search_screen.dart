@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/network/api_service.dart';
 import '../controllers/customer_controller.dart';
@@ -231,7 +232,7 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
                 child: Center(
                   child: Column(
                     children: [
-                      Icon(Icons.search_off_rounded, size: 54, color: Color(0xFF94A3B8)),
+                      CicalengkaGoLogo(size: 64, borderRadius: 20),
                       SizedBox(height: 14),
                       Text(
                         'Tidak ditemukan hasil untuk pencarian Anda',

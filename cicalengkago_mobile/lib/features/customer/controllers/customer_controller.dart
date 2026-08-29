@@ -286,10 +286,14 @@ class CustomerController extends ChangeNotifier {
       final res = await ApiService.postForm(ApiConstants.placeOrder, {
         'store_id': storeId.toString(),
         'delivery_address': deliveryAddress,
+        'address': deliveryAddress,
         'lat': lat.toString(),
         'lng': lng.toString(),
+        'latitude': lat.toString(),
+        'longitude': lng.toString(),
         'payment_method': paymentMethod,
-        'order_note': ?note,
+        'order_note': note ?? '',
+        'order_notes': note ?? '',
       });
 
       if (res['success'] == true) {

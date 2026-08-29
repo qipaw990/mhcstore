@@ -19,28 +19,45 @@ class CicalengkaGoLogo extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(borderRadius),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF262626),
-            Color(0xFF000000),
-          ],
-        ),
         boxShadow: showShadow
             ? [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.35),
-                  blurRadius: size * 0.25,
-                  offset: Offset(0, size * 0.1),
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: size * 0.2,
+                  offset: Offset(0, size * 0.08),
                 ),
               ]
             : null,
       ),
-      child: CustomPaint(
-        size: Size(size, size),
-        painter: _CicalengkaGoLogoPainter(),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: Image.asset(
+          'assets/images/app_logo.png',
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(borderRadius),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF262626),
+                    Color(0xFF000000),
+                  ],
+                ),
+              ),
+              child: CustomPaint(
+                size: Size(size, size),
+                painter: _CicalengkaGoLogoPainter(),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

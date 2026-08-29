@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/uber_pill_button.dart';
 import '../controllers/customer_controller.dart';
@@ -177,10 +178,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                             child: CachedNetworkImage(
                               imageUrl: ApiConstants.formatImageUrl(rawLogo ?? rawCover),
                               fit: BoxFit.cover,
-                              errorWidget: (context, url, error) => Container(
-                                color: const Color(0xFFEFEFEF),
-                                child: const Icon(Icons.storefront_rounded, size: 28, color: AppTheme.inkBlack),
-                              ),
+                              errorWidget: (context, url, error) => const CicalengkaGoLogo(size: 58, borderRadius: 12),
                             ),
                           ),
                         ),

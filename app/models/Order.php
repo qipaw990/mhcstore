@@ -372,7 +372,7 @@ class Order extends Model
                  FROM `orders` 
                  WHERE (`delivery_man_id` IS NULL OR `order_status` IN ('pending', 'confirmed'))
                    AND `order_status` NOT IN ('processing', 'handover', 'on_the_way', 'delivered', 'canceled', 'refunded', 'failed')
-                   AND `created_at` <= TIMESTAMPADD(SECOND, -300, NOW())"
+                   AND `created_at` <= TIMESTAMPADD(SECOND, -60, NOW())"
             );
 
             foreach ($expiredOrders as $ord) {
@@ -385,12 +385,12 @@ class Order extends Model
                 Database::update('orders', [
                     'delivery_man_id'     => null,
                     'order_status'        => 'canceled',
-                    'cancellation_reason' => 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 5 menit',
+                    'cancellation_reason' => 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 1 menit',
                     'canceled_at'          => date('Y-m-d H:i:s')
                 ], 'id = ?', [$ord['id']]);
 
                 // Perform robust refund to CicalengkaPay wallet
-                self::refundOrderIfPaid($ord, 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 5 menit');
+                self::refundOrderIfPaid($ord, 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 1 menit');
             }
         } catch (\Exception $e) {
             error_log("autoCancelUnclaimedOrders error: " . $e->getMessage());

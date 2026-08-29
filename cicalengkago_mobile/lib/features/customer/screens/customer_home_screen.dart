@@ -1,11 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../core/services/location_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/cicalengkago_logo.dart';
+import '../../../core/widgets/location_picker_modal.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../auth/screens/register_screen.dart';
@@ -30,6 +34,11 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   final PageController _bannerPageCtrl = PageController();
   int _currentBannerPage = 0;
   Timer? _bannerTimer;
+
+  double _userLat = -6.9835;
+  double _userLng = 107.8335;
+  String _currentAddress = 'Mendeteksi lokasi GPS...';
+  bool _isLocating = true;
 
   final List<Map<String, dynamic>> _categoriesGrid = const [
     {'name': 'Ayam & Bebek', 'icon': Icons.restaurant_rounded, 'color': Color(0xFF000000), 'bgColor': Color(0xFFF3F3F3), 'query': 'Ayam'},
@@ -56,6 +65,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CustomerController>().fetchHomeData();
+      _fetchRealLocation();
     });
 
     _bannerTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
@@ -69,6 +79,106 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
         );
       }
     });
+  }
+
+  Future<void> _fetchRealLocation() async {
+    if (!mounted) return;
+    setState(() {
+      _isLocating = true;
+    });
+
+    try {
+      final pos = await LocationService.getCurrentPosition();
+      _userLat = pos.latitude;
+      _userLng = pos.longitude;
+
+      String formattedAddress = '';
+      try {
+        final url = Uri.parse(
+          'https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.latitude}&lon=${pos.longitude}&accept-language=id',
+        );
+        final response = await http
+            .get(url, headers: {'User-Agent': 'CicalengkaGO-Mobile/1.0'})
+            .timeout(const Duration(seconds: 5));
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          if (data is Map) {
+            final addr = data['address'];
+            if (addr is Map) {
+              final road = addr['road'] ?? addr['suburb'] ?? addr['village'] ?? addr['neighbourhood'] ?? addr['hamlet'];
+              final city = addr['county'] ?? addr['city'] ?? addr['town'] ?? addr['regency'] ?? 'Kab. Bandung';
+
+              if (road != null && road.toString().trim().isNotEmpty) {
+                formattedAddress = '${road.toString().trim()}, ${city.toString().trim()}';
+              } else if (data['display_name'] != null) {
+                final parts = data['display_name'].toString().split(',');
+                if (parts.length >= 2) {
+                  formattedAddress = '${parts[0].trim()}, ${parts[1].trim()}';
+                } else {
+                  formattedAddress = data['display_name'].toString();
+                }
+              }
+            } else if (data['display_name'] != null) {
+              formattedAddress = data['display_name'].toString();
+            }
+          }
+        }
+      } catch (_) {}
+
+      if (formattedAddress.isEmpty) {
+        formattedAddress = 'Cicalengka (${_userLat.toStringAsFixed(4)}, ${_userLng.toStringAsFixed(4)})';
+      }
+
+      if (mounted) {
+        setState(() {
+          _currentAddress = formattedAddress;
+          _isLocating = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _currentAddress = 'Cicalengka, Kab. Bandung';
+          _isLocating = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _openLocationPicker() async {
+    final result = await LocationPickerModal.show(
+      context,
+      initialLat: _userLat,
+      initialLng: _userLng,
+    );
+
+    if (result != null && mounted) {
+      final double lat = result['lat'] ?? _userLat;
+      final double lng = result['lng'] ?? _userLng;
+      final String addr = result['address'] ?? _currentAddress;
+
+      String shortAddr = addr;
+      final parts = addr.split(',');
+      if (parts.length >= 2) {
+        shortAddr = '${parts[0].trim()}, ${parts[1].trim()}';
+      }
+
+      setState(() {
+        _userLat = lat;
+        _userLng = lng;
+        _currentAddress = shortAddr;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lokasi diatur ke: $shortAddr'),
+          backgroundColor: AppTheme.inkBlack,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
@@ -96,7 +206,12 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
       body: _currentIndex == 0
           ? RefreshIndicator(
               color: AppTheme.primaryRed,
-              onRefresh: () => customerCtrl.fetchHomeData(),
+              onRefresh: () async {
+                await Future.wait([
+                  customerCtrl.fetchHomeData(),
+                  _fetchRealLocation(),
+                ]);
+              },
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 child: Column(
@@ -115,7 +230,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
 
                     // Content Body Container
                     Transform.translate(
-                      offset: const Offset(0, -18),
+                      offset: const Offset(0, -12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -127,7 +242,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                           // 4. Gojek Service Grid Categories
                           _buildServiceCategoriesGrid(context),
 
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 12),
 
                           // 5. Promo Banners Carousel
                           if (customerCtrl.banners.isNotEmpty) ...[
@@ -288,24 +403,36 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     ),
                     const SizedBox(height: 2),
                     GestureDetector(
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Lokasi diatur ke Cicalengka, Kab. Bandung')),
-                        );
-                      },
+                      onTap: _openLocationPicker,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(Icons.location_on_rounded, size: 13, color: Colors.amberAccent),
-                          const SizedBox(width: 3),
-                          Flexible(
-                            child: Text(
-                              'Cicalengka, Kab. Bandung ▾',
-                              style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 11, fontWeight: FontWeight.w600),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
+                          const SizedBox(width: 4),
+                          if (_isLocating) ...[
+                            const SizedBox(
+                              width: 10,
+                              height: 10,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.5,
+                                color: Colors.amberAccent,
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 5),
+                            Text(
+                              'Mendeteksi GPS...',
+                              style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 11, fontWeight: FontWeight.w600),
+                            ),
+                          ] else ...[
+                            Flexible(
+                              child: Text(
+                                '$_currentAddress ▾',
+                                style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 11, fontWeight: FontWeight.w600),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -587,7 +714,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 4),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -652,7 +779,12 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 ],
               ),
               TextButton(
-                style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                ),
                 onPressed: () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerSearchScreen()));
                 },
@@ -662,13 +794,14 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
           ),
           const SizedBox(height: 10),
           GridView.builder(
+            padding: EdgeInsets.zero,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 4,
-              mainAxisSpacing: 14,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.88,
+              mainAxisSpacing: 6,
+              crossAxisSpacing: 8,
+              childAspectRatio: 0.95,
             ),
             itemCount: _categoriesGrid.length,
             itemBuilder: (context, index) {
@@ -685,11 +818,11 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 child: Column(
                   children: [
                     Container(
-                      width: 52,
-                      height: 52,
+                      width: 48,
+                      height: 48,
                       decoration: BoxDecoration(
                         color: cat['bgColor'] as Color,
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
                             color: (cat['color'] as Color).withOpacity(0.1),
@@ -698,9 +831,9 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                           ),
                         ],
                       ),
-                      child: Icon(cat['icon'] as IconData, color: cat['color'] as Color, size: 26),
+                      child: Icon(cat['icon'] as IconData, color: cat['color'] as Color, size: 24),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 3),
                     Text(
                       cat['name'] as String,
                       style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),

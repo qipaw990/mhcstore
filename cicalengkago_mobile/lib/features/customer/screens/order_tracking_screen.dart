@@ -29,6 +29,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   Map<String, dynamic>? _liveData;
   String? _snapUrl;
   Timer? _refreshTimer;
+  Timer? _tickerTimer;
+  int _currentRemainingSeconds = 60;
   final MapController _mapController = MapController();
 
   @override
@@ -38,11 +40,24 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     _pollLiveTracking();
     // Real-time polling every 3 seconds matching order_tracking.php
     _refreshTimer = Timer.periodic(const Duration(seconds: 3), (_) => _pollLiveTracking());
+    
+    // Ticker timer for smooth 1-second countdown
+    _tickerTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && _currentRemainingSeconds > 0) {
+        setState(() {
+          _currentRemainingSeconds--;
+        });
+        if (_currentRemainingSeconds <= 0) {
+          _pollLiveTracking();
+        }
+      }
+    });
   }
 
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _tickerTimer?.cancel();
     super.dispose();
   }
 
@@ -74,6 +89,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           setState(() {
             _liveData = live;
             _isLoading = false;
+            if (live['remaining_seconds'] != null) {
+              _currentRemainingSeconds = (live['remaining_seconds'] as num).toInt();
+            }
           });
 
           // Smoothly animate map camera to driver position if driver assigned
@@ -177,18 +195,18 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final status = live['order_status']?.toString() ?? order['order_status']?.toString() ?? 'pending';
     final paymentMethod = live['payment_method']?.toString() ?? order['payment_method']?.toString() ?? 'cod';
     final paymentStatus = live['payment_status']?.toString() ?? order['payment_status']?.toString() ?? 'unpaid';
-    final remainingSeconds = (live['remaining_seconds'] as num?)?.toInt() ?? 60;
+    final remainingSeconds = (_liveData != null ? _currentRemainingSeconds : ((live['remaining_seconds'] as num?)?.toInt() ?? 60)).clamp(0, 60);
     final otpCode = live['otp']?.toString() ?? order['otp']?.toString() ?? '----';
     final unreadChats = (live['unread_chats'] as num?)?.toInt() ?? 0;
     final cancellationReason = live['cancellation_reason']?.toString() ?? order['cancellation_reason']?.toString() ?? '';
 
-    final bool isCanceled = status == 'canceled';
-    final bool isUnpaidOnline = paymentMethod == 'midtrans' && paymentStatus != 'paid' && !isCanceled;
-    final bool isDelivered = status == 'delivered';
-
     final driverMap = live['driver'] is Map ? (live['driver'] as Map) : {};
     final bool isDriverValid = (driverMap['assigned'] == true) ||
-        (order['delivery_man_id'] != null && !isCanceled && ['processing', 'handover', 'on_the_way', 'delivered'].contains(status));
+        (order['delivery_man_id'] != null && status != 'canceled' && ['processing', 'handover', 'on_the_way', 'delivered'].contains(status));
+
+    final bool isCanceled = status == 'canceled' || (remainingSeconds <= 0 && !isDriverValid && !['processing', 'handover', 'on_the_way', 'delivered'].contains(status));
+    final bool isUnpaidOnline = paymentMethod == 'midtrans' && paymentStatus != 'paid' && !isCanceled;
+    final bool isDelivered = status == 'delivered';
 
     // Map Coordinates
     final storeMap = live['store'] is Map ? (live['store'] as Map) : {};

@@ -68,12 +68,16 @@ class OrderController extends Controller
         $data = $this->getPost();
         $paymentMethod = $data['payment_method'] ?? 'cod';
 
+        $rawLat  = $data['latitude'] ?? $data['lat'] ?? null;
+        $rawLng  = $data['longitude'] ?? $data['lng'] ?? null;
+        $rawAddr = $data['address'] ?? $data['delivery_address'] ?? 'Cicalengka, Bandung';
+
         $deliveryAddress = [
-            'contact_name'  => sanitize($data['contact_name'] ?? $_SESSION['user']['name']),
-            'contact_phone' => sanitize($data['contact_phone'] ?? $_SESSION['user']['phone']),
-            'address'       => sanitize($data['address'] ?? 'Cicalengka, Bandung'),
-            'lat'           => (float)($data['latitude'] ?? -6.9840),
-            'lng'           => (float)($data['longitude'] ?? 107.8340),
+            'contact_name'  => sanitize($data['contact_name'] ?? $_SESSION['user']['name'] ?? 'Pelanggan'),
+            'contact_phone' => sanitize($data['contact_phone'] ?? $_SESSION['user']['phone'] ?? ''),
+            'address'       => sanitize($rawAddr),
+            'lat'           => ($rawLat !== null && (float)$rawLat != 0) ? (float)$rawLat : -6.9840,
+            'lng'           => ($rawLng !== null && (float)$rawLng != 0) ? (float)$rawLng : 107.8340,
             'road'          => sanitize($data['road'] ?? ''),
             'house'         => sanitize($data['house'] ?? ''),
         ];
@@ -546,6 +550,20 @@ class OrderController extends Controller
         $serverNow      = (int)($timingRow['now_ts'] ?? time());
         $elapsedSeconds   = max(0, $serverNow - $createdAtTime);
         $remainingSeconds = max(0, 60 - $elapsedSeconds);
+
+        // Immediate inline auto-cancellation if order has exceeded 58 seconds without driver
+        if ($elapsedSeconds >= 58 && empty($order['delivery_man_id']) && !in_array($order['order_status'], ['processing', 'handover', 'on_the_way', 'delivered', 'canceled', 'refunded', 'failed'])) {
+            Database::update('orders', [
+                'delivery_man_id'     => null,
+                'order_status'        => 'canceled',
+                'cancellation_reason' => 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 1 menit',
+                'canceled_at'          => date('Y-m-d H:i:s')
+            ], 'id = ?', [$order['id']]);
+
+            \App\Models\Order::refundOrderIfPaid($order, 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 1 menit');
+            $order = $this->orderModel->findByIdOrCode($code) ?? $order;
+            $remainingSeconds = 0;
+        }
         $batchInfo = null;
         if (!empty($order['delivery_batch_id'])) {
             $totalInBatch = (int)Database::fetchColumn(

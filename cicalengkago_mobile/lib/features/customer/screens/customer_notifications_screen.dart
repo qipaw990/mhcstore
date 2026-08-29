@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/cicalengkago_logo.dart';
 import '../controllers/customer_controller.dart';
 
 class CustomerNotificationsScreen extends StatefulWidget {
@@ -67,12 +68,7 @@ class _CustomerNotificationsScreenState extends State<CustomerNotificationsScree
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle),
-                    child: const Icon(Icons.notifications_none_rounded, color: Color(0xFF94A3B8), size: 38),
-                  ),
+                  const CicalengkaGoLogo(size: 80, borderRadius: 24),
                   const SizedBox(height: 16),
                   const Text('Belum Ada Notifikasi', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                   const SizedBox(height: 6),
