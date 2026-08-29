@@ -93,7 +93,7 @@ class CallController extends Controller
             'caller_role'   => $callerRole,
             'receiver_role' => $receiverRole,
             'status'        => 'calling',
-            'offer'         => is_string($offer) ? $offer : json_encode($offer)
+            'offer'         => !empty($offer) ? (is_string($offer) ? $offer : json_encode($offer)) : null
         ]);
 
         $this->successResponse('Panggilan dimulai', [
@@ -193,7 +193,7 @@ class CallController extends Controller
 
         Database::update('voice_calls', [
             'status' => 'connected',
-            'answer' => is_string($answer) ? $answer : json_encode($answer)
+            'answer' => !empty($answer) ? (is_string($answer) ? $answer : json_encode($answer)) : null
         ], 'id = ?', [$callId]);
 
         $this->successResponse('Panggilan diterima');
