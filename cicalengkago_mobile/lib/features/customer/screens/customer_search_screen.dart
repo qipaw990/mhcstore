@@ -239,14 +239,15 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
         ),
         bottom: hasQuery
             ? PreferredSize(
-                preferredSize: const Size.fromHeight(88),
+                preferredSize: const Size.fromHeight(84),
                 child: Column(
                   children: [
-                    // Tab Selector: Semua, Produk, Resto
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      color: Colors.white,
-                      child: Row(
+                    // Tab Selector: Semua, Produk, Resto (Scrollable to prevent overflow)
+                    SizedBox(
+                      height: 38,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                         children: [
                           _buildTabButton(title: 'Semua', value: 'all', count: _products.length + _stores.length),
                           const SizedBox(width: 8),
