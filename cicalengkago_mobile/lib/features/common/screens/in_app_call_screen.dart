@@ -441,183 +441,203 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Column(
-            children: [
-              // Header badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.phone_in_talk_rounded, color: AppTheme.primaryRed, size: 14),
-                    SizedBox(width: 6),
-                    Text(
-                      'Panggilan Suara In-App CicalengkaGO',
-                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
-
-              const Spacer(),
-
-              // Avatar & Animated Ring Pulse
-              ScaleTransition(
-                scale: _isConnected ? const AlwaysStoppedAnimation(1.0) : _pulseAnimation,
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppTheme.primaryRed.withValues(alpha: 0.15),
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppTheme.primaryRed,
-                    ),
-                    child: CircleAvatar(
-                      radius: 54,
-                      backgroundColor: const Color(0xFF1E293B),
-                      backgroundImage: formattedAvatar.isNotEmpty ? NetworkImage(formattedAvatar) : null,
-                      child: formattedAvatar.isEmpty ? const Icon(Icons.person, size: 50, color: Colors.white) : null,
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Partner Name
-              Text(
-                _partnerName,
-                style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 6),
-
-              // Status or Duration
-              if (_isConnected)
-                Text(
-                  _formatDuration(_callDurationSeconds),
-                  style: const TextStyle(color: Color(0xFF10B981), fontSize: 28, fontWeight: FontWeight.w900, fontFamily: 'monospace'),
-                )
-              else
-                Text(
-                  _statusText,
-                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.w600),
-                ),
-
-              const Spacer(),
-
-              // Action Buttons Section
-              if (widget.isIncoming && !_isConnected) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // Reject Button
-                    _callActionButton(
-                      icon: Icons.call_end_rounded,
-                      label: 'Tolak',
-                      color: const Color(0xFFEF4444),
-                      onTap: _rejectCall,
-                    ),
-                    // Answer Button
-                    _callActionButton(
-                      icon: Icons.call_rounded,
-                      label: 'Jawab',
-                      color: const Color(0xFF10B981),
-                      onTap: _answerCall,
-                    ),
-                  ],
-                ),
-              ] else ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // Mute Button
-                    _callActionButton(
-                      icon: _isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
-                      label: _isMuted ? 'Unmute' : 'Mute',
-                      color: _isMuted ? const Color(0xFFF59E0B) : Colors.white.withValues(alpha: 0.2),
-                      iconColor: Colors.white,
-                      onTap: _toggleMute,
-                    ),
-                    // Speaker Button
-                    _callActionButton(
-                      icon: _isSpeakerOn ? Icons.volume_up_rounded : Icons.volume_off_rounded,
-                      label: _isSpeakerOn ? 'Speaker On' : 'Speaker Off',
-                      color: _isSpeakerOn ? const Color(0xFF3B82F6) : Colors.white.withValues(alpha: 0.2),
-                      iconColor: Colors.white,
-                      onTap: _toggleSpeaker,
-                    ),
-                    // End Call Button
-                    _callActionButton(
-                      icon: Icons.call_end_rounded,
-                      label: 'Akhiri',
-                      color: const Color(0xFFEF4444),
-                      onTap: _endCall,
-                    ),
-                  ],
-                ),
-              ],
-
-              const SizedBox(height: 28),
-
-              // Alternative Direct Call Methods
-              if (_partnerPhone.isNotEmpty) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-                  ),
-                  child: Row(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      // Header badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              'Alternatif Panggilan Cepat',
-                              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              'Jika sinyal internet kurang stabil',
-                              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
+                            Icon(Icons.phone_in_talk_rounded, color: AppTheme.primaryRed, size: 14),
+                            SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                'Panggilan Suara In-App CicalengkaGO',
+                                style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      IconButton.filled(
-                        style: IconButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
-                        icon: const Icon(Icons.chat_rounded, color: Colors.white, size: 18),
-                        tooltip: 'WhatsApp Call',
-                        onPressed: _launchWhatsAppCall,
+
+                      const SizedBox(height: 32),
+
+                      // Avatar & Animated Ring Pulse
+                      ScaleTransition(
+                        scale: _isConnected ? const AlwaysStoppedAnimation(1.0) : _pulseAnimation,
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppTheme.primaryRed.withValues(alpha: 0.15),
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppTheme.primaryRed,
+                            ),
+                            child: CircleAvatar(
+                              radius: 54,
+                              backgroundColor: const Color(0xFF1E293B),
+                              backgroundImage: formattedAvatar.isNotEmpty ? NetworkImage(formattedAvatar) : null,
+                              child: formattedAvatar.isEmpty ? const Icon(Icons.person, size: 50, color: Colors.white) : null,
+                            ),
+                          ),
+                        ),
                       ),
-                      const SizedBox(width: 8),
-                      IconButton.filled(
-                        style: IconButton.styleFrom(backgroundColor: const Color(0xFF3B82F6)),
-                        icon: const Icon(Icons.phone_forwarded_rounded, color: Colors.white, size: 18),
-                        tooltip: 'Telepon Seluler',
-                        onPressed: _launchPhoneCall,
+
+                      const SizedBox(height: 20),
+
+                      // Partner Name
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          _partnerName,
+                          style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
+                      const SizedBox(height: 6),
+
+                      // Status or Duration
+                      if (_isConnected)
+                        Text(
+                          _formatDuration(_callDurationSeconds),
+                          style: const TextStyle(color: Color(0xFF10B981), fontSize: 28, fontWeight: FontWeight.w900, fontFamily: 'monospace'),
+                        )
+                      else
+                        Text(
+                          _statusText,
+                          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+
+                      const SizedBox(height: 32),
+
+                      // Action Buttons Section
+                      if (widget.isIncoming && !_isConnected) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            // Reject Button
+                            _callActionButton(
+                              icon: Icons.call_end_rounded,
+                              label: 'Tolak',
+                              color: const Color(0xFFEF4444),
+                              onTap: _rejectCall,
+                            ),
+                            // Answer Button
+                            _callActionButton(
+                              icon: Icons.call_rounded,
+                              label: 'Jawab',
+                              color: const Color(0xFF10B981),
+                              onTap: _answerCall,
+                            ),
+                          ],
+                        ),
+                      ] else ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            // Mute Button
+                            _callActionButton(
+                              icon: _isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
+                              label: _isMuted ? 'Unmute' : 'Mute',
+                              color: _isMuted ? const Color(0xFFF59E0B) : Colors.white.withValues(alpha: 0.2),
+                              iconColor: Colors.white,
+                              onTap: _toggleMute,
+                            ),
+                            // Speaker Button
+                            _callActionButton(
+                              icon: _isSpeakerOn ? Icons.volume_up_rounded : Icons.volume_off_rounded,
+                              label: _isSpeakerOn ? 'Speaker On' : 'Speaker Off',
+                              color: _isSpeakerOn ? const Color(0xFF3B82F6) : Colors.white.withValues(alpha: 0.2),
+                              iconColor: Colors.white,
+                              onTap: _toggleSpeaker,
+                            ),
+                            // End Call Button
+                            _callActionButton(
+                              icon: Icons.call_end_rounded,
+                              label: 'Akhiri',
+                              color: const Color(0xFFEF4444),
+                              onTap: _endCall,
+                            ),
+                          ],
+                        ),
+                      ],
+
+                      const SizedBox(height: 24),
+
+                      // Alternative Direct Call Methods
+                      if (_partnerPhone.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Alternatif Panggilan Cepat',
+                                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      'Jika sinyal internet kurang stabil',
+                                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 9),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              IconButton.filled(
+                                style: IconButton.styleFrom(backgroundColor: const Color(0xFF25D366), padding: const EdgeInsets.all(8)),
+                                icon: const Icon(Icons.chat_rounded, color: Colors.white, size: 16),
+                                tooltip: 'WhatsApp Call',
+                                onPressed: _launchWhatsAppCall,
+                              ),
+                              const SizedBox(width: 6),
+                              IconButton.filled(
+                                style: IconButton.styleFrom(backgroundColor: const Color(0xFF3B82F6), padding: const EdgeInsets.all(8)),
+                                icon: const Icon(Icons.phone_forwarded_rounded, color: Colors.white, size: 16),
+                                tooltip: 'Telepon Seluler',
+                                onPressed: _launchPhoneCall,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
-              ],
-
-              const SizedBox(height: 10),
-            ],
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
