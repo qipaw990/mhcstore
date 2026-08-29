@@ -104,6 +104,17 @@ class Order extends Model
         return $this->findByCode((string)$idOrCode);
     }
 
+    public function getItems(int $orderId): array
+    {
+        return Database::query(
+            "SELECT oi.*, COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name, p.image as product_image 
+             FROM `order_items` oi 
+             LEFT JOIN `products` p ON oi.product_id = p.id 
+             WHERE oi.`order_id` = ?",
+            [$orderId]
+        ) ?: [];
+    }
+
     public function attachMultiStoreDetails(?array &$order): void
     {
         $this->enrichBatchOrderDetails($order);
