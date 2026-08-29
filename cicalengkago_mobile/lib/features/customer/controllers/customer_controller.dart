@@ -343,7 +343,17 @@ class CustomerController extends ChangeNotifier {
     try {
       final res = await ApiService.get(ApiConstants.customerProfile);
       if (res['success'] == true && res['data'] != null) {
-        _profile = res['data'] as Map<String, dynamic>;
+        final data = res['data'];
+        if (data is Map<String, dynamic>) {
+          if (data['user'] is Map<String, dynamic>) {
+            _profile = data['user'] as Map<String, dynamic>;
+          } else {
+            _profile = data;
+          }
+          if (data['wallet'] is Map<String, dynamic>) {
+            _wallet = data['wallet'] as Map<String, dynamic>;
+          }
+        }
         notifyListeners();
       }
     } catch (_) {}

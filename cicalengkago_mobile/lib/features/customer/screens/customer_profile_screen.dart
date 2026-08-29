@@ -75,19 +75,29 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
   Widget build(BuildContext context) {
     final authCtrl = context.watch<AuthController>();
     final ctrl = context.watch<CustomerController>();
-    final user = authCtrl.user ?? ctrl.profile;
 
     if (!authCtrl.isLoggedIn) {
       return _buildGuestView(context);
     }
 
+    final rawUser = authCtrl.user ?? ctrl.profile;
+    final user = (rawUser != null && rawUser.containsKey('user'))
+        ? (rawUser['user'] as Map<String, dynamic>?)
+        : rawUser;
+
     final name = user?['name'] ?? user?['username'] ?? 'Pengguna CicalengkaGO';
     final email = user?['email'] ?? '-';
     final phone = user?['phone'] ?? user?['no_hp'] ?? '-';
     final rawAvatar = user?['avatar'] ?? user?['profile_photo_url'];
-    final avatarUrl = (rawAvatar != null && rawAvatar.toString().isNotEmpty)
-        ? ApiConstants.formatImageUrl(rawAvatar.toString())
-        : null;
+
+    String? avatarUrl;
+    if (rawAvatar != null &&
+        rawAvatar.toString().trim().isNotEmpty &&
+        !rawAvatar.toString().contains('default.png') &&
+        !rawAvatar.toString().contains('customer.png') &&
+        !rawAvatar.toString().contains('driver.png')) {
+      avatarUrl = ApiConstants.formatImageUrl(rawAvatar.toString());
+    }
 
     final walletBalance = num.tryParse(ctrl.wallet?['balance']?.toString() ?? '0') ?? 0;
 
@@ -1090,12 +1100,21 @@ class _EditProfileModalSheetState extends State<_EditProfileModalSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final user = widget.user;
+    final rawUser = widget.user;
+    final user = (rawUser != null && rawUser.containsKey('user'))
+        ? (rawUser['user'] as Map<String, dynamic>?)
+        : rawUser;
     final name = user?['name'] ?? user?['username'] ?? 'Pengguna';
     final rawAvatar = user?['avatar'] ?? user?['profile_photo_url'];
-    final avatarUrl = (rawAvatar != null && rawAvatar.toString().isNotEmpty)
-        ? ApiConstants.formatImageUrl(rawAvatar.toString())
-        : null;
+
+    String? avatarUrl;
+    if (rawAvatar != null &&
+        rawAvatar.toString().trim().isNotEmpty &&
+        !rawAvatar.toString().contains('default.png') &&
+        !rawAvatar.toString().contains('customer.png') &&
+        !rawAvatar.toString().contains('driver.png')) {
+      avatarUrl = ApiConstants.formatImageUrl(rawAvatar.toString());
+    }
 
     return Container(
       padding: EdgeInsets.only(
