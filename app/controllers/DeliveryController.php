@@ -521,7 +521,30 @@ class DeliveryController extends Controller
         $reviewModel = new \App\Models\Review();
         $reviews = $reviewModel->getDmReviews((int)$dm['id'], 20);
 
-        $transactions = $this->walletModel->getTransactions($userId, 50);
+        // Fetch detailed delivered orders history for driver
+        $deliveredOrders = Database::query(
+            "SELECT o.id, o.order_code, o.order_status, o.delivery_charge, o.delivered_at, o.created_at,
+                    s.name as store_name, u.name as customer_name
+             FROM `orders` o
+             LEFT JOIN `stores` s ON o.store_id = s.id
+             LEFT JOIN `users` u ON o.customer_id = u.id
+             WHERE (o.delivery_man_id = ? OR o.delivery_man_id = ?) AND o.order_status = 'delivered'
+             ORDER BY o.delivered_at DESC, o.id DESC LIMIT 50",
+            [(int)$dm['id'], (int)$dm['user_id']]
+        );
+
+        // Fetch recent transactions with joined order details
+        $transactions = Database::query(
+            "SELECT wt.*, o.order_code, o.order_status, o.delivered_at, s.name as store_name, u.name as customer_name
+             FROM `wallet_transactions` wt
+             LEFT JOIN `orders` o ON wt.reference_id = CAST(o.id AS CHAR) OR wt.reference_id = o.order_code
+             LEFT JOIN `stores` s ON o.store_id = s.id
+             LEFT JOIN `users` u ON o.customer_id = u.id
+             WHERE wt.wallet_id = ?
+             ORDER BY wt.id DESC LIMIT 50",
+            [(int)$wallet['id']]
+        );
+
         $withdrawRequests = $this->withdrawModel->getByUser($userId, 'delivery_man', 50);
         $totalWithdrawn = $this->withdrawModel->getTotalWithdrawn($userId, 'delivery_man');
         $pendingWithdrawn = $this->withdrawModel->getPendingWithdrawn($userId, 'delivery_man');
@@ -532,6 +555,7 @@ class DeliveryController extends Controller
                 'wallet_balance'    => (float)($wallet['balance'] ?? 0),
                 'total_orders'      => $realDeliveredCount,
                 'driver'            => $dm,
+                'delivered_orders'  => $deliveredOrders,
                 'reviews'           => $reviews,
                 'transactions'      => $transactions,
                 'withdraw_requests' => $withdrawRequests,

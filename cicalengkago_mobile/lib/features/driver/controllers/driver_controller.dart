@@ -25,6 +25,7 @@ class DriverController extends ChangeNotifier {
   Map<String, dynamic>? get earnings => _earnings;
   Map<String, dynamic>? get driverProfile => _driverProfile;
   List<dynamic> get reviews => _reviews;
+  List<dynamic> get deliveredOrders => (_earnings?['delivered_orders'] is List) ? (_earnings!['delivered_orders'] as List) : [];
 
   // Derived stats from earnings & dashboard
   double get walletBalance {
