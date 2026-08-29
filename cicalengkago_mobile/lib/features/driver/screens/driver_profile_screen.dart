@@ -381,7 +381,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               color: Color(0xFF450A0A),
               shape: BoxShape.circle,
             ),
-            child: const Icon(icon, color: Color(0xFFEF4444), size: 16),
+            child: Icon(icon, color: const Color(0xFFEF4444), size: 16),
           ),
           const SizedBox(width: 12),
           Expanded(
