@@ -54,6 +54,21 @@ services:
     volumes:
       - cicago_wa_auth_data:/app/.wwebjs_auth
 
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: cicalengkago_pma
+    restart: always
+    ports:
+      - "8085:80"
+    environment:
+      PMA_HOST: cicalengkago_db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword
+      UPLOAD_LIMIT: 128M
+    depends_on:
+      - cicalengkago_db
+
 volumes:
   cicalengkago_db_data:
   cicago_wa_auth_data:
