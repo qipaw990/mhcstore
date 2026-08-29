@@ -748,19 +748,54 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           child: const Icon(Icons.home_rounded, color: Colors.white, size: 20),
                         ),
                       ),
-                      // Driver Pin
+                      // Driver Pin with Real-time Moving Coordinate Aura
                       if (isDriverValid)
                         Marker(
                           point: LatLng(driverLat, driverLng),
-                          width: 44,
-                          height: 44,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2563EB),
-                              shape: BoxShape.circle,
-                              boxShadow: [BoxShadow(color: const Color(0xFF2563EB).withValues(alpha: 0.4), blurRadius: 12)],
-                            ),
-                            child: const Icon(Icons.delivery_dining_rounded, color: Colors.white, size: 22),
+                          width: 80,
+                          height: 70,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1E293B),
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                                ),
+                                child: Text(
+                                  driverName.isNotEmpty ? driverName : 'Kurir',
+                                  style: const TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF2563EB).withValues(alpha: 0.2),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 34,
+                                    height: 34,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF2563EB),
+                                      shape: BoxShape.circle,
+                                      boxShadow: [BoxShadow(color: Color(0x662563EB), blurRadius: 10)],
+                                    ),
+                                    child: const Icon(Icons.delivery_dining_rounded, color: Colors.white, size: 20),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                     ],
@@ -768,23 +803,54 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 ],
               ),
 
-              // Top Floating HUD (Live Radar Status)
+              // Top Floating HUD (Live Radar Status & Dynamic Moving Coordinates)
               Positioned(
                 top: 10,
                 left: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.75),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.radar_rounded, color: Colors.greenAccent, size: 14),
-                      SizedBox(width: 6),
-                      Text('Live GPS Radar', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
+                right: 12,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.8),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.radar_rounded, color: Color(0xFF4ADE80), size: 14),
+                          const SizedBox(width: 6),
+                          if (isDriverValid) ...[
+                            Text(
+                              '📍 ${driverLat.toStringAsFixed(6)}, ${driverLng.toStringAsFixed(6)}',
+                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, fontFamily: 'monospace'),
+                            ),
+                          ] else ...[
+                            const Text('Live GPS Radar: Mencari Kurir...', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (isDriverValid)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF86EFAC)),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.directions_bike_rounded, color: Color(0xFF16A34A), size: 12),
+                            SizedBox(width: 4),
+                            Text('Kurir Bergerak', style: TextStyle(color: Color(0xFF16A34A), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
               ),
 
