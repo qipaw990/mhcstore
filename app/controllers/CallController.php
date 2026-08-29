@@ -242,6 +242,7 @@ class CallController extends Controller
         $callId    = (int)($data['call_id'] ?? 0);
         $orderCode = sanitize(trim($data['order_code'] ?? ''));
         $candidate = $data['candidate'] ?? null;
+        $role      = sanitize(trim($data['role'] ?? ''));
 
         if (!$callId && !empty($orderCode)) {
             $activeCall = Database::fetchOne("SELECT id FROM voice_calls WHERE order_code = ? AND status IN ('calling', 'connected') ORDER BY id DESC LIMIT 1", [$orderCode]);
@@ -258,7 +259,23 @@ class CallController extends Controller
         $call = Database::fetchOne("SELECT ice_candidates FROM voice_calls WHERE id = ? LIMIT 1", [$callId]);
         if ($call) {
             $currentCandidates = !empty($call['ice_candidates']) ? json_decode($call['ice_candidates'], true) : [];
-            $currentCandidates[] = $candidate;
+            if (!is_array($currentCandidates)) {
+                $currentCandidates = [];
+            }
+
+            // Handle candidate whether sent as json string or nested dict or raw object
+            $parsedCand = is_string($candidate) ? (json_decode($candidate, true) ?: $candidate) : $candidate;
+
+            if (is_array($parsedCand) && isset($parsedCand['role']) && isset($parsedCand['candidate'])) {
+                $itemToSave = $parsedCand;
+            } else {
+                $itemToSave = [
+                    'role'      => $role ?: 'unknown',
+                    'candidate' => $parsedCand
+                ];
+            }
+
+            $currentCandidates[] = $itemToSave;
 
             Database::update('voice_calls', [
                 'ice_candidates' => json_encode($currentCandidates)

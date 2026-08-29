@@ -26,12 +26,15 @@ void main() {
   );
 }
 
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
 class CicalengkaGoApp extends StatelessWidget {
   const CicalengkaGoApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: rootNavigatorKey,
       title: 'CicalengkaGO Mobile',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,

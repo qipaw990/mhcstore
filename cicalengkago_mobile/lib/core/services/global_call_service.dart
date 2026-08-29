@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../constants/api_constants.dart';
 import '../../features/common/screens/in_app_call_screen.dart';
+import '../../main.dart';
 
 class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
   static final GlobalCallService instance = GlobalCallService._internal();
@@ -86,10 +87,10 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
             notifyListeners();
 
             // Auto show call UI if receiving an incoming call or active call
-            if (!_isCallScreenOpen && _navigatorContext != null) {
+            if (!_isCallScreenOpen) {
               final isIncoming = (callStatus == 'calling' && _userId != null && (call['receiver_id'] == _userId || call['receiver_id'].toString() == _userId.toString()));
               if (isIncoming) {
-                openCallScreen(_navigatorContext!, orderCode: call['order_code'] ?? _orderCode ?? '', isIncoming: true, callData: call);
+                openCallScreen(_navigatorContext, orderCode: call['order_code'] ?? _orderCode ?? '', isIncoming: true, callData: call);
               }
             }
           } else {
@@ -108,11 +109,14 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
     } catch (_) {}
   }
 
-  void openCallScreen(BuildContext context, {required String orderCode, required bool isIncoming, String? callerRole, Map<String, dynamic>? callData}) {
+  void openCallScreen(BuildContext? context, {required String orderCode, required bool isIncoming, String? callerRole, Map<String, dynamic>? callData}) {
     if (_isCallScreenOpen) return;
+    final targetContext = (context != null && context.mounted) ? context : rootNavigatorKey.currentContext;
+    if (targetContext == null) return;
+
     _isCallScreenOpen = true;
 
-    Navigator.of(context, rootNavigator: true).push(
+    Navigator.of(targetContext, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (_) => InAppCallScreen(
           orderCode: orderCode,
@@ -133,3 +137,4 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
     super.dispose();
   }
 }
+

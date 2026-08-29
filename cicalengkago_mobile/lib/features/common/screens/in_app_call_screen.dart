@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -47,7 +48,10 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
   bool _hasSetRemoteAnswer = false;
   bool _hasSetRemoteOffer = false;
-  final Set<String> _processedIceCandidates = {};
+  bool _remoteDescriptionSet = false;
+  final Set<String> _processedCandidates = {};
+  final List<Map<String, dynamic>> _pendingLocalCandidates = [];
+  final List<Map<String, dynamic>> _pendingRemoteCandidates = [];
   int _pollCount = 0;
 
   static const Map<String, dynamic> _rtcConfiguration = {
@@ -75,6 +79,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         'credential': 'openrelayproject'
       }
     ],
+    'sdpSemantics': 'unified-plan',
     'iceCandidatePoolSize': 10
   };
 
@@ -112,12 +117,43 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     _startStatusPolling();
   }
 
+  Future<bool> _requestMicrophonePermission() async {
+    try {
+      var status = await Permission.microphone.status;
+      if (!status.isGranted) {
+        status = await Permission.microphone.request();
+      }
+      return status.isGranted;
+    } catch (e) {
+      debugPrint('[NativeWebRTC] Permission check error: $e');
+      return true; // Fallback to let WebRTC plugin prompt
+    }
+  }
+
   Future<void> _initNativeWebRTC() async {
     try {
       if (!widget.isIncoming) {
         // Outgoing Call: Setup PeerConnection and create Offer
-        await _setupLocalMediaAndPeerConnection();
-        
+        final hasPermission = await _requestMicrophonePermission();
+        if (!hasPermission) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Izin mikrofon diperlukan untuk melakukan panggilan.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          _handleCallEnded('Izin mikrofon ditolak');
+          return;
+        }
+
+        final setupSuccess = await _setupLocalMediaAndPeerConnection();
+        if (!setupSuccess || _peerConnection == null) {
+          _handleCallEnded('Gagal memuat media suara');
+          return;
+        }
+
         final offer = await _peerConnection!.createOffer({
           'offerToReceiveAudio': true,
           'offerToReceiveVideo': false,
@@ -140,7 +176,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
           final data = jsonDecode(res.body);
           if (data['success'] == true && data['data'] != null) {
             _callId = int.tryParse(data['data']['call_id']?.toString() ?? '');
-            await _flushPendingIceCandidates();
+            await _flushPendingLocalCandidates();
             if (data['data']['partner_name'] != null && mounted) {
               setState(() {
                 _partnerName = data['data']['partner_name'];
@@ -151,20 +187,41 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                 _partnerAvatar = data['data']['partner_avatar'];
               });
             }
+          } else {
+            final msg = data['message'] ?? 'Gagal memulai panggilan';
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(msg), backgroundColor: Colors.red),
+              );
+            }
+            _handleCallEnded(msg);
           }
+        } else {
+          final msg = 'Gagal menghubungi server (${res.statusCode})';
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(msg), backgroundColor: Colors.red),
+            );
+          }
+          _handleCallEnded(msg);
         }
       }
     } catch (e) {
       debugPrint('[NativeWebRTC] Error initializing call: $e');
+      _handleCallEnded('Gagal memulai panggilan');
     }
   }
 
-  Future<void> _setupLocalMediaAndPeerConnection() async {
-    if (_peerConnection != null) return;
+  Future<bool> _setupLocalMediaAndPeerConnection() async {
+    if (_peerConnection != null) return true;
 
     try {
       _localStream = await navigator.mediaDevices.getUserMedia({
-        'audio': true,
+        'audio': {
+          'echoCancellation': true,
+          'noiseSuppression': true,
+          'autoGainControl': true,
+        },
         'video': false,
       });
 
@@ -176,7 +233,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       });
 
       _peerConnection!.onIceCandidate = (candidate) {
-        if (candidate.candidate != null) {
+        if (candidate.candidate != null && candidate.candidate!.isNotEmpty) {
           _sendIceCandidate(candidate);
         }
       };
@@ -184,7 +241,10 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       _peerConnection!.onTrack = (event) {
         if (event.streams.isNotEmpty) {
           _remoteStream = event.streams[0];
-          Helper.setSpeakerphoneOn(_isSpeakerOn);
+          try {
+            event.track.enabled = true;
+            Helper.setSpeakerphoneOn(_isSpeakerOn);
+          } catch (_) {}
         }
       };
 
@@ -194,18 +254,23 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
           if (mounted && !_isConnected) {
             setState(() {
               _isConnected = true;
-              _statusText = 'Terhubung';
+              _statusText = 'Panggilan Berlangsung';
             });
             _startTimer();
           }
+        } else if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
+                   state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
+          debugPrint('[NativeWebRTC] Connection state disconnected/failed: $state');
         }
       };
+
+      Helper.setSpeakerphoneOn(_isSpeakerOn);
+      return true;
     } catch (e) {
       debugPrint('[NativeWebRTC] Setup error: $e');
+      return false;
     }
   }
-
-  final List<Map<String, dynamic>> _pendingLocalCandidates = [];
 
   Future<void> _sendIceCandidate(RTCIceCandidate candidate) async {
     try {
@@ -215,8 +280,13 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         'sdpMLineIndex': candidate.sdpMLineIndex,
       };
 
+      final payload = {
+        'role': widget.isIncoming ? 'receiver' : 'caller',
+        'candidate': candData,
+      };
+
       if (_callId == null || _callId == 0) {
-        _pendingLocalCandidates.add(candData);
+        _pendingLocalCandidates.add(payload);
         return;
       }
 
@@ -226,6 +296,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         body: jsonEncode({
           'call_id': _callId,
           'order_code': widget.orderCode,
+          'role': widget.isIncoming ? 'receiver' : 'caller',
           'candidate': jsonEncode(candData),
         }),
       );
@@ -234,12 +305,12 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     }
   }
 
-  Future<void> _flushPendingIceCandidates() async {
+  Future<void> _flushPendingLocalCandidates() async {
     if (_callId == null || _callId == 0 || _pendingLocalCandidates.isEmpty) return;
     final toFlush = List<Map<String, dynamic>>.from(_pendingLocalCandidates);
     _pendingLocalCandidates.clear();
 
-    for (var candData in toFlush) {
+    for (var payload in toFlush) {
       try {
         await http.post(
           Uri.parse('${ApiConstants.baseUrl}/calls/ice-candidate'),
@@ -247,10 +318,37 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
           body: jsonEncode({
             'call_id': _callId,
             'order_code': widget.orderCode,
-            'candidate': jsonEncode(candData),
+            'role': payload['role'] ?? (widget.isIncoming ? 'receiver' : 'caller'),
+            'candidate': jsonEncode(payload['candidate']),
           }),
         );
       } catch (_) {}
+    }
+  }
+
+  Future<void> _flushPendingRemoteCandidates() async {
+    if (_peerConnection == null || !_remoteDescriptionSet || _pendingRemoteCandidates.isEmpty) return;
+    final toFlush = List<Map<String, dynamic>>.from(_pendingRemoteCandidates);
+    _pendingRemoteCandidates.clear();
+
+    for (var candMap in toFlush) {
+      final candStr = candMap['candidate']?.toString();
+      if (candStr == null || candStr.isEmpty) continue;
+      final key = jsonEncode(candMap);
+      if (!_processedCandidates.contains(key)) {
+        _processedCandidates.add(key);
+        try {
+          final rtcCand = RTCIceCandidate(
+            candStr,
+            candMap['sdpMid']?.toString() ?? '',
+            int.tryParse(candMap['sdpMLineIndex']?.toString() ?? '0') ?? 0,
+          );
+          await _peerConnection?.addCandidate(rtcCand);
+          debugPrint('[NativeWebRTC] Flushed remote ICE candidate successfully');
+        } catch (e) {
+          debugPrint('[NativeWebRTC] Error adding buffered remote candidate: $e');
+        }
+      }
     }
   }
 
@@ -269,7 +367,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
             final call = data['data']['active_call'] as Map<String, dynamic>;
             final status = call['status'];
             _callId = int.tryParse(call['id']?.toString() ?? '');
-            _flushPendingIceCandidates();
+            await _flushPendingLocalCandidates();
 
             if (mounted) {
               setState(() {
@@ -288,15 +386,19 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
               try {
                 dynamic ansObj = call['answer'];
                 if (ansObj is String) ansObj = jsonDecode(ansObj);
-                final answerSdp = RTCSessionDescription(ansObj['sdp'], ansObj['type']);
-                await _peerConnection?.setRemoteDescription(answerSdp);
+                if (ansObj is Map) {
+                  final answerSdp = RTCSessionDescription(ansObj['sdp']?.toString(), ansObj['type']?.toString() ?? 'answer');
+                  await _peerConnection?.setRemoteDescription(answerSdp);
+                  _remoteDescriptionSet = true;
+                  await _flushPendingRemoteCandidates();
+                }
               } catch (e) {
                 debugPrint('[NativeWebRTC] Error setting remote answer: $e');
               }
             }
 
             // Process ICE Candidates from remote
-            if (_peerConnection != null && call['ice_candidates'] != null) {
+            if (call['ice_candidates'] != null) {
               dynamic candList = call['ice_candidates'];
               if (candList is String) {
                 try {
@@ -306,20 +408,43 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                 }
               }
               if (candList is List) {
+                final myRole = widget.isIncoming ? 'receiver' : 'caller';
                 for (var item in candList) {
                   dynamic cMap = item;
                   if (cMap is String) {
                     try { cMap = jsonDecode(cMap); } catch (_) { continue; }
                   }
-                  final keyStr = jsonEncode(cMap);
-                  if (!_processedIceCandidates.contains(keyStr)) {
-                    _processedIceCandidates.add(keyStr);
-                    final cand = RTCIceCandidate(
-                      cMap['candidate'] ?? '',
-                      cMap['sdpMid'] ?? '',
-                      cMap['sdpMLineIndex'] ?? 0,
-                    );
-                    await _peerConnection?.addCandidate(cand);
+                  if (cMap == null || cMap is! Map) continue;
+
+                  String? senderRole = cMap['role']?.toString();
+                  dynamic actualCand = cMap.containsKey('candidate') ? cMap['candidate'] : cMap;
+                  if (actualCand is String) {
+                    try { actualCand = jsonDecode(actualCand); } catch (_) {}
+                  }
+                  if (actualCand == null || actualCand is! Map) continue;
+
+                  // Ignore own candidates
+                  if (senderRole == myRole) continue;
+
+                  final keyStr = jsonEncode(actualCand);
+                  if (_processedCandidates.contains(keyStr)) continue;
+
+                  final candMap = Map<String, dynamic>.from(actualCand);
+
+                  if (!_remoteDescriptionSet || _peerConnection == null) {
+                    _pendingRemoteCandidates.add(candMap);
+                  } else {
+                    _processedCandidates.add(keyStr);
+                    try {
+                      final cand = RTCIceCandidate(
+                        candMap['candidate']?.toString() ?? '',
+                        candMap['sdpMid']?.toString() ?? '',
+                        int.tryParse(candMap['sdpMLineIndex']?.toString() ?? '0') ?? 0,
+                      );
+                      await _peerConnection?.addCandidate(cand);
+                    } catch (e) {
+                      debugPrint('[NativeWebRTC] Error adding ICE candidate: $e');
+                    }
                   }
                 }
               }
@@ -339,7 +464,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
               _handleCallEnded('Panggilan Diakhiri');
             }
           } else {
-            if (_isConnected || _pollCount > 20) {
+            if (_isConnected || _pollCount > 25) {
               _handleCallEnded('Panggilan Diakhiri');
             }
           }
@@ -361,7 +486,25 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
   Future<void> _answerCall() async {
     try {
-      await _setupLocalMediaAndPeerConnection();
+      final hasPermission = await _requestMicrophonePermission();
+      if (!hasPermission) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Izin mikrofon diperlukan untuk menerima panggilan.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        _handleCallEnded('Izin mikrofon ditolak');
+        return;
+      }
+
+      final setupSuccess = await _setupLocalMediaAndPeerConnection();
+      if (!setupSuccess || _peerConnection == null) {
+        _handleCallEnded('Gagal memuat media suara');
+        return;
+      }
 
       // Retrieve Offer from callData or poll
       dynamic offerData;
@@ -379,14 +522,23 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       if (offerData != null && !_hasSetRemoteOffer) {
         _hasSetRemoteOffer = true;
         if (offerData is String) offerData = jsonDecode(offerData);
-        final offerSdp = RTCSessionDescription(offerData['sdp'], offerData['type']);
-        await _peerConnection!.setRemoteDescription(offerSdp);
+        if (offerData is Map) {
+          final offerSdp = RTCSessionDescription(offerData['sdp']?.toString(), offerData['type']?.toString() ?? 'offer');
+          await _peerConnection!.setRemoteDescription(offerSdp);
+          _remoteDescriptionSet = true;
+          await _flushPendingRemoteCandidates();
+        }
       }
 
-      final answer = await _peerConnection!.createAnswer();
+      final answer = await _peerConnection!.createAnswer({
+        'offerToReceiveAudio': true,
+        'offerToReceiveVideo': false,
+      });
       await _peerConnection!.setLocalDescription(answer);
 
       final answerSdpStr = jsonEncode({'type': answer.type ?? 'answer', 'sdp': answer.sdp});
+
+      await _flushPendingLocalCandidates();
 
       if (_callId != null) {
         await http.post(
@@ -402,12 +554,13 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       if (mounted) {
         setState(() {
           _isConnected = true;
-          _statusText = 'Terhubung';
+          _statusText = 'Panggilan Berlangsung';
         });
       }
       _startTimer();
     } catch (e) {
       debugPrint('[NativeWebRTC] Answer error: $e');
+      _handleCallEnded('Gagal menjawab panggilan');
     }
   }
 
@@ -437,10 +590,15 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     setState(() {
       _isMuted = !_isMuted;
     });
-    if (_localStream != null) {
-      _localStream!.getAudioTracks().forEach((track) {
-        track.enabled = !_isMuted;
-      });
+    try {
+      Helper.setMicrophoneMute(_isMuted);
+      if (_localStream != null) {
+        for (var track in _localStream!.getAudioTracks()) {
+          track.enabled = !_isMuted;
+        }
+      }
+    } catch (e) {
+      debugPrint('[NativeWebRTC] Toggle mute error: $e');
     }
   }
 
@@ -448,7 +606,11 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     setState(() {
       _isSpeakerOn = !_isSpeakerOn;
     });
-    Helper.setSpeakerphoneOn(_isSpeakerOn);
+    try {
+      Helper.setSpeakerphoneOn(_isSpeakerOn);
+    } catch (e) {
+      debugPrint('[NativeWebRTC] Toggle speaker error: $e');
+    }
   }
 
   void _handleCallEnded(String message) {
@@ -549,7 +711,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                     child: CircleAvatar(
                       radius: 54,
                       backgroundColor: const Color(0xFF1E293B),
-                      backgroundImage: NetworkImage(formattedAvatar),
+                      backgroundImage: formattedAvatar.isNotEmpty ? NetworkImage(formattedAvatar) : null,
                       child: formattedAvatar.isEmpty ? const Icon(Icons.person, size: 50, color: Colors.white) : null,
                     ),
                   ),
