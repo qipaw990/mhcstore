@@ -3098,25 +3098,33 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFEFF6FF),
-                      shape: BoxShape.circle,
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFEFF6FF),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.alt_route_rounded, color: Color(0xFF2563EB), size: 16),
                     ),
-                    child: const Icon(Icons.alt_route_rounded, color: Color(0xFF2563EB), size: 16),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Tahapan Perjalanan Pesanan',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Tahapan Perjalanan Pesanan',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              if (isMulti)
+              if (isMulti) ...[
+                const SizedBox(width: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                   decoration: BoxDecoration(
@@ -3129,6 +3137,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
                   ),
                 ),
+              ],
             ],
           ),
           const Divider(height: 18, color: Color(0xFFF1F5F9)),
