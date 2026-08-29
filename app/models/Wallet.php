@@ -12,33 +12,51 @@ class Wallet extends Model
 
     public function getOrCreate(int $userId, string $userType = 'customer'): array
     {
-        $wallet = $this->firstWhere('user_id', $userId);
+        $wallet = Database::fetchOne("SELECT * FROM `wallets` WHERE `user_id` = ? AND `user_type` = ? LIMIT 1", [$userId, $userType]);
         if (!$wallet) {
-            $id = $this->create([
-                'user_id' => $userId,
-                'user_type' => $userType,
-                'balance' => 0.00,
-                'total_earned' => 0.00,
-                'total_withdrawn' => 0.00
-            ]);
-            $wallet = $this->find($id);
-        } elseif ($userType === 'delivery_man' && ($wallet['user_type'] ?? '') === 'customer') {
-            Database::update('wallets', ['user_type' => 'delivery_man'], 'id = ?', [$wallet['id']]);
-            $wallet['user_type'] = 'delivery_man';
+            $anyWallet = $this->firstWhere('user_id', $userId);
+            if ($anyWallet && ($anyWallet['user_type'] ?? '') === $userType) {
+                $wallet = $anyWallet;
+            } elseif ($anyWallet && $userType === 'delivery_man' && ($anyWallet['user_type'] ?? '') === 'customer') {
+                Database::update('wallets', ['user_type' => 'delivery_man'], 'id = ?', [$anyWallet['id']]);
+                $anyWallet['user_type'] = 'delivery_man';
+                $wallet = $anyWallet;
+            } else {
+                $id = $this->create([
+                    'user_id'         => $userId,
+                    'user_type'       => $userType,
+                    'balance'         => 0.00,
+                    'total_earned'    => 0.00,
+                    'total_withdrawn' => 0.00
+                ]);
+                $wallet = $this->find($id);
+            }
         }
         return $wallet;
     }
 
-    public function credit(int $userId, float $amount, string $category, string $description, ?string $refId = null): bool
+    public function credit(int $userId, float $amount, string $category, string $description, ?string $refId = null, ?string $userType = null): bool
     {
         // Safe mapping to match MySQL ENUM column
         if ($category === 'order_refund') {
             $category = 'refund';
         }
 
-        $wallet = $this->firstWhere('user_id', $userId);
+        $wallet = null;
+        if ($userType) {
+            $wallet = Database::fetchOne("SELECT * FROM `wallets` WHERE `user_id` = ? AND `user_type` = ? LIMIT 1", [$userId, $userType]);
+        }
+        if (!$wallet && $category === 'order_earning') {
+            $dm = Database::fetchOne("SELECT id FROM `delivery_men` WHERE `user_id` = ? LIMIT 1", [$userId]);
+            if ($dm) {
+                $wallet = Database::fetchOne("SELECT * FROM `wallets` WHERE `user_id` = ? AND `user_type` = 'delivery_man' LIMIT 1", [$userId]);
+            }
+        }
         if (!$wallet) {
-            $wallet = $this->getOrCreate($userId, 'customer');
+            $wallet = $this->firstWhere('user_id', $userId);
+        }
+        if (!$wallet) {
+            $wallet = $this->getOrCreate($userId, $userType ?? 'customer');
         }
 
         // Atomic calculation in MySQL
@@ -59,14 +77,14 @@ class Wallet extends Model
         return true;
     }
 
-    public function debit(int $userId, float $amount, string $category, string $description, ?string $refId = null): bool
+    public function debit(int $userId, float $amount, string $category, string $description, ?string $refId = null, string $userType = 'customer'): bool
     {
         // Safe mapping to match MySQL ENUM column
         if ($category === 'order_refund') {
             $category = 'refund';
         }
 
-        $wallet = $this->getOrCreate($userId, 'customer');
+        $wallet = $this->getOrCreate($userId, $userType);
 
         // Atomic UPDATE with balance condition check to prevent race conditions & double debiting
         $affected = Database::execute(
@@ -90,9 +108,21 @@ class Wallet extends Model
         return true;
     }
 
-    public function getTransactions(int $userId, int $limit = 20): array
+    public function getTransactions(int $userId, int $limit = 20, ?string $userType = null): array
     {
-        $wallet = $this->firstWhere('user_id', $userId);
+        $wallet = null;
+        if ($userType) {
+            $wallet = Database::fetchOne("SELECT * FROM `wallets` WHERE `user_id` = ? AND `user_type` = ? LIMIT 1", [$userId, $userType]);
+        }
+        if (!$wallet) {
+            $dm = Database::fetchOne("SELECT id FROM `delivery_men` WHERE `user_id` = ? LIMIT 1", [$userId]);
+            if ($dm) {
+                $wallet = Database::fetchOne("SELECT * FROM `wallets` WHERE `user_id` = ? AND `user_type` = 'delivery_man' LIMIT 1", [$userId]);
+            }
+        }
+        if (!$wallet) {
+            $wallet = $this->firstWhere('user_id', $userId);
+        }
         if (!$wallet) return [];
 
         return Database::query("SELECT * FROM `wallet_transactions` WHERE `wallet_id` = ? ORDER BY `id` DESC LIMIT {$limit}", [$wallet['id']]);

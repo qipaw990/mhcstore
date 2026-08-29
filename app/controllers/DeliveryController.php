@@ -870,7 +870,8 @@ class DeliveryController extends Controller
                         $driverEarning,
                         'order_earning',
                         "Komisi pengantaran pesanan #{$dOrder['order_code']}",
-                        (string)$dOrder['id']
+                        (string)$dOrder['id'],
+                        'delivery_man'
                     );
                 }
             }

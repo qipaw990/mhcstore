@@ -285,7 +285,8 @@ class DeliveryService
                         $dmEarning,
                         'order_earning',
                         "Komisi pengantaran #{$order['order_code']}",
-                        (string)$order['id']
+                        (string)$order['id'],
+                        'delivery_man'
                     );
                     Database::execute(
                         "UPDATE `delivery_men` SET `total_orders` = `total_orders` + 1, `current_order_id` = NULL, `active_batch_id` = NULL, `active_order_ids` = NULL WHERE `id` = ?",
@@ -396,7 +397,8 @@ class DeliveryService
                 $totalCommission,
                 'order_earning',
                 "Komisi Batch {$batchId} ({$storeCount} Toko, {$totalKm} km total)",
-                $batchId
+                $batchId,
+                'delivery_man'
             );
         }
     }
