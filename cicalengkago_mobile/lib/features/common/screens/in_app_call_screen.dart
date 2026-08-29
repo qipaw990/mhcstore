@@ -591,10 +591,10 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       _isMuted = !_isMuted;
     });
     try {
-      Helper.setMicrophoneMute(_isMuted);
       if (_localStream != null) {
         for (var track in _localStream!.getAudioTracks()) {
           track.enabled = !_isMuted;
+          Helper.setMicrophoneMute(_isMuted, track);
         }
       }
     } catch (e) {
