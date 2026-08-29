@@ -2859,6 +2859,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final bool isOnTheWay = (status == 'on_the_way') || isDelivered;
     final bool isPickedUp = (status == 'picked_up') || (status == 'handover') || isOnTheWay;
     final bool isDriverAssigned = isDriverValid || isPickedUp;
+    final bool isMulti = batchStores.length > 1;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -2879,63 +2880,97 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFEFF6FF),
-                  shape: BoxShape.circle,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFEFF6FF),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.alt_route_rounded, color: Color(0xFF2563EB), size: 16),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Tahapan Perjalanan Pesanan',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                  ),
+                ],
+              ),
+              if (isMulti)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
+                  ),
+                  child: Text(
+                    'Multi-Toko (${batchStores.length} Resto)',
+                    style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
+                  ),
                 ),
-                child: const Icon(Icons.alt_route_rounded, color: Color(0xFF2563EB), size: 16),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Tahapan Perjalanan Pesanan',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
-              ),
             ],
           ),
           const Divider(height: 18, color: Color(0xFFF1F5F9)),
 
-          // 1. Pesanan Diterima & Disiapkan Resto
-          _timelineStepItem(
-            isCompleted: true,
-            isActive: !isDriverAssigned,
-            stepNum: '1',
-            title: 'Pesanan Dikonfirmasi & Disiapkan Resto',
-            desc: storeName.isNotEmpty ? storeName : 'Resto Mitra Cicalengka',
-            icon: Icons.storefront_rounded,
-          ),
-          _timelineConnector(isCompleted: isDriverAssigned),
+          // 1. Render Each Store Step in Order
+          if (isMulti) ...[
+            for (int i = 0; i < batchStores.length; i++) ...[
+              Builder(builder: (context) {
+                final st = batchStores[i] is Map ? (batchStores[i] as Map) : {};
+                final String sName = (st['name'] ?? st['store_name'] ?? 'Toko ${i + 1}').toString();
+                final String sAddr = (st['address'] ?? st['store_address'] ?? 'Cicalengka').toString();
+                final bool stepFinished = isPickedUp;
+                final bool stepActive = isDriverAssigned && !isPickedUp && (i == 0);
 
-          // 2. Kurir Menjemput di Resto
-          _timelineStepItem(
-            isCompleted: isPickedUp,
-            isActive: isDriverAssigned && !isPickedUp,
-            stepNum: '2',
-            title: isPickedUp
-                ? 'Pesanan Selesai Diambil Kurir ✅'
-                : (isDriverAssigned
-                    ? (batchStores.length > 1 ? 'Kurir Menjemput Multi-Toko (${batchStores.length} Resto)' : 'Kurir Sedang Menuju ke Resto')
-                    : 'Menunggu Kurir Menjemput'),
-            desc: isDriverAssigned
-                ? (driverName.isNotEmpty ? 'Kurir: $driverName' : 'Mitra Kurir Cicalengka')
-                : 'Mencari kurir terdekat...',
-            icon: Icons.directions_bike_rounded,
-          ),
-          _timelineConnector(isCompleted: isPickedUp),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _timelineStepItem(
+                      isCompleted: stepFinished,
+                      isActive: stepActive,
+                      stepNum: '${i + 1}',
+                      title: stepFinished
+                          ? 'Toko ${i + 1}: $sName (Selesai Diambil ✅)'
+                          : (stepActive
+                              ? 'Toko ${i + 1}: $sName (Kurir Sedang Menjemput 📍)'
+                              : 'Toko ${i + 1}: $sName (Menunggu Penjemputan)'),
+                      desc: sAddr,
+                      icon: Icons.storefront_rounded,
+                    ),
+                    _timelineConnector(isCompleted: stepFinished),
+                  ],
+                );
+              }),
+            ],
+          ] else ...[
+            _timelineStepItem(
+              isCompleted: isPickedUp,
+              isActive: isDriverAssigned && !isPickedUp,
+              stepNum: '1',
+              title: isPickedUp
+                  ? 'Pesanan Selesai Diambil Kurir ✅'
+                  : (isDriverAssigned ? 'Kurir Sedang Menuju ke Resto 📍' : 'Resto Menyiapkan Pesanan'),
+              desc: storeName.isNotEmpty ? storeName : 'Resto Mitra Cicalengka',
+              icon: Icons.storefront_rounded,
+            ),
+            _timelineConnector(isCompleted: isPickedUp),
+          ],
 
-          // 3. Kurir Mengantar ke Rumah Anda
+          // 2. Final Customer Destination Delivery Step
           _timelineStepItem(
             isCompleted: isDelivered,
             isActive: isOnTheWay && !isDelivered,
-            stepNum: '3',
+            stepNum: isMulti ? '${batchStores.length + 1}' : '2',
             title: isDelivered
                 ? 'Telah Sampai di Lokasi Anda ✅'
-                : (isOnTheWay ? 'Kurir Sedang Menuju ke Alamat Anda 🛵' : 'Pengantaran ke Alamat Anda'),
+                : (isOnTheWay ? 'Kurir Sedang Menuju ke Alamat Anda 🛵' : 'Pengantaran ke Alamat Rumah Anda'),
             desc: isOnTheWay
-                ? 'Rute jalan aktif langsung ke rumah Anda'
-                : 'Menunggu pesanan diambil kurir',
+                ? 'Rute navigasi aktif langsung menuju ke rumah Anda'
+                : 'Menunggu semua pesanan selesai diambil kurir',
             icon: Icons.home_rounded,
           ),
         ],
