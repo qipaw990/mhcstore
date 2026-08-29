@@ -91,6 +91,27 @@ class OrderController extends Controller
                 return;
             }
 
+            if ($paymentMethod === 'wallet') {
+                $walletModel = new \App\Models\Wallet();
+                $wallet = $walletModel->getOrCreate($userId, 'customer');
+                $currentBalance = (float)($wallet['balance'] ?? 0);
+
+                $totalRequired = 0.0;
+                foreach ($stores as $sg) {
+                    $sgSubtotal = (float)($sg['subtotal'] ?? 0);
+                    $distKm = (float)($data['distance_km'] ?? 1.5);
+                    $sgDelivery = calculate_delivery_fee($distKm, (float)($sg['delivery_fee'] ?? 5000));
+                    $totalRequired += ($sgSubtotal + $sgDelivery);
+                }
+
+                if ($currentBalance < $totalRequired) {
+                    $formattedBalance = 'Rp ' . number_format($currentBalance, 0, ',', '.');
+                    $formattedRequired = 'Rp ' . number_format($totalRequired, 0, ',', '.');
+                    $this->errorResponse("Saldo CicalengkaPay Anda tidak mencukupi ({$formattedBalance}). Total tagihan: {$formattedRequired}. Silakan isi ulang saldo atau gunakan metode pembayaran lain.");
+                    return;
+                }
+            }
+
             $allOrderCodes = [];
             $grandTotal    = 0.0;
             $batchId       = (count($stores) > 1) ? ('BATCH-' . strtoupper(substr(uniqid(), -6)) . rand(10, 99)) : null;

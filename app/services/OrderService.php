@@ -124,6 +124,13 @@ class OrderService
 
             // Wallet debit
             if ($paymentMethod === 'wallet') {
+                $wallet = $this->walletModel->getOrCreate($customerId, 'customer');
+                $currentBalance = (float)($wallet['balance'] ?? 0);
+                if ($currentBalance < $totalAmount) {
+                    $formattedBalance = 'Rp ' . number_format($currentBalance, 0, ',', '.');
+                    $formattedTotal = 'Rp ' . number_format($totalAmount, 0, ',', '.');
+                    throw new Exception("Saldo CicalengkaPay Anda tidak mencukupi ({$formattedBalance}). Total tagihan: {$formattedTotal}. Silakan isi ulang saldo Anda.");
+                }
                 $this->walletModel->debit(
                     $customerId,
                     $totalAmount,

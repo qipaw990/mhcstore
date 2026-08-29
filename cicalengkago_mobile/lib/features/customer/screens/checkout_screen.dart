@@ -34,6 +34,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   void initState() {
     super.initState();
     _detectCurrentLocation();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<CustomerController>().fetchWallet();
+      }
+    });
   }
 
   Future<void> _detectCurrentLocation() async {
@@ -100,6 +105,38 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final cart = customerCtrl.cart;
     final stores = (cart?['stores'] as List<dynamic>?) ?? [];
     final storeId = int.tryParse(stores.isNotEmpty ? stores[0]['store_id']?.toString() ?? '1' : '1') ?? 1;
+
+    // Check CicalengkaPay wallet balance if wallet payment selected
+    if (_paymentMethod == 'wallet') {
+      double subtotal = customerCtrl.cartSubtotal;
+      double deliveryFee = 0.0;
+      if (cart?['grand_delivery'] != null) {
+        deliveryFee = double.tryParse(cart!['grand_delivery'].toString()) ?? 5000.0;
+      } else if (stores.isNotEmpty) {
+        for (var s in stores) {
+          deliveryFee += double.tryParse(s['delivery_fee']?.toString() ?? '5000') ?? 5000.0;
+        }
+      } else {
+        deliveryFee = 5000.0;
+      }
+      if (deliveryFee <= 0) deliveryFee = 5000.0;
+      final double grandTotal = subtotal + deliveryFee + 1000.0;
+
+      final walletMap = customerCtrl.wallet;
+      final double walletBalance = double.tryParse(walletMap?['balance']?.toString() ?? '0') ?? 0.0;
+
+      if (walletBalance < grandTotal) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Saldo CicalengkaPay Anda (${CurrencyFormatter.formatRupiah(walletBalance)}) tidak mencukupi untuk total tagihan ${CurrencyFormatter.formatRupiah(grandTotal)}. Silakan pilih metode pembayaran lain / Top Up.',
+            ),
+            backgroundColor: AppTheme.primaryRed,
+          ),
+        );
+        return;
+      }
+    }
 
     setState(() {
       _isSubmitting = true;
@@ -168,6 +205,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     const double serviceFee = 1000.0;
     final double grandTotal = subtotal + deliveryFee + serviceFee;
+
+    final walletMap = customerCtrl.wallet;
+    final double walletBalance = double.tryParse(walletMap?['balance']?.toString() ?? '0') ?? 0.0;
+    final bool isWalletInsufficient = walletBalance < grandTotal;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -345,11 +386,36 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     value: 'wallet',
                     // ignore: deprecated_member_use
                     groupValue: _paymentMethod,
-                    title: const Text('CicalengkaPay (Saldo E-Wallet)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    subtitle: const Text('Bebas biaya penanganan', style: TextStyle(fontSize: 11)),
-                    secondary: const Icon(Icons.account_balance_wallet_rounded, color: AppTheme.primaryRed),
+                    title: const Text('CicalengkaPay (Saldo Digital)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    subtitle: Text(
+                      isWalletInsufficient
+                          ? 'Saldo: ${CurrencyFormatter.formatRupiah(walletBalance)} (Saldo Kurang)'
+                          : 'Saldo: ${CurrencyFormatter.formatRupiah(walletBalance)} • Bebas Biaya',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: isWalletInsufficient ? AppTheme.primaryRed : const Color(0xFF16A34A),
+                      ),
+                    ),
+                    secondary: Icon(
+                      Icons.account_balance_wallet_rounded,
+                      color: isWalletInsufficient ? Colors.grey : AppTheme.primaryRed,
+                    ),
                     // ignore: deprecated_member_use
-                    onChanged: (val) => setState(() => _paymentMethod = val!),
+                    onChanged: (val) {
+                      if (isWalletInsufficient) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Saldo CicalengkaPay Anda (${CurrencyFormatter.formatRupiah(walletBalance)}) tidak mencukupi untuk tagihan ${CurrencyFormatter.formatRupiah(grandTotal)}. Silakan gunakan Bayar Tunai (COD).',
+                            ),
+                            backgroundColor: AppTheme.primaryRed,
+                          ),
+                        );
+                        return;
+                      }
+                      setState(() => _paymentMethod = val!);
+                    },
                   ),
                   const Divider(height: 1),
                   RadioListTile<String>(
@@ -487,7 +553,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 ? CachedNetworkImage(
                                     imageUrl: storeLogoUrl,
                                     fit: BoxFit.cover,
-                                    errorWidget: (_, __, ___) => const Icon(Icons.storefront_rounded, size: 16, color: AppTheme.inkBlack),
+                                    errorWidget: (context, url, error) => const Icon(Icons.storefront_rounded, size: 16, color: AppTheme.inkBlack),
                                   )
                                 : const Icon(Icons.storefront_rounded, size: 16, color: AppTheme.inkBlack),
                           ),
