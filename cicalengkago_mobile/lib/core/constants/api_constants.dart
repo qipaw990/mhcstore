@@ -37,9 +37,10 @@ class ApiConstants {
   static const String validateCoupon = '$domainUrl/api/coupons/validate';
 
   // Fallbacks
-  static const String modules  = '$domainUrl/api/home-data';
-  static const String stores   = '$domainUrl/explore-stores';
-  static const String products = '$domainUrl/api/home-data';
+  static const String modules       = '$domainUrl/api/home-data';
+  static const String stores        = '$domainUrl/explore-stores';
+  static const String products      = '$domainUrl/api/home-data';
+  static const String productDetail = '$domainUrl/api/products';
 
   // ==========================================
   // Auth Routes  (POST /login, /register, /verify-otp, /resend-otp)

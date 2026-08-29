@@ -17,8 +17,9 @@ Router::group(['prefix' => '/api/v1'], function () {
     Router::post('/payment/midtrans/notification', [PaymentController::class, 'notification']);
     Router::get('/modules', [ApiController::class, 'modules']);
     Router::get('/stores', [ApiController::class, 'stores']);
-    Router::get('/stores/{id}', [ApiController::class, 'storeDetail']);
     Router::get('/products', [ApiController::class, 'products']);
+    Router::get('/products/{id}', [ApiController::class, 'productDetail']);
+    Router::get('/products/{id}/reviews', [ApiController::class, 'productReviews']);
 
     // Authenticated API (Token Required)
     Router::group(['middleware' => ['ApiAuthMiddleware']], function () {
@@ -58,6 +59,8 @@ Router::group(['prefix' => '/api'], function () {
     Router::get('/stores', [ApiController::class, 'stores']);
     Router::get('/stores/{id}', [ApiController::class, 'storeDetail']);
     Router::get('/products', [ApiController::class, 'products']);
+    Router::get('/products/{id}', [ApiController::class, 'productDetail']);
+    Router::get('/products/{id}/reviews', [ApiController::class, 'productReviews']);
     Router::get('/cart', [ApiController::class, 'cart']);
     Router::post('/cart', [ApiController::class, 'cart']);
     Router::post('/checkout', [ApiController::class, 'checkout']);

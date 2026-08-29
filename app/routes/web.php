@@ -252,6 +252,8 @@ Router::get('/api/coupons', [\App\Controllers\ApiController::class, 'coupons']);
 Router::get('/api/vouchers', [\App\Controllers\ApiController::class, 'coupons']);
 Router::post('/api/coupons/validate', [\App\Controllers\ApiController::class, 'validateCoupon']);
 Router::post('/coupons/validate', [\App\Controllers\ApiController::class, 'validateCoupon']);
+Router::get('/api/products/{id}', [\App\Controllers\ApiController::class, 'productDetail']);
+Router::get('/api/products/{id}/reviews', [\App\Controllers\ApiController::class, 'productReviews']);
 Router::get('/api/banners', [\App\Controllers\ApiController::class, 'banners']);
 Router::get('/api/categories', [\App\Controllers\ApiController::class, 'categories']);
 Router::get('/api/clear-stores', [\App\Controllers\ApiController::class, 'clearStores']);

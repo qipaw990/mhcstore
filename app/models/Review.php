@@ -234,6 +234,43 @@ class Review extends Model
     }
 
     /**
+     * Get reviews list for a specific food / product (or fallback to its store reviews)
+     */
+    public function getProductReviews(int $productId, int $limit = 20): array
+    {
+        $product = Database::fetchOne("SELECT id, store_id, name FROM `products` WHERE `id` = ? LIMIT 1", [$productId]);
+        if (!$product) return [];
+
+        // 1. Direct reviews attached to this product_id
+        $reviews = Database::query(
+            "SELECT r.*, u.name as customer_name, u.avatar as customer_avatar, o.order_code
+             FROM `reviews` r
+             JOIN `users` u ON r.user_id = u.id
+             LEFT JOIN `orders` o ON r.order_id = o.id
+             WHERE r.product_id = ?
+             ORDER BY r.id DESC
+             LIMIT {$limit}",
+            [$productId]
+        );
+
+        // 2. Fallback: If no direct product reviews, fetch store culinary reviews where this food belongs
+        if (empty($reviews) && !empty($product['store_id'])) {
+            $reviews = Database::query(
+                "SELECT r.*, u.name as customer_name, u.avatar as customer_avatar, o.order_code
+                 FROM `reviews` r
+                 JOIN `users` u ON r.user_id = u.id
+                 LEFT JOIN `orders` o ON r.order_id = o.id
+                 WHERE r.store_id = ? AND r.delivery_man_id IS NULL
+                 ORDER BY r.id DESC
+                 LIMIT {$limit}",
+                [(int)$product['store_id']]
+            );
+        }
+
+        return $reviews;
+    }
+
+    /**
      * Recalculate average rating & reviews_count for store
      */
     public function recalculateStoreRating(int $storeId): void

@@ -828,5 +828,63 @@ class ApiController extends Controller
             json_response(false, "Gagal mengosongkan data toko: " . $e->getMessage(), [], 500);
         }
     }
+
+    /**
+     * Get single product / food detail with real-time rating and customer reviews
+     */
+    public function productDetail(int $id): void
+    {
+        $product = \App\Core\Database::fetchOne("
+            SELECT p.*, s.name as store_name, s.logo as store_logo, s.address as store_address, s.is_open as store_is_open, s.rating as store_rating
+            FROM `products` p
+            LEFT JOIN `stores` s ON p.store_id = s.id
+            WHERE p.id = ? LIMIT 1
+        ", [$id]);
+
+        if (!$product) {
+            $this->errorResponse('Produk tidak ditemukan.', null, 404);
+            return;
+        }
+
+        $productModel = new Product();
+        $product['final_price'] = $productModel->calculateFinalPrice($product);
+
+        $reviewModel = new \App\Models\Review();
+        $reviews = $reviewModel->getProductReviews($id, 30);
+
+        $reviewCount = count($reviews);
+        $totalRatingSum = 0;
+        $ratingDistribution = [5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0];
+
+        foreach ($reviews as $rev) {
+            $r = min(5, max(1, (int)$rev['rating']));
+            $totalRatingSum += $r;
+            $ratingDistribution[$r]++;
+        }
+
+        $avgRating = $reviewCount > 0 ? round($totalRatingSum / $reviewCount, 1) : (float)($product['rating'] ?? 5.0);
+
+        $product['avg_rating'] = $avgRating;
+        $product['reviews_count'] = $reviewCount;
+        $product['rating_breakdown'] = $ratingDistribution;
+        $product['reviews'] = $reviews;
+
+        $this->successResponse('Detail produk dan ulasan berhasil diambil', $product);
+    }
+
+    /**
+     * Get list of reviews for a product / food
+     */
+    public function productReviews(int $id): void
+    {
+        $reviewModel = new \App\Models\Review();
+        $reviews = $reviewModel->getProductReviews($id, 50);
+
+        $this->successResponse('Daftar ulasan produk berhasil diambil', [
+            'product_id' => $id,
+            'total'      => count($reviews),
+            'reviews'    => $reviews
+        ]);
+    }
 }
 
