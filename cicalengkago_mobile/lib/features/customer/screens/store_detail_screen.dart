@@ -378,37 +378,33 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                                 errorWidget: (_, url, error) => Container(
                                   width: 76,
                                   height: 76,
-                                  fit: BoxFit.cover,
-                                  errorWidget: (_, url, error) => Container(
-                                    width: 76,
-                                    height: 76,
-                                    color: const Color(0xFFF1F5F9),
-                                    child: const Icon(Icons.fastfood_rounded, size: 30, color: AppTheme.inkBlack),
+                                  color: const Color(0xFFF1F5F9),
+                                  child: const Icon(Icons.fastfood_rounded, size: 30, color: AppTheme.inkBlack),
+                                ),
+                              ),
+                            ),
+                            if (hasDiscount)
+                              Positioned(
+                                top: 0,
+                                left: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFEF4444),
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(14),
+                                      bottomRight: Radius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'PROMO',
+                                    style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900),
                                   ),
                                 ),
                               ),
-                              if (hasDiscount)
-                                Positioned(
-                                  top: 0,
-                                  left: 0,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFEF4444),
-                                      borderRadius: BorderRadius.only(
-                                        topLeft: Radius.circular(14),
-                                        bottomRight: Radius.circular(8),
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      'PROMO',
-                                      style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(width: 14),
+                          ],
+                        ),
+                        const SizedBox(width: 14),
 
                           // Product Details
                           Expanded(
