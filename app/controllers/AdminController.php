@@ -2114,5 +2114,115 @@ class AdminController extends Controller
 
         $this->redirect('admin/payment-methods');
     }
+
+    /**
+     * Halaman Approval Penarikan Dana & Transfer Saldo (Withdrawals / Transfers)
+     */
+    public function withdrawals(): void
+    {
+        $status = trim((string)($this->getQuery('status') ?? 'all'));
+        $page = max(1, (int)($this->getQuery('page') ?? 1));
+        $limit = 15;
+        $offset = ($page - 1) * $limit;
+
+        $whereSql = "1=1";
+        $params = [];
+
+        if (in_array($status, ['pending', 'approved', 'rejected'])) {
+            $whereSql .= " AND wr.status = ?";
+            $params[] = $status;
+        }
+
+        $totalWithdrawals = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM `withdraw_requests` wr WHERE {$whereSql}", $params)['c'] ?? 0);
+        $totalPages = max(1, (int)ceil($totalWithdrawals / $limit));
+
+        $withdrawals = Database::query("
+            SELECT wr.*, u.name as user_name, u.phone as user_phone, u.email as user_email
+            FROM `withdraw_requests` wr
+            LEFT JOIN `users` u ON wr.user_id = u.id
+            WHERE {$whereSql}
+            ORDER BY wr.id DESC
+            LIMIT {$limit} OFFSET {$offset}
+        ", $params);
+
+        $pendingCount = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM `withdraw_requests` WHERE `status` = 'pending'")['c'] ?? 0);
+        $totalPaid = (float)(Database::fetchOne("SELECT COALESCE(SUM(amount), 0) as s FROM `withdraw_requests` WHERE `status` = 'approved'")['s'] ?? 0);
+
+        $this->view('admin.withdrawals', [
+            'title'             => 'Pusat Pencairan Dana & Transfer - CicalengkaGO Admin',
+            'active_tab'        => 'withdrawals',
+            'withdrawals'       => $withdrawals,
+            'current_filter'    => $status,
+            'current_page'      => $page,
+            'total_pages'       => $totalPages,
+            'total_withdrawals' => $totalWithdrawals,
+            'pending_count'     => $pendingCount,
+            'total_paid'        => $totalPaid
+        ], 'admin_layout');
+    }
+
+    /**
+     * Proses Setujui (Approve) atau Tolak (Reject + Refund) Pengajuan Transfer / Withdrawal
+     */
+    public function updateWithdrawalStatus(): void
+    {
+        $id = (int)($this->getPost('id') ?? 0);
+        $newStatus = trim((string)($this->getPost('status') ?? ''));
+        $notes = trim((string)($this->getPost('admin_notes') ?? ''));
+
+        if (!$id || !in_array($newStatus, ['approved', 'rejected'])) {
+            $this->errorResponse('Data pengajuan atau status tidak valid.');
+            return;
+        }
+
+        $req = Database::fetchOne("SELECT * FROM `withdraw_requests` WHERE id = ? LIMIT 1", [$id]);
+        if (!$req) {
+            $this->errorResponse('Pengajuan penarikan dana tidak ditemukan.');
+            return;
+        }
+
+        if ($req['status'] !== 'pending') {
+            $this->errorResponse('Pengajuan ini sudah pernah diproses sebelumnya.');
+            return;
+        }
+
+        try {
+            if ($newStatus === 'approved') {
+                Database::update('withdraw_requests', [
+                    'status'       => 'approved',
+                    'admin_notes'  => $notes ?: 'Transfer telah disetujui & dikirimkan oleh Admin',
+                    'processed_at' => date('Y-m-d H:i:s')
+                ], 'id = ?', [$id]);
+
+                $this->successResponse("Pengajuan penarikan dana ({$req['withdraw_code']}) berhasil disetujui dan ditandai selesai.");
+            } else {
+                // Status: Rejected -> Refund balance back to user's wallet
+                $walletModel = new \App\Models\Wallet();
+                $refundAmount = (float)$req['amount'];
+
+                Database::transaction(function () use ($walletModel, $req, $refundAmount, $notes, $id) {
+                    Database::update('withdraw_requests', [
+                        'status'       => 'rejected',
+                        'admin_notes'  => $notes ?: 'Pengajuan transfer ditolak oleh Admin',
+                        'processed_at' => date('Y-m-d H:i:s')
+                    ], 'id = ?', [$id]);
+
+                    // Refund to wallet
+                    $walletModel->credit(
+                        (int)$req['user_id'],
+                        $refundAmount,
+                        'refund',
+                        "Pengembalian dana (Refund penolakan transfer {$req['withdraw_code']})" . ($notes ? " - {$notes}" : ""),
+                        $req['withdraw_code'] . '-REFUND',
+                        $req['user_type'] ?? 'customer'
+                    );
+                });
+
+                $this->successResponse("Pengajuan penarikan dana ({$req['withdraw_code']}) berhasil ditolak dan saldo Rp " . number_format($refundAmount, 0, ',', '.') . " telah dikembalikan ke dompet pengguna.");
+            }
+        } catch (\Throwable $e) {
+            $this->errorResponse('Gagal memperbarui status pengajuan: ' . $e->getMessage());
+        }
+    }
 }
 

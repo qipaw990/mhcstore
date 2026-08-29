@@ -209,15 +209,12 @@ Router::group(['prefix' => '/admin', 'middleware' => ['AdminMiddleware']], funct
     Router::post('/email/test-send', [AdminController::class, 'testEmailGateway']);
 
     // Payouts & Withdrawals
-    Router::get('/withdrawals', [AdminController::class, 'withdrawals']);
-    Router::post('/withdrawals/update-status', [AdminController::class, 'updateWithdrawStatus']);
-
-    // Midtrans Top-Up Management
+    // Top-ups & Withdrawals
     Router::get('/topups', [AdminController::class, 'topups']);
-    Router::get('/topups/{id}', [AdminController::class, 'topupDetail']);
-    Router::post('/topups/sync-status', [AdminController::class, 'syncTopupStatus']);
     Router::post('/topups/manual-approve', [AdminController::class, 'manualApproveTopup']);
     Router::post('/topups/manual-cancel', [AdminController::class, 'manualCancelTopup']);
+    Router::get('/withdrawals', [AdminController::class, 'withdrawals']);
+    Router::post('/withdrawals/update-status', [AdminController::class, 'updateWithdrawalStatus']);
 
     // In-House Automated Payment & Bank Setup
     Router::get('/payment-methods', [AdminController::class, 'paymentMethods']);

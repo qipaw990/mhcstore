@@ -112,8 +112,19 @@
                             </td>
                             <td>
                                 <div class="fw-bold text-dark small"><?= htmlspecialchars($w['user_name']) ?></div>
-                                <div class="text-muted" style="font-size: 11px;">
-                                    <span class="badge bg-secondary-subtle text-secondary py-0 px-1 me-1"><?= ($w['user_type'] === 'vendor') ? 'Toko / Vendor' : 'Driver Kurir' ?></span>
+                                    <?php 
+                                        $uType = $w['user_type'] ?? 'customer';
+                                        $typeBadge = 'Pelanggan';
+                                        $badgeBg = 'bg-info-subtle text-info-emphasis';
+                                        if ($uType === 'vendor') {
+                                            $typeBadge = 'Mitra Toko';
+                                            $badgeBg = 'bg-warning-subtle text-warning-emphasis';
+                                        } elseif ($uType === 'delivery_man') {
+                                            $typeBadge = 'Driver Kurir';
+                                            $badgeBg = 'bg-success-subtle text-success-emphasis';
+                                        }
+                                    ?>
+                                    <span class="badge <?= $badgeBg ?> py-0.5 px-1.5 me-1"><?= $typeBadge ?></span>
                                     <?= htmlspecialchars($w['user_phone'] ?? '-') ?>
                                 </div>
                             </td>
