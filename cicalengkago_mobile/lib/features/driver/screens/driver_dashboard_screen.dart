@@ -173,7 +173,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             BottomNavigationBarItem(
               icon: (driverCtrl.activeTrip != null)
                   ? Stack(
-                      clipBehavior: ClipNone,
+                      clipBehavior: Clip.none,
                       children: [
                         const Icon(Icons.delivery_dining_rounded),
                         Positioned(
@@ -193,7 +193,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   : const Icon(Icons.radar_rounded),
               activeIcon: (driverCtrl.activeTrip != null)
                   ? Stack(
-                      clipBehavior: ClipNone,
+                      clipBehavior: Clip.none,
                       children: [
                         const Icon(Icons.delivery_dining_rounded, color: AppTheme.primaryRed),
                         Positioned(
