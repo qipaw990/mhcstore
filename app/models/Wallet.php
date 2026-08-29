@@ -160,7 +160,7 @@ class Wallet extends Model
         return true;
     }
 
-    public function getTransactions(int $userId, int $limit = 20, ?string $userType = null): array
+    public function getTransactions(int $userId, int $limit = 50, ?string $userType = null): array
     {
         $wallet = null;
         if ($userType) {
@@ -177,6 +177,18 @@ class Wallet extends Model
         }
         if (!$wallet) return [];
 
-        return Database::query("SELECT * FROM `wallet_transactions` WHERE `wallet_id` = ? ORDER BY `id` DESC LIMIT {$limit}", [$wallet['id']]);
+        return Database::query("
+            SELECT wt.*, 
+                   wr.status as withdraw_status,
+                   wr.admin_notes as withdraw_admin_notes,
+                   wr.bank_name as withdraw_bank,
+                   wr.account_number as withdraw_acc_num,
+                   wr.account_holder as withdraw_acc_holder
+            FROM `wallet_transactions` wt
+            LEFT JOIN `withdraw_requests` wr ON (wr.withdraw_code = wt.reference_id OR wr.withdraw_code = REPLACE(wt.reference_id, '-FEE', ''))
+            WHERE wt.`wallet_id` = ?
+            ORDER BY wt.`id` DESC
+            LIMIT {$limit}
+        ", [$wallet['id']]);
     }
 }

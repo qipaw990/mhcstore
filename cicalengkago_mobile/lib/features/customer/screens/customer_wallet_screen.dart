@@ -1110,30 +1110,75 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
   }
 
   Widget _buildTransactionCard(Map<String, dynamic> tx) {
-    final category = tx['category'] ?? tx['type'] ?? 'credit';
+    final category = (tx['category'] ?? tx['type'] ?? 'credit').toString().toLowerCase();
     final isCredit = tx['type'] == 'credit';
     final amount = double.tryParse(tx['amount']?.toString() ?? '0') ?? 0;
+    final withdrawStatus = tx['withdraw_status']?.toString().toLowerCase();
+    final description = (tx['description'] ?? '').toString();
 
     Color color;
     IconData icon;
     String title;
+    String badgeText;
+    Color badgeBg;
+    Color badgeTextColor;
 
-    if (category == 'topup') {
+    if (withdrawStatus == 'pending' || (category == 'withdraw' && withdrawStatus == null)) {
+      color = const Color(0xFFD97706);
+      icon = Icons.hourglass_top_rounded;
+      title = description.isNotEmpty ? description : 'Kirim Uang ke Rekening';
+      badgeText = 'Menunggu Persetujuan Admin';
+      badgeBg = const Color(0xFFFEF3C7);
+      badgeTextColor = const Color(0xFFB45309);
+    } else if (withdrawStatus == 'approved') {
+      color = const Color(0xFF059669);
+      icon = Icons.check_circle_rounded;
+      title = description.isNotEmpty ? description : 'Transfer Berhasil';
+      badgeText = 'Berhasil Ditransfer';
+      badgeBg = const Color(0xFFDCFCE7);
+      badgeTextColor = const Color(0xFF15803D);
+    } else if (withdrawStatus == 'rejected') {
+      color = AppTheme.primaryRed;
+      icon = Icons.cancel_rounded;
+      title = description.isNotEmpty ? description : 'Transfer Ditolak';
+      badgeText = 'Ditolak (Saldo Dikembalikan)';
+      badgeBg = const Color(0xFFFFE4E6);
+      badgeTextColor = AppTheme.primaryRed;
+    } else if (category == 'fee') {
+      color = const Color(0xFF64748B);
+      icon = Icons.receipt_rounded;
+      title = 'Biaya Admin Layanan Transfer';
+      badgeText = 'Biaya Admin';
+      badgeBg = const Color(0xFFF1F5F9);
+      badgeTextColor = const Color(0xFF475569);
+    } else if (category == 'topup') {
       color = const Color(0xFF10B981);
       icon = Icons.add_circle_rounded;
       title = 'Top Up CicalengkaPay';
+      badgeText = 'Saldo Masuk';
+      badgeBg = const Color(0xFFDCFCE7);
+      badgeTextColor = const Color(0xFF15803D);
     } else if (category == 'order_payment') {
       color = AppTheme.primaryRed;
       icon = Icons.shopping_bag_rounded;
       title = 'Pembayaran Pesanan';
+      badgeText = 'Belanja';
+      badgeBg = const Color(0xFFFFE4E6);
+      badgeTextColor = AppTheme.primaryRed;
     } else if (category == 'refund' || category == 'order_refund') {
       color = const Color(0xFF2563EB);
       icon = Icons.replay_rounded;
       title = 'Refund Pengembalian Dana';
+      badgeText = 'Dana Kembali';
+      badgeBg = const Color(0xFFDBEAFE);
+      badgeTextColor = const Color(0xFF1D4ED8);
     } else {
       color = isCredit ? const Color(0xFF10B981) : AppTheme.primaryRed;
       icon = isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded;
-      title = isCredit ? 'Saldo Masuk' : 'Saldo Keluar';
+      title = description.isNotEmpty ? description : (isCredit ? 'Saldo Masuk' : 'Saldo Keluar');
+      badgeText = isCredit ? 'Masuk' : 'Keluar';
+      badgeBg = color.withOpacity(0.1);
+      badgeTextColor = color;
     }
 
     return Container(
@@ -1141,15 +1186,17 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(
+          color: withdrawStatus == 'pending' ? const Color(0xFFFDE68A) : const Color(0xFFF1F5F9),
+        ),
       ),
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withOpacity(0.12),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 20),
@@ -1159,11 +1206,28 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                Text(tx['description'] ?? '', style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis),
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  withdrawStatus == 'pending'
+                      ? 'Pengajuan sedang ditinjau Admin'
+                      : (tx['created_at'] != null ? tx['created_at'].toString() : (tx['description'] ?? '')),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: withdrawStatus == 'pending' ? const Color(0xFFD97706) : const Color(0xFF64748B),
+                    fontWeight: withdrawStatus == 'pending' ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
+          const SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -1171,16 +1235,16 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                 '${isCredit ? '+' : '-'}${CurrencyFormatter.formatRupiah(amount)}',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color),
               ),
+              const SizedBox(height: 4),
               Container(
-                margin: const EdgeInsets.only(top: 3),
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: badgeBg,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  isCredit ? 'Masuk' : 'Keluar',
-                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color),
+                  badgeText,
+                  style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: badgeTextColor),
                 ),
               ),
             ],

@@ -354,14 +354,16 @@ class CustomerController extends Controller
         $topupLogModel = new \App\Models\TopupLog();
         $topupLogs = $topupLogModel->getByUser($userId, null, 50);
         $topupStats = $topupLogModel->getStats($userId);
+        $withdrawRequests = Database::query("SELECT * FROM `withdraw_requests` WHERE `user_id` = ? ORDER BY `id` DESC LIMIT 50", [$userId]);
 
         if ($this->isJsonRequest()) {
             $this->successResponse('Data dompet digital berhasil diambil', [
-                'wallet'       => $wallet,
-                'transactions' => $transactions,
-                'topup_logs'   => $topupLogs,
-                'topup_stats'  => $topupStats,
-                'balance'      => (float)($wallet['balance'] ?? 0),
+                'wallet'            => $wallet,
+                'transactions'      => $transactions,
+                'topup_logs'        => $topupLogs,
+                'topup_stats'       => $topupStats,
+                'withdraw_requests' => $withdrawRequests,
+                'balance'           => (float)($wallet['balance'] ?? 0),
             ]);
             return;
         }
