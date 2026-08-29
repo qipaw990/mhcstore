@@ -117,6 +117,61 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     _startStatusPolling();
   }
 
+  Map<String, dynamic>? _parseSdpMap(dynamic raw) {
+    if (raw == null) return null;
+    dynamic current = raw;
+    while (current is String) {
+      try {
+        current = jsonDecode(current);
+      } catch (_) {
+        break;
+      }
+    }
+    if (current is Map) {
+      return Map<String, dynamic>.from(current);
+    }
+    return null;
+  }
+
+  Map<String, dynamic>? _unpackCandidate(dynamic item) {
+    if (item == null) return null;
+    dynamic current = item;
+    while (current is String) {
+      try {
+        current = jsonDecode(current);
+      } catch (_) {
+        break;
+      }
+    }
+    if (current is! Map) return null;
+    final map = Map<String, dynamic>.from(current);
+
+    String? role = map['role']?.toString();
+    dynamic cand = map.containsKey('candidate') ? map['candidate'] : map;
+    while (cand is String) {
+      try {
+        cand = jsonDecode(cand);
+      } catch (_) {
+        break;
+      }
+    }
+    if (cand is! Map) return null;
+    final candMap = Map<String, dynamic>.from(cand);
+
+    final candidateStr = candMap['candidate']?.toString() ?? '';
+    final sdpMid = candMap['sdpMid']?.toString() ?? '';
+    final sdpMLineIndex = int.tryParse(candMap['sdpMLineIndex']?.toString() ?? '0') ?? 0;
+
+    if (candidateStr.isEmpty) return null;
+
+    return {
+      'role': role,
+      'candidate': candidateStr,
+      'sdpMid': sdpMid,
+      'sdpMLineIndex': sdpMLineIndex,
+    };
+  }
+
   Future<bool> _requestMicrophonePermission() async {
     try {
       var status = await Permission.microphone.status;
@@ -126,7 +181,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       return status.isGranted;
     } catch (e) {
       debugPrint('[NativeWebRTC] Permission check error: $e');
-      return true; // Fallback to let WebRTC plugin prompt
+      return true;
     }
   }
 
@@ -233,6 +288,10 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         return false;
       }
 
+      for (var track in _localStream!.getAudioTracks()) {
+        track.enabled = true;
+      }
+
       _peerConnection = await createPeerConnection(_rtcConfiguration);
       if (_peerConnection == null) {
         debugPrint('[NativeWebRTC] PeerConnection is null');
@@ -252,14 +311,20 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         }
       };
 
-      _peerConnection!.onTrack = (event) {
-        if (event.streams.isNotEmpty) {
-          _remoteStream = event.streams[0];
+      _peerConnection!.onTrack = (RTCTrackEvent event) {
+        debugPrint('[NativeWebRTC] onTrack received: ${event.track.kind}');
+        if (event.track.kind == 'audio') {
           try {
             event.track.enabled = true;
-            Helper.setSpeakerphoneOn(_isSpeakerOn);
           } catch (_) {}
         }
+        if (event.streams.isNotEmpty) {
+          _remoteStream = event.streams[0];
+          for (var track in _remoteStream!.getAudioTracks()) {
+            track.enabled = true;
+          }
+        }
+        _applyAudioSettings();
       };
 
       _peerConnection!.onConnectionState = (state) {
@@ -271,6 +336,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
               _statusText = 'Panggilan Berlangsung';
             });
             _startTimer();
+            _applyAudioSettings();
           }
         } else if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
                    state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
@@ -278,16 +344,34 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         }
       };
 
-      try {
-        await Helper.setSpeakerphoneOn(_isSpeakerOn);
-      } catch (e) {
-        debugPrint('[NativeWebRTC] setSpeakerphoneOn error: $e');
-      }
+      _peerConnection!.onIceConnectionState = (state) {
+        debugPrint('[NativeWebRTC] ICE connection state: $state');
+        if (state == RTCIceConnectionState.RTCIceConnectionStateConnected ||
+            state == RTCIceConnectionState.RTCIceConnectionStateCompleted) {
+          if (mounted && !_isConnected) {
+            setState(() {
+              _isConnected = true;
+              _statusText = 'Panggilan Berlangsung';
+            });
+            _startTimer();
+            _applyAudioSettings();
+          }
+        }
+      };
 
+      _applyAudioSettings();
       return true;
     } catch (e) {
       debugPrint('[NativeWebRTC] Setup error: $e');
       return false;
+    }
+  }
+
+  Future<void> _applyAudioSettings() async {
+    try {
+      await Helper.setSpeakerphoneOn(_isSpeakerOn);
+    } catch (e) {
+      debugPrint('[NativeWebRTC] setSpeakerphoneOn error: $e');
     }
   }
 
@@ -400,17 +484,18 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
             }
 
             // Handle Answer for Outgoing Call
-            if (!widget.isIncoming && status == 'connected' && call['answer'] != null && !_hasSetRemoteAnswer) {
+            final answerMap = _parseSdpMap(call['answer']);
+            if (!widget.isIncoming && (status == 'connected' || status == 'calling') && answerMap != null && !_hasSetRemoteAnswer) {
               _hasSetRemoteAnswer = true;
               try {
-                dynamic ansObj = call['answer'];
-                if (ansObj is String) ansObj = jsonDecode(ansObj);
-                if (ansObj is Map) {
-                  final answerSdp = RTCSessionDescription(ansObj['sdp']?.toString(), ansObj['type']?.toString() ?? 'answer');
-                  await _peerConnection?.setRemoteDescription(answerSdp);
-                  _remoteDescriptionSet = true;
-                  await _flushPendingRemoteCandidates();
-                }
+                final answerSdp = RTCSessionDescription(
+                  answerMap['sdp']?.toString(),
+                  answerMap['type']?.toString() ?? 'answer',
+                );
+                await _peerConnection?.setRemoteDescription(answerSdp);
+                _remoteDescriptionSet = true;
+                await _flushPendingRemoteCandidates();
+                _applyAudioSettings();
               } catch (e) {
                 debugPrint('[NativeWebRTC] Error setting remote answer: $e');
               }
@@ -429,38 +514,27 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
               if (candList is List) {
                 final myRole = widget.isIncoming ? 'receiver' : 'caller';
                 for (var item in candList) {
-                  dynamic cMap = item;
-                  if (cMap is String) {
-                    try { cMap = jsonDecode(cMap); } catch (_) { continue; }
-                  }
-                  if (cMap == null || cMap is! Map) continue;
-
-                  String? senderRole = cMap['role']?.toString();
-                  dynamic actualCand = cMap.containsKey('candidate') ? cMap['candidate'] : cMap;
-                  if (actualCand is String) {
-                    try { actualCand = jsonDecode(actualCand); } catch (_) {}
-                  }
-                  if (actualCand == null || actualCand is! Map) continue;
+                  final unpacked = _unpackCandidate(item);
+                  if (unpacked == null) continue;
 
                   // Ignore own candidates
-                  if (senderRole == myRole) continue;
+                  if (unpacked['role'] == myRole) continue;
 
-                  final keyStr = jsonEncode(actualCand);
+                  final keyStr = jsonEncode(unpacked);
                   if (_processedCandidates.contains(keyStr)) continue;
 
-                  final candMap = Map<String, dynamic>.from(actualCand);
-
                   if (!_remoteDescriptionSet || _peerConnection == null) {
-                    _pendingRemoteCandidates.add(candMap);
+                    _pendingRemoteCandidates.add(unpacked);
                   } else {
                     _processedCandidates.add(keyStr);
                     try {
                       final cand = RTCIceCandidate(
-                        candMap['candidate']?.toString() ?? '',
-                        candMap['sdpMid']?.toString() ?? '',
-                        int.tryParse(candMap['sdpMLineIndex']?.toString() ?? '0') ?? 0,
+                        unpacked['candidate'],
+                        unpacked['sdpMid'],
+                        unpacked['sdpMLineIndex'],
                       );
                       await _peerConnection?.addCandidate(cand);
+                      debugPrint('[NativeWebRTC] Added remote ICE candidate from polling');
                     } catch (e) {
                       debugPrint('[NativeWebRTC] Error adding ICE candidate: $e');
                     }
@@ -477,6 +551,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                 });
               }
               _startTimer();
+              _applyAudioSettings();
             } else if (status == 'rejected') {
               _handleCallEnded('Panggilan Ditolak');
             } else if (status == 'ended') {
@@ -538,15 +613,16 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         }
       }
 
-      if (offerData != null && !_hasSetRemoteOffer) {
+      final offerMap = _parseSdpMap(offerData);
+      if (offerMap != null && !_hasSetRemoteOffer) {
         _hasSetRemoteOffer = true;
-        if (offerData is String) offerData = jsonDecode(offerData);
-        if (offerData is Map) {
-          final offerSdp = RTCSessionDescription(offerData['sdp']?.toString(), offerData['type']?.toString() ?? 'offer');
-          await _peerConnection!.setRemoteDescription(offerSdp);
-          _remoteDescriptionSet = true;
-          await _flushPendingRemoteCandidates();
-        }
+        final offerSdp = RTCSessionDescription(
+          offerMap['sdp']?.toString(),
+          offerMap['type']?.toString() ?? 'offer',
+        );
+        await _peerConnection!.setRemoteDescription(offerSdp);
+        _remoteDescriptionSet = true;
+        await _flushPendingRemoteCandidates();
       }
 
       final answer = await _peerConnection!.createAnswer({
@@ -577,6 +653,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         });
       }
       _startTimer();
+      _applyAudioSettings();
     } catch (e) {
       debugPrint('[NativeWebRTC] Answer error: $e');
       _handleCallEnded('Gagal menjawab panggilan');
@@ -625,11 +702,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     setState(() {
       _isSpeakerOn = !_isSpeakerOn;
     });
-    try {
-      Helper.setSpeakerphoneOn(_isSpeakerOn);
-    } catch (e) {
-      debugPrint('[NativeWebRTC] Toggle speaker error: $e');
-    }
+    _applyAudioSettings();
   }
 
   void _handleCallEnded(String message) {
