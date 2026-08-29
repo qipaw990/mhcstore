@@ -80,25 +80,56 @@ class DriverController extends ChangeNotifier {
     } catch (_) {}
   }
 
+  StreamSubscription<dynamic>? _positionStreamSub;
+
+  Future<void> refreshLocation() async {
+    try {
+      final pos = await LocationService.getCurrentPosition();
+      _currentLocation = pos;
+      notifyListeners();
+      await _broadcastLocation(pos);
+    } catch (_) {}
+  }
+
+  Future<void> _broadcastLocation(LatLng pos) async {
+    try {
+      await ApiService.postForm(ApiConstants.updateDriverLocation, {
+        'lat': pos.latitude.toString(),
+        'lng': pos.longitude.toString(),
+      });
+    } catch (_) {}
+  }
+
   void startGpsBroadcaster() {
-    _gpsBroadcastTimer?.cancel();
-    _gpsBroadcastTimer = Timer.periodic(const Duration(seconds: 15), (_) async {
-      if (_isOnline) {
-        try {
-          final pos = await LocationService.getCurrentPosition();
-          _currentLocation = pos;
-          await ApiService.postForm(ApiConstants.updateDriverLocation, {
-            'lat': pos.latitude.toString(),
-            'lng': pos.longitude.toString(),
-          });
+    stopGpsBroadcaster();
+
+    // 1. Broadcast immediately on start
+    refreshLocation();
+
+    // 2. Continuous real-time location stream
+    try {
+      _positionStreamSub = LocationService.getPositionStream().listen((position) {
+        if (_isOnline) {
+          _currentLocation = LatLng(position.latitude, position.longitude);
           notifyListeners();
-        } catch (_) {}
+          _broadcastLocation(_currentLocation);
+        }
+      });
+    } catch (_) {}
+
+    // 3. Fallback Periodic heartbeat every 10 seconds
+    _gpsBroadcastTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
+      if (_isOnline) {
+        await refreshLocation();
       }
     });
   }
 
   void stopGpsBroadcaster() {
     _gpsBroadcastTimer?.cancel();
+    _gpsBroadcastTimer = null;
+    _positionStreamSub?.cancel();
+    _positionStreamSub = null;
   }
 
   void startRadarPolling() {

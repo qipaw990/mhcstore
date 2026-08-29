@@ -7,9 +7,24 @@ import '../../../core/utils/currency_formatter.dart';
 import '../controllers/driver_controller.dart';
 import 'active_trip_screen.dart';
 
-class DriverRadarScreen extends StatelessWidget {
+class DriverRadarScreen extends StatefulWidget {
   final Function(int)? onNavigateTab;
   const DriverRadarScreen({super.key, this.onNavigateTab});
+
+  @override
+  State<DriverRadarScreen> createState() => _DriverRadarScreenState();
+}
+
+class _DriverRadarScreenState extends State<DriverRadarScreen> {
+  final MapController _mapController = MapController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DriverController>().refreshLocation();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +55,10 @@ class DriverRadarScreen extends StatelessWidget {
 
     return RefreshIndicator(
       color: AppTheme.primaryRed,
-      onRefresh: () => driverCtrl.fetchRadarData(),
+      onRefresh: () async {
+        await driverCtrl.refreshLocation();
+        await driverCtrl.fetchRadarData();
+      },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Padding(
@@ -93,16 +111,16 @@ class DriverRadarScreen extends StatelessWidget {
                                 child: const Icon(Icons.radar_rounded, color: Colors.white, size: 16),
                               ),
                               const SizedBox(width: 8),
-                              const Column(
+                              Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
+                                  const Text(
                                     'Radar Peta GPS Cicalengka',
                                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
                                   ),
                                   Text(
-                                    'Zona Pelayanan Cicalengka & Sekitarnya',
-                                    style: TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                                    'Lat: ${driverCtrl.currentLocation.latitude.toStringAsFixed(4)}, Lng: ${driverCtrl.currentLocation.longitude.toStringAsFixed(4)}',
+                                    style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontFamily: 'monospace'),
                                   ),
                                 ],
                               ),
@@ -133,76 +151,112 @@ class DriverRadarScreen extends StatelessWidget {
 
                     // Map Container
                     SizedBox(
-                      height: 200,
+                      height: 220,
                       child: ClipRRect(
                         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
-                        child: FlutterMap(
-                          options: MapOptions(
-                            initialCenter: driverCtrl.currentLocation,
-                            initialZoom: 15.0,
-                          ),
+                        child: Stack(
                           children: [
-                            TileLayer(
-                              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                              userAgentPackageName: 'com.cicalengkago.mobile',
-                              errorTileCallback: (tile, error, stackTrace) {
-                                // Silent handling for aborted/cancelled tile requests
-                              },
-                              evictErrorTileStrategy: EvictErrorTileStrategy.none,
-                            ),
-                            MarkerLayer(
-                              markers: [
-                                // Driver location marker
-                                Marker(
-                                  point: driverCtrl.currentLocation,
-                                  width: 50,
-                                  height: 50,
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Container(
-                                        width: 50,
-                                        height: 50,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF16A34A).withValues(alpha: 0.15),
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      Container(
-                                        width: 32,
-                                        height: 32,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFF16A34A),
-                                          shape: BoxShape.circle,
-                                          boxShadow: [BoxShadow(color: Color(0x6616A34A), blurRadius: 10)],
-                                        ),
-                                        child: const Icon(Icons.navigation_rounded, color: Colors.white, size: 18),
-                                      ),
-                                    ],
-                                  ),
+                            FlutterMap(
+                              mapController: _mapController,
+                              options: MapOptions(
+                                initialCenter: driverCtrl.currentLocation,
+                                initialZoom: 15.0,
+                              ),
+                              children: [
+                                TileLayer(
+                                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                  userAgentPackageName: 'com.cicalengkago.mobile',
+                                  errorTileCallback: (tile, error, stackTrace) {
+                                    // Silent handling for aborted/cancelled tile requests
+                                  },
+                                  evictErrorTileStrategy: EvictErrorTileStrategy.none,
                                 ),
-
-                                // Available Order Store Markers
-                                ...driverCtrl.availableOrders.map((ord) {
-                                  final lat = double.tryParse(ord['store_lat']?.toString() ?? '') ?? driverCtrl.currentLocation.latitude + 0.002;
-                                  final lng = double.tryParse(ord['store_lng']?.toString() ?? '') ?? driverCtrl.currentLocation.longitude + 0.002;
-                                  return Marker(
-                                    point: LatLng(lat, lng),
-                                    width: 38,
-                                    height: 38,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.primaryRed,
-                                        shape: BoxShape.circle,
-                                        boxShadow: [
-                                          BoxShadow(color: AppTheme.primaryRed.withValues(alpha: 0.4), blurRadius: 8),
+                                MarkerLayer(
+                                  markers: [
+                                    // Driver location marker
+                                    Marker(
+                                      point: driverCtrl.currentLocation,
+                                      width: 50,
+                                      height: 50,
+                                      child: Stack(
+                                        alignment: Alignment.center,
+                                        children: [
+                                          Container(
+                                            width: 50,
+                                            height: 50,
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF16A34A).withValues(alpha: 0.15),
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                          Container(
+                                            width: 32,
+                                            height: 32,
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFF16A34A),
+                                              shape: BoxShape.circle,
+                                              boxShadow: [BoxShadow(color: Color(0x6616A34A), blurRadius: 10)],
+                                            ),
+                                            child: const Icon(Icons.navigation_rounded, color: Colors.white, size: 18),
+                                          ),
                                         ],
                                       ),
-                                      child: const Icon(Icons.store_rounded, color: Colors.white, size: 18),
                                     ),
-                                  );
-                                }),
+
+                                    // Available Order Store Markers
+                                    ...driverCtrl.availableOrders.map((ord) {
+                                      final lat = double.tryParse(ord['store_lat']?.toString() ?? '') ?? driverCtrl.currentLocation.latitude + 0.002;
+                                      final lng = double.tryParse(ord['store_lng']?.toString() ?? '') ?? driverCtrl.currentLocation.longitude + 0.002;
+                                      return Marker(
+                                        point: LatLng(lat, lng),
+                                        width: 38,
+                                        height: 38,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.primaryRed,
+                                            shape: BoxShape.circle,
+                                            boxShadow: [
+                                              BoxShadow(color: AppTheme.primaryRed.withValues(alpha: 0.4), blurRadius: 8),
+                                            ],
+                                          ),
+                                          child: const Icon(Icons.store_rounded, color: Colors.white, size: 18),
+                                        ),
+                                      );
+                                    }),
+                                  ],
+                                ),
                               ],
+                            ),
+
+                            // Floating Re-center GPS Button
+                            Positioned(
+                              bottom: 10,
+                              right: 10,
+                              child: Material(
+                                elevation: 3,
+                                shape: const CircleBorder(),
+                                color: Colors.white,
+                                child: InkWell(
+                                  customBorder: const CircleBorder(),
+                                  onTap: () async {
+                                    await driverCtrl.refreshLocation();
+                                    _mapController.move(driverCtrl.currentLocation, 15.5);
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('📍 Koordinat GPS Driver diperbarui!'),
+                                          duration: Duration(seconds: 1),
+                                          backgroundColor: Color(0xFF16A34A),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(10),
+                                    child: Icon(Icons.my_location_rounded, color: AppTheme.primaryRed, size: 20),
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
                         ),
