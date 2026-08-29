@@ -112,38 +112,7 @@ class DeliveryController extends Controller
         }
 
         // Auto-credit driver commission for delivered orders that haven't been credited yet
-        $driverWallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
-        $deliveredDriverOrders = Database::query(
-            "SELECT id, order_code, delivery_charge, delivery_batch_id FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` = 'delivered'",
-            [$dm['id']]
-        );
-        $processedBatches = [];
-        $deliveryService = new \App\Services\DeliveryService();
-
-        foreach ($deliveredDriverOrders as $dOrder) {
-            $batchId = $dOrder['delivery_batch_id'] ?? null;
-            if (!empty($batchId)) {
-                if (!in_array($batchId, $processedBatches)) {
-                    $processedBatches[] = $batchId;
-                    $deliveryService->creditBatchCommission($dm, $batchId);
-                }
-            } else {
-                $alreadyCredited = Database::fetchOne(
-                    "SELECT id FROM `wallet_transactions` WHERE `wallet_id` = ? AND `category` = 'order_earning' AND `reference_id` = ? LIMIT 1",
-                    [$driverWallet['id'], (string)$dOrder['id']]
-                );
-                if (!$alreadyCredited) {
-                    $driverEarning = (float)$dOrder['delivery_charge'] * 0.85;
-                    $this->walletModel->credit(
-                        $userId,
-                        $driverEarning,
-                        'order_earning',
-                        "Komisi pengantaran pesanan #{$dOrder['order_code']}",
-                        (string)$dOrder['id']
-                    );
-                }
-            }
-        }
+        $wallet = $this->ensureDriverDeliveredOrdersCredited($dm);
 
         // Calculate REAL delivered orders count strictly from orders table
         $realDeliveredCount = (int)Database::fetchColumn(
@@ -151,9 +120,6 @@ class DeliveryController extends Controller
             [$dm['id']]
         );
         Database::update('delivery_men', ['total_orders' => $realDeliveredCount], 'id = ?', [$dm['id']]);
-
-        // Today's summary
-        $wallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
 
         // Recalculate driver rating & fetch driver reviews
         $reviewModel = new \App\Models\Review();
@@ -233,15 +199,15 @@ class DeliveryController extends Controller
             $availableOrders = $this->orderModel->getAvailableForDelivery((int)($dm['zone_id'] ?? 1));
         }
 
+        // Auto-credit any pending delivered orders
+        $wallet = $this->ensureDriverDeliveredOrdersCredited($dm);
+
         // Recalculate REAL delivered count strictly from orders table
         $realDeliveredCount = (int)Database::fetchColumn(
             "SELECT COUNT(*) FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` = 'delivered'",
             [$dm['id']]
         );
         Database::update('delivery_men', ['total_orders' => $realDeliveredCount], 'id = ?', [$dm['id']]);
-
-        // Today's summary
-        $wallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
 
         // Unread chats
         $unreadChats = 0;
@@ -263,6 +229,7 @@ class DeliveryController extends Controller
             'active_order'     => $activeOrder,
             'available_orders' => $availableOrders,
             'available_count'  => count($availableOrders),
+            'wallet'           => $wallet,
             'wallet_balance'   => (float)($wallet['balance'] ?? 0),
             'total_orders'     => $realDeliveredCount,
             'rating'           => (float)($dm['rating'] ?? 5.0),
@@ -414,40 +381,7 @@ class DeliveryController extends Controller
         }
 
         // Auto-credit any pending delivered orders
-        $driverWallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
-        $deliveredDriverOrders = Database::query(
-            "SELECT id, order_code, delivery_charge, delivery_batch_id FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` = 'delivered'",
-            [$dm['id']]
-        );
-        $processedBatches = [];
-        $deliveryService = new \App\Services\DeliveryService();
-
-        foreach ($deliveredDriverOrders as $dOrder) {
-            $batchId = $dOrder['delivery_batch_id'] ?? null;
-            if (!empty($batchId)) {
-                if (!in_array($batchId, $processedBatches)) {
-                    $processedBatches[] = $batchId;
-                    $deliveryService->creditBatchCommission($dm, $batchId);
-                }
-            } else {
-                $alreadyCredited = Database::fetchOne(
-                    "SELECT id FROM `wallet_transactions` WHERE `wallet_id` = ? AND `category` = 'order_earning' AND `reference_id` = ? LIMIT 1",
-                    [$driverWallet['id'], (string)$dOrder['id']]
-                );
-                if (!$alreadyCredited) {
-                    $driverEarning = (float)$dOrder['delivery_charge'] * 0.85;
-                    $this->walletModel->credit(
-                        $userId,
-                        $driverEarning,
-                        'order_earning',
-                        "Komisi pengantaran pesanan #{$dOrder['order_code']}",
-                        (string)$dOrder['id']
-                    );
-                }
-            }
-        }
-
-        $wallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
+        $wallet = $this->ensureDriverDeliveredOrdersCredited($dm);
         $transactions = $this->walletModel->getTransactions($userId, 50);
         $withdrawRequests = $this->withdrawModel->getByUser($userId, 'delivery_man', 50);
         $totalWithdrawn = $this->withdrawModel->getTotalWithdrawn($userId, 'delivery_man');
@@ -713,5 +647,48 @@ class DeliveryController extends Controller
 
         $_SESSION['success'] = 'Profil Mitra Driver berhasil diperbarui!';
         $this->redirect('delivery/profile');
+    }
+
+    public function ensureDriverDeliveredOrdersCredited(array $dm): array
+    {
+        $userId = (int)$dm['user_id'];
+        $driverWallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
+        $deliveredDriverOrders = Database::query(
+            "SELECT id, order_code, delivery_charge, distance_km, delivery_batch_id FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` = 'delivered'",
+            [$dm['id']]
+        );
+        $processedBatches = [];
+
+        foreach ($deliveredDriverOrders as $dOrder) {
+            $batchId = $dOrder['delivery_batch_id'] ?? null;
+            if (!empty($batchId)) {
+                if (!in_array($batchId, $processedBatches)) {
+                    $processedBatches[] = $batchId;
+                    $this->deliveryService->creditBatchCommission($dm, $batchId);
+                }
+            } else {
+                $alreadyCredited = Database::fetchOne(
+                    "SELECT id FROM `wallet_transactions` WHERE `wallet_id` = ? AND `category` = 'order_earning' AND `reference_id` = ? LIMIT 1",
+                    [$driverWallet['id'], (string)$dOrder['id']]
+                );
+                if (!$alreadyCredited) {
+                    $charge = (float)($dOrder['delivery_charge'] ?? 0);
+                    if ($charge <= 0) {
+                        $km = (float)($dOrder['distance_km'] ?? 1.5);
+                        $charge = max(5000.0, $km * 2500.0);
+                    }
+                    $driverEarning = max(3000.0, round($charge * 0.85, 0));
+                    $this->walletModel->credit(
+                        $userId,
+                        $driverEarning,
+                        'order_earning',
+                        "Komisi pengantaran pesanan #{$dOrder['order_code']}",
+                        (string)$dOrder['id']
+                    );
+                }
+            }
+        }
+
+        return $this->walletModel->find($driverWallet['id']);
     }
 }

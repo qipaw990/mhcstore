@@ -129,6 +129,25 @@ class DriverController extends ChangeNotifier {
               'driver': data['driver'],
             };
           }
+        } else if (data['wallet_balance'] != null) {
+          if (_earnings != null && _earnings!['wallet'] is Map) {
+            final updated = Map<String, dynamic>.from(_earnings!);
+            final wMap = Map<String, dynamic>.from(updated['wallet'] as Map);
+            wMap['balance'] = data['wallet_balance'];
+            if (data['total_orders'] != null) {
+              wMap['total_orders'] = data['total_orders'];
+            }
+            updated['wallet'] = wMap;
+            _earnings = updated;
+          } else {
+            _earnings = {
+              'wallet': {
+                'balance': data['wallet_balance'],
+                'total_orders': data['total_orders'] ?? 0,
+              },
+              'driver': data['driver'] ?? _driverProfile,
+            };
+          }
         }
 
         if (data['reviews'] != null && data['reviews'] is List) {
@@ -216,6 +235,8 @@ class DriverController extends ChangeNotifier {
       final res = await ApiService.postForm(ApiConstants.updateOrderStatus, fields);
       if (res['success'] == true) {
         await fetchRadarData();
+        await fetchEarnings();
+        notifyListeners();
         return true;
       }
     } catch (_) {}

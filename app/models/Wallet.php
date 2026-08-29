@@ -22,6 +22,9 @@ class Wallet extends Model
                 'total_withdrawn' => 0.00
             ]);
             $wallet = $this->find($id);
+        } elseif ($userType === 'delivery_man' && ($wallet['user_type'] ?? '') === 'customer') {
+            Database::update('wallets', ['user_type' => 'delivery_man'], 'id = ?', [$wallet['id']]);
+            $wallet['user_type'] = 'delivery_man';
         }
         return $wallet;
     }
@@ -33,7 +36,10 @@ class Wallet extends Model
             $category = 'refund';
         }
 
-        $wallet = $this->getOrCreate($userId, 'customer');
+        $wallet = $this->firstWhere('user_id', $userId);
+        if (!$wallet) {
+            $wallet = $this->getOrCreate($userId, 'customer');
+        }
 
         // Atomic calculation in MySQL
         Database::execute(
