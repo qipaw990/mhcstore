@@ -18,6 +18,7 @@ class DriverDashboardScreen extends StatefulWidget {
 
 class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   int _currentIndex = 0;
+  dynamic _lastAutoSwitchedTripId;
 
   @override
   void initState() {
@@ -35,13 +36,17 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     final authCtrl = context.watch<AuthController>();
     final user = authCtrl.user;
 
-    // Auto-switch to tab 0 (Radar & Active Trip Screen) if driver has active order
-    if (driverCtrl.activeTrip != null && _currentIndex != 0) {
+    // Only auto-switch to tab 0 once when a NEW trip is first accepted
+    final currentTripId = driverCtrl.activeTrip?['id'] ?? driverCtrl.activeTrip?['order_code'];
+    if (currentTripId != null && currentTripId != _lastAutoSwitchedTripId) {
+      _lastAutoSwitchedTripId = currentTripId;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _currentIndex != 0) {
           setState(() => _currentIndex = 0);
         }
       });
+    } else if (currentTripId == null && _lastAutoSwitchedTripId != null) {
+      _lastAutoSwitchedTripId = null;
     }
 
     return Scaffold(
@@ -164,18 +169,56 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
               context.read<DriverController>().fetchProfile();
             }
           },
-          items: const [
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.radar_rounded),
-              activeIcon: Icon(Icons.radar_rounded, color: AppTheme.primaryRed),
-              label: 'Radar Order',
+              icon: (driverCtrl.activeTrip != null)
+                  ? Stack(
+                      clipBehavior: ClipNone,
+                      children: [
+                        const Icon(Icons.delivery_dining_rounded),
+                        Positioned(
+                          top: -2,
+                          right: -3,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF16A34A),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : const Icon(Icons.radar_rounded),
+              activeIcon: (driverCtrl.activeTrip != null)
+                  ? Stack(
+                      clipBehavior: ClipNone,
+                      children: [
+                        const Icon(Icons.delivery_dining_rounded, color: AppTheme.primaryRed),
+                        Positioned(
+                          top: -2,
+                          right: -3,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF16A34A),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : const Icon(Icons.radar_rounded, color: AppTheme.primaryRed),
+              label: (driverCtrl.activeTrip != null) ? 'Trip Aktif' : 'Radar Order',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.account_balance_wallet_outlined),
               activeIcon: Icon(Icons.account_balance_wallet_rounded, color: AppTheme.primaryRed),
               label: 'Pendapatan',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.person_outline_rounded),
               activeIcon: Icon(Icons.person_rounded, color: AppTheme.primaryRed),
               label: 'Profil Driver',
