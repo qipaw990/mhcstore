@@ -903,7 +903,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   // OTP Code Banner Card
                   if (!isDelivered) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
@@ -919,44 +919,51 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFEF2F2),
-                                  borderRadius: BorderRadius.circular(12),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFEF2F2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(Icons.shield_rounded, color: Color(0xFFDC2626), size: 20),
                                 ),
-                                child: const Icon(Icons.shield_rounded, color: Color(0xFFDC2626), size: 22),
-                              ),
-                              const SizedBox(width: 12),
-                              const Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'KODE OTP PENERIMAAN',
-                                    style: TextStyle(
-                                      color: Color(0xFF64748B),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.5,
-                                    ),
+                                const SizedBox(width: 10),
+                                const Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'KODE OTP PENERIMAAN',
+                                        style: TextStyle(
+                                          color: Color(0xFF64748B),
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 0.5,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      SizedBox(height: 2),
+                                      Text(
+                                        'Berikan kode ini kepada kurir',
+                                        style: TextStyle(
+                                          color: Color(0xFF0F172A),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
                                   ),
-                                  SizedBox(height: 2),
-                                  Text(
-                                    'Berikan kode ini kepada kurir',
-                                    style: TextStyle(
-                                      color: Color(0xFF0F172A),
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
                               color: const Color(0xFF0F172A),
                               borderRadius: BorderRadius.circular(12),
@@ -964,10 +971,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                             child: Text(
                               otpCode,
                               style: const TextStyle(
-                                fontSize: 20,
+                                fontSize: 18,
                                 fontWeight: FontWeight.w900,
                                 color: Colors.white,
-                                letterSpacing: 4,
+                                letterSpacing: 3,
                               ),
                             ),
                           ),
@@ -1056,9 +1063,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                             ),
                           ),
                           Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               // Voice Call Button
                               IconButton(
+                                constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                                padding: const EdgeInsets.all(6),
                                 onPressed: () {
                                   GlobalCallService.instance.openCallScreen(
                                     context,
@@ -1067,12 +1077,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                     callerRole: 'customer',
                                   );
                                 },
-                                icon: const Icon(Icons.phone_in_talk_rounded, color: Color(0xFF2563EB), size: 20),
+                                icon: const Icon(Icons.phone_in_talk_rounded, color: Color(0xFF2563EB), size: 18),
                               ),
                               // In-App Chat Button
                               Stack(
                                 children: [
                                   IconButton(
+                                    constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                                    padding: const EdgeInsets.all(6),
                                     onPressed: () {
                                       final authCtrl = context.read<AuthController>();
                                       final uid = int.tryParse(authCtrl.user?['id']?.toString() ?? '0') ?? 0;
@@ -1083,24 +1095,26 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                         currentUserRole: 'customer',
                                       );
                                     },
-                                    icon: const Icon(Icons.chat_bubble_rounded, color: AppTheme.primaryRed, size: 20),
+                                    icon: const Icon(Icons.chat_bubble_rounded, color: AppTheme.primaryRed, size: 18),
                                   ),
                                   if (unreadChats > 0)
                                     Positioned(
-                                      right: 6,
-                                      top: 6,
+                                      right: 2,
+                                      top: 2,
                                       child: Container(
-                                        padding: const EdgeInsets.all(4),
+                                        padding: const EdgeInsets.all(3),
                                         decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                                        child: Text('$unreadChats', style: const TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold)),
+                                        child: Text('$unreadChats', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
                                       ),
                                     ),
                                 ],
                               ),
                               if (driverPhone.isNotEmpty)
                                 IconButton(
+                                  constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                                  padding: const EdgeInsets.all(6),
                                   onPressed: () => launchUrl(Uri.parse('tel:$driverPhone')),
-                                  icon: const Icon(Icons.call_rounded, color: Color(0xFF16A34A), size: 20),
+                                  icon: const Icon(Icons.call_rounded, color: Color(0xFF16A34A), size: 18),
                                 ),
                             ],
                           ),
@@ -1535,16 +1549,22 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.storefront_rounded, color: AppTheme.primaryRed, size: 18),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Titik Penjemputan (${batchStores.length} Toko)',
-                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
-                          ),
-                        ],
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.storefront_rounded, color: AppTheme.primaryRed, size: 18),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'Titik Penjemputan (${batchStores.length} Toko)',
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
@@ -1760,18 +1780,25 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.storefront_rounded, size: 14, color: AppTheme.primaryRed),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    subStoreName,
-                                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
-                                  ),
-                                ],
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.storefront_rounded, size: 14, color: AppTheme.primaryRed),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        subStoreName,
+                                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              if (subCode.isNotEmpty)
+                              if (subCode.isNotEmpty) ...[
+                                const SizedBox(width: 6),
                                 Text('#$subCode', style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B), fontFamily: 'monospace')),
+                              ],
                             ],
                           ),
                           const Divider(height: 12, color: Color(0xFFF1F5F9)),
