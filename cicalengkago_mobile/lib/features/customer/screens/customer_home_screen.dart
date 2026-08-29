@@ -44,14 +44,14 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   bool _isLocating = true;
 
   final List<Map<String, dynamic>> _categoriesGrid = const [
-    {'name': 'Ayam & Bebek', 'icon': Icons.restaurant_rounded, 'color': Color(0xFF000000), 'bgColor': Color(0xFFF3F3F3), 'query': 'Ayam'},
-    {'name': 'Seblak & Pedas', 'icon': Icons.local_fire_department_rounded, 'color': Color(0xFF000000), 'bgColor': Color(0xFFF3F3F3), 'query': 'Seblak'},
-    {'name': 'Bakso & Mie', 'icon': Icons.soup_kitchen_rounded, 'color': Color(0xFF000000), 'bgColor': Color(0xFFF3F3F3), 'query': 'Bakso'},
-    {'name': 'Nasi & Lauk', 'icon': Icons.rice_bowl_rounded, 'color': Color(0xFF000000), 'bgColor': Color(0xFFF3F3F3), 'query': 'Nasi Goreng'},
-    {'name': 'Kopi & Cafe', 'icon': Icons.local_cafe_rounded, 'color': Color(0xFF000000), 'bgColor': Color(0xFFF3F3F3), 'query': 'Kopi'},
-    {'name': 'Snack & Boba', 'icon': Icons.fastfood_rounded, 'color': Color(0xFF000000), 'bgColor': Color(0xFFF3F3F3), 'query': 'Snack'},
-    {'name': 'Sate & Bakaran', 'icon': Icons.kebab_dining_rounded, 'color': Color(0xFF000000), 'bgColor': Color(0xFFF3F3F3), 'query': 'Sate'},
-    {'name': 'Aneka Minuman', 'icon': Icons.local_drink_rounded, 'color': Color(0xFF000000), 'bgColor': Color(0xFFF3F3F3), 'query': 'Minuman'},
+    {'name': 'Ayam & Bebek', 'icon': Icons.restaurant_rounded, 'color': Color(0xFFDC2626), 'bgColor': Color(0xFFFEE2E2), 'query': 'Ayam'},
+    {'name': 'Seblak & Pedas', 'icon': Icons.local_fire_department_rounded, 'color': Color(0xFFE11D48), 'bgColor': Color(0xFFFFE4E6), 'query': 'Seblak'},
+    {'name': 'Bakso & Mie', 'icon': Icons.soup_kitchen_rounded, 'color': Color(0xFFD97706), 'bgColor': Color(0xFFFEF3C7), 'query': 'Bakso'},
+    {'name': 'Nasi & Lauk', 'icon': Icons.rice_bowl_rounded, 'color': Color(0xFFCA8A04), 'bgColor': Color(0xFFFEF9C3), 'query': 'Nasi Goreng'},
+    {'name': 'Kopi & Cafe', 'icon': Icons.local_cafe_rounded, 'color': Color(0xFF7C3AED), 'bgColor': Color(0xFFEDE9FE), 'query': 'Kopi'},
+    {'name': 'Snack & Boba', 'icon': Icons.fastfood_rounded, 'color': Color(0xFF16A34A), 'bgColor': Color(0xFFDCFCE7), 'query': 'Snack'},
+    {'name': 'Sate & Bakaran', 'icon': Icons.kebab_dining_rounded, 'color': Color(0xFF0891B2), 'bgColor': Color(0xFFCFFAFE), 'query': 'Sate'},
+    {'name': 'Aneka Minuman', 'icon': Icons.local_drink_rounded, 'color': Color(0xFF2563EB), 'bgColor': Color(0xFFDBEAFE), 'query': 'Minuman'},
   ];
 
   final List<Map<String, String>> _trendingChips = const [
@@ -314,8 +314,8 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
 
           return BottomNavigationBar(
             currentIndex: _currentIndex,
-            selectedItemColor: AppTheme.inkBlack,
-            unselectedItemColor: const Color(0xFF94A3B8),
+            selectedItemColor: const Color(0xFFEF4444),
+            unselectedItemColor: const Color(0xFF64748B),
             selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
             unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
             type: BottomNavigationBarType.fixed,
@@ -332,17 +332,17 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             items: [
               const BottomNavigationBarItem(
                 icon: Icon(Icons.grid_view_rounded),
-                activeIcon: Icon(Icons.grid_view_rounded, color: AppTheme.inkBlack),
+                activeIcon: Icon(Icons.grid_view_rounded, color: Color(0xFFEF4444)),
                 label: 'Beranda',
               ),
               const BottomNavigationBarItem(
                 icon: Icon(Icons.receipt_long_outlined),
-                activeIcon: Icon(Icons.receipt_long_rounded, color: AppTheme.inkBlack),
+                activeIcon: Icon(Icons.receipt_long_rounded, color: Color(0xFFEF4444)),
                 label: 'Pesanan',
               ),
               const BottomNavigationBarItem(
                 icon: Icon(Icons.account_balance_wallet_outlined),
-                activeIcon: Icon(Icons.account_balance_wallet_rounded, color: AppTheme.inkBlack),
+                activeIcon: Icon(Icons.account_balance_wallet_rounded, color: Color(0xFFEF4444)),
                 label: 'Dompet',
               ),
               BottomNavigationBarItem(
@@ -357,12 +357,12 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                         child: Container(
                           width: 10,
                           height: 10,
-                          decoration: const BoxDecoration(color: AppTheme.inkBlack, shape: BoxShape.circle),
+                          decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
                         ),
                       ),
                   ],
                 ),
-                activeIcon: const Icon(Icons.person_rounded, color: AppTheme.inkBlack),
+                activeIcon: const Icon(Icons.person_rounded, color: Color(0xFFEF4444)),
                 label: 'Profil',
               ),
             ],
@@ -628,6 +628,8 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               children: [
                 _buildGopayActionButton(
                   icon: Icons.qr_code_scanner_rounded,
+                  iconColor: const Color(0xFF6366F1),
+                  bgColor: const Color(0xFFEEF2FF),
                   label: 'Bayar',
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerWalletScreen()));
@@ -635,6 +637,8 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 ),
                 _buildGopayActionButton(
                   icon: Icons.add_circle_outline_rounded,
+                  iconColor: const Color(0xFF10B981),
+                  bgColor: const Color(0xFFECFDF5),
                   label: 'Top Up',
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerWalletScreen()));
@@ -642,14 +646,18 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 ),
                 _buildGopayActionButton(
                   icon: Icons.history_rounded,
+                  iconColor: const Color(0xFFF59E0B),
+                  bgColor: const Color(0xFFFFFBEB),
                   label: 'Riwayat',
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerWalletScreen()));
                   },
                 ),
                 _buildGopayActionButton(
-                  icon: Icons.grid_view_rounded,
-                  label: 'Lainnya',
+                  icon: Icons.discount_rounded,
+                  iconColor: const Color(0xFFEF4444),
+                  bgColor: const Color(0xFFFEF2F2),
+                  label: 'Voucher',
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerWalletScreen()));
                   },
@@ -662,25 +670,31 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     );
   }
 
-  Widget _buildGopayActionButton({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildGopayActionButton({
+    required IconData icon,
+    required Color iconColor,
+    required Color bgColor,
+    required String label,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(14),
       child: Column(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: const Color(0xFFF3F3F3),
+              color: bgColor,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: AppTheme.inkBlack, size: 20),
+            child: Icon(icon, color: iconColor, size: 22),
           ),
           const SizedBox(height: 5),
           Text(
             label,
-            style: const TextStyle(color: Color(0xFF334155), fontSize: 10, fontWeight: FontWeight.bold),
+            style: const TextStyle(color: Color(0xFF334155), fontSize: 10.5, fontWeight: FontWeight.bold),
           ),
         ],
       ),

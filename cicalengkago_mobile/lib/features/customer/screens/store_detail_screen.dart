@@ -378,117 +378,128 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                                 errorWidget: (_, url, error) => Container(
                                   width: 76,
                                   height: 76,
-                                  color: const Color(0xFFF1F5F9),
-                                  child: const Icon(Icons.fastfood_rounded, size: 30, color: AppTheme.inkBlack),
+                                  fit: BoxFit.cover,
+                                  errorWidget: (_, url, error) => Container(
+                                    width: 76,
+                                    height: 76,
+                                    color: const Color(0xFFF1F5F9),
+                                    child: const Icon(Icons.fastfood_rounded, size: 30, color: AppTheme.inkBlack),
+                                  ),
                                 ),
                               ),
-                            ),
-                            if (hasDiscount)
-                              Positioned(
-                                top: 0,
-                                left: 0,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: const BoxDecoration(
-                                    color: AppTheme.inkBlack,
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(14),
-                                      bottomRight: Radius.circular(8),
+                              if (hasDiscount)
+                                Positioned(
+                                  top: 0,
+                                  left: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFEF4444),
+                                      borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(14),
+                                        bottomRight: Radius.circular(8),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'PROMO',
+                                      style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900),
                                     ),
                                   ),
-                                  child: const Text(
-                                    'PROMO',
-                                    style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900),
-                                  ),
                                 ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(width: 14),
+                            ],
+                          ),
+                          const SizedBox(width: 14),
 
-                        // Product Details
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                product['name'] ?? 'Menu Kuliner',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: AppTheme.inkBlack,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (product['description'] != null && product['description'].toString().isNotEmpty) ...[
-                                const SizedBox(height: 2),
+                          // Product Details
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                                 Text(
-                                  product['description'].toString(),
-                                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                  product['name'] ?? 'Menu Kuliner',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: AppTheme.inkBlack,
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                              ],
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
+                                if (product['description'] != null && product['description'].toString().isNotEmpty) ...[
+                                  const SizedBox(height: 2),
                                   Text(
-                                    CurrencyFormatter.formatRupiah(finalPrice),
-                                    style: const TextStyle(
-                                      color: AppTheme.inkBlack,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 13,
-                                    ),
+                                    product['description'].toString(),
+                                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  if (hasDiscount) ...[
-                                    const SizedBox(width: 6),
+                                ],
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
                                     Text(
-                                      CurrencyFormatter.formatRupiah(price),
+                                      CurrencyFormatter.formatRupiah(finalPrice),
                                       style: const TextStyle(
-                                        fontSize: 10,
-                                        color: Color(0xFF94A3B8),
-                                        decoration: TextDecoration.lineThrough,
+                                        color: Color(0xFFEF4444),
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 13.5,
                                       ),
                                     ),
+                                    if (hasDiscount) ...[
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        CurrencyFormatter.formatRupiah(price),
+                                        style: const TextStyle(
+                                          fontSize: 10.5,
+                                          color: Color(0xFF94A3B8),
+                                          decoration: TextDecoration.lineThrough,
+                                        ),
+                                      ),
+                                    ],
                                   ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+
+                          // Add to Cart Button
+                          InkWell(
+                            onTap: () async {
+                              final productId = int.tryParse(product['id']?.toString() ?? '0') ?? 0;
+                              final ok = await customerCtrl.addToCart(productId, 1);
+                              if (ok && context.mounted) {
+                                AppAlert.showCartAdded(
+                                  context,
+                                  productName: product['name'] ?? 'Menu',
+                                  quantity: 1,
+                                );
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEF4444),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFEF4444).withValues(alpha: 0.25),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-
-                        // Add to Cart Button
-                        InkWell(
-                          onTap: () async {
-                            final productId = int.tryParse(product['id']?.toString() ?? '0') ?? 0;
-                            final ok = await customerCtrl.addToCart(productId, 1);
-                            if (ok && context.mounted) {
-                              AppAlert.showCartAdded(
-                                context,
-                                productName: product['name'] ?? 'Menu',
-                                quantity: 1,
-                              );
-                            }
-                          },
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: AppTheme.inkBlack,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              '+ Tambah',
-                              style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                              child: const Text(
+                                '+ Tambah',
+                                style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                );
+                  );
                 },
                 childCount: _products.length,
               ),
@@ -507,7 +518,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 16,
                     offset: const Offset(0, -4),
                   ),
@@ -516,6 +527,15 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
               child: SafeArea(
                 child: Row(
                   children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.shopping_bag_rounded, color: Color(0xFFEF4444), size: 22),
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -529,17 +549,24 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                           Text(
                             CurrencyFormatter.formatRupiah(customerCtrl.cartSubtotal),
                             style: const TextStyle(
-                              fontSize: 18,
+                              fontSize: 17,
                               fontWeight: FontWeight.w800,
-                              color: AppTheme.inkBlack,
+                              color: Color(0xFF0F172A),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    UberPillButton(
-                      label: 'Lihat Keranjang',
-                      icon: Icons.shopping_bag_outlined,
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFEF4444),
+                        foregroundColor: Colors.white,
+                        elevation: 2,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                      label: const Text('Keranjang', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                       onPressed: () {
                         Navigator.push(
                           context,

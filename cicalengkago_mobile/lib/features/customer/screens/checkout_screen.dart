@@ -488,11 +488,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              UberPillButton(
-                label: _isSubmitting ? 'Memproses...' : 'Buat Pesanan',
-                icon: Icons.check_circle_rounded,
-                paddingHorizontal: 16,
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEF4444),
+                  foregroundColor: Colors.white,
+                  elevation: 2,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                icon: _isSubmitting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.check_circle_rounded, size: 18),
+                label: Text(
+                  _isSubmitting ? 'Memproses...' : 'Pesan Sekarang',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                ),
                 onPressed: (_isSubmitting || _isFetchingLocation) ? null : _handleCheckout,
               ),
             ],

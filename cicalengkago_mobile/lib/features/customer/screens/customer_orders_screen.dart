@@ -151,7 +151,7 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
                             });
                           }
                         },
-                        selectedColor: AppTheme.inkBlack,
+                        selectedColor: const Color(0xFFEF4444),
                         backgroundColor: const Color(0xFFF1F5F9),
                         labelStyle: TextStyle(
                           fontSize: 12,
