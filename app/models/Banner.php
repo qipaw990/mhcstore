@@ -17,7 +17,7 @@ class Banner extends Model
         $params = [];
         $moduleSql = '';
         if ($moduleId) {
-            $moduleSql = " AND (module_id = ? OR module_id IS NULL)";
+            $moduleSql = " AND (module_id = ? OR module_id IS NULL OR module_id = 0)";
             $params[] = $moduleId;
         }
 

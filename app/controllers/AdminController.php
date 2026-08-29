@@ -2042,4 +2042,100 @@ class AdminController extends Controller
 
         $this->redirect('admin/payment-methods');
     }
+
+    // =========================================================================
+    // BANNER & PROMO MANAGEMENT
+    // =========================================================================
+
+    public function banners(): void
+    {
+        $banners = Database::query("
+            SELECT b.*, m.name as module_name
+            FROM `banners` b
+            LEFT JOIN `modules` m ON b.module_id = m.id
+            ORDER BY b.priority ASC, b.id DESC
+        ");
+
+        $modules = Database::query("SELECT * FROM `modules` WHERE `status` = 1 ORDER BY `id` ASC");
+
+        $this->view('admin.banners', [
+            'title'      => 'Manajemen Banner Promo - CicalengkaGO Admin',
+            'active_tab' => 'banners',
+            'banners'    => $banners,
+            'modules'    => $modules
+        ], 'admin_layout');
+    }
+
+    public function saveBanner(): void
+    {
+        $title      = trim((string)($this->getPost('title') ?? ''));
+        $moduleId   = !empty($this->getPost('module_id')) ? (int)$this->getPost('module_id') : null;
+        $priority   = max(1, (int)($this->getPost('priority') ?? 1));
+        $targetType = trim((string)($this->getPost('target_type') ?? 'store'));
+        $targetId   = trim((string)($this->getPost('target_id') ?? '1'));
+        $id         = !empty($this->getPost('id')) ? (int)$this->getPost('id') : null;
+
+        if (empty($title)) {
+            $_SESSION['flash_error'] = 'Judul banner wajib diisi!';
+            $this->redirect('admin/banners');
+            return;
+        }
+
+        $imagePath = '';
+        if (isset($_FILES['image']) && !empty($_FILES['image']['tmp_name']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            $uploaded = upload_image($_FILES['image'], 'banners');
+            if ($uploaded) {
+                $imagePath = $uploaded;
+            }
+        }
+
+        if (empty($imagePath)) {
+            $imagePath = trim((string)($this->getPost('image_url') ?? ''));
+        }
+
+        if (empty($imagePath) && !$id) {
+            $imagePath = 'assets/images/banners/banner1.jpg'; // default placeholder
+        }
+
+        if ($id) {
+            $updateData = [
+                'title'       => $title,
+                'module_id'   => $moduleId,
+                'priority'    => $priority,
+                'target_type' => $targetType,
+                'target_id'   => $targetId,
+            ];
+            if (!empty($imagePath)) {
+                $updateData['image'] = $imagePath;
+            }
+            Database::update('banners', $updateData, 'id = ?', [$id]);
+            $_SESSION['flash_success'] = 'Banner berhasil diperbarui!';
+        } else {
+            Database::insert('banners', [
+                'title'       => $title,
+                'module_id'   => $moduleId,
+                'priority'    => $priority,
+                'image'       => $imagePath,
+                'banner_type' => 'promo',
+                'target_type' => $targetType,
+                'target_id'   => $targetId,
+                'status'      => 1
+            ]);
+            $_SESSION['flash_success'] = 'Banner baru berhasil ditambahkan!';
+        }
+
+        $this->redirect('admin/banners');
+    }
+
+    public function deleteBanner(): void
+    {
+        $id = (int)($this->getPost('id') ?? 0);
+        if ($id <= 0) {
+            $this->json(['success' => false, 'message' => 'ID banner tidak valid.'], 400);
+            return;
+        }
+
+        Database::delete('banners', 'id = ?', [$id]);
+        $this->json(['success' => true, 'message' => 'Banner berhasil dihapus!']);
+    }
 }
