@@ -998,12 +998,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           child: const Icon(Icons.home_rounded, color: Colors.white, size: 20),
                         ),
                       ),
-                      // Driver Pin with Real-time Moving Coordinate Aura
+                      // Driver Pin with Real-time Moving Coordinate Aura & Bogo Helmet Mascot
                       if (isDriverValid)
                         Marker(
                           point: LatLng(driverLat, driverLng),
                           width: 80,
-                          height: 70,
+                          height: 72,
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -1026,24 +1026,35 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                 alignment: Alignment.center,
                                 children: [
                                   Container(
-                                    width: 44,
-                                    height: 44,
+                                    width: 48,
+                                    height: 48,
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF2563EB).withValues(alpha: 0.2),
+                                      color: const Color(0xFF16A34A).withValues(alpha: 0.2),
                                       shape: BoxShape.circle,
                                     ),
                                   ),
-                                  Container(
-                                    width: 36,
-                                    height: 36,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF2563EB),
-                                      shape: BoxShape.circle,
-                                      boxShadow: [BoxShadow(color: Color(0x662563EB), blurRadius: 10)],
-                                    ),
-                                    child: Transform.rotate(
-                                      angle: _driverBearing * (3.141592653589793 / 180.0),
-                                      child: const Icon(Icons.navigation_rounded, color: Colors.white, size: 20),
+                                  Transform.rotate(
+                                    angle: _driverBearing * (3.141592653589793 / 180.0),
+                                    child: Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(color: Color(0x4416A34A), blurRadius: 8, spreadRadius: 1),
+                                        ],
+                                      ),
+                                      child: ClipOval(
+                                        child: Image.asset(
+                                          'assets/images/driver_bogo_marker.png',
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) => Container(
+                                            color: const Color(0xFF16A34A),
+                                            child: const Icon(Icons.navigation_rounded, color: Colors.white, size: 20),
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ],

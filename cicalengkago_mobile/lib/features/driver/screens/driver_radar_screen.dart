@@ -215,33 +215,44 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
                                 ),
                                 MarkerLayer(
                                   markers: [
-                                    // Driver location marker with live compass rotation
+                                    // Driver location marker with Bogo helmet mascot & live compass rotation
                                     Marker(
                                       point: driverCtrl.currentLocation,
-                                      width: 50,
-                                      height: 50,
+                                      width: 52,
+                                      height: 52,
                                       child: Stack(
                                         alignment: Alignment.center,
                                         children: [
                                           Container(
-                                            width: 50,
-                                            height: 50,
+                                            width: 52,
+                                            height: 52,
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFF16A34A).withValues(alpha: 0.15),
+                                              color: const Color(0xFF16A34A).withValues(alpha: 0.2),
                                               shape: BoxShape.circle,
                                             ),
                                           ),
                                           Transform.rotate(
                                             angle: (driverCtrl.heading) * (3.141592653589793 / 180),
                                             child: Container(
-                                              width: 32,
-                                              height: 32,
+                                              width: 42,
+                                              height: 42,
                                               decoration: const BoxDecoration(
-                                                color: Color(0xFF16A34A),
+                                                color: Colors.white,
                                                 shape: BoxShape.circle,
-                                                boxShadow: [BoxShadow(color: Color(0x6616A34A), blurRadius: 10)],
+                                                boxShadow: [
+                                                  BoxShadow(color: Color(0x4416A34A), blurRadius: 8, spreadRadius: 1),
+                                                ],
                                               ),
-                                              child: const Icon(Icons.navigation_rounded, color: Colors.white, size: 18),
+                                              child: ClipOval(
+                                                child: Image.asset(
+                                                  'assets/images/driver_bogo_marker.png',
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error, stackTrace) => Container(
+                                                    color: const Color(0xFF16A34A),
+                                                    child: const Icon(Icons.navigation_rounded, color: Colors.white, size: 18),
+                                                  ),
+                                                ),
+                                              ),
                                             ),
                                           ),
                                         ],
