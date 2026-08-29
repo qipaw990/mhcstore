@@ -1023,7 +1023,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     SizedBox(width: 4),
                     Text(
                       'SERVER LIVE',
-                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.extrabold, color: Color(0xFFDC2626)),
+                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Color(0xFFDC2626)),
                     ),
                   ],
                 ),
