@@ -515,9 +515,12 @@ class PaymentController extends Controller
         $senderWallet = $walletModel->getOrCreate($senderId, 'customer');
         $currentBalance = (float)($senderWallet['balance'] ?? 0);
 
-        // Auto-heal withdraw_requests table column for customer user_type
+        // Auto-heal table columns for customer transfers
         try {
             Database::execute("ALTER TABLE `withdraw_requests` MODIFY COLUMN `user_type` VARCHAR(32) NOT NULL DEFAULT 'customer'");
+        } catch (\Throwable $e) {}
+        try {
+            Database::execute("ALTER TABLE `wallet_transactions` MODIFY COLUMN `category` VARCHAR(50) NOT NULL DEFAULT 'transfer'");
         } catch (\Throwable $e) {}
 
         // =====================================================================

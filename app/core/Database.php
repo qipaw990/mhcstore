@@ -129,6 +129,11 @@ class Database
                   KEY `idx_wr_status` (`status`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
 
+                // Guarantee wallet_transactions category accepts varchar
+                try {
+                    $this->pdo->exec("ALTER TABLE `wallet_transactions` MODIFY COLUMN `category` VARCHAR(50) NOT NULL DEFAULT 'transfer'");
+                } catch (Exception $e) {}
+
                 // Auto-heal orphaned withdrawal transactions if any
                 $orphans = $this->pdo->query("
                     SELECT wt.*, w.user_id, w.user_type, u.name as user_name

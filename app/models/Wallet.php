@@ -67,14 +67,39 @@ class Wallet extends Model
             [$amount, $amount, (int)$wallet['id']]
         );
 
-        Database::insert('wallet_transactions', [
-            'wallet_id'    => (int)$wallet['id'],
-            'amount'       => $amount,
-            'type'         => 'credit',
-            'category'     => $category,
-            'reference_id' => $refId,
-            'description'  => $description
-        ]);
+        try {
+            Database::insert('wallet_transactions', [
+                'wallet_id'    => (int)$wallet['id'],
+                'amount'       => $amount,
+                'type'         => 'credit',
+                'category'     => $category,
+                'reference_id' => $refId,
+                'description'  => $description
+            ]);
+        } catch (\Throwable $e) {
+            // If category fails due to MySQL ENUM, heal table and retry
+            try {
+                Database::execute("ALTER TABLE `wallet_transactions` MODIFY COLUMN `category` VARCHAR(50) NOT NULL DEFAULT 'transfer'");
+                Database::insert('wallet_transactions', [
+                    'wallet_id'    => (int)$wallet['id'],
+                    'amount'       => $amount,
+                    'type'         => 'credit',
+                    'category'     => $category,
+                    'reference_id' => $refId,
+                    'description'  => $description
+                ]);
+            } catch (\Throwable $e2) {
+                // Fallback to basic credit category
+                Database::insert('wallet_transactions', [
+                    'wallet_id'    => (int)$wallet['id'],
+                    'amount'       => $amount,
+                    'type'         => 'credit',
+                    'category'     => 'topup',
+                    'reference_id' => $refId,
+                    'description'  => $description
+                ]);
+            }
+        }
 
         return true;
     }
@@ -98,14 +123,39 @@ class Wallet extends Model
             throw new Exception("Saldo CicalengkaPay tidak mencukupi untuk melakukan transaksi ini.");
         }
 
-        Database::insert('wallet_transactions', [
-            'wallet_id'    => $wallet['id'],
-            'amount'       => $amount,
-            'type'         => 'debit',
-            'category'     => $category,
-            'reference_id' => $refId,
-            'description'  => $description
-        ]);
+        try {
+            Database::insert('wallet_transactions', [
+                'wallet_id'    => $wallet['id'],
+                'amount'       => $amount,
+                'type'         => 'debit',
+                'category'     => $category,
+                'reference_id' => $refId,
+                'description'  => $description
+            ]);
+        } catch (\Throwable $e) {
+            // If category fails due to MySQL ENUM, heal table and retry
+            try {
+                Database::execute("ALTER TABLE `wallet_transactions` MODIFY COLUMN `category` VARCHAR(50) NOT NULL DEFAULT 'transfer'");
+                Database::insert('wallet_transactions', [
+                    'wallet_id'    => $wallet['id'],
+                    'amount'       => $amount,
+                    'type'         => 'debit',
+                    'category'     => $category,
+                    'reference_id' => $refId,
+                    'description'  => $description
+                ]);
+            } catch (\Throwable $e2) {
+                // Fallback to standard debit category
+                Database::insert('wallet_transactions', [
+                    'wallet_id'    => $wallet['id'],
+                    'amount'       => $amount,
+                    'type'         => 'debit',
+                    'category'     => 'order_payment',
+                    'reference_id' => $refId,
+                    'description'  => $description
+                ]);
+            }
+        }
 
         return true;
     }
