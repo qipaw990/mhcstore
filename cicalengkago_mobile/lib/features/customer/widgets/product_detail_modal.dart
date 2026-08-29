@@ -106,7 +106,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                           height: 220,
                           width: double.infinity,
                           fit: BoxFit.cover,
-                          errorWidget: (_, __, ___) => Container(
+                          errorWidget: (context, url, error) => Container(
                             height: 220,
                             color: const Color(0xFFF1F5F9),
                             child: const Center(
@@ -233,7 +233,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
 
             // Bottom Action Bar with Quantity Stepper & Add Button
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
               decoration: BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
@@ -258,6 +258,8 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                       child: Row(
                         children: [
                           IconButton(
+                            constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                            padding: EdgeInsets.zero,
                             icon: const Icon(Icons.remove_rounded, size: 18, color: AppTheme.inkBlack),
                             onPressed: () {
                               if (_quantity > 1) {
@@ -265,11 +267,16 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                               }
                             },
                           ),
-                          Text(
-                            '$_quantity',
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Text(
+                              '$_quantity',
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                            ),
                           ),
                           IconButton(
+                            constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                            padding: EdgeInsets.zero,
                             icon: const Icon(Icons.add_rounded, size: 18, color: AppTheme.inkBlack),
                             onPressed: () {
                               setState(() => _quantity++);
@@ -278,13 +285,15 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 10),
 
                     // Add to Cart Button
                     Expanded(
                       child: UberPillButton(
                         label: 'Tambah • ${CurrencyFormatter.formatRupiah(totalPrice)}',
                         icon: Icons.shopping_bag_outlined,
+                        paddingHorizontal: 12,
+                        fullWidth: true,
                         onPressed: () async {
                           await customerCtrl.addToCart(
                             productId,

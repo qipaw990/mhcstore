@@ -434,7 +434,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
       ),
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -470,9 +470,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               UberPillButton(
                 label: _isSubmitting ? 'Memproses...' : 'Buat Pesanan',
                 icon: Icons.check_circle_rounded,
+                paddingHorizontal: 16,
                 onPressed: (_isSubmitting || _isFetchingLocation) ? null : _handleCheckout,
               ),
             ],
