@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -41,6 +42,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
   String _partnerName = 'Pengguna';
   String _partnerAvatar = 'assets/images/users/driver.png';
+  String _partnerPhone = '';
 
   RTCPeerConnection? _peerConnection;
   MediaStream? _localStream;
@@ -104,6 +106,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       _partnerAvatar = widget.isIncoming
           ? (widget.callData!['caller_avatar'] ?? 'assets/images/users/driver.png')
           : (widget.callData!['receiver_avatar'] ?? 'assets/images/users/driver.png');
+      _partnerPhone = widget.callData!['partner_phone'] ?? widget.callData!['phone'] ?? widget.callData!['customer_phone'] ?? widget.callData!['dm_phone'] ?? '';
       if (widget.callData!['status'] == 'connected') {
         _isConnected = true;
         _statusText = 'Panggilan Berlangsung';
@@ -240,6 +243,11 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
             if (data['data']['partner_avatar'] != null && mounted) {
               setState(() {
                 _partnerAvatar = data['data']['partner_avatar'];
+              });
+            }
+            if (data['data']['partner_phone'] != null && mounted) {
+              setState(() {
+                _partnerPhone = data['data']['partner_phone'].toString();
               });
             }
           } else {
@@ -480,6 +488,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                 _partnerAvatar = widget.isIncoming
                     ? (call['caller_avatar'] ?? _partnerAvatar)
                     : (call['receiver_avatar'] ?? _partnerAvatar);
+                _partnerPhone = call['partner_phone'] ?? call['phone'] ?? _partnerPhone;
               });
             }
 
@@ -886,12 +895,78 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                 ),
               ],
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 28),
+
+              // Alternative Direct Call Methods
+              if (_partnerPhone.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Alternatif Panggilan Cepat',
+                              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              'Jika suara internet tidak terdengar',
+                              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton.filled(
+                        style: IconButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
+                        icon: const Icon(Icons.chat_rounded, color: Colors.white, size: 18),
+                        tooltip: 'WhatsApp Call',
+                        onPressed: _launchWhatsAppCall,
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filled(
+                        style: IconButton.styleFrom(backgroundColor: const Color(0xFF3B82F6)),
+                        icon: const Icon(Icons.phone_forwarded_rounded, color: Colors.white, size: 18),
+                        tooltip: 'Telepon Seluler',
+                        onPressed: _launchPhoneCall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 10),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _launchWhatsAppCall() async {
+    if (_partnerPhone.isEmpty) return;
+    String cleanPhone = _partnerPhone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = '62${cleanPhone.substring(1)}';
+    }
+    final url = Uri.parse('https://wa.me/$cleanPhone?text=Halo%2C%20saya%20terkait%20pesanan%20CicalengkaGO%20${widget.orderCode}');
+    try {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (_) {}
+  }
+
+  Future<void> _launchPhoneCall() async {
+    if (_partnerPhone.isEmpty) return;
+    final url = Uri.parse('tel:$_partnerPhone');
+    try {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (_) {}
   }
 
   Widget _callActionButton({
