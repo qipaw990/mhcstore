@@ -94,7 +94,7 @@ class PaymentInvoice extends Model
     }
 
     /**
-     * Ensure table exists on first call
+     * Ensure table exists and columns have sufficient length on first call
      */
     public static function ensureTable(): void
     {
@@ -106,8 +106,8 @@ class PaymentInvoice extends Model
                     `user_id` INT NOT NULL,
                     `order_id` INT NULL,
                     `type` VARCHAR(32) DEFAULT 'topup',
-                    `bank_name` VARCHAR(32) NOT NULL,
-                    `account_number` VARCHAR(64) NOT NULL,
+                    `bank_name` VARCHAR(128) NOT NULL,
+                    `account_number` VARCHAR(128) NOT NULL,
                     `account_name` VARCHAR(128) NOT NULL,
                     `base_amount` DECIMAL(12,2) NOT NULL,
                     `unique_code` INT NOT NULL,
@@ -125,6 +125,11 @@ class PaymentInvoice extends Model
                     INDEX(`total_amount`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
             ");
+
+            // Auto-migrate column lengths in case table was created with VARCHAR(32)
+            Database::execute("ALTER TABLE `payment_invoices` MODIFY COLUMN `bank_name` VARCHAR(128) NOT NULL");
+            Database::execute("ALTER TABLE `payment_invoices` MODIFY COLUMN `account_number` VARCHAR(128) NOT NULL");
+            Database::execute("ALTER TABLE `payment_invoices` MODIFY COLUMN `account_name` VARCHAR(128) NOT NULL");
         } catch (\Throwable $e) {}
     }
 

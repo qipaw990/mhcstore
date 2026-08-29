@@ -1941,7 +1941,7 @@ class AdminController extends Controller
     {
         $code    = strtoupper(trim((string)($this->getPost('code') ?? '')));
         $name    = trim((string)($this->getPost('name') ?? ''));
-        $accNum  = trim((string)($this->getPost('account_number') ?? '')));
+        $accNum  = trim((string)($this->getPost('account_number') ?? ''));
         $accName = trim((string)($this->getPost('account_name') ?? ''));
         $type    = trim((string)($this->getPost('type') ?? 'bank'));
         $bankId  = trim((string)($this->getPost('bank_id') ?? ''));
