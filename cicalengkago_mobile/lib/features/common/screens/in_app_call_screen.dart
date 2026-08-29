@@ -216,21 +216,35 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     if (_peerConnection != null) return true;
 
     try {
-      _localStream = await navigator.mediaDevices.getUserMedia({
-        'audio': {
-          'echoCancellation': true,
-          'noiseSuppression': true,
-          'autoGainControl': true,
-        },
-        'video': false,
-      });
+      try {
+        _localStream = await navigator.mediaDevices.getUserMedia({
+          'audio': true,
+          'video': false,
+        });
+      } catch (mediaErr) {
+        debugPrint('[NativeWebRTC] First getUserMedia attempt: $mediaErr');
+        _localStream = await navigator.mediaDevices.getUserMedia({
+          'audio': true,
+        });
+      }
+
+      if (_localStream == null) {
+        debugPrint('[NativeWebRTC] LocalStream is null');
+        return false;
+      }
 
       _peerConnection = await createPeerConnection(_rtcConfiguration);
+      if (_peerConnection == null) {
+        debugPrint('[NativeWebRTC] PeerConnection is null');
+        return false;
+      }
 
-      _localStream!.getTracks().forEach((track) {
+      for (var track in _localStream!.getTracks()) {
         track.enabled = true;
-        _peerConnection!.addTrack(track, _localStream!);
-      });
+        try {
+          await _peerConnection!.addTrack(track, _localStream!);
+        } catch (_) {}
+      }
 
       _peerConnection!.onIceCandidate = (candidate) {
         if (candidate.candidate != null && candidate.candidate!.isNotEmpty) {
@@ -264,7 +278,12 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         }
       };
 
-      Helper.setSpeakerphoneOn(_isSpeakerOn);
+      try {
+        await Helper.setSpeakerphoneOn(_isSpeakerOn);
+      } catch (e) {
+        debugPrint('[NativeWebRTC] setSpeakerphoneOn error: $e');
+      }
+
       return true;
     } catch (e) {
       debugPrint('[NativeWebRTC] Setup error: $e');
