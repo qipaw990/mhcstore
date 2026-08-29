@@ -323,7 +323,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             elevation: 0,
             backgroundColor: Colors.white,
             onTap: (idx) {
-              if (idx != 0) {
+              if (idx > 1) {
                 if (!RequireAuthWidget.check(context)) return;
               }
               setState(() {
@@ -335,6 +335,11 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 icon: Icon(Icons.grid_view_rounded),
                 activeIcon: Icon(Icons.grid_view_rounded, color: Color(0xFFEF4444)),
                 label: 'Beranda',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.search_rounded),
+                activeIcon: Icon(Icons.search_rounded, color: Color(0xFFEF4444)),
+                label: 'Pencarian',
               ),
               const BottomNavigationBarItem(
                 icon: Icon(Icons.receipt_long_outlined),
@@ -376,10 +381,12 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   Widget _buildTabBody() {
     switch (_currentIndex) {
       case 1:
-        return const CustomerOrdersScreen();
+        return const CustomerSearchScreen();
       case 2:
-        return const CustomerWalletScreen();
+        return const CustomerOrdersScreen();
       case 3:
+        return const CustomerWalletScreen();
+      case 4:
         return const CustomerProfileScreen();
       default:
         return const SizedBox();
