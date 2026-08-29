@@ -522,8 +522,9 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _defaultAvatar(String name) {
     final initial = name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : 'C';

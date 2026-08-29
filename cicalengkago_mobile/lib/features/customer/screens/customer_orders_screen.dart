@@ -214,6 +214,7 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
                       },
                     ),
             ),
+      ),
     );
   }
 

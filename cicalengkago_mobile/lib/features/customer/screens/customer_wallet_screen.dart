@@ -151,8 +151,9 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
           const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildBalanceCard(double balance, BuildContext context) {
     return Container(

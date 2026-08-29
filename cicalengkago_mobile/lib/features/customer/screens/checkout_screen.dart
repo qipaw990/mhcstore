@@ -486,8 +486,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildOrderSummaryCard(CustomerController customerCtrl) {
     final cart = customerCtrl.cart;
