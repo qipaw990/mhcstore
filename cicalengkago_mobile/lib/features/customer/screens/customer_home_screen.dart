@@ -22,6 +22,7 @@ import 'customer_search_screen.dart';
 import 'order_tracking_screen.dart';
 import 'customer_orders_screen.dart';
 import 'customer_profile_screen.dart';
+import 'explore_stores_screen.dart';
 import '../widgets/product_detail_modal.dart';
 import '../../../core/widgets/require_auth_widget.dart';
 
@@ -1487,9 +1488,15 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerSearchScreen()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ExploreStoresScreen()),
+                  );
                 },
-                child: const Text('Lihat Semua', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryRed)),
+                child: const Text(
+                  'Lihat Semua',
+                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+                ),
               ),
             ],
           ),

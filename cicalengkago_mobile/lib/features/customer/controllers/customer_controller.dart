@@ -175,6 +175,25 @@ class CustomerController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> fetchExploreStores() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final res = await ApiService.get(ApiConstants.exploreStores);
+      if (res['success'] == true && res['data'] != null) {
+        if (res['data'] is List) {
+          _stores = res['data'] as List<dynamic>;
+          if (_topRatedStores.isEmpty) _topRatedStores = _stores;
+        } else if (res['data'] is Map && res['data']['stores'] is List) {
+          _stores = res['data']['stores'] as List<dynamic>;
+          if (_topRatedStores.isEmpty) _topRatedStores = _stores;
+        }
+      }
+    } catch (_) {}
+    _isLoading = false;
+    notifyListeners();
+  }
+
   // ── CART METHODS (Sesuaian dengan web.php routes /cart/add, /cart/update-qty, /cart/remove, /cart/clear) ──
 
   Future<void> fetchCart() async {
