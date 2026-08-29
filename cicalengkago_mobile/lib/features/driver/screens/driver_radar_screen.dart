@@ -108,63 +108,64 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
                   child: Column(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 30,
-                                  height: 30,
-                                  decoration: const BoxDecoration(
-                                    color: AppTheme.primaryRed,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(Icons.radar_rounded, color: Colors.white, size: 16),
-                                ),
-                                const SizedBox(width: 8),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Text(
-                                          'Radar Peta GPS Cicalengka',
-                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.white),
-                                        ),
-                                        if (_autoFollow) ...[
-                                          const SizedBox(width: 6),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFF064E3B),
-                                              borderRadius: BorderRadius.circular(8),
-                                              border: Border.all(color: const Color(0xFF059669)),
-                                            ),
-                                            child: const Text('Live Ikuti GPS', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFF34D399))),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Container(
-                                          width: 6,
-                                          height: 6,
-                                          margin: const EdgeInsets.only(right: 5),
-                                          decoration: const BoxDecoration(color: Color(0xFF22C55E), shape: BoxShape.circle),
-                                        ),
-                                        Text(
-                                          'Lat: ${driverCtrl.currentLocation.latitude.toStringAsFixed(6)} | Lng: ${driverCtrl.currentLocation.longitude.toStringAsFixed(6)}',
-                                          style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF34D399), fontFamily: 'monospace'),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ],
+                            Container(
+                              width: 30,
+                              height: 30,
+                              decoration: const BoxDecoration(
+                                color: AppTheme.primaryRed,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.radar_rounded, color: Colors.white, size: 16),
                             ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Wrap(
+                                    crossAxisAlignment: WrapCrossAlignment.center,
+                                    spacing: 6,
+                                    children: [
+                                      const Text(
+                                        'Radar Peta GPS',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white),
+                                      ),
+                                      if (_autoFollow)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF064E3B),
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: const Color(0xFF059669)),
+                                          ),
+                                          child: const Text('Live GPS', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Color(0xFF34D399))),
+                                        ),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        margin: const EdgeInsets.only(right: 4),
+                                        decoration: const BoxDecoration(color: Color(0xFF22C55E), shape: BoxShape.circle),
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          'Lat: ${driverCtrl.currentLocation.latitude.toStringAsFixed(4)} | Lng: ${driverCtrl.currentLocation.longitude.toStringAsFixed(4)}',
+                                          style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF34D399), fontFamily: 'monospace'),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
@@ -173,6 +174,7 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
                                 border: Border.all(color: const Color(0xFF7F1D1D)),
                               ),
                               child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   const Icon(Icons.my_location_rounded, color: Color(0xFFFCA5A5), size: 12),
                                   const SizedBox(width: 4),
@@ -502,26 +504,30 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
                   children: [
-                    const Text('Status Kurir: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
+                    const Text('Status Kurir:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: driverCtrl.isOnline ? const Color(0xFF16A34A) : const Color(0xFF334155),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        driverCtrl.isOnline ? '● ONLINE (SIAP ANTAR)' : '● OFFLINE (ISTIRAHAT)',
-                        style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
+                        driverCtrl.isOnline ? 'ONLINE' : 'OFFLINE',
+                        style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  driverCtrl.isOnline ? 'GPS aktif: Memindai orderan Cicalengka' : 'Aktifkan status untuk menerima pesanan',
+                  driverCtrl.isOnline ? 'GPS aktif memindai orderan' : 'Aktifkan untuk terima pesanan',
                   style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ],
             ),
@@ -573,28 +579,31 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
                   children: [
-                    const Text('Rating Driver Anda', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.white)),
-                    const SizedBox(width: 6),
+                    const Text('Rating Driver', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                       decoration: BoxDecoration(
                         color: const Color(0xFF78350F),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: const Color(0xFFB45309)),
                       ),
                       child: Text(
-                        '⭐ ${rating.toStringAsFixed(1)} / 5.0',
-                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFFDE68A)),
+                        '⭐ ${rating.toStringAsFixed(1)}',
+                        style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFFFDE68A)),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Total $reviewsCount ulasan kepuasan pengantaran',
-                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                  '$reviewsCount ulasan kepuasan',
+                  style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ],
             ),
