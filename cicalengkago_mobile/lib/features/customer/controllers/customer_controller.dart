@@ -349,11 +349,18 @@ class CustomerController extends ChangeNotifier {
     } catch (_) {}
   }
 
-  Future<bool> updateProfile(Map<String, dynamic> data) async {
+  Future<bool> updateProfile(Map<String, dynamic> data, {String? avatarPath}) async {
     try {
       final fields = <String, String>{};
-      data.forEach((key, val) => fields[key] = val?.toString() ?? '');
-      final res = await ApiService.postForm(ApiConstants.updateProfile, fields);
+      data.forEach((key, val) {
+        if (val != null) fields[key] = val.toString();
+      });
+      final res = await ApiService.postForm(
+        ApiConstants.updateProfile,
+        fields,
+        fileFieldName: avatarPath != null ? 'avatar' : null,
+        filePath: avatarPath,
+      );
       if (res['success'] == true) {
         await fetchProfile();
         return true;

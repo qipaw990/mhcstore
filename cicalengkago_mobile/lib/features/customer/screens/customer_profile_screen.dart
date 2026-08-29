@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/cicalengkago_logo.dart';
@@ -31,6 +33,8 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
   bool _showNewPass = false;
   bool _showConfirmPass = false;
   bool _isSaving = false;
+
+  File? _selectedAvatarFile;
 
   @override
   void initState() {
@@ -64,6 +68,122 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
       buffer.write(str[i]);
     }
     return 'Rp ${buffer.toString()}';
+  }
+
+  Future<void> _pickImage(ImageSource source, StateSetter? setModalState) async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+
+      if (picked != null) {
+        final file = File(picked.path);
+        setState(() {
+          _selectedAvatarFile = file;
+        });
+        if (setModalState != null) {
+          setModalState(() {
+            _selectedAvatarFile = file;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mengambil gambar: $e'),
+            backgroundColor: AppTheme.primaryRed,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showImageSourcePicker(StateSetter? setModalState) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Pilih Sumber Foto Profil',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 14),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEE2E2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.photo_library_rounded, color: AppTheme.primaryRed),
+              ),
+              title: const Text(
+                'Galeri Foto',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              subtitle: const Text(
+                'Pilih gambar yang sudah ada dari galeri',
+                style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickImage(ImageSource.gallery, setModalState);
+              },
+            ),
+            const Divider(height: 1, color: Color(0xFFF1F5F9)),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE0F2FE),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.camera_alt_rounded, color: Color(0xFF0284C7)),
+              ),
+              title: const Text(
+                'Kamera',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              subtitle: const Text(
+                'Ambil foto baru langsung dari kamera',
+                style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickImage(ImageSource.camera, setModalState);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -160,23 +280,48 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
               ),
               child: Row(
                 children: [
-                  // Avatar
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFEE2737), width: 2),
-                    ),
-                    child: ClipOval(
-                      child: avatarUrl != null
-                          ? CachedNetworkImage(
-                              imageUrl: avatarUrl,
-                              fit: BoxFit.cover,
-                              placeholder: (_, __) => _defaultAvatar(name),
-                              errorWidget: (_, __, ___) => _defaultAvatar(name),
-                            )
-                          : _defaultAvatar(name),
+                  // Avatar with camera tap option
+                  GestureDetector(
+                    onTap: () => _showEditProfileModal(context, user, ctrl, authCtrl),
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 54,
+                          height: 54,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: const Color(0xFFEE2737), width: 2),
+                          ),
+                          child: ClipOval(
+                            child: _selectedAvatarFile != null
+                                ? Image.file(_selectedAvatarFile!, fit: BoxFit.cover)
+                                : (avatarUrl != null
+                                    ? CachedNetworkImage(
+                                        imageUrl: avatarUrl,
+                                        fit: BoxFit.cover,
+                                        placeholder: (_, __) => _defaultAvatar(name),
+                                        errorWidget: (_, __, ___) => _defaultAvatar(name),
+                                      )
+                                    : _defaultAvatar(name)),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: AppTheme.primaryRed,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt_rounded,
+                              color: Colors.white,
+                              size: 11,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -541,6 +686,12 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     _newPassCtrl.clear();
     _confirmPassCtrl.clear();
 
+    final name = user?['name'] ?? user?['username'] ?? 'Pengguna';
+    final rawAvatar = user?['avatar'] ?? user?['profile_photo_url'];
+    final avatarUrl = (rawAvatar != null && rawAvatar.toString().isNotEmpty)
+        ? ApiConstants.formatImageUrl(rawAvatar.toString())
+        : null;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -591,6 +742,93 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                         icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF64748B)),
                       ),
                     ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // 0. Foto Profil Avatar Section (Match Web views/customer/profile.php)
+                  _inputLabel('Foto Profil'),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      children: [
+                        Stack(
+                          children: [
+                            Container(
+                              width: 52,
+                              height: 52,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: AppTheme.primaryRed, width: 2),
+                              ),
+                              child: ClipOval(
+                                child: _selectedAvatarFile != null
+                                    ? Image.file(_selectedAvatarFile!, fit: BoxFit.cover)
+                                    : (avatarUrl != null
+                                        ? CachedNetworkImage(
+                                            imageUrl: avatarUrl,
+                                            fit: BoxFit.cover,
+                                            placeholder: (_, __) => _defaultAvatar(name),
+                                            errorWidget: (_, __, ___) => _defaultAvatar(name),
+                                          )
+                                        : _defaultAvatar(name)),
+                              ),
+                            ),
+                            if (_selectedAvatarFile != null)
+                              Positioned(
+                                top: 0,
+                                right: 0,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() => _selectedAvatarFile = null);
+                                    setModalState(() => _selectedAvatarFile = null);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(3),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.close, color: Colors.white, size: 10),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              OutlinedButton.icon(
+                                onPressed: () => _showImageSourcePicker(setModalState),
+                                icon: const Icon(Icons.photo_camera_rounded, size: 14, color: AppTheme.primaryRed),
+                                label: Text(
+                                  _selectedAvatarFile != null ? 'Ganti Foto Pilih' : 'Pilih Foto Baru',
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              const Text(
+                                'JPG, PNG, WEBP. Maks 2MB.',
+                                style: TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
 
                   const SizedBox(height: 12),
@@ -753,24 +991,41 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                                   if (_newPassCtrl.text.isNotEmpty) {
                                     payload['current_password'] = _currentPassCtrl.text;
                                     payload['new_password'] = _newPassCtrl.text;
+                                    payload['confirm_password'] = _confirmPassCtrl.text;
                                   }
 
-                                  final ok = await ctrl.updateProfile(payload);
+                                  final ok = await ctrl.updateProfile(
+                                    payload,
+                                    avatarPath: _selectedAvatarFile?.path,
+                                  );
                                   setModalState(() => _isSaving = false);
 
                                   if (ok && context.mounted) {
+                                    final updatedUser = ctrl.profile ?? {};
                                     await authCtrl.updateUser({
                                       'name': _nameCtrl.text.trim(),
                                       'email': _emailCtrl.text.trim(),
                                       'phone': _phoneCtrl.text.trim(),
+                                      if (updatedUser['avatar'] != null) 'avatar': updatedUser['avatar'],
+                                    });
+
+                                    setState(() {
+                                      _selectedAvatarFile = null;
                                     });
 
                                     Navigator.pop(ctx);
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text('Profil Anda berhasil diperbarui!'),
+                                        content: Text('Profil dan foto berhasil diperbarui!'),
                                         backgroundColor: Color(0xFF10B981),
                                         behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  } else if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Gagal mengupdate profil. Periksa koneksi atau data Anda.'),
+                                        backgroundColor: AppTheme.primaryRed,
                                       ),
                                     );
                                   }

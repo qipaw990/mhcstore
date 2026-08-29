@@ -155,8 +155,10 @@ class ApiService {
   // ── POST multipart/form-data (untuk upload file, atau form PHP lama) ─
   static Future<Map<String, dynamic>> postForm(
     String url,
-    Map<String, String> fields,
-  ) async {
+    Map<String, String> fields, {
+    String? fileFieldName,
+    String? filePath,
+  }) async {
     try {
       final cookie = await _getSavedCookie();
       final token = await _getSavedToken();
@@ -179,7 +181,12 @@ class ApiService {
       }
       request.fields.addAll(updatedFields);
 
-      final streamed = await request.send().timeout(const Duration(seconds: 20));
+      if (fileFieldName != null && filePath != null && filePath.isNotEmpty) {
+        final multipartFile = await http.MultipartFile.fromPath(fileFieldName, filePath);
+        request.files.add(multipartFile);
+      }
+
+      final streamed = await request.send().timeout(const Duration(seconds: 30));
       final response = await http.Response.fromStream(streamed);
 
       await _saveCookiesFromResponse(response);
