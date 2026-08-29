@@ -25,21 +25,37 @@ class ApiController extends Controller
         $password = trim($data['password'] ?? '');
 
         try {
-            $user = (new AuthService())->login($username, $password);
-            
-            // Set session user so PHP $_SESSION is active
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
+
+            $authResult = (new AuthService())->login($username, $password);
+            $user = $authResult['user'] ?? $authResult;
+            $needsOtp = !empty($authResult['needs_otp']);
+
+            if ($needsOtp) {
+                $this->successResponse('Kode OTP WhatsApp telah dikirimkan ke nomor Anda.', [
+                    'require_otp'  => true,
+                    'phone_masked' => $authResult['phone_masked'] ?? '',
+                    'channel'      => $authResult['channel'] ?? 'whatsapp',
+                    'user_id'      => $user['id'],
+                    'role'         => $user['role'],
+                ]);
+                return;
+            }
+
+            // Set session user so PHP $_SESSION is active
             $_SESSION['user'] = $user;
 
             $token = $user['api_token'] ?? null;
             if (empty($token)) {
                 $token = bin2hex(random_bytes(32));
                 (new \App\Models\User())->update($user['id'], ['api_token' => $token]);
+                $user['api_token'] = $token;
             }
 
             $this->successResponse('Login berhasil', [
+                'require_otp' => false,
                 'token' => $token,
                 'user'  => [
                     'id'    => $user['id'],

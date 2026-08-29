@@ -39,11 +39,13 @@ class ApiConstants {
   static const String products = '$domainUrl/api/home-data';
 
   // ==========================================
-  // Auth Routes  (POST /login, /register)
+  // Auth Routes  (POST /login, /register, /verify-otp, /resend-otp)
   // ==========================================
-  static const String login    = '$domainUrl/login';
-  static const String register = '$domainUrl/register';
-  static const String logout   = '$domainUrl/logout';
+  static const String login     = '$domainUrl/login';
+  static const String register  = '$domainUrl/register';
+  static const String verifyOtp = '$domainUrl/verify-otp';
+  static const String resendOtp = '$domainUrl/resend-otp';
+  static const String logout    = '$domainUrl/logout';
 
   // ==========================================
   // Customer Routes  (prefix: /)

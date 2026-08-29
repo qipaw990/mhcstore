@@ -31,7 +31,7 @@ class AuthService
         $isAdminRole    = in_array($role, ['admin', 'vendor', 'delivery_man']);
         $isCustomer     = ($role === 'customer');
 
-        $requireAdminOtp    = BusinessSetting::get('require_login_otp', '1') === '1';
+        $requireAdminOtp    = BusinessSetting::get('require_login_otp', '0') === '1';
         $requireCustomerOtp = BusinessSetting::get('require_customer_otp', '0') === '1';
 
         $needsOtp = ($isAdminRole && $requireAdminOtp) || ($isCustomer && $requireCustomerOtp);
@@ -39,7 +39,11 @@ class AuthService
         if (!$needsOtp) {
             // Direct login — no OTP required
             $_SESSION['user'] = $user;
-            return $user;
+            unset($_SESSION['pending_otp']);
+            return [
+                'user'      => $user,
+                'needs_otp' => false,
+            ];
         }
 
         $otpMode = BusinessSetting::get('otp_mode', 'real');
@@ -85,7 +89,13 @@ class AuthService
             $this->dispatchOtp($phone, $user['email'], $user['name'], $otp);
         }
 
-        return $user;
+        return [
+            'user'         => $user,
+            'needs_otp'    => true,
+            'phone'        => $phone,
+            'phone_masked' => $_SESSION['otp_phone_masked'] ?? $phone,
+            'channel'      => $_SESSION['otp_channel'] ?? 'whatsapp',
+        ];
     }
 
     public function verifyOtp(string $inputOtp): array

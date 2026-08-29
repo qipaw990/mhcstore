@@ -79,9 +79,35 @@ class AuthController extends Controller
         }
 
         try {
-            $user = $this->authService->login($emailOrPhone, $password);
+            $authResult = $this->authService->login($emailOrPhone, $password);
+            $user = $authResult['user'] ?? $authResult;
+            $needsOtp = !empty($authResult['needs_otp']);
 
-            // Directly ensure session user is stored
+            if ($needsOtp) {
+                if ($isJsonRequest) {
+                    $this->json([
+                        'success'      => true,
+                        'require_otp'  => true,
+                        'message'      => 'Kode OTP verifikasi telah dikirimkan via WhatsApp.',
+                        'phone_masked' => $authResult['phone_masked'] ?? '',
+                        'channel'      => $authResult['channel'] ?? 'whatsapp',
+                        'data'         => [
+                            'user_id'      => $user['id'],
+                            'phone'        => $user['phone'] ?? '',
+                            'role'         => $user['role'],
+                            'phone_masked' => $authResult['phone_masked'] ?? '',
+                            'channel'      => $authResult['channel'] ?? 'whatsapp',
+                        ]
+                    ]);
+                    return;
+                }
+
+                $_SESSION['info'] = 'Kode verifikasi OTP telah dikirimkan via WhatsApp.';
+                $this->redirect('verify-otp');
+                return;
+            }
+
+            // Direct login (OTP disabled in Admin settings)
             $_SESSION['user'] = $user;
 
             $apiToken = $user['api_token'] ?? null;
@@ -93,10 +119,11 @@ class AuthController extends Controller
 
             if ($isJsonRequest) {
                 $this->json([
-                    'success' => true,
-                    'message' => 'Login berhasil',
-                    'token'   => $apiToken,
-                    'data'    => [
+                    'success'     => true,
+                    'require_otp' => false,
+                    'message'     => 'Login berhasil',
+                    'token'       => $apiToken,
+                    'data'        => [
                         'token' => $apiToken,
                         'user'  => [
                             'id'    => $user['id'],
@@ -106,14 +133,8 @@ class AuthController extends Controller
                             'role'  => $user['role']
                         ]
                     ],
-                    'user'    => $user
+                    'user'        => $user
                 ]);
-                return;
-            }
-
-            if (!empty($_SESSION['pending_otp'])) {
-                $_SESSION['info'] = 'Kode verifikasi OTP telah dikirimkan.';
-                $this->redirect('verify-otp');
                 return;
             }
 
@@ -167,7 +188,15 @@ class AuthController extends Controller
             $otp = implode('', $data['otp_digit']);
         }
 
+        $isJsonRequest = (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
+            || (isset($_SERVER['CONTENT_TYPE']) && str_contains($_SERVER['CONTENT_TYPE'], 'application/json'))
+            || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
+
         if (empty($otp) || strlen($otp) < 6) {
+            if ($isJsonRequest) {
+                $this->json(['success' => false, 'message' => 'Masukkan 6 digit kode OTP verifikasi.'], 400);
+                return;
+            }
             $_SESSION['error'] = 'Masukkan 6 digit kode OTP verifikasi.';
             $this->redirect('verify-otp');
             return;
@@ -176,6 +205,10 @@ class AuthController extends Controller
         try {
             if (!empty($_SESSION['is_password_reset_flow'])) {
                 $this->authService->verifyResetOtp($otp);
+                if ($isJsonRequest) {
+                    $this->json(['success' => true, 'message' => 'Kode OTP terverifikasi. Silakan buat kata sandi baru.']);
+                    return;
+                }
                 $_SESSION['success'] = 'Kode OTP terverifikasi! Silakan buat kata sandi baru Anda.';
                 $this->redirect('reset-password');
                 return;
@@ -184,6 +217,33 @@ class AuthController extends Controller
             $isProfileUpdate = !empty($_SESSION['pending_profile_update']);
             $isPasswordUpdate = !empty($_SESSION['pending_profile_update']['password']);
             $user = $this->authService->verifyOtp($otp);
+
+            $apiToken = $user['api_token'] ?? null;
+            if (empty($apiToken)) {
+                $apiToken = bin2hex(random_bytes(32));
+                (new \App\Models\User())->update($user['id'], ['api_token' => $apiToken]);
+                $user['api_token'] = $apiToken;
+            }
+
+            if ($isJsonRequest) {
+                $this->json([
+                    'success' => true,
+                    'message' => 'Verifikasi OTP berhasil',
+                    'token'   => $apiToken,
+                    'data'    => [
+                        'token' => $apiToken,
+                        'user'  => [
+                            'id'    => $user['id'],
+                            'name'  => $user['name'],
+                            'email' => $user['email'],
+                            'phone' => $user['phone'],
+                            'role'  => $user['role']
+                        ]
+                    ],
+                    'user'    => $user
+                ]);
+                return;
+            }
 
             if ($isPasswordUpdate) {
                 $_SESSION['success'] = 'Kata sandi dan profil berhasil diverifikasi & diperbarui!';
@@ -195,6 +255,10 @@ class AuthController extends Controller
 
             $this->redirectToRoleDashboard($user['role'], $isProfileUpdate);
         } catch (Exception $e) {
+            if ($isJsonRequest) {
+                $this->json(['success' => false, 'message' => $e->getMessage()], 400);
+                return;
+            }
             $_SESSION['error'] = $e->getMessage();
             $this->redirect('verify-otp');
         }
@@ -202,10 +266,26 @@ class AuthController extends Controller
 
     public function handleResendOtp(): void
     {
+        $isJsonRequest = (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
+            || (isset($_SERVER['CONTENT_TYPE']) && str_contains($_SERVER['CONTENT_TYPE'], 'application/json'))
+            || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
+
         try {
             $newOtp = $this->authService->resendOtp();
+            if ($isJsonRequest) {
+                $this->json([
+                    'success' => true,
+                    'message' => 'Kode OTP baru telah dikirimkan via WhatsApp.',
+                    'phone_masked' => $_SESSION['otp_phone_masked'] ?? '',
+                ]);
+                return;
+            }
             $_SESSION['success'] = 'Kode OTP baru telah dikirimkan via WhatsApp.';
         } catch (Exception $e) {
+            if ($isJsonRequest) {
+                $this->json(['success' => false, 'message' => $e->getMessage()], 400);
+                return;
+            }
             $_SESSION['error'] = $e->getMessage();
         }
         $this->redirect('verify-otp');

@@ -6,6 +6,7 @@ import '../../../main.dart';
 import '../controllers/auth_controller.dart';
 import '../../driver/controllers/driver_controller.dart';
 import 'register_screen.dart';
+import 'otp_verification_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -45,6 +46,20 @@ class _LoginScreenState extends State<LoginScreen> {
     final success = await authController.login(username, password);
 
     if (!mounted) return;
+
+    // Check if backend requires WhatsApp OTP verification
+    if (authController.requiresOtp) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => OtpVerificationScreen(
+            phoneMasked: authController.otpPhoneMasked ?? username,
+            channel: authController.otpChannel ?? 'whatsapp',
+          ),
+        ),
+      );
+      return;
+    }
 
     if (success) {
       final userName = authController.user?['name'] ?? 'Pengguna';
