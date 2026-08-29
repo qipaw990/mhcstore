@@ -652,11 +652,43 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                             if (ok) {
                               setState(() => _isEditing = false);
                               messenger.showSnackBar(
-                                const SnackBar(content: Text('✅ Kata sandi berhasil diperbarui!'), backgroundColor: Colors.green),
+                                const SnackBar(
+                                  content: Text('✅ Kata sandi berhasil diperbarui!'),
+                                  backgroundColor: Colors.green,
+                                ),
                               );
                             } else {
-                              messenger.showSnackBar(
-                                const SnackBar(content: Text('Gagal memperbarui kata sandi. Periksa kata sandi saat ini.'), backgroundColor: Colors.red),
+                              final errMsg = driverCtrl.lastErrorMessage ?? 'Gagal memperbarui kata sandi.';
+                              showDialog(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                  title: const Row(
+                                    children: [
+                                      Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 24),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Gagal Ubah Sandi',
+                                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                      ),
+                                    ],
+                                  ),
+                                  content: Text(
+                                    errMsg,
+                                    style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
+                                  ),
+                                  actions: [
+                                    ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFFDC2626),
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      ),
+                                      onPressed: () => Navigator.of(ctx).pop(),
+                                      child: const Text('Tutup', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    ),
+                                  ],
+                                ),
                               );
                             }
                           }

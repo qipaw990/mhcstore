@@ -393,6 +393,7 @@ class DriverController extends ChangeNotifier {
     String? newPassword,
     String? confirmPassword,
   }) async {
+    _lastErrorMessage = null;
     try {
       final fields = <String, String>{
         'name': name,
@@ -413,10 +414,15 @@ class DriverController extends ChangeNotifier {
 
       final res = await ApiService.postForm(ApiConstants.driverUpdateProfile, fields);
       if (res['success'] == true) {
+        _lastErrorMessage = null;
         await fetchProfile();
         return true;
+      } else {
+        _lastErrorMessage = res['message']?.toString() ?? 'Gagal memperbarui kata sandi.';
       }
-    } catch (_) {}
+    } catch (e) {
+      _lastErrorMessage = 'Terjadi kesalahan koneksi. Silakan coba lagi.';
+    }
     return false;
   }
 
