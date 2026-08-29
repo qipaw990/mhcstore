@@ -533,17 +533,37 @@ class DeliveryController extends Controller
             [(int)$dm['id'], (int)$dm['user_id']]
         );
 
-        // Fetch recent transactions with joined order details
-        $transactions = Database::query(
-            "SELECT wt.*, o.order_code, o.order_status, o.delivered_at, s.name as store_name, u.name as customer_name
-             FROM `wallet_transactions` wt
-             LEFT JOIN `orders` o ON wt.reference_id = CAST(o.id AS CHAR) OR wt.reference_id = o.order_code
-             LEFT JOIN `stores` s ON o.store_id = s.id
-             LEFT JOIN `users` u ON o.customer_id = u.id
-             WHERE wt.wallet_id = ?
-             ORDER BY wt.id DESC LIMIT 50",
-            [(int)$wallet['id']]
-        );
+        // Fetch recent transactions
+        $transactions = $this->walletModel->getTransactions($userId, 50);
+
+        // Safe in-memory enrichment without collation conflicts
+        if (!empty($transactions)) {
+            $refIds = array_filter(array_column($transactions, 'reference_id'));
+            $numericIds = array_values(array_filter($refIds, fn($val) => is_numeric($val) && (int)$val > 0));
+            if (!empty($numericIds)) {
+                $inPlaceholders = implode(',', array_fill(0, count($numericIds), '?'));
+                $orderRows = Database::query(
+                    "SELECT o.id, o.order_code, s.name as store_name, u.name as customer_name
+                     FROM `orders` o
+                     LEFT JOIN `stores` s ON o.store_id = s.id
+                     LEFT JOIN `users` u ON o.customer_id = u.id
+                     WHERE o.id IN ({$inPlaceholders})",
+                    $numericIds
+                );
+                $ordersMap = [];
+                foreach ($orderRows as $or) {
+                    $ordersMap[(string)$or['id']] = $or;
+                }
+                foreach ($transactions as &$tx) {
+                    $ref = (string)($tx['reference_id'] ?? '');
+                    if (isset($ordersMap[$ref])) {
+                        $tx['order_code'] = $ordersMap[$ref]['order_code'];
+                        $tx['store_name'] = $ordersMap[$ref]['store_name'];
+                        $tx['customer_name'] = $ordersMap[$ref]['customer_name'];
+                    }
+                }
+            }
+        }
 
         $withdrawRequests = $this->withdrawModel->getByUser($userId, 'delivery_man', 50);
         $totalWithdrawn = $this->withdrawModel->getTotalWithdrawn($userId, 'delivery_man');
