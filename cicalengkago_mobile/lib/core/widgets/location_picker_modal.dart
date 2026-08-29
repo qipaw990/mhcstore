@@ -194,6 +194,10 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                     TileLayer(
                       urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                       userAgentPackageName: 'com.cicalengkago.mobile',
+                      errorTileCallback: (tile, error, stackTrace) {
+                        // Silent handling for aborted/cancelled tile requests
+                      },
+                      evictErrorTileStrategy: EvictErrorTileStrategy.none,
                     ),
                   ],
                 ),
