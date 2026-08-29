@@ -1019,9 +1019,11 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             Builder(builder: (context) {
               final currentStoreName = pickupStores[currentPickupIdx]['name'] ?? 'Toko ${currentPickupIdx + 1}';
               return _actionButton(
+                icon: Icons.check_circle_rounded,
                 label: storeCount > 1
-                    ? '✅ Sudah Ambil di Toko ${currentPickupIdx + 1}: $currentStoreName'
-                    : '✅ Sudah Ambil di Toko / Resto',
+                    ? 'Sudah Ambil di Toko ${currentPickupIdx + 1}'
+                    : 'Sudah Ambil di Toko',
+                sublabel: currentStoreName,
                 color: const Color(0xFF2563EB),
                 onTap: () async {
                   setState(() {
@@ -1034,7 +1036,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                       if (ok) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('🎉 Semua resto selesai diambil! Rute otomatis diarahkan ke rumah pelanggan.'),
+                            content: Text('🎉 Semua toko selesai diambil! Rute otomatis diarahkan ke rumah pelanggan.'),
                             backgroundColor: Color(0xFF059669),
                           ),
                         );
@@ -1110,7 +1112,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           ),
           const SizedBox(height: 12),
           _actionButton(
-            label: '📦 Pesanan Sudah Sampai (Selesai)',
+            icon: Icons.done_all_rounded,
+            label: 'Pesanan Selesai Diantar',
+            sublabel: 'Konfirmasi Serah Terima ke $customerName',
             color: const Color(0xFF059669),
             onTap: () async {
               final otp = _otpCtrl.text.trim();
@@ -1193,19 +1197,56 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     );
   }
 
-  Widget _actionButton({required String label, required Color color, required VoidCallback onTap}) {
+  Widget _actionButton({
+    required IconData icon,
+    required String label,
+    String? sublabel,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: const StadiumBorder(),
-          elevation: 0,
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 2,
+          shadowColor: color.withValues(alpha: 0.35),
         ),
         onPressed: onTap,
-        child: Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20, color: Colors.white),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Colors.white),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                  if (sublabel != null && sublabel.isNotEmpty) ...[
+                    const SizedBox(height: 1.5),
+                    Text(
+                      sublabel,
+                      style: const TextStyle(fontSize: 10.5, color: Colors.white70),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
