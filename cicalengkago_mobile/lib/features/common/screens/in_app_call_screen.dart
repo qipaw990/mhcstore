@@ -177,7 +177,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         RtcEngineEventHandler(
           onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
             debugPrint('[AgoraVoice] Local user joined channel: ${connection.channelId}');
-            _agoraEngine?.setEnableSpeakerphone(_isSpeakerOn);
+            _safeSetSpeakerphone(_isSpeakerOn);
           },
           onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
             debugPrint('[AgoraVoice] Remote user joined channel: $remoteUid');
@@ -187,7 +187,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                 _statusText = 'Panggilan Berlangsung';
               });
               _startTimer();
-              _agoraEngine?.setEnableSpeakerphone(_isSpeakerOn);
+              _safeSetSpeakerphone(_isSpeakerOn);
             }
           },
           onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
@@ -205,11 +205,22 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         profile: AudioProfileType.audioProfileSpeechStandard,
         scenario: AudioScenarioType.audioScenarioGameStreaming,
       );
-      await _agoraEngine!.setEnableSpeakerphone(_isSpeakerOn);
+      try {
+        await _agoraEngine!.setDefaultAudioRouteToSpeakerphone(_isSpeakerOn);
+      } catch (_) {}
+      await _safeSetSpeakerphone(_isSpeakerOn);
 
       _isAgoraInitialized = true;
     } catch (e) {
       debugPrint('[AgoraVoice] Setup engine error: $e');
+    }
+  }
+
+  Future<void> _safeSetSpeakerphone(bool enable) async {
+    try {
+      await _agoraEngine?.setEnableSpeakerphone(enable);
+    } catch (e) {
+      debugPrint('[AgoraVoice] setEnableSpeakerphone safe catch: $e');
     }
   }
 
@@ -271,7 +282,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                 });
               }
               _startTimer();
-              _agoraEngine?.setEnableSpeakerphone(_isSpeakerOn);
+              _safeSetSpeakerphone(_isSpeakerOn);
             } else if (status == 'rejected') {
               _handleCallEnded('Panggilan Ditolak');
             } else if (status == 'ended') {
@@ -334,7 +345,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         });
       }
       _startTimer();
-      _agoraEngine?.setEnableSpeakerphone(_isSpeakerOn);
+      _safeSetSpeakerphone(_isSpeakerOn);
     } catch (e) {
       debugPrint('[AgoraVoice] Answer error: $e');
       _handleCallEnded('Gagal menjawab panggilan');
@@ -378,11 +389,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     setState(() {
       _isSpeakerOn = !_isSpeakerOn;
     });
-    try {
-      _agoraEngine?.setEnableSpeakerphone(_isSpeakerOn);
-    } catch (e) {
-      debugPrint('[AgoraVoice] Toggle speaker error: $e');
-    }
+    _safeSetSpeakerphone(_isSpeakerOn);
   }
 
   void _handleCallEnded(String message) {
