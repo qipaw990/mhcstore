@@ -71,23 +71,36 @@ class DeliveryController extends Controller
                     break;
                 }
             }
-        } else {
-            // Fallback: look up last assigned order
+        }
+        
+        // Fallback: look up last assigned order from delivery_men or orders table
+        if (empty($activeOrder)) {
             if (!empty($dm['current_order_id'])) {
-                $activeOrder = $this->orderModel->find($dm['current_order_id']);
-                if ($activeOrder && in_array($activeOrder['order_status'], ['delivered', 'canceled'])) {
-                    $activeOrder = null;
+                $candidate = $this->orderModel->find($dm['current_order_id']);
+                if ($candidate && !in_array($candidate['order_status'], ['delivered', 'canceled'])) {
+                    $activeOrder = $candidate;
                 }
             }
-            if (empty($activeOrder)) {
-                $activeOrder = Database::fetchOne(
-                    "SELECT * FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` IN ('confirmed', 'processing', 'handover', 'picked_up', 'on_the_way') ORDER BY id DESC LIMIT 1",
-                    [$dm['id']]
-                );
+        }
+        if (empty($activeOrder)) {
+            $candidate = Database::fetchOne(
+                "SELECT * FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` NOT IN ('delivered', 'canceled') ORDER BY id DESC LIMIT 1",
+                [$dm['id']]
+            );
+            if ($candidate) {
+                $activeOrder = $this->orderModel->findByCode($candidate['order_code']) ?: $candidate;
+                Database::update('delivery_men', ['current_order_id' => $candidate['id']], 'id = ?', [$dm['id']]);
             }
         }
 
         if (!empty($activeOrder)) {
+            if (empty($activeOrder['customer_name']) && !empty($activeOrder['customer_id'])) {
+                $customer = Database::fetchOne("SELECT name, phone, avatar FROM users WHERE id = ? LIMIT 1", [$activeOrder['customer_id']]);
+                if ($customer) {
+                    $activeOrder['customer_name'] = $customer['name'];
+                    $activeOrder['customer_phone'] = $customer['phone'];
+                }
+            }
             if (!empty($activeOrder['delivery_address_json']) && empty($activeOrder['delivery_address'])) {
                 $activeOrder['delivery_address'] = json_decode($activeOrder['delivery_address_json'], true);
             }
@@ -136,11 +149,14 @@ class DeliveryController extends Controller
         if ($this->isJsonRequest()) {
             $this->successResponse('Dashboard driver berhasil diambil', [
                 'driver'            => $dm,
+                'is_online'         => (int)($dm['is_online'] ?? 1),
                 'active_order'      => $activeOrder,
                 'active_trip'       => $activeOrder,
                 'active_batch'      => $activeBatch,
                 'available_orders'  => $availableOrders,
                 'wallet'            => $wallet,
+                'wallet_balance'    => (float)($wallet['balance'] ?? 0),
+                'total_orders'      => $realDeliveredCount,
                 'reviews'           => $reviews,
             ]);
             return;
@@ -317,6 +333,34 @@ class DeliveryController extends Controller
         try {
             $result = $this->deliveryService->acceptOrder($userId, $orderId);
             $orderCount = is_array($result['order_count'] ?? null) ? count($result['order_count']) : (int)($result['order_count'] ?? 1);
+
+            // Fetch full order data for instant mobile transition
+            $order = $this->orderModel->findByCode($result['order_code'] ?? '') ?: $this->orderModel->find($orderId);
+            if ($order) {
+                if (empty($order['customer_name']) && !empty($order['customer_id'])) {
+                    $customer = Database::fetchOne("SELECT name, phone, avatar FROM users WHERE id = ? LIMIT 1", [$order['customer_id']]);
+                    if ($customer) {
+                        $order['customer_name'] = $customer['name'];
+                        $order['customer_phone'] = $customer['phone'];
+                    }
+                }
+                if (!empty($order['delivery_address_json']) && empty($order['delivery_address'])) {
+                    $order['delivery_address'] = json_decode($order['delivery_address_json'], true);
+                }
+                if (!empty($order['store_id'])) {
+                    $store = (new \App\Models\Store())->find($order['store_id']);
+                    if ($store) {
+                        $order['store_name'] = $store['name'] ?? 'Toko Mitra';
+                        $order['store_address'] = $store['address'] ?? 'Cicalengka';
+                        $order['store_lat'] = $store['latitude'] ?? -6.9835;
+                        $order['store_lng'] = $store['longitude'] ?? 107.8345;
+                        $order['store_phone'] = $store['phone'] ?? '';
+                    }
+                }
+                $this->orderModel->attachMultiStoreDetails($order);
+                $order['items'] = $this->orderModel->getItems((int)$order['id']);
+            }
+
             $this->successResponse(
                 $orderCount > 1
                     ? "Pesanan ke-{$result['sequence']} berhasil ditambahkan ke trip Anda!"
@@ -326,6 +370,8 @@ class DeliveryController extends Controller
                     'batch_id'    => $result['batch_id'],
                     'order_count' => $orderCount,
                     'sequence'    => $result['sequence'],
+                    'active_trip' => $order,
+                    'active_order'=> $order,
                 ]
             );
         } catch (\Throwable $e) {

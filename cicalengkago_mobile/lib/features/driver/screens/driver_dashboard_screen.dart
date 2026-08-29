@@ -35,6 +35,15 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     final authCtrl = context.watch<AuthController>();
     final user = authCtrl.user;
 
+    // Auto-switch to tab 0 (Radar & Active Trip Screen) if driver has active order
+    if (driverCtrl.activeTrip != null && _currentIndex != 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _currentIndex != 0) {
+          setState(() => _currentIndex = 0);
+        }
+      });
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(

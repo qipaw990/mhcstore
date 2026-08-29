@@ -228,7 +228,15 @@ class DriverController extends ChangeNotifier {
 
       _isLoading = false;
       if (res['success'] == true) {
+        if (res['data'] != null && (res['data']['active_trip'] != null || res['data']['active_order'] != null)) {
+          final tripMap = res['data']['active_trip'] ?? res['data']['active_order'];
+          if (tripMap is Map<String, dynamic>) {
+            _activeTrip = tripMap;
+            debugPrint('[DriverController] acceptOrder: activeTrip set to ${_activeTrip?['order_code']}');
+          }
+        }
         await fetchRadarData();
+        notifyListeners();
         return true;
       } else {
         _lastErrorMessage = res['message']?.toString();
@@ -236,6 +244,7 @@ class DriverController extends ChangeNotifier {
     } catch (e) {
       _isLoading = false;
       _lastErrorMessage = 'Koneksi terganggu. Silakan coba lagi.';
+      debugPrint('[DriverController] acceptOrder Exception: $e');
     }
 
     notifyListeners();
