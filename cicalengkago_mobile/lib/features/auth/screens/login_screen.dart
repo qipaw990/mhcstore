@@ -75,15 +75,12 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
 
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      } else {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const RoleRouter()),
-          (route) => false,
-        );
-      }
+      // Route to user role dashboard directly clearing guest stack
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const RoleRouter()),
+        (route) => false,
+      );
     } else if (authController.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
