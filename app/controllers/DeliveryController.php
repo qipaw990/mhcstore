@@ -861,10 +861,10 @@ class DeliveryController extends Controller
                 if (!$alreadyCredited) {
                     $charge = (float)($dOrder['delivery_charge'] ?? 0);
                     if ($charge <= 0) {
-                        $km = (float)($dOrder['distance_km'] ?? 1.5);
+                        $km = (float)($dOrder['distance_km'] ?? 0);
                         $charge = max(5000.0, $km * 2500.0);
                     }
-                    $driverEarning = max(3000.0, round($charge, 0));
+                    $driverEarning = max(5000.0, round($charge, 0));
                     $this->walletModel->credit(
                         $userId,
                         $driverEarning,

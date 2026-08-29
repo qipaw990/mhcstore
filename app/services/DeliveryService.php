@@ -358,10 +358,11 @@ class DeliveryService
     {
         $charge = (float)($order['delivery_charge'] ?? 0);
         if ($charge <= 0) {
-            $km = (float)($order['distance_km'] ?? 1.5);
+            $km = (float)($order['distance_km'] ?? 0);
             $charge = max(5000.0, $km * 2500.0);
         }
-        return max(3000.0, round($charge, 0));
+        // Guaranteed minimum commission even for distances < 1 meter (or 0 distance)
+        return max(5000.0, round($charge, 0));
     }
 
     public function creditBatchCommission(array $dm, string $batchId, ?array $lastOrder = null): void
@@ -437,11 +438,11 @@ class DeliveryService
         }
 
         // Fallback to sum of order recorded distance_km if calculated distance is minimal
-        if ($totalKm < 0.3) {
-            $totalKm = array_sum(array_map(fn($o) => max(0.5, (float)($o['distance_km'] ?? 1.5)), $orders));
+        if ($totalKm < 0.1) {
+            $totalKm = array_sum(array_map(fn($o) => max(0.1, (float)($o['distance_km'] ?? 1.0)), $orders));
         }
 
-        return max(0.5, round($totalKm, 2));
+        return max(0.1, round($totalKm, 2));
     }
 
     /**
@@ -453,9 +454,9 @@ class DeliveryService
 
         $sumCharge = (float)array_sum(array_column($orders, 'delivery_charge'));
 
-        // If delivery_charge was 0 or not set, calculate based on km
+        // If delivery_charge was 0 or not set, calculate based on km or base minimum fee
         if ($sumCharge <= 0) {
-            $sumCharge = max(5000.0, $totalKm * 2500.0);
+            $sumCharge = max(5000.0 * max(1, count($orders)), $totalKm * 2500.0);
         }
 
         return max(5000.0, round($sumCharge, 0));
