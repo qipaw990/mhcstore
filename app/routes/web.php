@@ -194,6 +194,7 @@ Router::group(['prefix' => '/admin', 'middleware' => ['AdminMiddleware']], funct
     // Banners
     Router::get('/banners', [AdminController::class, 'banners']);
     Router::post('/banners/save', [AdminController::class, 'saveBanner']);
+    Router::post('/banners/toggle-status', [AdminController::class, 'toggleBannerStatus']);
     Router::post('/banners/delete', [AdminController::class, 'deleteBanner']);
 
     // Settings & Profile

@@ -11,7 +11,8 @@ function upload_image(array $file, string $folder = 'general'): ?string
     }
 
     $folder = trim($folder, '/\\');
-    $targetDir = PUBLIC_PATH . '/uploads/' . $folder;
+    $publicDir = defined('PUBLIC_PATH') ? PUBLIC_PATH : (defined('BASE_PATH') ? BASE_PATH . '/public' : __DIR__ . '/../../public');
+    $targetDir = $publicDir . '/uploads/' . $folder;
 
     if (!is_dir($targetDir)) {
         @mkdir($targetDir, 0777, true);
@@ -20,36 +21,62 @@ function upload_image(array $file, string $folder = 'general'): ?string
 
     if (!is_dir($targetDir) || !is_writable($targetDir)) {
         @chmod($targetDir, 0777);
-        // If still not writable, try parent directory permissions
-        $parentDir = PUBLIC_PATH . '/uploads';
+        $parentDir = $publicDir . '/uploads';
         if (is_dir($parentDir) && !is_writable($parentDir)) {
             @chmod($parentDir, 0777);
         }
     }
 
-    $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mime = finfo_file($finfo, $file['tmp_name']);
-    finfo_close($finfo);
+    // MIME detection with multiple fallbacks
+    $mime = '';
+    if (function_exists('finfo_open')) {
+        $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+        if ($finfo) {
+            $mime = (string)@finfo_file($finfo, $file['tmp_name']);
+            @finfo_close($finfo);
+        }
+    }
+    if (empty($mime) && function_exists('mime_content_type')) {
+        $mime = (string)@mime_content_type($file['tmp_name']);
+    }
+    if (empty($mime)) {
+        $mime = (string)($file['type'] ?? '');
+    }
 
-    if (!in_array($mime, $allowedMimes)) {
+    $origExt = strtolower(pathinfo($file['name'] ?? '', PATHINFO_EXTENSION));
+    $allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'];
+    $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml', 'image/x-png', 'image/pjpeg'];
+
+    $isValid = in_array(strtolower($mime), $allowedMimes) || in_array($origExt, $allowedExts);
+    if (!$isValid) {
         return null;
     }
 
-    $ext = match ($mime) {
-        'image/jpeg' => 'jpg',
-        'image/png'  => 'png',
-        'image/webp' => 'webp',
-        'image/gif'  => 'gif',
-        default      => 'jpg'
+    $ext = match (strtolower($mime)) {
+        'image/jpeg', 'image/pjpeg' => 'jpg',
+        'image/png', 'image/x-png'  => 'png',
+        'image/webp'                => 'webp',
+        'image/gif'                 => 'gif',
+        'image/svg+xml'             => 'svg',
+        default                     => in_array($origExt, $allowedExts) ? $origExt : 'jpg'
     };
 
     $filename = uniqid('img_', true) . '.' . $ext;
     $destination = $targetDir . '/' . $filename;
 
+    // Strategy 1: move_uploaded_file
     if (@move_uploaded_file($file['tmp_name'], $destination)) {
         @chmod($destination, 0664);
         return 'uploads/' . $folder . '/' . $filename;
+    }
+
+    // Strategy 2: copy / file_put_contents fallback
+    $fileData = @file_get_contents($file['tmp_name']);
+    if ($fileData !== false && strlen($fileData) > 0) {
+        if (@file_put_contents($destination, $fileData) !== false) {
+            @chmod($destination, 0664);
+            return 'uploads/' . $folder . '/' . $filename;
+        }
     }
 
     return null;

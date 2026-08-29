@@ -1001,12 +1001,16 @@ class AdminController extends Controller
         ");
 
         $modules = Database::query("SELECT * FROM `modules` WHERE `status` = 1 ORDER BY `id` ASC");
+        $stores = Database::query("SELECT id, name, module_id FROM `stores` WHERE `status` = 'approved' ORDER BY `name` ASC");
+        $categories = Database::query("SELECT id, name, module_id FROM `categories` WHERE `status` = 1 ORDER BY `name` ASC");
 
         $this->view('admin.banners', [
             'title'      => 'Manajemen Banner Promo - CicalengkaGO Admin',
             'active_tab' => 'banners',
             'banners'    => $banners,
-            'modules'    => $modules
+            'modules'    => $modules,
+            'stores'     => $stores,
+            'categories' => $categories
         ], 'admin_layout');
     }
 
@@ -1017,6 +1021,7 @@ class AdminController extends Controller
         $priority   = max(1, (int)($this->getPost('priority') ?? 1));
         $targetType = trim((string)($this->getPost('target_type') ?? 'store'));
         $targetId   = trim((string)($this->getPost('target_id') ?? '1'));
+        $bannerType = trim((string)($this->getPost('banner_type') ?? 'main_banner'));
         $id         = !empty($this->getPost('id')) ? (int)$this->getPost('id') : null;
 
         if (empty($title)) {
@@ -1026,6 +1031,8 @@ class AdminController extends Controller
         }
 
         $imagePath = '';
+
+        // Priority 1: Direct File Upload
         if (isset($_FILES['image']) && !empty($_FILES['image']['tmp_name']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
             $uploaded = upload_image($_FILES['image'], 'banners');
             if ($uploaded) {
@@ -1033,12 +1040,32 @@ class AdminController extends Controller
             }
         }
 
-        if (empty($imagePath)) {
-            $imagePath = trim((string)($this->getPost('image_url') ?? ''));
+        // Priority 2: Base64 Upload from Drag & Drop or Client Canvas
+        $base64Image = trim((string)($this->getPost('image_base64') ?? ''));
+        if (empty($imagePath) && !empty($base64Image) && str_contains($base64Image, 'base64,')) {
+            $parts = explode('base64,', $base64Image);
+            $decoded = base64_decode($parts[1] ?? '');
+            if ($decoded !== false && strlen($decoded) > 0) {
+                $publicDir = defined('PUBLIC_PATH') ? PUBLIC_PATH : (defined('BASE_PATH') ? BASE_PATH . '/public' : __DIR__ . '/../../public');
+                $targetDir = $publicDir . '/uploads/banners';
+                if (!is_dir($targetDir)) {
+                    @mkdir($targetDir, 0777, true);
+                    @chmod($targetDir, 0777);
+                }
+                $ext = 'jpg';
+                if (str_contains($parts[0], 'png')) $ext = 'png';
+                elseif (str_contains($parts[0], 'webp')) $ext = 'webp';
+                $filename = uniqid('img_', true) . '.' . $ext;
+                if (@file_put_contents($targetDir . '/' . $filename, $decoded) !== false) {
+                    @chmod($targetDir . '/' . $filename, 0664);
+                    $imagePath = 'uploads/banners/' . $filename;
+                }
+            }
         }
 
-        if (empty($imagePath) && !$id) {
-            $imagePath = 'assets/images/banners/banner1.jpg'; // default placeholder
+        // Priority 3: Custom Image URL / Path
+        if (empty($imagePath)) {
+            $imagePath = trim((string)($this->getPost('image_url') ?? ''));
         }
 
         if ($id) {
@@ -1046,7 +1073,8 @@ class AdminController extends Controller
                 'title'       => $title,
                 'module_id'   => $moduleId,
                 'priority'    => $priority,
-                'target_type' => $targetType,
+                'banner_type' => in_array($bannerType, ['main_banner', 'popup', 'promo_strip']) ? $bannerType : 'main_banner',
+                'target_type' => in_array($targetType, ['store', 'product', 'category', 'url']) ? $targetType : 'store',
                 'target_id'   => $targetId,
             ];
             if (!empty($imagePath)) {
@@ -1055,12 +1083,15 @@ class AdminController extends Controller
             Database::update('banners', $updateData, 'id = ?', [$id]);
             $_SESSION['flash_success'] = 'Banner berhasil diperbarui!';
         } else {
+            if (empty($imagePath)) {
+                $imagePath = 'assets/images/banners/banner1.jpg';
+            }
             Database::insert('banners', [
                 'title'       => $title,
                 'module_id'   => $moduleId,
                 'priority'    => $priority,
                 'image'       => $imagePath,
-                'banner_type' => 'main_banner',
+                'banner_type' => in_array($bannerType, ['main_banner', 'popup', 'promo_strip']) ? $bannerType : 'main_banner',
                 'target_type' => in_array($targetType, ['store', 'product', 'category', 'url']) ? $targetType : 'store',
                 'target_id'   => $targetId,
                 'status'      => 1
@@ -1069,6 +1100,24 @@ class AdminController extends Controller
         }
 
         $this->redirect('admin/banners');
+    }
+
+    public function toggleBannerStatus(): void
+    {
+        $id = (int)($this->getPost('id') ?? 0);
+        $banner = Database::fetchOne("SELECT id, status FROM `banners` WHERE `id` = ? LIMIT 1", [$id]);
+        if (!$banner) {
+            $this->json(['success' => false, 'message' => 'Banner tidak ditemukan.'], 404);
+            return;
+        }
+
+        $newStatus = $banner['status'] ? 0 : 1;
+        Database::update('banners', ['status' => $newStatus], 'id = ?', [$id]);
+        $this->json([
+            'success' => true,
+            'message' => $newStatus ? 'Banner aktif dan tampil di aplikasi.' : 'Banner dinonaktifkan.',
+            'status'  => $newStatus
+        ]);
     }
 
     public function deleteBanner(): void
