@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -86,5 +87,26 @@ class LocationService {
       );
     }
     return Geolocator.getPositionStream(locationSettings: locationSettings);
+  }
+
+  /// Calculate bearing (compass angle in degrees 0-360) between two coordinates
+  static double calculateBearing(LatLng start, LatLng end) {
+    if (start.latitude == end.latitude && start.longitude == end.longitude) {
+      return 0.0;
+    }
+    final double startLat = start.latitude * (math.pi / 180.0);
+    final double startLng = start.longitude * (math.pi / 180.0);
+    final double endLat = end.latitude * (math.pi / 180.0);
+    final double endLng = end.longitude * (math.pi / 180.0);
+
+    final double dLng = endLng - startLng;
+
+    final double y = math.sin(dLng) * math.cos(endLat);
+    final double x = math.cos(startLat) * math.sin(endLat) -
+        math.sin(startLat) * math.cos(endLat) * math.cos(dLng);
+
+    final double rad = math.atan2(y, x);
+    final double deg = (rad * (180.0 / math.pi) + 360.0) % 360.0;
+    return deg;
   }
 }

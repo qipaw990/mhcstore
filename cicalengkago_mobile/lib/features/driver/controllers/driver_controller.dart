@@ -88,16 +88,23 @@ class DriverController extends ChangeNotifier {
   }
 
   StreamSubscription<dynamic>? _positionStreamSub;
+  LatLng? _previousLocation;
 
   void _initGpsTracking() {
     refreshLocation();
     try {
       _positionStreamSub?.cancel();
       _positionStreamSub = LocationService.getPositionStream().listen((position) {
-        _currentLocation = LatLng(position.latitude, position.longitude);
-        if (position.heading >= 0) {
+        final newLoc = LatLng(position.latitude, position.longitude);
+        if (position.heading > 0) {
           _heading = position.heading;
+        } else if (_previousLocation != null &&
+            (_previousLocation!.latitude != newLoc.latitude || _previousLocation!.longitude != newLoc.longitude)) {
+          final computed = LocationService.calculateBearing(_previousLocation!, newLoc);
+          if (computed > 0) _heading = computed;
         }
+        _previousLocation = _currentLocation;
+        _currentLocation = newLoc;
         notifyListeners();
         if (_isOnline) {
           _broadcastLocation(_currentLocation);

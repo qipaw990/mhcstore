@@ -33,6 +33,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   Timer? _tickerTimer;
   int _currentRemainingSeconds = 60;
   final MapController _mapController = MapController();
+  LatLng? _previousDriverPos;
+  double _driverBearing = 0.0;
 
   @override
   void initState() {
@@ -87,6 +89,25 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       if (res['success'] == true && res['data'] != null) {
         final live = res['data'] as Map<String, dynamic>;
         if (mounted) {
+          final driverMap = live['driver'] is Map ? (live['driver'] as Map) : {};
+          final driverLat = double.tryParse(driverMap['lat']?.toString() ?? '');
+          final driverLng = double.tryParse(driverMap['lng']?.toString() ?? '');
+
+          if (driverLat != null && driverLng != null && driverLat != 0 && driverLng != 0) {
+            final newDriverPos = LatLng(driverLat, driverLng);
+            if (_previousDriverPos != null &&
+                (_previousDriverPos!.latitude != newDriverPos.latitude || _previousDriverPos!.longitude != newDriverPos.longitude)) {
+              final computedBearing = LocationService.calculateBearing(_previousDriverPos!, newDriverPos);
+              if (computedBearing > 0) {
+                _driverBearing = computedBearing;
+              }
+            }
+            _previousDriverPos = newDriverPos;
+            try {
+              _mapController.move(newDriverPos, _mapController.camera.zoom);
+            } catch (_) {}
+          }
+
           setState(() {
             _liveData = live;
             _isLoading = false;
@@ -94,16 +115,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               _currentRemainingSeconds = (live['remaining_seconds'] as num).toInt();
             }
           });
-
-          // Smoothly animate map camera to driver position if driver assigned
-          final driverMap = live['driver'] is Map ? (live['driver'] as Map) : {};
-          final driverLat = double.tryParse(driverMap['lat']?.toString() ?? '');
-          final driverLng = double.tryParse(driverMap['lng']?.toString() ?? '');
-          if (driverLat != null && driverLng != null && driverLat != 0 && driverLng != 0) {
-            try {
-              _mapController.move(LatLng(driverLat, driverLng), _mapController.camera.zoom);
-            } catch (_) {}
-          }
         }
       } else {
         if (mounted && _isLoading) {
@@ -784,14 +795,17 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                     ),
                                   ),
                                   Container(
-                                    width: 34,
-                                    height: 34,
+                                    width: 36,
+                                    height: 36,
                                     decoration: const BoxDecoration(
                                       color: Color(0xFF2563EB),
                                       shape: BoxShape.circle,
                                       boxShadow: [BoxShadow(color: Color(0x662563EB), blurRadius: 10)],
                                     ),
-                                    child: const Icon(Icons.delivery_dining_rounded, color: Colors.white, size: 20),
+                                    child: Transform.rotate(
+                                      angle: _driverBearing * (3.141592653589793 / 180.0),
+                                      child: const Icon(Icons.navigation_rounded, color: Colors.white, size: 20),
+                                    ),
                                   ),
                                 ],
                               ),
