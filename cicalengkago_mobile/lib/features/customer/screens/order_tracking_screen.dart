@@ -792,6 +792,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                 width: 44,
                                 height: 44,
                                 fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  width: 44,
+                                  height: 44,
+                                  color: const Color(0xFFE2E8F0),
+                                  child: const Icon(Icons.motorcycle_rounded, color: Color(0xFF64748B), size: 22),
+                                ),
                               ),
                             )
                           : Image.asset(
@@ -799,6 +805,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                               width: 44,
                               height: 44,
                               fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                width: 44,
+                                height: 44,
+                                color: const Color(0xFFE2E8F0),
+                                child: const Icon(Icons.motorcycle_rounded, color: Color(0xFF64748B), size: 22),
+                              ),
                             ),
                     ),
                     const SizedBox(width: 12),
@@ -1132,6 +1144,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                 width: 16,
                                 height: 16,
                                 fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => const Icon(
+                                  Icons.directions_bike_rounded,
+                                  color: Color(0xFF16A34A),
+                                  size: 13,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 5),
@@ -1433,6 +1450,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                       width: 46,
                                       height: 46,
                                       fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) => Container(
+                                        width: 46,
+                                        height: 46,
+                                        color: const Color(0xFFE2E8F0),
+                                        child: const Icon(Icons.motorcycle_rounded, color: Color(0xFF64748B), size: 24),
+                                      ),
                                     ),
                                   )
                                 : Image.asset(
@@ -1440,6 +1463,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                     width: 46,
                                     height: 46,
                                     fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => Container(
+                                      width: 46,
+                                      height: 46,
+                                      color: const Color(0xFFE2E8F0),
+                                      child: const Icon(Icons.motorcycle_rounded, color: Color(0xFF64748B), size: 24),
+                                    ),
                                   ),
                           ),
                           const SizedBox(width: 12),
