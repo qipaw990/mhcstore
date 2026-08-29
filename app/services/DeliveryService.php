@@ -353,16 +353,14 @@ class DeliveryService
         ];
     }
 
-    // ──────────────── Private helpers ────────────────
-
-    private function calcSingleCommission(array $order): float
+    public function calcSingleCommission(array $order): float
     {
         $charge = (float)($order['delivery_charge'] ?? 0);
         if ($charge <= 0) {
             $km = (float)($order['distance_km'] ?? 1.5);
             $charge = max(5000.0, $km * 2500.0);
         }
-        return max(3000.0, round($charge * 0.85, 0));
+        return max(3000.0, round($charge, 0));
     }
 
     public function creditBatchCommission(array $dm, string $batchId, ?array $lastOrder = null): void
@@ -445,20 +443,19 @@ class DeliveryService
     }
 
     /**
-     * Net Driver Commission = 85% of total delivery charges for all orders in the batch
+     * Driver Commission for batch orders = sum of delivery charges of all batch orders
      */
-    private function calcBatchCommissionAmount(array $orders, float $totalKm): float
+    public function calcBatchCommissionAmount(array $orders, float $totalKm): float
     {
         if (empty($orders)) return 0.0;
 
-        $sumCharge = array_sum(array_column($orders, 'delivery_charge'));
-        $netCommission = $sumCharge * 0.85;
+        $sumCharge = (float)array_sum(array_column($orders, 'delivery_charge'));
 
         // If delivery_charge was 0 or not set, calculate based on km
-        if ($netCommission <= 0) {
-            $netCommission = max(5000.0, $totalKm * 2500.0) * 0.85;
+        if ($sumCharge <= 0) {
+            $sumCharge = max(5000.0, $totalKm * 2500.0);
         }
 
-        return max(3000.0, round($netCommission, 0));
+        return max(5000.0, round($sumCharge, 0));
     }
 }

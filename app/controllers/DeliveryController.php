@@ -820,7 +820,7 @@ class DeliveryController extends Controller
                         $km = (float)($dOrder['distance_km'] ?? 1.5);
                         $charge = max(5000.0, $km * 2500.0);
                     }
-                    $driverEarning = max(3000.0, round($charge * 0.85, 0));
+                    $driverEarning = max(3000.0, round($charge, 0));
                     $this->walletModel->credit(
                         $userId,
                         $driverEarning,

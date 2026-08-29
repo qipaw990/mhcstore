@@ -53,10 +53,24 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
       deliveryAddress = rawDeliv;
     }
 
-    final deliveryCharge = double.tryParse(trip['delivery_charge']?.toString() ?? '0') ?? 0;
+    double deliveryCharge = double.tryParse(trip['delivery_charge']?.toString() ?? '0') ?? 0;
 
     // Extract all pickup stores for multi-store trip
     final List<Map<String, dynamic>> pickupStores = _extractPickupStores(trip, storeName, storeAddress);
+
+    if (pickupStores.length > 1) {
+      final estCom = double.tryParse(trip['est_commission']?.toString() ??
+          (trip['batch_info'] is Map ? trip['batch_info']['est_commission']?.toString() : null) ?? '0') ?? 0;
+      if (estCom > 0) {
+        deliveryCharge = estCom;
+      } else if (trip['batch_orders'] is List && (trip['batch_orders'] as List).isNotEmpty) {
+        final sumBatch = (trip['batch_orders'] as List).fold<double>(
+          0.0,
+          (sum, bo) => sum + (double.tryParse((bo is Map ? bo['delivery_charge'] : null)?.toString() ?? '0') ?? 0),
+        );
+        if (sumBatch > 0) deliveryCharge = sumBatch;
+      }
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -124,6 +138,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             storeName: storeName,
             customerPhone: customerPhone,
             orderCode: orderCode,
+            deliveryCharge: deliveryCharge,
             storeCount: pickupStores.length,
           ),
         ],
@@ -562,6 +577,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     required String storeName,
     required String customerPhone,
     required String orderCode,
+    required double deliveryCharge,
     required int storeCount,
   }) {
     return Column(
@@ -639,7 +655,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                   _showCompletionSuccessDialog(
                     context,
                     orderCode: orderCode,
-                    commission: double.tryParse(trip['delivery_charge']?.toString() ?? '0') ?? 0,
+                    commission: deliveryCharge,
                     customerName: customerName,
                     storeName: storeName,
                     newWalletBalance: driverCtrl.walletBalance,
