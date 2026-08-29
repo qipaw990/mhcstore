@@ -28,9 +28,21 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
   bool _autoFollow = true;
   LatLng? _lastCenteredLocation;
 
-  // Real-time Road Routing State
+  // Real-time Road Routing & Sequential Multi-Store Pickup State
   List<LatLng> _liveRoadPoints = [];
   String? _lastRouteTargetKey;
+  final Set<int> _pickedStoreIndices = {};
+
+  int _getCurrentPickupIndex(int totalStores) {
+    for (int i = 0; i < totalStores; i++) {
+      if (!_pickedStoreIndices.contains(i)) return i;
+    }
+    return totalStores;
+  }
+
+  bool _isAllStoresPicked(int totalStores) {
+    return totalStores > 0 && _pickedStoreIndices.length >= totalStores;
+  }
 
   @override
   void dispose() {
@@ -180,7 +192,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
 
           const SizedBox(height: 20),
 
-          // Action Buttons
+          // Action Buttons (Sequential 1-by-1 Store Confirmation & Final Customer Delivery)
           _buildActionSection(
             context: context,
             driverCtrl: driverCtrl,
@@ -192,7 +204,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             customerPhone: customerPhone,
             orderCode: orderCode,
             deliveryCharge: deliveryCharge,
-            storeCount: pickupStores.length,
+            pickupStores: pickupStores,
           ),
         ],
       ),
@@ -206,7 +218,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     required String customerName,
     required String status,
   }) {
-    final bool isDeliveringToCustomer = (status == 'on_the_way');
+    final int currentPickupIdx = _getCurrentPickupIndex(pickupStores.length);
+    final bool allStoresPicked = _isAllStoresPicked(pickupStores.length);
+    final bool isDeliveringToCustomer = (status == 'on_the_way') || (status == 'picked_up') || allStoresPicked;
 
     // 1. Build List of Store Coordinates
     final List<LatLng> storePositions = [];
@@ -228,7 +242,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     // 2. Determine target coordinate for current stage
     final LatLng currentStageTarget = isDeliveringToCustomer
         ? custPosition
-        : (storePositions.isNotEmpty ? storePositions.first : custPosition);
+        : (currentPickupIdx < storePositions.length ? storePositions[currentPickupIdx] : custPosition);
 
     // Synchronize road route dynamically
     _syncRoadRoute(driverCtrl.currentLocation, currentStageTarget);
@@ -238,7 +252,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     final activeRoadPoints = _liveRoadPoints.isNotEmpty ? _liveRoadPoints : [driverCtrl.currentLocation, currentStageTarget];
 
     if (isDeliveringToCustomer) {
-      // Stage 2: Delivering to customer (GREEN ROAD ROUTE) - STORE LINES ARE HIDDEN!
+      // Stage 2: Delivering to customer (GREEN ROAD ROUTE)
       polylines.add(
         Polyline(
           points: activeRoadPoints,
@@ -247,7 +261,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
         ),
       );
     } else {
-      // Stage 1: Heading to Store 1 (BLUE ROAD ROUTE) - CUSTOMER LINE IS HIDDEN!
+      // Stage 1: Heading to Current Unpicked Store (BLUE ROAD ROUTE)
       polylines.add(
         Polyline(
           points: activeRoadPoints,
@@ -256,8 +270,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
         ),
       );
 
-      // Route 2+: Store 1 -> Store 2 (Amber for multi-store)
-      for (int i = 0; i < storePositions.length - 1; i++) {
+      // Remaining Stores Route (Amber for subsequent multi-stores)
+      for (int i = currentPickupIdx; i < storePositions.length - 1; i++) {
         polylines.add(
           Polyline(
             points: [storePositions[i], storePositions[i + 1]],
@@ -308,6 +322,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
       // Add Store Markers during Pickup Stage
       for (int i = 0; i < storePositions.length; i++) {
         final String sName = (i < pickupStores.length ? pickupStores[i]['name'] : 'Toko') ?? 'Toko';
+        final bool isPicked = _pickedStoreIndices.contains(i);
+        final bool isCurrent = (i == currentPickupIdx);
+
         markers.add(
           Marker(
             point: storePositions[i],
@@ -319,7 +336,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
+                    color: isPicked
+                        ? const Color(0xFF065F46)
+                        : (isCurrent ? const Color(0xFF1E293B) : const Color(0xFF64748B)),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -337,23 +356,35 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                       width: 34,
                       height: 34,
                       decoration: BoxDecoration(
-                        color: (i == 0) ? const Color(0xFF2563EB) : const Color(0xFFD97706),
+                        color: isPicked
+                            ? const Color(0xFF059669)
+                            : (isCurrent ? const Color(0xFF2563EB) : const Color(0xFFD97706)),
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: ((i == 0) ? const Color(0xFF2563EB) : const Color(0xFFD97706)).withValues(alpha: 0.4),
+                            color: (isPicked
+                                    ? const Color(0xFF059669)
+                                    : (isCurrent ? const Color(0xFF2563EB) : const Color(0xFFD97706)))
+                                .withValues(alpha: 0.4),
                             blurRadius: 8,
                           ),
                         ],
                       ),
-                      child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 17),
+                      child: Icon(
+                        isPicked ? Icons.check_circle_rounded : Icons.storefront_rounded,
+                        color: Colors.white,
+                        size: 17,
+                      ),
                     ),
                     Positioned(
                       top: 0,
                       right: 0,
                       child: Container(
                         padding: const EdgeInsets.all(3),
-                        decoration: const BoxDecoration(color: AppTheme.primaryRed, shape: BoxShape.circle),
+                        decoration: BoxDecoration(
+                          color: isPicked ? const Color(0xFF16A34A) : AppTheme.primaryRed,
+                          shape: BoxShape.circle,
+                        ),
                         child: Text('${i + 1}', style: const TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold)),
                       ),
                     ),
@@ -406,6 +437,10 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
       );
     }
 
+    final String stageHeaderTitle = isDeliveringToCustomer
+        ? 'Panduan Rute: Ke Pelanggan'
+        : 'Panduan Rute: Ke Toko ${currentPickupIdx + 1} (${pickupStores.isNotEmpty && currentPickupIdx < pickupStores.length ? pickupStores[currentPickupIdx]['name'] : ''})';
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -445,8 +480,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                         Row(
                           children: [
                             Text(
-                              isDeliveringToCustomer ? 'Panduan Rute: Ke Pelanggan' : 'Panduan Rute: Ke Resto',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                              stageHeaderTitle,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
                             ),
                             if (_autoFollow) ...[
                               const SizedBox(width: 6),
@@ -457,7 +492,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: const Color(0xFF86EFAC)),
                                 ),
-                                child: const Text('Live Ikuti Jalan', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
+                                child: const Text('Live Jalan', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
                               ),
                             ],
                           ],
@@ -676,10 +711,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
       child: Row(
         children: [
           Container(
-            width: 46,
-            height: 46,
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: (statusInfo['color'] as Color).withValues(alpha: 0.15),
+              color: (statusInfo['color'] as Color).withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(statusInfo['icon'] as IconData, color: statusInfo['color'] as Color, size: 24),
@@ -691,11 +725,15 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
               children: [
                 Text(
                   statusInfo['label'] as String,
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: statusInfo['color'] as Color),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: statusInfo['color'] as Color,
+                  ),
                 ),
                 Text(
                   'Order #$orderCode',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontFamily: 'monospace'),
+                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontFamily: 'monospace'),
                 ),
               ],
             ),
@@ -758,6 +796,10 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     required String customerPhone,
     required String status,
   }) {
+    final int currentPickupIdx = _getCurrentPickupIndex(pickupStores.length);
+    final bool allStoresPicked = _isAllStoresPicked(pickupStores.length);
+    final bool isDeliveringToCustomer = (status == 'on_the_way') || (status == 'picked_up') || allStoresPicked;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -774,13 +816,15 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Render each pickup store step with its items and map button
+          // 1. Render each pickup store step with its items and status badge
           ...pickupStores.asMap().entries.map((stepEntry) {
             final int stepIdx = stepEntry.key;
             final Map<String, dynamic> storeData = stepEntry.value;
             final String sName = storeData['name'] ?? 'Toko Mitra';
             final String sAddr = storeData['address'] ?? 'Cicalengka, Jawa Barat';
             final List sItems = (storeData['items'] is List) ? (storeData['items'] as List) : [];
+            final bool isThisPicked = _pickedStoreIndices.contains(stepIdx) || isDeliveringToCustomer;
+            final bool isThisCurrent = (stepIdx == currentPickupIdx) && !isDeliveringToCustomer;
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -798,18 +842,22 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEFF6FF),
+                              color: isThisPicked
+                                  ? const Color(0xFFDCFCE7)
+                                  : (isThisCurrent ? const Color(0xFFEFF6FF) : const Color(0xFFF1F5F9)),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Center(
-                              child: Text(
-                                '${stepIdx + 1}',
-                                style: const TextStyle(
-                                  color: Color(0xFF2563EB),
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                              child: isThisPicked
+                                  ? const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 20)
+                                  : Text(
+                                      '${stepIdx + 1}',
+                                      style: TextStyle(
+                                        color: isThisCurrent ? const Color(0xFF2563EB) : const Color(0xFF64748B),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -821,10 +869,16 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        'LANGKAH ${stepIdx + 1}: JEMPUT PESANAN',
-                                        style: const TextStyle(
+                                        isThisPicked
+                                            ? 'LANGKAH ${stepIdx + 1}: SUDAH DIAMBIL'
+                                            : (isThisCurrent
+                                                ? 'LANGKAH ${stepIdx + 1}: JEMPUT SEKARANG'
+                                                : 'LANGKAH ${stepIdx + 1}: JEMPUT BERIKUTNYA'),
+                                        style: TextStyle(
                                           fontSize: 10,
-                                          color: Color(0xFF2563EB),
+                                          color: isThisPicked
+                                              ? const Color(0xFF16A34A)
+                                              : (isThisCurrent ? const Color(0xFF2563EB) : const Color(0xFF64748B)),
                                           fontWeight: FontWeight.w800,
                                           letterSpacing: 0.5,
                                         ),
@@ -854,7 +908,12 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                                 const SizedBox(height: 2),
                                 Text(
                                   sName,
-                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: isThisPicked ? const Color(0xFF64748B) : const Color(0xFF0F172A),
+                                    decoration: isThisPicked ? TextDecoration.lineThrough : null,
+                                  ),
                                 ),
                                 Text(
                                   sAddr,
@@ -869,92 +928,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                           _mapBtn(sAddr),
                         ],
                       ),
-
-                      // Items list belonging strictly to this store step
-                      if (sItems.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.shopping_bag_rounded, size: 13, color: AppTheme.primaryRed),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      'Item yang diambil di $sName:',
-                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const Divider(height: 14, color: Color(0xFFE2E8F0)),
-                              ...sItems.map((item) {
-                                final pName = (item is Map) ? (item['product_name'] ?? item['name'] ?? 'Menu') : 'Menu';
-                                final qty = (item is Map) ? (item['quantity'] ?? 1) : 1;
-                                final price = (item is Map) ? (double.tryParse(item['total_price']?.toString() ?? item['price']?.toString() ?? '0') ?? 0) : 0;
-
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 6),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFE2E8F0),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Text(
-                                          '${qty}x',
-                                          style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          pName.toString(),
-                                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      if (price > 0)
-                                        Text(
-                                          CurrencyFormatter.formatRupiah(price as double),
-                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF059669)),
-                                        ),
-                                    ],
-                                  ),
-                                );
-                              }),
-                            ],
-                          ),
-                        ),
-                      ],
                     ],
-                  ),
-                ),
-
-                // Step Connector Line
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 32),
-                  height: 20,
-                  child: Column(
-                    children: List.generate(3, (_) => Container(
-                      margin: const EdgeInsets.only(bottom: 2),
-                      width: 2,
-                      height: 4,
-                      decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(1)),
-                    )),
                   ),
                 ),
               ],
@@ -982,7 +956,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'LANGKAH ${pickupStores.length + 1}: PENGANTARAN KE PELANGGAN',
+                        'LANGKAH AKHIR: ANTAR KE PELANGGAN',
                         style: const TextStyle(
                           fontSize: 10,
                           color: Color(0xFF059669),
@@ -991,8 +965,21 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      Text(customerName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                      Text(deliveryAddress, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      Text(
+                        customerName,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      ),
+                      Text(
+                        deliveryAddress,
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (customerPhone.isNotEmpty)
+                        Text(
+                          'Telp: $customerPhone',
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                        ),
                     ],
                   ),
                 ),
@@ -1017,26 +1004,65 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     required String customerPhone,
     required String orderCode,
     required double deliveryCharge,
-    required int storeCount,
+    required List<Map<String, dynamic>> pickupStores,
   }) {
+    final int storeCount = pickupStores.length;
+    final int currentPickupIdx = _getCurrentPickupIndex(storeCount);
+    final bool allStoresPicked = _isAllStoresPicked(storeCount);
+    final bool isDeliveringToCustomer = (status == 'on_the_way') || (status == 'picked_up') || allStoresPicked;
+
     return Column(
       children: [
-        // Main action button
-        if (status == 'accepted' || status == 'pending' || status == 'confirmed' || status == 'processing') ...[
-          _actionButton(
-            label: storeCount > 1
-                ? '✅ Sudah Ambil Semua di $storeCount Toko'
-                : '✅ Sudah Ambil di Toko / Resto',
-            color: const Color(0xFF2563EB),
-            onTap: () async {
-              final ok = await driverCtrl.updateTripStatus(orderId, 'picked_up');
-              if (!ok && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal update status. Coba lagi.')));
-              }
-            },
-          ),
-        ] else if (status == 'picked_up' || status == 'handover' || status == 'on_the_way') ...[
-          // OTP input for delivery confirmation
+        // Sequential Store Pickup Action Buttons
+        if (!isDeliveringToCustomer) ...[
+          if (currentPickupIdx < storeCount) ...[
+            Builder(builder: (context) {
+              final currentStoreName = pickupStores[currentPickupIdx]['name'] ?? 'Toko ${currentPickupIdx + 1}';
+              return _actionButton(
+                label: storeCount > 1
+                    ? '✅ Sudah Ambil di Toko ${currentPickupIdx + 1}: $currentStoreName'
+                    : '✅ Sudah Ambil di Toko / Resto',
+                color: const Color(0xFF2563EB),
+                onTap: () async {
+                  setState(() {
+                    _pickedStoreIndices.add(currentPickupIdx);
+                  });
+
+                  if (_isAllStoresPicked(storeCount)) {
+                    final ok = await driverCtrl.updateTripStatus(orderId, 'picked_up');
+                    if (context.mounted) {
+                      if (ok) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('🎉 Semua resto selesai diambil! Rute otomatis diarahkan ke rumah pelanggan.'),
+                            backgroundColor: Color(0xFF059669),
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Gagal update status. Coba lagi.')),
+                        );
+                      }
+                    }
+                  } else {
+                    if (context.mounted) {
+                      final nextStoreName = (currentPickupIdx + 1 < storeCount)
+                          ? pickupStores[currentPickupIdx + 1]['name']
+                          : 'Toko Berikutnya';
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('✅ Toko ${currentPickupIdx + 1} selesai! Rute sekarang dialihkan ke Toko ${currentPickupIdx + 2} ($nextStoreName).'),
+                          backgroundColor: const Color(0xFF2563EB),
+                        ),
+                      );
+                    }
+                  }
+                },
+              );
+            }),
+          ],
+        ] else if (status == 'picked_up' || status == 'handover' || status == 'on_the_way' || allStoresPicked) ...[
+          // OTP input for final delivery confirmation to customer
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
