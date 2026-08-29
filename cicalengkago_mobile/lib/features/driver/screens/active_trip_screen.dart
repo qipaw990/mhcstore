@@ -114,7 +114,18 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           const SizedBox(height: 20),
 
           // Action Buttons
-          _buildActionSection(context, driverCtrl, orderId, status, customerPhone, orderCode, pickupStores.length),
+          _buildActionSection(
+            context: context,
+            driverCtrl: driverCtrl,
+            trip: trip,
+            orderId: orderId,
+            status: status,
+            customerName: customerName,
+            storeName: storeName,
+            customerPhone: customerPhone,
+            orderCode: orderCode,
+            storeCount: pickupStores.length,
+          ),
         ],
       ),
     );
@@ -541,15 +552,18 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     );
   }
 
-  Widget _buildActionSection(
-    BuildContext context,
-    DriverController driverCtrl,
-    int orderId,
-    String status,
-    String customerPhone,
-    String orderCode,
-    int storeCount,
-  ) {
+  Widget _buildActionSection({
+    required BuildContext context,
+    required DriverController driverCtrl,
+    required Map<String, dynamic> trip,
+    required int orderId,
+    required String status,
+    required String customerName,
+    required String storeName,
+    required String customerPhone,
+    required String orderCode,
+    required int storeCount,
+  }) {
     return Column(
       children: [
         // Main action button
@@ -622,12 +636,20 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
               final ok = await driverCtrl.updateTripStatus(orderId, 'delivered', otpCode: otp.isNotEmpty ? otp : null);
               if (context.mounted) {
                 if (ok) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('🎉 Trip selesai! Komisi telah masuk ke dompet.'), backgroundColor: Colors.green),
+                  _showCompletionSuccessDialog(
+                    context,
+                    orderCode: orderCode,
+                    commission: double.tryParse(trip['delivery_charge']?.toString() ?? '0') ?? 0,
+                    customerName: customerName,
+                    storeName: storeName,
+                    newWalletBalance: driverCtrl.walletBalance,
                   );
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Gagal selesaikan trip. Periksa OTP kembali.')),
+                    SnackBar(
+                      content: Text(driverCtrl.lastErrorMessage ?? 'Gagal selesaikan trip. Periksa OTP kembali.'),
+                      backgroundColor: const Color(0xFFDC2626),
+                    ),
                   );
                 }
               }
@@ -720,6 +742,166 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           borderRadius: BorderRadius.circular(10),
         ),
         child: const Icon(Icons.map_rounded, color: Color(0xFF2563EB), size: 16),
+      ),
+    );
+  }
+
+  void _showCompletionSuccessDialog(
+    BuildContext context, {
+    required String orderCode,
+    required double commission,
+    required String customerName,
+    required String storeName,
+    required double newWalletBalance,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Celebration Icon Animation
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDCFCE7),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF86EFAC), width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF16A34A).withValues(alpha: 0.2),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 44),
+              ),
+              const SizedBox(height: 16),
+
+              const Text(
+                'Pesanan Selesai! 🎉',
+                style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Pesanan #$orderCode berhasil diantar ke pelanggan.',
+                style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 18),
+
+              // Commission Box
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFBBF7D0)),
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      'KOMISI TRIP BERHASIL MASUK',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF15803D), letterSpacing: 0.5),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '+ ${CurrencyFormatter.formatRupiah(commission)}',
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF16A34A)),
+                    ),
+                    const SizedBox(height: 6),
+                    const Divider(height: 1, color: Color(0xFFDCFCE7)),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Saldo Dompet Sekarang:', style: TextStyle(fontSize: 11, color: Color(0xFF475569))),
+                        Text(
+                          CurrencyFormatter.formatRupiah(newWalletBalance),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Info summary
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.person_rounded, size: 14, color: Color(0xFF64748B)),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Pelanggan: $customerName',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF334155), fontWeight: FontWeight.w600),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.storefront_rounded, size: 14, color: Color(0xFF64748B)),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Toko: $storeName',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF334155), fontWeight: FontWeight.w600),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Action button
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryRed,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 46),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  elevation: 2,
+                ),
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                },
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.radar_rounded, size: 18),
+                    SizedBox(width: 8),
+                    Text('Siap Terima Orderan Baru 🚀', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
