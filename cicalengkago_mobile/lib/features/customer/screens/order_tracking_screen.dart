@@ -840,6 +840,53 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final LatLng custPos = LatLng(custLat, custLng);
     final LatLng storePos = LatLng(storeLat, storeLng);
 
+    // Calculate Comprehensive Multi-Store Distance & Realistic ETA
+    double calculatedTotalDistanceKm = 0.0;
+    int calculatedEtaMinutes = 0;
+
+    if (isDeliveringToCustomer) {
+      // Stage: Kurir is on the way directly to customer
+      final double directDist = const Distance().as(
+        LengthUnit.Kilometer,
+        isDriverValid ? driverPos : storePos,
+        custPos,
+      );
+      calculatedTotalDistanceKm = directDist;
+      calculatedEtaMinutes = math.max(3, (directDist * 2.5 + 3).round());
+    } else {
+      // Stage: Kurir is picking up at store(s)
+      if (batchStores.length > 1) {
+        // Multi-store route distance: Driver -> Store 1 -> Store 2 -> ... -> Customer
+        double cumDist = 0.0;
+        LatLng prevPoint = isDriverValid ? driverPos : storePos;
+
+        for (int i = 0; i < batchStores.length; i++) {
+          final st = batchStores[i] is Map ? (batchStores[i] as Map) : {};
+          final double sLat = double.tryParse(st['lat']?.toString() ?? '') ?? storeLat;
+          final double sLng = double.tryParse(st['lng']?.toString() ?? '') ?? storeLng;
+          final currentStorePoint = LatLng(sLat, sLng);
+          cumDist += const Distance().as(LengthUnit.Kilometer, prevPoint, currentStorePoint);
+          prevPoint = currentStorePoint;
+        }
+        // From last store to customer
+        cumDist += const Distance().as(LengthUnit.Kilometer, prevPoint, custPos);
+        calculatedTotalDistanceKm = cumDist;
+
+        // ETA = Travel time (~2.5 mins/km) + 4 mins per store pickup buffer + 3 mins handover
+        final int pickupBuffer = batchStores.length * 4;
+        calculatedEtaMinutes = math.max(5, (cumDist * 2.5 + pickupBuffer + 3).round());
+      } else {
+        // Single store route: Driver -> Store -> Customer
+        final double distToStore = isDriverValid ? const Distance().as(LengthUnit.Kilometer, driverPos, storePos) : 0.0;
+        final double distStoreToCust = const Distance().as(LengthUnit.Kilometer, storePos, custPos);
+        final double totalDist = distToStore + distStoreToCust;
+        calculatedTotalDistanceKm = totalDist;
+
+        // ETA = Travel time + 4 mins store pickup buffer + 3 mins handover
+        calculatedEtaMinutes = math.max(5, (totalDist * 2.5 + 7).round());
+      }
+    }
+
     if (isDriverValid) {
       final LatLng activeTarget = isDeliveringToCustomer ? custPos : storePos;
       _syncCustomerRoadRoute(driverPos, activeTarget);
@@ -1059,7 +1106,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 ),
               ),
 
-              // Bottom Floating Telemetry HUD (ETA & Controls)
+              // Bottom Floating Telemetry HUD (ETA & Multi-Store Total Distance)
               Positioned(
                 bottom: 12,
                 left: 12,
@@ -1071,23 +1118,41 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)]),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
+                          ),
                           child: Row(
                             children: [
                               const Icon(Icons.pin_drop_rounded, color: AppTheme.primaryRed, size: 14),
                               const SizedBox(width: 4),
-                              Text('${distKm.toStringAsFixed(1)} km', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
+                              Text(
+                                isDeliveringToCustomer
+                                    ? '${calculatedTotalDistanceKm.toStringAsFixed(1)} km ke Rumah'
+                                    : (batchStores.length > 1
+                                        ? '${calculatedTotalDistanceKm.toStringAsFixed(1)} km (Multi-Resto)'
+                                        : '${calculatedTotalDistanceKm.toStringAsFixed(1)} km Total'),
+                                style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold),
+                              ),
                             ],
                           ),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(color: AppTheme.primaryRed, borderRadius: BorderRadius.circular(16), boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)]),
+                          decoration: BoxDecoration(
+                            color: isDeliveringToCustomer ? const Color(0xFF059669) : AppTheme.primaryRed,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
+                          ),
                           child: Row(
                             children: [
                               const Icon(Icons.timer_rounded, color: Colors.white, size: 14),
                               const SizedBox(width: 4),
-                              Text('Est. Tiba ~$etaMin min', style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold)),
+                              Text(
+                                'Est. Tiba ~$calculatedEtaMinutes Menit',
+                                style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
+                              ),
                             ],
                           ),
                         ),
