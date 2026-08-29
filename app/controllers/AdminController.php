@@ -1060,8 +1060,8 @@ class AdminController extends Controller
                 'module_id'   => $moduleId,
                 'priority'    => $priority,
                 'image'       => $imagePath,
-                'banner_type' => 'promo',
-                'target_type' => $targetType,
+                'banner_type' => 'main_banner',
+                'target_type' => in_array($targetType, ['store', 'product', 'category', 'url']) ? $targetType : 'store',
                 'target_id'   => $targetId,
                 'status'      => 1
             ]);
