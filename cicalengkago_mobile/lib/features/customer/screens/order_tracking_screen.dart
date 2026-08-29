@@ -116,6 +116,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               _currentRemainingSeconds = (live['remaining_seconds'] as num).toInt();
             }
           });
+
+          // If order is completed or canceled, immediately stop polling to protect driver privacy
+          final currentStatus = live['order_status']?.toString() ?? '';
+          if (currentStatus == 'delivered' || currentStatus == 'canceled' || currentStatus == 'refunded' || currentStatus == 'failed') {
+            _refreshTimer?.cancel();
+            _tickerTimer?.cancel();
+          }
         }
       } else {
         if (mounted && _isLoading) {
@@ -214,12 +221,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final cancellationReason = live['cancellation_reason']?.toString() ?? order['cancellation_reason']?.toString() ?? '';
 
     final driverMap = live['driver'] is Map ? (live['driver'] as Map) : {};
-    final bool isDriverValid = (driverMap['assigned'] == true) ||
-        (order['delivery_man_id'] != null && status != 'canceled' && ['processing', 'handover', 'on_the_way', 'delivered'].contains(status));
+    final bool isDelivered = status == 'delivered';
+    final bool isDriverValid = !isDelivered && (status != 'canceled') &&
+        ((driverMap['assigned'] == true && driverMap['lat'] != null && driverMap['lng'] != null) ||
+        (order['delivery_man_id'] != null && ['processing', 'handover', 'on_the_way'].contains(status)));
 
     final bool isCanceled = status == 'canceled' || (remainingSeconds <= 0 && !isDriverValid && !['processing', 'handover', 'on_the_way', 'delivered'].contains(status));
     final bool isUnpaidOnline = paymentMethod == 'midtrans' && paymentStatus != 'paid' && !isCanceled;
-    final bool isDelivered = status == 'delivered';
 
     // Map Coordinates
     final storeMap = live['store'] is Map ? (live['store'] as Map) : {};
@@ -670,6 +678,91 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         : (order['batch_stores'] is List && (order['batch_stores'] as List).isNotEmpty)
             ? (order['batch_stores'] as List)
             : [];
+
+    if (isDelivered) {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // 1. Delivered Header Card (Privacy Protected, No GPS Radar)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF065F46), Color(0xFF047857)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF047857).withValues(alpha: 0.25),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: const BoxDecoration(
+                      color: Colors.white24,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 40),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Pesanan Selesai Diantar! 🎉',
+                    style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Terima kasih telah berbelanja di CicalengkaGO.',
+                    style: TextStyle(color: Colors.white70, fontSize: 11.5),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.shield_rounded, color: Color(0xFF86EFAC), size: 14),
+                        SizedBox(width: 6),
+                        Text(
+                          'Radar Lokasi Dinonaktifkan (Privasi Kurir Terlindungi)',
+                          style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // 2. Driver Profile Summary Card (Without Live GPS)
+            _buildDriverDetailCard(driverAvatar, driverName, vehicleType, vehiclePlate, driverPhone, unreadChats),
+            const SizedBox(height: 16),
+
+            // 3. Store & Purchased Items Breakdown
+            _buildStoreAndItemsCard(order, live),
+            const SizedBox(height: 16),
+
+            // 4. Payment Breakdown Receipt
+            _buildPaymentBreakdownCard(order, live),
+            const SizedBox(height: 24),
+          ],
+        ),
+      );
+    }
 
     return Column(
       children: [

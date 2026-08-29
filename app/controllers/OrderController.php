@@ -647,8 +647,8 @@ class OrderController extends Controller
                     'avatar'   => $isDriverAssigned ? ($order['dm_avatar'] ?? 'assets/images/users/driver.png') : 'assets/images/users/driver.png',
                     'vehicle'  => $isDriverAssigned ? ($order['vehicle_type'] ?? 'Motor') : 'Motor',
                     'plate'    => $isDriverAssigned ? ($order['vehicle_number'] ?? '') : '',
-                    'lat'      => $isDriverAssigned ? $driverLat : null,
-                    'lng'      => $isDriverAssigned ? $driverLng : null
+                    'lat'      => ($isDriverAssigned && !in_array($order['order_status'], ['delivered', 'canceled', 'refunded', 'failed'])) ? $driverLat : null,
+                    'lng'      => ($isDriverAssigned && !in_array($order['order_status'], ['delivered', 'canceled', 'refunded', 'failed'])) ? $driverLng : null
                 ],
                 'store'          => [
                     'name'    => $order['store_name'] ?? 'Titik Penjemputan',
