@@ -145,9 +145,19 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
                                       ],
                                     ],
                                   ),
-                                  Text(
-                                    'Lat: ${driverCtrl.currentLocation.latitude.toStringAsFixed(4)}, Lng: ${driverCtrl.currentLocation.longitude.toStringAsFixed(4)}',
-                                    style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontFamily: 'monospace'),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        margin: const EdgeInsets.only(right: 5),
+                                        decoration: const BoxDecoration(color: Color(0xFF16A34A), shape: BoxShape.circle),
+                                      ),
+                                      Text(
+                                        'Lat: ${driverCtrl.currentLocation.latitude.toStringAsFixed(6)} | Lng: ${driverCtrl.currentLocation.longitude.toStringAsFixed(6)}',
+                                        style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF047857), fontFamily: 'monospace'),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -178,7 +188,7 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
 
                     // Map Container
                     SizedBox(
-                      height: 220,
+                      height: 230,
                       child: ClipRRect(
                         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
                         child: Stack(
@@ -261,6 +271,38 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
                                   ],
                                 ),
                               ],
+                            ),
+
+                            // Top Map HUD (Live GPS Coordinate Stream Bar)
+                            Positioned(
+                              top: 8,
+                              left: 8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.75),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.satellite_alt_rounded, color: Color(0xFF4ADE80), size: 12),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      '${driverCtrl.currentLocation.latitude.toStringAsFixed(6)}, ${driverCtrl.currentLocation.longitude.toStringAsFixed(6)}',
+                                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'monospace'),
+                                    ),
+                                    if (driverCtrl.heading > 0) ...[
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        '(${driverCtrl.heading.toInt()}°)',
+                                        style: const TextStyle(fontSize: 9, color: Color(0xFF86EFAC)),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
                             ),
 
                             // Floating Re-center GPS Button with Auto-Follow Indicator
