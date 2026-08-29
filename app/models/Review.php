@@ -224,6 +224,11 @@ class Review extends Model
         );
     }
 
+    public function getByDriverId(int $dmId, int $limit = 20): array
+    {
+        return $this->getDmReviews($dmId, $limit);
+    }
+
     /**
      * Recalculate average rating & reviews_count for store
      */

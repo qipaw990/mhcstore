@@ -131,7 +131,7 @@ class DeliveryController extends Controller
         $reviewModel = new \App\Models\Review();
         $reviewModel->recalculateDmRating((int)$dm['id']);
         $dm = $this->dmModel->find($dm['id']);
-        $reviews = $reviewModel->getByDriverId((int)$dm['id'], 20);
+        $reviews = $reviewModel->getDmReviews((int)$dm['id'], 20);
 
         if ($this->isJsonRequest()) {
             $this->successResponse('Dashboard driver berhasil diambil', [
@@ -378,14 +378,13 @@ class DeliveryController extends Controller
 
         // 1. Check client-side reported Mock Location flag
         if ($isMocked === 1 || ($accuracy > 0 && $accuracy < 0.05)) {
-            Database::update('delivery_men', ['is_mocked' => 1], 'id = ?', [$dm['id']]);
             $this->errorResponse('Aplikasi Fake GPS terdeteksi. Akses pembaruan lokasi ditolak.');
             return;
         }
 
         // 2. Server-side Teleportation & Speed Jump Anomaly Check
-        $prevLat = (float)($dm['latitude'] ?? 0);
-        $prevLng = (float)($dm['longitude'] ?? 0);
+        $prevLat = (float)($dm['current_latitude'] ?? 0);
+        $prevLng = (float)($dm['current_longitude'] ?? 0);
         $lastUpdate = !empty($dm['updated_at']) ? strtotime($dm['updated_at']) : 0;
         $now = time();
         $timeDeltaSec = $now - $lastUpdate;
@@ -396,7 +395,6 @@ class DeliveryController extends Controller
             $speedKmh = $distKm / ($timeDeltaSec / 3600);
 
             if ($distMeters > 350 && $speedKmh > 160) {
-                Database::update('delivery_men', ['is_mocked' => 1], 'id = ?', [$dm['id']]);
                 $this->errorResponse('Anomali lompatan lokasi tidak wajar terdeteksi (Fake GPS).');
                 return;
             }
@@ -404,7 +402,6 @@ class DeliveryController extends Controller
 
         if ($lat != 0 && $lng != 0) {
             $this->dmModel->updateLocation($dm['id'], $lat, $lng, $dm['current_order_id']);
-            Database::update('delivery_men', ['is_mocked' => 0], 'id = ?', [$dm['id']]);
             $this->successResponse('Lokasi diperbarui.');
             return;
         }

@@ -113,68 +113,72 @@ class CallController extends Controller
      */
     public function poll(): void
     {
-        $userId   = auth_id() ?: 0;
-        $orderCode = sanitize(trim($_GET['order_code'] ?? ''));
-        $reqUserId = (int)($_GET['user_id'] ?? 0);
-        if ($reqUserId > 0 && $userId === 0) {
-            $userId = $reqUserId;
-        }
+        try {
+            $userId   = auth_id() ?: 0;
+            $orderCode = sanitize(trim($_GET['order_code'] ?? ''));
+            $reqUserId = (int)($_GET['user_id'] ?? 0);
+            if ($reqUserId > 0 && $userId === 0) {
+                $userId = $reqUserId;
+            }
 
-        $whereSql = "vc.created_at >= NOW() - INTERVAL 5 MINUTE AND vc.status IN ('calling', 'connected', 'ended', 'rejected')";
-        $params = [];
+            $whereSql = "vc.created_at >= NOW() - INTERVAL 5 MINUTE AND vc.status IN ('calling', 'connected', 'ended', 'rejected')";
+            $params = [];
 
-        if (!empty($orderCode) && $userId > 0) {
-            $whereSql .= " AND vc.order_code = ? AND (vc.receiver_id = ? OR vc.caller_id = ?)";
-            $params[] = $orderCode;
-            $params[] = $userId;
-            $params[] = $userId;
-        } elseif (!empty($orderCode)) {
-            $whereSql .= " AND vc.order_code = ?";
-            $params[] = $orderCode;
-        } elseif ($userId > 0) {
-            $whereSql .= " AND (vc.receiver_id = ? OR vc.caller_id = ?)";
-            $params[] = $userId;
-            $params[] = $userId;
-        } else {
+            if (!empty($orderCode) && $userId > 0) {
+                $whereSql .= " AND vc.order_code = ? AND (vc.receiver_id = ? OR vc.caller_id = ?)";
+                $params[] = $orderCode;
+                $params[] = $userId;
+                $params[] = $userId;
+            } elseif (!empty($orderCode)) {
+                $whereSql .= " AND vc.order_code = ?";
+                $params[] = $orderCode;
+            } elseif ($userId > 0) {
+                $whereSql .= " AND (vc.receiver_id = ? OR vc.caller_id = ?)";
+                $params[] = $userId;
+                $params[] = $userId;
+            } else {
+                $this->successResponse('Tidak ada panggilan aktif', ['active_call' => null]);
+                return;
+            }
+
+            // Fetch active call for order or user
+            $call = Database::fetchOne("
+                SELECT vc.*,
+                       u_caller.name as caller_name, u_caller.avatar as caller_avatar,
+                       u_recv.name as receiver_name, u_recv.avatar as receiver_avatar
+                FROM voice_calls vc
+                LEFT JOIN users u_caller ON vc.caller_id = u_caller.id
+                LEFT JOIN users u_recv ON vc.receiver_id = u_recv.id
+                WHERE {$whereSql}
+                ORDER BY vc.id DESC LIMIT 1
+            ", $params);
+
+            if (!$call) {
+                $this->successResponse('Tidak ada panggilan aktif', ['active_call' => null]);
+                return;
+            }
+
+            $this->successResponse('Status panggilan', [
+                'active_call' => [
+                    'id'              => (int)$call['id'],
+                    'order_code'      => $call['order_code'],
+                    'caller_id'       => (int)$call['caller_id'],
+                    'receiver_id'     => (int)$call['receiver_id'],
+                    'caller_role'     => $call['caller_role'],
+                    'receiver_role'   => $call['receiver_role'],
+                    'caller_name'     => $call['caller_name'] ?? 'Pengguna',
+                    'caller_avatar'   => $call['caller_avatar'] ?? 'assets/images/users/customer.png',
+                    'receiver_name'   => $call['receiver_name'] ?? 'Pengguna',
+                    'receiver_avatar' => $call['receiver_avatar'] ?? 'assets/images/users/driver.png',
+                    'status'          => $call['status'],
+                    'offer'           => $call['offer'],
+                    'answer'          => $call['answer'],
+                    'ice_candidates'  => $call['ice_candidates']
+                ]
+            ]);
+        } catch (\Throwable $e) {
             $this->successResponse('Tidak ada panggilan aktif', ['active_call' => null]);
-            return;
         }
-
-        // Fetch active call for order or user
-        $call = Database::fetchOne("
-            SELECT vc.*,
-                   u_caller.name as caller_name, u_caller.avatar as caller_avatar,
-                   u_recv.name as receiver_name, u_recv.avatar as receiver_avatar
-            FROM voice_calls vc
-            LEFT JOIN users u_caller ON vc.caller_id = u_caller.id
-            LEFT JOIN users u_recv ON vc.receiver_id = u_recv.id
-            WHERE {$whereSql}
-            ORDER BY vc.id DESC LIMIT 1
-        ", $params);
-
-        if (!$call) {
-            $this->successResponse('Tidak ada panggilan aktif', ['active_call' => null]);
-            return;
-        }
-
-        $this->successResponse('Status panggilan', [
-            'active_call' => [
-                'id'              => (int)$call['id'],
-                'order_code'      => $call['order_code'],
-                'caller_id'       => (int)$call['caller_id'],
-                'receiver_id'     => (int)$call['receiver_id'],
-                'caller_role'     => $call['caller_role'],
-                'receiver_role'   => $call['receiver_role'],
-                'caller_name'     => $call['caller_name'] ?? 'Pengguna',
-                'caller_avatar'   => $call['caller_avatar'] ?? 'assets/images/users/customer.png',
-                'receiver_name'   => $call['receiver_name'] ?? 'Pengguna',
-                'receiver_avatar' => $call['receiver_avatar'] ?? 'assets/images/users/driver.png',
-                'status'          => $call['status'],
-                'offer'           => $call['offer'],
-                'answer'          => $call['answer'],
-                'ice_candidates'  => $call['ice_candidates']
-            ]
-        ]);
     }
 
     /**
