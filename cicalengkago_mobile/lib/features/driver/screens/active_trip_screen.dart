@@ -1,10 +1,14 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/services/global_call_service.dart';
+import '../../../core/services/location_service.dart';
 import '../../common/screens/in_app_chat_modal.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/driver_controller.dart';
@@ -19,6 +23,9 @@ class ActiveTripScreen extends StatefulWidget {
 
 class _ActiveTripScreenState extends State<ActiveTripScreen> {
   final _otpCtrl = TextEditingController();
+  final MapController _mapController = MapController();
+  bool _autoFollow = true;
+  LatLng? _lastCenteredLocation;
 
   @override
   void dispose() {
@@ -72,6 +79,23 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
       }
     }
 
+    // Extract customer coordinates
+    final double? custLat = double.tryParse((rawDeliv is Map ? (rawDeliv['lat'] ?? rawDeliv['latitude']) : trip['dest_lat'])?.toString() ?? '');
+    final double? custLng = double.tryParse((rawDeliv is Map ? (rawDeliv['lng'] ?? rawDeliv['longitude']) : trip['dest_lng'])?.toString() ?? '');
+    final LatLng custPosition = (custLat != null && custLng != null && custLat != 0 && custLng != 0)
+        ? LatLng(custLat, custLng)
+        : const LatLng(-6.9855, 107.8350);
+
+    // Auto-follow camera movement
+    if (_autoFollow && _lastCenteredLocation != driverCtrl.currentLocation) {
+      _lastCenteredLocation = driverCtrl.currentLocation;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _mapController.move(driverCtrl.currentLocation, 15.5);
+        }
+      });
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -79,7 +103,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
         children: [
           // Status Banner
           _buildStatusBanner(status, orderCode, pickupStores.length),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           // Komisi chip
           Row(
@@ -114,6 +138,16 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
               ],
             ],
           ),
+          const SizedBox(height: 14),
+
+          // Multi-Store Radar Map with Live Route Polylines
+          _buildTripRadarMap(
+            driverCtrl: driverCtrl,
+            pickupStores: pickupStores,
+            custPosition: custPosition,
+            customerName: customerName,
+            status: status,
+          ),
           const SizedBox(height: 16),
 
           // Sequential Itinerary Card (Multi-Store Pickups + Final Customer Destination)
@@ -146,6 +180,324 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     );
   }
 
+  Widget _buildTripRadarMap({
+    required DriverController driverCtrl,
+    required List<Map<String, dynamic>> pickupStores,
+    required LatLng custPosition,
+    required String customerName,
+    required String status,
+  }) {
+    // 1. Build List of Store Coordinates
+    final List<LatLng> storePositions = [];
+    for (int i = 0; i < pickupStores.length; i++) {
+      final s = pickupStores[i];
+      final sLat = double.tryParse(s['lat']?.toString() ?? '');
+      final sLng = double.tryParse(s['lng']?.toString() ?? '');
+      if (sLat != null && sLng != null && sLat != 0 && sLng != 0) {
+        storePositions.add(LatLng(sLat, sLng));
+      } else {
+        // Fallback staggered from driver location
+        storePositions.add(LatLng(
+          driverCtrl.currentLocation.latitude + (0.003 * (i + 1)),
+          driverCtrl.currentLocation.longitude + (0.002 * (i + 1)),
+        ));
+      }
+    }
+
+    // 2. Build Polyline Route Segments
+    final List<Polyline> polylines = [];
+    if (storePositions.isNotEmpty) {
+      // Route 1: Driver -> First Store (Blue)
+      polylines.add(
+        Polyline(
+          points: [driverCtrl.currentLocation, storePositions.first],
+          strokeWidth: 4.5,
+          color: const Color(0xFF2563EB),
+        ),
+      );
+
+      // Route 2+: Store i -> Store i+1 (Amber for multi-store)
+      for (int i = 0; i < storePositions.length - 1; i++) {
+        polylines.add(
+          Polyline(
+            points: [storePositions[i], storePositions[i + 1]],
+            strokeWidth: 4.0,
+            color: const Color(0xFFD97706),
+          ),
+        );
+      }
+
+      // Route Final: Last Store -> Customer Destination (Emerald Green)
+      polylines.add(
+        Polyline(
+          points: [storePositions.last, custPosition],
+          strokeWidth: 4.0,
+          color: const Color(0xFF059669),
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Radar Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 30,
+                      height: 30,
+                      decoration: const BoxDecoration(
+                        color: AppTheme.primaryRed,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.radar_rounded, color: Colors.white, size: 16),
+                    ),
+                    const SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Text(
+                              'Radar Rute Pengantaran',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                            ),
+                            if (_autoFollow) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFDCFCE7),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: const Color(0xFF86EFAC)),
+                                ),
+                                child: const Text('Live Ikuti GPS', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
+                              ),
+                            ],
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              margin: const EdgeInsets.only(right: 5),
+                              decoration: const BoxDecoration(color: Color(0xFF16A34A), shape: BoxShape.circle),
+                            ),
+                            Text(
+                              '${driverCtrl.currentLocation.latitude.toStringAsFixed(6)}, ${driverCtrl.currentLocation.longitude.toStringAsFixed(6)}',
+                              style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF047857), fontFamily: 'monospace'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: (status == 'on_the_way') ? const Color(0xFFDCFCE7) : const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: (status == 'on_the_way') ? const Color(0xFF86EFAC) : const Color(0xFFBFDBFE)),
+                  ),
+                  child: Text(
+                    (status == 'on_the_way') ? 'Menuju Pelanggan' : 'Ambil di Resto',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: (status == 'on_the_way') ? const Color(0xFF16A34A) : const Color(0xFF2563EB),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+
+          // Map Container
+          SizedBox(
+            height: 240,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+              child: Stack(
+                children: [
+                  FlutterMap(
+                    mapController: _mapController,
+                    options: MapOptions(
+                      initialCenter: driverCtrl.currentLocation,
+                      initialZoom: 15.0,
+                      onPositionChanged: (camera, hasGesture) {
+                        if (hasGesture && _autoFollow) {
+                          setState(() => _autoFollow = false);
+                        }
+                      },
+                    ),
+                    children: [
+                      TileLayer(
+                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.cicalengkago.mobile',
+                        errorTileCallback: (tile, error, stackTrace) {},
+                        evictErrorTileStrategy: EvictErrorTileStrategy.none,
+                      ),
+                      // Multi-Store Route Polylines
+                      PolylineLayer(polylines: polylines),
+                      MarkerLayer(
+                        markers: [
+                          // 1. Driver Live Position Marker (Rotating Heading)
+                          Marker(
+                            point: driverCtrl.currentLocation,
+                            width: 50,
+                            height: 50,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Container(
+                                  width: 50,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF16A34A).withValues(alpha: 0.15),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                Transform.rotate(
+                                  angle: (driverCtrl.heading) * (math.pi / 180.0),
+                                  child: Container(
+                                    width: 34,
+                                    height: 34,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF16A34A),
+                                      shape: BoxShape.circle,
+                                      boxShadow: [BoxShadow(color: Color(0x6616A34A), blurRadius: 10)],
+                                    ),
+                                    child: const Icon(Icons.navigation_rounded, color: Colors.white, size: 20),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // 2. Sequential Store Pickup Markers
+                          for (int i = 0; i < storePositions.length; i++)
+                            Marker(
+                              point: storePositions[i],
+                              width: 44,
+                              height: 44,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      color: (i == 0) ? const Color(0xFF2563EB) : const Color(0xFFD97706),
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: ((i == 0) ? const Color(0xFF2563EB) : const Color(0xFFD97706)).withValues(alpha: 0.4),
+                                          blurRadius: 8,
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 18),
+                                  ),
+                                  Positioned(
+                                    top: 0,
+                                    right: 0,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(3.5),
+                                      decoration: const BoxDecoration(color: AppTheme.primaryRed, shape: BoxShape.circle),
+                                      child: Text('${i + 1}', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                          // 3. Customer Destination Marker
+                          Marker(
+                            point: custPosition,
+                            width: 44,
+                            height: 44,
+                            child: Container(
+                              width: 38,
+                              height: 38,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF059669),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(color: const Color(0xFF059669).withValues(alpha: 0.4), blurRadius: 8),
+                                ],
+                              ),
+                              child: const Icon(Icons.home_rounded, color: Colors.white, size: 20),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  // Floating Re-center GPS Button
+                  Positioned(
+                    bottom: 10,
+                    right: 10,
+                    child: Material(
+                      elevation: 3,
+                      shape: const CircleBorder(),
+                      color: _autoFollow ? const Color(0xFF16A34A) : Colors.white,
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: () async {
+                          setState(() => _autoFollow = true);
+                          await driverCtrl.refreshLocation();
+                          _mapController.move(driverCtrl.currentLocation, 15.5);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('📍 Mode Ikuti GPS Driver Aktif!'),
+                                duration: Duration(seconds: 1),
+                                backgroundColor: Color(0xFF16A34A),
+                              ),
+                            );
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: Icon(
+                            Icons.my_location_rounded,
+                            color: _autoFollow ? Colors.white : AppTheme.primaryRed,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   List<Map<String, dynamic>> _extractPickupStores(Map<String, dynamic> trip, String defaultStoreName, String defaultStoreAddress) {
     final List<Map<String, dynamic>> result = [];
     final rawBatchStores = trip['batch_stores'];
@@ -160,6 +512,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             'name': (sMap['name'] ?? sMap['store_name'] ?? defaultStoreName).toString(),
             'address': (sMap['address'] ?? sMap['store_address'] ?? defaultStoreAddress).toString(),
             'phone': (sMap['phone'] ?? sMap['store_phone'] ?? '').toString(),
+            'lat': double.tryParse((sMap['lat'] ?? sMap['latitude'] ?? sMap['store_lat'] ?? trip['store_lat'])?.toString() ?? ''),
+            'lng': double.tryParse((sMap['lng'] ?? sMap['longitude'] ?? sMap['store_lng'] ?? trip['store_lng'])?.toString() ?? ''),
             'items': (sMap['items'] is List) ? (sMap['items'] as List) : [],
           });
         }
@@ -172,6 +526,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             'name': (subMap['store_name'] ?? defaultStoreName).toString(),
             'address': (subMap['store_address'] ?? defaultStoreAddress).toString(),
             'phone': (subMap['store_phone'] ?? '').toString(),
+            'lat': double.tryParse((subMap['lat'] ?? subMap['latitude'] ?? subMap['store_lat'] ?? trip['store_lat'])?.toString() ?? ''),
+            'lng': double.tryParse((subMap['lng'] ?? subMap['longitude'] ?? subMap['store_lng'] ?? trip['store_lng'])?.toString() ?? ''),
             'items': (subMap['items'] is List) ? (subMap['items'] as List) : [],
           });
         }
@@ -184,6 +540,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             'name': (boMap['store_name'] ?? defaultStoreName).toString(),
             'address': (boMap['store_address'] ?? defaultStoreAddress).toString(),
             'phone': (boMap['store_phone'] ?? '').toString(),
+            'lat': double.tryParse((boMap['lat'] ?? boMap['latitude'] ?? boMap['store_lat'] ?? trip['store_lat'])?.toString() ?? ''),
+            'lng': double.tryParse((boMap['lng'] ?? boMap['longitude'] ?? boMap['store_lng'] ?? trip['store_lng'])?.toString() ?? ''),
             'items': (boMap['items'] is List) ? (boMap['items'] as List) : [],
           });
         }
@@ -207,6 +565,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           'name': defaultStoreName,
           'address': defaultStoreAddress,
           'phone': trip['store_phone'] ?? '',
+          'lat': double.tryParse(trip['store_lat']?.toString() ?? ''),
+          'lng': double.tryParse(trip['store_lng']?.toString() ?? ''),
           'items': rawItems,
         });
       } else {
@@ -215,12 +575,13 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             'name': sName,
             'address': (sName == defaultStoreName) ? defaultStoreAddress : 'Cicalengka, Jawa Barat',
             'phone': (sName == defaultStoreName) ? (trip['store_phone'] ?? '') : '',
+            'lat': double.tryParse(trip['store_lat']?.toString() ?? ''),
+            'lng': double.tryParse(trip['store_lng']?.toString() ?? ''),
             'items': sItems,
           });
         });
       }
     }
-
     return result;
   }
 
