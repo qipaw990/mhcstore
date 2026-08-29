@@ -8,6 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/uber_pill_button.dart';
 import '../../../core/services/location_service.dart';
+import '../../../core/widgets/location_picker_modal.dart';
 import '../controllers/customer_controller.dart';
 import 'order_tracking_screen.dart';
 
@@ -229,11 +230,55 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
             ),
 
-            const SizedBox(height: 16),
-
-            const Text(
-              'Alamat Lengkap Pengantaran',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Alamat Lengkap Pengantaran',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                ),
+                InkWell(
+                  onTap: () async {
+                    final result = await LocationPickerModal.show(
+                      context,
+                      initialLat: _userLat,
+                      initialLng: _userLng,
+                    );
+                    if (result != null && mounted) {
+                      setState(() {
+                        _userLat = (result['lat'] as num).toDouble();
+                        _userLng = (result['lng'] as num).toDouble();
+                        _addressController.text = result['address']?.toString() ?? '';
+                        _gpsStatusText = 'Titik Peta Terpilih (${_userLat.toStringAsFixed(5)}, ${_userLng.toStringAsFixed(5)})';
+                      });
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEE2E2),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppTheme.primaryRed.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.map_rounded, color: AppTheme.primaryRed, size: 14),
+                        SizedBox(width: 4),
+                        Text(
+                          'Pilih dari Peta',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryRed,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             TextField(
