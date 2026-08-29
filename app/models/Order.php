@@ -135,16 +135,26 @@ class Order extends Model
 
                 $sId = $subOrd['store_id'];
                 if ($sId && !isset($storeSeen[$sId])) {
-                    $storeSeen[$sId] = true;
+                    $storeSeen[$sId] = count($order['batch_stores']);
                     $order['batch_stores'][] = [
-                        'store_id' => $sId,
-                        'order_id' => $subOrd['id'],
-                        'name'     => $subOrd['store_name'] ?? 'Toko Cicalengka',
-                        'address'  => $subOrd['store_address'] ?? 'Cicalengka, Bandung',
-                        'phone'    => $subOrd['store_phone'] ?? '',
-                        'lat'      => (float)($subOrd['store_lat'] ?? -6.9835),
-                        'lng'      => (float)($subOrd['store_lng'] ?? 107.8335)
+                        'store_id'   => $sId,
+                        'order_id'   => $subOrd['id'],
+                        'order_code' => $subOrd['order_code'] ?? '',
+                        'name'       => $subOrd['store_name'] ?? 'Toko Cicalengka',
+                        'address'    => $subOrd['store_address'] ?? 'Cicalengka, Bandung',
+                        'phone'      => $subOrd['store_phone'] ?? '',
+                        'lat'        => (float)($subOrd['store_lat'] ?? -6.9835),
+                        'lng'        => (float)($subOrd['store_lng'] ?? 107.8335),
+                        'items'      => $subOrd['items'] ?? []
                     ];
+                } elseif ($sId && isset($storeSeen[$sId])) {
+                    $existingIdx = $storeSeen[$sId];
+                    if (!empty($subOrd['items'])) {
+                        $order['batch_stores'][$existingIdx]['items'] = array_merge(
+                            $order['batch_stores'][$existingIdx]['items'] ?? [],
+                            $subOrd['items']
+                        );
+                    }
                 }
             }
         }

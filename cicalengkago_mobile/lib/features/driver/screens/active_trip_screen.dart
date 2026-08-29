@@ -55,10 +55,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
 
     final deliveryCharge = double.tryParse(trip['delivery_charge']?.toString() ?? '0') ?? 0;
 
-    // Items list
-    final List items = (trip['items'] as List?) ?? [];
-    final List batchOrders = (trip['batch_orders'] as List?) ?? [];
-    final hasBatch = batchOrders.isNotEmpty;
+    // Extract all pickup stores for multi-store trip
+    final List<Map<String, dynamic>> pickupStores = _extractPickupStores(trip, storeName, storeAddress);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -66,7 +64,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Status Banner
-          _buildStatusBanner(status, orderCode),
+          _buildStatusBanner(status, orderCode, pickupStores.length),
           const SizedBox(height: 16),
 
           // Komisi chip
@@ -85,37 +83,123 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
                 ),
               ),
+              if (pickupStores.length > 1) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
+                  ),
+                  child: Text(
+                    'Multi-Toko (${pickupStores.length} Resto)',
+                    style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 16),
 
-          // Batch orders (multiple destinations)
-          if (hasBatch) ...[
-            _buildBatchOrdersSection(batchOrders),
-          ] else ...[
-            // Single order
-            _buildLocationCard(
-              storeName: storeName,
-              storeAddress: storeAddress,
-              customerName: customerName,
-              deliveryAddress: deliveryAddress,
-              customerPhone: customerPhone,
-              items: items,
-              status: status,
-            ),
-          ],
+          // Sequential Itinerary Card (Multi-Store Pickups + Final Customer Destination)
+          _buildLocationCard(
+            pickupStores: pickupStores,
+            customerName: customerName,
+            deliveryAddress: deliveryAddress,
+            customerPhone: customerPhone,
+            status: status,
+          ),
 
           const SizedBox(height: 20),
 
           // Action Buttons
-          _buildActionSection(context, driverCtrl, orderId, status, customerPhone, orderCode),
+          _buildActionSection(context, driverCtrl, orderId, status, customerPhone, orderCode, pickupStores.length),
         ],
       ),
     );
   }
 
-  Widget _buildStatusBanner(String status, String orderCode) {
-    final statusInfo = _getStatusInfo(status);
+  List<Map<String, dynamic>> _extractPickupStores(Map<String, dynamic> trip, String defaultStoreName, String defaultStoreAddress) {
+    final List<Map<String, dynamic>> result = [];
+    final rawBatchStores = trip['batch_stores'];
+    final rawBatchSubOrders = trip['batch_sub_orders'];
+    final rawBatchOrders = trip['batch_orders'];
+
+    if (rawBatchStores is List && rawBatchStores.isNotEmpty) {
+      for (var s in rawBatchStores) {
+        if (s is Map) {
+          final sMap = Map<String, dynamic>.from(s);
+          result.add({
+            'name': (sMap['name'] ?? sMap['store_name'] ?? defaultStoreName).toString(),
+            'address': (sMap['address'] ?? sMap['store_address'] ?? defaultStoreAddress).toString(),
+            'phone': (sMap['phone'] ?? sMap['store_phone'] ?? '').toString(),
+            'items': (sMap['items'] is List) ? (sMap['items'] as List) : [],
+          });
+        }
+      }
+    } else if (rawBatchSubOrders is List && rawBatchSubOrders.isNotEmpty) {
+      for (var sub in rawBatchSubOrders) {
+        if (sub is Map) {
+          final subMap = Map<String, dynamic>.from(sub);
+          result.add({
+            'name': (subMap['store_name'] ?? defaultStoreName).toString(),
+            'address': (subMap['store_address'] ?? defaultStoreAddress).toString(),
+            'phone': (subMap['store_phone'] ?? '').toString(),
+            'items': (subMap['items'] is List) ? (subMap['items'] as List) : [],
+          });
+        }
+      }
+    } else if (rawBatchOrders is List && rawBatchOrders.isNotEmpty) {
+      for (var bo in rawBatchOrders) {
+        if (bo is Map) {
+          final boMap = Map<String, dynamic>.from(bo);
+          result.add({
+            'name': (boMap['store_name'] ?? defaultStoreName).toString(),
+            'address': (boMap['store_address'] ?? defaultStoreAddress).toString(),
+            'phone': (boMap['store_phone'] ?? '').toString(),
+            'items': (boMap['items'] is List) ? (boMap['items'] as List) : [],
+          });
+        }
+      }
+    }
+
+    if (result.isEmpty) {
+      final List rawItems = (trip['items'] as List?) ?? [];
+      final Map<String, List<dynamic>> itemsByStore = {};
+      for (var item in rawItems) {
+        if (item is Map) {
+          final String sName = (item['store_name'] ?? defaultStoreName).toString();
+          if (!itemsByStore.containsKey(sName)) {
+            itemsByStore[sName] = [];
+          }
+          itemsByStore[sName]!.add(item);
+        }
+      }
+      if (itemsByStore.isEmpty) {
+        result.add({
+          'name': defaultStoreName,
+          'address': defaultStoreAddress,
+          'phone': trip['store_phone'] ?? '',
+          'items': rawItems,
+        });
+      } else {
+        itemsByStore.forEach((sName, sItems) {
+          result.add({
+            'name': sName,
+            'address': (sName == defaultStoreName) ? defaultStoreAddress : 'Cicalengka, Jawa Barat',
+            'phone': (sName == defaultStoreName) ? (trip['store_phone'] ?? '') : '',
+            'items': sItems,
+          });
+        });
+      }
+    }
+
+    return result;
+  }
+
+  Widget _buildStatusBanner(String status, String orderCode, int storeCount) {
+    final statusInfo = _getStatusInfo(status, storeCount);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -167,15 +251,16 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     );
   }
 
-  Map<String, dynamic> _getStatusInfo(String status) {
+  Map<String, dynamic> _getStatusInfo(String status, int storeCount) {
+    final totalSteps = storeCount + 1;
     switch (status) {
       case 'accepted':
       case 'pending':
       case 'confirmed':
       case 'processing':
         return {
-          'label': 'Menuju ke Toko / Resto',
-          'stepLabel': 'Langkah 1/2',
+          'label': storeCount > 1 ? 'Jemput di $storeCount Toko / Resto' : 'Menuju ke Toko / Resto',
+          'stepLabel': 'Langkah 1/$totalSteps',
           'icon': Icons.store_rounded,
           'color': const Color(0xFF2563EB),
           'bgColor': const Color(0xFFEFF6FF),
@@ -185,7 +270,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
       case 'on_the_way':
         return {
           'label': 'Mengantar ke Pelanggan',
-          'stepLabel': 'Langkah 2/2',
+          'stepLabel': 'Langkah $totalSteps/$totalSteps',
           'icon': Icons.delivery_dining_rounded,
           'color': const Color(0xFF059669),
           'bgColor': const Color(0xFFECFDF5),
@@ -202,29 +287,12 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
   }
 
   Widget _buildLocationCard({
-    required String storeName,
-    required String storeAddress,
+    required List<Map<String, dynamic>> pickupStores,
     required String customerName,
     required String deliveryAddress,
     required String customerPhone,
-    required List items,
     required String status,
   }) {
-    // Group items per store
-    final Map<String, List<dynamic>> itemsByStore = {};
-    for (var item in items) {
-      final String sName = (item['store_name'] ?? storeName).toString();
-      if (!itemsByStore.containsKey(sName)) {
-        itemsByStore[sName] = [];
-      }
-      itemsByStore[sName]!.add(item);
-    }
-    if (itemsByStore.isEmpty) {
-      itemsByStore[storeName] = items;
-    }
-
-    final storeEntries = itemsByStore.entries.toList();
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -241,12 +309,13 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Render each pickup store step with its items
-          ...storeEntries.asMap().entries.map((stepEntry) {
+          // 1. Render each pickup store step with its items and map button
+          ...pickupStores.asMap().entries.map((stepEntry) {
             final int stepIdx = stepEntry.key;
-            final String sName = stepEntry.value.key;
-            final List sItems = stepEntry.value.value;
-            final String sAddr = (sName == storeName) ? storeAddress : 'Cicalengka, Jawa Barat';
+            final Map<String, dynamic> storeData = stepEntry.value;
+            final String sName = storeData['name'] ?? 'Toko Mitra';
+            final String sAddr = storeData['address'] ?? 'Cicalengka, Jawa Barat';
+            final List sItems = (storeData['items'] is List) ? (storeData['items'] as List) : [];
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -285,31 +354,36 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                               children: [
                                 Row(
                                   children: [
-                                    Text(
-                                      'LANGKAH ${stepIdx + 1}: JEMPUT PESANAN',
-                                      style: const TextStyle(
-                                        fontSize: 10,
-                                        color: Color(0xFF2563EB),
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 0.5,
+                                    Expanded(
+                                      child: Text(
+                                        'LANGKAH ${stepIdx + 1}: JEMPUT PESANAN',
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                          color: Color(0xFF2563EB),
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 0.5,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                    const SizedBox(width: 6),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFDBEAFE),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        '${sItems.length} Menu',
-                                        style: const TextStyle(
-                                          fontSize: 9.5,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF1D4ED8),
+                                    if (sItems.isNotEmpty) ...[
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFDBEAFE),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          '${sItems.length} Menu',
+                                          style: const TextStyle(
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF1D4ED8),
+                                          ),
                                         ),
                                       ),
-                                    ),
+                                    ],
                                   ],
                                 ),
                                 const SizedBox(height: 2),
@@ -317,10 +391,16 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                                   sName,
                                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                                 ),
-                                Text(sAddr, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                Text(
+                                  sAddr,
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ],
                             ),
                           ),
+                          const SizedBox(width: 8),
                           _mapBtn(sAddr),
                         ],
                       ),
@@ -354,9 +434,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                               ),
                               const Divider(height: 14, color: Color(0xFFE2E8F0)),
                               ...sItems.map((item) {
-                                final pName = item['product_name'] ?? item['name'] ?? 'Menu';
-                                final qty = item['quantity'] ?? 1;
-                                final price = double.tryParse(item['total_price']?.toString() ?? item['price']?.toString() ?? '0') ?? 0;
+                                final pName = (item is Map) ? (item['product_name'] ?? item['name'] ?? 'Menu') : 'Menu';
+                                final qty = (item is Map) ? (item['quantity'] ?? 1) : 1;
+                                final price = (item is Map) ? (double.tryParse(item['total_price']?.toString() ?? item['price']?.toString() ?? '0') ?? 0) : 0;
 
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 6),
@@ -376,13 +456,15 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
-                                          pName,
+                                          pName.toString(),
                                           style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                       if (price > 0)
                                         Text(
-                                          CurrencyFormatter.formatRupiah(price),
+                                          CurrencyFormatter.formatRupiah(price as double),
                                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF059669)),
                                         ),
                                     ],
@@ -414,7 +496,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             );
           }),
 
-          // 2. Customer Destination Step
+          // 2. Final Customer Destination Step
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -434,9 +516,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'LANGKAH TERAKHIR: PENGANTARAN',
-                        style: TextStyle(
+                      Text(
+                        'LANGKAH ${pickupStores.length + 1}: PENGANTARAN KE PELANGGAN',
+                        style: const TextStyle(
                           fontSize: 10,
                           color: Color(0xFF059669),
                           fontWeight: FontWeight.w800,
@@ -449,25 +531,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                     ],
                   ),
                 ),
-                Column(
-                  children: [
-                    _mapBtn(deliveryAddress),
-                    if (customerPhone.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      GestureDetector(
-                        onTap: () => launchUrl(Uri.parse('tel:$customerPhone')),
-                        child: Container(
-                          padding: const EdgeInsets.all(7),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFECFDF5),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.call_rounded, color: Color(0xFF059669), size: 16),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+                const SizedBox(width: 8),
+                _mapBtn(deliveryAddress),
               ],
             ),
           ),
@@ -476,95 +541,23 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     );
   }
 
-  Widget _buildBatchOrdersSection(List batchOrders) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(Icons.layers_rounded, size: 16, color: Color(0xFF7C3AED)),
-            const SizedBox(width: 6),
-            Text(
-              'Batch Trip Gabungan: ${batchOrders.length} Pesanan Multi-Toko',
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF7C3AED)),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        ...batchOrders.asMap().entries.map((entry) {
-          final i = entry.key;
-          final order = entry.value as Map<String, dynamic>;
-          final sName = order['store_name'] ?? 'Toko ${i + 1}';
-          final cName = order['customer_name'] ?? 'Pelanggan';
-          final List bItems = (order['items'] as List?) ?? [];
-
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFDDD6FE)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: const BoxDecoration(color: Color(0xFF7C3AED), shape: BoxShape.circle),
-                          child: Center(child: Text('${i + 1}', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))),
-                        ),
-                        const SizedBox(width: 8),
-                        Text('Order #${order['order_code'] ?? order['id']}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(color: const Color(0xFFF3E8FF), borderRadius: BorderRadius.circular(8)),
-                      child: Text(sName, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF7C3AED))),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text('📍 Resto: $sName → Pelanggan: $cName', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                if (bItems.isNotEmpty) ...[
-                  const Divider(height: 16, color: Color(0xFFF1F5F9)),
-                  ...bItems.map((it) {
-                    final pName = it['product_name'] ?? it['name'] ?? 'Menu';
-                    final qty = it['quantity'] ?? 1;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.circle, size: 5, color: Color(0xFF7C3AED)),
-                          const SizedBox(width: 6),
-                          Text('${qty}x $pName', style: const TextStyle(fontSize: 11, color: Color(0xFF475569))),
-                        ],
-                      ),
-                    );
-                  }),
-                ],
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
-  Widget _buildActionSection(BuildContext context, DriverController driverCtrl, int orderId, String status, String customerPhone, String orderCode) {
+  Widget _buildActionSection(
+    BuildContext context,
+    DriverController driverCtrl,
+    int orderId,
+    String status,
+    String customerPhone,
+    String orderCode,
+    int storeCount,
+  ) {
     return Column(
       children: [
         // Main action button
         if (status == 'accepted' || status == 'pending' || status == 'confirmed' || status == 'processing') ...[
           _actionButton(
-            label: '✅ Sudah Ambil di Toko / Resto',
+            label: storeCount > 1
+                ? '✅ Sudah Ambil Semua di $storeCount Toko'
+                : '✅ Sudah Ambil di Toko / Resto',
             color: const Color(0xFF2563EB),
             onTap: () async {
               final ok = await driverCtrl.updateTripStatus(orderId, 'picked_up');
@@ -642,7 +635,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           ),
         ],
 
-        // Secondary actions (Voice Call, Chat, Phone, Refresh)
+        // Secondary actions (Voice Call, Chat)
         const SizedBox(height: 12),
         Row(
           children: [
@@ -691,18 +684,6 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                 },
               ),
             ),
-            if (customerPhone.isNotEmpty) ...[
-              const SizedBox(width: 8),
-              IconButton(
-                style: IconButton.styleFrom(
-                  backgroundColor: const Color(0xFFECFDF5),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.all(10),
-                ),
-                icon: const Icon(Icons.call_rounded, color: Color(0xFF059669), size: 18),
-                onPressed: () => launchUrl(Uri.parse('tel:$customerPhone')),
-              ),
-            ],
           ],
         ),
       ],

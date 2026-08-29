@@ -93,11 +93,16 @@ class DeliveryController extends Controller
                     $activeOrder['store_phone'] = $store['phone'] ?? '';
                 }
             }
+            // Attach multi-store batch data if part of multi-store order
+            $this->orderModel->attachMultiStoreDetails($activeOrder);
+
             // Fetch and attach order items list for mobile driver UI
-            $activeOrder['items'] = Database::query(
-                "SELECT id, order_id, product_id, product_name, price, quantity, total_price FROM `order_items` WHERE `order_id` = ?",
-                [$activeOrder['id']]
-            );
+            if (empty($activeOrder['items'])) {
+                $activeOrder['items'] = Database::query(
+                    "SELECT id, order_id, product_id, product_name, price, quantity, total_price FROM `order_items` WHERE `order_id` = ?",
+                    [$activeOrder['id']]
+                );
+            }
         }
 
         // Available nearby orders in driver zone
