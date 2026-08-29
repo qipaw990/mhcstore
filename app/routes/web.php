@@ -243,6 +243,8 @@ Router::options('/api/login', [\App\Controllers\ApiController::class, 'login']);
 Router::post('/api/register', [\App\Controllers\ApiController::class, 'register']);
 Router::options('/api/register', [\App\Controllers\ApiController::class, 'register']);
 Router::get('/api/home-data', [\App\Controllers\ApiController::class, 'homeData']);
+Router::get('/api/coupons', [\App\Controllers\ApiController::class, 'coupons']);
+Router::get('/api/vouchers', [\App\Controllers\ApiController::class, 'coupons']);
 Router::get('/api/banners', [\App\Controllers\ApiController::class, 'banners']);
 Router::get('/api/categories', [\App\Controllers\ApiController::class, 'categories']);
 Router::get('/api/clear-stores', [\App\Controllers\ApiController::class, 'clearStores']);

@@ -7,6 +7,7 @@ class CustomerController extends ChangeNotifier {
   List<dynamic> _modules = [];
   List<dynamic> _banners = [];
   List<dynamic> _categories = [];
+  List<dynamic> _coupons = [];
   List<dynamic> _stores = [];
   List<dynamic> _topRatedStores = [];
   List<dynamic> _recommendedProducts = [];
@@ -23,6 +24,7 @@ class CustomerController extends ChangeNotifier {
   List<dynamic> get modules => _modules;
   List<dynamic> get banners => _banners;
   List<dynamic> get categories => _categories;
+  List<dynamic> get coupons => _coupons;
   List<dynamic> get stores => _stores;
   List<dynamic> get topRatedStores => _topRatedStores.isNotEmpty ? _topRatedStores : _stores;
   List<dynamic> get recommendedProducts => _recommendedProducts.isNotEmpty ? _recommendedProducts : _products;
@@ -149,6 +151,7 @@ class CustomerController extends ChangeNotifier {
         _modules = data['modules'] as List<dynamic>? ?? [];
         _banners = data['banners'] as List<dynamic>? ?? [];
         _categories = data['categories'] as List<dynamic>? ?? [];
+        _coupons = data['coupons'] as List<dynamic>? ?? data['vouchers'] as List<dynamic>? ?? [];
         _topRatedStores = data['top_rated_stores'] as List<dynamic>? ?? [];
         _recommendedProducts = data['recommended_products'] as List<dynamic>? ?? [];
         _discountedProducts = data['discounted_products'] as List<dynamic>? ?? [];

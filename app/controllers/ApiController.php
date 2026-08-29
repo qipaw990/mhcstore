@@ -99,6 +99,29 @@ class ApiController extends Controller
         $banners = $bannerModel->getActiveBanners($selectedModuleId);
         $categories = (new Category())->getByModule($selectedModuleId);
 
+        // Fetch coupons/vouchers from database
+        $coupons = \App\Core\Database::query("
+            SELECT * FROM `coupons` WHERE `status` = 1 ORDER BY `id` DESC LIMIT 10
+        ");
+        if (empty($coupons)) {
+            $today = date('Y-m-d');
+            $nextYear = date('Y-m-d', strtotime('+1 year'));
+            try {
+                \App\Core\Database::query("
+                    INSERT IGNORE INTO `coupons` (`code`, `title`, `discount_type`, `discount`, `min_purchase`, `max_discount`, `start_date`, `expire_date`, `status`) VALUES
+                    ('CICAHEBAT', 'Diskon Rp 10.000 Kuliner Cicalengka', 'amount', 10000.00, 30000.00, 10000.00, '{$today}', '{$nextYear}', 1),
+                    ('FREESHIP', 'Bebas Ongkir Pengantaran 5 km', 'amount', 5000.00, 0.00, 5000.00, '{$today}', '{$nextYear}', 1),
+                    ('MAKANLANCAR', 'Cashback 20% CicalengkaPay', 'percent', 20.00, 25000.00, 15000.00, '{$today}', '{$nextYear}', 1),
+                    ('CICAHEMAT5K', 'Voucher Jajanan Rp 5.000', 'amount', 5000.00, 15000.00, 5000.00, '{$today}', '{$nextYear}', 1)
+                ");
+                $coupons = \App\Core\Database::query("
+                    SELECT * FROM `coupons` WHERE `status` = 1 ORDER BY `id` DESC LIMIT 10
+                ");
+            } catch (\Throwable $e) {
+                $coupons = [];
+            }
+        }
+
         $topRatedStores = \App\Core\Database::query("
             SELECT s.*, m.name as module_name
             FROM `stores` s
@@ -143,10 +166,20 @@ class ApiController extends Controller
             'modules'             => $modules,
             'banners'             => $banners,
             'categories'          => $categories,
+            'coupons'             => $coupons,
+            'vouchers'            => $coupons,
             'top_rated_stores'    => $topRatedStores,
             'recommended_products'=> $recommendedProducts,
             'discounted_products' => $discountedProducts,
         ]);
+    }
+
+    public function coupons(): void
+    {
+        $coupons = \App\Core\Database::query("
+            SELECT * FROM `coupons` WHERE `status` = 1 ORDER BY `id` DESC LIMIT 20
+        ");
+        $this->successResponse('Daftar kupon & voucher berhasil diambil', $coupons);
     }
 
     public function banners(): void

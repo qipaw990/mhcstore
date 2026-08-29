@@ -263,7 +263,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                           const SizedBox(height: 16),
 
                           // 5.2 Kupon & Voucher Hemat Discovery
-                          _buildVoucherDiscoverySection(context),
+                          _buildVoucherDiscoverySection(customerCtrl, context),
 
                           const SizedBox(height: 18),
 
@@ -923,73 +923,142 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     );
   }
 
-  // --- Voucher & Promo Discovery Section ---
-  Widget _buildVoucherDiscoverySection(BuildContext context) {
-    final vouchers = [
-      {
-        'title': 'Diskon Rp 10.000',
-        'sub': 'Min. belanja Rp 30rb',
-        'code': 'CICAHEBAT',
-        'color': const Color(0xFFDC2626),
-        'bg': const Color(0xFFFEF2F2),
-        'icon': Icons.confirmation_number_rounded,
-      },
-      {
-        'title': 'Bebas Ongkir 5 km',
-        'sub': 'Tanpa syarat minimal',
-        'code': 'FREESHIP',
-        'color': const Color(0xFF059669),
-        'bg': const Color(0xFFECFDF5),
-        'icon': Icons.two_wheeler_rounded,
-      },
-      {
-        'title': 'Cashback 20%',
-        'sub': 'Khusus CicalengkaPay',
-        'code': 'MAKANLANCAR',
-        'color': const Color(0xFFD97706),
-        'bg': const Color(0xFFFFFBEB),
-        'icon': Icons.stars_rounded,
-      },
-    ];
+  // --- Voucher & Promo Discovery Section (Connected to Server DB) ---
+  Widget _buildVoucherDiscoverySection(CustomerController customerCtrl, BuildContext context) {
+    final List serverCoupons = customerCtrl.coupons;
+    final List<Map<String, dynamic>> displayVouchers = [];
+
+    if (serverCoupons.isNotEmpty) {
+      for (var c in serverCoupons) {
+        if (c is Map) {
+          final code = c['code']?.toString() ?? 'Cicago';
+          final title = c['title']?.toString() ?? 'Voucher Promo';
+          final discType = c['discount_type']?.toString() ?? 'amount';
+          final discVal = double.tryParse(c['discount']?.toString() ?? '0') ?? 0;
+          final minPur = double.tryParse(c['min_purchase']?.toString() ?? '0') ?? 0;
+
+          String mainLabel = title;
+          if (mainLabel.length > 28) {
+            mainLabel = discType == 'percent' 
+                ? 'Diskon ${discVal.toInt()}%' 
+                : 'Diskon ${CurrencyFormatter.formatRupiah(discVal)}';
+          }
+
+          String subLabel = minPur > 0 
+              ? 'Min. belanja ${CurrencyFormatter.formatRupiah(minPur)}' 
+              : 'Tanpa minimal belanja';
+
+          final isShip = code.toUpperCase().contains('SHIP') || code.toUpperCase().contains('ONGKIR');
+          final isCashback = code.toUpperCase().contains('LANCAR') || code.toUpperCase().contains('PAY');
+
+          displayVouchers.add({
+            'title': mainLabel,
+            'sub': subLabel,
+            'code': code,
+            'color': isShip ? const Color(0xFF059669) : (isCashback ? const Color(0xFFD97706) : const Color(0xFFDC2626)),
+            'bg': isShip ? const Color(0xFFECFDF5) : (isCashback ? const Color(0xFFFFFBEB) : const Color(0xFFFEF2F2)),
+            'icon': isShip ? Icons.two_wheeler_rounded : (isCashback ? Icons.stars_rounded : Icons.confirmation_number_rounded),
+          });
+        }
+      }
+    }
+
+    // Fallback if empty during initial loading
+    if (displayVouchers.isEmpty) {
+      displayVouchers.addAll([
+        {
+          'title': 'Diskon Rp 10.000',
+          'sub': 'Min. belanja Rp 30.000',
+          'code': 'CICAHEBAT',
+          'color': const Color(0xFFDC2626),
+          'bg': const Color(0xFFFEF2F2),
+          'icon': Icons.confirmation_number_rounded,
+        },
+        {
+          'title': 'Bebas Ongkir 5 km',
+          'sub': 'Tanpa minimal belanja',
+          'code': 'FREESHIP',
+          'color': const Color(0xFF059669),
+          'bg': const Color(0xFFECFDF5),
+          'icon': Icons.two_wheeler_rounded,
+        },
+        {
+          'title': 'Cashback 20%',
+          'sub': 'Khusus CicalengkaPay',
+          'code': 'MAKANLANCAR',
+          'color': const Color(0xFFD97706),
+          'bg': const Color(0xFFFFFBEB),
+          'icon': Icons.stars_rounded,
+        },
+      ]);
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(Icons.local_offer_rounded, size: 18, color: AppTheme.primaryRed),
-              SizedBox(width: 6),
-              Text(
-                'Kupon & Voucher Hemat',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              const Row(
+                children: [
+                  Icon(Icons.confirmation_number_rounded, size: 18, color: AppTheme.primaryRed),
+                  SizedBox(width: 6),
+                  Text(
+                    'Kupon & Voucher Server',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDC2626).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.cloud_done_rounded, size: 12, color: Color(0xFFDC2626)),
+                    SizedBox(width: 4),
+                    Text(
+                      'SERVER LIVE',
+                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.extrabold, color: Color(0xFFDC2626)),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
         const SizedBox(height: 10),
         SizedBox(
-          height: 84,
+          height: 88,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: vouchers.length,
+            itemCount: displayVouchers.length,
             itemBuilder: (context, idx) {
-              final v = vouchers[idx];
+              final v = displayVouchers[idx];
               final code = v['code'] as String;
               final color = v['color'] as Color;
               final bg = v['bg'] as Color;
               final icon = v['icon'] as IconData;
 
               return Container(
-                width: 210,
+                width: 220,
                 margin: const EdgeInsets.only(right: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
                   color: bg,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: color.withValues(alpha: 0.3)),
+                  border: Border.all(color: color.withValues(alpha: 0.35), width: 1.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),
@@ -997,55 +1066,58 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     AppAlert.showSuccess(
                       context,
                       title: 'Voucher Disalin! 🎟️',
-                      message: 'Kode "$code" siap digunakan saat checkout.',
+                      message: 'Kode "$code" tersimpan. Gunakan saat checkout!',
                     );
                   },
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.18),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(icon, color: color, size: 20),
                         ),
-                        child: Icon(icon, color: color, size: 20),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              v['title'] as String,
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              v['sub'] as String,
-                              style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: color.withValues(alpha: 0.4)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                v['title'] as String,
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              child: Text(
-                                'KODE: $code',
-                                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: color),
+                              const SizedBox(height: 2),
+                              Text(
+                                v['sub'] as String,
+                                style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: color.withValues(alpha: 0.4)),
+                                ),
+                                child: Text(
+                                  'KODE: $code',
+                                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: color),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );
