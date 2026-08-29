@@ -58,7 +58,7 @@ class RequireAuthWidget extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const CicalengkaGoLogo(height: 48),
+              const CicalengkaGoLogo(size: 64),
               const SizedBox(height: 32),
 
               Container(
