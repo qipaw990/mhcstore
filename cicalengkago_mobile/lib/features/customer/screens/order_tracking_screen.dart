@@ -1109,13 +1109,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                     ),
                                 ],
                               ),
-                              if (driverPhone.isNotEmpty)
-                                IconButton(
-                                  constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
-                                  padding: const EdgeInsets.all(6),
-                                  onPressed: () => launchUrl(Uri.parse('tel:$driverPhone')),
-                                  icon: const Icon(Icons.call_rounded, color: Color(0xFF16A34A), size: 18),
-                                ),
                             ],
                           ),
                         ],

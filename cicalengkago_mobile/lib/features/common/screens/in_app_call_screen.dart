@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -585,53 +584,6 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                       ],
 
                       const SizedBox(height: 24),
-
-                      // Alternative Direct Call Methods
-                      if (_partnerPhone.isNotEmpty) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-                          ),
-                          child: Row(
-                            children: [
-                              const Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Alternatif Panggilan Cepat',
-                                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Text(
-                                      'Jika sinyal internet kurang stabil',
-                                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 9),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              IconButton.filled(
-                                style: IconButton.styleFrom(backgroundColor: const Color(0xFF25D366), padding: const EdgeInsets.all(8)),
-                                icon: const Icon(Icons.chat_rounded, color: Colors.white, size: 16),
-                                tooltip: 'WhatsApp Call',
-                                onPressed: _launchWhatsAppCall,
-                              ),
-                              const SizedBox(width: 6),
-                              IconButton.filled(
-                                style: IconButton.styleFrom(backgroundColor: const Color(0xFF3B82F6), padding: const EdgeInsets.all(8)),
-                                icon: const Icon(Icons.phone_forwarded_rounded, color: Colors.white, size: 16),
-                                tooltip: 'Telepon Seluler',
-                                onPressed: _launchPhoneCall,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -641,26 +593,6 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         ),
       ),
     );
-  }
-
-  Future<void> _launchWhatsAppCall() async {
-    if (_partnerPhone.isEmpty) return;
-    String cleanPhone = _partnerPhone.replaceAll(RegExp(r'[^0-9]'), '');
-    if (cleanPhone.startsWith('0')) {
-      cleanPhone = '62${cleanPhone.substring(1)}';
-    }
-    final url = Uri.parse('https://wa.me/$cleanPhone?text=Halo%2C%20saya%20terkait%20pesanan%20CicalengkaGO%20${widget.orderCode}');
-    try {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } catch (_) {}
-  }
-
-  Future<void> _launchPhoneCall() async {
-    if (_partnerPhone.isEmpty) return;
-    final url = Uri.parse('tel:$_partnerPhone');
-    try {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } catch (_) {}
   }
 
   Widget _callActionButton({
