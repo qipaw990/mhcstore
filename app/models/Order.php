@@ -104,6 +104,11 @@ class Order extends Model
         return $this->findByCode((string)$idOrCode);
     }
 
+    public function attachMultiStoreDetails(?array &$order): void
+    {
+        $this->enrichBatchOrderDetails($order);
+    }
+
     public function enrichBatchOrderDetails(?array &$order): void
     {
         if (empty($order) || empty($order['delivery_batch_id'])) {
