@@ -6,11 +6,13 @@ import '../../../core/network/api_service.dart';
 
 class AuthController extends ChangeNotifier {
   bool _isLoading = false;
+  bool _isInitialized = false;
   String? _errorMessage;
   Map<String, dynamic>? _user;
   String? _role;
 
   bool get isLoading => _isLoading;
+  bool get isInitialized => _isInitialized;
   String? get errorMessage => _errorMessage;
   Map<String, dynamic>? get user => _user;
   String? get role => _role;
@@ -25,9 +27,10 @@ class AuthController extends ChangeNotifier {
       try {
         _user = jsonDecode(userStr);
         _role = roleStr ?? _user?['role'] ?? 'customer';
-        notifyListeners();
       } catch (_) {}
     }
+    _isInitialized = true;
+    notifyListeners();
   }
 
   Future<bool> login(String username, String password) async {

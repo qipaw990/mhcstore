@@ -11,6 +11,8 @@ import 'features/merchant/controllers/merchant_controller.dart';
 import 'features/merchant/screens/merchant_dashboard_screen.dart';
 import 'core/services/global_call_service.dart';
 
+import 'core/widgets/cicalengkago_logo.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
@@ -335,6 +337,12 @@ class _RoleRouterState extends State<RoleRouter> {
   @override
   Widget build(BuildContext context) {
     final authCtrl = context.watch<AuthController>();
+
+    // Show branded splash screen until stored session is read
+    if (!authCtrl.isInitialized) {
+      return const _AppSplashView();
+    }
+
     final uId = int.tryParse(authCtrl.user?['id']?.toString() ?? '0');
     GlobalCallService.instance.updateContext(context);
     if (uId != null && uId > 0) {
@@ -355,5 +363,52 @@ class _RoleRouterState extends State<RoleRouter> {
     } else {
       return const CustomerHomeScreen();
     }
+  }
+}
+
+class _AppSplashView extends StatelessWidget {
+  const _AppSplashView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CicalengkaGoLogo(size: 88, borderRadius: 24, showShadow: true),
+            const SizedBox(height: 20),
+            const Text(
+              'CicalengkaGO',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0F172A),
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Pesan Antar Makanan & Belanja Praktis',
+              style: TextStyle(
+                fontSize: 12,
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 32),
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryRed),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
