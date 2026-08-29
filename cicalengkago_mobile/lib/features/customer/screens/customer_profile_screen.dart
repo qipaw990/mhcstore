@@ -61,9 +61,11 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         authCtrl: authCtrl,
         initialAvatarFile: _selectedAvatarFile,
         onAvatarUpdated: (file) {
-          setState(() {
-            _selectedAvatarFile = file;
-          });
+          if (mounted) {
+            setState(() {
+              _selectedAvatarFile = file;
+            });
+          }
         },
       ),
     );
@@ -972,9 +974,11 @@ class _EditProfileModalSheetState extends State<_EditProfileModalSheet> {
 
       if (picked != null) {
         final file = File(picked.path);
-        setState(() {
-          _selectedAvatarFile = file;
-        });
+        if (mounted) {
+          setState(() {
+            _selectedAvatarFile = file;
+          });
+        }
         widget.onAvatarUpdated(file);
       }
     } catch (e) {
