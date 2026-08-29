@@ -443,7 +443,7 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
               backgroundColor: const Color(0xFFFFFBEB),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             ),
-            onPressed: () => onNavigateTab?.call(2),
+            onPressed: () => widget.onNavigateTab?.call(2),
             child: const Row(
               children: [
                 Text('Rincian', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF92400E))),
@@ -462,7 +462,7 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
         // Dompet Card
         Expanded(
           child: GestureDetector(
-            onTap: () => onNavigateTab?.call(1),
+            onTap: () => widget.onNavigateTab?.call(1),
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
