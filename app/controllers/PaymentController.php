@@ -337,4 +337,155 @@ class PaymentController extends Controller
             echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
         }
     }
+
+    // =========================================================================
+    // IN-HOUSE AUTOMATED PAYMENT SYSTEM (TRANSFER BANK + QRIS + KODE UNIK + WEBHOOK)
+    // =========================================================================
+
+    /**
+     * Get list of supported destination bank accounts & QRIS
+     */
+    public function getBanks(): void
+    {
+        $banks = \App\Models\PaymentInvoice::getAvailableBanks();
+        $this->successResponse('Daftar metode pembayaran berhasil diambil', $banks);
+    }
+
+    /**
+     * Create In-House Payment Invoice with 3-digit unique code
+     */
+    public function createInvoice(): void
+    {
+        $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Silakan login terlebih dahulu.', null, 401);
+            return;
+        }
+
+        $data = $this->getPost();
+        if (empty($data)) {
+            $raw = file_get_contents('php://input');
+            $data = json_decode($raw, true) ?: [];
+        }
+
+        $amount    = (float)($data['amount'] ?? 0);
+        $bankCode  = trim((string)($data['bank'] ?? $data['bank_code'] ?? 'QRIS'));
+        $type      = trim((string)($data['type'] ?? 'topup'));
+        $orderId   = !empty($data['order_id']) ? (int)$data['order_id'] : null;
+
+        if ($amount < 1000) {
+            $this->errorResponse('Nominal pembayaran minimal Rp 1.000');
+            return;
+        }
+
+        try {
+            $model = new \App\Models\PaymentInvoice();
+            $invoice = $model->createInvoice($userId, $type, $bankCode, $amount, $orderId);
+
+            // Generate Google Charts / QR Server URL for QRIS QR display
+            $qrisQrUrl = null;
+            if (!empty($invoice['qris_payload'])) {
+                $qrisQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . urlencode($invoice['qris_payload']);
+            }
+
+            $invoice['qris_qr_url'] = $qrisQrUrl;
+
+            $this->successResponse('Tiket pembayaran berhasil dibuat', $invoice);
+        } catch (\Throwable $e) {
+            $this->errorResponse($e->getMessage());
+        }
+    }
+
+    /**
+     * Check real-time payment status of an invoice
+     */
+    public function checkInvoice(): void
+    {
+        $code = trim((string)($_GET['code'] ?? $_GET['invoice_code'] ?? ''));
+        if (empty($code)) {
+            $this->errorResponse('Invoice code is required');
+            return;
+        }
+
+        $invoice = \App\Core\Database::fetchOne("SELECT * FROM `payment_invoices` WHERE `invoice_code` = ? LIMIT 1", [$code]);
+        if (!$invoice) {
+            $this->errorResponse('Invoice tidak ditemukan', null, 404);
+            return;
+        }
+
+        $isExpired = ($invoice['status'] === 'pending' && strtotime($invoice['expires_at']) < time());
+        if ($isExpired) {
+            \App\Core\Database::update('payment_invoices', ['status' => 'expired'], 'id = ?', [$invoice['id']]);
+            $invoice['status'] = 'expired';
+        }
+
+        $this->successResponse('Status invoice berhasil dicek', [
+            'invoice_code' => $invoice['invoice_code'],
+            'status'       => $invoice['status'],
+            'total_amount' => (float)$invoice['total_amount'],
+            'base_amount'  => (float)$invoice['base_amount'],
+            'unique_code'  => (int)$invoice['unique_code'],
+            'paid_at'      => $invoice['paid_at'],
+            'expires_at'   => $invoice['expires_at']
+        ]);
+    }
+
+    /**
+     * In-House Auto-Approve Webhook API
+     * Can receive data from:
+     * - Bank Mutasi Scraper
+     * - Android Notification Listener / MacroDroid (SMS Banking, BCA Mobile, Livin, GoPay, DANA)
+     */
+    public function autoWebhook(): void
+    {
+        $rawInput = file_get_contents('php://input');
+        $payload = json_decode($rawInput, true) ?: $_POST;
+
+        $amount  = (float)($payload['amount'] ?? 0);
+        $bank    = $payload['bank'] ?? $payload['bank_name'] ?? null;
+        $sender  = $payload['sender'] ?? $payload['from'] ?? null;
+        $rawText = $payload['text'] ?? $payload['message'] ?? $payload['notification'] ?? null;
+
+        $model = new \App\Models\PaymentInvoice();
+        $result = $model->processWebhookData($amount, $bank, $sender, $rawText);
+
+        header('Content-Type: application/json');
+        if ($result['success']) {
+            http_response_code(200);
+            echo json_encode(['status' => 'success', 'data' => $result]);
+        } else {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => $result['message']]);
+        }
+    }
+
+    /**
+     * Testing Simulator: Auto-approve an invoice without actual bank transfer (Development/Admin testing)
+     */
+    public function simulatePay(): void
+    {
+        $data = $this->getPost();
+        if (empty($data)) {
+            $raw = file_get_contents('php://input');
+            $data = json_decode($raw, true) ?: [];
+        }
+
+        $code = trim((string)($data['invoice_code'] ?? $data['code'] ?? ''));
+        if (empty($code)) {
+            $this->errorResponse('Invoice code diperlukan');
+            return;
+        }
+
+        $model = new \App\Models\PaymentInvoice();
+        $success = $model->approveInvoice($code, 'Simulator Admin CicalengkaGO');
+
+        if ($success) {
+            $this->successResponse('Pembayaran invoice berhasil disimulasikan & lunas!', [
+                'invoice_code' => $code,
+                'status'       => 'paid'
+            ]);
+        } else {
+            $this->errorResponse('Invoice tidak ditemukan atau sudah dibayar.');
+        }
+    }
 }

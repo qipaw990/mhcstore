@@ -258,5 +258,19 @@ Router::get('/api/wallet', [CustomerController::class, 'wallet']);
 Router::get('/api/profile', [CustomerController::class, 'profile']);
 Router::get('/api/notifications', [CustomerController::class, 'notifications']);
 
+// ==========================================
+// In-House Payment System (Bank Transfer / QRIS / Kode Unik / Webhook)
+// ==========================================
+Router::get('/api/payment/banks', [PaymentController::class, 'getBanks']);
+Router::get('/payment/banks', [PaymentController::class, 'getBanks']);
+Router::post('/api/payment/create-invoice', [PaymentController::class, 'createInvoice']);
+Router::post('/payment/create-invoice', [PaymentController::class, 'createInvoice']);
+Router::get('/api/payment/check-invoice', [PaymentController::class, 'checkInvoice']);
+Router::get('/payment/check-invoice', [PaymentController::class, 'checkInvoice']);
+Router::post('/api/payment/auto-webhook', [PaymentController::class, 'autoWebhook']);
+Router::post('/payment/auto-webhook', [PaymentController::class, 'autoWebhook']);
+Router::post('/api/payment/simulate-pay', [PaymentController::class, 'simulatePay']);
+Router::post('/payment/simulate-pay', [PaymentController::class, 'simulatePay']);
+
 
 

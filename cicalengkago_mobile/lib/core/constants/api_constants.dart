@@ -81,6 +81,12 @@ class ApiConstants {
   static const String paymentSimulate     = '$domainUrl/payment/simulate-sandbox-success';
   static const String paymentNotification = '$domainUrl/payment/midtrans/notification';
 
+  // In-House Payment System (Kode Unik + QRIS Otomatis)
+  static const String paymentBanks         = '$domainUrl/api/payment/banks';
+  static const String paymentCreateInvoice = '$domainUrl/api/payment/create-invoice';
+  static const String paymentCheckInvoice  = '$domainUrl/api/payment/check-invoice';
+  static const String paymentSimulatePay   = '$domainUrl/api/payment/simulate-pay';
+
   // Profile & Notifications
   static const String customerProfile = '$domainUrl/profile';
   static const String updateProfile   = '$domainUrl/profile/update';
