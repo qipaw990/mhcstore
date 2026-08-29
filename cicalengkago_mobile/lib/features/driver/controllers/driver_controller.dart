@@ -61,6 +61,8 @@ class DriverController extends ChangeNotifier {
     return r1 ?? r2 ?? r3 ?? 5.0;
   }
 
+  double get rating => driverRating;
+
   void toggleOnline(bool status) {
     _isOnline = status;
     if (_isOnline) {
