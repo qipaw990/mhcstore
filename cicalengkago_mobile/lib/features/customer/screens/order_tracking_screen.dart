@@ -42,6 +42,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   // Real-time Road Polyline Routing State
   List<LatLng> _liveCustomerRoadPoints = [];
   String? _lastCustomerRouteKey;
+  bool _isMapFullScreen = false;
 
   void _syncCustomerRoadRoute(LatLng start, LatLng end) {
     final key = '${start.latitude.toStringAsFixed(3)},${start.longitude.toStringAsFixed(3)}->${end.latitude.toStringAsFixed(3)},${end.longitude.toStringAsFixed(3)}';
@@ -1216,7 +1217,25 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        if (isDriverValid)
+                        // Toggle Full Screen Button
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _isMapFullScreen ? const Color(0xFF0F172A) : Colors.white,
+                            foregroundColor: _isMapFullScreen ? Colors.white : const Color(0xFF0F172A),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            elevation: 2,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isMapFullScreen = !_isMapFullScreen;
+                            });
+                          },
+                          icon: Icon(_isMapFullScreen ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded, size: 15),
+                          label: Text(_isMapFullScreen ? 'Ciutkan' : 'Layar Penuh', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                        ),
+                        const SizedBox(width: 8),
+                        if (isDriverValid) ...[
                           ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
@@ -1226,20 +1245,36 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                               elevation: 2,
                             ),
                             onPressed: () {
-                              final minLat = math.min(math.min(driverLat, storeLat), custLat);
-                              final maxLat = math.max(math.max(driverLat, storeLat), custLat);
-                              final minLng = math.min(math.min(driverLng, storeLng), custLng);
-                              final maxLng = math.max(math.max(driverLng, storeLng), custLng);
-                              _mapController.fitCamera(
-                                CameraFit.bounds(
-                                  bounds: LatLngBounds(LatLng(minLat, minLng), LatLng(maxLat, maxLng)),
-                                  padding: const EdgeInsets.all(40),
-                                ),
-                              );
+                              _mapController.move(LatLng(driverLat, driverLng), 15.5);
                             },
-                            icon: const Icon(Icons.zoom_out_map_rounded, size: 14),
-                            label: const Text('Rute Penuh', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                            icon: const Icon(Icons.my_location_rounded, size: 14),
+                            label: const Text('Fokus Kurir', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                           ),
+                          const SizedBox(width: 8),
+                        ],
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: const Color(0xFF0F172A),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            elevation: 2,
+                          ),
+                          onPressed: () {
+                            final minLat = math.min(math.min(driverLat, storeLat), custLat);
+                            final maxLat = math.max(math.max(driverLat, storeLat), custLat);
+                            final minLng = math.min(math.min(driverLng, storeLng), custLng);
+                            final maxLng = math.max(math.max(driverLng, storeLng), custLng);
+                            _mapController.fitCamera(
+                              CameraFit.bounds(
+                                bounds: LatLngBounds(LatLng(minLat, minLng), LatLng(maxLat, maxLng)),
+                                padding: const EdgeInsets.all(40),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.zoom_out_map_rounded, size: 14),
+                          label: const Text('Rute Penuh', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                        ),
                         const SizedBox(width: 8),
                         ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
@@ -1258,21 +1293,51 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ],
                 ),
               ),
+
+              // Floating Pull-Up Button when in Full Screen Mode
+              if (_isMapFullScreen)
+                Positioned(
+                  top: 54,
+                  right: 12,
+                  child: Material(
+                    elevation: 4,
+                    borderRadius: BorderRadius.circular(20),
+                    color: const Color(0xFF0F172A),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {
+                        setState(() => _isMapFullScreen = false);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 16),
+                            SizedBox(width: 4),
+                            Text('Buka Detail Pesanan', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
 
-        // Bottom Details Container (Status, Driver info, Multi-store order timeline, items, etc)
-        Expanded(
-          flex: 5,
-          child: Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              boxShadow: [
-                BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2)),
-              ],
-            ),
+        // Bottom Details Container (Hidden or Collapsed when Full Screen)
+        if (!_isMapFullScreen)
+          Expanded(
+            flex: 5,
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -2)),
+                ],
+              ),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
