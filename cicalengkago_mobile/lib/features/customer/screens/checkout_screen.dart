@@ -115,22 +115,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final stores = (cart?['stores'] as List<dynamic>?) ?? [];
     final storeId = int.tryParse(stores.isNotEmpty ? stores[0]['store_id']?.toString() ?? '1' : '1') ?? 1;
 
+    // Compute totals for checkout
+    final double subtotal = customerCtrl.cartSubtotal;
+    double deliveryFee = 0.0;
+    if (cart?['grand_delivery'] != null) {
+      deliveryFee = double.tryParse(cart!['grand_delivery'].toString()) ?? 5000.0;
+    } else if (stores.isNotEmpty) {
+      for (var s in stores) {
+        deliveryFee += double.tryParse(s['delivery_fee']?.toString() ?? '5000') ?? 5000.0;
+      }
+    } else {
+      deliveryFee = 5000.0;
+    }
+    if (deliveryFee <= 0) deliveryFee = 5000.0;
+    final double grandTotal = (subtotal + deliveryFee + 1000.0 - _voucherDiscount).clamp(0.0, double.infinity);
+
     // Check CicalengkaPay wallet balance if wallet payment selected
     if (_paymentMethod == 'wallet') {
-      double subtotal = customerCtrl.cartSubtotal;
-      double deliveryFee = 0.0;
-      if (cart?['grand_delivery'] != null) {
-        deliveryFee = double.tryParse(cart!['grand_delivery'].toString()) ?? 5000.0;
-      } else if (stores.isNotEmpty) {
-        for (var s in stores) {
-          deliveryFee += double.tryParse(s['delivery_fee']?.toString() ?? '5000') ?? 5000.0;
-        }
-      } else {
-        deliveryFee = 5000.0;
-      }
-      if (deliveryFee <= 0) deliveryFee = 5000.0;
-      final double grandTotal = (subtotal + deliveryFee + 1000.0 - _voucherDiscount).clamp(0.0, double.infinity);
-
       final walletMap = customerCtrl.wallet;
       final double walletBalance = double.tryParse(walletMap?['balance']?.toString() ?? '0') ?? 0.0;
 
@@ -138,7 +139,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         AppAlert.showError(
           context,
           title: 'Saldo CicalengkaPay Kurang',
-          message: 'Saldo Anda (${CurrencyFormatter.formatRupiah(walletBalance)}) kurang dari total tagihan (${CurrencyFormatter.formatRupiah(grandTotal)}). Gunakan COD / Top Up.',
+          message: 'Saldo Anda (${CurrencyFormatter.formatRupiah(walletBalance)}) kurang dari total tagihan (${CurrencyFormatter.formatRupiah(grandTotal)}). Gunakan QRIS / COD.',
         );
         return;
       }
