@@ -850,7 +850,32 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
             // 4. Payment Breakdown Receipt
             _buildPaymentBreakdownCard(order, live),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+
+            // 5. Customer Rating & Review Section
+            _buildReviewSection(order, live),
+            const SizedBox(height: 20),
+
+            // 6. Action Button (Beri / Ubah Rating & Ulasan)
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD97706),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 2,
+                ),
+                onPressed: () => _showReviewDialog(context, order),
+                icon: const Icon(Icons.star_rounded, size: 20, color: Colors.white),
+                label: const Text(
+                  'Beri Rating & Ulasan Sekarang ⭐',
+                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            const SizedBox(height: 28),
           ],
         ),
       );
@@ -3032,7 +3057,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       bodyPayload['comment'] = singleStoreCommentCtrl.text;
                     }
 
-                    final res = await ApiService.postForm('${ApiConstants.orders}/review', bodyPayload);
+                    final res = await ApiService.postForm(ApiConstants.orderReview, bodyPayload);
                     if (res['success'] == true && res['data'] != null && res['data']['review_info'] != null) {
                       if (mounted) {
                         setState(() {
