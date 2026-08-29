@@ -19,6 +19,25 @@ class DriverRadarScreen extends StatelessWidget {
       return ActiveTripScreen(trip: driverCtrl.activeTrip!);
     }
 
+    if (driverCtrl.isLoading && driverCtrl.driverProfile == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF8FAFC),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(color: AppTheme.primaryRed),
+              SizedBox(height: 12),
+              Text(
+                'Memeriksa status driver & pesanan aktif...',
+                style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return RefreshIndicator(
       color: AppTheme.primaryRed,
       onRefresh: () => driverCtrl.fetchRadarData(),

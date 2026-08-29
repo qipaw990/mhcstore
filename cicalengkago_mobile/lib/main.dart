@@ -324,6 +324,11 @@ class _RoleRouterState extends State<RoleRouter> {
       final authCtrl = context.read<AuthController>();
       final uId = int.tryParse(authCtrl.user?['id']?.toString() ?? '0');
       GlobalCallService.instance.init(context, userId: uId);
+
+      final role = authCtrl.role?.toLowerCase() ?? '';
+      if (role == 'delivery_man' || role == 'driver') {
+        context.read<DriverController>().fetchRadarData();
+      }
     });
   }
 

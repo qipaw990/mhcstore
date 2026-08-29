@@ -4,6 +4,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../../main.dart';
 import '../controllers/auth_controller.dart';
+import '../../driver/controllers/driver_controller.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -47,6 +48,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (success) {
       final userName = authController.user?['name'] ?? 'Pengguna';
+      final role = authController.role?.toLowerCase() ?? 'customer';
+
+      if (role == 'delivery_man' || role == 'driver') {
+        context.read<DriverController>().fetchRadarData();
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
