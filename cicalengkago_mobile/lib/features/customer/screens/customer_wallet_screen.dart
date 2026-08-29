@@ -1182,74 +1182,86 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
     }
 
     return Container(
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: withdrawStatus == 'pending' ? const Color(0xFFFDE68A) : const Color(0xFFF1F5F9),
         ),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 2)),
+        ],
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showTransactionDetail(context, tx),
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  withdrawStatus == 'pending'
-                      ? 'Pengajuan sedang ditinjau Admin'
-                      : (tx['created_at'] != null ? tx['created_at'].toString() : (tx['description'] ?? '')),
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: withdrawStatus == 'pending' ? const Color(0xFFD97706) : const Color(0xFF64748B),
-                    fontWeight: withdrawStatus == 'pending' ? FontWeight.w600 : FontWeight.normal,
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.12),
+                    shape: BoxShape.circle,
                   ),
-                  overflow: TextOverflow.ellipsis,
+                  child: Icon(icon, color: color, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        withdrawStatus == 'pending'
+                            ? 'Pengajuan sedang ditinjau Admin'
+                            : (tx['created_at'] != null ? tx['created_at'].toString() : (tx['description'] ?? '')),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: withdrawStatus == 'pending' ? const Color(0xFFD97706) : const Color(0xFF64748B),
+                          fontWeight: withdrawStatus == 'pending' ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${isCredit ? '+' : '-'}${CurrencyFormatter.formatRupiah(amount)}',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                      decoration: BoxDecoration(
+                        color: badgeBg,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        badgeText,
+                        style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: badgeTextColor),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${isCredit ? '+' : '-'}${CurrencyFormatter.formatRupiah(amount)}',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                decoration: BoxDecoration(
-                  color: badgeBg,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  badgeText,
-                  style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: badgeTextColor),
-                ),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1277,47 +1289,395 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
     }
 
     return Container(
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: color.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 2)),
+        ],
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showTopUpDetail(context, log),
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
               children: [
-                const Text('Top Up CicalengkaPay', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                Text(log['topup_code'] ?? '', style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontFamily: 'monospace')),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+                  child: Icon(icon, color: color, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Top Up CicalengkaPay', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                      Text(log['topup_code'] ?? '', style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontFamily: 'monospace')),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${status == 'success' ? '+' : ''}${CurrencyFormatter.formatRupiah(amount)}',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color),
+                    ),
+                    Container(
+                      margin: const EdgeInsets.only(top: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                      child: Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color)),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+        ),
+      ),
+    );
+  }
+
+  void _showTransactionDetail(BuildContext context, Map<String, dynamic> tx) {
+    final isCredit = tx['type'] == 'credit';
+    final amount = double.tryParse(tx['amount']?.toString() ?? '0') ?? 0;
+    final category = (tx['category'] ?? tx['type'] ?? 'credit').toString();
+    final withdrawStatus = tx['withdraw_status']?.toString().toLowerCase();
+    final refId = tx['reference_id']?.toString() ?? '-';
+    final description = tx['description']?.toString() ?? '-';
+    final createdAt = tx['created_at']?.toString() ?? '-';
+    final bankName = tx['withdraw_bank']?.toString();
+    final accNum = tx['withdraw_acc_num']?.toString();
+    final accHolder = tx['withdraw_acc_holder']?.toString();
+    final adminNotes = tx['withdraw_admin_notes']?.toString();
+
+    String statusLabel = isCredit ? 'Saldo Masuk' : 'Saldo Keluar';
+    Color statusColor = isCredit ? const Color(0xFF059669) : const Color(0xFF0F172A);
+    Color statusBadgeBg = isCredit ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9);
+
+    if (withdrawStatus == 'pending' || (category == 'withdraw' && withdrawStatus == null)) {
+      statusLabel = 'Menunggu Persetujuan Admin';
+      statusColor = const Color(0xFFB45309);
+      statusBadgeBg = const Color(0xFFFEF3C7);
+    } else if (withdrawStatus == 'approved') {
+      statusLabel = 'Transfer Berhasil & Selesai';
+      statusColor = const Color(0xFF15803D);
+      statusBadgeBg = const Color(0xFFDCFCE7);
+    } else if (withdrawStatus == 'rejected') {
+      statusLabel = 'Transfer Ditolak (Saldo Dikembalikan)';
+      statusColor = AppTheme.primaryRed;
+      statusBadgeBg = const Color(0xFFFFE4E6);
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                '${status == 'success' ? '+' : ''}${CurrencyFormatter.formatRupiah(amount)}',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color),
-              ),
+              // Handle
               Container(
-                margin: const EdgeInsets.only(top: 3),
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-                child: Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color)),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(2)),
+              ),
+              const SizedBox(height: 18),
+
+              // Top Icon
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(color: statusBadgeBg, shape: BoxShape.circle),
+                child: Icon(
+                  isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+                  color: statusColor,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Amount
+              Text(
+                '${isCredit ? '+' : '-'}${CurrencyFormatter.formatRupiah(amount)}',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: statusColor),
+              ),
+              const SizedBox(height: 6),
+
+              // Status Pill
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: statusBadgeBg, borderRadius: BorderRadius.circular(20)),
+                child: Text(
+                  statusLabel,
+                  style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Receipt Box
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  children: [
+                    _buildReceiptRow('Kategori', category.toUpperCase()),
+                    const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                    _buildReceiptRow(
+                      'No. Referensi',
+                      refId,
+                      isCopyable: refId != '-',
+                      onCopy: () {
+                        Clipboard.setData(ClipboardData(text: refId));
+                        AppAlert.showSuccess(context, title: 'Disalin', message: 'No. Referensi berhasil disalin.');
+                      },
+                    ),
+                    if (bankName != null && bankName.isNotEmpty) ...[
+                      const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                      _buildReceiptRow('Tujuan Transfer', '$bankName - $accNum\n(a.n $accHolder)'),
+                    ],
+                    const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                    _buildReceiptRow('Keterangan', description),
+                    if (adminNotes != null && adminNotes.isNotEmpty) ...[
+                      const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                      _buildReceiptRow('Catatan Admin', adminNotes),
+                    ],
+                    const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                    _buildReceiptRow('Waktu Transaksi', createdAt),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Close button
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F172A),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: const Text('Tutup Rincian', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                ),
               ),
             ],
           ),
-        ],
-      ),
+        );
+      },
+    );
+  }
+
+  void _showTopUpDetail(BuildContext context, Map<String, dynamic> log) {
+    final code = log['topup_code']?.toString() ?? '-';
+    final amount = double.tryParse(log['amount']?.toString() ?? '0') ?? 0;
+    final status = log['status']?.toString().toLowerCase() ?? 'pending';
+    final paymentMethod = log['payment_method']?.toString().toUpperCase() ?? 'MIDTRANS';
+    final createdAt = log['created_at']?.toString() ?? '-';
+    final snapToken = log['snap_token']?.toString();
+
+    Color statusColor = const Color(0xFFD97706);
+    Color statusBadgeBg = const Color(0xFFFEF3C7);
+    String statusLabel = 'Menunggu Pembayaran';
+
+    if (status == 'success') {
+      statusColor = const Color(0xFF059669);
+      statusBadgeBg = const Color(0xFFDCFCE7);
+      statusLabel = 'Top Up Berhasil';
+    } else if (status == 'failed' || status == 'canceled') {
+      statusColor = AppTheme.primaryRed;
+      statusBadgeBg = const Color(0xFFFFE4E6);
+      statusLabel = status == 'canceled' ? 'Dibatalkan' : 'Gagal / Kadaluarsa';
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(2)),
+              ),
+              const SizedBox(height: 18),
+
+              // Top Icon
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(color: statusBadgeBg, shape: BoxShape.circle),
+                child: Icon(
+                  status == 'success' ? Icons.check_circle_rounded : (status == 'pending' ? Icons.hourglass_top_rounded : Icons.cancel_rounded),
+                  color: statusColor,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Amount
+              Text(
+                CurrencyFormatter.formatRupiah(amount),
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: statusColor),
+              ),
+              const SizedBox(height: 6),
+
+              // Status Pill
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: statusBadgeBg, borderRadius: BorderRadius.circular(20)),
+                child: Text(
+                  statusLabel,
+                  style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Receipt Box
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  children: [
+                    _buildReceiptRow(
+                      'Kode Top-Up',
+                      code,
+                      isCopyable: true,
+                      onCopy: () {
+                        Clipboard.setData(ClipboardData(text: code));
+                        AppAlert.showSuccess(context, title: 'Disalin', message: 'Kode Top Up berhasil disalin.');
+                      },
+                    ),
+                    const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                    _buildReceiptRow('Metode', paymentMethod),
+                    const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                    _buildReceiptRow('Waktu Pemesanan', createdAt),
+                    const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                    _buildReceiptRow('Status Tiket', status.toUpperCase()),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Actions
+              if (status == 'pending' && snapToken != null && snapToken.isNotEmpty) ...[
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      final redirectUrl = 'https://app.sandbox.midtrans.com/snap/v2/vtweb/$snapToken';
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => InAppPaymentScreen(
+                            paymentUrl: redirectUrl,
+                            orderId: code,
+                            amount: amount,
+                            title: 'Lanjutkan Top Up CicalengkaPay',
+                            onPaymentComplete: () {
+                              context.read<CustomerController>().fetchWallet();
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryRed,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: const Text('Lanjutkan Pembayaran Sekarang', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: const Text('Tutup Rincian', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildReceiptRow(String label, String value, {bool isCopyable = false, VoidCallback? onCopy}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
+        const SizedBox(width: 14),
+        Flexible(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  value,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  textAlign: TextAlign.right,
+                ),
+              ),
+              if (isCopyable && onCopy != null) ...[
+                const SizedBox(width: 6),
+                InkWell(
+                  onTap: onCopy,
+                  child: const Icon(Icons.copy_rounded, size: 14, color: AppTheme.primaryRed),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 
