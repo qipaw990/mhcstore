@@ -487,7 +487,7 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
                                     style: const TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w800,
-                                      color: AppTheme.inkBlack,
+                                      color: Color(0xFFEF4444),
                                     ),
                                   ),
                                   const SizedBox(height: 8),
@@ -496,9 +496,9 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
                                     height: 32,
                                     child: ElevatedButton(
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppTheme.inkBlack,
+                                        backgroundColor: const Color(0xFFEF4444),
                                         foregroundColor: Colors.white,
-                                        elevation: 0,
+                                        elevation: 1,
                                         padding: EdgeInsets.zero,
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(10),
@@ -511,13 +511,13 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
                                             SnackBar(
                                               content: Text('${prod['name']} ditambahkan ke keranjang'),
                                               duration: const Duration(seconds: 1),
-                                              backgroundColor: AppTheme.inkBlack,
+                                              backgroundColor: const Color(0xFF16A34A),
                                               behavior: SnackBarBehavior.floating,
                                             ),
                                           );
                                         }
                                       },
-                                      child: const Text('+ Tambah', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                      child: const Text('+ Tambah', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                                     ),
                                   ),
                                 ],

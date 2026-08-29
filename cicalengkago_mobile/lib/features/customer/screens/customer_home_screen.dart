@@ -1367,7 +1367,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                   ProductDetailModal.show(context, prod);
                 },
                 child: Container(
-                  width: 140,
+                  width: 145,
                   margin: const EdgeInsets.only(right: 12),
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -1375,8 +1375,8 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     border: Border.all(color: const Color(0xFFE2E8F0)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 8,
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 10,
                         offset: const Offset(0, 3),
                       ),
                     ],
@@ -1390,27 +1390,69 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                             child: CachedNetworkImage(
                               imageUrl: imgUrl,
-                              height: 100,
+                              height: 105,
                               width: double.infinity,
                               fit: BoxFit.cover,
-                              errorWidget: (context, url, error) => Container(color: Colors.grey[200]),
+                              errorWidget: (context, url, error) => Container(
+                                height: 105,
+                                color: const Color(0xFFF1F5F9),
+                                child: const Icon(Icons.fastfood_rounded, size: 36, color: Color(0xFF94A3B8)),
+                              ),
                             ),
                           ),
                           Positioned(
-                            top: 0,
-                            left: 0,
+                            top: 6,
+                            left: 6,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: const BoxDecoration(
-                                color: AppTheme.primaryRed,
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(16),
-                                  bottomRight: Radius.circular(10),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
                                 ),
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFEF4444).withValues(alpha: 0.3),
+                                    blurRadius: 4,
+                                  ),
+                                ],
                               ),
                               child: Text(
                                 '-${prod['discount_type'] == 'percent' ? '${prod['discount']}%' : CurrencyFormatter.formatRupiah(double.tryParse(prod['discount'].toString()) ?? 0)}',
-                                style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 6,
+                            right: 6,
+                            child: InkWell(
+                              onTap: () async {
+                                final ok = await customerCtrl.addToCart(int.parse(prod['id'].toString()), 1);
+                                if (ok && context.mounted) {
+                                  AppAlert.showCartAdded(
+                                    context,
+                                    productName: prod['name'] ?? 'Menu Kuliner',
+                                    quantity: 1,
+                                  );
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEF4444),
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFFEF4444).withValues(alpha: 0.4),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(Icons.add_rounded, color: Colors.white, size: 18),
                               ),
                             ),
                           ),
@@ -1423,25 +1465,26 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                           children: [
                             Text(
                               prod['store_name'] ?? 'Resto Cicalengka',
-                              style: const TextStyle(fontSize: 9, color: Color(0xFF64748B)),
+                              style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
+                            const SizedBox(height: 2),
                             Text(
                               prod['name'] ?? '',
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 3),
+                            const SizedBox(height: 4),
                             Text(
                               CurrencyFormatter.formatRupiah(finalPrice),
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.primaryRed),
+                              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: Color(0xFFEF4444)),
                             ),
                             if (price > finalPrice)
                               Text(
                                 CurrencyFormatter.formatRupiah(price),
-                                style: const TextStyle(fontSize: 9, color: Color(0xFF94A3B8), decoration: TextDecoration.lineThrough),
+                                style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8), decoration: TextDecoration.lineThrough),
                               ),
                           ],
                         ),
@@ -1709,7 +1752,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            childAspectRatio: 0.70,
+            childAspectRatio: 0.68,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
           ),
@@ -1719,6 +1762,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             final double price = double.tryParse(prod['price']?.toString() ?? '0') ?? 0;
             final double finalPrice = double.tryParse(prod['final_price']?.toString() ?? price.toString()) ?? price;
             final imgUrl = ApiConstants.formatImageUrl(prod['image']?.toString());
+            final bool hasDiscount = price > finalPrice;
 
             return Container(
               decoration: BoxDecoration(
@@ -1727,8 +1771,8 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 border: Border.all(color: const Color(0xFFE2E8F0)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 8,
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
                     offset: const Offset(0, 3),
                   ),
                 ],
@@ -1750,7 +1794,11 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                             height: 115,
                             width: double.infinity,
                             fit: BoxFit.cover,
-                            errorWidget: (context, url, error) => Container(color: Colors.grey[200]),
+                            errorWidget: (context, url, error) => Container(
+                              height: 115,
+                              color: const Color(0xFFF1F5F9),
+                              child: const Icon(Icons.fastfood_rounded, size: 36, color: Color(0xFF94A3B8)),
+                            ),
                           ),
                         ),
                         Positioned(
@@ -1759,13 +1807,13 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                             decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.65),
-                              borderRadius: BorderRadius.circular(10),
+                              color: Colors.black.withValues(alpha: 0.7),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.star_rounded, size: 11, color: Colors.amber),
+                                const Icon(Icons.star_rounded, size: 12, color: Colors.amber),
                                 const SizedBox(width: 2),
                                 Text(
                                   '${prod['rating'] ?? '4.8'}',
@@ -1775,41 +1823,72 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                             ),
                           ),
                         ),
+                        if (hasDiscount)
+                          Positioned(
+                            top: 8,
+                            left: 8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEF4444),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'PROMO',
+                                style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.w900),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                     Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.all(10.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             prod['store_name'] ?? 'Mitra CicalengkaGO',
-                            style: const TextStyle(fontSize: 9, color: Color(0xFF64748B)),
+                            style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
+                          const SizedBox(height: 2),
                           Text(
                             prod['name'] ?? '',
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 3),
-                          Text(
-                            CurrencyFormatter.formatRupiah(finalPrice),
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.primaryRed),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Text(
+                                CurrencyFormatter.formatRupiah(finalPrice),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFFEF4444)),
+                              ),
+                              if (hasDiscount) ...[
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    CurrencyFormatter.formatRupiah(price),
+                                    style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8), decoration: TextDecoration.lineThrough),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                           const SizedBox(height: 8),
                           SizedBox(
                             width: double.infinity,
-                            height: 28,
+                            height: 30,
                             child: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.inkBlack,
-                                foregroundColor: AppTheme.onPrimary,
+                                backgroundColor: const Color(0xFFEF4444),
+                                foregroundColor: Colors.white,
                                 padding: EdgeInsets.zero,
-                                shape: const StadiumBorder(),
-                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                elevation: 1,
                               ),
                               onPressed: () async {
                                 final ok = await customerCtrl.addToCart(int.parse(prod['id'].toString()), 1);
@@ -1821,8 +1900,8 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                                   );
                                 }
                               },
-                              icon: const Icon(Icons.add_rounded, size: 14),
-                              label: const Text('Tambah', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                              icon: const Icon(Icons.add_rounded, size: 16),
+                              label: const Text('+ Tambah', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                             ),
                           ),
                         ],
