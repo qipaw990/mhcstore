@@ -85,7 +85,7 @@ class AppAlert {
     _showFloatingBanner(
       context,
       title: 'Masuk Keranjang! 🛒',
-      message: '$quantityx $productName telah ditambahkan ke keranjang belanja.',
+      message: '${quantity}x $productName telah ditambahkan ke keranjang belanja.',
       icon: Icons.shopping_bag_rounded,
       accentColor: const Color(0xFF10B981),
       bgGradient: const LinearGradient(
