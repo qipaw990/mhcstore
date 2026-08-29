@@ -83,14 +83,37 @@ class DriverController extends ChangeNotifier {
     } catch (_) {}
   }
 
+  DriverController() {
+    _initGpsTracking();
+  }
+
   StreamSubscription<dynamic>? _positionStreamSub;
+
+  void _initGpsTracking() {
+    refreshLocation();
+    try {
+      _positionStreamSub?.cancel();
+      _positionStreamSub = LocationService.getPositionStream().listen((position) {
+        _currentLocation = LatLng(position.latitude, position.longitude);
+        if (position.heading >= 0) {
+          _heading = position.heading;
+        }
+        notifyListeners();
+        if (_isOnline) {
+          _broadcastLocation(_currentLocation);
+        }
+      });
+    } catch (_) {}
+  }
 
   Future<void> refreshLocation() async {
     try {
       final pos = await LocationService.getCurrentPosition();
       _currentLocation = pos;
       notifyListeners();
-      await _broadcastLocation(pos);
+      if (_isOnline) {
+        await _broadcastLocation(pos);
+      }
     } catch (_) {}
   }
 
@@ -104,26 +127,16 @@ class DriverController extends ChangeNotifier {
   }
 
   void startGpsBroadcaster() {
-    stopGpsBroadcaster();
-
     // 1. Broadcast immediately on start
     refreshLocation();
 
-    // 2. Continuous real-time location stream with heading
-    try {
-      _positionStreamSub = LocationService.getPositionStream().listen((position) {
-        if (_isOnline) {
-          _currentLocation = LatLng(position.latitude, position.longitude);
-          if (position.heading >= 0) {
-            _heading = position.heading;
-          }
-          notifyListeners();
-          _broadcastLocation(_currentLocation);
-        }
-      });
-    } catch (_) {}
+    // 2. Ensure stream is listening
+    if (_positionStreamSub == null) {
+      _initGpsTracking();
+    }
 
     // 3. Fallback Periodic heartbeat every 8 seconds
+    _gpsBroadcastTimer?.cancel();
     _gpsBroadcastTimer = Timer.periodic(const Duration(seconds: 8), (_) async {
       if (_isOnline) {
         await refreshLocation();
@@ -134,8 +147,6 @@ class DriverController extends ChangeNotifier {
   void stopGpsBroadcaster() {
     _gpsBroadcastTimer?.cancel();
     _gpsBroadcastTimer = null;
-    _positionStreamSub?.cancel();
-    _positionStreamSub = null;
   }
 
   void startRadarPolling() {

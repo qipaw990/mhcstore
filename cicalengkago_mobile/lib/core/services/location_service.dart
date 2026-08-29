@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -37,7 +38,7 @@ class LocationService {
       // Stage 1: Try High Accuracy GPS
       try {
         Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high,
+          desiredAccuracy: LocationAccuracy.bestForNavigation,
           timeLimit: const Duration(seconds: 8),
         );
         return LatLng(position.latitude, position.longitude);
@@ -62,13 +63,28 @@ class LocationService {
     }
   }
 
-  /// Live high-precision position stream
+  /// Live continuous real-time navigation position stream (0 distance filter)
   static Stream<Position> getPositionStream() {
-    return Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
+    LocationSettings locationSettings;
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      locationSettings = AndroidSettings(
         accuracy: LocationAccuracy.bestForNavigation,
-        distanceFilter: 1,
-      ),
-    );
+        distanceFilter: 0,
+        intervalDuration: const Duration(milliseconds: 1000),
+      );
+    } else if (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS) {
+      locationSettings = AppleSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        activityType: ActivityType.automotiveNavigation,
+        distanceFilter: 0,
+        pauseLocationUpdatesAutomatically: false,
+      );
+    } else {
+      locationSettings = const LocationSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 0,
+      );
+    }
+    return Geolocator.getPositionStream(locationSettings: locationSettings);
   }
 }
