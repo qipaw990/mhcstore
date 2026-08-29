@@ -12,6 +12,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/services/global_call_service.dart';
 import '../../../core/services/location_service.dart';
+import '../../../core/services/route_service.dart';
 import '../../common/screens/in_app_chat_modal.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../widgets/order_item_detail_modal.dart';
@@ -36,6 +37,24 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   final MapController _mapController = MapController();
   LatLng? _previousDriverPos;
   double _driverBearing = 0.0;
+
+  // Real-time Road Polyline Routing State
+  List<LatLng> _liveCustomerRoadPoints = [];
+  String? _lastCustomerRouteKey;
+
+  void _syncCustomerRoadRoute(LatLng start, LatLng end) {
+    final key = '${start.latitude.toStringAsFixed(3)},${start.longitude.toStringAsFixed(3)}->${end.latitude.toStringAsFixed(3)},${end.longitude.toStringAsFixed(3)}';
+    if (_lastCustomerRouteKey == key) return;
+    _lastCustomerRouteKey = key;
+
+    RouteService.getRoadRoute(start, end).then((points) {
+      if (mounted && points.isNotEmpty) {
+        setState(() {
+          _liveCustomerRoadPoints = points;
+        });
+      }
+    }).catchError((_) {});
+  }
 
   @override
   void initState() {
@@ -816,6 +835,30 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       );
     }
 
+    final bool isDeliveringToCustomer = (status == 'on_the_way');
+    final LatLng driverPos = LatLng(driverLat, driverLng);
+    final LatLng custPos = LatLng(custLat, custLng);
+    final LatLng storePos = LatLng(storeLat, storeLng);
+
+    if (isDriverValid) {
+      final LatLng activeTarget = isDeliveringToCustomer ? custPos : storePos;
+      _syncCustomerRoadRoute(driverPos, activeTarget);
+    }
+
+    final List<Polyline> polylines = [];
+    if (isDriverValid) {
+      final roadPoints = _liveCustomerRoadPoints.isNotEmpty
+          ? _liveCustomerRoadPoints
+          : [driverPos, (isDeliveringToCustomer ? custPos : storePos)];
+      polylines.add(
+        Polyline(
+          points: roadPoints,
+          strokeWidth: 4.8,
+          color: isDeliveringToCustomer ? const Color(0xFF059669) : const Color(0xFF2563EB),
+        ),
+      );
+    }
+
     return Column(
       children: [
         // Live Map Container with Floating HUD
@@ -838,6 +881,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     },
                     evictErrorTileStrategy: EvictErrorTileStrategy.none,
                   ),
+                  // Turn-by-Turn Road Polylines
+                  PolylineLayer(polylines: polylines),
                   MarkerLayer(
                     markers: [
                       // Store Pin (Multi-Store or Single Store)
@@ -1213,6 +1258,15 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     ),
                     const SizedBox(height: 12),
                   ],
+
+                  // Live Stage Log Timeline (Real-time progress progression)
+                  _buildStageLogTimelineCard(
+                    status: status,
+                    isDriverValid: isDriverValid,
+                    driverName: driverName,
+                    storeName: (batchStores.isNotEmpty && batchStores[0] is Map ? (batchStores[0]['name'] ?? batchStores[0]['store_name']) : null) ?? 'Resto Mitra',
+                    batchStores: batchStores,
+                  ),
 
                   // Multi-Store Batch Pickup Notice Card
                   if (batchInfo != null && batchInfo['is_multi_pickup'] == true) ...[
@@ -2790,6 +2844,174 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildStageLogTimelineCard({
+    required String status,
+    required bool isDriverValid,
+    required String driverName,
+    required String storeName,
+    required List batchStores,
+  }) {
+    // Determine completed and active steps
+    final bool isDelivered = (status == 'delivered');
+    final bool isOnTheWay = (status == 'on_the_way') || isDelivered;
+    final bool isPickedUp = (status == 'picked_up') || (status == 'handover') || isOnTheWay;
+    final bool isDriverAssigned = isDriverValid || isPickedUp;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFEFF6FF),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.alt_route_rounded, color: Color(0xFF2563EB), size: 16),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Tahapan Perjalanan Pesanan',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+              ),
+            ],
+          ),
+          const Divider(height: 18, color: Color(0xFFF1F5F9)),
+
+          // 1. Pesanan Diterima & Disiapkan Resto
+          _timelineStepItem(
+            isCompleted: true,
+            isActive: !isDriverAssigned,
+            stepNum: '1',
+            title: 'Pesanan Dikonfirmasi & Disiapkan Resto',
+            desc: storeName.isNotEmpty ? storeName : 'Resto Mitra Cicalengka',
+            icon: Icons.storefront_rounded,
+          ),
+          _timelineConnector(isCompleted: isDriverAssigned),
+
+          // 2. Kurir Menjemput di Resto
+          _timelineStepItem(
+            isCompleted: isPickedUp,
+            isActive: isDriverAssigned && !isPickedUp,
+            stepNum: '2',
+            title: isPickedUp
+                ? 'Pesanan Selesai Diambil Kurir ✅'
+                : (isDriverAssigned
+                    ? (batchStores.length > 1 ? 'Kurir Menjemput Multi-Toko (${batchStores.length} Resto)' : 'Kurir Sedang Menuju ke Resto')
+                    : 'Menunggu Kurir Menjemput'),
+            desc: isDriverAssigned
+                ? (driverName.isNotEmpty ? 'Kurir: $driverName' : 'Mitra Kurir Cicalengka')
+                : 'Mencari kurir terdekat...',
+            icon: Icons.directions_bike_rounded,
+          ),
+          _timelineConnector(isCompleted: isPickedUp),
+
+          // 3. Kurir Mengantar ke Rumah Anda
+          _timelineStepItem(
+            isCompleted: isDelivered,
+            isActive: isOnTheWay && !isDelivered,
+            stepNum: '3',
+            title: isDelivered
+                ? 'Telah Sampai di Lokasi Anda ✅'
+                : (isOnTheWay ? 'Kurir Sedang Menuju ke Alamat Anda 🛵' : 'Pengantaran ke Alamat Anda'),
+            desc: isOnTheWay
+                ? 'Rute jalan aktif langsung ke rumah Anda'
+                : 'Menunggu pesanan diambil kurir',
+            icon: Icons.home_rounded,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _timelineStepItem({
+    required bool isCompleted,
+    required bool isActive,
+    required String stepNum,
+    required String title,
+    required String desc,
+    required IconData icon,
+  }) {
+    final Color badgeColor = isCompleted
+        ? const Color(0xFF16A34A)
+        : (isActive ? const Color(0xFF2563EB) : const Color(0xFF94A3B8));
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: isCompleted
+                ? const Color(0xFFDCFCE7)
+                : (isActive ? const Color(0xFFEFF6FF) : const Color(0xFFF1F5F9)),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: badgeColor,
+              width: isActive ? 2 : 1,
+            ),
+          ),
+          child: Center(
+            child: isCompleted
+                ? const Icon(Icons.check_rounded, color: Color(0xFF16A34A), size: 16)
+                : Icon(icon, color: badgeColor, size: 14),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: isActive || isCompleted ? FontWeight.bold : FontWeight.w600,
+                  color: isCompleted
+                      ? const Color(0xFF0F172A)
+                      : (isActive ? const Color(0xFF2563EB) : const Color(0xFF64748B)),
+                ),
+              ),
+              const SizedBox(height: 1),
+              Text(
+                desc,
+                style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _timelineConnector({required bool isCompleted}) {
+    return Container(
+      margin: const EdgeInsets.only(left: 13, top: 2, bottom: 2),
+      height: 16,
+      width: 2,
+      color: isCompleted ? const Color(0xFF16A34A) : const Color(0xFFE2E8F0),
     );
   }
 }
