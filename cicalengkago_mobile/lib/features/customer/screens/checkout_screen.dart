@@ -13,6 +13,7 @@ import '../../../core/services/location_service.dart';
 import '../../../core/widgets/location_picker_modal.dart';
 import '../controllers/customer_controller.dart';
 import 'order_tracking_screen.dart';
+import 'in_app_payment_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -164,20 +165,48 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (mounted) {
       if (res['success'] == true) {
         final orderCode = res['data']?['order_code'] ?? res['data']?['order_id']?.toString() ?? res['order_code'] ?? '';
+        
+        final snapToken = res['data']?['snap_token'];
+        String? redirectUrl = res['data']?['redirect_url'] ?? res['redirect_url'];
+        if ((redirectUrl == null || redirectUrl.isEmpty) && snapToken != null) {
+          redirectUrl = 'https://app.sandbox.midtrans.com/snap/v2/vtweb/$snapToken';
+        }
 
-        AppAlert.showSuccess(
-          context,
-          title: 'Pesanan Berhasil Dibuat! 🎉',
-          message: 'Mencari driver terdekat untuk mengantar pesanan Anda.',
-        );
+        // If Midtrans is chosen and Snap URL is available, open InAppPaymentScreen
+        if (_paymentMethod == 'midtrans' && redirectUrl != null && redirectUrl.isNotEmpty) {
+          await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => InAppPaymentScreen(
+                paymentUrl: redirectUrl!,
+                orderId: orderCode,
+                amount: grandTotal,
+                title: 'Pembayaran Pesanan Midtrans',
+                onPaymentComplete: () {
+                  context.read<CustomerController>().fetchOrders();
+                },
+              ),
+            ),
+          );
+        } else {
+          AppAlert.showSuccess(
+            context,
+            title: 'Pesanan Berhasil Dibuat! 🎉',
+            message: _paymentMethod == 'wallet'
+                ? 'Pembayaran berhasil dipotong dari CicalengkaPay. Mencari driver terdekat.'
+                : 'Mencari driver terdekat untuk mengantar pesanan Anda.',
+          );
+        }
 
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => OrderTrackingScreen(orderCode: orderCode),
-          ),
-          (route) => route.isFirst,
-        );
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (_) => OrderTrackingScreen(orderCode: orderCode),
+            ),
+            (route) => route.isFirst,
+          );
+        }
       } else {
         AppAlert.showError(
           context,
@@ -395,32 +424,39 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
               child: Column(
                 children: [
+                  // 1. CicalengkaPay (Saldo Dompet)
                   RadioListTile<String>(
                     value: 'wallet',
-                    // ignore: deprecated_member_use
                     groupValue: _paymentMethod,
                     title: const Text('CicalengkaPay (Saldo Digital)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     subtitle: Text(
                       isWalletInsufficient
                           ? 'Saldo: ${CurrencyFormatter.formatRupiah(walletBalance)} (Saldo Kurang)'
-                          : 'Saldo: ${CurrencyFormatter.formatRupiah(walletBalance)} • Bebas Biaya',
+                          : 'Saldo: ${CurrencyFormatter.formatRupiah(walletBalance)} • Otomatis & Bebas Biaya',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         color: isWalletInsufficient ? AppTheme.primaryRed : const Color(0xFF16A34A),
                       ),
                     ),
-                    secondary: Icon(
-                      Icons.account_balance_wallet_rounded,
-                      color: isWalletInsufficient ? Colors.grey : AppTheme.primaryRed,
+                    secondary: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: (isWalletInsufficient ? Colors.grey : AppTheme.primaryRed).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.account_balance_wallet_rounded,
+                        color: isWalletInsufficient ? Colors.grey : AppTheme.primaryRed,
+                        size: 20,
+                      ),
                     ),
-                    // ignore: deprecated_member_use
                     onChanged: (val) {
                       if (isWalletInsufficient) {
                         AppAlert.showError(
                           context,
                           title: 'Saldo CicalengkaPay Kurang',
-                          message: 'Saldo Anda (${CurrencyFormatter.formatRupiah(walletBalance)}) kurang dari total tagihan (${CurrencyFormatter.formatRupiah(grandTotal)}). Silakan gunakan Bayar Tunai (COD).',
+                          message: 'Saldo Anda (${CurrencyFormatter.formatRupiah(walletBalance)}) kurang dari total tagihan (${CurrencyFormatter.formatRupiah(grandTotal)}). Silakan gunakan QRIS/Transfer Bank atau Bayar Tunai (COD).',
                         );
                         return;
                       }
@@ -428,14 +464,50 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     },
                   ),
                   const Divider(height: 1),
+
+                  // 2. Midtrans Payment Gateway (QRIS, VA Bank, E-Wallet)
+                  RadioListTile<String>(
+                    value: 'midtrans',
+                    groupValue: _paymentMethod,
+                    title: const Text('Transfer Bank / QRIS (Midtrans)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    subtitle: const Text(
+                      'QRIS, BCA, BRI, Mandiri, BNI, ShopeePay, Indomaret',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF2563EB), fontWeight: FontWeight.w600),
+                    ),
+                    secondary: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.qr_code_2_rounded,
+                        color: Color(0xFF2563EB),
+                        size: 20,
+                      ),
+                    ),
+                    onChanged: (val) => setState(() => _paymentMethod = val!),
+                  ),
+                  const Divider(height: 1),
+
+                  // 3. Bayar Tunai / COD
                   RadioListTile<String>(
                     value: 'cod',
-                    // ignore: deprecated_member_use
                     groupValue: _paymentMethod,
                     title: const Text('Bayar Tunai / COD', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    subtitle: const Text('Bayar langsung ke Kurir saat sampai', style: TextStyle(fontSize: 11)),
-                    secondary: const Icon(Icons.payments_rounded, color: Color(0xFF059669)),
-                    // ignore: deprecated_member_use
+                    subtitle: const Text('Bayar langsung ke Kurir saat pesanan sampai', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                    secondary: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF059669).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.payments_rounded,
+                        color: Color(0xFF059669),
+                        size: 20,
+                      ),
+                    ),
                     onChanged: (val) => setState(() => _paymentMethod = val!),
                   ),
                 ],
