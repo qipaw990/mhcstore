@@ -9,6 +9,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/services/global_call_service.dart';
 import '../../../core/services/location_service.dart';
+import '../../../core/services/route_service.dart';
 import '../../common/screens/in_app_chat_modal.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/driver_controller.dart';
@@ -27,10 +28,28 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
   bool _autoFollow = true;
   LatLng? _lastCenteredLocation;
 
+  // Real-time Road Routing State
+  List<LatLng> _liveRoadPoints = [];
+  String? _lastRouteTargetKey;
+
   @override
   void dispose() {
     _otpCtrl.dispose();
     super.dispose();
+  }
+
+  void _syncRoadRoute(LatLng start, LatLng end) {
+    final key = '${start.latitude.toStringAsFixed(3)},${start.longitude.toStringAsFixed(3)}->${end.latitude.toStringAsFixed(3)},${end.longitude.toStringAsFixed(3)}';
+    if (_lastRouteTargetKey == key) return;
+    _lastRouteTargetKey = key;
+
+    RouteService.getRoadRoute(start, end).then((points) {
+      if (mounted && points.isNotEmpty) {
+        setState(() {
+          _liveRoadPoints = points;
+        });
+      }
+    }).catchError((_) {});
   }
 
   @override
@@ -187,6 +206,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     required String customerName,
     required String status,
   }) {
+    final bool isDeliveringToCustomer = (status == 'on_the_way');
+
     // 1. Build List of Store Coordinates
     final List<LatLng> storePositions = [];
     for (int i = 0; i < pickupStores.length; i++) {
@@ -204,19 +225,38 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
       }
     }
 
-    // 2. Build Polyline Route Segments
+    // 2. Determine target coordinate for current stage
+    final LatLng currentStageTarget = isDeliveringToCustomer
+        ? custPosition
+        : (storePositions.isNotEmpty ? storePositions.first : custPosition);
+
+    // Synchronize road route dynamically
+    _syncRoadRoute(driverCtrl.currentLocation, currentStageTarget);
+
+    // 3. Build Polyline Route Segments based on Stage
     final List<Polyline> polylines = [];
-    if (storePositions.isNotEmpty) {
-      // Route 1: Driver -> First Store (Blue)
+    final activeRoadPoints = _liveRoadPoints.isNotEmpty ? _liveRoadPoints : [driverCtrl.currentLocation, currentStageTarget];
+
+    if (isDeliveringToCustomer) {
+      // Stage 2: Delivering to customer (GREEN ROAD ROUTE) - STORE LINES ARE HIDDEN!
       polylines.add(
         Polyline(
-          points: [driverCtrl.currentLocation, storePositions.first],
-          strokeWidth: 4.5,
+          points: activeRoadPoints,
+          strokeWidth: 5.0,
+          color: const Color(0xFF059669),
+        ),
+      );
+    } else {
+      // Stage 1: Heading to Store 1 (BLUE ROAD ROUTE) - CUSTOMER LINE IS HIDDEN!
+      polylines.add(
+        Polyline(
+          points: activeRoadPoints,
+          strokeWidth: 5.0,
           color: const Color(0xFF2563EB),
         ),
       );
 
-      // Route 2+: Store i -> Store i+1 (Amber for multi-store)
+      // Route 2+: Store 1 -> Store 2 (Amber for multi-store)
       for (int i = 0; i < storePositions.length - 1; i++) {
         polylines.add(
           Polyline(
@@ -226,13 +266,142 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           ),
         );
       }
+    }
 
-      // Route Final: Last Store -> Customer Destination (Emerald Green)
-      polylines.add(
-        Polyline(
-          points: [storePositions.last, custPosition],
-          strokeWidth: 4.0,
-          color: const Color(0xFF059669),
+    // 4. Build Markers for current stage
+    final List<Marker> markers = [
+      // Driver Marker (Live compass rotation)
+      Marker(
+        point: driverCtrl.currentLocation,
+        width: 50,
+        height: 50,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: const Color(0xFF16A34A).withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+            ),
+            Transform.rotate(
+              angle: (driverCtrl.heading) * (math.pi / 180.0),
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF16A34A),
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: Color(0x6616A34A), blurRadius: 10)],
+                ),
+                child: const Icon(Icons.navigation_rounded, color: Colors.white, size: 20),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ];
+
+    if (!isDeliveringToCustomer) {
+      // Add Store Markers during Pickup Stage
+      for (int i = 0; i < storePositions.length; i++) {
+        final String sName = (i < pickupStores.length ? pickupStores[i]['name'] : 'Toko') ?? 'Toko';
+        markers.add(
+          Marker(
+            point: storePositions[i],
+            width: 80,
+            height: 60,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    sName,
+                    style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: (i == 0) ? const Color(0xFF2563EB) : const Color(0xFFD97706),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: ((i == 0) ? const Color(0xFF2563EB) : const Color(0xFFD97706)).withValues(alpha: 0.4),
+                            blurRadius: 8,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 17),
+                    ),
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(color: AppTheme.primaryRed, shape: BoxShape.circle),
+                        child: Text('${i + 1}', style: const TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    } else {
+      // Add Customer Destination Marker during Delivery Stage
+      markers.add(
+        Marker(
+          point: custPosition,
+          width: 80,
+          height: 60,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF047857),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  customerName.isNotEmpty ? customerName : 'Pelanggan',
+                  style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF059669),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(color: const Color(0xFF059669).withValues(alpha: 0.4), blurRadius: 8),
+                  ],
+                ),
+                child: const Icon(Icons.home_rounded, color: Colors.white, size: 18),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -275,9 +444,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                       children: [
                         Row(
                           children: [
-                            const Text(
-                              'Radar Rute Pengantaran',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                            Text(
+                              isDeliveringToCustomer ? 'Panduan Rute: Ke Pelanggan' : 'Panduan Rute: Ke Resto',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
                             ),
                             if (_autoFollow) ...[
                               const SizedBox(width: 6),
@@ -288,7 +457,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: const Color(0xFF86EFAC)),
                                 ),
-                                child: const Text('Live Ikuti GPS', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
+                                child: const Text('Live Ikuti Jalan', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
                               ),
                             ],
                           ],
@@ -314,16 +483,16 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: (status == 'on_the_way') ? const Color(0xFFDCFCE7) : const Color(0xFFEFF6FF),
+                    color: isDeliveringToCustomer ? const Color(0xFFDCFCE7) : const Color(0xFFEFF6FF),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: (status == 'on_the_way') ? const Color(0xFF86EFAC) : const Color(0xFFBFDBFE)),
+                    border: Border.all(color: isDeliveringToCustomer ? const Color(0xFF86EFAC) : const Color(0xFFBFDBFE)),
                   ),
                   child: Text(
-                    (status == 'on_the_way') ? 'Menuju Pelanggan' : 'Ambil di Resto',
+                    isDeliveringToCustomer ? 'Antar Pesanan' : 'Ambil di Resto',
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: (status == 'on_the_way') ? const Color(0xFF16A34A) : const Color(0xFF2563EB),
+                      color: isDeliveringToCustomer ? const Color(0xFF16A34A) : const Color(0xFF2563EB),
                     ),
                   ),
                 ),
@@ -357,100 +526,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                         errorTileCallback: (tile, error, stackTrace) {},
                         evictErrorTileStrategy: EvictErrorTileStrategy.none,
                       ),
-                      // Multi-Store Route Polylines
+                      // Turn-by-turn road polyline
                       PolylineLayer(polylines: polylines),
-                      MarkerLayer(
-                        markers: [
-                          // 1. Driver Live Position Marker (Rotating Heading)
-                          Marker(
-                            point: driverCtrl.currentLocation,
-                            width: 50,
-                            height: 50,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Container(
-                                  width: 50,
-                                  height: 50,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF16A34A).withValues(alpha: 0.15),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                Transform.rotate(
-                                  angle: (driverCtrl.heading) * (math.pi / 180.0),
-                                  child: Container(
-                                    width: 34,
-                                    height: 34,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF16A34A),
-                                      shape: BoxShape.circle,
-                                      boxShadow: [BoxShadow(color: Color(0x6616A34A), blurRadius: 10)],
-                                    ),
-                                    child: const Icon(Icons.navigation_rounded, color: Colors.white, size: 20),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // 2. Sequential Store Pickup Markers
-                          for (int i = 0; i < storePositions.length; i++)
-                            Marker(
-                              point: storePositions[i],
-                              width: 44,
-                              height: 44,
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  Container(
-                                    width: 36,
-                                    height: 36,
-                                    decoration: BoxDecoration(
-                                      color: (i == 0) ? const Color(0xFF2563EB) : const Color(0xFFD97706),
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: ((i == 0) ? const Color(0xFF2563EB) : const Color(0xFFD97706)).withValues(alpha: 0.4),
-                                          blurRadius: 8,
-                                        ),
-                                      ],
-                                    ),
-                                    child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 18),
-                                  ),
-                                  Positioned(
-                                    top: 0,
-                                    right: 0,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(3.5),
-                                      decoration: const BoxDecoration(color: AppTheme.primaryRed, shape: BoxShape.circle),
-                                      child: Text('${i + 1}', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                          // 3. Customer Destination Marker
-                          Marker(
-                            point: custPosition,
-                            width: 44,
-                            height: 44,
-                            child: Container(
-                              width: 38,
-                              height: 38,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF059669),
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(color: const Color(0xFF059669).withValues(alpha: 0.4), blurRadius: 8),
-                                ],
-                              ),
-                              child: const Icon(Icons.home_rounded, color: Colors.white, size: 20),
-                            ),
-                          ),
-                        ],
-                      ),
+                      MarkerLayer(markers: markers),
                     ],
                   ),
 
