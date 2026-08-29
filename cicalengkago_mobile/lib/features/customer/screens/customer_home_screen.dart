@@ -259,12 +259,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                             const SizedBox(height: 18),
                           ],
 
-                          // 5.1 Uber-Inspired Polarity-Flipped Promo Dark Band
-                          _buildUberDarkPromoCard(context),
-
-                          const SizedBox(height: 16),
-
-                          // 5.2 Kupon & Voucher Hemat Discovery
+                          // 5.1 Kupon & Voucher Hemat Discovery
                           _buildVoucherDiscoverySection(customerCtrl, context),
 
                           const SizedBox(height: 18),
@@ -1221,87 +1216,6 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
           }),
         ),
       ],
-    );
-  }
-
-  // --- Uber-Inspired Polarity-Flipped Promo Dark Card ---
-  Widget _buildUberDarkPromoCard(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppTheme.inkBlack,
-          borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Cari Penghasilan Ekstra?',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Gabung jadi mitra Driver & antar penumpang atau kuliner di Cicalengka.',
-                    style: TextStyle(
-                      color: Color(0xFFAFAFAF),
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
-                      shape: const StadiumBorder(),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                      );
-                    },
-                    child: const Text(
-                      'Daftar Driver',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Container(
-              width: 64,
-              height: 64,
-              decoration: const BoxDecoration(
-                color: Color(0xFF282828),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.two_wheeler_rounded,
-                color: Colors.white,
-                size: 34,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
