@@ -171,7 +171,7 @@ class _ExploreStoresScreenState extends State<ExploreStoresScreen> {
   @override
   Widget build(BuildContext context) {
     final customerCtrl = context.watch<CustomerController>();
-    final allStores = customerCtrl.topRatedStores;
+    final allStores = customerCtrl.stores.isNotEmpty ? customerCtrl.stores : customerCtrl.topRatedStores;
     final filteredStores = _getFilteredStores(allStores);
 
     return Scaffold(
