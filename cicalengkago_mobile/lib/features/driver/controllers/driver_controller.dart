@@ -97,19 +97,25 @@ class DriverController extends ChangeNotifier {
     }
 
     try {
+      debugPrint('[DriverController] fetchRadarData: Requesting ${ApiConstants.driverDashboard}...');
       final res = await ApiService.get(ApiConstants.driverDashboard);
+      debugPrint('[DriverController] fetchRadarData: Server Response: $res');
+
       if (res['success'] == true && res['data'] != null) {
         final data = res['data'] as Map<String, dynamic>;
         final activeData = data['active_trip'] ?? data['active_order'];
         if (activeData is Map<String, dynamic>) {
           _activeTrip = activeData;
+          debugPrint('[DriverController] Active Trip DETECTED: ${_activeTrip?['order_code']} (Status: ${_activeTrip?['order_status']})');
         } else {
           _activeTrip = null;
+          debugPrint('[DriverController] No Active Trip.');
         }
 
         // Available orders for grabs
         final availList = (data['available_orders'] as List<dynamic>?) ?? [];
         _availableOrders = availList;
+        debugPrint('[DriverController] Available Orders Count: ${_availableOrders.length}');
 
         if (data['driver'] != null) {
           _driverProfile = data['driver'] as Map<String, dynamic>;
@@ -158,6 +164,7 @@ class DriverController extends ChangeNotifier {
         final serverOnline = data['is_online'] ?? data['driver']?['is_online'];
         if (serverOnline != null) {
           _isOnline = serverOnline == true || serverOnline == 1 || serverOnline == '1';
+          debugPrint('[DriverController] Online status synced: $_isOnline');
         }
 
         // Auto-start polling if online and timer not active
@@ -165,8 +172,12 @@ class DriverController extends ChangeNotifier {
           startRadarPolling();
           startGpsBroadcaster();
         }
+      } else {
+        debugPrint('[DriverController] fetchRadarData failed: ${res['message']}');
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[DriverController] fetchRadarData Exception: $e');
+    }
 
     if (!silent) {
       _isLoading = false;

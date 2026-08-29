@@ -11,26 +11,47 @@ class DeliveryMiddleware
             session_start();
         }
 
-        if (empty($_SESSION['user']) || empty($_SESSION['user']['id'])) {
-            $token = get_bearer_token();
-            if (!empty($token)) {
-                $user = Database::fetchOne("SELECT * FROM `users` WHERE `api_token` = ? AND `is_active` = 1 LIMIT 1", [$token]);
-                if (!empty($user)) {
-                    $_SESSION['user'] = $user;
+        $user = auth_user();
+        if ($user) {
+            $_SESSION['user'] = $user;
+        }
+
+        $userId = auth_id();
+        $isDelivery = false;
+
+        if ($userId > 0) {
+            $role = $_SESSION['user']['role'] ?? auth_role();
+            if ($role === 'delivery_man') {
+                $isDelivery = true;
+            } else {
+                $dm = Database::fetchOne("SELECT id FROM delivery_men WHERE user_id = ? LIMIT 1", [$userId]);
+                if ($dm) {
+                    $isDelivery = true;
+                    // Sync user role
+                    Database::update('users', ['role' => 'delivery_man'], 'id = ?', [$userId]);
+                    if (isset($_SESSION['user'])) {
+                        $_SESSION['user']['role'] = 'delivery_man';
+                    }
                 }
             }
         }
 
-        if (empty($_SESSION['user']) || ($_SESSION['user']['role'] ?? '') !== 'delivery_man') {
+        if (!$isDelivery) {
             $isJson = (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
-                || isset($_SERVER['HTTP_X_REQUESTED_WITH']);
+                || isset($_SERVER['HTTP_X_REQUESTED_WITH'])
+                || !empty(get_bearer_token())
+                || isset($_SERVER['HTTP_X_USER_ID']);
 
             if ($isJson) {
                 if (!headers_sent()) {
                     header('Content-Type: application/json');
                     http_response_code(403);
                 }
-                echo json_encode(['success' => false, 'message' => 'Akses ditolak. Peran Kurir Delivery diperlukan.', 'unauthenticated' => true]);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Akses ditolak. Peran Kurir Delivery diperlukan.',
+                    'unauthenticated' => empty($userId)
+                ]);
                 exit;
             }
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -117,13 +118,18 @@ class ApiService {
       }
 
       final headers = await _buildHeaders(isJson: false);
+      debugPrint('[ApiService GET] Requesting: $uri | Headers: $headers');
+
       final response = await http
           .get(uri, headers: headers)
           .timeout(const Duration(seconds: 20));
 
+      debugPrint('[ApiService GET] Response Code: ${response.statusCode} | URL: $uri | Body: ${response.body.length > 300 ? "${response.body.substring(0, 300)}..." : response.body}');
+
       await _saveCookiesFromResponse(response);
       return _parseResponse(response);
     } catch (e) {
+      debugPrint('[ApiService GET ERROR] $url | $e');
       return {'success': false, 'message': 'Kesalahan koneksi: $e'};
     }
   }
@@ -141,13 +147,18 @@ class ApiService {
       }
 
       final headers = await _buildHeaders(isJson: true);
+      debugPrint('[ApiService POST] Requesting: $url | Body: $updatedBody');
+
       final response = await http
           .post(Uri.parse(url), headers: headers, body: jsonEncode(updatedBody))
           .timeout(const Duration(seconds: 20));
 
+      debugPrint('[ApiService POST] Response Code: ${response.statusCode} | URL: $url | Body: ${response.body.length > 300 ? "${response.body.substring(0, 300)}..." : response.body}');
+
       await _saveCookiesFromResponse(response);
       return _parseResponse(response);
     } catch (e) {
+      debugPrint('[ApiService POST ERROR] $url | $e');
       return {'success': false, 'message': 'Kesalahan koneksi: $e'};
     }
   }
@@ -186,12 +197,17 @@ class ApiService {
         request.files.add(multipartFile);
       }
 
+      debugPrint('[ApiService postForm] Requesting: $url | Headers: ${request.headers} | Fields: $updatedFields');
+
       final streamed = await request.send().timeout(const Duration(seconds: 30));
       final response = await http.Response.fromStream(streamed);
+
+      debugPrint('[ApiService postForm] Response Code: ${response.statusCode} | URL: $url | Body: ${response.body.length > 300 ? "${response.body.substring(0, 300)}..." : response.body}');
 
       await _saveCookiesFromResponse(response);
       return _parseResponse(response);
     } catch (e) {
+      debugPrint('[ApiService postForm ERROR] $url | $e');
       return {'success': false, 'message': 'Kesalahan koneksi: $e'};
     }
   }
@@ -199,8 +215,13 @@ class ApiService {
   // ── Parse response body ────────────────────────────────────────────
   static Map<String, dynamic> _parseResponse(http.Response response) {
     try {
-      if (response.statusCode == 401) {
-        return {'success': false, 'message': 'Sesi telah berakhir', 'unauthenticated': true};
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        return {
+          'success': false,
+          'message': response.statusCode == 403 ? 'Akses Ditolak (Perlu login akun driver)' : 'Sesi telah berakhir',
+          'unauthenticated': true,
+          'statusCode': response.statusCode,
+        };
       }
 
       final body = response.body.trim();
@@ -217,7 +238,7 @@ class ApiService {
         if (response.statusCode == 302 || body.contains('<html')) {
           return {'success': false, 'message': 'Sesi berakhir, silakan login ulang.', 'unauthenticated': true};
         }
-        return {'success': false, 'message': 'Respon server tidak valid (bukan JSON)'};
+        return {'success': false, 'message': 'Respon server tidak valid (HTML: ${body.length > 80 ? body.substring(0, 80) : body})'};
       }
 
       final decoded = jsonDecode(body);
@@ -229,8 +250,9 @@ class ApiService {
         'success': response.statusCode >= 200 && response.statusCode < 300,
         'data': decoded,
       };
-    } catch (_) {
-      return {'success': false, 'message': 'Gagal memproses respon server'};
+    } catch (e) {
+      debugPrint('[ApiService PARSE ERROR] $e');
+      return {'success': false, 'message': 'Gagal memproses respon server: $e'};
     }
   }
 }
