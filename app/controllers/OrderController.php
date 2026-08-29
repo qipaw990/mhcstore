@@ -666,7 +666,8 @@ class OrderController extends Controller
                     'created_at'   => $order['created_at'] ?? null,
                     'confirmed_at' => $order['confirmed_at'] ?? null,
                     'delivered_at' => $order['delivered_at'] ?? null
-                ]
+                ],
+                'review_info'    => $order['review_info'] ?? null
             ]
         ]);
     }
@@ -693,8 +694,8 @@ class OrderController extends Controller
             return;
         }
 
-        $storeRating  = (int)($data['store_rating'] ?? 5);
-        $storeComment = sanitize($data['store_comment'] ?? '');
+        $storeRating  = (int)($data['store_rating'] ?? $data['rating'] ?? 5);
+        $storeComment = sanitize($data['store_comment'] ?? $data['comment'] ?? '');
         $dmRating     = (isset($data['dm_rating']) && $data['dm_rating'] !== '') ? (int)$data['dm_rating'] : null;
         $dmComment    = sanitize($data['dm_comment'] ?? '');
 
@@ -718,7 +719,12 @@ class OrderController extends Controller
                 $multiStoreReviews
             );
 
-            $this->successResponse('Terima kasih! Ulasan dan rating bintang berhasil dikirimkan.', $res);
+            $reviewInfo = $reviewModel->getOrderReview($orderId, $userId);
+
+            $this->successResponse('Terima kasih! Ulasan dan rating bintang berhasil dikirimkan.', [
+                'review_result' => $res,
+                'review_info'   => $reviewInfo
+            ]);
         } catch (Exception $e) {
             $this->errorResponse($e->getMessage());
         }

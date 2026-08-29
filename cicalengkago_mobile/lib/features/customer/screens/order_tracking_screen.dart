@@ -1174,6 +1174,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   // Detailed Payment Breakdown Card
                   _buildPaymentBreakdownCard(order, live),
 
+                  // Customer Rating & Review Result Card
+                  if (isDelivered) _buildReviewSection(order, live),
+
                   const SizedBox(height: 16),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
                   const SizedBox(height: 14),
@@ -1202,7 +1205,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           ),
                           onPressed: () => _showReviewDialog(context, order),
                           icon: const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
-                          label: const Text('Beri Rating', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          label: const Text('Rating & Ulasan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                         ),
                     ],
                   ),
@@ -2031,7 +2034,268 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     );
   }
 
+  Widget _buildReviewSection(Map<String, dynamic> order, Map<String, dynamic> live) {
+    final Map? reviewInfo = (live['review_info'] is Map ? live['review_info'] : null) ??
+        (order['review_info'] is Map ? order['review_info'] : null);
+    final bool hasReviewed = reviewInfo != null && reviewInfo['has_reviewed'] == true;
+
+    if (hasReviewed) {
+      final storeReview = reviewInfo['store_review'] is Map ? (reviewInfo['store_review'] as Map) : null;
+      final List storeReviews = reviewInfo['store_reviews'] is List ? (reviewInfo['store_reviews'] as List) : [];
+      final dmReview = reviewInfo['dm_review'] is Map ? (reviewInfo['dm_review'] as Map) : null;
+
+      return Container(
+        margin: const EdgeInsets.only(top: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFBEB),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFFDE68A)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFD97706).withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.stars_rounded, color: Color(0xFFD97706), size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Ulasan & Rating Anda',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF92400E),
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD1FAE5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFA7F3D0)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 12),
+                      SizedBox(width: 4),
+                      Text(
+                        'Sudah Diulas',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF059669),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Store Reviews
+            if (storeReviews.isNotEmpty) ...[
+              ...storeReviews.map((sr) {
+                final sMap = sr is Map ? sr : {};
+                final sName = sMap['store_name']?.toString() ?? 'Toko Mitra';
+                final rating = int.tryParse(sMap['rating']?.toString() ?? '5') ?? 5;
+                final comment = sMap['comment']?.toString() ?? '';
+
+                return _buildSingleReviewCardItem(
+                  icon: Icons.storefront_rounded,
+                  iconColor: AppTheme.primaryRed,
+                  title: sName,
+                  rating: rating,
+                  comment: comment,
+                );
+              }),
+            ] else if (storeReview != null) ...[
+              _buildSingleReviewCardItem(
+                icon: Icons.storefront_rounded,
+                iconColor: AppTheme.primaryRed,
+                title: storeReview['store_name']?.toString() ?? order['store_name']?.toString() ?? 'Toko Mitra',
+                rating: int.tryParse(storeReview['rating']?.toString() ?? '5') ?? 5,
+                comment: storeReview['comment']?.toString() ?? '',
+              ),
+            ],
+
+            // Courier / Driver Review
+            if (dmReview != null) ...[
+              const SizedBox(height: 8),
+              _buildSingleReviewCardItem(
+                icon: Icons.two_wheeler_rounded,
+                iconColor: const Color(0xFF2563EB),
+                title: 'Pelayanan Kurir Pengantar',
+                rating: int.tryParse(dmReview['rating']?.toString() ?? '5') ?? 5,
+                comment: dmReview['comment']?.toString() ?? '',
+              ),
+            ],
+
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF92400E),
+                  side: const BorderSide(color: Color(0xFFFCD34D)),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  backgroundColor: Colors.white,
+                ),
+                onPressed: () => _showReviewDialog(context, order),
+                icon: const Icon(Icons.edit_note_rounded, size: 16),
+                label: const Text(
+                  'Ubah Rating & Ulasan',
+                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // If not reviewed yet
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFDE68A)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: const BoxDecoration(
+              color: Color(0xFFFEF3C7),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.star_rounded, color: Color(0xFFD97706), size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Bagaimana Pesanan Anda?',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF92400E),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'Beri rating & ulasan untuk membantu meningkatkan kualitas layanan.',
+                  style: TextStyle(fontSize: 10.5, color: Color(0xFFB45309)),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD97706),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: () => _showReviewDialog(context, order),
+                  icon: const Icon(Icons.rate_review_rounded, size: 14),
+                  label: const Text(
+                    'Beri Rating Sekarang',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSingleReviewCardItem({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required int rating,
+    required String comment,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 15, color: iconColor),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Row(
+                children: List.generate(5, (i) => Icon(
+                  i < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                  color: Colors.amber,
+                  size: 16,
+                )),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '$rating.0',
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xFFD97706)),
+              ),
+            ],
+          ),
+          if (comment.trim().isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '“$comment”',
+                style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: Color(0xFF475569)),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   void _showReviewDialog(BuildContext context, Map<String, dynamic> order) {
+    final Map? reviewInfo = (_liveData != null && _liveData!['review_info'] is Map ? _liveData!['review_info'] : null) ??
+        (_orderData != null && _orderData!['review_info'] is Map ? _orderData!['review_info'] : null) ??
+        (order['review_info'] is Map ? order['review_info'] : null);
+
     final List batchStores = (order['batch_stores'] is List && (order['batch_stores'] as List).isNotEmpty)
         ? (order['batch_stores'] as List)
         : (_liveData != null && _liveData!['batch_info'] is Map && _liveData!['batch_info']['stores'] is List)
@@ -2040,8 +2304,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
     final bool isMulti = batchStores.length > 1 || (order['is_multi_store_batch'] == true);
 
-    int singleStoreRating = 5;
-    final singleStoreCommentCtrl = TextEditingController();
+    // Initial values from existing review
+    final existingStoreReview = reviewInfo != null && reviewInfo['store_review'] is Map ? (reviewInfo['store_review'] as Map) : null;
+    final List existingStoreReviews = reviewInfo != null && reviewInfo['store_reviews'] is List ? (reviewInfo['store_reviews'] as List) : [];
+    final existingDmReview = reviewInfo != null && reviewInfo['dm_review'] is Map ? (reviewInfo['dm_review'] as Map) : null;
+
+    int singleStoreRating = existingStoreReview != null ? (int.tryParse(existingStoreReview['rating']?.toString() ?? '5') ?? 5) : 5;
+    final singleStoreCommentCtrl = TextEditingController(text: existingStoreReview?['comment']?.toString() ?? '');
 
     final Map<int, int> multiRatings = {};
     final Map<int, TextEditingController> multiComments = {};
@@ -2051,12 +2320,22 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         if (st is Map) {
           final sId = int.tryParse(st['store_id']?.toString() ?? '0') ?? 0;
           if (sId > 0) {
-            multiRatings[sId] = 5;
-            multiComments[sId] = TextEditingController();
+            final matchRev = existingStoreReviews.firstWhere(
+              (r) => r is Map && int.tryParse(r['store_id']?.toString() ?? '0') == sId,
+              orElse: () => null,
+            );
+            multiRatings[sId] = matchRev != null ? (int.tryParse(matchRev['rating']?.toString() ?? '5') ?? 5) : 5;
+            multiComments[sId] = TextEditingController(text: matchRev?['comment']?.toString() ?? '');
           }
         }
       }
     }
+
+    int driverRating = existingDmReview != null ? (int.tryParse(existingDmReview['rating']?.toString() ?? '5') ?? 5) : 5;
+    final driverCommentCtrl = TextEditingController(text: existingDmReview?['comment']?.toString() ?? '');
+
+    final hasDriver = order['delivery_man_id'] != null ||
+        (_liveData != null && _liveData!['driver'] is Map && _liveData!['driver']['assigned'] == true);
 
     showModalBottomSheet(
       context: context,
@@ -2171,6 +2450,46 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ),
                 ],
 
+                // Driver Review (if assigned)
+                if (hasDriver) ...[
+                  const SizedBox(height: 16),
+                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                  const SizedBox(height: 14),
+                  const Row(
+                    children: [
+                      Icon(Icons.two_wheeler_rounded, size: 16, color: Color(0xFF2563EB)),
+                      SizedBox(width: 6),
+                      Text('Rating Kurir Pengantar', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (i) => GestureDetector(
+                      onTap: () => setModalState(() => driverRating = i + 1),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Icon(
+                          i < driverRating ? Icons.star_rounded : Icons.star_outline_rounded,
+                          color: Colors.amber,
+                          size: 34,
+                        ),
+                      ),
+                    )),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: driverCommentCtrl,
+                    maxLines: 2,
+                    decoration: InputDecoration(
+                      hintText: 'Tulis ulasan untuk kurir...',
+                      hintStyle: const TextStyle(fontSize: 12),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      contentPadding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                ],
+
                 const SizedBox(height: 20),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -2201,7 +2520,27 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       bodyPayload['comment'] = singleStoreCommentCtrl.text;
                     }
 
+                    if (hasDriver) {
+                      bodyPayload['dm_rating'] = driverRating.toString();
+                      bodyPayload['dm_comment'] = driverCommentCtrl.text;
+                    }
+
                     final res = await ApiService.postForm('${ApiConstants.orders}/review', bodyPayload);
+                    if (res['success'] == true && res['data'] != null && res['data']['review_info'] != null) {
+                      if (mounted) {
+                        setState(() {
+                          if (_liveData != null) {
+                            _liveData!['review_info'] = res['data']['review_info'];
+                          }
+                          if (_orderData != null) {
+                            _orderData!['review_info'] = res['data']['review_info'];
+                          }
+                        });
+                      }
+                    }
+                    _fetchFullOrderDetails();
+                    _pollLiveTracking();
+
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(res['message'] ?? 'Terima kasih atas ulasan Anda!')),
