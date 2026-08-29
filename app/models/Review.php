@@ -162,9 +162,13 @@ class Review extends Model
         $params = array_merge($orderIds, [$userId]);
 
         $reviews = Database::query(
-            "SELECT r.*, s.name as store_name
+            "SELECT r.*, s.name as store_name, s.logo as store_logo,
+                    dmu.name as dm_name, dmu.avatar as dm_avatar,
+                    dm.vehicle_type, dm.vehicle_number
              FROM `reviews` r
              LEFT JOIN `stores` s ON r.store_id = s.id
+             LEFT JOIN `delivery_men` dm ON r.delivery_man_id = dm.id
+             LEFT JOIN `users` dmu ON dm.user_id = dmu.id
              WHERE r.order_id IN ({$placeholders}) AND r.user_id = ?",
             $params
         );
