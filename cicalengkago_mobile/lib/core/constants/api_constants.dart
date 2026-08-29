@@ -29,9 +29,12 @@ class ApiConstants {
   // API Extension Routes (prefix /api/)
   // Hanya endpoint khusus ApiController yang pakai /api/
   // ==========================================
-  static const String homeData   = '$domainUrl/api/home-data';
-  static const String banners    = '$domainUrl/api/banners';
-  static const String categories = '$domainUrl/api/categories';
+  static const String homeData       = '$domainUrl/api/home-data';
+  static const String banners        = '$domainUrl/api/banners';
+  static const String categories     = '$domainUrl/api/categories';
+  static const String coupons        = '$domainUrl/api/coupons';
+  static const String vouchers       = '$domainUrl/api/coupons';
+  static const String validateCoupon = '$domainUrl/api/coupons/validate';
 
   // Fallbacks
   static const String modules  = '$domainUrl/api/home-data';

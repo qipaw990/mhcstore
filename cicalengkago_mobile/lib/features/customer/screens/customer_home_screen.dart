@@ -22,7 +22,7 @@ import 'customer_search_screen.dart';
 import 'order_tracking_screen.dart';
 import 'customer_orders_screen.dart';
 import 'customer_profile_screen.dart';
-import 'explore_stores_screen.dart';
+import 'vouchers_screen.dart';
 import '../widgets/product_detail_modal.dart';
 import '../../../core/widgets/require_auth_widget.dart';
 
@@ -630,10 +630,10 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildGopayActionButton(
-                  icon: Icons.qr_code_scanner_rounded,
+                  icon: Icons.send_rounded,
                   iconColor: const Color(0xFF6366F1),
                   bgColor: const Color(0xFFEEF2FF),
-                  label: 'Bayar',
+                  label: 'Kirim',
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerWalletScreen()));
                   },
@@ -657,12 +657,12 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                   },
                 ),
                 _buildGopayActionButton(
-                  icon: Icons.discount_rounded,
+                  icon: Icons.confirmation_number_rounded,
                   iconColor: const Color(0xFFEF4444),
                   bgColor: const Color(0xFFFEF2F2),
                   label: 'Voucher',
                   onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerWalletScreen()));
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const VouchersScreen()));
                   },
                 ),
               ],

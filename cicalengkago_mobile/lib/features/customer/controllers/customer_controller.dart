@@ -344,6 +344,16 @@ class CustomerController extends ChangeNotifier {
     }
   }
 
+  Future<void> fetchCoupons() async {
+    try {
+      final res = await ApiService.get(ApiConstants.coupons);
+      if (res['success'] == true && res['data'] != null) {
+        _coupons = res['data'] as List<dynamic>;
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
   Future<void> fetchOrders() async {
     _isLoading = true;
     notifyListeners();

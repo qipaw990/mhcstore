@@ -14,6 +14,7 @@ import '../../../core/widgets/location_picker_modal.dart';
 import '../controllers/customer_controller.dart';
 import 'order_tracking_screen.dart';
 import 'in_app_payment_screen.dart';
+import 'vouchers_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -882,6 +883,32 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 child: Text(
                   'Voucher & Kode Promo',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                ),
+              ),
+              InkWell(
+                onTap: () async {
+                  final selectedCode = await Navigator.push<String>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => VouchersScreen(
+                        isSelectMode: true,
+                        orderSubtotal: subtotal,
+                      ),
+                    ),
+                  );
+                  if (selectedCode != null && selectedCode.isNotEmpty) {
+                    _voucherController.text = selectedCode;
+                    _handleApplyVoucher(subtotal);
+                  }
+                },
+                child: const Row(
+                  children: [
+                    Text(
+                      'Lihat Promo',
+                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+                    ),
+                    Icon(Icons.chevron_right_rounded, size: 16, color: AppTheme.primaryRed),
+                  ],
                 ),
               ),
             ],
