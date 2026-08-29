@@ -4,6 +4,8 @@ import 'package:latlong2/latlong.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_service.dart';
 import '../../../core/services/location_service.dart';
+import '../../../main.dart';
+import '../widgets/driver_transaction_alert.dart';
 
 class DriverController extends ChangeNotifier {
   bool _isOnline = false;
@@ -16,6 +18,10 @@ class DriverController extends ChangeNotifier {
   List<dynamic> _reviews = [];
   Timer? _gpsBroadcastTimer;
   Timer? _radarPollTimer;
+
+  // Transaction tracking for automatic alerts
+  double _lastKnownBalance = -1.0;
+  final Set<String> _knownTxIds = {};
 
   bool get isOnline => _isOnline;
   bool get isLoading => _isLoading;
@@ -206,6 +212,10 @@ class DriverController extends ChangeNotifier {
         if (_earnings?['reviews'] != null && _earnings!['reviews'] is List) {
           _reviews = _earnings!['reviews'] as List<dynamic>;
         }
+
+        // Check for new transactions and trigger transaction alerts
+        _checkTransactionsList(_earnings?['transactions']);
+        _checkBalanceAlert(walletBalance);
       }
     } catch (_) {}
 
@@ -213,6 +223,58 @@ class DriverController extends ChangeNotifier {
       _isLoading = false;
     }
     notifyListeners();
+  }
+
+  void _checkBalanceAlert(double newBalance) {
+    if (_lastKnownBalance >= 0 && newBalance > _lastKnownBalance) {
+      final diff = newBalance - _lastKnownBalance;
+      final ctx = rootNavigatorKey.currentContext;
+      if (ctx != null && ctx.mounted) {
+        DriverTransactionAlert.showFloatingBanner(
+          ctx,
+          title: 'Komisi Masuk! 💰',
+          message: 'Saldo dompet driver Anda telah bertambah.',
+          amount: diff,
+          type: 'credit',
+        );
+      }
+    }
+    _lastKnownBalance = newBalance;
+  }
+
+  void _checkTransactionsList(dynamic transactions) {
+    if (transactions is! List) return;
+    if (_knownTxIds.isEmpty) {
+      for (final tx in transactions) {
+        if (tx is Map && tx['id'] != null) {
+          _knownTxIds.add(tx['id'].toString());
+        }
+      }
+      return;
+    }
+
+    for (final tx in transactions) {
+      if (tx is Map && tx['id'] != null) {
+        final txId = tx['id'].toString();
+        if (!_knownTxIds.contains(txId)) {
+          _knownTxIds.add(txId);
+          final ctx = rootNavigatorKey.currentContext;
+          if (ctx != null && ctx.mounted) {
+            final amt = double.tryParse(tx['amount']?.toString() ?? '0') ?? 0.0;
+            final type = tx['type']?.toString() ?? 'credit';
+            final desc = tx['description']?.toString() ?? 'Mutasi Dompet';
+            final title = type == 'credit' ? 'Saldo Masuk 💰' : 'Penarikan Saldo 📤';
+            DriverTransactionAlert.showFloatingBanner(
+              ctx,
+              title: title,
+              message: desc,
+              amount: amt,
+              type: type,
+            );
+          }
+        }
+      }
+    }
   }
 
   Future<void> fetchProfile() async {
@@ -304,6 +366,16 @@ class DriverController extends ChangeNotifier {
         'amount': amount.toString(),
       });
       if (res['success'] == true) {
+        final ctx = rootNavigatorKey.currentContext;
+        if (ctx != null && ctx.mounted) {
+          DriverTransactionAlert.showFloatingBanner(
+            ctx,
+            title: 'Penarikan Diajukan 📤',
+            message: 'Permintaan tarik saldo ke $bankName ($accountNumber) berhasil dikirim.',
+            amount: amount,
+            type: 'debit',
+          );
+        }
         await fetchEarnings();
         return true;
       }
