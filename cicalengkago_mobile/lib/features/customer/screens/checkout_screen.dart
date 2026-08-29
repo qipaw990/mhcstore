@@ -577,29 +577,77 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
+  String _getFoodImage(Map<String, dynamic> item) {
+    final rawImg = item['image']?.toString() ?? item['product_image']?.toString() ?? item['photo']?.toString();
+    if (rawImg != null && rawImg.isNotEmpty && !rawImg.contains('null')) {
+      return ApiConstants.formatImageUrl(rawImg);
+    }
+    final name = (item['product_name'] ?? item['name'] ?? '').toString().toLowerCase();
+    if (name.contains('ayam') || name.contains('chick')) {
+      return 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=300&q=80';
+    } else if (name.contains('nasi') || name.contains('rice')) {
+      return 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=300&q=80';
+    } else if (name.contains('kopi') || name.contains('coffee') || name.contains('boba') || name.contains('es')) {
+      return 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=300&q=80';
+    } else if (name.contains('seblak') || name.contains('bakso') || name.contains('mie') || name.contains('ramen')) {
+      return 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=300&q=80';
+    }
+    return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&q=80';
+  }
+
   Widget _buildCheckoutItemTile(Map<String, dynamic> item) {
     final name = (item['product_name'] ?? item['name'] ?? 'Menu Kuliner').toString();
     final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
     final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
     final notes = item['item_notes'] ?? item['notes'];
+    final imageUrl = _getFoodImage(item);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              '${qty}x',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.inkBlack),
+          // Product Image Thumbnail
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: SizedBox(
+              width: 48,
+              height: 48,
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(
+                  color: const Color(0xFFF1F5F9),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.inkBlack),
+                    ),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: const Color(0xFFF1F5F9),
+                  child: const Icon(Icons.fastfood_rounded, color: AppTheme.inkBlack, size: 20),
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 12),
+          // Quantity Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              '${qty}x',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppTheme.inkBlack),
+            ),
+          ),
+          const SizedBox(width: 10),
+          // Details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -607,12 +655,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 Text(
                   name,
                   style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppTheme.inkBlack),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 if (notes != null && notes.toString().trim().isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
                     'Catatan: ${notes.toString().trim()}',
                     style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
                 const SizedBox(height: 2),
@@ -623,6 +675,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ],
             ),
           ),
+          const SizedBox(width: 8),
           Text(
             CurrencyFormatter.formatRupiah(price * qty),
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.inkBlack),
