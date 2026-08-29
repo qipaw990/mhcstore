@@ -426,7 +426,15 @@ class DeliveryController extends Controller
 
         try {
             $this->deliveryService->updateOrderStatus($userId, $orderId, $status, $otp);
-            $this->successResponse('Status pengantaran berhasil diperbarui.');
+            $dm = $this->dmModel->findByUserId($userId);
+            $wallet = null;
+            if ($dm) {
+                $wallet = $this->ensureDriverDeliveredOrdersCredited($dm);
+            }
+            $this->successResponse('Status pengantaran berhasil diperbarui.', [
+                'wallet'         => $wallet,
+                'wallet_balance' => (float)($wallet['balance'] ?? 0),
+            ]);
         } catch (\Throwable $e) {
             $this->errorResponse($e->getMessage());
         }

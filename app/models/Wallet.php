@@ -42,31 +42,25 @@ class Wallet extends Model
             $category = 'refund';
         }
 
-        $wallet = null;
-        if ($userType) {
-            $wallet = Database::fetchOne("SELECT * FROM `wallets` WHERE `user_id` = ? AND `user_type` = ? LIMIT 1", [$userId, $userType]);
-        }
-        if (!$wallet && $category === 'order_earning') {
+        $targetType = $userType;
+        if (!$targetType && $category === 'order_earning') {
             $dm = Database::fetchOne("SELECT id FROM `delivery_men` WHERE `user_id` = ? LIMIT 1", [$userId]);
             if ($dm) {
-                $wallet = Database::fetchOne("SELECT * FROM `wallets` WHERE `user_id` = ? AND `user_type` = 'delivery_man' LIMIT 1", [$userId]);
+                $targetType = 'delivery_man';
             }
         }
-        if (!$wallet) {
-            $wallet = $this->firstWhere('user_id', $userId);
-        }
-        if (!$wallet) {
-            $wallet = $this->getOrCreate($userId, $userType ?? 'customer');
-        }
+        $targetType = $targetType ?: 'customer';
+
+        $wallet = $this->getOrCreate($userId, $targetType);
 
         // Atomic calculation in MySQL
         Database::execute(
-            "UPDATE `wallets` SET `balance` = `balance` + ?, `total_earned` = `total_earned` + ? WHERE `id` = ?",
-            [$amount, $amount, $wallet['id']]
+            "UPDATE `wallets` SET `balance` = `balance` + ?, `total_earned` = `total_earned` + ?, `updated_at` = NOW() WHERE `id` = ?",
+            [$amount, $amount, (int)$wallet['id']]
         );
 
         Database::insert('wallet_transactions', [
-            'wallet_id'    => $wallet['id'],
+            'wallet_id'    => (int)$wallet['id'],
             'amount'       => $amount,
             'type'         => 'credit',
             'category'     => $category,

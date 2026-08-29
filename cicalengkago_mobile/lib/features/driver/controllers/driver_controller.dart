@@ -273,8 +273,16 @@ class DriverController extends ChangeNotifier {
 
       final res = await ApiService.postForm(ApiConstants.updateOrderStatus, fields);
       if (res['success'] == true) {
-        await fetchRadarData();
-        await fetchEarnings();
+        if (res['data'] is Map<String, dynamic>) {
+          final d = res['data'] as Map<String, dynamic>;
+          if (d['wallet'] != null) {
+            _earnings ??= {};
+            _earnings!['wallet'] = d['wallet'];
+            _earnings!['wallet_balance'] = d['wallet_balance'];
+          }
+        }
+        await fetchRadarData(silent: true);
+        await fetchEarnings(silent: true);
         notifyListeners();
         return true;
       }
