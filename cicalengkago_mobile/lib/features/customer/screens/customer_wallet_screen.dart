@@ -544,11 +544,21 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
   }
 
   void _showSendMoneySheet(BuildContext context) {
+    String transferType = 'bank'; // 'bank', 'ewallet', 'cicalengkapay'
+    String selectedBank = 'BCA';
+    String selectedEwallet = 'DANA';
+
+    final accountNumberCtrl = TextEditingController();
+    final accountHolderCtrl = TextEditingController();
     final phoneCtrl = TextEditingController();
     final amountCtrl = TextEditingController();
     final noteCtrl = TextEditingController();
+
     int selectedAmount = 0;
     bool isSubmitting = false;
+
+    final bankList = ['BCA', 'BRI', 'Mandiri', 'BNI', 'BSI', 'CIMB Niaga', 'Bank Jago', 'SeaBank', 'Permata'];
+    final ewalletList = ['DANA', 'GoPay', 'OVO', 'ShopeePay', 'LinkAja', 'AstraPay'];
 
     showModalBottomSheet(
       context: context,
@@ -557,11 +567,16 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
       builder: (ctx) {
         return StatefulBuilder(
           builder: (modalCtx, setModalState) {
+            final int rawAmount = int.tryParse(amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? selectedAmount;
+            final double fee = (transferType == 'cicalengkapay') ? 0.0 : 1500.0;
+            final double totalDeducted = rawAmount > 0 ? (rawAmount + fee) : 0.0;
+
             return Container(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(modalCtx).size.height * 0.88),
               padding: EdgeInsets.only(
                 left: 20,
                 right: 20,
-                top: 20,
+                top: 16,
                 bottom: MediaQuery.of(modalCtx).viewInsets.bottom + 24,
               ),
               decoration: const BoxDecoration(
@@ -573,7 +588,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header
+                    // Handle bar
                     Center(
                       child: Container(
                         width: 40,
@@ -584,7 +599,9 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
+
+                    // Header
                     Row(
                       children: [
                         Container(
@@ -596,45 +613,197 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                           child: const Icon(Icons.send_rounded, color: AppTheme.primaryRed, size: 20),
                         ),
                         const SizedBox(width: 10),
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Kirim Uang / Transfer',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                            ),
-                            Text(
-                              'Transfer instan ke sesama pengguna CicalengkaPay',
-                              style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                            ),
-                          ],
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Kirim Uang / Transfer Saldo',
+                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              ),
+                              Text(
+                                'Tujuan Rekening Bank, E-Wallet, atau Sesama Akun',
+                                style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
 
-                    // Input Nomor HP Penerima
-                    const Text('Nomor WhatsApp / HP Penerima *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: phoneCtrl,
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(
-                        hintText: 'Contoh: 081234567890',
-                        hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-                        prefixIcon: const Icon(Icons.phone_android_rounded, color: Color(0xFF64748B), size: 20),
-                        filled: true,
-                        fillColor: const Color(0xFFF8FAFC),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primaryRed)),
+                    // Transfer Type Segment Tabs
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          _buildTypeTab('bank', 'Rek. Bank', Icons.account_balance_rounded, transferType, (val) {
+                            setModalState(() => transferType = val);
+                          }),
+                          _buildTypeTab('ewallet', 'E-Wallet', Icons.account_balance_wallet_rounded, transferType, (val) {
+                            setModalState(() => transferType = val);
+                          }),
+                          _buildTypeTab('cicalengkapay', 'Sesama Pay', Icons.swap_horiz_rounded, transferType, (val) {
+                            setModalState(() => transferType = val);
+                          }),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 16),
 
+                    // 1. BANK TRANSFER FORM
+                    if (transferType == 'bank') ...[
+                      const Text('Pilih Bank Tujuan *', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: selectedBank,
+                            isExpanded: true,
+                            items: bankList.map((b) => DropdownMenuItem(value: b, child: Text(b, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)))).toList(),
+                            onChanged: (val) {
+                              if (val != null) setModalState(() => selectedBank = val);
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      const Text('Nomor Rekening Bank *', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: accountNumberCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          hintText: 'Masukkan no. rekening tujuan',
+                          hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                          prefixIcon: const Icon(Icons.credit_card_rounded, color: Color(0xFF64748B), size: 20),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primaryRed)),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      const Text('Nama Pemilik Rekening *', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: accountHolderCtrl,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: InputDecoration(
+                          hintText: 'Contoh: Budi Santoso',
+                          hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                          prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF64748B), size: 20),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primaryRed)),
+                        ),
+                      ),
+                    ],
+
+                    // 2. E-WALLET TRANSFER FORM
+                    if (transferType == 'ewallet') ...[
+                      const Text('Pilih E-Wallet Tujuan *', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: selectedEwallet,
+                            isExpanded: true,
+                            items: ewalletList.map((ew) => DropdownMenuItem(value: ew, child: Text(ew, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)))).toList(),
+                            onChanged: (val) {
+                              if (val != null) setModalState(() => selectedEwallet = val);
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      const Text('Nomor HP Akun E-Wallet *', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: accountNumberCtrl,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          hintText: 'Contoh: 081234567890',
+                          hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                          prefixIcon: const Icon(Icons.phone_android_rounded, color: Color(0xFF64748B), size: 20),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primaryRed)),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      const Text('Nama Penerima / Akun E-Wallet *', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: accountHolderCtrl,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: InputDecoration(
+                          hintText: 'Nama terdaftar di akun e-wallet',
+                          hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                          prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF64748B), size: 20),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primaryRed)),
+                        ),
+                      ),
+                    ],
+
+                    // 3. CICALENGKAPAY PEER TRANSFER FORM
+                    if (transferType == 'cicalengkapay') ...[
+                      const Text('Nomor WhatsApp / HP Pengguna *', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: phoneCtrl,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          hintText: 'Contoh: 081234567890',
+                          hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                          prefixIcon: const Icon(Icons.phone_android_rounded, color: Color(0xFF64748B), size: 20),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primaryRed)),
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 14),
+
                     // Input Nominal Transfer
-                    const Text('Nominal Kirim (Rp) *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                    const Text('Nominal Kirim (Rp) *', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                     const SizedBox(height: 6),
                     TextField(
                       controller: amountCtrl,
@@ -645,7 +814,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                         });
                       },
                       decoration: InputDecoration(
-                        hintText: 'Min. Rp 1.000',
+                        hintText: transferType == 'cicalengkapay' ? 'Min. Rp 1.000' : 'Min. Rp 10.000',
                         hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                         prefixIcon: const Icon(Icons.payments_rounded, color: Color(0xFF16A34A), size: 20),
                         filled: true,
@@ -656,13 +825,13 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primaryRed)),
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
 
                     // Quick Nominal Chips
                     Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [10000, 25000, 50000, 100000, 200000].map((nom) {
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [20000, 50000, 100000, 200000, 500000].map((nom) {
                         final isSelected = selectedAmount == nom;
                         return InkWell(
                           onTap: () {
@@ -673,7 +842,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                           },
                           borderRadius: BorderRadius.circular(20),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
                               color: isSelected ? AppTheme.primaryRed : const Color(0xFFF1F5F9),
                               borderRadius: BorderRadius.circular(20),
@@ -684,7 +853,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                             child: Text(
                               CurrencyFormatter.formatRupiah(nom.toDouble()),
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 10.5,
                                 fontWeight: FontWeight.bold,
                                 color: isSelected ? Colors.white : const Color(0xFF334155),
                               ),
@@ -693,10 +862,10 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                         );
                       }).toList(),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
                     // Catatan (Opsional)
-                    const Text('Catatan / Pesan (Opsional)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                    const Text('Catatan / Berita Transfer (Opsional)', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                     const SizedBox(height: 6),
                     TextField(
                       controller: noteCtrl,
@@ -706,13 +875,61 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                         prefixIcon: const Icon(Icons.note_alt_rounded, color: Color(0xFF64748B), size: 20),
                         filled: true,
                         fillColor: const Color(0xFFF8FAFC),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primaryRed)),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 14),
+
+                    // Fee & Breakdown Summary Card
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Nominal Kirim', style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
+                              Text(CurrencyFormatter.formatRupiah(rawAmount.toDouble()), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Biaya Admin', style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
+                              Text(
+                                fee > 0 ? CurrencyFormatter.formatRupiah(fee) : 'Gratis (Rp 0)',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: fee > 0 ? AppTheme.primaryRed : const Color(0xFF16A34A),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Divider(height: 12, color: Color(0xFFE2E8F0)),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Total Saldo Terpotong', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                              Text(
+                                CurrencyFormatter.formatRupiah(totalDeducted),
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: AppTheme.primaryRed),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
 
                     // Submit Button
                     SizedBox(
@@ -722,29 +939,55 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                         onPressed: isSubmitting
                             ? null
                             : () async {
+                                final accNum = accountNumberCtrl.text.trim();
+                                final accHolder = accountHolderCtrl.text.trim();
                                 final phone = phoneCtrl.text.trim();
-                                final rawAmt = int.tryParse(amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? selectedAmount;
                                 final note = noteCtrl.text.trim();
 
-                                if (phone.isEmpty) {
-                                  AppAlert.showWarning(context, title: 'Nomor HP Kosong', message: 'Masukkan nomor HP/WhatsApp penerima transfer.');
-                                  return;
-                                }
-
-                                if (rawAmt < 1000) {
-                                  AppAlert.showWarning(context, title: 'Nominal Kurang', message: 'Nominal transfer minimal Rp 1.000.');
-                                  return;
+                                if (transferType == 'bank') {
+                                  if (accNum.isEmpty || accHolder.isEmpty) {
+                                    AppAlert.showWarning(context, title: 'Data Belum Lengkap', message: 'Nomor rekening dan nama pemilik rekening wajib diisi.');
+                                    return;
+                                  }
+                                  if (rawAmount < 10000) {
+                                    AppAlert.showWarning(context, title: 'Nominal Kurang', message: 'Nominal transfer bank minimal Rp 10.000.');
+                                    return;
+                                  }
+                                } else if (transferType == 'ewallet') {
+                                  if (accNum.isEmpty || accHolder.isEmpty) {
+                                    AppAlert.showWarning(context, title: 'Data Belum Lengkap', message: 'Nomor HP e-wallet dan nama akun wajib diisi.');
+                                    return;
+                                  }
+                                  if (rawAmount < 10000) {
+                                    AppAlert.showWarning(context, title: 'Nominal Kurang', message: 'Nominal transfer e-wallet minimal Rp 10.000.');
+                                    return;
+                                  }
+                                } else {
+                                  if (phone.isEmpty) {
+                                    AppAlert.showWarning(context, title: 'Nomor HP Kosong', message: 'Masukkan nomor HP penerima transfer.');
+                                    return;
+                                  }
+                                  if (rawAmount < 1000) {
+                                    AppAlert.showWarning(context, title: 'Nominal Kurang', message: 'Nominal transfer minimal Rp 1.000.');
+                                    return;
+                                  }
                                 }
 
                                 setModalState(() => isSubmitting = true);
 
                                 try {
-                                  final res = await ApiService.postForm(ApiConstants.paymentTransfer, {
+                                  final body = {
+                                    'transfer_type': transferType,
+                                    'bank_name': selectedBank,
+                                    'ewallet_name': selectedEwallet,
+                                    'account_number': accNum,
+                                    'account_holder': accHolder,
                                     'recipient_phone': phone,
-                                    'amount': rawAmt.toString(),
+                                    'amount': rawAmount.toString(),
                                     'notes': note,
-                                  });
+                                  };
 
+                                  final res = await ApiService.postForm(ApiConstants.paymentTransfer, body);
                                   setModalState(() => isSubmitting = false);
 
                                   if (modalCtx.mounted) {
@@ -755,15 +998,15 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                                     if (res['success'] == true) {
                                       AppAlert.showSuccess(
                                         context,
-                                        title: 'Transfer Berhasil! 🎉',
-                                        message: res['message'] ?? 'Saldo berhasil dikirimkan.',
+                                        title: 'Kirim Uang Berhasil! 🎉',
+                                        message: res['message'] ?? 'Permintaan transfer berhasil diproses.',
                                       );
                                       context.read<CustomerController>().fetchWallet();
                                     } else {
                                       AppAlert.showError(
                                         context,
                                         title: 'Transfer Gagal',
-                                        message: res['message'] ?? 'Gagal mengirim saldo. Periksa nomor tujuan dan saldo Anda.',
+                                        message: res['message'] ?? 'Gagal memproses kirim uang. Periksa saldo dan data rekening Anda.',
                                       );
                                     }
                                   }
@@ -785,12 +1028,17 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                         ),
                         child: isSubmitting
                             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : const Row(
+                            : Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.send_rounded, size: 18),
-                                  SizedBox(width: 8),
-                                  Text('Kirim Uang Sekarang', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                                  const Icon(Icons.send_rounded, size: 18),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    transferType == 'bank'
+                                        ? 'Transfer ke Rekening Bank'
+                                        : (transferType == 'ewallet' ? 'Transfer ke E-Wallet' : 'Kirim ke CicalengkaPay'),
+                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                  ),
                                 ],
                               ),
                       ),
@@ -802,6 +1050,38 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
           },
         );
       },
+    );
+  }
+
+  Widget _buildTypeTab(String key, String label, IconData icon, String activeKey, ValueChanged<String> onSelect) {
+    final isActive = key == activeKey;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => onSelect(key),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isActive ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: isActive ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4, offset: const Offset(0, 1))] : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 14, color: isActive ? AppTheme.primaryRed : const Color(0xFF64748B)),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: isActive ? AppTheme.primaryRed : const Color(0xFF64748B),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

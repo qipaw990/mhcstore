@@ -490,7 +490,7 @@ class PaymentController extends Controller
     }
 
     /**
-     * Kirim Uang / Transfer Saldo CicalengkaPay ke sesama pengguna
+     * Kirim Uang / Transfer Saldo CicalengkaPay ke Rekening Bank, E-Wallet (Fee Rp 1.500), atau Sesama CicalengkaPay
      */
     public function transfer(): void
     {
@@ -501,21 +501,188 @@ class PaymentController extends Controller
         }
 
         $data = $this->getPost();
-        $recipientPhone = trim((string)($data['recipient_phone'] ?? $data['phone'] ?? $data['recipient'] ?? ''));
+        $transferType = trim((string)($data['transfer_type'] ?? $data['type'] ?? 'bank'));
         $amount = (float)($data['amount'] ?? 0);
         $notes = trim((string)($data['notes'] ?? $data['note'] ?? ''));
-
-        if (empty($recipientPhone)) {
-            $this->errorResponse('Nomor WhatsApp / HP penerima wajib diisi.');
-            return;
-        }
 
         if ($amount < 1000) {
             $this->errorResponse('Nominal kirim uang minimal Rp 1.000.');
             return;
         }
 
-        // Clean phone format
+        $walletModel = new \App\Models\Wallet();
+        $sender = auth_user();
+        $senderWallet = $walletModel->getOrCreate($senderId, 'customer');
+        $currentBalance = (float)($senderWallet['balance'] ?? 0);
+
+        // Auto-heal withdraw_requests table column for customer user_type
+        try {
+            Database::execute("ALTER TABLE `withdraw_requests` MODIFY COLUMN `user_type` VARCHAR(32) NOT NULL DEFAULT 'customer'");
+        } catch (\Throwable $e) {}
+
+        // =====================================================================
+        // 1. TRANSFER KE REKENING BANK (Fee Rp 1.500)
+        // =====================================================================
+        if ($transferType === 'bank') {
+            $bankName = trim((string)($data['bank_name'] ?? 'BCA'));
+            $accountNumber = trim((string)($data['account_number'] ?? ''));
+            $accountHolder = trim((string)($data['account_holder'] ?? ''));
+            $fee = 1500.0;
+            $totalDeduct = $amount + $fee;
+
+            if (empty($bankName) || empty($accountNumber) || empty($accountHolder)) {
+                $this->errorResponse('Nama Bank, Nomor Rekening, dan Nama Pemilik Rekening wajib diisi lengkap.');
+                return;
+            }
+
+            if ($amount < 10000) {
+                $this->errorResponse('Nominal transfer ke rekening bank minimal Rp 10.000.');
+                return;
+            }
+
+            if ($currentBalance < $totalDeduct) {
+                $this->errorResponse("Saldo tidak mencukupi. Dibutuhkan Rp " . number_format($totalDeduct, 0, ',', '.') . " (Transfer Rp " . number_format($amount, 0, ',', '.') . " + Biaya Admin Rp 1.500), sedangkan saldo Anda Rp " . number_format($currentBalance, 0, ',', '.') . ".");
+                return;
+            }
+
+            try {
+                $withdrawCode = 'TRF-BANK-' . strtoupper(substr(uniqid(), -6)) . rand(10, 99);
+                Database::transaction(function () use ($walletModel, $senderId, $amount, $fee, $bankName, $accountNumber, $accountHolder, $notes, $withdrawCode) {
+                    // 1. Debit pokok transfer
+                    $walletModel->debit(
+                        $senderId,
+                        $amount,
+                        'withdraw',
+                        "Kirim uang ke Bank {$bankName} ({$accountNumber} a.n {$accountHolder})" . ($notes ? " - {$notes}" : ""),
+                        $withdrawCode
+                    );
+
+                    // 2. Debit biaya admin Rp 1.500
+                    $walletModel->debit(
+                        $senderId,
+                        $fee,
+                        'fee',
+                        "Biaya admin transfer ke Bank {$bankName} (Rp 1.500)",
+                        $withdrawCode . '-FEE'
+                    );
+
+                    // 3. Catat ke tabel withdraw_requests / pengajuan transfer bank
+                    Database::insert('withdraw_requests', [
+                        'withdraw_code'  => $withdrawCode,
+                        'user_id'        => $senderId,
+                        'user_type'      => 'customer',
+                        'amount'         => $amount,
+                        'bank_name'      => $bankName,
+                        'account_number' => $accountNumber,
+                        'account_holder' => $accountHolder,
+                        'status'         => 'pending',
+                        'admin_notes'    => 'Kirim Uang ke Bank via CicalengkaPay (Biaya Admin Rp 1.500)' . ($notes ? " | Pesan: {$notes}" : '')
+                    ]);
+                });
+
+                $this->successResponse("Permintaan transfer ke {$bankName} sebesar Rp " . number_format($amount, 0, ',', '.') . " berhasil diajukan! (Biaya admin Rp 1.500).", [
+                    'transfer_type'   => 'bank',
+                    'bank_name'       => $bankName,
+                    'account_number'  => $accountNumber,
+                    'account_holder'  => $accountHolder,
+                    'amount'          => $amount,
+                    'fee'             => $fee,
+                    'total_deducted'  => $totalDeduct,
+                    'reference_id'    => $withdrawCode
+                ]);
+                return;
+            } catch (\Throwable $e) {
+                $this->errorResponse('Gagal memproses transfer ke bank: ' . $e->getMessage());
+                return;
+            }
+        }
+
+        // =====================================================================
+        // 2. TRANSFER KE E-WALLET (Fee Rp 1.500)
+        // =====================================================================
+        if ($transferType === 'ewallet') {
+            $ewalletName = trim((string)($data['ewallet_name'] ?? 'DANA'));
+            $accountNumber = trim((string)($data['account_number'] ?? $data['phone'] ?? ''));
+            $accountHolder = trim((string)($data['account_holder'] ?? ''));
+            $fee = 1500.0;
+            $totalDeduct = $amount + $fee;
+
+            if (empty($ewalletName) || empty($accountNumber) || empty($accountHolder)) {
+                $this->errorResponse('Nama E-Wallet, Nomor HP Akun, dan Nama Akun Penerima wajib diisi.');
+                return;
+            }
+
+            if ($amount < 10000) {
+                $this->errorResponse('Nominal transfer ke E-Wallet minimal Rp 10.000.');
+                return;
+            }
+
+            if ($currentBalance < $totalDeduct) {
+                $this->errorResponse("Saldo tidak mencukupi. Dibutuhkan Rp " . number_format($totalDeduct, 0, ',', '.') . " (Transfer Rp " . number_format($amount, 0, ',', '.') . " + Biaya Admin Rp 1.500), sedangkan saldo Anda Rp " . number_format($currentBalance, 0, ',', '.') . ".");
+                return;
+            }
+
+            try {
+                $withdrawCode = 'TRF-EWAL-' . strtoupper(substr(uniqid(), -6)) . rand(10, 99);
+                Database::transaction(function () use ($walletModel, $senderId, $amount, $fee, $ewalletName, $accountNumber, $accountHolder, $notes, $withdrawCode) {
+                    // 1. Debit pokok transfer
+                    $walletModel->debit(
+                        $senderId,
+                        $amount,
+                        'withdraw',
+                        "Kirim uang ke E-Wallet {$ewalletName} ({$accountNumber} a.n {$accountHolder})" . ($notes ? " - {$notes}" : ""),
+                        $withdrawCode
+                    );
+
+                    // 2. Debit biaya admin Rp 1.500
+                    $walletModel->debit(
+                        $senderId,
+                        $fee,
+                        'fee',
+                        "Biaya admin transfer ke E-Wallet {$ewalletName} (Rp 1.500)",
+                        $withdrawCode . '-FEE'
+                    );
+
+                    // 3. Catat ke tabel withdraw_requests / pengajuan transfer e-wallet
+                    Database::insert('withdraw_requests', [
+                        'withdraw_code'  => $withdrawCode,
+                        'user_id'        => $senderId,
+                        'user_type'      => 'customer',
+                        'amount'         => $amount,
+                        'bank_name'      => 'E-Wallet ' . $ewalletName,
+                        'account_number' => $accountNumber,
+                        'account_holder' => $accountHolder,
+                        'status'         => 'pending',
+                        'admin_notes'    => 'Kirim Uang ke E-Wallet via CicalengkaPay (Biaya Admin Rp 1.500)' . ($notes ? " | Pesan: {$notes}" : '')
+                    ]);
+                });
+
+                $this->successResponse("Permintaan transfer ke E-Wallet {$ewalletName} sebesar Rp " . number_format($amount, 0, ',', '.') . " berhasil diajukan! (Biaya admin Rp 1.500).", [
+                    'transfer_type'   => 'ewallet',
+                    'ewallet_name'    => $ewalletName,
+                    'account_number'  => $accountNumber,
+                    'account_holder'  => $accountHolder,
+                    'amount'          => $amount,
+                    'fee'             => $fee,
+                    'total_deducted'  => $totalDeduct,
+                    'reference_id'    => $withdrawCode
+                ]);
+                return;
+            } catch (\Throwable $e) {
+                $this->errorResponse('Gagal memproses transfer ke e-wallet: ' . $e->getMessage());
+                return;
+            }
+        }
+
+        // =====================================================================
+        // 3. TRANSFER SESAMA CICALENGKAPAY (Bebas Biaya Admin)
+        // =====================================================================
+        $recipientPhone = trim((string)($data['recipient_phone'] ?? $data['phone'] ?? $data['recipient'] ?? ''));
+        if (empty($recipientPhone)) {
+            $this->errorResponse('Nomor WhatsApp / HP penerima wajib diisi.');
+            return;
+        }
+
         $cleanPhone = preg_replace('/[^0-9]/', '', $recipientPhone);
         $cleanPhoneAlt = $cleanPhone;
         if (str_starts_with($cleanPhone, '62')) {
@@ -524,7 +691,6 @@ class PaymentController extends Controller
             $cleanPhoneAlt = '62' . substr($cleanPhone, 1);
         }
 
-        // Find recipient user
         $recipient = Database::fetchOne(
             "SELECT id, name, phone, email FROM `users` WHERE (`phone` = ? OR `phone` = ? OR `email` = ?) AND `id` != ? LIMIT 1",
             [$cleanPhone, $cleanPhoneAlt, $recipientPhone, $senderId]
@@ -535,12 +701,7 @@ class PaymentController extends Controller
             return;
         }
 
-        $sender = auth_user();
-        $walletModel = new \App\Models\Wallet();
-
-        // Check sender wallet balance
-        $senderWallet = $walletModel->getOrCreate($senderId, 'customer');
-        if ((float)($senderWallet['balance'] ?? 0) < $amount) {
+        if ($currentBalance < $amount) {
             $this->errorResponse('Saldo CicalengkaPay Anda tidak mencukupi untuk melakukan transfer ini.');
             return;
         }
@@ -548,7 +709,6 @@ class PaymentController extends Controller
         try {
             $refId = 'TRF-' . time() . '-' . rand(100, 999);
             Database::transaction(function () use ($walletModel, $senderId, $recipient, $sender, $amount, $notes, $refId) {
-                // Debit sender
                 $walletModel->debit(
                     $senderId,
                     $amount,
@@ -557,7 +717,6 @@ class PaymentController extends Controller
                     $refId
                 );
 
-                // Credit recipient
                 $walletModel->credit(
                     (int)$recipient['id'],
                     $amount,
@@ -567,10 +726,12 @@ class PaymentController extends Controller
                 );
             });
 
-            $this->successResponse("Berhasil mengirim uang sebesar Rp " . number_format($amount, 0, ',', '.') . " ke {$recipient['name']}!", [
+            $this->successResponse("Berhasil mengirim uang sebesar Rp " . number_format($amount, 0, ',', '.') . " ke {$recipient['name']}! (Bebas Biaya Admin)", [
                 'recipient_name'  => $recipient['name'],
                 'recipient_phone' => $recipient['phone'],
                 'amount'          => $amount,
+                'fee'             => 0,
+                'total_deducted'  => $amount,
                 'reference_id'    => $refId,
                 'notes'           => $notes
             ]);
