@@ -202,8 +202,12 @@ class DriverController extends ChangeNotifier {
     } catch (_) {}
   }
 
+  String? _lastErrorMessage;
+  String? get lastErrorMessage => _lastErrorMessage;
+
   Future<bool> acceptOrder(int orderId) async {
     _isLoading = true;
+    _lastErrorMessage = null;
     notifyListeners();
 
     try {
@@ -215,9 +219,12 @@ class DriverController extends ChangeNotifier {
       if (res['success'] == true) {
         await fetchRadarData();
         return true;
+      } else {
+        _lastErrorMessage = res['message']?.toString();
       }
-    } catch (_) {
+    } catch (e) {
       _isLoading = false;
+      _lastErrorMessage = 'Koneksi terganggu. Silakan coba lagi.';
     }
 
     notifyListeners();

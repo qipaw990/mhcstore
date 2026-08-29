@@ -684,7 +684,9 @@ class DriverRadarScreen extends StatelessWidget {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(ok ? '✅ Orderan berhasil diterima! Segera meluncur.' : 'Gagal mengambil orderan.'),
+                      content: Text(ok
+                          ? '✅ Orderan berhasil diterima! Segera meluncur.'
+                          : (driverCtrl.lastErrorMessage ?? 'Gagal mengambil orderan.')),
                       backgroundColor: ok ? Colors.green : Colors.red,
                     ),
                   );
