@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/uber_pill_button.dart';
 import '../../../core/widgets/app_alert.dart';
+import '../../../core/widgets/require_auth_widget.dart';
 import '../controllers/customer_controller.dart';
 
 class ProductDetailModal extends StatefulWidget {
@@ -295,6 +296,9 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                         paddingHorizontal: 12,
                         fullWidth: true,
                         onPressed: () async {
+                          if (!RequireAuthWidget.check(context)) {
+                            return;
+                          }
                           await customerCtrl.addToCart(
                             productId,
                             _quantity,

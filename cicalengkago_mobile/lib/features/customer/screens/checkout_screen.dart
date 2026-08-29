@@ -8,6 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/uber_pill_button.dart';
 import '../../../core/widgets/app_alert.dart';
+import '../../../core/widgets/require_auth_widget.dart';
 import '../../../core/services/location_service.dart';
 import '../../../core/widgets/location_picker_modal.dart';
 import '../controllers/customer_controller.dart';
@@ -205,7 +206,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final double walletBalance = double.tryParse(walletMap?['balance']?.toString() ?? '0') ?? 0.0;
     final bool isWalletInsufficient = walletBalance < grandTotal;
 
-    return Scaffold(
+    return RequireAuthWidget(
+      title: 'Checkout Pesanan',
+      subtitle: 'Masuk ke akun CicalengkaGO Anda untuk melanjutkan proses pengantaran dan pembayaran.',
+      icon: Icons.local_shipping_outlined,
+      child: Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.white,

@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/uber_pill_button.dart';
 import '../../../core/widgets/app_alert.dart';
+import '../../../core/widgets/require_auth_widget.dart';
 import '../controllers/customer_controller.dart';
 import '../widgets/product_detail_modal.dart';
 import 'checkout_screen.dart';
@@ -119,7 +120,11 @@ class _CartScreenState extends State<CartScreen> {
       }
     }
 
-    return Scaffold(
+    return RequireAuthWidget(
+      title: 'Keranjang Belanja',
+      subtitle: 'Silakan masuk ke akun Anda untuk melihat isi keranjang belanja dan memproses checkout.',
+      icon: Icons.shopping_bag_outlined,
+      child: Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.white,

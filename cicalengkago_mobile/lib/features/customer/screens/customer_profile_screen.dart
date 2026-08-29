@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/cicalengkago_logo.dart';
+import '../../../core/widgets/require_auth_widget.dart';
 import '../../../core/widgets/uber_pill_button.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../auth/screens/login_screen.dart';
@@ -82,10 +83,6 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     final authCtrl = context.watch<AuthController>();
     final ctrl = context.watch<CustomerController>();
 
-    if (!authCtrl.isLoggedIn) {
-      return _buildGuestView(context);
-    }
-
     final Map<String, dynamic> mergedUser = {};
     if (authCtrl.user != null) {
       if (authCtrl.user!.containsKey('user') && authCtrl.user!['user'] is Map) {
@@ -115,7 +112,11 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
 
     final walletBalance = num.tryParse(ctrl.wallet?['balance']?.toString() ?? '0') ?? 0;
 
-    return Scaffold(
+    return RequireAuthWidget(
+      title: 'Profil Saya',
+      subtitle: 'Masuk ke akun CicalengkaGO Anda untuk mengelola profil, alamat pengiriman, dan pengaturan akun.',
+      icon: Icons.person_outline_rounded,
+      child: Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.white,

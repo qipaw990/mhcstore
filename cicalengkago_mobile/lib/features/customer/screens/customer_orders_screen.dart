@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/widgets/cicalengkago_logo.dart';
+import '../../../core/widgets/require_auth_widget.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -108,7 +109,11 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
     final allOrders = ctrl.orders;
     final filteredOrders = _filterOrders(allOrders);
 
-    return Scaffold(
+    return RequireAuthWidget(
+      title: 'Pesanan Saya',
+      subtitle: 'Silakan masuk ke akun CicalengkaGO Anda untuk melihat daftar pesanan aktif dan riwayat belanja.',
+      icon: Icons.receipt_long_rounded,
+      child: Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.white,

@@ -23,6 +23,7 @@ import 'order_tracking_screen.dart';
 import 'customer_orders_screen.dart';
 import 'customer_profile_screen.dart';
 import '../widgets/product_detail_modal.dart';
+import '../../../core/widgets/require_auth_widget.dart';
 
 class CustomerHomeScreen extends StatefulWidget {
   const CustomerHomeScreen({super.key});
@@ -321,6 +322,9 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             elevation: 0,
             backgroundColor: Colors.white,
             onTap: (idx) {
+              if (idx != 0) {
+                if (!RequireAuthWidget.check(context)) return;
+              }
               setState(() {
                 _currentIndex = idx;
               });
@@ -463,6 +467,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     child: IconButton(
                       icon: const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 20),
                       onPressed: () {
+                        if (!RequireAuthWidget.check(context)) return;
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (_) => const CartScreen()),
@@ -533,6 +538,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   Widget _buildGopaySuperCard(double balance, BuildContext context) {
     return GestureDetector(
       onTap: () {
+        if (!RequireAuthWidget.check(context)) return;
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const CustomerWalletScreen()),

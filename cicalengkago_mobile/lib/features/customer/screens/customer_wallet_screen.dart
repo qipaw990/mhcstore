@@ -5,6 +5,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/cicalengkago_logo.dart';
+import '../../../core/widgets/require_auth_widget.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../controllers/customer_controller.dart';
 import 'in_app_payment_screen.dart';
@@ -47,7 +48,11 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
     final topupLogs =
         (walletData?['topup_logs'] as List<dynamic>?) ?? [];
 
-    return Scaffold(
+    return RequireAuthWidget(
+      title: 'Dompet CicalengkaPay',
+      subtitle: 'Masuk ke akun Anda untuk mengecek saldo, riwayat transaksi, dan melakukan isi ulang saldo (top-up).',
+      icon: Icons.account_balance_wallet_rounded,
+      child: Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: CustomScrollView(
         slivers: [
