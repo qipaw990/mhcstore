@@ -205,6 +205,7 @@ class _InAppChatModalState extends State<InAppChatModal> {
                       context,
                       orderCode: widget.orderCode,
                       isIncoming: false,
+                      callerRole: widget.currentUserRole,
                     );
                   },
                   child: Container(

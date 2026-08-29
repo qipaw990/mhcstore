@@ -42,29 +42,35 @@ class CallController extends Controller
             return;
         }
 
-        $isDriver   = in_array($userRole, ['delivery_man', 'driver', 'delivery'], true) || ((int)($order['dm_user_id'] ?? 0) === $userId);
-        $isCustomer = ($userId > 0 && (int)$order['cust_user_id'] === $userId) || ($userId === 0 && !$isDriver);
+        $dmUserId   = (int)($order['dm_user_id'] ?? $order['delivery_man_id'] ?? 0);
+        $custUserId = (int)($order['cust_user_id'] ?? 0);
+
+        $requestedRole = sanitize(trim($data['caller_role'] ?? $data['role'] ?? $_GET['role'] ?? ''));
+        $isDriver   = in_array($userRole, ['delivery_man', 'driver', 'delivery'], true) 
+                    || in_array($requestedRole, ['delivery_man', 'driver', 'delivery'], true)
+                    || ($userId > 0 && $dmUserId === $userId);
+
+        $isCustomer = ($userId > 0 && $custUserId === $userId) 
+                    || ($requestedRole === 'customer')
+                    || ($userId === 0 && !$isDriver);
 
         if (!$isDriver && !$isCustomer) {
             $this->errorResponse('Akses panggilan ditolak.', null, 403);
             return;
         }
 
-        $callerId = $userId;
-        if ($callerId === 0 && $isCustomer) {
-            $callerId = (int)$order['cust_user_id'];
-        }
-
         if ($isDriver) {
+            $callerId     = ($userId > 0) ? $userId : $dmUserId;
             $callerRole   = 'delivery_man';
-            $receiverId   = (int)$order['cust_user_id'];
+            $receiverId   = $custUserId;
             $receiverRole = 'customer';
             $partnerName  = $order['cust_name'] ?? 'Pelanggan';
             $partnerAvatar= $order['cust_avatar'] ?? 'assets/images/users/customer.png';
             $partnerPhone = $order['cust_phone'] ?? '';
         } else {
+            $callerId     = ($userId > 0) ? $userId : $custUserId;
             $callerRole   = 'customer';
-            $receiverId   = (int)($order['dm_user_id'] ?? 0);
+            $receiverId   = $dmUserId;
             $receiverRole = 'delivery_man';
             $partnerName  = $order['dm_name'] ?? 'Mitra Driver';
             $partnerAvatar= $order['dm_avatar'] ?? 'assets/images/users/driver.png';
@@ -109,11 +115,20 @@ class CallController extends Controller
     {
         $userId   = auth_id() ?: 0;
         $orderCode = sanitize(trim($_GET['order_code'] ?? ''));
+        $reqUserId = (int)($_GET['user_id'] ?? 0);
+        if ($reqUserId > 0 && $userId === 0) {
+            $userId = $reqUserId;
+        }
 
         $whereSql = "vc.created_at >= NOW() - INTERVAL 5 MINUTE AND vc.status IN ('calling', 'connected', 'ended', 'rejected')";
         $params = [];
 
-        if (!empty($orderCode)) {
+        if (!empty($orderCode) && $userId > 0) {
+            $whereSql .= " AND vc.order_code = ? AND (vc.receiver_id = ? OR vc.caller_id = ?)";
+            $params[] = $orderCode;
+            $params[] = $userId;
+            $params[] = $userId;
+        } elseif (!empty($orderCode)) {
             $whereSql .= " AND vc.order_code = ?";
             $params[] = $orderCode;
         } elseif ($userId > 0) {
@@ -225,7 +240,15 @@ class CallController extends Controller
     {
         $data      = $this->getPostData();
         $callId    = (int)($data['call_id'] ?? 0);
+        $orderCode = sanitize(trim($data['order_code'] ?? ''));
         $candidate = $data['candidate'] ?? null;
+
+        if (!$callId && !empty($orderCode)) {
+            $activeCall = Database::fetchOne("SELECT id FROM voice_calls WHERE order_code = ? AND status IN ('calling', 'connected') ORDER BY id DESC LIMIT 1", [$orderCode]);
+            if ($activeCall) {
+                $callId = (int)$activeCall['id'];
+            }
+        }
 
         if (!$callId || !$candidate) {
             $this->errorResponse('Parameter tidak lengkap.');

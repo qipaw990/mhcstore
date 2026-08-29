@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -652,6 +653,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final distKm = const Distance().as(LengthUnit.Kilometer, LatLng(driverLat, driverLng), LatLng(custLat, custLng));
     final etaMin = (distKm * 3 + 5).round();
 
+    final List batchStores = (batchInfo != null && batchInfo['stores'] is List && (batchInfo['stores'] as List).isNotEmpty)
+        ? (batchInfo['stores'] as List)
+        : (order['batch_stores'] is List && (order['batch_stores'] as List).isNotEmpty)
+            ? (order['batch_stores'] as List)
+            : [];
+
     return Column(
       children: [
         // Live Map Container with Floating HUD
@@ -672,20 +679,57 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ),
                   MarkerLayer(
                     markers: [
-                      // Store Pin
-                      Marker(
-                        point: LatLng(storeLat, storeLng),
-                        width: 42,
-                        height: 42,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF16A34A),
-                            shape: BoxShape.circle,
-                            boxShadow: [BoxShadow(color: const Color(0xFF16A34A).withValues(alpha: 0.4), blurRadius: 10)],
+                      // Store Pin (Multi-Store or Single Store)
+                      if (batchStores.length > 1)
+                        ...batchStores.asMap().entries.map((entry) {
+                          final idx = entry.key;
+                          final st = entry.value is Map ? (entry.value as Map) : {};
+                          final sLat = double.tryParse(st['lat']?.toString() ?? '') ?? storeLat;
+                          final sLng = double.tryParse(st['lng']?.toString() ?? '') ?? storeLng;
+                          return Marker(
+                            point: LatLng(sLat, sLng),
+                            width: 44,
+                            height: 44,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Container(
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF16A34A),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [BoxShadow(color: const Color(0xFF16A34A).withValues(alpha: 0.4), blurRadius: 10)],
+                                  ),
+                                  child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 20),
+                                ),
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(color: AppTheme.primaryRed, shape: BoxShape.circle),
+                                    child: Text('${idx + 1}', style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        })
+                      else
+                        Marker(
+                          point: LatLng(storeLat, storeLng),
+                          width: 42,
+                          height: 42,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF16A34A),
+                              shape: BoxShape.circle,
+                              boxShadow: [BoxShadow(color: const Color(0xFF16A34A).withValues(alpha: 0.4), blurRadius: 10)],
+                            ),
+                            child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 20),
                           ),
-                          child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 20),
                         ),
-                      ),
                       // Customer Pin
                       Marker(
                         point: LatLng(custLat, custLng),
@@ -1020,6 +1064,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                     context,
                                     orderCode: widget.orderCode,
                                     isIncoming: false,
+                                    callerRole: 'customer',
                                   );
                                 },
                                 icon: const Icon(Icons.phone_in_talk_rounded, color: Color(0xFF2563EB), size: 20),
@@ -1273,6 +1318,148 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     );
   }
 
+  Widget _buildSingleItemTile(Map item, {required String storeName, String? rawStoreLogo}) {
+    final Map<String, dynamic> itemMap = Map<String, dynamic>.from(item);
+    final name = (item['product_name'] ??
+            item['name'] ??
+            item['title'] ??
+            item['item_name'] ??
+            (item['product'] is Map ? item['product']['name'] : null) ??
+            'Menu Kuliner')
+        .toString();
+    final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
+    final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
+    final itemTotal = price * qty;
+    final variantText = item['variant']?.toString() ??
+        item['variation_name']?.toString() ??
+        '';
+
+    final rawImg = item['product_image'] ?? item['image'] ?? (item['product'] is Map ? item['product']['image'] : null);
+    final imgUrl = rawImg != null && rawImg.toString().isNotEmpty
+        ? ApiConstants.formatImageUrl(rawImg.toString())
+        : null;
+
+    final itemStore = item['store_name']?.toString() ?? storeName;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => OrderItemDetailModal.show(
+            context,
+            itemMap,
+            storeName: itemStore,
+            storeLogo: rawStoreLogo,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: imgUrl != null
+                      ? CachedNetworkImage(
+                          imageUrl: imgUrl,
+                          width: 44,
+                          height: 44,
+                          fit: BoxFit.cover,
+                          errorWidget: (context, url, error) => Container(
+                            width: 44,
+                            height: 44,
+                            color: const Color(0xFFF8FAFC),
+                            child: const Icon(Icons.fastfood_rounded, color: Color(0xFF94A3B8), size: 20),
+                          ),
+                        )
+                      : Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.restaurant_rounded, color: AppTheme.primaryRed, size: 20),
+                        ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: AppTheme.inkBlack,
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Text(
+                              '${qty}x',
+                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              name,
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (variantText.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            'Varian: $variantText',
+                            style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                          ),
+                        ),
+                      if (itemStore.isNotEmpty && itemStore != storeName)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            'dari $itemStore',
+                            style: const TextStyle(fontSize: 9.5, color: AppTheme.primaryRed, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                if (price > 0)
+                  Text(
+                    CurrencyFormatter.formatRupiah(itemTotal),
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.inkBlack),
+                  ),
+                const SizedBox(width: 4),
+                const Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFF94A3B8)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildStoreAndItemsCard(Map<String, dynamic> order, Map<String, dynamic> live) {
     final liveStore = live['store'] is Map ? (live['store'] as Map) : {};
     final storeName = liveStore['name']?.toString() ??
@@ -1282,6 +1469,24 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         order['store_address']?.toString() ??
         'Cicalengka, Kab. Bandung';
     final storePhone = order['store_phone']?.toString() ?? '';
+
+    final Map<String, dynamic>? batchInfo = live['batch_info'] is Map
+        ? Map<String, dynamic>.from(live['batch_info'] as Map)
+        : null;
+
+    final List batchStores = (batchInfo != null && batchInfo['stores'] is List && (batchInfo['stores'] as List).isNotEmpty)
+        ? (batchInfo['stores'] as List)
+        : (order['batch_stores'] is List && (order['batch_stores'] as List).isNotEmpty)
+            ? (order['batch_stores'] as List)
+            : [];
+
+    final List batchSubOrders = (batchInfo != null && batchInfo['sub_orders'] is List && (batchInfo['sub_orders'] as List).isNotEmpty)
+        ? (batchInfo['sub_orders'] as List)
+        : (order['batch_sub_orders'] is List && (order['batch_sub_orders'] as List).isNotEmpty)
+            ? (order['batch_sub_orders'] as List)
+            : [];
+
+    final bool isMultiStore = batchStores.length > 1 || (order['is_multi_store_batch'] == true);
 
     final List rawItems = (live['items'] is List && (live['items'] as List).isNotEmpty)
         ? (live['items'] as List)
@@ -1316,68 +1521,175 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Store Header
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-              border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: AppTheme.inkBlack,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: (!isParcel && storeLogoUrl != null)
-                        ? CachedNetworkImage(
-                            imageUrl: storeLogoUrl,
-                            width: 38,
-                            height: 38,
-                            fit: BoxFit.cover,
-                            errorWidget: (context, url, error) => Container(
-                              color: AppTheme.inkBlack,
-                              child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 20),
-                            ),
-                          )
-                        : Icon(isParcel ? Icons.local_shipping_rounded : Icons.storefront_rounded, color: Colors.white, size: 20),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          if (isMultiStore && batchStores.isNotEmpty) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        isParcel ? (parcelDetails['pickup_address'] ?? 'Pengiriman Paket CicalengkaSend') : storeName,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          const Icon(Icons.storefront_rounded, color: AppTheme.primaryRed, size: 18),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Titik Penjemputan (${batchStores.length} Toko)',
+                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        isParcel ? 'Kurir CicalengkaGO' : storeAddress,
-                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFFDE68A)),
+                        ),
+                        child: const Text(
+                          'Multi-Toko',
+                          style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
+                        ),
                       ),
                     ],
                   ),
-                ),
-                if (storePhone.isNotEmpty)
-                  IconButton(
-                    onPressed: () => launchUrl(Uri.parse('tel:$storePhone')),
-                    icon: const Icon(Icons.call_rounded, color: Color(0xFF16A34A), size: 18),
-                    tooltip: 'Hubungi Toko',
-                  ),
-              ],
+                  const SizedBox(height: 10),
+                  ...batchStores.asMap().entries.map((entry) {
+                    final idx = entry.key;
+                    final st = entry.value is Map ? (entry.value as Map) : {};
+                    final sName = st['name']?.toString() ?? 'Toko Cicalengka';
+                    final sAddress = st['address']?.toString() ?? 'Cicalengka, Bandung';
+                    final sPhone = st['phone']?.toString() ?? '';
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: const BoxDecoration(
+                              color: AppTheme.primaryRed,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${idx + 1}',
+                                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  sName,
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  sAddress,
+                                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (sPhone.isNotEmpty)
+                            IconButton(
+                              onPressed: () => launchUrl(Uri.parse('tel:$sPhone')),
+                              icon: const Icon(Icons.call_rounded, color: Color(0xFF16A34A), size: 18),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
             ),
-          ),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: AppTheme.inkBlack,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: (!isParcel && storeLogoUrl != null)
+                          ? CachedNetworkImage(
+                              imageUrl: storeLogoUrl,
+                              width: 38,
+                              height: 38,
+                              fit: BoxFit.cover,
+                              errorWidget: (context, url, error) => Container(
+                                color: AppTheme.inkBlack,
+                                child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 20),
+                              ),
+                            )
+                          : Icon(isParcel ? Icons.local_shipping_rounded : Icons.storefront_rounded, color: Colors.white, size: 20),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isParcel ? (parcelDetails['pickup_address'] ?? 'Pengiriman Paket CicalengkaSend') : storeName,
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          isParcel ? 'Kurir CicalengkaGO' : storeAddress,
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (storePhone.isNotEmpty)
+                    IconButton(
+                      onPressed: () => launchUrl(Uri.parse('tel:$storePhone')),
+                      icon: const Icon(Icons.call_rounded, color: Color(0xFF16A34A), size: 18),
+                      tooltip: 'Hubungi Toko',
+                    ),
+                ],
+              ),
+            ),
+          ],
 
           // Items Purchased List
           Padding(
@@ -1427,151 +1739,61 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       ],
                     ),
                   ),
-                ] else if (rawItems.isEmpty)
+                ] else if (isMultiStore && batchSubOrders.isNotEmpty) ...[
+                  ...batchSubOrders.map((subOrdMap) {
+                    final subOrd = subOrdMap is Map ? subOrdMap : {};
+                    final subStoreName = subOrd['store_name']?.toString() ?? 'Toko';
+                    final subCode = subOrd['order_code']?.toString() ?? '';
+                    final subItems = subOrd['items'] is List ? (subOrd['items'] as List) : [];
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.storefront_rounded, size: 14, color: AppTheme.primaryRed),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    subStoreName,
+                                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                                  ),
+                                ],
+                              ),
+                              if (subCode.isNotEmpty)
+                                Text('#$subCode', style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B), fontFamily: 'monospace')),
+                            ],
+                          ),
+                          const Divider(height: 12, color: Color(0xFFF1F5F9)),
+                          ...subItems.map((item) {
+                            final Map it = item is Map ? item : {};
+                            return _buildSingleItemTile(it, storeName: subStoreName, rawStoreLogo: rawStoreLogo);
+                          }),
+                        ],
+                      ),
+                    );
+                  })
+                ] else if (rawItems.isEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Text('1x Pesanan di $storeName', style: const TextStyle(fontSize: 12, color: AppTheme.inkBlack, fontWeight: FontWeight.w600)),
                   )
-                else
+                ] else ...[
                   ...rawItems.map((item) {
                     final Map it = item is Map ? item : {};
-                    final name = (it['product_name'] ??
-                            it['name'] ??
-                            it['title'] ??
-                            it['item_name'] ??
-                            (it['product'] is Map ? it['product']['name'] : null) ??
-                            'Menu Kuliner')
-                        .toString();
-                    final qty = int.tryParse(it['quantity']?.toString() ?? '1') ?? 1;
-                    final price = double.tryParse(it['price']?.toString() ?? '0') ?? 0.0;
-                    final itemTotal = price * qty;
-                    final variantText = it['variant']?.toString() ??
-                        it['variation_name']?.toString() ??
-                        '';
-
-                    final rawImg = it['product_image'] ?? it['image'] ?? (it['product'] is Map ? it['product']['image'] : null);
-                    final imgUrl = rawImg != null && rawImg.toString().isNotEmpty
-                        ? ApiConstants.formatImageUrl(rawImg.toString())
-                        : null;
-
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFF1F5F9)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.02),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () => OrderItemDetailModal.show(
-                            context,
-                            it,
-                            storeName: it['store_name']?.toString() ?? storeName,
-                            storeLogo: rawStoreLogo,
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: imgUrl != null
-                                      ? CachedNetworkImage(
-                                          imageUrl: imgUrl,
-                                          width: 44,
-                                          height: 44,
-                                          fit: BoxFit.cover,
-                                          errorWidget: (context, url, error) => Container(
-                                            width: 44,
-                                            height: 44,
-                                            color: const Color(0xFFF8FAFC),
-                                            child: const Icon(Icons.fastfood_rounded, color: Color(0xFF94A3B8), size: 20),
-                                          ),
-                                        )
-                                      : Container(
-                                          width: 44,
-                                          height: 44,
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFFEF2F2),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: const Icon(Icons.restaurant_rounded, color: AppTheme.primaryRed, size: 20),
-                                        ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                                            decoration: BoxDecoration(
-                                              color: AppTheme.inkBlack,
-                                              borderRadius: BorderRadius.circular(5),
-                                            ),
-                                            child: Text(
-                                              '${qty}x',
-                                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Expanded(
-                                            child: Text(
-                                              name,
-                                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      if (variantText.isNotEmpty)
-                                        Padding(
-                                          padding: const EdgeInsets.only(top: 2),
-                                          child: Text(
-                                            'Varian: $variantText',
-                                            style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-                                          ),
-                                        ),
-                                      if (it['store_name'] != null && (order['is_multi_store_batch'] == true || order['batch_sub_orders'] != null))
-                                        Padding(
-                                          padding: const EdgeInsets.only(top: 2),
-                                          child: Text(
-                                            'dari ${it['store_name']}',
-                                            style: const TextStyle(fontSize: 9.5, color: AppTheme.primaryRed, fontWeight: FontWeight.w600),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                if (price > 0)
-                                  Text(
-                                    CurrencyFormatter.formatRupiah(itemTotal),
-                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.inkBlack),
-                                  ),
-                                const SizedBox(width: 4),
-                                const Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFF94A3B8)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
+                    return _buildSingleItemTile(it, storeName: storeName, rawStoreLogo: rawStoreLogo);
                   }),
+                ],
 
                 if (orderNotes.isNotEmpty) ...[
                   const SizedBox(height: 6),
@@ -1790,8 +2012,31 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
 
   void _showReviewDialog(BuildContext context, Map<String, dynamic> order) {
-    int storeRating = 5;
-    final storeCommentCtrl = TextEditingController();
+    final List batchStores = (order['batch_stores'] is List && (order['batch_stores'] as List).isNotEmpty)
+        ? (order['batch_stores'] as List)
+        : (_liveData != null && _liveData!['batch_info'] is Map && _liveData!['batch_info']['stores'] is List)
+            ? (_liveData!['batch_info']['stores'] as List)
+            : [];
+
+    final bool isMulti = batchStores.length > 1 || (order['is_multi_store_batch'] == true);
+
+    int singleStoreRating = 5;
+    final singleStoreCommentCtrl = TextEditingController();
+
+    final Map<int, int> multiRatings = {};
+    final Map<int, TextEditingController> multiComments = {};
+
+    if (isMulti) {
+      for (var st in batchStores) {
+        if (st is Map) {
+          final sId = int.tryParse(st['store_id']?.toString() ?? '0') ?? 0;
+          if (sId > 0) {
+            multiRatings[sId] = 5;
+            multiComments[sId] = TextEditingController();
+          }
+        }
+      }
+    }
 
     showModalBottomSheet(
       context: context,
@@ -1820,33 +2065,92 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 Text('Pesanan #${order['order_code']}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                 const SizedBox(height: 18),
 
-                const Text('Rating Toko & Makanan', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(5, (i) => GestureDetector(
-                    onTap: () => setModalState(() => storeRating = i + 1),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Icon(
-                        i < storeRating ? Icons.star_rounded : Icons.star_outline_rounded,
-                        color: Colors.amber,
-                        size: 34,
+                if (isMulti && batchStores.isNotEmpty) ...[
+                  ...batchStores.map((st) {
+                    final Map sMap = st is Map ? st : {};
+                    final sId = int.tryParse(sMap['store_id']?.toString() ?? '0') ?? 0;
+                    final sName = sMap['name']?.toString() ?? 'Toko Mitra';
+                    final currentRating = multiRatings[sId] ?? 5;
+                    final ctrl = multiComments[sId] ?? TextEditingController();
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
-                    ),
-                  )),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: storeCommentCtrl,
-                  maxLines: 2,
-                  decoration: InputDecoration(
-                    hintText: 'Tulis ulasan makanan & toko...',
-                    hintStyle: const TextStyle(fontSize: 12),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                    contentPadding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.storefront_rounded, size: 16, color: AppTheme.primaryRed),
+                              const SizedBox(width: 6),
+                              Text(sName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.inkBlack)),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(5, (i) => GestureDetector(
+                              onTap: () => setModalState(() => multiRatings[sId] = i + 1),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 3),
+                                child: Icon(
+                                  i < currentRating ? Icons.star_rounded : Icons.star_outline_rounded,
+                                  color: Colors.amber,
+                                  size: 30,
+                                ),
+                              ),
+                            )),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: ctrl,
+                            maxLines: 2,
+                            decoration: InputDecoration(
+                              hintText: 'Ulasan untuk $sName...',
+                              hintStyle: const TextStyle(fontSize: 11.5),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                              contentPadding: const EdgeInsets.all(10),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ] else ...[
+                  const Text('Rating Toko & Makanan', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (i) => GestureDetector(
+                      onTap: () => setModalState(() => singleStoreRating = i + 1),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Icon(
+                          i < singleStoreRating ? Icons.star_rounded : Icons.star_outline_rounded,
+                          color: Colors.amber,
+                          size: 34,
+                        ),
+                      ),
+                    )),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: singleStoreCommentCtrl,
+                    maxLines: 2,
+                    decoration: InputDecoration(
+                      hintText: 'Tulis ulasan makanan & toko...',
+                      hintStyle: const TextStyle(fontSize: 12),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      contentPadding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                ],
+
                 const SizedBox(height: 20),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -1857,11 +2161,27 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ),
                   onPressed: () async {
                     Navigator.pop(ctx);
-                    final res = await ApiService.postForm('${ApiConstants.orders}/review', {
-                      'order_code': widget.orderCode,
-                      'rating': storeRating.toString(),
-                      'comment': storeCommentCtrl.text,
-                    });
+                    Map<String, String> bodyPayload = {'order_code': widget.orderCode};
+
+                    if (isMulti && multiRatings.isNotEmpty) {
+                      final multiReviews = batchStores.map((st) {
+                        final Map sMap = st is Map ? st : {};
+                        final sId = int.tryParse(sMap['store_id']?.toString() ?? '0') ?? 0;
+                        final oId = int.tryParse(sMap['order_id']?.toString() ?? '0') ?? int.tryParse(order['id']?.toString() ?? '0') ?? 0;
+                        return {
+                          'store_id': sId,
+                          'order_id': oId,
+                          'rating': multiRatings[sId] ?? 5,
+                          'comment': multiComments[sId]?.text ?? '',
+                        };
+                      }).toList();
+                      bodyPayload['multi_store_reviews'] = jsonEncode(multiReviews);
+                    } else {
+                      bodyPayload['rating'] = singleStoreRating.toString();
+                      bodyPayload['comment'] = singleStoreCommentCtrl.text;
+                    }
+
+                    final res = await ApiService.postForm('${ApiConstants.orders}/review', bodyPayload);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(res['message'] ?? 'Terima kasih atas ulasan Anda!')),

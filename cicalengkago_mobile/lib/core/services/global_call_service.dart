@@ -61,10 +61,15 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> checkIncomingCall() async {
     try {
       String url = '${ApiConstants.baseUrl}/calls/poll';
+      List<String> queryParams = [];
       if (_orderCode != null && _orderCode!.isNotEmpty) {
-        url += '?order_code=${Uri.encodeComponent(_orderCode!)}';
-      } else if (_userId != null && _userId! > 0) {
-        url += '?user_id=$_userId';
+        queryParams.add('order_code=${Uri.encodeComponent(_orderCode!)}');
+      }
+      if (_userId != null && _userId! > 0) {
+        queryParams.add('user_id=$_userId');
+      }
+      if (queryParams.isNotEmpty) {
+        url += '?${queryParams.join('&')}';
       } else {
         return;
       }
@@ -82,7 +87,7 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
 
             // Auto show call UI if receiving an incoming call or active call
             if (!_isCallScreenOpen && _navigatorContext != null) {
-              final isIncoming = (callStatus == 'calling' && (_userId == null || call['receiver_id'] == _userId || call['caller_id'] != _userId));
+              final isIncoming = (callStatus == 'calling' && _userId != null && (call['receiver_id'] == _userId || call['receiver_id'].toString() == _userId.toString()));
               if (isIncoming) {
                 openCallScreen(_navigatorContext!, orderCode: call['order_code'] ?? _orderCode ?? '', isIncoming: true, callData: call);
               }
@@ -103,7 +108,7 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
     } catch (_) {}
   }
 
-  void openCallScreen(BuildContext context, {required String orderCode, required bool isIncoming, Map<String, dynamic>? callData}) {
+  void openCallScreen(BuildContext context, {required String orderCode, required bool isIncoming, String? callerRole, Map<String, dynamic>? callData}) {
     if (_isCallScreenOpen) return;
     _isCallScreenOpen = true;
 
@@ -112,6 +117,7 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
         builder: (_) => InAppCallScreen(
           orderCode: orderCode,
           isIncoming: isIncoming,
+          callerRole: callerRole,
           callData: callData ?? _activeCallData,
         ),
       ),

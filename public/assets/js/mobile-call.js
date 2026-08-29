@@ -919,7 +919,7 @@
         },
 
         // Start Voice Call (Outgoing)
-        makeCall: async function (orderCode, partnerName, partnerAvatar) {
+        makeCall: async function (orderCode, partnerName, partnerAvatar, callerRole) {
             this.resetCall();
             currentOrderCode = orderCode || currentOrderCode;
             isCaller = true;
@@ -930,7 +930,7 @@
             injectCallUI();
 
             const modal = document.getElementById('ccgVoiceCallModal');
-            document.getElementById('ccgCallName').innerText = partnerName || 'Mitra Kurir';
+            document.getElementById('ccgCallName').innerText = partnerName || 'Mitra CicalengkaGO';
             document.getElementById('ccgCallSubtext').innerText = 'Memanggil CicalengkaGO...';
             document.getElementById('ccgCallTimer').classList.add('d-none');
             document.getElementById('ccgSoundVisualizer').classList.add('d-none');
@@ -982,18 +982,29 @@
                 sdp: offer.sdp
             });
 
+            const effectiveRole = callerRole || (window.location.search.includes('role=delivery_man') || window.location.pathname.includes('/delivery/') ? 'delivery_man' : 'customer');
+
             try {
                 const res = await fetch((window.BASE_URL || '') + '/calls/initiate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         order_code: currentOrderCode,
-                        offer: offerSdp
+                        offer: offerSdp,
+                        caller_role: effectiveRole
                     })
                 });
                 const data = await res.json();
                 if (data.success) {
                     currentCallId = data.data.call_id;
+                    if (data.data.partner_name && document.getElementById('ccgCallName')) {
+                        document.getElementById('ccgCallName').innerText = data.data.partner_name;
+                    }
+                    if (data.data.partner_avatar && document.getElementById('ccgCallAvatar')) {
+                        document.getElementById('ccgCallAvatar').src = data.data.partner_avatar.startsWith('http') || data.data.partner_avatar.startsWith('/')
+                            ? data.data.partner_avatar
+                            : (window.BASE_URL + '/' + data.data.partner_avatar);
+                    }
                     // Flush local ICE candidates gathered during setLocalDescription!
                     await this.flushPendingLocalCandidates();
                 } else {
