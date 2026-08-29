@@ -198,6 +198,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
 
   Widget _buildRatingReviewsCard(double rating, List<dynamic> reviews) {
     return Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -210,173 +211,43 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Container(
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              color: Color(0xFFFEF3C7),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.star_rounded, color: Color(0xFFD97706), size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFFEF3C7),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.star_rounded, color: Color(0xFFD97706), size: 20),
+                    Text(
+                      '${rating.toStringAsFixed(1)} ★',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
                     ),
-                    const SizedBox(width: 10),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Rating Saya & Ulasan Pelanggan',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                        Text(
-                          'Penilaian kepuasan pengantaran pembeli',
-                          style: TextStyle(fontSize: 10, color: Color(0xFF64748B)),
-                        ),
-                      ],
-                    ),
+                    const SizedBox(width: 6),
+                    const Text('Kepuasan Pelanggan', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF3C7),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFFCD34D)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.star_rounded, color: Color(0xFFD97706), size: 12),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${rating.toStringAsFixed(1)} / 5.0',
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
-                      ),
-                    ],
-                  ),
+                const SizedBox(height: 2),
+                Text(
+                  '${reviews.length} Ulasan Terverifikasi',
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
-
-          if (reviews.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Center(
-                child: Column(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFFEF3C7),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFFD97706), size: 22),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Belum Ada Ulasan Driver',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                    ),
-                    const SizedBox(height: 2),
-                    const Text(
-                      'Penilaian dari pelanggan yang Anda antar orderannya akan muncul di sini.',
-                      style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(12),
-              itemCount: reviews.length > 5 ? 5 : reviews.length,
-              separatorBuilder: (ctx, index) => const SizedBox(height: 8),
-              itemBuilder: (ctx, i) => _buildReviewItem(reviews[i]),
-            ),
+          const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8), size: 20),
         ],
       ),
-    );
-  }
-
-  Widget _buildReviewItem(Map<String, dynamic> rev) {
-    final customerName = rev['customer_name'] ?? 'Pelanggan';
-    final customerAvatar = rev['customer_avatar'] as String?;
-    final ratingVal = int.tryParse(rev['rating']?.toString() ?? '5') ?? 5;
-    final comment = rev['comment'] ?? '';
-    final orderCode = rev['order_code'] ?? '#ORD';
-
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: const Color(0xFFE2E8F0),
-                backgroundImage: customerAvatar != null ? NetworkImage(ApiConstants.formatImageUrl(customerAvatar)) : null,
-                child: customerAvatar == null ? const Icon(Icons.person_rounded, size: 16, color: Color(0xFF64748B)) : null,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(customerName, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                    Text(orderCode.toString(), style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8))),
-                  ],
-                ),
-              ),
-              Row(
-                children: List.generate(
-                  5,
-                  (idx) => Icon(
-                    idx < ratingVal ? Icons.star_rounded : Icons.star_border_rounded,
-                    color: const Color(0xFFF59E0B),
-                    size: 14,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (comment.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: const Border(left: BorderSide(color: Color(0xFFF59E0B), width: 3)),
-              ),
-              child: Text(
-                '"$comment"',
-                style: const TextStyle(fontSize: 10.5, color: Color(0xFF334155), fontStyle: FontStyle.italic),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
   }
 
   Widget _buildProfileInfoCard(

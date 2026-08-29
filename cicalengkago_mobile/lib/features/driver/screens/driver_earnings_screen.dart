@@ -127,51 +127,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
           ),
         ),
 
-        // Reviews section
-        if (reviews.isNotEmpty) ...[
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: Colors.amber.withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.star_rounded, color: Colors.amber, size: 20),
-                      ),
-                      const SizedBox(width: 10),
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Rating & Ulasan Pelanggan', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                          Text('Penilaian kepuasan pengantaran', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                ],
-              ),
-            ),
-          ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, i) => Padding(
-                padding: EdgeInsets.fromLTRB(16, 0, 16, i < reviews.length - 1 ? 8 : 24),
-                child: _buildReviewCard(reviews[i]),
-              ),
-              childCount: reviews.length,
-            ),
-          ),
-        ] else
-          const SliverToBoxAdapter(child: SizedBox(height: 40)),
+        const SliverToBoxAdapter(child: SizedBox(height: 40)),
       ],
     );
   }
@@ -491,51 +447,6 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
               color: isCredit ? const Color(0xFF059669) : AppTheme.primaryRed,
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReviewCard(Map<String, dynamic> rev) {
-    final rating = int.tryParse(rev['rating']?.toString() ?? '5') ?? 5;
-    final customerName = rev['customer_name'] ?? 'Pelanggan';
-    final comment = rev['comment'] ?? '';
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFBEB),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFDE68A)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle),
-                child: const Icon(Icons.person_rounded, color: Color(0xFF64748B), size: 20),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(customerName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-              ),
-              Row(
-                children: List.generate(5, (i) => Icon(
-                  i < rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                  color: Colors.amber,
-                  size: 16,
-                )),
-              ),
-            ],
-          ),
-          if (comment.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text('"$comment"', style: const TextStyle(fontSize: 12, color: Color(0xFF334155), fontStyle: FontStyle.italic)),
-          ],
         ],
       ),
     );

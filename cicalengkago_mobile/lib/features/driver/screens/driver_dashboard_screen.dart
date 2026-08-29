@@ -7,6 +7,7 @@ import '../../auth/controllers/auth_controller.dart';
 import '../controllers/driver_controller.dart';
 import 'driver_radar_screen.dart';
 import 'driver_earnings_screen.dart';
+import 'driver_reviews_screen.dart';
 import 'driver_profile_screen.dart';
 
 class DriverDashboardScreen extends StatefulWidget {
@@ -142,6 +143,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             },
           ),
           const DriverEarningsScreen(),
+          const DriverReviewsScreen(),
           const DriverProfileScreen(),
         ],
       ),
@@ -162,10 +164,13 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           backgroundColor: Colors.white,
           onTap: (idx) {
             setState(() => _currentIndex = idx);
-            // Load earnings data when tab is selected
+            // Load respective data when tab is selected
             if (idx == 1) {
               context.read<DriverController>().fetchEarnings();
             } else if (idx == 2) {
+              context.read<DriverController>().fetchProfile();
+              context.read<DriverController>().fetchEarnings();
+            } else if (idx == 3) {
               context.read<DriverController>().fetchProfile();
             }
           },
@@ -217,6 +222,11 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
               icon: Icon(Icons.account_balance_wallet_outlined),
               activeIcon: Icon(Icons.account_balance_wallet_rounded, color: AppTheme.primaryRed),
               label: 'Pendapatan',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.star_outline_rounded),
+              activeIcon: Icon(Icons.star_rounded, color: AppTheme.primaryRed),
+              label: 'Ulasan',
             ),
             const BottomNavigationBarItem(
               icon: Icon(Icons.person_outline_rounded),
