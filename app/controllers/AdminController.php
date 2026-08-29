@@ -1939,12 +1939,12 @@ class AdminController extends Controller
 
     public function savePaymentBank(): void
     {
-        $code    = strtoupper(trim($this->getPost('code') ?? ''));
-        $name    = trim($this->getPost('name') ?? '');
-        $accNum  = trim($this->getPost('account_number') ?? '');
-        $accName = trim($this->getPost('account_name') ?? '');
-        $type    = trim($this->getPost('type') ?? 'bank');
-        $bankId  = trim($this->getPost('bank_id') ?? '');
+        $code    = strtoupper(trim((string)($this->getPost('code') ?? '')));
+        $name    = trim((string)($this->getPost('name') ?? ''));
+        $accNum  = trim((string)($this->getPost('account_number') ?? '')));
+        $accName = trim((string)($this->getPost('account_name') ?? ''));
+        $type    = trim((string)($this->getPost('type') ?? 'bank'));
+        $bankId  = trim((string)($this->getPost('bank_id') ?? ''));
 
         if (empty($code) || empty($name) || empty($accNum) || empty($accName)) {
             $_SESSION['flash_error'] = 'Semua field wajib diisi!';
@@ -1956,7 +1956,7 @@ class AdminController extends Controller
         $updated = false;
 
         foreach ($banks as &$b) {
-            if ($b['code'] === $code || (!empty($bankId) && $b['id'] === $bankId)) {
+            if ($b['code'] === $code || (!empty($bankId) && ($b['id'] ?? '') === $bankId)) {
                 $b['code']           = $code;
                 $b['name']           = $name;
                 $b['account_number'] = $accNum;
@@ -1989,10 +1989,10 @@ class AdminController extends Controller
 
     public function savePaymentQris(): void
     {
-        $merchant = trim($this->getPost('qris_merchant_name') ?? 'CICALENGKAGO');
-        $city     = trim($this->getPost('qris_city') ?? 'KAB BANDUNG');
-        $nmid     = trim($this->getPost('qris_nmid') ?? 'ID1024328492048');
-        $payload  = trim($this->getPost('qris_static_payload') ?? '');
+        $merchant = trim((string)($this->getPost('qris_merchant_name') ?? 'CICALENGKAGO'));
+        $city     = trim((string)($this->getPost('qris_city') ?? 'KAB BANDUNG'));
+        $nmid     = trim((string)($this->getPost('qris_nmid') ?? 'ID1024328492048'));
+        $payload  = trim((string)($this->getPost('qris_static_payload') ?? ''));
 
         \App\Models\BusinessSetting::set('qris_merchant_name', $merchant);
         \App\Models\BusinessSetting::set('qris_city', $city);
@@ -2007,7 +2007,7 @@ class AdminController extends Controller
 
     public function approvePaymentInvoice(): void
     {
-        $code = trim($this->getPost('invoice_code') ?? '');
+        $code = trim((string)($this->getPost('invoice_code') ?? ''));
         if (empty($code)) {
             $_SESSION['flash_error'] = 'Invoice code tidak valid.';
             $this->redirect('admin/payment-methods');
@@ -2028,8 +2028,8 @@ class AdminController extends Controller
     public function testPaymentWebhook(): void
     {
         $amount = (float)($this->getPost('amount') ?? 0);
-        $sender = trim($this->getPost('sender') ?? 'Admin Test');
-        $text   = trim($this->getPost('text') ?? '');
+        $sender = trim((string)($this->getPost('sender') ?? 'Admin Test'));
+        $text   = trim((string)($this->getPost('text') ?? ''));
 
         $model = new \App\Models\PaymentInvoice();
         $res = $model->processWebhookData($amount, null, $sender, $text);

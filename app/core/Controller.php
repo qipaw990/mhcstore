@@ -80,14 +80,20 @@ abstract class Controller
         return isset($_SESSION['user']) && !empty($_SESSION['user']['id']);
     }
 
-    protected function getPost(): array
+    protected function getPost(?string $key = null, $default = null)
     {
         $contentType = $_SERVER["CONTENT_TYPE"] ?? '';
         if (str_contains($contentType, 'application/json')) {
             $input = json_decode(file_get_contents('php://input'), true);
-            return is_array($input) ? $input : [];
+            $data = is_array($input) ? $input : [];
+        } else {
+            $data = $_POST;
         }
-        return $_POST;
+
+        if ($key === null) {
+            return $data;
+        }
+        return $data[$key] ?? $default;
     }
 
     protected function isJsonRequest(): bool
