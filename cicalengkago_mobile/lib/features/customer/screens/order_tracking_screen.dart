@@ -1124,11 +1124,18 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: const Color(0xFF86EFAC)),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
-                            Icon(Icons.directions_bike_rounded, color: Color(0xFF16A34A), size: 12),
-                            SizedBox(width: 4),
-                            Text('Kurir Bergerak', style: TextStyle(color: Color(0xFF16A34A), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                            ClipOval(
+                              child: Image.asset(
+                                'assets/images/driver_bogo_marker.png',
+                                width: 16,
+                                height: 16,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            const Text('Kurir Bergerak', style: TextStyle(color: Color(0xFF16A34A), fontSize: 9.5, fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),
@@ -3085,6 +3092,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 ? 'Rute navigasi aktif langsung menuju ke rumah Anda'
                 : 'Menunggu semua pesanan selesai diambil kurir',
             icon: Icons.home_rounded,
+            imageAsset: 'assets/images/customer_home_marker.png',
           ),
         ],
       ),
@@ -3098,6 +3106,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     required String title,
     required String desc,
     required IconData icon,
+    String? imageAsset,
   }) {
     final Color badgeColor = isCompleted
         ? const Color(0xFF16A34A)
@@ -3122,7 +3131,17 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           child: Center(
             child: isCompleted
                 ? const Icon(Icons.check_rounded, color: Color(0xFF16A34A), size: 16)
-                : Icon(icon, color: badgeColor, size: 14),
+                : (imageAsset != null
+                    ? ClipOval(
+                        child: Image.asset(
+                          imageAsset,
+                          width: 20,
+                          height: 20,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(icon, color: badgeColor, size: 14),
+                        ),
+                      )
+                    : Icon(icon, color: badgeColor, size: 14)),
           ),
         ),
         const SizedBox(width: 10),
