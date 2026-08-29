@@ -17,6 +17,8 @@ class DriverRadarScreen extends StatefulWidget {
 
 class _DriverRadarScreenState extends State<DriverRadarScreen> {
   final MapController _mapController = MapController();
+  bool _autoFollow = true;
+  LatLng? _lastCenteredLocation;
 
   @override
   void initState() {
@@ -32,6 +34,15 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
 
     if (driverCtrl.activeTrip != null) {
       return ActiveTripScreen(trip: driverCtrl.activeTrip!);
+    }
+
+    if (_autoFollow && _lastCenteredLocation != driverCtrl.currentLocation) {
+      _lastCenteredLocation = driverCtrl.currentLocation;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _mapController.move(driverCtrl.currentLocation, 15.5);
+        }
+      });
     }
 
     if (driverCtrl.isLoading && driverCtrl.driverProfile == null) {
@@ -114,9 +125,25 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Radar Peta GPS Cicalengka',
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                                  Row(
+                                    children: [
+                                      const Text(
+                                        'Radar Peta GPS Cicalengka',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                                      ),
+                                      if (_autoFollow) ...[
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFDCFCE7),
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: const Color(0xFF86EFAC)),
+                                          ),
+                                          child: const Text('Live Ikuti GPS', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                   Text(
                                     'Lat: ${driverCtrl.currentLocation.latitude.toStringAsFixed(4)}, Lng: ${driverCtrl.currentLocation.longitude.toStringAsFixed(4)}',
@@ -161,6 +188,11 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
                               options: MapOptions(
                                 initialCenter: driverCtrl.currentLocation,
                                 initialZoom: 15.0,
+                                onPositionChanged: (camera, hasGesture) {
+                                  if (hasGesture && _autoFollow) {
+                                    setState(() => _autoFollow = false);
+                                  }
+                                },
                               ),
                               children: [
                                 TileLayer(
@@ -173,7 +205,7 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
                                 ),
                                 MarkerLayer(
                                   markers: [
-                                    // Driver location marker
+                                    // Driver location marker with live compass rotation
                                     Marker(
                                       point: driverCtrl.currentLocation,
                                       width: 50,
@@ -189,15 +221,18 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
                                               shape: BoxShape.circle,
                                             ),
                                           ),
-                                          Container(
-                                            width: 32,
-                                            height: 32,
-                                            decoration: const BoxDecoration(
-                                              color: Color(0xFF16A34A),
-                                              shape: BoxShape.circle,
-                                              boxShadow: [BoxShadow(color: Color(0x6616A34A), blurRadius: 10)],
+                                          Transform.rotate(
+                                            angle: (driverCtrl.heading) * (3.141592653589793 / 180),
+                                            child: Container(
+                                              width: 32,
+                                              height: 32,
+                                              decoration: const BoxDecoration(
+                                                color: Color(0xFF16A34A),
+                                                shape: BoxShape.circle,
+                                                boxShadow: [BoxShadow(color: Color(0x6616A34A), blurRadius: 10)],
+                                              ),
+                                              child: const Icon(Icons.navigation_rounded, color: Colors.white, size: 18),
                                             ),
-                                            child: const Icon(Icons.navigation_rounded, color: Colors.white, size: 18),
                                           ),
                                         ],
                                       ),
@@ -228,32 +263,37 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
                               ],
                             ),
 
-                            // Floating Re-center GPS Button
+                            // Floating Re-center GPS Button with Auto-Follow Indicator
                             Positioned(
                               bottom: 10,
                               right: 10,
                               child: Material(
                                 elevation: 3,
                                 shape: const CircleBorder(),
-                                color: Colors.white,
+                                color: _autoFollow ? const Color(0xFF16A34A) : Colors.white,
                                 child: InkWell(
                                   customBorder: const CircleBorder(),
                                   onTap: () async {
+                                    setState(() => _autoFollow = true);
                                     await driverCtrl.refreshLocation();
                                     _mapController.move(driverCtrl.currentLocation, 15.5);
                                     if (mounted) {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         const SnackBar(
-                                          content: Text('📍 Koordinat GPS Driver diperbarui!'),
+                                          content: Text('📍 Mode Ikuti GPS Driver Aktif!'),
                                           duration: Duration(seconds: 1),
                                           backgroundColor: Color(0xFF16A34A),
                                         ),
                                       );
                                     }
                                   },
-                                  child: const Padding(
-                                    padding: EdgeInsets.all(10),
-                                    child: Icon(Icons.my_location_rounded, color: AppTheme.primaryRed, size: 20),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(10),
+                                    child: Icon(
+                                      Icons.my_location_rounded,
+                                      color: _autoFollow ? Colors.white : AppTheme.primaryRed,
+                                      size: 20,
+                                    ),
                                   ),
                                 ),
                               ),

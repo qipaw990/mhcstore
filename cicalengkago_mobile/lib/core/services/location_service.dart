@@ -62,12 +62,12 @@ class LocationService {
     }
   }
 
-  /// Live position stream
+  /// Live high-precision position stream
   static Stream<Position> getPositionStream() {
     return Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 5,
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 1,
       ),
     );
   }

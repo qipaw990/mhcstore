@@ -23,9 +23,12 @@ class DriverController extends ChangeNotifier {
   double _lastKnownBalance = -1.0;
   final Set<String> _knownTxIds = {};
 
+  double _heading = 0.0;
+
   bool get isOnline => _isOnline;
   bool get isLoading => _isLoading;
   LatLng get currentLocation => _currentLocation;
+  double get heading => _heading;
   List<dynamic> get availableOrders => _availableOrders;
   Map<String, dynamic>? get activeTrip => _activeTrip;
   Map<String, dynamic>? get earnings => _earnings;
@@ -106,19 +109,22 @@ class DriverController extends ChangeNotifier {
     // 1. Broadcast immediately on start
     refreshLocation();
 
-    // 2. Continuous real-time location stream
+    // 2. Continuous real-time location stream with heading
     try {
       _positionStreamSub = LocationService.getPositionStream().listen((position) {
         if (_isOnline) {
           _currentLocation = LatLng(position.latitude, position.longitude);
+          if (position.heading >= 0) {
+            _heading = position.heading;
+          }
           notifyListeners();
           _broadcastLocation(_currentLocation);
         }
       });
     } catch (_) {}
 
-    // 3. Fallback Periodic heartbeat every 10 seconds
-    _gpsBroadcastTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
+    // 3. Fallback Periodic heartbeat every 8 seconds
+    _gpsBroadcastTimer = Timer.periodic(const Duration(seconds: 8), (_) async {
       if (_isOnline) {
         await refreshLocation();
       }
