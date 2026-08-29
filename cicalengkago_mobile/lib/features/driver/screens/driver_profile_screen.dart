@@ -404,37 +404,90 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 14, 16, 10),
-            child: Text('Detail Informasi Driver', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Detail Informasi Driver',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.lock_rounded, size: 11, color: Color(0xFF64748B)),
+                      SizedBox(width: 4),
+                      Text('Terkunci', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
           const Divider(height: 1, color: Color(0xFFF1F5F9)),
-          _infoTile(Icons.person_rounded, 'Nama Lengkap', name),
+          _infoTile(Icons.person_rounded, 'Nama Lengkap Driver', name),
           const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 50),
           _infoTile(Icons.email_rounded, 'Alamat Email', email),
           const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 50),
-          _infoTile(Icons.phone_rounded, 'Nomor HP / WA', phone),
+          _infoTile(Icons.phone_rounded, 'Nomor HP / WhatsApp', phone),
           const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 50),
           _infoTile(Icons.motorcycle_rounded, 'Tipe Kendaraan', vehicleType),
           const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 50),
           _infoTile(Icons.badge_rounded, 'Plat Nomor Kendaraan', vehicleNumber),
+          const SizedBox(height: 10),
+          
+          // Lock security notice
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.verified_user_rounded, color: Color(0xFF0284C7), size: 16),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Data identitas & kendaraan diverifikasi resmi oleh Admin. Untuk ubah nomor/kendaraan, hubungi CS.',
+                      style: TextStyle(fontSize: 10, color: Color(0xFF475569)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: 12),
+
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryRed,
+                  backgroundColor: const Color(0xFF0F172A),
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () {
-                  _populateFormFields(user, driver);
+                  _currentPasswordCtrl.clear();
+                  _newPasswordCtrl.clear();
+                  _confirmPasswordCtrl.clear();
                   setState(() => _isEditing = true);
                 },
-                icon: const Icon(Icons.edit_square, size: 16),
-                label: const Text('Edit Profil Driver', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                icon: const Icon(Icons.lock_reset_rounded, size: 16),
+                label: const Text('Ganti Kata Sandi (Password)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
               ),
             ),
           ),
@@ -500,9 +553,9 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             children: [
               const Row(
                 children: [
-                  Icon(Icons.edit_note_rounded, color: AppTheme.primaryRed, size: 20),
+                  Icon(Icons.lock_reset_rounded, color: Color(0xFF0F172A), size: 20),
                   SizedBox(width: 6),
-                  Text('Form Edit Profil Driver', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  Text('Ganti Kata Sandi Driver', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                 ],
               ),
               IconButton(
@@ -513,73 +566,25 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           ),
           const Divider(height: 16),
 
-          _buildTextField('Nama Lengkap Driver', _nameCtrl, Icons.person_rounded),
-          const SizedBox(height: 10),
-
-          _buildTextField('Alamat Email (Gmail)', _emailCtrl, Icons.email_rounded, keyboardType: TextInputType.emailAddress),
-          const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEF3C7),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706), size: 14),
-                SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    'Mengubah email/nomor HP/kata sandi memerlukan verifikasi OTP.',
-                    style: TextStyle(fontSize: 10, color: Color(0xFF92400E)),
-                  ),
-                ),
-              ],
-            ),
+          const Text(
+            'Demi keamanan akun mitra, hanya kata sandi yang dapat diubah secara mandiri.',
+            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
           ),
-          const SizedBox(height: 10),
-
-          _buildTextField('Nomor Telepon / WA', _phoneCtrl, Icons.phone_rounded, keyboardType: TextInputType.phone),
-          const SizedBox(height: 10),
-
-          _buildTextField('Tipe Kendaraan Operasional', _vehicleTypeCtrl, Icons.two_wheeler_rounded),
-          const SizedBox(height: 10),
-
-          _buildTextField('Plat Nomor Kendaraan', _vehicleNumberCtrl, Icons.badge_rounded),
           const SizedBox(height: 14),
 
-          // Checkbox toggle password section
-          InkWell(
-            onTap: () => setState(() => _showPasswordSection = !_showPasswordSection),
-            child: Row(
-              children: [
-                Checkbox(
-                  value: _showPasswordSection,
-                  activeColor: AppTheme.primaryRed,
-                  onChanged: (val) => setState(() => _showPasswordSection = val ?? false),
-                ),
-                const Text('Ubah Kata Sandi (Opsional)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-              ],
-            ),
-          ),
+          _buildPasswordField('Kata Sandi Saat Ini', _currentPasswordCtrl, _obscureCurrentPassword, () {
+            setState(() => _obscureCurrentPassword = !_obscureCurrentPassword);
+          }),
+          const SizedBox(height: 12),
+          _buildPasswordField('Kata Sandi Baru (Minimal 6 Karakter)', _newPasswordCtrl, _obscureNewPassword, () {
+            setState(() => _obscureNewPassword = !_obscureNewPassword);
+          }),
+          const SizedBox(height: 12),
+          _buildPasswordField('Konfirmasi Kata Sandi Baru', _confirmPasswordCtrl, _obscureConfirmPassword, () {
+            setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
+          }),
+          const SizedBox(height: 16),
 
-          if (_showPasswordSection) ...[
-            const SizedBox(height: 8),
-            _buildPasswordField('Kata Sandi Saat Ini', _currentPasswordCtrl, _obscureCurrentPassword, () {
-              setState(() => _obscureCurrentPassword = !_obscureCurrentPassword);
-            }),
-            const SizedBox(height: 10),
-            _buildPasswordField('Kata Sandi Baru (Min. 6 Karakter)', _newPasswordCtrl, _obscureNewPassword, () {
-              setState(() => _obscureNewPassword = !_obscureNewPassword);
-            }),
-            const SizedBox(height: 10),
-            _buildPasswordField('Konfirmasi Kata Sandi Baru', _confirmPasswordCtrl, _obscureConfirmPassword, () {
-              setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
-            }),
-            const SizedBox(height: 10),
-          ],
-
-          const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
@@ -596,22 +601,35 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               Expanded(
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryRed,
+                    backgroundColor: const Color(0xFF0F172A),
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: _isSaving
                       ? null
                       : () async {
-                          final name = _nameCtrl.text.trim();
-                          final email = _emailCtrl.text.trim();
-                          final phone = _phoneCtrl.text.trim();
-                          final vehicleType = _vehicleTypeCtrl.text.trim();
-                          final vehicleNumber = _vehicleNumberCtrl.text.trim();
+                          final currentPass = _currentPasswordCtrl.text.trim();
+                          final newPass = _newPasswordCtrl.text.trim();
+                          final confirmPass = _confirmPasswordCtrl.text.trim();
 
-                          if (name.isEmpty || email.isEmpty || phone.isEmpty) {
+                          if (currentPass.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Nama, email, dan nomor HP wajib diisi.')),
+                              const SnackBar(content: Text('Kata sandi saat ini wajib diisi.')),
+                            );
+                            return;
+                          }
+
+                          if (newPass.length < 6) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Kata sandi baru minimal 6 karakter.')),
+                            );
+                            return;
+                          }
+
+                          if (newPass != confirmPass) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Konfirmasi kata sandi baru tidak cocok.')),
                             );
                             return;
                           }
@@ -619,14 +637,14 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                           final messenger = ScaffoldMessenger.of(context);
                           setState(() => _isSaving = true);
                           final ok = await driverCtrl.updateProfile(
-                            name: name,
-                            email: email,
-                            phone: phone,
-                            vehicleType: vehicleType,
-                            vehicleNumber: vehicleNumber,
-                            currentPassword: _showPasswordSection ? _currentPasswordCtrl.text.trim() : null,
-                            newPassword: _showPasswordSection ? _newPasswordCtrl.text.trim() : null,
-                            confirmPassword: _showPasswordSection ? _confirmPasswordCtrl.text.trim() : null,
+                            name: user?['name'] ?? '',
+                            email: user?['email'] ?? '',
+                            phone: user?['phone'] ?? '',
+                            vehicleType: driver?['vehicle_type'] ?? '',
+                            vehicleNumber: driver?['vehicle_number'] ?? '',
+                            currentPassword: currentPass,
+                            newPassword: newPass,
+                            confirmPassword: confirmPass,
                           );
                           setState(() => _isSaving = false);
 
@@ -634,11 +652,11 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                             if (ok) {
                               setState(() => _isEditing = false);
                               messenger.showSnackBar(
-                                const SnackBar(content: Text('✅ Profil Driver berhasil diperbarui!'), backgroundColor: Colors.green),
+                                const SnackBar(content: Text('✅ Kata sandi berhasil diperbarui!'), backgroundColor: Colors.green),
                               );
                             } else {
                               messenger.showSnackBar(
-                                const SnackBar(content: Text('Gagal memperbarui profil. Periksa data Anda.'), backgroundColor: Colors.red),
+                                const SnackBar(content: Text('Gagal memperbarui kata sandi. Periksa kata sandi saat ini.'), backgroundColor: Colors.red),
                               );
                             }
                           }
@@ -646,7 +664,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                   icon: _isSaving
                       ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : const Icon(Icons.save_rounded, size: 16),
-                  label: Text(_isSaving ? 'Menyimpan...' : 'Simpan Profil', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                  label: Text(_isSaving ? 'Menyimpan...' : 'Simpan Kata Sandi', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
                 ),
               ),
             ],

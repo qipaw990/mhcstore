@@ -684,163 +684,83 @@ class DeliveryController extends Controller
     {
         $userId = auth_id();
         if (!$userId) {
+            if ($this->isJsonRequest()) {
+                $this->errorResponse('Unauthorized', null, 401);
+                return;
+            }
             $this->redirect('login');
             return;
         }
 
         $data = $this->getPost();
-        $name          = sanitize($data['name'] ?? '');
-        $email         = sanitize($data['email'] ?? '');
-        $phone         = sanitize($data['phone'] ?? '');
-        $vehicleType   = sanitize($data['vehicle_type'] ?? '');
-        $vehicleNumber = sanitize($data['vehicle_number'] ?? '');
-
-        if (empty($name) || empty($email) || empty($phone)) {
-            $_SESSION['error'] = 'Nama, email, dan nomor HP driver wajib diisi.';
-            $this->redirect('delivery/profile');
-            return;
-        }
-
-        // Handle Driver Avatar Upload
-        if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-            $avatarPath = upload_image($_FILES['avatar'], 'profiles');
-            if ($avatarPath) {
-                (new \App\Models\User())->update($userId, ['avatar' => $avatarPath]);
-                $_SESSION['user']['avatar'] = $avatarPath;
-            }
-        }
-
-        $dm = $this->dmModel->findByUserId($userId);
-        if ($dm && (!empty($vehicleType) || !empty($vehicleNumber))) {
-            $this->dmModel->update($dm['id'], [
-                'vehicle_type'   => $vehicleType ?: $dm['vehicle_type'],
-                'vehicle_number' => $vehicleNumber ?: $dm['vehicle_number']
-            ]);
-        }
-
         $currentPassword = $data['current_password'] ?? '';
         $newPassword     = $data['new_password'] ?? '';
         $confirmPassword = $data['confirm_password'] ?? '';
 
-        $passwordUpdate = null;
-        if (!empty($newPassword) || !empty($currentPassword)) {
-            $userModel = new \App\Models\User();
-            $dbUser = $userModel->find($userId);
-
-            if (empty($currentPassword)) {
-                $_SESSION['error'] = 'Harap masukkan Kata Sandi Saat Ini untuk memverifikasi perubahan kata sandi.';
-                $this->redirect('delivery/profile');
+        // If no password change is provided
+        if (empty($newPassword) && empty($currentPassword)) {
+            if ($this->isJsonRequest()) {
+                $this->successResponse('Data identitas & kendaraan profil driver terkunci resmi oleh Admin. Hanya kata sandi yang dapat diubah.');
                 return;
             }
-
-            if (!password_verify($currentPassword, $dbUser['password'] ?? '')) {
-                $_SESSION['error'] = 'Kata Sandi Saat Ini yang Anda masukkan salah.';
-                $this->redirect('delivery/profile');
-                return;
-            }
-
-            if (strlen($newPassword) < 6) {
-                $_SESSION['error'] = 'Kata Sandi Baru harus memiliki minimal 6 karakter.';
-                $this->redirect('delivery/profile');
-                return;
-            }
-
-            if ($newPassword !== $confirmPassword) {
-                $_SESSION['error'] = 'Konfirmasi Kata Sandi Baru tidak cocok.';
-                $this->redirect('delivery/profile');
-                return;
-            }
-
-            $passwordUpdate = password_hash($newPassword, PASSWORD_BCRYPT);
-        }
-
-        $currentUser = auth_user();
-        $isEmailChanged    = (strtolower($email) !== strtolower($currentUser['email'] ?? ''));
-        $isPhoneChanged    = (trim($phone) !== trim($currentUser['phone'] ?? ''));
-        $isPasswordChanged = !empty($passwordUpdate);
-
-        if ($isEmailChanged || $isPhoneChanged || $isPasswordChanged) {
-            if ($isEmailChanged) {
-                $existing = Database::fetchOne("SELECT id FROM users WHERE email = ? AND id != ? LIMIT 1", [$email, $userId]);
-                if ($existing) {
-                    $_SESSION['error'] = 'Alamat email ini sudah terdaftar pada akun lain.';
-                    $this->redirect('delivery/profile');
-                    return;
-                }
-            }
-
-            if ($isPhoneChanged) {
-                $existingPhone = Database::fetchOne("SELECT id FROM users WHERE phone = ? AND id != ? LIMIT 1", [$phone, $userId]);
-                if ($existingPhone) {
-                    $_SESSION['error'] = 'Nomor WhatsApp ini sudah terdaftar pada akun lain.';
-                    $this->redirect('delivery/profile');
-                    return;
-                }
-            }
-
-            $otpMode = \App\Models\BusinessSetting::get('otp_mode', 'real');
-            $isDemo = ($otpMode === 'demo');
-            $otp = $isDemo ? '123456' : sprintf("%06d", rand(100000, 999999));
-
-            $_SESSION['pending_profile_update'] = [
-                'user_id'    => $userId,
-                'name'       => $name,
-                'phone'      => $phone,
-                'new_email'  => $email,
-                'password'   => $passwordUpdate,
-                'otp'        => $otp,
-                'expires_at' => time() + 600
-            ];
-
-            $_SESSION['pending_otp'] = [
-                'user_id'    => $userId,
-                'name'       => $name,
-                'email'      => $email,
-                'phone'      => $phone,
-                'role'       => $currentUser['role'],
-                'otp'        => $otp,
-                'expires_at' => time() + 600
-            ];
-            $_SESSION['otp_last_sent'] = time();
-
-            // Set WhatsApp channel details for verify UI
-            $targetPhone = $isPhoneChanged ? $phone : ($currentUser['phone'] ?? $phone);
-            $_SESSION['otp_channel'] = 'whatsapp';
-            $_SESSION['otp_phone_masked'] = !empty($targetPhone)
-                ? preg_replace('/(?<=.{4}).(?=.{4})/', '*', $targetPhone)
-                : 'Nomor WhatsApp Baru';
-
-            if (!$isDemo && !empty($targetPhone)) {
-                try {
-                    $wa = new \App\Services\WhatsAppService();
-                    $wa->sendOtp($targetPhone, $name, $otp);
-                } catch (\Throwable $e) {
-                    error_log("[DeliveryController] Profile update WA OTP failed: " . $e->getMessage());
-                }
-            }
-
-            $reasons = [];
-            if ($isPhoneChanged) $reasons[] = 'nomor WhatsApp';
-            if ($isEmailChanged) $reasons[] = 'email';
-            if ($isPasswordChanged) $reasons[] = 'kata sandi';
-            $reasonStr = implode(' & ', $reasons);
-
-            $maskedNotice = !empty($targetPhone) ? preg_replace('/(?<=.{4}).(?=.{4})/', '*', $targetPhone) : $targetPhone;
-            $_SESSION['info'] = "Kode verifikasi 6-digit telah dikirimkan via WhatsApp ke ({$maskedNotice}) untuk mengonfirmasi perubahan {$reasonStr}.";
-            $this->redirect('verify-otp');
+            $_SESSION['info'] = 'Data profil driver diverifikasi resmi oleh Admin. Hanya kata sandi yang dapat diubah.';
+            $this->redirect('delivery/profile');
             return;
         }
 
-        // Only name / phone changed without password or email changes
-        (new \App\Models\User())->update($userId, [
-            'name'  => $name,
-            'phone' => $phone
-        ]);
+        // Validate password change
+        $userModel = new \App\Models\User();
+        $dbUser = $userModel->find($userId);
 
-        $_SESSION['user']['name'] = $name;
-        $_SESSION['user']['phone'] = $phone;
+        if (empty($currentPassword)) {
+            if ($this->isJsonRequest()) {
+                $this->errorResponse('Harap masukkan Kata Sandi Saat Ini.');
+                return;
+            }
+            $_SESSION['error'] = 'Harap masukkan Kata Sandi Saat Ini untuk memverifikasi perubahan kata sandi.';
+            $this->redirect('delivery/profile');
+            return;
+        }
 
-        $_SESSION['success'] = 'Profil Mitra Driver berhasil diperbarui!';
+        if (!password_verify($currentPassword, $dbUser['password'] ?? '')) {
+            if ($this->isJsonRequest()) {
+                $this->errorResponse('Kata Sandi Saat Ini yang Anda masukkan salah.');
+                return;
+            }
+            $_SESSION['error'] = 'Kata Sandi Saat Ini yang Anda masukkan salah.';
+            $this->redirect('delivery/profile');
+            return;
+        }
+
+        if (strlen($newPassword) < 6) {
+            if ($this->isJsonRequest()) {
+                $this->errorResponse('Kata Sandi Baru harus memiliki minimal 6 karakter.');
+                return;
+            }
+            $_SESSION['error'] = 'Kata Sandi Baru harus memiliki minimal 6 karakter.';
+            $this->redirect('delivery/profile');
+            return;
+        }
+
+        if ($newPassword !== $confirmPassword) {
+            if ($this->isJsonRequest()) {
+                $this->errorResponse('Konfirmasi Kata Sandi Baru tidak cocok.');
+                return;
+            }
+            $_SESSION['error'] = 'Konfirmasi Kata Sandi Baru tidak cocok.';
+            $this->redirect('delivery/profile');
+            return;
+        }
+
+        $passwordHash = password_hash($newPassword, PASSWORD_BCRYPT);
+        $userModel->update($userId, ['password' => $passwordHash]);
+
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Kata sandi driver berhasil diperbarui!');
+            return;
+        }
+
+        $_SESSION['success'] = 'Kata sandi berhasil diperbarui!';
         $this->redirect('delivery/profile');
     }
 
