@@ -351,13 +351,21 @@ class Database
 
     public static function transaction(callable $callback)
     {
-        self::beginTransaction();
+        $pdo = self::getPdo();
+        $isNested = $pdo->inTransaction();
+        if (!$isNested) {
+            $pdo->beginTransaction();
+        }
         try {
-            $result = $callback(self::getPdo());
-            self::commit();
+            $result = $callback($pdo);
+            if (!$isNested) {
+                $pdo->commit();
+            }
             return $result;
         } catch (Exception $e) {
-            self::rollBack();
+            if (!$isNested && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             throw $e;
         }
     }

@@ -118,24 +118,26 @@ class OrderController extends Controller
             $sharedOtp     = str_pad((string)rand(1000, 9999), 4, '0', STR_PAD_LEFT);
             $seq           = 1;
 
-            // Create one order per store
-            foreach ($stores as $storeGroup) {
-                $result = $this->orderService->createOrderFromCart($userId, [
-                    'delivery_address'  => $deliveryAddress,
-                    'payment_method'    => $paymentMethod,
-                    'coupon_code'       => sanitize($data['coupon_code'] ?? ''),
-                    'order_notes'       => sanitize($data['order_notes'] ?? ''),
-                    'distance_km'       => (float)($data['distance_km'] ?? 1.5),
-                    'order_type'        => $data['order_type'] ?? 'delivery',
-                    'store_id'          => $storeGroup['store_id'],   // scoped to this store
-                    'delivery_batch_id' => $batchId,
-                    'shared_otp'        => $sharedOtp,
-                    'pickup_sequence'   => $seq++,
-                ]);
+            // Create one order per store atomically inside a single batch transaction
+            \App\Core\Database::transaction(function () use ($stores, $userId, $deliveryAddress, $paymentMethod, $data, $batchId, $sharedOtp, &$seq, &$allOrderCodes, &$grandTotal) {
+                foreach ($stores as $storeGroup) {
+                    $result = $this->orderService->createOrderFromCart($userId, [
+                        'delivery_address'  => $deliveryAddress,
+                        'payment_method'    => $paymentMethod,
+                        'coupon_code'       => sanitize($data['coupon_code'] ?? ''),
+                        'order_notes'       => sanitize($data['order_notes'] ?? ''),
+                        'distance_km'       => (float)($data['distance_km'] ?? 1.5),
+                        'order_type'        => $data['order_type'] ?? 'delivery',
+                        'store_id'          => $storeGroup['store_id'],   // scoped to this store
+                        'delivery_batch_id' => $batchId,
+                        'shared_otp'        => $sharedOtp,
+                        'pickup_sequence'   => $seq++,
+                    ]);
 
-                $allOrderCodes[] = $result['order_code'];
-                $grandTotal     += (float)($result['total'] ?? 0);
-            }
+                    $allOrderCodes[] = $result['order_code'];
+                    $grandTotal     += (float)($result['total'] ?? 0);
+                }
+            });
 
             $firstCode   = $allOrderCodes[0];
             $multiOrder  = count($allOrderCodes) > 1;

@@ -279,7 +279,11 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
                           ),
                         ],
                       ),
-                      child: ListTile(
+                      child: Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                        clipBehavior: Clip.antiAlias,
+                        child: ListTile(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                         leading: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
@@ -339,7 +343,8 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
                           }
                         },
                       ),
-                    );
+                    ),
+                  );
                   },
                 ),
               ],

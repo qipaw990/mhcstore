@@ -182,6 +182,36 @@ class ApiController extends Controller
         $this->successResponse('Daftar kupon & voucher berhasil diambil', $coupons);
     }
 
+    public function validateCoupon(): void
+    {
+        $data = $this->getPost();
+        $code = trim($data['code'] ?? $data['coupon_code'] ?? '');
+        $amount = (float)($data['amount'] ?? $data['subtotal'] ?? 0);
+
+        if (empty($code)) {
+            $this->errorResponse('Kode voucher tidak boleh kosong.');
+            return;
+        }
+
+        $couponModel = new \App\Models\Coupon();
+        $result = $couponModel->validateCouponDetails($code, $amount);
+
+        if (!$result['valid']) {
+            $this->errorResponse($result['message']);
+            return;
+        }
+
+        $coupon = $result['coupon'];
+        $this->successResponse($result['message'], [
+            'code'                => $coupon['code'],
+            'title'               => $coupon['title'],
+            'discount_type'       => $coupon['discount_type'],
+            'discount'            => (float)$coupon['discount'],
+            'calculated_discount' => (float)$coupon['calculated_discount'],
+            'min_purchase'        => (float)$coupon['min_purchase'],
+        ]);
+    }
+
     public function banners(): void
     {
         $selectedModuleId = !empty($_GET['module_id']) ? (int)$_GET['module_id'] : 1;

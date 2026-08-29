@@ -522,13 +522,102 @@ async function handlePlaceOrder(e) {
     }
 }
 
-function applyCouponPreview() {
-    const code = document.getElementById('coupon_code').value.trim();
+let VOUCHER_DISCOUNT = 0;
+let APPLIED_COUPON_CODE = '';
+
+async function applyCouponPreview() {
+    const inputEl = document.getElementById('coupon_code');
+    const code = inputEl ? inputEl.value.trim() : '';
     if (!code) {
         Swal.fire('Info', 'Ketikkan kode voucher terlebih dahulu.', 'info');
         return;
     }
-    Swal.fire('Kupon Dipasang', 'Kupon ' + code + ' akan dihitung pada saat konfirmasi pesanan.', 'success');
+
+    const btn = document.querySelector('button[onclick="applyCouponPreview()"]');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    }
+
+    try {
+        const formData = new FormData();
+        formData.append('coupon_code', code);
+        formData.append('subtotal', BASE_SUBTOTAL);
+
+        const res = await fetch(window.BASE_URL + '/api/coupons/validate', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+
+        if (data.success && data.data) {
+            VOUCHER_DISCOUNT = parseFloat(data.data.calculated_discount || 0);
+            APPLIED_COUPON_CODE = data.data.code;
+
+            // Update Breakdown UI
+            let discountRow = document.getElementById('voucher-discount-row');
+            if (!discountRow) {
+                discountRow = document.createElement('div');
+                discountRow.id = 'voucher-discount-row';
+                discountRow.className = 'd-flex justify-content-between align-items-center text-success fw-bold my-2';
+                discountRow.style.fontSize = '11px';
+                const totalEl = document.getElementById('total-amount-display');
+                if (totalEl && totalEl.parentElement) {
+                    totalEl.parentElement.parentNode.insertBefore(discountRow, totalEl.parentElement);
+                }
+            }
+
+            discountRow.innerHTML = `
+                <span class="text-truncate"><i class="bi bi-tag-fill me-1"></i> Potongan Voucher (${data.data.code})</span>
+                <span class="flex-shrink-0">- ${formatRupiahJS(VOUCHER_DISCOUNT)}</span>
+            `;
+
+            updateGrandTotalDisplay();
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Voucher Berhasil Diterapkan! 🎉',
+                text: `${data.data.title || 'Diskon'}: Potongan ${formatRupiahJS(VOUCHER_DISCOUNT)}`,
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } else {
+            removeCouponPreview(false);
+            Swal.fire('Voucher Gagal', data.message || 'Kode voucher tidak valid.', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        Swal.fire('Error', 'Gagal memproses voucher.', 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = 'Pakai';
+        }
+    }
+}
+
+function removeCouponPreview(showAlert = true) {
+    VOUCHER_DISCOUNT = 0;
+    APPLIED_COUPON_CODE = '';
+    const discountRow = document.getElementById('voucher-discount-row');
+    if (discountRow) discountRow.remove();
+    const inputEl = document.getElementById('coupon_code');
+    if (inputEl) inputEl.value = '';
+    updateGrandTotalDisplay();
+    if (showAlert) Swal.fire('Voucher Dihapus', 'Voucher telah dilepas.', 'info');
+}
+
+function formatRupiahJS(number) {
+    return 'Rp ' + new Intl.NumberFormat('id-ID').format(number);
+}
+
+function updateGrandTotalDisplay() {
+    const rawTotal = (BASE_SUBTOTAL + BASE_DELIVERY_FEE - VOUCHER_DISCOUNT);
+    const finalTotal = Math.max(0, rawTotal);
+    const totalEl = document.getElementById('total-amount-display');
+    if (totalEl) {
+        totalEl.textContent = formatRupiahJS(finalTotal);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', initCheckoutMap);

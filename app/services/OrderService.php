@@ -35,10 +35,18 @@ class OrderService
             \App\Models\Order::autoCancelUnclaimedOrders();
 
             // Cek pencegahan pesanan ganda (idempotency: jika ada order persis sama baru saja dibuat < 4 detik lalu)
-            $recentDuplicate = Database::fetchOne(
-                "SELECT id, order_code FROM `orders` WHERE `customer_id` = ? AND `created_at` >= (NOW() - INTERVAL 4 SECOND) LIMIT 1",
-                [$customerId]
-            );
+            $batchId = $data['delivery_batch_id'] ?? null;
+            if (!empty($batchId)) {
+                $recentDuplicate = Database::fetchOne(
+                    "SELECT id, order_code FROM `orders` WHERE `customer_id` = ? AND `created_at` >= (NOW() - INTERVAL 4 SECOND) AND (`delivery_batch_id` IS NULL OR `delivery_batch_id` != ?) LIMIT 1",
+                    [$customerId, $batchId]
+                );
+            } else {
+                $recentDuplicate = Database::fetchOne(
+                    "SELECT id, order_code FROM `orders` WHERE `customer_id` = ? AND `created_at` >= (NOW() - INTERVAL 4 SECOND) LIMIT 1",
+                    [$customerId]
+                );
+            }
             if ($recentDuplicate) {
                 throw new Exception("⚡ Pesanan Anda (#{$recentDuplicate['order_code']}) baru saja berhasil diproses! Silakan periksa daftar pesanan.");
             }

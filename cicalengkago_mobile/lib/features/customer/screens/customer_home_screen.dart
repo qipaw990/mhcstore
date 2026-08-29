@@ -1787,7 +1787,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                                 }
                               },
                               icon: const Icon(Icons.add_rounded, size: 14),
-                              label: const Text('+ Tambah', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                              label: const Text('Tambah', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                             ),
                           ),
                         ],

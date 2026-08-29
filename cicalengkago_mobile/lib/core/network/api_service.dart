@@ -199,6 +199,10 @@ class ApiService {
   // ── Parse response body ────────────────────────────────────────────
   static Map<String, dynamic> _parseResponse(http.Response response) {
     try {
+      if (response.statusCode == 401) {
+        return {'success': false, 'message': 'Sesi telah berakhir', 'unauthenticated': true};
+      }
+
       final body = response.body.trim();
       if (body.isEmpty) {
         return {

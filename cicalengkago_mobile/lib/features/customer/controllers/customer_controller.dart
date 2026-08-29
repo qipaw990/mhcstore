@@ -186,7 +186,7 @@ class CustomerController extends ChangeNotifier {
         _cart = res['cart'] as Map<String, dynamic>;
       } else if (res['data'] is Map<String, dynamic>) {
         _cart = res['data'] as Map<String, dynamic>;
-      } else if (res is Map<String, dynamic> && (res.containsKey('items') || res.containsKey('stores') || res.containsKey('count'))) {
+      } else if (res.containsKey('items') || res.containsKey('stores') || res.containsKey('count')) {
         _cart = res;
       }
     } catch (_) {}
@@ -284,6 +284,7 @@ class CustomerController extends ChangeNotifier {
     required double lng,
     required String paymentMethod, // 'cod', 'wallet', 'midtrans'
     String? note,
+    String? couponCode,
   }) async {
     try {
       final res = await ApiService.postForm(ApiConstants.placeOrder, {
@@ -297,6 +298,7 @@ class CustomerController extends ChangeNotifier {
         'payment_method': paymentMethod,
         'order_note': note ?? '',
         'order_notes': note ?? '',
+        'coupon_code': couponCode ?? '',
       });
 
       if (res['success'] == true) {
@@ -306,6 +308,20 @@ class CustomerController extends ChangeNotifier {
       return res;
     } catch (e) {
       return {'success': false, 'message': 'Terjadi kesalahan sistem: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> validateCoupon(String code, double subtotal) async {
+    try {
+      final res = await ApiService.postForm(ApiConstants.validateCoupon, {
+        'coupon_code': code,
+        'code': code,
+        'subtotal': subtotal.toString(),
+        'amount': subtotal.toString(),
+      });
+      return res;
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal memverifikasi voucher: $e'};
     }
   }
 

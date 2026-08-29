@@ -116,10 +116,23 @@ class DriverController extends ChangeNotifier {
         }
 
         if (data['wallet'] != null) {
-          _earnings = {
-            'wallet': data['wallet'],
-            'driver': data['driver'],
-          };
+          if (_earnings != null) {
+            final updated = Map<String, dynamic>.from(_earnings!);
+            updated['wallet'] = data['wallet'];
+            if (data['driver'] != null) {
+              updated['driver'] = data['driver'];
+            }
+            _earnings = updated;
+          } else {
+            _earnings = {
+              'wallet': data['wallet'],
+              'driver': data['driver'],
+            };
+          }
+        }
+
+        if (data['reviews'] != null && data['reviews'] is List) {
+          _reviews = data['reviews'] as List<dynamic>;
         }
 
         // Sync online status from server
@@ -149,8 +162,10 @@ class DriverController extends ChangeNotifier {
     try {
       final res = await ApiService.get(ApiConstants.driverEarnings);
       if (res['success'] == true && res['data'] != null) {
-        _earnings = res['data'] as Map<String, dynamic>;
-        _reviews = (_earnings?['reviews'] as List<dynamic>?) ?? [];
+        _earnings = Map<String, dynamic>.from(res['data'] as Map<String, dynamic>);
+        if (_earnings?['reviews'] != null && _earnings!['reviews'] is List) {
+          _reviews = _earnings!['reviews'] as List<dynamic>;
+        }
       }
     } catch (_) {}
 

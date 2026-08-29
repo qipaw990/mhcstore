@@ -704,44 +704,49 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          ListTile(
-            onTap: () {},
-            leading: Container(
-              width: 32,
-              height: 32,
-              decoration: const BoxDecoration(color: Color(0xFFDCFCE7), shape: BoxShape.circle),
-              child: const Icon(Icons.help_outline_rounded, color: Color(0xFF16A34A), size: 18),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            ListTile(
+              onTap: () {},
+              leading: Container(
+                width: 32,
+                height: 32,
+                decoration: const BoxDecoration(color: Color(0xFFDCFCE7), shape: BoxShape.circle),
+                child: const Icon(Icons.help_outline_rounded, color: Color(0xFF16A34A), size: 18),
+              ),
+              title: const Text('Bantuan & FAQ Kurir', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+              trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF94A3B8)),
             ),
-            title: const Text('Bantuan & FAQ Kurir', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-            trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF94A3B8)),
-          ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 50),
-          ListTile(
-            onTap: () {},
-            leading: Container(
-              width: 32,
-              height: 32,
-              decoration: const BoxDecoration(color: Color(0xFFDBEAFE), shape: BoxShape.circle),
-              child: const Icon(Icons.verified_user_rounded, color: Color(0xFF2563EB), size: 18),
+            const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 50),
+            ListTile(
+              onTap: () {},
+              leading: Container(
+                width: 32,
+                height: 32,
+                decoration: const BoxDecoration(color: Color(0xFFDBEAFE), shape: BoxShape.circle),
+                child: const Icon(Icons.verified_user_rounded, color: Color(0xFF2563EB), size: 18),
+              ),
+              title: const Text('Ketentuan & Syarat Layanan', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+              trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF94A3B8)),
             ),
-            title: const Text('Ketentuan & Syarat Layanan', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-            trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF94A3B8)),
-          ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 50),
-          ListTile(
-            onTap: () => _confirmLogout(context, authCtrl),
-            leading: Container(
-              width: 32,
-              height: 32,
-              decoration: const BoxDecoration(color: Color(0xFFFEF2F2), shape: BoxShape.circle),
-              child: const Icon(Icons.logout_rounded, color: AppTheme.primaryRed, size: 18),
+            const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 50),
+            ListTile(
+              onTap: () => _confirmLogout(context, authCtrl),
+              leading: Container(
+                width: 32,
+                height: 32,
+                decoration: const BoxDecoration(color: Color(0xFFFEF2F2), shape: BoxShape.circle),
+                child: const Icon(Icons.logout_rounded, color: AppTheme.primaryRed, size: 18),
+              ),
+              title: const Text('Keluar dari Akun Driver', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.primaryRed)),
+              trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: AppTheme.primaryRed),
             ),
-            title: const Text('Keluar dari Akun Driver', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.primaryRed)),
-            trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: AppTheme.primaryRed),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

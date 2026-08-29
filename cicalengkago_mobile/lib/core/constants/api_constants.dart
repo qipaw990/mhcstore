@@ -61,6 +61,7 @@ class ApiConstants {
   // Checkout & Orders — sesuai web.php
   static const String checkout       = '$domainUrl/checkout';
   static const String placeOrder     = '$domainUrl/orders/place';
+  static const String validateCoupon = '$domainUrl/api/coupons/validate';
   static const String orders         = '$domainUrl/orders';           // GET list
   static const String liveOrdersList = '$domainUrl/orders/live-list'; // GET polling
   static const String orderTracking  = '$domainUrl/orders';           // + /{code}/tracking

@@ -24,9 +24,16 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   final _addressController = TextEditingController();
   final _noteController = TextEditingController();
+  final _voucherController = TextEditingController();
+
   String _paymentMethod = 'wallet';
   bool _isSubmitting = false;
   bool _isFetchingLocation = true;
+  bool _isValidatingVoucher = false;
+
+  String? _appliedVoucherCode;
+  String? _appliedVoucherTitle;
+  double _voucherDiscount = 0.0;
 
   double _userLat = -6.9835;
   double _userLng = 107.8335;
@@ -121,7 +128,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         deliveryFee = 5000.0;
       }
       if (deliveryFee <= 0) deliveryFee = 5000.0;
-      final double grandTotal = subtotal + deliveryFee + 1000.0;
+      final double grandTotal = (subtotal + deliveryFee + 1000.0 - _voucherDiscount).clamp(0.0, double.infinity);
 
       final walletMap = customerCtrl.wallet;
       final double walletBalance = double.tryParse(walletMap?['balance']?.toString() ?? '0') ?? 0.0;
@@ -147,6 +154,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       lng: _userLng,
       paymentMethod: _paymentMethod,
       note: _noteController.text.trim().isNotEmpty ? _noteController.text.trim() : null,
+      couponCode: _appliedVoucherCode,
     );
 
     setState(() {
@@ -200,7 +208,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (deliveryFee <= 0) deliveryFee = 5000.0;
 
     const double serviceFee = 1000.0;
-    final double grandTotal = subtotal + deliveryFee + serviceFee;
+    final double grandTotal = (subtotal + deliveryFee + serviceFee - _voucherDiscount).clamp(0.0, double.infinity);
 
     final walletMap = customerCtrl.wallet;
     final double walletBalance = double.tryParse(walletMap?['balance']?.toString() ?? '0') ?? 0.0;
@@ -368,6 +376,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
             const SizedBox(height: 16),
 
+            // 2. Voucher Promo Card
+            _buildVoucherCard(subtotal),
+
+            const SizedBox(height: 16),
+
             const Text(
               'Metode Pembayaran',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
@@ -431,7 +444,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
             const SizedBox(height: 20),
 
-            // 2. Rincian Pembayaran Card
+            // 3. Rincian Pembayaran Card
             _buildPaymentDetailCard(subtotal, deliveryFee, serviceFee, grandTotal),
 
             const SizedBox(height: 40),
@@ -691,6 +704,210 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
+  Future<void> _handleApplyVoucher(double subtotal) async {
+    final code = _voucherController.text.trim();
+    if (code.isEmpty) {
+      AppAlert.showWarning(context, title: 'Kode Voucher Kosong', message: 'Masukkan kode voucher / promo terlebih dahulu.');
+      return;
+    }
+
+    setState(() {
+      _isValidatingVoucher = true;
+    });
+
+    final customerCtrl = context.read<CustomerController>();
+    final res = await customerCtrl.validateCoupon(code, subtotal);
+
+    setState(() {
+      _isValidatingVoucher = false;
+    });
+
+    if (mounted) {
+      if (res['success'] == true && res['data'] != null) {
+        final data = res['data'];
+        final disc = double.tryParse(data['calculated_discount']?.toString() ?? '0') ?? 0.0;
+        setState(() {
+          _appliedVoucherCode = data['code']?.toString() ?? code;
+          _appliedVoucherTitle = data['title']?.toString() ?? 'Voucher Promo';
+          _voucherDiscount = disc;
+        });
+        AppAlert.showSuccess(
+          context,
+          title: 'Voucher Berhasil Diterapkan! 🎉',
+          message: '${data['title'] ?? 'Diskon'}: Potongan ${CurrencyFormatter.formatRupiah(disc)}',
+        );
+      } else {
+        AppAlert.showError(
+          context,
+          title: 'Gagal Menggunakan Voucher',
+          message: res['message'] ?? 'Kode voucher tidak valid atau minimal pembelian belum terpenuhi.',
+        );
+      }
+    }
+  }
+
+  void _removeAppliedVoucher() {
+    setState(() {
+      _appliedVoucherCode = null;
+      _appliedVoucherTitle = null;
+      _voucherDiscount = 0.0;
+      _voucherController.clear();
+    });
+  }
+
+  Widget _buildVoucherCard(double subtotal) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _appliedVoucherCode != null ? const Color(0xFF16A34A) : const Color(0xFFE2E8F0),
+          width: _appliedVoucherCode != null ? 1.5 : 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: _appliedVoucherCode != null ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.confirmation_number_rounded,
+                  color: _appliedVoucherCode != null ? const Color(0xFF16A34A) : const Color(0xFFD97706),
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Voucher & Kode Promo',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          if (_appliedVoucherCode != null) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 22),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              _appliedVoucherCode!,
+                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF15803D), letterSpacing: 0.5),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF16A34A),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '-${CurrencyFormatter.formatRupiah(_voucherDiscount)}',
+                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_appliedVoucherTitle != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            _appliedVoucherTitle!,
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF166534)),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: _removeAppliedVoucher,
+                    icon: const Icon(Icons.close_rounded, size: 14, color: AppTheme.primaryRed),
+                    label: const Text('Hapus', style: TextStyle(fontSize: 11, color: AppTheme.primaryRed, fontWeight: FontWeight.bold)),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 44,
+                    child: TextField(
+                      controller: _voucherController,
+                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+                      textCapitalization: TextCapitalization.characters,
+                      decoration: InputDecoration(
+                        hintText: 'Masukkan kode voucher (cth: CICAHEBAT)',
+                        hintStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.normal, color: Color(0xFF94A3B8)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.primaryRed)),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  height: 44,
+                  child: ElevatedButton(
+                    onPressed: _isValidatingVoucher ? null : () => _handleApplyVoucher(subtotal),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryRed,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                    child: _isValidatingVoucher
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Text('Terapkan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildPaymentDetailCard(double subtotal, double deliveryFee, double serviceFee, double grandTotal) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -740,6 +957,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             'Biaya Layanan & Sistem',
             CurrencyFormatter.formatRupiah(serviceFee),
           ),
+
+          if (_voucherDiscount > 0) ...[
+            const SizedBox(height: 10),
+            _buildPaymentRow(
+              'Potongan Voucher (${_appliedVoucherCode ?? 'Promo'})',
+              '-${CurrencyFormatter.formatRupiah(_voucherDiscount)}',
+              isGreen: true,
+            ),
+          ],
           const SizedBox(height: 14),
 
           const Divider(height: 1, color: Color(0xFFE2E8F0)),
@@ -786,7 +1012,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildPaymentRow(String label, String value, {String? subtitle, bool isBold = false}) {
+  Widget _buildPaymentRow(String label, String value, {String? subtitle, bool isBold = false, bool isGreen = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -798,8 +1024,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               label,
               style: TextStyle(
                 fontSize: 12.5,
-                fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
-                color: const Color(0xFF475569),
+                fontWeight: isBold || isGreen ? FontWeight.bold : FontWeight.w500,
+                color: isGreen ? const Color(0xFF15803D) : const Color(0xFF475569),
               ),
             ),
             if (subtitle != null) ...[
@@ -815,8 +1041,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           value,
           style: TextStyle(
             fontSize: 13,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-            color: AppTheme.inkBlack,
+            fontWeight: isBold || isGreen ? FontWeight.bold : FontWeight.w600,
+            color: isGreen ? const Color(0xFF16A34A) : AppTheme.inkBlack,
           ),
         ),
       ],
