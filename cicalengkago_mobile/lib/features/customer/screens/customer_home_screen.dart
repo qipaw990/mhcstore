@@ -22,6 +22,7 @@ import 'customer_search_screen.dart';
 import 'order_tracking_screen.dart';
 import 'customer_orders_screen.dart';
 import 'customer_profile_screen.dart';
+import '../widgets/product_detail_modal.dart';
 
 class CustomerHomeScreen extends StatefulWidget {
   const CustomerHomeScreen({super.key});
@@ -243,7 +244,12 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                           // 4. Gojek Service Grid Categories
                           _buildServiceCategoriesGrid(context),
 
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 14),
+
+                          // 4.1 Exploration Filter Chips Bar
+                          _buildExplorationFilterChips(context),
+
+                          const SizedBox(height: 16),
 
                           // 5. Promo Banners Carousel
                           if (customerCtrl.banners.isNotEmpty) ...[
@@ -253,6 +259,11 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
 
                           // 5.1 Uber-Inspired Polarity-Flipped Promo Dark Band
                           _buildUberDarkPromoCard(context),
+
+                          const SizedBox(height: 16),
+
+                          // 5.2 Kupon & Voucher Hemat Discovery
+                          _buildVoucherDiscoverySection(context),
 
                           const SizedBox(height: 18),
 
@@ -852,6 +863,199 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     );
   }
 
+  // --- Exploration Filter Chips ---
+  Widget _buildExplorationFilterChips(BuildContext context) {
+    final filters = [
+      {'icon': '🔥', 'label': 'Semua Kuliner', 'query': ''},
+      {'icon': '🍗', 'label': 'Ayam & Bebek', 'query': 'Ayam'},
+      {'icon': '🍚', 'label': 'Nasi & Bento', 'query': 'Nasi'},
+      {'icon': '🍜', 'label': 'Mie & Seblak', 'query': 'Seblak'},
+      {'icon': '🧋', 'label': 'Kopi & Boba', 'query': 'Kopi'},
+      {'icon': '🍰', 'label': 'Camilan & Dessert', 'query': 'Camilan'},
+      {'icon': '⚡', 'label': 'Flash Sale', 'query': 'Promo'},
+      {'icon': '⭐', 'label': 'Rating 4.8+', 'query': 'Top'},
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: filters.map((f) {
+          return Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CustomerSearchScreen(initialQuery: f['query']!),
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(f['icon']!, style: const TextStyle(fontSize: 12)),
+                    const SizedBox(width: 6),
+                    Text(
+                      f['label']!,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // --- Voucher & Promo Discovery Section ---
+  Widget _buildVoucherDiscoverySection(BuildContext context) {
+    final vouchers = [
+      {
+        'title': 'Diskon Rp 10.000',
+        'sub': 'Min. belanja Rp 30rb',
+        'code': 'CICAHEBAT',
+        'color': const Color(0xFFDC2626),
+        'bg': const Color(0xFFFEF2F2),
+        'icon': Icons.confirmation_number_rounded,
+      },
+      {
+        'title': 'Bebas Ongkir 5 km',
+        'sub': 'Tanpa syarat minimal',
+        'code': 'FREESHIP',
+        'color': const Color(0xFF059669),
+        'bg': const Color(0xFFECFDF5),
+        'icon': Icons.two_wheeler_rounded,
+      },
+      {
+        'title': 'Cashback 20%',
+        'sub': 'Khusus CicalengkaPay',
+        'code': 'MAKANLANCAR',
+        'color': const Color(0xFFD97706),
+        'bg': const Color(0xFFFFFBEB),
+        'icon': Icons.stars_rounded,
+      },
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Icon(Icons.local_offer_rounded, size: 18, color: AppTheme.primaryRed),
+              SizedBox(width: 6),
+              Text(
+                'Kupon & Voucher Hemat',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 84,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: vouchers.length,
+            itemBuilder: (context, idx) {
+              final v = vouchers[idx];
+              final code = v['code'] as String;
+              final color = v['color'] as Color;
+              final bg = v['bg'] as Color;
+              final icon = v['icon'] as IconData;
+
+              return Container(
+                width: 210,
+                margin: const EdgeInsets.only(right: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: bg,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: color.withValues(alpha: 0.3)),
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () {
+                    AppAlert.showSuccess(
+                      context,
+                      title: 'Voucher Disalin! 🎟️',
+                      message: 'Kode "$code" siap digunakan saat checkout.',
+                    );
+                  },
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(icon, color: color, size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              v['title'] as String,
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              v['sub'] as String,
+                              style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: color.withValues(alpha: 0.4)),
+                              ),
+                              child: Text(
+                                'KODE: $code',
+                                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: color),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   // --- Banner Carousel Section ---
   Widget _buildBannersCarousel(CustomerController customerCtrl) {
     return Column(
@@ -888,7 +1092,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     imageUrl: imgUrl,
                     fit: BoxFit.cover,
                     width: double.infinity,
-                    errorWidget: (_, __, ___) => Container(
+                    errorWidget: (context, url, error) => Container(
                       color: Colors.red.shade50,
                       child: const Center(
                         child: Icon(Icons.card_giftcard_rounded, color: AppTheme.primaryRed, size: 40),
@@ -1067,14 +1271,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
 
               return GestureDetector(
                 onTap: () {
-                  if (prod['store_id'] != null) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => StoreDetailScreen(storeId: int.parse(prod['store_id'].toString())),
-                      ),
-                    );
-                  }
+                  ProductDetailModal.show(context, prod);
                 },
                 child: Container(
                   width: 140,
@@ -1103,7 +1300,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                               height: 100,
                               width: double.infinity,
                               fit: BoxFit.cover,
-                              errorWidget: (_, __, ___) => Container(color: Colors.grey[200]),
+                              errorWidget: (context, url, error) => Container(color: Colors.grey[200]),
                             ),
                           ),
                           Positioned(
@@ -1257,7 +1454,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                               height: 125,
                               width: double.infinity,
                               fit: BoxFit.cover,
-                              errorWidget: (_, __, ___) => Container(
+                              errorWidget: (context, url, error) => Container(
                                 height: 125,
                                 color: Colors.grey[200],
                                 child: const Icon(Icons.store, size: 40, color: Colors.grey),
@@ -1417,78 +1614,109 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 border: Border.all(color: const Color(0xFFE2E8F0)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: Colors.black.withOpacity(0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
                 ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                    child: CachedNetworkImage(
-                      imageUrl: imgUrl,
-                      height: 115,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorWidget: (_, __, ___) => Container(color: Colors.grey[200]),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  ProductDetailModal.show(context, prod);
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Stack(
                       children: [
-                        Text(
-                          prod['store_name'] ?? 'Mitra CicalengkaGO',
-                          style: const TextStyle(fontSize: 9, color: Color(0xFF64748B)),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                          child: CachedNetworkImage(
+                            imageUrl: imgUrl,
+                            height: 115,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorWidget: (context, url, error) => Container(color: Colors.grey[200]),
+                          ),
                         ),
-                        Text(
-                          prod['name'] ?? '',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          CurrencyFormatter.formatRupiah(finalPrice),
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.primaryRed),
-                        ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 28,
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.inkBlack,
-                              foregroundColor: AppTheme.onPrimary,
-                              padding: EdgeInsets.zero,
-                              shape: const StadiumBorder(),
-                              elevation: 0,
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.65),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            onPressed: () async {
-                              final ok = await customerCtrl.addToCart(int.parse(prod['id'].toString()), 1);
-                              if (ok && context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('${prod['name']} ditambahkan ke keranjang'),
-                                    duration: const Duration(seconds: 1),
-                                  ),
-                                );
-                              }
-                            },
-                            icon: const Icon(Icons.add_rounded, size: 14),
-                            label: const Text('+ Tambah', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.star_rounded, size: 11, color: Colors.amber),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '${prod['rating'] ?? '4.8'}',
+                                  style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            prod['store_name'] ?? 'Mitra CicalengkaGO',
+                            style: const TextStyle(fontSize: 9, color: Color(0xFF64748B)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            prod['name'] ?? '',
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            CurrencyFormatter.formatRupiah(finalPrice),
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppTheme.primaryRed),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 28,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.inkBlack,
+                                foregroundColor: AppTheme.onPrimary,
+                                padding: EdgeInsets.zero,
+                                shape: const StadiumBorder(),
+                                elevation: 0,
+                              ),
+                              onPressed: () async {
+                                final ok = await customerCtrl.addToCart(int.parse(prod['id'].toString()), 1);
+                                if (ok && context.mounted) {
+                                  AppAlert.showCartAdded(
+                                    context,
+                                    productName: prod['name'] ?? 'Menu Kuliner',
+                                    quantity: 1,
+                                  );
+                                }
+                              },
+                              icon: const Icon(Icons.add_rounded, size: 14),
+                              label: const Text('+ Tambah', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },
