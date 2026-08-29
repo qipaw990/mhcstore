@@ -443,218 +443,6 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
   }
 
   Future<void> _initiateTopUp(BuildContext context, int amount) async {
-    final selectedMethod = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Pilih Metode Pembayaran',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
-                      Text(
-                        'Nominal: ${CurrencyFormatter.formatRupiah(amount.toDouble())}',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFEF4444)),
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 20),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              _buildPaymentOptionTile(
-                ctx,
-                code: 'QRIS',
-                title: 'QRIS Otomatis (Rekomendasi)',
-                subtitle: 'GoPay, OVO, DANA, BCA, Mandiri, BRI, ShopeePay',
-                icon: Icons.qr_code_2_rounded,
-                isRecommended: true,
-              ),
-              _buildPaymentOptionTile(
-                ctx,
-                code: 'BCA',
-                title: 'Bank Central Asia (BCA)',
-                subtitle: 'Transfer Bank Otomatis (Kode Unik)',
-                icon: Icons.account_balance_rounded,
-              ),
-              _buildPaymentOptionTile(
-                ctx,
-                code: 'BRI',
-                title: 'Bank BRI',
-                subtitle: 'Transfer Bank Otomatis (Kode Unik)',
-                icon: Icons.account_balance_rounded,
-              ),
-              _buildPaymentOptionTile(
-                ctx,
-                code: 'MANDIRI',
-                title: 'Bank Mandiri',
-                subtitle: 'Transfer Bank Otomatis (Kode Unik)',
-                icon: Icons.account_balance_rounded,
-              ),
-              _buildPaymentOptionTile(
-                ctx,
-                code: 'DANA',
-                title: 'DANA / E-Wallet',
-                subtitle: 'Transfer saldo ke DANA Official',
-                icon: Icons.account_balance_wallet_rounded,
-              ),
-              _buildPaymentOptionTile(
-                ctx,
-                code: 'MIDTRANS',
-                title: 'Midtrans Payment Gateway',
-                subtitle: 'Virtual Account & Kartu Kredit Otomatis',
-                icon: Icons.payment_rounded,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    if (selectedMethod == null || !context.mounted) return;
-
-    // Handle Midtrans Snap Fallback
-    if (selectedMethod == 'MIDTRANS') {
-      _processMidtransTopUp(context, amount);
-      return;
-    }
-
-    // Handle In-House Automated Transfer / QRIS with 3-digit Unique Code
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(
-        child: CircularProgressIndicator(color: AppTheme.primaryRed),
-      ),
-    );
-
-    try {
-      final res = await ApiService.post(ApiConstants.paymentCreateInvoice, {
-        'amount': amount,
-        'bank': selectedMethod,
-        'type': 'topup',
-      });
-
-      if (context.mounted) {
-        Navigator.pop(context); // Dismiss loading
-      }
-
-      if (res['success'] == true && res['data'] != null) {
-        final invoiceData = Map<String, dynamic>.from(res['data'] as Map);
-        if (context.mounted) {
-          final paid = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(
-              builder: (_) => PaymentInvoiceScreen(invoiceData: invoiceData),
-            ),
-          );
-
-          if (paid == true && context.mounted) {
-            context.read<CustomerController>().fetchWallet();
-          }
-        }
-        return;
-      }
-
-      if (context.mounted) {
-        AppAlert.showError(
-          context,
-          title: 'Gagal Membuat Tiket',
-          message: res['message'] ?? 'Tidak dapat membuat tagihan pembayaran.',
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        Navigator.pop(context);
-        AppAlert.showError(context, title: 'Error', message: e.toString());
-      }
-    }
-  }
-
-  Widget _buildPaymentOptionTile(
-    BuildContext ctx, {
-    required String code,
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    bool isRecommended = false,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: isRecommended ? const Color(0xFFFEF2F2) : const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isRecommended ? const Color(0xFFFCA5A5) : const Color(0xFFE2E8F0),
-        ),
-      ),
-      child: ListTile(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: isRecommended ? const Color(0xFFEF4444) : Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-          ),
-          child: Icon(icon, color: isRecommended ? Colors.white : const Color(0xFF0F172A), size: 20),
-        ),
-        title: Row(
-          children: [
-            Flexible(
-              child: Text(
-                title,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (isRecommended) ...[
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEF4444),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Text('0% FEE', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900)),
-              ),
-            ],
-          ],
-        ),
-        subtitle: Text(
-          subtitle,
-          style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: Color(0xFF94A3B8)),
-        onTap: () => Navigator.pop(ctx, code),
-      ),
-    );
-  }
-
-  Future<void> _processMidtransTopUp(BuildContext context, int amount) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -669,7 +457,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
       });
 
       if (context.mounted) {
-        Navigator.pop(context);
+        Navigator.pop(context); // Dismiss loading dialog
       }
 
       if (res['success'] == true && res['data'] != null) {
@@ -701,7 +489,11 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
       }
 
       if (context.mounted) {
-        AppAlert.showError(context, title: 'Gagal', message: res['message'] ?? 'Gagal membuat tiket pembayaran Top-Up.');
+        AppAlert.showError(
+          context,
+          title: 'Gagal Membuat Tiket',
+          message: res['message'] ?? 'Gagal membuat tiket pembayaran Top-Up via Midtrans.',
+        );
       }
     } catch (e) {
       if (context.mounted) {
