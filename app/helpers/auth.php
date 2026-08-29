@@ -7,7 +7,7 @@ function auth_user(): ?array
 {
     $uid = auth_id();
     if ($uid > 0) {
-        $u = \App\Core\Database::fetchOne("SELECT id, name, email, phone, role, avatar FROM users WHERE id = ? LIMIT 1", [$uid]);
+        $u = \App\Core\Database::fetchOne("SELECT id, name, email, phone, role, avatar, api_token FROM users WHERE id = ? LIMIT 1", [$uid]);
         if ($u) {
             $_SESSION['user'] = array_merge($_SESSION['user'] ?? [], $u);
             return $_SESSION['user'];
@@ -21,18 +21,53 @@ function auth_user(): ?array
 
 function auth_id(): ?int
 {
-    if (isset($_SESSION['user']['id'])) {
+    if (isset($_SESSION['user']['id']) && (int)$_SESSION['user']['id'] > 0) {
         return (int)$_SESSION['user']['id'];
     }
-    $uid = (int)($_REQUEST['user_id'] ?? $_GET['user_id'] ?? $_POST['user_id'] ?? $_SERVER['HTTP_X_USER_ID'] ?? 0);
+
+    $token = get_bearer_token();
+    if (!empty($token)) {
+        // 1. Direct query to users table via api_token
+        $u = \App\Core\Database::fetchOne("SELECT id, name, email, phone, role, avatar, api_token FROM users WHERE api_token = ? LIMIT 1", [$token]);
+        if ($u) {
+            $_SESSION['user'] = $u;
+            return (int)$u['id'];
+        }
+
+        // 2. Fallback to personal_access_tokens
+        try {
+            $t = \App\Core\Database::fetchOne("SELECT user_id FROM personal_access_tokens WHERE token = ? LIMIT 1", [$token]);
+            if ($t && !empty($t['user_id'])) {
+                $u2 = \App\Core\Database::fetchOne("SELECT id, name, email, phone, role, avatar, api_token FROM users WHERE id = ? LIMIT 1", [$t['user_id']]);
+                if ($u2) {
+                    $_SESSION['user'] = $u2;
+                    return (int)$u2['id'];
+                }
+                return (int)$t['user_id'];
+            }
+        } catch (\Throwable $e) {}
+    }
+
+    // 3. Check X-User-ID header or request params
+    $headers = function_exists('getallheaders') ? getallheaders() : [];
+    $xUserId = 0;
+    foreach ($headers as $k => $v) {
+        if (strtolower($k) === 'x-user-id') {
+            $xUserId = (int)$v;
+            break;
+        }
+    }
+
+    $uid = (int)($_REQUEST['user_id'] ?? $_GET['user_id'] ?? $_POST['user_id'] ?? $_SERVER['HTTP_X_USER_ID'] ?? $xUserId);
     if ($uid > 0) {
+        $u = \App\Core\Database::fetchOne("SELECT id, name, email, phone, role, avatar, api_token FROM users WHERE id = ? LIMIT 1", [$uid]);
+        if ($u) {
+            $_SESSION['user'] = $u;
+            return (int)$u['id'];
+        }
         return $uid;
     }
-    $token = get_bearer_token();
-    if ($token) {
-        $t = \App\Core\Database::fetchOne("SELECT user_id FROM personal_access_tokens WHERE token = ? LIMIT 1", [$token]);
-        if ($t) return (int)$t['user_id'];
-    }
+
     return null;
 }
 
@@ -54,7 +89,7 @@ function auth_role(): ?string
 
 function is_authenticated(): bool
 {
-    return !empty($_SESSION['user']['id']);
+    return auth_id() !== null;
 }
 
 function is_admin(): bool
@@ -80,9 +115,20 @@ function is_delivery(): bool
 function get_bearer_token(): ?string
 {
     $headers = function_exists('getallheaders') ? getallheaders() : [];
-    $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-    if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-        return $matches[1];
+    $normalizedHeaders = [];
+    foreach ($headers as $k => $v) {
+        $normalizedHeaders[strtolower($k)] = $v;
     }
-    return $_GET['token'] ?? null;
+
+    $authHeader = $normalizedHeaders['authorization']
+               ?? $_SERVER['HTTP_AUTHORIZATION']
+               ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+               ?? $_SERVER['Authorization']
+               ?? '';
+
+    if (preg_match('/Bearer\s(\S+)/i', $authHeader, $matches)) {
+        return trim($matches[1]);
+    }
+
+    return $_REQUEST['api_token'] ?? $_REQUEST['token'] ?? $_GET['token'] ?? $_POST['token'] ?? null;
 }

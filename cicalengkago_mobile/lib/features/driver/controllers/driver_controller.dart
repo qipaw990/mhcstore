@@ -155,7 +155,7 @@ class DriverController extends ChangeNotifier {
         }
 
         // Sync online status from server
-        final serverOnline = data['driver']?['is_online'];
+        final serverOnline = data['is_online'] ?? data['driver']?['is_online'];
         if (serverOnline != null) {
           _isOnline = serverOnline == true || serverOnline == 1 || serverOnline == '1';
         }

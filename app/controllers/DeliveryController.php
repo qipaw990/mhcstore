@@ -33,6 +33,15 @@ class DeliveryController extends Controller
         \App\Models\Order::autoCancelUnclaimedOrders();
 
         $userId = auth_id();
+        if (!$userId) {
+            if ($this->isJsonRequest()) {
+                $this->errorResponse('Silakan login terlebih dahulu.', null, 401);
+                return;
+            }
+            $this->redirect('login');
+            return;
+        }
+
         $dm = $this->dmModel->findByUserId($userId);
 
         if (!$dm) {
@@ -98,10 +107,7 @@ class DeliveryController extends Controller
 
             // Fetch and attach order items list for mobile driver UI
             if (empty($activeOrder['items'])) {
-                $activeOrder['items'] = Database::query(
-                    "SELECT id, order_id, product_id, product_name, price, quantity, total_price FROM `order_items` WHERE `order_id` = ?",
-                    [$activeOrder['id']]
-                );
+                $activeOrder['items'] = $this->orderModel->getItems((int)$activeOrder['id']);
             }
         }
 
@@ -125,8 +131,7 @@ class DeliveryController extends Controller
         $reviewModel = new \App\Models\Review();
         $reviewModel->recalculateDmRating((int)$dm['id']);
         $dm = $this->dmModel->find($dm['id']);
-        $dm['total_orders'] = $realDeliveredCount;
-        $reviews = $reviewModel->getDmReviews((int)$dm['id'], 15);
+        $reviews = $reviewModel->getByDriverId((int)$dm['id'], 20);
 
         if ($this->isJsonRequest()) {
             $this->successResponse('Dashboard driver berhasil diambil', [
@@ -142,14 +147,14 @@ class DeliveryController extends Controller
         }
 
         $this->view('delivery.dashboard', [
-            'title'            => 'Kurir Dashboard - CicalengkaGO',
-            'driver'           => $dm,
-            'active_order'     => $activeOrder,
-            'active_batch'     => $activeBatch,
-            'available_orders' => $availableOrders,
-            'wallet'           => $wallet,
-            'reviews'          => $reviews,
-            'active_tab'       => 'home'
+            'title'             => 'Dashboard Driver',
+            'dm'                => $dm,
+            'activeOrder'       => $activeOrder,
+            'activeBatch'       => $activeBatch,
+            'availableOrders'   => $availableOrders,
+            'wallet'            => $wallet,
+            'reviews'           => $reviews,
+            'active_tab'        => 'home'
         ], 'delivery_layout');
     }
 
@@ -159,6 +164,11 @@ class DeliveryController extends Controller
         \App\Models\Order::autoCancelUnclaimedOrders();
 
         $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Silakan login terlebih dahulu', null, 401);
+            return;
+        }
+
         $dm = $this->dmModel->findByUserId($userId);
 
         if (!$dm) {
@@ -191,6 +201,30 @@ class DeliveryController extends Controller
             }
         } else {
             $activeOrder = $this->orderModel->findByCode($activeOrder['order_code']);
+        }
+
+        if (!empty($activeOrder)) {
+            if (!empty($activeOrder['delivery_address_json']) && empty($activeOrder['delivery_address'])) {
+                $activeOrder['delivery_address'] = json_decode($activeOrder['delivery_address_json'], true);
+            }
+            if (!empty($activeOrder['store_id'])) {
+                $storeModel = new \App\Models\Store();
+                $store = $storeModel->find($activeOrder['store_id']);
+                if ($store) {
+                    $activeOrder['store_name'] = $store['name'] ?? 'Toko Mitra';
+                    $activeOrder['store_address'] = $store['address'] ?? 'Cicalengka';
+                    $activeOrder['store_lat'] = $store['latitude'] ?? -6.9835;
+                    $activeOrder['store_lng'] = $store['longitude'] ?? 107.8345;
+                    $activeOrder['store_phone'] = $store['phone'] ?? '';
+                }
+            }
+            // Attach multi-store batch data if part of multi-store order
+            $this->orderModel->attachMultiStoreDetails($activeOrder);
+
+            // Fetch and attach order items list for mobile driver UI
+            if (empty($activeOrder['items'])) {
+                $activeOrder['items'] = $this->orderModel->getItems((int)$activeOrder['id']);
+            }
         }
 
         // Available nearby orders in driver radar
@@ -227,6 +261,8 @@ class DeliveryController extends Controller
             'is_online'        => (int)$dm['is_online'],
             'has_active_order' => !empty($activeOrder),
             'active_order'     => $activeOrder,
+            'active_trip'      => $activeOrder,
+            'driver'           => $dm,
             'available_orders' => $availableOrders,
             'available_count'  => count($availableOrders),
             'wallet'           => $wallet,
@@ -248,13 +284,23 @@ class DeliveryController extends Controller
     public function toggleOnline(): void
     {
         $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Silakan login terlebih dahulu', null, 401);
+            return;
+        }
+
         $dm = $this->dmModel->findByUserId($userId);
         if (!$dm) {
             $this->errorResponse('Driver tidak ditemukan');
             return;
         }
 
-        $newStatus = $dm['is_online'] ? 0 : 1;
+        $data = $this->getPost();
+        if (isset($data['online'])) {
+            $newStatus = ($data['online'] == '1' || $data['online'] === true || $data['online'] === 1) ? 1 : 0;
+        } else {
+            $newStatus = $dm['is_online'] ? 0 : 1;
+        }
         $this->dmModel->update($dm['id'], ['is_online' => $newStatus]);
 
         $this->successResponse($newStatus ? 'Anda sekarang ONLINE dan siap menerima order.' : 'Anda sekarang OFFLINE.', [
