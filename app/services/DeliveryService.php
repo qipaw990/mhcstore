@@ -39,13 +39,30 @@ class DeliveryService
 
         // Pre-flight check (quick, before acquiring lock) — saves DB time on obvious rejects
         $preCheck = Database::fetchOne(
-            "SELECT id, delivery_man_id, order_status, delivery_batch_id FROM `orders` WHERE id = ? LIMIT 1",
+            "SELECT id, order_code, delivery_man_id, order_status, delivery_batch_id FROM `orders` WHERE id = ? LIMIT 1",
             [$orderId]
         );
         if (!$preCheck) {
             throw new Exception("Pesanan tidak ditemukan.");
         }
-        if (!empty($preCheck['delivery_man_id'])) {
+
+        // If THIS driver already accepted this order, return success directly without throwing error!
+        if (!empty($preCheck['delivery_man_id']) && (int)$preCheck['delivery_man_id'] === (int)$dm['id']) {
+            Database::update('delivery_men', [
+                'current_order_id' => $preCheck['id'],
+                'active_batch_id'  => $preCheck['delivery_batch_id'] ?? $dm['active_batch_id'],
+            ], 'id = ?', [$dm['id']]);
+
+            return [
+                'batch_id'    => $preCheck['delivery_batch_id'] ?? $dm['active_batch_id'],
+                'order_count' => 1,
+                'sequence'    => 1,
+                'order_code'  => $preCheck['order_code'],
+                'winner'      => true,
+            ];
+        }
+
+        if (!empty($preCheck['delivery_man_id']) && (int)$preCheck['delivery_man_id'] !== (int)$dm['id']) {
             throw new Exception("⚡ Pesanan sudah lebih dulu diambil oleh driver lain. Cari pesanan berikutnya!");
         }
         if (in_array($preCheck['order_status'], ['canceled', 'delivered'])) {
@@ -55,13 +72,29 @@ class DeliveryService
         return Database::transaction(function () use ($dm, $orderId, $preCheck) {
             // ── ATOMIC LOCK: Kunci baris order ini agar tidak bisa diambil driver lain bersamaan ──
             $order = Database::fetchOne(
-                "SELECT * FROM `orders` WHERE id = ? AND (delivery_man_id IS NULL OR delivery_man_id = 0) AND order_status NOT IN ('canceled', 'delivered') FOR UPDATE",
-                [$orderId]
+                "SELECT * FROM `orders` WHERE id = ? AND (delivery_man_id IS NULL OR delivery_man_id = 0 OR delivery_man_id = ?) AND order_status NOT IN ('canceled', 'delivered') FOR UPDATE",
+                [$orderId, $dm['id']]
             );
 
             // Jika null = driver lain sudah berhasil mengunci order ini terlebih dahulu
             if (!$order) {
                 throw new Exception("⚡ Pesanan sudah lebih dulu diambil oleh driver lain. Cari pesanan berikutnya!");
+            }
+
+            // If already assigned to this driver, refresh driver state & return success
+            if (!empty($order['delivery_man_id']) && (int)$order['delivery_man_id'] === (int)$dm['id']) {
+                Database::update('delivery_men', [
+                    'current_order_id' => $order['id'],
+                    'active_batch_id'  => $order['delivery_batch_id'] ?? $dm['active_batch_id'],
+                ], 'id = ?', [$dm['id']]);
+
+                return [
+                    'batch_id'    => $order['delivery_batch_id'] ?? $dm['active_batch_id'],
+                    'order_count' => 1,
+                    'sequence'    => 1,
+                    'order_code'  => $order['order_code'],
+                    'winner'      => true,
+                ];
             }
 
             // Check if this order is part of an unassigned multi-store batch
@@ -71,8 +104,8 @@ class DeliveryService
             if ($batchIdToAccept) {
                 // Lock all batch orders atomically
                 $ordersToAccept = Database::query(
-                    "SELECT * FROM `orders` WHERE `delivery_batch_id` = ? AND (`delivery_man_id` IS NULL OR `delivery_man_id` = 0) AND `order_status` NOT IN ('canceled', 'delivered') FOR UPDATE",
-                    [$batchIdToAccept]
+                    "SELECT * FROM `orders` WHERE `delivery_batch_id` = ? AND (`delivery_man_id` IS NULL OR `delivery_man_id` = 0 OR `delivery_man_id` = ?) AND `order_status` NOT IN ('canceled', 'delivered') FOR UPDATE",
+                    [$batchIdToAccept, $dm['id']]
                 );
             }
 
@@ -324,7 +357,12 @@ class DeliveryService
 
     private function calcSingleCommission(array $order): float
     {
-        return (float)$order['delivery_charge'] * 0.85;
+        $charge = (float)($order['delivery_charge'] ?? 0);
+        if ($charge <= 0) {
+            $km = (float)($order['distance_km'] ?? 1.5);
+            $charge = max(5000.0, $km * 2500.0);
+        }
+        return max(3000.0, round($charge * 0.85, 0));
     }
 
     public function creditBatchCommission(array $dm, string $batchId, ?array $lastOrder = null): void
@@ -347,7 +385,7 @@ class DeliveryService
         $alreadyCredited = Database::fetchOne(
             "SELECT wt.id FROM `wallet_transactions` wt
              JOIN `wallets` w ON wt.wallet_id = w.id
-             WHERE w.user_id = ? AND w.user_type = 'delivery_man' 
+             WHERE w.user_id = ? 
                AND wt.category = 'order_earning' 
                AND wt.reference_id IN ({$inPlaceholders}) LIMIT 1",
             array_merge([$dm['user_id']], $orderIds)
@@ -416,6 +454,11 @@ class DeliveryService
         $sumCharge = array_sum(array_column($orders, 'delivery_charge'));
         $netCommission = $sumCharge * 0.85;
 
-        return max(500.0, round($netCommission, 0));
+        // If delivery_charge was 0 or not set, calculate based on km
+        if ($netCommission <= 0) {
+            $netCommission = max(5000.0, $totalKm * 2500.0) * 0.85;
+        }
+
+        return max(3000.0, round($netCommission, 0));
     }
 }
