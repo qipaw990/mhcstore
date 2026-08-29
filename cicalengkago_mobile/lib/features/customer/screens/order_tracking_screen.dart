@@ -1214,81 +1214,84 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        // Toggle Full Screen Button
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _isMapFullScreen ? const Color(0xFF0F172A) : Colors.white,
-                            foregroundColor: _isMapFullScreen ? Colors.white : const Color(0xFF0F172A),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            elevation: 2,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _isMapFullScreen = !_isMapFullScreen;
-                            });
-                          },
-                          icon: Icon(_isMapFullScreen ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded, size: 15),
-                          label: Text(_isMapFullScreen ? 'Ciutkan' : 'Layar Penuh', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                        ),
-                        const SizedBox(width: 8),
-                        if (isDriverValid) ...[
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      child: Row(
+                        children: [
+                          // Toggle Full Screen Button
                           ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: AppTheme.primaryRed,
+                              backgroundColor: _isMapFullScreen ? const Color(0xFF0F172A) : Colors.white,
+                              foregroundColor: _isMapFullScreen ? Colors.white : const Color(0xFF0F172A),
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               elevation: 2,
                             ),
                             onPressed: () {
-                              _mapController.move(LatLng(driverLat, driverLng), 15.5);
+                              setState(() {
+                                _isMapFullScreen = !_isMapFullScreen;
+                              });
                             },
-                            icon: const Icon(Icons.my_location_rounded, size: 14),
-                            label: const Text('Fokus Kurir', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                            icon: Icon(_isMapFullScreen ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded, size: 15),
+                            label: Text(_isMapFullScreen ? 'Ciutkan' : 'Layar Penuh', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                           ),
                           const SizedBox(width: 8),
-                        ],
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: const Color(0xFF0F172A),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            elevation: 2,
-                          ),
-                          onPressed: () {
-                            final minLat = math.min(math.min(driverLat, storeLat), custLat);
-                            final maxLat = math.max(math.max(driverLat, storeLat), custLat);
-                            final minLng = math.min(math.min(driverLng, storeLng), custLng);
-                            final maxLng = math.max(math.max(driverLng, storeLng), custLng);
-                            _mapController.fitCamera(
-                              CameraFit.bounds(
-                                bounds: LatLngBounds(LatLng(minLat, minLng), LatLng(maxLat, maxLng)),
-                                padding: const EdgeInsets.all(40),
+                          if (isDriverValid) ...[
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: AppTheme.primaryRed,
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                elevation: 2,
                               ),
-                            );
-                          },
-                          icon: const Icon(Icons.zoom_out_map_rounded, size: 14),
-                          label: const Text('Rute Penuh', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryRed,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            elevation: 2,
+                              onPressed: () {
+                                _mapController.move(LatLng(driverLat, driverLng), 15.5);
+                              },
+                              icon: const Icon(Icons.my_location_rounded, size: 14),
+                              label: const Text('Fokus Kurir', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: const Color(0xFF0F172A),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              elevation: 2,
+                            ),
+                            onPressed: () {
+                              final minLat = math.min(math.min(driverLat, storeLat), custLat);
+                              final maxLat = math.max(math.max(driverLat, storeLat), custLat);
+                              final minLng = math.min(math.min(driverLng, storeLng), custLng);
+                              final maxLng = math.max(math.max(driverLng, storeLng), custLng);
+                              _mapController.fitCamera(
+                                CameraFit.bounds(
+                                  bounds: LatLngBounds(LatLng(minLat, minLng), LatLng(maxLat, maxLng)),
+                                  padding: const EdgeInsets.all(40),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.zoom_out_map_rounded, size: 14),
+                            label: const Text('Rute Penuh', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                           ),
-                          onPressed: () => _openGoogleMapsNav(custLat, custLng),
-                          icon: const Icon(Icons.navigation_rounded, size: 14),
-                          label: const Text('Maps Nav', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryRed,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              elevation: 2,
+                            ),
+                            onPressed: () => _openGoogleMapsNav(custLat, custLng),
+                            icon: const Icon(Icons.navigation_rounded, size: 14),
+                            label: const Text('Maps Nav', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
