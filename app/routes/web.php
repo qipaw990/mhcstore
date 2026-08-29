@@ -279,6 +279,9 @@ Router::post('/api/payment/auto-webhook', [PaymentController::class, 'autoWebhoo
 Router::post('/payment/auto-webhook', [PaymentController::class, 'autoWebhook']);
 Router::post('/api/payment/simulate-pay', [PaymentController::class, 'simulatePay']);
 Router::post('/payment/simulate-pay', [PaymentController::class, 'simulatePay']);
+Router::post('/api/payment/transfer', [PaymentController::class, 'transfer']);
+Router::post('/payment/transfer', [PaymentController::class, 'transfer']);
+Router::post('/wallet/transfer', [PaymentController::class, 'transfer']);
 
 
 

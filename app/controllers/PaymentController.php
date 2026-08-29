@@ -488,4 +488,94 @@ class PaymentController extends Controller
             $this->errorResponse('Invoice tidak ditemukan atau sudah dibayar.');
         }
     }
+
+    /**
+     * Kirim Uang / Transfer Saldo CicalengkaPay ke sesama pengguna
+     */
+    public function transfer(): void
+    {
+        $senderId = auth_id();
+        if (!$senderId) {
+            $this->errorResponse('Silakan login terlebih dahulu.', null, 401);
+            return;
+        }
+
+        $data = $this->getPost();
+        $recipientPhone = trim((string)($data['recipient_phone'] ?? $data['phone'] ?? $data['recipient'] ?? ''));
+        $amount = (float)($data['amount'] ?? 0);
+        $notes = trim((string)($data['notes'] ?? $data['note'] ?? ''));
+
+        if (empty($recipientPhone)) {
+            $this->errorResponse('Nomor WhatsApp / HP penerima wajib diisi.');
+            return;
+        }
+
+        if ($amount < 1000) {
+            $this->errorResponse('Nominal kirim uang minimal Rp 1.000.');
+            return;
+        }
+
+        // Clean phone format
+        $cleanPhone = preg_replace('/[^0-9]/', '', $recipientPhone);
+        $cleanPhoneAlt = $cleanPhone;
+        if (str_starts_with($cleanPhone, '62')) {
+            $cleanPhoneAlt = '0' . substr($cleanPhone, 2);
+        } elseif (str_starts_with($cleanPhone, '0')) {
+            $cleanPhoneAlt = '62' . substr($cleanPhone, 1);
+        }
+
+        // Find recipient user
+        $recipient = Database::fetchOne(
+            "SELECT id, name, phone, email FROM `users` WHERE (`phone` = ? OR `phone` = ? OR `email` = ?) AND `id` != ? LIMIT 1",
+            [$cleanPhone, $cleanPhoneAlt, $recipientPhone, $senderId]
+        );
+
+        if (!$recipient) {
+            $this->errorResponse('Pengguna penerima dengan nomor atau email tersebut tidak ditemukan di CicalengkaGO.');
+            return;
+        }
+
+        $sender = auth_user();
+        $walletModel = new \App\Models\Wallet();
+
+        // Check sender wallet balance
+        $senderWallet = $walletModel->getOrCreate($senderId, 'customer');
+        if ((float)($senderWallet['balance'] ?? 0) < $amount) {
+            $this->errorResponse('Saldo CicalengkaPay Anda tidak mencukupi untuk melakukan transfer ini.');
+            return;
+        }
+
+        try {
+            $refId = 'TRF-' . time() . '-' . rand(100, 999);
+            Database::transaction(function () use ($walletModel, $senderId, $recipient, $sender, $amount, $notes, $refId) {
+                // Debit sender
+                $walletModel->debit(
+                    $senderId,
+                    $amount,
+                    'transfer',
+                    "Kirim saldo ke {$recipient['name']} ({$recipient['phone']})" . ($notes ? " - {$notes}" : ""),
+                    $refId
+                );
+
+                // Credit recipient
+                $walletModel->credit(
+                    (int)$recipient['id'],
+                    $amount,
+                    'transfer',
+                    "Terima saldo dari {$sender['name']} ({$sender['phone']})" . ($notes ? " - {$notes}" : ""),
+                    $refId
+                );
+            });
+
+            $this->successResponse("Berhasil mengirim uang sebesar Rp " . number_format($amount, 0, ',', '.') . " ke {$recipient['name']}!", [
+                'recipient_name'  => $recipient['name'],
+                'recipient_phone' => $recipient['phone'],
+                'amount'          => $amount,
+                'reference_id'    => $refId,
+                'notes'           => $notes
+            ]);
+        } catch (\Throwable $e) {
+            $this->errorResponse('Gagal mengirim saldo: ' . $e->getMessage());
+        }
+    }
 }
