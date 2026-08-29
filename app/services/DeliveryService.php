@@ -172,7 +172,7 @@ class DeliveryService
         $dm    = $this->dmModel->findByUserId($dmUserId);
         $order = $this->orderModel->find($orderId);
 
-        if (!$order || $order['delivery_man_id'] != $dm['id']) {
+        if (!$order || ($order['delivery_man_id'] != $dm['id'] && $order['delivery_man_id'] != $dm['user_id'])) {
             throw new Exception("Akses pesanan tidak valid.");
         }
 

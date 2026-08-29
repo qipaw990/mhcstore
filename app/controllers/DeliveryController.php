@@ -533,8 +533,8 @@ class DeliveryController extends Controller
             [(int)$dm['id'], (int)$dm['user_id']]
         );
 
-        // Fetch recent transactions
-        $transactions = $this->walletModel->getTransactions($userId, 50);
+        // Fetch recent transactions for delivery_man
+        $transactions = $this->walletModel->getTransactions($userId, 50, 'delivery_man');
 
         // Safe in-memory enrichment without collation conflicts
         if (!empty($transactions)) {
@@ -841,8 +841,10 @@ class DeliveryController extends Controller
         $userId = (int)$dm['user_id'];
         $driverWallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
         $deliveredDriverOrders = Database::query(
-            "SELECT id, order_code, delivery_charge, distance_km, delivery_batch_id FROM `orders` WHERE `delivery_man_id` = ? AND `order_status` = 'delivered'",
-            [$dm['id']]
+            "SELECT id, order_code, delivery_charge, distance_km, delivery_batch_id 
+             FROM `orders` 
+             WHERE (`delivery_man_id` = ? OR `delivery_man_id` = ?) AND `order_status` = 'delivered'",
+            [(int)$dm['id'], (int)$dm['user_id']]
         );
         $processedBatches = [];
 
@@ -855,8 +857,10 @@ class DeliveryController extends Controller
                 }
             } else {
                 $alreadyCredited = Database::fetchOne(
-                    "SELECT id FROM `wallet_transactions` WHERE `wallet_id` = ? AND `category` = 'order_earning' AND `reference_id` = ? LIMIT 1",
-                    [$driverWallet['id'], (string)$dOrder['id']]
+                    "SELECT id FROM `wallet_transactions` 
+                     WHERE `wallet_id` = ? AND `category` = 'order_earning' 
+                       AND (`reference_id` = ? OR `reference_id` = ?) LIMIT 1",
+                    [$driverWallet['id'], (string)$dOrder['id'], (string)$dOrder['order_code']]
                 );
                 if (!$alreadyCredited) {
                     $charge = (float)($dOrder['delivery_charge'] ?? 0);
@@ -877,6 +881,6 @@ class DeliveryController extends Controller
             }
         }
 
-        return $this->walletModel->find($driverWallet['id']);
+        return $this->walletModel->find($driverWallet['id']) ?: $driverWallet;
     }
 }
