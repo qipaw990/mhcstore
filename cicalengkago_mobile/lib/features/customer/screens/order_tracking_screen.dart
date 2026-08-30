@@ -241,9 +241,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final String deliveryType = (order['delivery_type'] ?? live['delivery_type'] ?? 'driver').toString().toLowerCase();
     final bool isMerchantDelivery = (deliveryType == 'merchant');
     final int maxDurationSeconds = isMerchantDelivery ? 300 : 60;
-    final remainingSeconds = (_liveData != null ? _currentRemainingSeconds : ((live['remaining_seconds'] as num?)?.toInt() ?? maxDurationSeconds)).clamp(0, maxDurationSeconds);
+    final rawRemSec = live['remaining_seconds'];
+    final parsedRemSec = (rawRemSec is num) ? rawRemSec.toInt() : (int.tryParse(rawRemSec?.toString() ?? ''));
+    final remainingSeconds = (_liveData != null ? _currentRemainingSeconds : (parsedRemSec ?? maxDurationSeconds)).clamp(0, maxDurationSeconds);
     final otpCode = live['otp']?.toString() ?? order['otp']?.toString() ?? '----';
-    final unreadChats = (live['unread_chats'] as num?)?.toInt() ?? 0;
+    final rawUnread = live['unread_chats'];
+    final unreadChats = (rawUnread is num) ? rawUnread.toInt() : (int.tryParse(rawUnread?.toString() ?? '0') ?? 0);
     final cancellationReason = live['cancellation_reason']?.toString() ?? order['cancellation_reason']?.toString() ?? '';
 
     final driverMap = live['driver'] is Map ? (live['driver'] as Map) : {};

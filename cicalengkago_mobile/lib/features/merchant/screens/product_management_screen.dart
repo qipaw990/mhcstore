@@ -433,8 +433,15 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
     final p = widget.product ?? {};
     _nameCtrl = TextEditingController(text: p['name']?.toString() ?? '');
     _barcodeCtrl = TextEditingController(text: p['barcode']?.toString() ?? '');
-    _priceCtrl = TextEditingController(text: (p['price'] as num?)?.toInt().toString() ?? (p['price']?.toString() ?? ''));
-    _discountCtrl = TextEditingController(text: (p['discount'] as num?)?.toInt().toString() ?? (p['discount']?.toString() ?? '0'));
+
+    final rawPrice = p['price'];
+    final parsedPrice = (rawPrice is num) ? rawPrice.toInt() : (double.tryParse(rawPrice?.toString() ?? '')?.toInt());
+    _priceCtrl = TextEditingController(text: parsedPrice != null ? parsedPrice.toString() : (rawPrice?.toString() ?? ''));
+
+    final rawDiscount = p['discount'];
+    final parsedDiscount = (rawDiscount is num) ? rawDiscount.toInt() : (double.tryParse(rawDiscount?.toString() ?? '')?.toInt());
+    _discountCtrl = TextEditingController(text: parsedDiscount != null ? parsedDiscount.toString() : (rawDiscount?.toString() ?? '0'));
+
     _descCtrl = TextEditingController(text: p['description']?.toString() ?? '');
     _unitCtrl = TextEditingController(text: p['unit']?.toString() ?? 'porsi');
   }
