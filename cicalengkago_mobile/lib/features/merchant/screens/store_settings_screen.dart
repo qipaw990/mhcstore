@@ -10,6 +10,7 @@ import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/uber_pill_button.dart';
 import '../../../core/widgets/location_picker_modal.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../auth/screens/splash_screen.dart';
 import '../controllers/merchant_controller.dart';
 
 class StoreSettingsScreen extends StatefulWidget {
@@ -355,9 +356,53 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
           ),
           const SizedBox(height: 14),
 
-          // ── TOMBOL LOGOUT ──
+          // ── TOMBOL LOGOUT MITRA ──
           OutlinedButton.icon(
-            onPressed: () => authCtrl.logout(),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (dialogCtx) => AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  title: Row(
+                    children: const [
+                      Icon(Icons.logout_rounded, color: Color(0xFFDC2626), size: 22),
+                      SizedBox(width: 8),
+                      Text('Keluar Akun Mitra?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ],
+                  ),
+                  content: const Text(
+                    'Apakah Anda yakin ingin keluar dari akun mitra resto ini?',
+                    style: TextStyle(fontSize: 13, color: Color(0xFF475569)),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogCtx),
+                      child: const Text('Batal', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        Navigator.pop(dialogCtx);
+                        await authCtrl.logout();
+                        if (context.mounted) {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(builder: (_) => const SplashScreen()),
+                            (route) => false,
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFDC2626),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
+                      ),
+                      child: const Text('Ya, Keluar', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              );
+            },
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFFDC2626),
               side: const BorderSide(color: Color(0xFFFCA5A5)),

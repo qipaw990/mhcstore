@@ -10,6 +10,7 @@ import '../../../core/widgets/require_auth_widget.dart';
 import '../../../core/widgets/uber_pill_button.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../auth/screens/login_screen.dart';
+import '../../auth/screens/splash_screen.dart';
 import '../controllers/customer_controller.dart';
 import 'customer_orders_screen.dart';
 import 'customer_wallet_screen.dart';
@@ -1321,9 +1322,16 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               elevation: 0,
             ),
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              authCtrl.logout();
+              await authCtrl.logout();
+              if (context.mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SplashScreen()),
+                  (route) => false,
+                );
+              }
             },
             child: const Text('Keluar Akun', style: TextStyle(fontWeight: FontWeight.bold)),
           ),

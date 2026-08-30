@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../auth/screens/splash_screen.dart';
 import '../controllers/driver_controller.dart';
 
 class DriverProfileScreen extends StatefulWidget {
@@ -696,9 +697,16 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               backgroundColor: const Color(0xFFEF4444),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              authCtrl.logout();
+              await authCtrl.logout();
+              if (context.mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SplashScreen()),
+                  (route) => false,
+                );
+              }
             },
             child: const Text('Keluar', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
           ),
