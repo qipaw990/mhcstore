@@ -821,6 +821,10 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                       if (!_formKey.currentState!.validate()) return;
                       setState(() => _isSaving = true);
 
+                      final authUser = context.read<AuthController>().user;
+                      final merchantUser = context.read<MerchantController>().vendorUser;
+                      final email = authUser?['email']?.toString() ?? merchantUser?['email']?.toString() ?? '';
+
                       final ok = await context.read<MerchantController>().updateStoreProfile({
                         'store_name': _nameCtrl.text.trim(),
                         'store_phone': _phoneCtrl.text.trim(),
@@ -829,6 +833,7 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                         'longitude': _lng.toString(),
                         'name': _nameCtrl.text.trim(),
                         'phone': _phoneCtrl.text.trim(),
+                        'email': email,
                       });
 
                       if (mounted) setState(() => _isSaving = false);
@@ -837,6 +842,10 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Profil dan titik lokasi resto berhasil diperbarui!'), backgroundColor: Color(0xFF10B981)),
+                        );
+                      } else if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Gagal menyimpan profil resto. Silakan coba lagi.'), backgroundColor: AppTheme.primaryRed),
                         );
                       }
                     },

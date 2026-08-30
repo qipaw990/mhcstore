@@ -459,21 +459,32 @@ class VendorController extends Controller
     {
         $userId = auth_id();
         if (!$userId) {
+            if ($this->isJsonRequest()) {
+                $this->errorResponse('Akses tidak terotentikasi. Silakan masuk kembali.', null, 401);
+                return;
+            }
             $this->redirect('login');
             return;
         }
 
+        $userModel = new \App\Models\User();
+        $dbUser = $userModel->find($userId);
+
         $data = $this->getPost();
-        $name         = sanitize($data['name'] ?? '');
-        $email        = sanitize($data['email'] ?? '');
-        $phone        = sanitize($data['phone'] ?? '');
-        $storeName    = sanitize($data['store_name'] ?? '');
+        $name         = sanitize($data['name'] ?? ($dbUser['name'] ?? ''));
+        $email        = sanitize($data['email'] ?? ($dbUser['email'] ?? ''));
+        $phone        = sanitize($data['phone'] ?? ($dbUser['phone'] ?? ''));
+        $storeName    = sanitize($data['store_name'] ?? ($name ?: 'Toko Mitra'));
         $storeAddress = sanitize($data['store_address'] ?? '');
-        $storePhone   = sanitize($data['store_phone'] ?? '');
+        $storePhone   = sanitize($data['store_phone'] ?? $phone);
         $storeLat     = isset($data['latitude']) ? (float)$data['latitude'] : null;
         $storeLng     = isset($data['longitude']) ? (float)$data['longitude'] : null;
 
-        if (empty($name) || empty($email) || empty($phone)) {
+        if (empty($name) || empty($phone)) {
+            if ($this->isJsonRequest()) {
+                $this->errorResponse('Nama dan nomor HP pemilik/toko wajib diisi.');
+                return;
+            }
             $_SESSION['error'] = 'Nama, email, dan nomor HP pemilik wajib diisi.';
             $this->redirect('vendor/profile');
             return;
@@ -483,7 +494,7 @@ class VendorController extends Controller
         if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
             $avatarPath = upload_image($_FILES['avatar'], 'profiles');
             if ($avatarPath) {
-                (new \App\Models\User())->update($userId, ['avatar' => $avatarPath]);
+                $userModel->update($userId, ['avatar' => $avatarPath]);
                 $_SESSION['user']['avatar'] = $avatarPath;
             }
         }
@@ -510,6 +521,35 @@ class VendorController extends Controller
             if (!empty($storeUpdates)) {
                 $this->storeModel->update($store['id'], $storeUpdates);
             }
+        } else {
+            // Auto-create store if vendor does not have a store record yet
+            $logoPath = 'assets/images/stores/default.jpg';
+            if (isset($_FILES['store_logo']) && $_FILES['store_logo']['error'] === UPLOAD_ERR_OK) {
+                $up = upload_image($_FILES['store_logo'], 'stores');
+                if ($up) $logoPath = $up;
+            }
+
+            $storeId = $this->storeModel->create([
+                'vendor_id'      => $userId,
+                'module_id'      => 1,
+                'zone_id'        => 1,
+                'name'           => !empty($storeName) ? $storeName : ($name . ' Store'),
+                'phone'          => !empty($storePhone) ? $storePhone : $phone,
+                'email'          => !empty($email) ? $email : ($dbUser['email'] ?? ''),
+                'logo'           => $logoPath,
+                'cover_photo'    => 'assets/images/stores/default_cover.jpg',
+                'address'        => !empty($storeAddress) ? $storeAddress : 'Cicalengka, Kab. Bandung',
+                'latitude'       => $storeLat ?? -6.9840,
+                'longitude'      => $storeLng ?? 107.8340,
+                'minimum_order'  => 10000.00,
+                'delivery_time'  => '20-30 Menit',
+                'is_open'        => 1,
+                'status'         => 'approved',
+                'rating'         => 5.0,
+                'reviews_count'  => 0,
+                'order_count'    => 0
+            ]);
+            $store = $this->storeModel->find($storeId);
         }
 
         $currentPassword = $data['current_password'] ?? '';
@@ -518,28 +558,41 @@ class VendorController extends Controller
 
         $passwordUpdate = null;
         if (!empty($newPassword) || !empty($currentPassword)) {
-            $userModel = new \App\Models\User();
-            $dbUser = $userModel->find($userId);
-
             if (empty($currentPassword)) {
+                if ($this->isJsonRequest()) {
+                    $this->errorResponse('Harap masukkan Kata Sandi Saat Ini untuk memverifikasi perubahan kata sandi.');
+                    return;
+                }
                 $_SESSION['error'] = 'Harap masukkan Kata Sandi Saat Ini untuk memverifikasi perubahan kata sandi.';
                 $this->redirect('vendor/profile');
                 return;
             }
 
             if (!password_verify($currentPassword, $dbUser['password'] ?? '')) {
+                if ($this->isJsonRequest()) {
+                    $this->errorResponse('Kata Sandi Saat Ini yang Anda masukkan salah.');
+                    return;
+                }
                 $_SESSION['error'] = 'Kata Sandi Saat Ini yang Anda masukkan salah.';
                 $this->redirect('vendor/profile');
                 return;
             }
 
             if (strlen($newPassword) < 6) {
+                if ($this->isJsonRequest()) {
+                    $this->errorResponse('Kata Sandi Baru harus memiliki minimal 6 karakter.');
+                    return;
+                }
                 $_SESSION['error'] = 'Kata Sandi Baru harus memiliki minimal 6 karakter.';
                 $this->redirect('vendor/profile');
                 return;
             }
 
             if ($newPassword !== $confirmPassword) {
+                if ($this->isJsonRequest()) {
+                    $this->errorResponse('Konfirmasi Kata Sandi Baru tidak cocok.');
+                    return;
+                }
                 $_SESSION['error'] = 'Konfirmasi Kata Sandi Baru tidak cocok.';
                 $this->redirect('vendor/profile');
                 return;
@@ -554,13 +607,13 @@ class VendorController extends Controller
             if (!empty($phone)) $userUpdates['phone'] = $phone;
             if (!empty($email)) $userUpdates['email'] = $email;
             if (!empty($passwordUpdate)) $userUpdates['password'] = $passwordUpdate;
-            (new \App\Models\User())->update($userId, $userUpdates);
+            $userModel->update($userId, $userUpdates);
 
             $freshStore = $this->storeModel->findByVendorId($userId);
-            $freshUser = (new \App\Models\User())->find($userId);
+            $freshUser = $userModel->find($userId);
             if (!empty($freshUser)) unset($freshUser['password']);
 
-            $this->successResponse('Profil toko dan pemilik berhasil diperbarui!', [
+            $this->successResponse('Profil toko dan titik lokasi berhasil diperbarui!', [
                 'user'  => $freshUser,
                 'store' => $freshStore
             ]);
