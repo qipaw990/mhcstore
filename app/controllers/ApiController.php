@@ -846,6 +846,20 @@ class ApiController extends Controller
             return;
         }
 
+        if (!empty($product['store_id'])) {
+            $store = \App\Core\Database::fetchOne("SELECT * FROM `stores` WHERE id = ? LIMIT 1", [$product['store_id']]);
+            if ($store) {
+                attach_store_schedule_data($store, true);
+                $isCurrentlyOpen = !empty($store['is_currently_open']) || (isset($store['is_open']) && ($store['is_open'] == 1 || $store['is_open'] === true || $store['is_open'] === '1'));
+                $product['store_is_open'] = $isCurrentlyOpen ? 1 : 0;
+                $product['is_store_open'] = $isCurrentlyOpen;
+                $product['store_name'] = $store['name'];
+                $product['store_logo'] = $store['logo'];
+                $product['store_address'] = $store['address'];
+                $product['store_rating'] = $store['rating'];
+            }
+        }
+
         $productModel = new Product();
         $product['final_price'] = $productModel->calculateFinalPrice($product);
 

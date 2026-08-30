@@ -36,6 +36,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
   double _avgRating = 5.0;
   int _reviewsCount = 0;
   Map<dynamic, dynamic> _ratingBreakdown = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0};
+  bool? _storeIsOpenOverride;
 
   @override
   void initState() {
@@ -64,6 +65,10 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
           _reviewsCount = int.tryParse(data['reviews_count']?.toString() ?? _reviews.length.toString()) ?? _reviews.length;
           if (data['rating_breakdown'] is Map) {
             _ratingBreakdown = data['rating_breakdown'];
+          }
+          if (data['store_is_open'] != null || data['is_store_open'] != null) {
+            final sOpen = data['store_is_open'] ?? data['is_store_open'];
+            _storeIsOpenOverride = (sOpen == 1 || sOpen == true || sOpen == '1');
           }
           _isLoadingReviews = false;
         });
@@ -119,7 +124,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
     final imgUrl = _getFoodImage(product);
     final totalPrice = finalPrice * _quantity;
 
-    final rawStoreOpen = product['store_is_open'] ?? product['is_open'] ?? product['is_currently_open'];
+    final rawStoreOpen = _storeIsOpenOverride ?? product['store_is_open'] ?? product['is_open'] ?? product['is_currently_open'];
     final bool isStoreClosed = (rawStoreOpen != null && (rawStoreOpen == 0 || rawStoreOpen == false || rawStoreOpen == '0' || rawStoreOpen == 'false'));
     final bool isStoreOpen = !isStoreClosed;
 

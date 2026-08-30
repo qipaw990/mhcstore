@@ -1283,6 +1283,10 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               final double price = double.tryParse(prod['price']?.toString() ?? '0') ?? 0;
               final double finalPrice = double.tryParse(prod['final_price']?.toString() ?? price.toString()) ?? price;
               final imgUrl = ApiConstants.formatImageUrl(prod['image']?.toString());
+              final bool storeOpen = prod['store_is_open'] == 1
+                  || prod['store_is_open'] == true
+                  || prod['store_is_open'] == '1'
+                  || prod['is_store_open'] == true;
 
               return GestureDetector(
                 onTap: () {
@@ -1349,7 +1353,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                             bottom: 6,
                             right: 6,
                             child: InkWell(
-                              onTap: () async {
+                              onTap: storeOpen ? () async {
                                 final ok = await customerCtrl.addToCart(int.parse(prod['id'].toString()), 1);
                                 if (ok && context.mounted) {
                                   AppAlert.showCartAdded(
@@ -1358,23 +1362,27 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                                     quantity: 1,
                                   );
                                 }
-                              },
+                              } : null,
                               borderRadius: BorderRadius.circular(20),
                               child: Container(
                                 width: 28,
                                 height: 28,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFEF4444),
+                                  color: storeOpen ? const Color(0xFFEF4444) : const Color(0xFF94A3B8),
                                   shape: BoxShape.circle,
-                                  boxShadow: [
+                                  boxShadow: storeOpen ? [
                                     BoxShadow(
                                       color: const Color(0xFFEF4444).withValues(alpha: 0.4),
                                       blurRadius: 6,
                                       offset: const Offset(0, 2),
                                     ),
-                                  ],
+                                  ] : null,
                                 ),
-                                child: const Icon(Icons.add_rounded, color: Colors.white, size: 18),
+                                child: Icon(
+                                  storeOpen ? Icons.add_rounded : Icons.lock_outline_rounded,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
                               ),
                             ),
                           ),
@@ -1685,6 +1693,10 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             final double finalPrice = double.tryParse(prod['final_price']?.toString() ?? price.toString()) ?? price;
             final imgUrl = ApiConstants.formatImageUrl(prod['image']?.toString());
             final bool hasDiscount = price > finalPrice;
+            final bool storeOpen = prod['store_is_open'] == 1
+                || prod['store_is_open'] == true
+                || prod['store_is_open'] == '1'
+                || prod['is_store_open'] == true;
 
             return Container(
               decoration: BoxDecoration(
@@ -1804,27 +1816,40 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                           SizedBox(
                             width: double.infinity,
                             height: 30,
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFEF4444),
-                                foregroundColor: Colors.white,
-                                padding: EdgeInsets.zero,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                elevation: 1,
-                              ),
-                              onPressed: () async {
-                                final ok = await customerCtrl.addToCart(int.parse(prod['id'].toString()), 1);
-                                if (ok && context.mounted) {
-                                  AppAlert.showCartAdded(
-                                    context,
-                                    productName: prod['name'] ?? 'Menu Kuliner',
-                                    quantity: 1,
-                                  );
-                                }
-                              },
-                              icon: const Icon(Icons.add_rounded, size: 16),
-                              label: const Text('+ Tambah', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                            ),
+                            child: storeOpen
+                                ? ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFEF4444),
+                                      foregroundColor: Colors.white,
+                                      padding: EdgeInsets.zero,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      elevation: 1,
+                                    ),
+                                    onPressed: () async {
+                                      final ok = await customerCtrl.addToCart(int.parse(prod['id'].toString()), 1);
+                                      if (ok && context.mounted) {
+                                        AppAlert.showCartAdded(
+                                          context,
+                                          productName: prod['name'] ?? 'Menu Kuliner',
+                                          quantity: 1,
+                                        );
+                                      }
+                                    },
+                                    icon: const Icon(Icons.add_rounded, size: 16),
+                                    label: const Text('+ Tambah', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                  )
+                                : Container(
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF94A3B8),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Center(
+                                      child: Text(
+                                        '🔴 Toko Tutup',
+                                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ),
                           ),
                         ],
                       ),

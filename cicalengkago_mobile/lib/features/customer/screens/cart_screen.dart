@@ -637,6 +637,10 @@ class _CartScreenState extends State<CartScreen> {
               final double foodPrice = double.tryParse(food['final_price']?.toString() ?? food['price']?.toString() ?? '0') ?? 0.0;
               final String rating = food['rating']?.toString() ?? '4.8';
               final String imgUrl = _getFoodImage(food);
+              final bool storeOpen = food['store_is_open'] == 1
+                  || food['store_is_open'] == true
+                  || food['store_is_open'] == '1'
+                  || food['is_store_open'] == true;
 
               return GestureDetector(
                 onTap: () => ProductDetailModal.show(context, food),
@@ -729,7 +733,7 @@ class _CartScreenState extends State<CartScreen> {
                                 ),
                               ),
                               InkWell(
-                                onTap: () async {
+                                onTap: storeOpen ? () async {
                                   final success = await customerCtrl.addToCart(foodId, 1);
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
@@ -743,17 +747,17 @@ class _CartScreenState extends State<CartScreen> {
                                       ),
                                     );
                                   }
-                                },
+                                } : null,
                                 borderRadius: BorderRadius.circular(20),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.inkBlack,
+                                    color: storeOpen ? AppTheme.inkBlack : const Color(0xFF94A3B8),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
-                                  child: const Text(
-                                    '+ Tambah',
-                                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                  child: Text(
+                                    storeOpen ? '+ Tambah' : '🔴 Tutup',
+                                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                                   ),
                                 ),
                               ),
