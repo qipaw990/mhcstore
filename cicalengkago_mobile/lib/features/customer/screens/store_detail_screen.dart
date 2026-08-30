@@ -24,6 +24,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
   bool _isLoading = true;
   Map<String, dynamic>? _storeData;
   List<dynamic> _products = [];
+  List<dynamic> _reviews = [];
 
   @override
   void initState() {
@@ -38,6 +39,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
       setState(() {
         _storeData = data['store'] is Map<String, dynamic> ? data['store'] : (data is Map<String, dynamic> ? data : {});
         _products = data['products'] is List ? data['products'] : [];
+        _reviews = data['reviews'] is List ? data['reviews'] : [];
         _isLoading = false;
       });
     } else {
@@ -536,6 +538,47 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                 childCount: _products.length,
               ),
             ),
+
+          // Reviews Section
+          if (_reviews.isNotEmpty) ...[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 4, height: 18,
+                      decoration: BoxDecoration(color: Colors.amber.shade600, borderRadius: BorderRadius.circular(4)),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Ulasan Pelanggan',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppTheme.inkBlack),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${_reviews.length} Ulasan',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Rating Summary Card
+            SliverToBoxAdapter(
+              child: _buildRatingSummary(),
+            ),
+
+            // Review Cards
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => _buildReviewCard(_reviews[index]),
+                childCount: _reviews.length,
+              ),
+            ),
+          ],
+
           const SliverPadding(padding: EdgeInsets.only(bottom: 90)),
         ],
       ),
@@ -599,7 +642,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                       ),
                       icon: const Icon(Icons.arrow_forward_rounded, size: 16),
                       label: const Text('Keranjang', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      onPressed: () {
+                       onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (_) => const CartScreen()),
@@ -610,6 +653,222 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildRatingSummary() {
+    final store = _storeData ?? {};
+    final double avgRating = double.tryParse(store['rating']?.toString() ?? '0') ?? 0.0;
+    final int totalReviews = _reviews.length;
+
+    final Map<int, int> dist = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0};
+    for (final r in _reviews) {
+      final rating = int.tryParse(r['rating']?.toString() ?? '0') ?? 0;
+      if (dist.containsKey(rating)) dist[rating] = dist[rating]! + 1;
+    }
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFFDE68A)),
+        boxShadow: [
+          BoxShadow(color: Colors.amber.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Big Score
+          Column(
+            children: [
+              Text(
+                avgRating.toStringAsFixed(1),
+                style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: AppTheme.inkBlack, height: 1),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: List.generate(5, (i) => Icon(
+                  i < avgRating.round() ? Icons.star_rounded : Icons.star_outline_rounded,
+                  color: Colors.amber, size: 14,
+                )),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '$totalReviews ulasan',
+                style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const SizedBox(width: 20),
+          // Breakdown Bars
+          Expanded(
+            child: Column(
+              children: [5, 4, 3, 2, 1].map((star) {
+                final count = dist[star] ?? 0;
+                final frac = totalReviews > 0 ? count / totalReviews : 0.0;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    children: [
+                      Icon(Icons.star_rounded, size: 12, color: Colors.amber.shade600),
+                      const SizedBox(width: 4),
+                      Text('$star', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.inkBlack)),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: frac,
+                            backgroundColor: const Color(0xFFF1F5F9),
+                            color: Colors.amber,
+                            minHeight: 7,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      SizedBox(
+                        width: 22,
+                        child: Text('$count', textAlign: TextAlign.right,
+                            style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewCard(dynamic review) {
+    final Map rev = review is Map ? review : {};
+    final String customerName = rev['customer_name']?.toString() ?? 'Pelanggan';
+    final String? avatarRaw = rev['customer_avatar']?.toString();
+    final String avatarUrl = (avatarRaw != null && avatarRaw.isNotEmpty && !avatarRaw.contains('null'))
+        ? ApiConstants.formatImageUrl(avatarRaw)
+        : '';
+    final int rating = int.tryParse(rev['rating']?.toString() ?? '5') ?? 5;
+    final String comment = rev['comment']?.toString() ?? '';
+    final String? reply = rev['reply']?.toString();
+    final String date = (rev['created_at']?.toString() ?? '').split(' ').first;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Reviewer Header
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: const Color(0xFFF1F5F9),
+                backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                child: avatarUrl.isEmpty
+                    ? Text(
+                        customerName.isNotEmpty ? customerName[0].toUpperCase() : 'P',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.inkBlack),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            customerName,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.inkBlack),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDCFCE7),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Text(
+                            '✓ Pembeli Terverifikasi',
+                            style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        ...List.generate(5, (i) => Icon(
+                          i < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                          color: Colors.amber, size: 13,
+                        )),
+                        const SizedBox(width: 6),
+                        Text(date, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // Comment
+          if (comment.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              '"$comment"',
+              style: const TextStyle(fontSize: 12.5, color: Color(0xFF374151), height: 1.5, fontStyle: FontStyle.italic),
+            ),
+          ],
+
+          // Store Reply
+          if (reply != null && reply.trim().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.storefront_rounded, size: 13, color: AppTheme.primaryRed),
+                      SizedBox(width: 4),
+                      Text(
+                        'Balasan Mitra Toko',
+                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(reply, style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569))),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
