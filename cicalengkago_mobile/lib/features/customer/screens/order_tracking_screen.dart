@@ -799,7 +799,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            (batchStores.isNotEmpty && batchStores[0] is Map ? (batchStores[0]['name'] ?? batchStores[0]['store_name']) : null) ?? 'Mitra Toko',
+                            (batchStores.isNotEmpty && batchStores[0] is Map ? (batchStores[0]['name'] ?? batchStores[0]['store_name']) : null) ?? 'Mitra Resto',
                             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                           ),
                           const SizedBox(height: 2),
@@ -813,7 +813,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         color: const Color(0xFFDCFCE7),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text('Kurir Toko', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
+                      child: const Text('Diantar Merchant', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
                     ),
                   ],
                 ),
@@ -987,7 +987,37 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     }
 
     final List<Polyline> polylines = [];
-    if (isDriverValid) {
+    if (isMerchantDelivery) {
+      if (batchStores.length > 1) {
+        final List<Color> merchantColors = [
+          const Color(0xFF16A34A),
+          const Color(0xFF2563EB),
+          const Color(0xFFD97706),
+          const Color(0xFF9333EA),
+        ];
+        for (int i = 0; i < batchStores.length; i++) {
+          final st = batchStores[i] is Map ? (batchStores[i] as Map) : {};
+          final sLat = double.tryParse(st['lat']?.toString() ?? '') ?? double.tryParse(st['latitude']?.toString() ?? '') ?? storeLat;
+          final sLng = double.tryParse(st['lng']?.toString() ?? '') ?? double.tryParse(st['longitude']?.toString() ?? '') ?? storeLng;
+          final col = merchantColors[i % merchantColors.length];
+          polylines.add(
+            Polyline(
+              points: [LatLng(sLat, sLng), custPos],
+              strokeWidth: 4.2,
+              color: col.withValues(alpha: 0.85),
+            ),
+          );
+        }
+      } else {
+        polylines.add(
+          Polyline(
+            points: [storePos, custPos],
+            strokeWidth: 4.8,
+            color: const Color(0xFF16A34A),
+          ),
+        );
+      }
+    } else if (isDriverValid) {
       final roadPoints = _liveCustomerRoadPoints.isNotEmpty
           ? _liveCustomerRoadPoints
           : [driverPos, (isDeliveringToCustomer ? custPos : storePos)];
@@ -1110,8 +1140,105 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           ),
                         ),
                       ),
+
+                      // Merchant Delivery Moving Pins (Single or Multi-Merchant)
+                      if (isMerchantDelivery) ...[
+                        if (batchStores.length > 1)
+                          ...batchStores.asMap().entries.map((entry) {
+                            final i = entry.key;
+                            final st = entry.value is Map ? (entry.value as Map) : {};
+                            final sLat = double.tryParse(st['lat']?.toString() ?? '') ?? double.tryParse(st['latitude']?.toString() ?? '') ?? storeLat;
+                            final sLng = double.tryParse(st['lng']?.toString() ?? '') ?? double.tryParse(st['longitude']?.toString() ?? '') ?? storeLng;
+                            final sName = (st['name'] ?? st['store_name'] ?? 'Resto ${i + 1}').toString();
+                            final List<Color> merchantColors = [const Color(0xFF16A34A), const Color(0xFF2563EB), const Color(0xFFD97706), const Color(0xFF9333EA)];
+                            final col = merchantColors[i % merchantColors.length];
+
+                            // Independent real-time progress simulation per merchant
+                            final double prog = status == 'on_the_way'
+                                ? (0.40 + (i * 0.20))
+                                : (status == 'processing' ? 0.15 : 0.05);
+                            final double liveMLat = sLat + (custLat - sLat) * prog;
+                            final double liveMLng = sLng + (custLng - sLng) * prog;
+
+                            return Marker(
+                              point: LatLng(liveMLat, liveMLng),
+                              width: 96,
+                              height: 74,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF0F172A),
+                                      borderRadius: BorderRadius.circular(8),
+                                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                                    ),
+                                    child: Text(
+                                      'Merchant $sName',
+                                      style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Container(
+                                    width: 38,
+                                    height: 38,
+                                    decoration: BoxDecoration(
+                                      color: col,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [BoxShadow(color: col.withValues(alpha: 0.4), blurRadius: 8)],
+                                    ),
+                                    child: const Icon(Icons.directions_walk_rounded, color: Colors.white, size: 22),
+                                  ),
+                                ],
+                              ),
+                            );
+                          })
+                        else if (status == 'on_the_way' || status == 'processing')
+                          Marker(
+                            point: LatLng(
+                              storeLat + (custLat - storeLat) * (status == 'on_the_way' ? 0.55 : 0.15),
+                              storeLng + (custLng - storeLng) * (status == 'on_the_way' ? 0.55 : 0.15),
+                            ),
+                            width: 96,
+                            height: 74,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF15803D),
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                                  ),
+                                  child: const Text(
+                                    'Merchant Mengantar',
+                                    style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF16A34A),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [BoxShadow(color: Color(0x6616A34A), blurRadius: 10)],
+                                  ),
+                                  child: const Icon(Icons.directions_walk_rounded, color: Colors.white, size: 24),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+
                       // Driver Pin with Real-time Moving Coordinate Aura & Bogo Helmet Mascot
-                      if (isDriverValid)
+                      if (!isMerchantDelivery && isDriverValid)
                         Marker(
                           point: LatLng(driverLat, driverLng),
                           width: 80,
@@ -1618,17 +1745,17 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                         color: const Color(0xFFDCFCE7),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
-                                      child: const Text('Kurir Toko', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
+                                      child: const Text('Diantar Merchant', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 3),
                                 Text(
                                   status == 'on_the_way'
-                                      ? 'Staff toko sedang berjalan mengantarkan pesanan ke rumah Anda 🚶‍♂️'
+                                      ? 'Staff merchant sedang berjalan mengantarkan pesanan ke rumah Anda 🚶‍♂️'
                                       : (status == 'processing'
-                                          ? 'Pesanan sedang disiapkan & dimasak oleh tim toko 👨‍🍳'
-                                          : 'Toko menerima pesanan & bersiap menyiapkan menu'),
+                                          ? 'Pesanan sedang disiapkan & dimasak oleh tim merchant 👨‍🍳'
+                                          : 'Merchant menerima pesanan & bersiap menyiapkan menu'),
                                   style: const TextStyle(fontSize: 10.5, color: Color(0xFF166534), fontWeight: FontWeight.w500),
                                 ),
                               ],
@@ -1889,15 +2016,15 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           'icon': Icons.soup_kitchen_rounded
         },
         {
-          'title': 'Staff Toko Mengantar (< 300m)',
-          'sub': 'Staff toko sedang berjalan mengantarkan ke rumah Anda',
+          'title': 'Merchant Sedang Menuju Alamat Anda',
+          'sub': 'Staff merchant sedang berjalan mengantarkan ke lokasi Anda',
           'done': isStep3Done,
           'active': isStep3Active,
           'icon': Icons.directions_walk_rounded
         },
         {
           'title': 'Pesanan Selesai Sampai',
-          'sub': 'Pesanan telah diterima langsung dari pihak toko',
+          'sub': 'Pesanan telah diterima langsung dari pihak merchant',
           'done': isStep4Done,
           'active': isStep4Active,
           'icon': Icons.task_alt_rounded
@@ -1966,7 +2093,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   color: const Color(0xFFDCFCE7),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text('Kurir Toko', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
+                child: const Text('Diantar Merchant', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
               ),
           ],
         ),
@@ -3312,11 +3439,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     required List batchStores,
     bool isMerchantDelivery = false,
   }) {
-    // Mode 1: Pengantaran Kurir Toko / Merchant (< 300m)
+    // Mode 1: Pengantaran Langsung oleh Merchant (< 300m atau Pilihan Toko)
     if (isMerchantDelivery) {
       final bool isCooking = ['pending', 'confirmed', 'processing'].contains(status);
       final bool isWalking = (status == 'on_the_way');
       final bool isDelivered = (status == 'delivered');
+      final bool isMulti = batchStores.length > 1;
 
       return Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -3352,10 +3480,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         child: const Icon(Icons.storefront_rounded, color: Color(0xFF16A34A), size: 16),
                       ),
                       const SizedBox(width: 8),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Tahapan Pengantaran Toko',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF14532D)),
+                          isMulti ? 'Tahapan Pengantaran Multi-Merchant' : 'Tahapan Pengantaran Merchant',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF14532D)),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -3370,57 +3498,114 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: const Color(0xFF86EFAC)),
                   ),
-                  child: const Text(
-                    'Radius Dekat < 300m',
-                    style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                  child: Text(
+                    isMulti ? 'Multi-Merchant (${batchStores.length} Resto)' : 'Diantar Merchant (< 300m)',
+                    style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
                   ),
                 ),
               ],
             ),
             const Divider(height: 18, color: Color(0xFFF1F5F9)),
 
-            // Step 1: Penyiapan oleh Resto
-            _timelineStepItem(
-              isCompleted: isWalking || isDelivered,
-              isActive: isCooking,
-              stepNum: '1',
-              title: (isWalking || isDelivered)
-                  ? 'Pesanan Selesai Disiapkan di Toko ✅'
-                  : 'Resto Sedang Menyiapkan & Memasak Pesanan 👨‍🍳',
-              desc: storeName.isNotEmpty ? storeName : 'Resto Mitra Cicalengka',
-              icon: Icons.soup_kitchen_rounded,
-            ),
-            _timelineConnector(isCompleted: isWalking || isDelivered),
+            if (isMulti) ...[
+              // Step 1: Penyiapan Resto
+              _timelineStepItem(
+                isCompleted: isWalking || isDelivered,
+                isActive: isCooking,
+                stepNum: '1',
+                title: (isWalking || isDelivered)
+                    ? 'Semua Merchant Telah Selesai Memasak ✅'
+                    : 'Masing-Masing Merchant Sedang Memasak Menu 👨‍🍳',
+                desc: '${batchStores.length} resto mitra menyiapkan menu hidangan Anda',
+                icon: Icons.soup_kitchen_rounded,
+              ),
+              _timelineConnector(isCompleted: isWalking || isDelivered),
 
-            // Step 2: Staff Toko Mengantar Langsung
-            _timelineStepItem(
-              isCompleted: isDelivered,
-              isActive: isWalking,
-              stepNum: '2',
-              title: isDelivered
-                  ? 'Pesanan Berhasil Diserahkan Toko ✅'
-                  : (isWalking ? 'Staff Toko Sedang Mengantar ke Lokasi Anda 🚶‍♂️' : 'Menunggu Selesai Dimasak oleh Toko'),
-              desc: isWalking
-                  ? 'Staff toko sedang berjalan mengantarkan pesanan ke rumah Anda'
-                  : 'Pengantaran langsung oleh staff toko tanpa perantara driver',
-              icon: Icons.directions_walk_rounded,
-            ),
-            _timelineConnector(isCompleted: isDelivered),
+              // Step 2..N: Pengantaran Masing-Masing Merchant
+              for (int i = 0; i < batchStores.length; i++) ...[
+                Builder(builder: (context) {
+                  final st = batchStores[i] is Map ? (batchStores[i] as Map) : {};
+                  final String sName = (st['name'] ?? st['store_name'] ?? 'Resto ${i + 1}').toString();
+                  final String sAddr = (st['address'] ?? st['store_address'] ?? 'Cicalengka').toString();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _timelineStepItem(
+                        isCompleted: isDelivered,
+                        isActive: isWalking,
+                        stepNum: '${i + 2}',
+                        title: isDelivered
+                            ? 'Merchant $sName: Telah Sampai & Diserahkan ✅'
+                            : (isWalking
+                                ? 'Merchant $sName Sedang Menuju Alamat Anda 🚶‍♂️'
+                                : 'Merchant $sName: Menyiapkan Pengantaran Mandiri'),
+                        desc: 'Diantar langsung oleh pihak $sName ($sAddr)',
+                        icon: Icons.directions_walk_rounded,
+                      ),
+                      _timelineConnector(isCompleted: isDelivered),
+                    ],
+                  );
+                }),
+              ],
 
-            // Step 3: Sampai di Lokasi Rumah Pelanggan
-            _timelineStepItem(
-              isCompleted: isDelivered,
-              isActive: false,
-              stepNum: '3',
-              title: isDelivered
-                  ? 'Telah Sampai & Diterima dengan Selamat 🎉'
-                  : 'Tiba di Alamat Rumah Anda',
-              desc: isDelivered
-                  ? 'Selamat menikmati hidangan dari $storeName'
-                  : 'Siap menerima pesanan langsung di depan rumah',
-              icon: Icons.home_rounded,
-              imageAsset: 'assets/images/customer_home_marker.png',
-            ),
+              // Final Step: Sampai di Lokasi Rumah
+              _timelineStepItem(
+                isCompleted: isDelivered,
+                isActive: false,
+                stepNum: '${batchStores.length + 2}',
+                title: isDelivered
+                    ? 'Semua Pesanan Merchant Telah Diterima 🎉'
+                    : 'Tiba di Alamat Rumah Anda',
+                desc: isDelivered
+                    ? 'Selamat menikmati hidangan dari seluruh resto mitra'
+                    : 'Siap menerima pengantaran mandiri dari masing-masing merchant',
+                icon: Icons.home_rounded,
+                imageAsset: 'assets/images/customer_home_marker.png',
+              ),
+            ] else ...[
+              // Step 1: Penyiapan oleh Resto
+              _timelineStepItem(
+                isCompleted: isWalking || isDelivered,
+                isActive: isCooking,
+                stepNum: '1',
+                title: (isWalking || isDelivered)
+                    ? 'Pesanan Selesai Disiapkan di Resto ✅'
+                    : 'Resto Sedang Menyiapkan & Memasak Pesanan 👨‍🍳',
+                desc: storeName.isNotEmpty ? storeName : 'Resto Mitra Cicalengka',
+                icon: Icons.soup_kitchen_rounded,
+              ),
+              _timelineConnector(isCompleted: isWalking || isDelivered),
+
+              // Step 2: Merchant Mengantar Langsung
+              _timelineStepItem(
+                isCompleted: isDelivered,
+                isActive: isWalking,
+                stepNum: '2',
+                title: isDelivered
+                    ? 'Pesanan Berhasil Diserahkan Merchant ✅'
+                    : (isWalking ? 'Merchant Sedang Menuju Alamat Anda 🚶‍♂️' : 'Menunggu Selesai Dimasak oleh Resto'),
+                desc: isWalking
+                    ? 'Staff merchant sedang berjalan mengantarkan pesanan ke rumah Anda'
+                    : 'Pengantaran langsung oleh pihak merchant tanpa perantara driver',
+                icon: Icons.directions_walk_rounded,
+              ),
+              _timelineConnector(isCompleted: isDelivered),
+
+              // Step 3: Sampai di Lokasi Rumah Pelanggan
+              _timelineStepItem(
+                isCompleted: isDelivered,
+                isActive: false,
+                stepNum: '3',
+                title: isDelivered
+                    ? 'Telah Sampai & Diterima dengan Selamat 🎉'
+                    : 'Tiba di Alamat Rumah Anda',
+                desc: isDelivered
+                    ? 'Selamat menikmati hidangan dari $storeName'
+                    : 'Siap menerima pesanan langsung di depan rumah',
+                icon: Icons.home_rounded,
+                imageAsset: 'assets/images/customer_home_marker.png',
+              ),
+            ],
           ],
         ),
       );
