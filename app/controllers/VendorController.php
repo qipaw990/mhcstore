@@ -66,9 +66,9 @@ class VendorController extends Controller
         // Pre-fetch vendor wallet so we can use wallet_id for duplicate check
         $vendorWallet = $this->walletModel->getOrCreate($userId, 'vendor');
 
-        // Auto-heal vendor wallet credit for any delivered orders that haven't been credited yet
+        // Auto-heal vendor wallet credit for any non-COD delivered orders that haven't been credited yet (COD is received in cash directly)
         $deliveredOrders = Database::query(
-            "SELECT id, order_code, order_amount FROM `orders` WHERE `store_id` = ? AND `order_status` = 'delivered'",
+            "SELECT id, order_code, order_amount, payment_method FROM `orders` WHERE `store_id` = ? AND `order_status` = 'delivered' AND `payment_method` != 'cod'",
             [$storeId]
         );
         foreach ($deliveredOrders as $dOrder) {
@@ -215,22 +215,26 @@ class VendorController extends Controller
             $updateData['delivered_at'] = date('Y-m-d H:i:s');
             $updateData['payment_status'] = 'paid';
 
-            // Auto-credit pendapatan toko (90%)
-            $userId = auth_id();
-            $vendorWallet = $this->walletModel->getOrCreate($userId, 'vendor');
-            $alreadyCredited = Database::fetchOne(
-                "SELECT id FROM `wallet_transactions` WHERE `wallet_id` = ? AND `category` = 'order_earning' AND `reference_id` = ? LIMIT 1",
-                [$vendorWallet['id'], (string)$order['id']]
-            );
-            if (!$alreadyCredited) {
-                $vendorEarning = (float)$order['order_amount'] * 0.90;
-                $this->walletModel->credit(
-                    $userId,
-                    $vendorEarning,
-                    'order_earning',
-                    "Penjualan pesanan #{$order['order_code']}",
-                    (string)$order['id']
+            // Auto-credit pendapatan toko (90%) HANYA untuk pesanan non-COD (Wallet / Online / Midtrans)
+            // Untuk COD, pembayaran diterima langsung tunai di tangan oleh merchant/driver (tidak masuk saldo digital).
+            $pMethod = strtolower($order['payment_method'] ?? 'cod');
+            if ($pMethod !== 'cod') {
+                $userId = auth_id();
+                $vendorWallet = $this->walletModel->getOrCreate($userId, 'vendor');
+                $alreadyCredited = Database::fetchOne(
+                    "SELECT id FROM `wallet_transactions` WHERE `wallet_id` = ? AND `category` = 'order_earning' AND `reference_id` = ? LIMIT 1",
+                    [$vendorWallet['id'], (string)$order['id']]
                 );
+                if (!$alreadyCredited) {
+                    $vendorEarning = (float)$order['order_amount'] * 0.90;
+                    $this->walletModel->credit(
+                        $userId,
+                        $vendorEarning,
+                        'order_earning',
+                        "Penjualan pesanan #{$order['order_code']}",
+                        (string)$order['id']
+                    );
+                }
             }
         } elseif ($status === 'canceled') {
             $updateData['cancellation_reason'] = 'Dibatalkan oleh Mitra Toko';

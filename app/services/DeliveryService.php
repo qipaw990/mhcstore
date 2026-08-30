@@ -194,8 +194,9 @@ class DeliveryService
                 $updateData['delivered_at']     = $now;
                 $updateData['payment_status']   = 'paid';
 
-                // Credit Vendor Earnings (90% of order amount)
-                if (!empty($order['store_id'])) {
+                // Credit Vendor Earnings (90% of order amount) - ONLY for non-COD payment methods
+                $pMethod = strtolower($order['payment_method'] ?? 'cod');
+                if ($pMethod !== 'cod' && !empty($order['store_id'])) {
                     $store = Database::fetchOne("SELECT vendor_id, name FROM stores WHERE id = ?", [$order['store_id']]);
                     if ($store) {
                         $vendorEarning = (float)$order['order_amount'] * 0.90;
@@ -247,8 +248,9 @@ class DeliveryService
                         ];
                         Database::update('orders', $subUpdateData, 'id = ?', [$bOrdToDel['id']]);
 
-                        // Credit Vendor Earnings (90% of order amount)
-                        if (!empty($bOrdToDel['store_id'])) {
+                        // Credit Vendor Earnings (90% of order amount) - ONLY for non-COD orders
+                        $bMethod = strtolower($bOrdToDel['payment_method'] ?? 'cod');
+                        if ($bMethod !== 'cod' && !empty($bOrdToDel['store_id'])) {
                             $store = Database::fetchOne("SELECT vendor_id, name FROM stores WHERE id = ?", [$bOrdToDel['store_id']]);
                             if ($store) {
                                 $vendorEarning = (float)$bOrdToDel['order_amount'] * 0.90;
@@ -278,25 +280,27 @@ class DeliveryService
                         ),
                     ], 'id = ?', [$dm['id']]);
                 } else {
-                    // Single order delivery (no batch)
-                    $driverWallet = $this->walletModel->getOrCreate((int)$dm['user_id'], 'delivery_man');
-                    $alreadyCredited = Database::fetchOne(
-                        "SELECT id FROM `wallet_transactions` 
-                         WHERE `wallet_id` = ? AND `category` = 'order_earning' 
-                           AND (`reference_id` = ? OR `reference_id` = ?) LIMIT 1",
-                        [$driverWallet['id'], (string)$order['id'], (string)$order['order_code']]
-                    );
-
-                    if (!$alreadyCredited) {
-                        $dmEarning = $this->calcSingleCommission($order);
-                        $this->walletModel->credit(
-                            (int)$dm['user_id'],
-                            $dmEarning,
-                            'order_earning',
-                            "Komisi pengantaran #{$order['order_code']}",
-                            (string)$order['id'],
-                            'delivery_man'
+                    // Single order delivery (no batch) - Credit digital driver commission ONLY if non-COD
+                    if ($pMethod !== 'cod') {
+                        $driverWallet = $this->walletModel->getOrCreate((int)$dm['user_id'], 'delivery_man');
+                        $alreadyCredited = Database::fetchOne(
+                            "SELECT id FROM `wallet_transactions` 
+                             WHERE `wallet_id` = ? AND `category` = 'order_earning' 
+                               AND (`reference_id` = ? OR `reference_id` = ?) LIMIT 1",
+                            [$driverWallet['id'], (string)$order['id'], (string)$order['order_code']]
                         );
+
+                        if (!$alreadyCredited) {
+                            $dmEarning = $this->calcSingleCommission($order);
+                            $this->walletModel->credit(
+                                (int)$dm['user_id'],
+                                $dmEarning,
+                                'order_earning',
+                                "Komisi pengantaran #{$order['order_code']}",
+                                (string)$order['id'],
+                                'delivery_man'
+                            );
+                        }
                     }
 
                     Database::execute(
@@ -392,6 +396,9 @@ class DeliveryService
         $driverWallet = $this->walletModel->getOrCreate((int)$dm['user_id'], 'delivery_man');
 
         foreach ($batchOrders as $bOrd) {
+            $pMethod = strtolower($bOrd['payment_method'] ?? 'cod');
+            if ($pMethod === 'cod') continue; // COD is collected in physical cash directly
+
             $alreadyCredited = Database::fetchOne(
                 "SELECT id FROM `wallet_transactions` 
                  WHERE `wallet_id` = ? AND `category` = 'order_earning' 

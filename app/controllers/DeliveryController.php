@@ -779,9 +779,9 @@ class DeliveryController extends Controller
         $userId = (int)$dm['user_id'];
         $driverWallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
         $deliveredDriverOrders = Database::query(
-            "SELECT id, order_code, delivery_charge, distance_km, delivery_batch_id, zone_id 
+            "SELECT id, order_code, delivery_charge, distance_km, delivery_batch_id, zone_id, payment_method 
              FROM `orders` 
-             WHERE (`delivery_man_id` = ? OR `delivery_man_id` = ?) AND `order_status` = 'delivered'",
+             WHERE (`delivery_man_id` = ? OR `delivery_man_id` = ?) AND `order_status` = 'delivered' AND `payment_method` != 'cod'",
             [(int)$dm['id'], (int)$dm['user_id']]
         );
 
