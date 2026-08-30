@@ -730,6 +730,7 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
                   TextFormField(
                     controller: _hppCtrl,
                     keyboardType: TextInputType.number,
+                    onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
                       hintText: 'Contoh: 8000 (untuk hitung profit)',
                       hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
@@ -741,6 +742,23 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFFDE68A))),
                       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFD97706))),
                     ),
+                  ),
+                  const SizedBox(height: 6),
+                  // Smart Markup Preset Chips
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      const Text(
+                        'Preset Untung:',
+                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                      ),
+                      _buildMarkupChip(20),
+                      _buildMarkupChip(30),
+                      _buildMarkupChip(50),
+                      _buildMarkupChip(100),
+                    ],
                   ),
                   const SizedBox(height: 12),
 
@@ -814,6 +832,41 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 5),
       child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+    );
+  }
+
+  Widget _buildMarkupChip(double percent) {
+    final hpp = double.tryParse(_hppCtrl.text.trim()) ?? 0.0;
+    return InkWell(
+      onTap: () {
+        if (hpp <= 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Masukkan nominal modal HPP terlebih dahulu'),
+              backgroundColor: Color(0xFFD97706),
+              duration: Duration(seconds: 2),
+            ),
+          );
+          return;
+        }
+        final calculatedPrice = (hpp * (1 + percent / 100)).round();
+        setState(() {
+          _priceCtrl.text = calculatedPrice.toString();
+        });
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEFF6FF),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFBFDBFE)),
+        ),
+        child: Text(
+          '+${percent.toInt()}%',
+          style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8)),
+        ),
+      ),
     );
   }
 

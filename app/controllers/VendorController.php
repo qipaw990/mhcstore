@@ -993,6 +993,279 @@ class VendorController extends Controller
         ]);
     }
 
+    public function smartInsights(): void
+    {
+        $this->ensureHppColumn();
+        $userId = auth_id();
+        $store = $this->storeModel->findByVendorId($userId);
+        if (!$store) {
+            $this->errorResponse('Toko tidak ditemukan.');
+            return;
+        }
+        $storeId = (int)$store['id'];
+
+        // 1. Low Stock Products (stock <= 5 and status = 1)
+        $lowStockItems = Database::query(
+            "SELECT id, name, price, COALESCE(hpp, 0) as hpp, stock, image, barcode 
+             FROM products 
+             WHERE store_id = :sid AND status = 1 AND stock <= 5 
+             ORDER BY stock ASC LIMIT 15",
+            [':sid' => $storeId]
+        );
+
+        // 2. Menu Engineering Matrix (Last 60 days of delivered orders)
+        $productPerformance = Database::query(
+            "SELECT 
+                oi.product_id,
+                COALESCE(p.name, oi.product_name) as name,
+                COALESCE(oi.product_image_snapshot, p.image) as image,
+                p.stock,
+                COALESCE(p.price, oi.price) as price,
+                COALESCE(oi.hpp_snapshot, p.hpp, 0) as hpp,
+                SUM(oi.quantity) as total_sold,
+                SUM(oi.total_price) as total_revenue,
+                SUM((oi.price - COALESCE(oi.hpp_snapshot, p.hpp, 0)) * oi.quantity) as total_profit,
+                AVG(CASE WHEN oi.price > 0 THEN ((oi.price - COALESCE(oi.hpp_snapshot, p.hpp, 0)) / oi.price * 100) ELSE 0 END) as avg_margin_pct
+             FROM order_items oi
+             JOIN orders o ON oi.order_id = o.id
+             LEFT JOIN products p ON oi.product_id = p.id
+             WHERE o.store_id = :sid AND o.order_status = 'delivered' AND o.created_at >= DATE_SUB(NOW(), INTERVAL 60 DAY)
+             GROUP BY oi.product_id, name, image, p.stock, price, hpp
+             ORDER BY total_sold DESC",
+            [':sid' => $storeId]
+        );
+
+        $totalSoldAll = 0;
+        $itemCount = count($productPerformance);
+        foreach ($productPerformance as $p) {
+            $totalSoldAll += (int)$p['total_sold'];
+        }
+        $avgSold = $itemCount > 0 ? ($totalSoldAll / $itemCount) : 1;
+
+        $starProducts = [];
+        $potentialProducts = [];
+        $thinMarginProducts = [];
+
+        foreach ($productPerformance as $p) {
+            $sold = (int)$p['total_sold'];
+            $margin = (float)$p['avg_margin_pct'];
+            $profit = (float)$p['total_profit'];
+            $itemHpp = (float)$p['hpp'];
+
+            $itemData = [
+                'product_id'   => $p['product_id'],
+                'name'         => $p['name'],
+                'image'        => $p['image'],
+                'stock'        => $p['stock'] !== null ? (int)$p['stock'] : 0,
+                'price'        => (float)$p['price'],
+                'hpp'          => $itemHpp,
+                'total_sold'   => $sold,
+                'total_profit' => $profit,
+                'margin_pct'   => round($margin, 1),
+            ];
+
+            if ($sold >= $avgSold && $margin >= 25) {
+                $itemData['badge'] = 'Bintang';
+                $itemData['tip'] = 'Menu paling laris & menguntungkan. Pertahankan stok & pasang promo!';
+                $starProducts[] = $itemData;
+            } elseif ($sold < $avgSold && $margin >= 35 && $itemHpp > 0) {
+                $itemData['badge'] = 'Potensial';
+                $itemData['tip'] = 'Margin tinggi tapi penjualan masih rendah. Rekomendasi: Beri diskon flash sale!';
+                $potentialProducts[] = $itemData;
+            } elseif ($sold >= $avgSold && $margin < 20 && $itemHpp > 0) {
+                $itemData['badge'] = 'Margin Tipis';
+                $itemData['tip'] = 'Laris tapi laba bersih tipis. Rekomendasi: Naikkan harga sedikit atau optimasi HPP.';
+                $thinMarginProducts[] = $itemData;
+            }
+        }
+
+        // 3. Peak Hours Distribution (Last 30 days)
+        $hourlyOrders = Database::query(
+            "SELECT 
+                HOUR(o.created_at) as order_hour,
+                COUNT(o.id) as order_count,
+                SUM(o.total_amount) as total_sales
+             FROM orders o
+             WHERE o.store_id = :sid AND o.order_status = 'delivered' AND o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+             GROUP BY HOUR(o.created_at)
+             ORDER BY order_hour ASC",
+            [':sid' => $storeId]
+        );
+
+        $blocks = [
+            'pagi'  => ['key' => 'pagi',  'label' => 'Pagi (06:00 - 10:59)', 'count' => 0, 'sales' => 0.0, 'icon' => 'wb_sunny_rounded'],
+            'siang' => ['key' => 'siang', 'label' => 'Siang (11:00 - 14:59)', 'count' => 0, 'sales' => 0.0, 'icon' => 'restaurant_rounded'],
+            'sore'  => ['key' => 'sore',  'label' => 'Sore (15:00 - 17:59)', 'count' => 0, 'sales' => 0.0, 'icon' => 'local_cafe_rounded'],
+            'malam' => ['key' => 'malam', 'label' => 'Malam (18:00 - 23:59)', 'count' => 0, 'sales' => 0.0, 'icon' => 'nights_stay_rounded'],
+        ];
+
+        $peakHour = null;
+        $maxPeakCount = -1;
+
+        foreach ($hourlyOrders as $h) {
+            $hr = (int)$h['order_hour'];
+            $cnt = (int)$h['order_count'];
+            $sls = (float)$h['total_sales'];
+
+            if ($cnt > $maxPeakCount) {
+                $maxPeakCount = $cnt;
+                $peakHour = sprintf("%02d:00 - %02d:00", $hr, ($hr + 1) % 24);
+            }
+
+            if ($hr >= 6 && $hr < 11) {
+                $blocks['pagi']['count'] += $cnt;
+                $blocks['pagi']['sales'] += $sls;
+            } elseif ($hr >= 11 && $hr < 15) {
+                $blocks['siang']['count'] += $cnt;
+                $blocks['siang']['sales'] += $sls;
+            } elseif ($hr >= 15 && $hr < 18) {
+                $blocks['sore']['count'] += $cnt;
+                $blocks['sore']['sales'] += $sls;
+            } elseif ($hr >= 18 || $hr < 6) {
+                $blocks['malam']['count'] += $cnt;
+                $blocks['malam']['sales'] += $sls;
+            }
+        }
+
+        $busiestBlock = 'siang';
+        $busiestCount = -1;
+        foreach ($blocks as $k => $b) {
+            if ($b['count'] > $busiestCount) {
+                $busiestCount = $b['count'];
+                $busiestBlock = $k;
+            }
+        }
+
+        $this->successResponse('Smart Business Insights retrieved successfully.', [
+            'low_stock_count'       => count($lowStockItems),
+            'low_stock_items'       => $lowStockItems,
+            'star_products'         => array_slice($starProducts, 0, 5),
+            'potential_products'    => array_slice($potentialProducts, 0, 5),
+            'thin_margin_products'  => array_slice($thinMarginProducts, 0, 5),
+            'hourly_trends'         => $hourlyOrders,
+            'time_blocks'           => array_values($blocks),
+            'busiest_period'        => $blocks[$busiestBlock]['label'],
+            'busiest_hour'          => $peakHour ?? 'Belum ada data',
+        ]);
+    }
+
+    public function dailySettlement(): void
+    {
+        $this->ensureHppColumn();
+        $userId = auth_id();
+        $store = $this->storeModel->findByVendorId($userId);
+        if (!$store) {
+            $this->errorResponse('Toko tidak ditemukan.');
+            return;
+        }
+        $storeId = (int)$store['id'];
+        $date = sanitize($_GET['date'] ?? date('Y-m-d'));
+
+        // 1. Orders Summary for the day
+        $orders = Database::query(
+            "SELECT 
+                o.id, o.order_code, o.order_amount, o.delivery_charge, o.total_amount,
+                o.payment_method, o.order_status, o.order_type, o.delivery_type, o.created_at,
+                COALESCE(SUM(oi.hpp_snapshot * oi.quantity), 0) as total_cogs
+             FROM orders o
+             LEFT JOIN order_items oi ON o.id = oi.order_id
+             WHERE o.store_id = :sid AND DATE(o.created_at) = :dt
+             GROUP BY o.id, o.order_code, o.order_amount, o.delivery_charge, o.total_amount, o.payment_method, o.order_status, o.order_type, o.delivery_type, o.created_at
+             ORDER BY o.created_at DESC",
+            [':sid' => $storeId, ':dt' => $date]
+        );
+
+        $totalOrders = count($orders);
+        $completedOrders = 0;
+        $canceledOrders = 0;
+        $grossSales = 0.0;
+        $netRevenue = 0.0;
+        $totalCogs = 0.0;
+        $cashAmount = 0.0;
+        $nonCashAmount = 0.0;
+        $posOrdersCount = 0;
+        $onlineOrdersCount = 0;
+
+        foreach ($orders as $ord) {
+            $st = $ord['order_status'];
+            $payMethod = strtolower($ord['payment_method'] ?? 'cash');
+            $isPos = ($ord['order_type'] === 'takeaway' && $ord['delivery_type'] === 'merchant') || (isset($ord['is_pos']) && $ord['is_pos'] == 1);
+            $amount = (float)$ord['order_amount'];
+            $cogs = (float)$ord['total_cogs'];
+
+            if ($st === 'delivered') {
+                $completedOrders++;
+                $grossSales += $amount;
+                $net = $amount * 0.90; // Net after platform commission
+                $netRevenue += $net;
+                $totalCogs += $cogs;
+
+                if ($payMethod === 'cod' || $payMethod === 'cash') {
+                    $cashAmount += $amount;
+                } else {
+                    $nonCashAmount += $amount;
+                }
+
+                if ($isPos) {
+                    $posOrdersCount++;
+                } else {
+                    $onlineOrdersCount++;
+                }
+            } elseif ($st === 'canceled') {
+                $canceledOrders++;
+            }
+        }
+
+        $grossProfit = $netRevenue - $totalCogs;
+        $marginPct = $netRevenue > 0 ? ($grossProfit / $netRevenue * 100) : 0.0;
+
+        // Generate formatted WhatsApp message for owner
+        $formattedDate = date('d F Y', strtotime($date));
+        $storeName = $store['name'];
+        $rpGross = number_format($grossSales, 0, ',', '.');
+        $rpNet = number_format($netRevenue, 0, ',', '.');
+        $rpCash = number_format($cashAmount, 0, ',', '.');
+        $rpNonCash = number_format($nonCashAmount, 0, ',', '.');
+        $rpCogs = number_format($totalCogs, 0, ',', '.');
+        $rpProfit = number_format($grossProfit, 0, ',', '.');
+        $marginStr = number_format($marginPct, 1);
+
+        $waMessage = "*📊 LAPORAN TUTUP KASIR HARIAN*\n"
+                   . "*Toko:* {$storeName}\n"
+                   . "*Tanggal:* {$formattedDate}\n"
+                   . "--------------------------------\n"
+                   . "✅ *Pesanan Berhasil:* {$completedOrders} Transaksi\n"
+                   . ($canceledOrders > 0 ? "❌ *Pesanan Batal:* {$canceledOrders} Transaksi\n" : "")
+                   . "💰 *Total Omzet Kotor:* Rp {$rpGross}\n"
+                   . "💵 *Kas Tunai (Cash):* Rp {$rpCash}\n"
+                   . "💳 *Non-Tunai (Digital/Transfer):* Rp {$rpNonCash}\n"
+                   . "--------------------------------\n"
+                   . "📦 *Total Modal (HPP):* Rp {$rpCogs}\n"
+                   . "💚 *Laba Bersih:* Rp {$rpProfit} ({$marginStr}%)\n"
+                   . "--------------------------------\n"
+                   . "Laporan digenerate otomatis oleh *CicalengkaGO Merchant*.";
+
+        $this->successResponse('Daily settlement generated successfully.', [
+            'date'               => $date,
+            'formatted_date'     => $formattedDate,
+            'store_name'         => $storeName,
+            'total_orders'       => $totalOrders,
+            'completed_orders'   => $completedOrders,
+            'canceled_orders'    => $canceledOrders,
+            'gross_sales'        => $grossSales,
+            'net_revenue'        => $netRevenue,
+            'cash_amount'        => $cashAmount,
+            'non_cash_amount'    => $nonCashAmount,
+            'total_cogs'         => $totalCogs,
+            'gross_profit'       => $grossProfit,
+            'margin_pct'         => round($marginPct, 1),
+            'pos_orders_count'   => $posOrdersCount,
+            'online_orders_count'=> $onlineOrdersCount,
+            'wa_message'         => $waMessage,
+            'recent_orders'      => array_slice($orders, 0, 15),
+        ]);
+    }
+
     public function requestWithdraw(): void
     {
         $userId = auth_id();

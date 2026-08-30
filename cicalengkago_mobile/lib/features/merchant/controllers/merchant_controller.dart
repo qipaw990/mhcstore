@@ -26,6 +26,14 @@ class MerchantController extends ChangeNotifier {
   List<dynamic> _analyticsDeliveryBreakdown = [];
   List<dynamic> _analyticsRecentOrders = [];
 
+  // Smart Business Insights State
+  bool _isSmartInsightsLoading = false;
+  Map<String, dynamic>? _smartInsights;
+
+  // Daily Settlement (Tutup Kasir) State
+  bool _isSettlementLoading = false;
+  Map<String, dynamic>? _dailySettlement;
+
   bool get isLoading => _isLoading;
   bool get isOpen => _isOpen;
   Map<String, dynamic>? get store => _store;
@@ -47,6 +55,12 @@ class MerchantController extends ChangeNotifier {
   List<dynamic> get analyticsPaymentBreakdown => _analyticsPaymentBreakdown;
   List<dynamic> get analyticsDeliveryBreakdown => _analyticsDeliveryBreakdown;
   List<dynamic> get analyticsRecentOrders => _analyticsRecentOrders;
+
+  bool get isSmartInsightsLoading => _isSmartInsightsLoading;
+  Map<String, dynamic>? get smartInsights => _smartInsights;
+
+  bool get isSettlementLoading => _isSettlementLoading;
+  Map<String, dynamic>? get dailySettlement => _dailySettlement;
 
   Future<void> fetchAnalytics({bool silent = false}) async {
     if (!silent) {
@@ -74,6 +88,41 @@ class MerchantController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> fetchSmartInsights({bool silent = false}) async {
+    if (!silent) {
+      _isSmartInsightsLoading = true;
+      notifyListeners();
+    }
+
+    try {
+      final res = await ApiService.get(ApiConstants.vendorSmartInsights);
+      if (res['success'] == true && res['data'] != null) {
+        _smartInsights = res['data'] as Map<String, dynamic>?;
+      }
+    } catch (_) {}
+
+    _isSmartInsightsLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> fetchDailySettlement({String? date, bool silent = false}) async {
+    if (!silent) {
+      _isSettlementLoading = true;
+      notifyListeners();
+    }
+
+    try {
+      final url = date != null ? '${ApiConstants.vendorDailySettlement}?date=$date' : ApiConstants.vendorDailySettlement;
+      final res = await ApiService.get(url);
+      if (res['success'] == true && res['data'] != null) {
+        _dailySettlement = res['data'] as Map<String, dynamic>?;
+      }
+    } catch (_) {}
+
+    _isSettlementLoading = false;
+    notifyListeners();
+  }
+
   Future<void> fetchDashboardData() async {
     _isLoading = true;
     notifyListeners();
@@ -92,6 +141,7 @@ class MerchantController extends ChangeNotifier {
       await fetchProducts(silent: true);
       await fetchWallet(silent: true);
       await fetchProfile(silent: true);
+      await fetchSmartInsights(silent: true);
     } catch (_) {}
 
     _isLoading = false;

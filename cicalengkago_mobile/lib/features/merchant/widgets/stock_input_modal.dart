@@ -472,24 +472,84 @@ class _StockInputModalState extends State<StockInputModal> with SingleTickerProv
   }
 
   Widget _buildHppField() {
-    return TextFormField(
-      controller: _hppCtrl,
-      keyboardType: TextInputType.number,
-      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      decoration: InputDecoration(
-        hintText: _currentHpp > 0 ? 'HPP lama: ${_currentHpp.toInt()}' : 'Contoh: 8000',
-        hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-        prefixIcon: const Padding(
-          padding: EdgeInsets.only(left: 12, right: 8),
-          child: Text('Rp', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF334155))),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: _hppCtrl,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: InputDecoration(
+            hintText: _currentHpp > 0 ? 'HPP lama: ${_currentHpp.toInt()}' : 'Contoh: 8000',
+            hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+            prefixIcon: const Padding(
+              padding: EdgeInsets.only(left: 12, right: 8),
+              child: Text('Rp', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF334155))),
+            ),
+            prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+            filled: true,
+            fillColor: const Color(0xFFF8FAFC),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF059669))),
+          ),
         ),
-        prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-        filled: true,
-        fillColor: const Color(0xFFF8FAFC),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF059669))),
+        const SizedBox(height: 6),
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            const Text(
+              'Preset Untung:',
+              style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+            ),
+            _buildStockMarkupChip(20),
+            _buildStockMarkupChip(30),
+            _buildStockMarkupChip(50),
+            _buildStockMarkupChip(100),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStockMarkupChip(double percent) {
+    return InkWell(
+      onTap: () {
+        final hppInput = double.tryParse(_hppCtrl.text) ?? _currentHpp;
+        if (hppInput <= 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Masukkan nominal modal HPP terlebih dahulu'),
+              backgroundColor: Color(0xFFD97706),
+              duration: Duration(seconds: 2),
+            ),
+          );
+          return;
+        }
+        final newPrice = (hppInput * (1 + percent / 100)).roundToDouble();
+        final qty = int.tryParse(_qtyCtrl.text) ?? 0;
+        setState(() {
+          _markupPct = percent;
+          _previewNewPrice = newPrice;
+          _previewProfit = newPrice - hppInput;
+          _previewNewStock = _currentStock + qty;
+        });
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+        decoration: BoxDecoration(
+          color: const Color(0xFFECFDF5),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFA7F3D0)),
+        ),
+        child: Text(
+          '+${percent.toInt()}%',
+          style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+        ),
       ),
     );
   }

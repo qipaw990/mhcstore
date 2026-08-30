@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -21,6 +22,7 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<MerchantController>().fetchAnalytics();
+      context.read<MerchantController>().fetchSmartInsights(silent: true);
     });
   }
 
@@ -33,6 +35,7 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
     final paymentBreakdown = merchantCtrl.analyticsPaymentBreakdown;
     final deliveryBreakdown = merchantCtrl.analyticsDeliveryBreakdown;
     final recentOrders = merchantCtrl.analyticsRecentOrders;
+    final smartInsights = merchantCtrl.smartInsights;
     final isLoading = merchantCtrl.isAnalyticsLoading;
 
     // Computed Filter Values
@@ -106,6 +109,42 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
             : ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  // ── TUTUP KASIR HARIAN BANNER BUTTON ──
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showDailySettlementModal(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF16A34A),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
+                      ),
+                      icon: const Icon(Icons.point_of_sale_rounded, size: 18),
+                      label: const Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Rekap Kas & Tutup Kasir Hari Ini',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                                ),
+                                Text(
+                                  'Hitung kas laci, laba & bagikan ke WhatsApp Owner',
+                                  style: TextStyle(fontSize: 10, color: Color(0xFFDCFCE7)),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.arrow_forward_ios_rounded, size: 12),
+                        ],
+                      ),
+                    ),
+                  ),
+
                   // ── TIME FILTER SELECTOR ──
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
@@ -335,6 +374,14 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                         },
                       ),
                     ),
+                  const SizedBox(height: 22),
+
+                  // ── SMART MENU ENGINEERING MATRIX ──
+                  _buildMenuEngineeringSection(smartInsights),
+                  const SizedBox(height: 22),
+
+                  // ── PEAK HOURS BREAKDOWN ──
+                  _buildPeakHoursSection(smartInsights),
                   const SizedBox(height: 22),
 
                   // ── PAYMENT & DELIVERY BREAKDOWN ──
@@ -997,6 +1044,510 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
             }),
         ],
       ),
+    );
+  }
+
+  void _showDailySettlementModal(BuildContext context) async {
+    final ctrl = context.read<MerchantController>();
+    ctrl.fetchDailySettlement();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Consumer<MerchantController>(
+          builder: (context, c, _) {
+            final data = c.dailySettlement;
+            final isLoad = c.isSettlementLoading;
+
+            if (isLoad || data == null) {
+              return Container(
+                padding: const EdgeInsets.all(40),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                ),
+                child: const Center(child: CircularProgressIndicator(color: Color(0xFF16A34A))),
+              );
+            }
+
+            final dateStr = data['formatted_date'] ?? 'Hari Ini';
+            final storeName = data['store_name'] ?? 'Toko Mitra';
+            final grossSales = double.tryParse(data['gross_sales']?.toString() ?? '0') ?? 0.0;
+            final netRevenue = double.tryParse(data['net_revenue']?.toString() ?? '0') ?? 0.0;
+            final cashAmount = double.tryParse(data['cash_amount']?.toString() ?? '0') ?? 0.0;
+            final nonCashAmount = double.tryParse(data['non_cash_amount']?.toString() ?? '0') ?? 0.0;
+            final totalCogs = double.tryParse(data['total_cogs']?.toString() ?? '0') ?? 0.0;
+            final grossProfit = double.tryParse(data['gross_profit']?.toString() ?? '0') ?? 0.0;
+            final marginPct = double.tryParse(data['margin_pct']?.toString() ?? '0') ?? 0.0;
+            final completedOrders = data['completed_orders'] ?? 0;
+            final canceledOrders = data['canceled_orders'] ?? 0;
+            final waMessage = data['wa_message']?.toString() ?? '';
+
+            return Container(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.90),
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF16A34A).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.point_of_sale_rounded, color: Color(0xFF16A34A), size: 22),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Laporan Tutup Kasir Harian',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A)),
+                            ),
+                            Text(
+                              '$storeName • $dateStr',
+                              style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF64748B)),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 20, color: Color(0xFFF1F5F9)),
+                  Expanded(
+                    child: ListView(
+                      children: [
+                        // Cash vs Non-Cash Highlight Card
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Uang Kas di Laci (Tunai)',
+                                    style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF16A34A),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Text('Cash in Hand', style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                CurrencyFormatter.formatRupiah(cashAmount),
+                                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white),
+                              ),
+                              const SizedBox(height: 12),
+                              const Divider(height: 1, color: Color(0xFF334155)),
+                              const SizedBox(height: 10),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Non-Tunai: ${CurrencyFormatter.formatRupiah(nonCashAmount)}',
+                                    style: const TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
+                                  ),
+                                  Text(
+                                    '$completedOrders Order Berhasil',
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF38BDF8)),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Breakdown Details Card
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Ringkasan Finansial',
+                                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                              ),
+                              const SizedBox(height: 10),
+                              _settlementRow('Total Omzet Kotor (100%)', CurrencyFormatter.formatRupiah(grossSales), bold: true),
+                              _settlementRow('Pendapatan Bersih (90%)', CurrencyFormatter.formatRupiah(netRevenue), color: const Color(0xFF2563EB)),
+                              _settlementRow('Total Modal (HPP)', CurrencyFormatter.formatRupiah(totalCogs), color: const Color(0xFFDC2626)),
+                              const Divider(height: 14, color: Color(0xFFE2E8F0)),
+                              _settlementRow(
+                                'Laba Bersih Toko',
+                                CurrencyFormatter.formatRupiah(grossProfit),
+                                bold: true,
+                                color: grossProfit >= 0 ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                                trailingExtra: ' (${marginPct.toStringAsFixed(1)}%)',
+                              ),
+                              if (canceledOrders > 0) ...[
+                                const Divider(height: 14, color: Color(0xFFE2E8F0)),
+                                _settlementRow('Pesanan Dibatalkan', '$canceledOrders Transaksi', color: const Color(0xFFDC2626)),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
+
+                  // WhatsApp Share Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF16A34A),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
+                      ),
+                      icon: const Icon(Icons.share_rounded, size: 20),
+                      label: const Text(
+                        'Kirim Laporan ke WhatsApp Owner',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                      ),
+                      onPressed: () async {
+                        final encoded = Uri.encodeComponent(waMessage);
+                        final url = Uri.parse('https://api.whatsapp.com/send?text=$encoded');
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(url, mode: LaunchMode.externalApplication);
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _settlementRow(String label, String value, {bool bold = false, Color? color, String? trailingExtra}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: 12, color: const Color(0xFF64748B), fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: value,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+                    color: color ?? const Color(0xFF0F172A),
+                  ),
+                ),
+                if (trailingExtra != null)
+                  TextSpan(
+                    text: trailingExtra,
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color ?? const Color(0xFF0F172A)),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuEngineeringSection(Map<String, dynamic>? smartInsights) {
+    if (smartInsights == null) return const SizedBox.shrink();
+
+    final stars = (smartInsights['star_products'] as List<dynamic>?) ?? [];
+    final potentials = (smartInsights['potential_products'] as List<dynamic>?) ?? [];
+    final thinMargins = (smartInsights['thin_margin_products'] as List<dynamic>?) ?? [];
+
+    if (stars.isEmpty && potentials.isEmpty && thinMargins.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('Matriks Menu Pintar & Rekomendasi', Icons.auto_awesome_rounded),
+        const SizedBox(height: 12),
+
+        if (stars.isNotEmpty) ...[
+          _buildMatrixCard(
+            title: '🌟 Menu Bintang (Laris & Laba Tinggi)',
+            subtitle: 'Menu paling menguntungkan. Pertahankan stok & pasang banner promo!',
+            color: const Color(0xFFD97706),
+            bgColor: const Color(0xFFFFFBEB),
+            borderColor: const Color(0xFFFDE68A),
+            items: stars,
+          ),
+          const SizedBox(height: 12),
+        ],
+
+        if (potentials.isNotEmpty) ...[
+          _buildMatrixCard(
+            title: '🚀 Menu Potensial (Margin Tinggi)',
+            subtitle: 'Margin tebal tapi order masih rendah. Rekomendasi: Buat promo / flash sale!',
+            color: const Color(0xFF2563EB),
+            bgColor: const Color(0xFFEFF6FF),
+            borderColor: const Color(0xFFBFDBFE),
+            items: potentials,
+          ),
+          const SizedBox(height: 12),
+        ],
+
+        if (thinMargins.isNotEmpty) ...[
+          _buildMatrixCard(
+            title: '⚠️ Menu Margin Tipis (Perlu Evaluasi)',
+            subtitle: 'Laris tapi laba tipis (< 20%). Rekomendasi: Naikkan harga sedikit / nego HPP.',
+            color: const Color(0xFFDC2626),
+            bgColor: const Color(0xFFFEF2F2),
+            borderColor: const Color(0xFFFECACA),
+            items: thinMargins,
+          ),
+          const SizedBox(height: 12),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildMatrixCard({
+    required String title,
+    required String subtitle,
+    required Color color,
+    required Color bgColor,
+    required Color borderColor,
+    required List<dynamic> items,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color)),
+          const SizedBox(height: 2),
+          Text(subtitle, style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
+          const SizedBox(height: 10),
+          ...items.map((it) {
+            final name = it['name']?.toString() ?? 'Menu';
+            final sold = it['total_sold'] ?? 0;
+            final margin = double.tryParse(it['margin_pct']?.toString() ?? '0') ?? 0.0;
+            final profit = double.tryParse(it['total_profit']?.toString() ?? '0') ?? 0.0;
+            final tip = it['tip']?.toString() ?? '';
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: borderColor.withValues(alpha: 0.6)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          name,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(6)),
+                        child: Text(
+                          'Margin ${margin.toStringAsFixed(0)}%',
+                          style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: color),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Terjual: $sold porsi', style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
+                      Text('Profit: ${CurrencyFormatter.formatRupiah(profit)}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Color(0xFF16A34A))),
+                    ],
+                  ),
+                  if (tip.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text('💡 $tip', style: const TextStyle(fontSize: 9.5, fontStyle: FontStyle.italic, color: Color(0xFF475569))),
+                  ],
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPeakHoursSection(Map<String, dynamic>? smartInsights) {
+    if (smartInsights == null) return const SizedBox.shrink();
+
+    final timeBlocks = (smartInsights['time_blocks'] as List<dynamic>?) ?? [];
+    final busiest = smartInsights['busiest_period']?.toString() ?? 'Siang';
+    final busiestHour = smartInsights['busiest_hour']?.toString() ?? '-';
+
+    if (timeBlocks.isEmpty) return const SizedBox.shrink();
+
+    int totalOrders = 0;
+    for (var b in timeBlocks) {
+      totalOrders += (b['count'] as int? ?? 0);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('Pola Jam Ramai & Distribusi Waktu', Icons.schedule_rounded),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 8,
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF16A34A).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.local_fire_department_rounded, color: Color(0xFF16A34A), size: 18),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Waktu Puncak: $busiest', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A))),
+                        Text('Jam tersibuk sekitar $busiestHour (siapkan stok bahan & karyawan)', style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              ...timeBlocks.map((b) {
+                final label = b['label']?.toString() ?? '';
+                final count = (b['count'] as int? ?? 0);
+                final ratio = totalOrders > 0 ? (count / totalOrders) : 0.0;
+                final isBusiest = label.contains(busiest);
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            label,
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: isBusiest ? FontWeight.bold : FontWeight.w500,
+                              color: isBusiest ? const Color(0xFF0F172A) : const Color(0xFF475569),
+                            ),
+                          ),
+                          Text(
+                            '$count Pesanan (${(ratio * 100).toStringAsFixed(0)}%)',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: isBusiest ? FontWeight.bold : FontWeight.w600,
+                              color: isBusiest ? const Color(0xFF16A34A) : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: LinearProgressIndicator(
+                          value: ratio,
+                          minHeight: 8,
+                          backgroundColor: const Color(0xFFF1F5F9),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            isBusiest ? const Color(0xFF16A34A) : const Color(0xFF3B82F6),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

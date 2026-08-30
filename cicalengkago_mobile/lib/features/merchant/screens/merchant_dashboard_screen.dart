@@ -7,6 +7,7 @@ import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../auth/screens/register_merchant_screen.dart';
 import '../controllers/merchant_controller.dart';
+import '../widgets/stock_input_modal.dart';
 import 'merchant_orders_screen.dart';
 import 'merchant_analytics_screen.dart';
 import 'merchant_pos_screen.dart';
@@ -223,6 +224,7 @@ class _MerchantOverviewTab extends StatelessWidget {
     final store = merchantCtrl.store;
     final storeStatus = store?['status']?.toString().toLowerCase();
     final recentOrders = merchantCtrl.orders.take(5).toList();
+    final smartInsights = merchantCtrl.smartInsights;
 
     return RefreshIndicator(
       onRefresh: () => merchantCtrl.fetchDashboardData(),
@@ -558,6 +560,18 @@ class _MerchantOverviewTab extends StatelessWidget {
             ),
           const SizedBox(height: 16),
 
+          // ── SMART LOW STOCK ALERT BANNER ──
+          if ((smartInsights?['low_stock_count'] as int? ?? 0) > 0) ...[
+            _buildLowStockBanner(context, smartInsights!),
+            const SizedBox(height: 14),
+          ],
+
+          // ── SMART PEAK HOURS INSIGHT CARD ──
+          if (smartInsights != null && smartInsights['busiest_period'] != null && (smartInsights['hourly_trends'] as List?)?.isNotEmpty == true) ...[
+            _buildPeakHoursBanner(context, smartInsights),
+            const SizedBox(height: 14),
+          ],
+
           // ── QUICK STATUS PIPELINE ──
           Row(
             children: [
@@ -852,6 +866,194 @@ class _MerchantOverviewTab extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLowStockBanner(BuildContext context, Map<String, dynamic> insights) {
+    final count = insights['low_stock_count'] as int? ?? 0;
+    final items = (insights['low_stock_items'] as List<dynamic>?) ?? [];
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFDE68A)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.amber.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF59E0B),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 16),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$count Menu Perlu Restock Stok!',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF92400E)),
+                    ),
+                    const Text(
+                      'Stok hampir habis (≤ 5 unit) — segera tambah stok.',
+                      style: TextStyle(fontSize: 10.5, color: Color(0xFFB45309)),
+                    ),
+                  ],
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final ok = await StockInputModal.scanAndOpen(context);
+                  if (ok == true && context.mounted) {
+                    context.read<MerchantController>().fetchDashboardData();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD97706),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('Restock', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          if (items.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 36,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: items.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (ctx, i) {
+                  final it = items[i] as Map<String, dynamic>;
+                  final name = it['name']?.toString() ?? 'Menu';
+                  final stock = int.tryParse(it['stock']?.toString() ?? '0') ?? 0;
+                  return InkWell(
+                    onTap: () async {
+                      final ok = await StockInputModal.openForProduct(context, it);
+                      if (ok == true && context.mounted) {
+                        context.read<MerchantController>().fetchDashboardData();
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: stock == 0 ? const Color(0xFFFCA5A5) : const Color(0xFFFDE68A)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            name,
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                            maxLines: 1,
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: stock == 0 ? const Color(0xFFFEE2E2) : const Color(0xFFFEF3C7),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'Sisa $stock',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.bold,
+                                color: stock == 0 ? const Color(0xFFDC2626) : const Color(0xFFB45309),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPeakHoursBanner(BuildContext context, Map<String, dynamic> insights) {
+    final period = insights['busiest_period']?.toString() ?? 'Siang';
+    final hour = insights['busiest_hour']?.toString() ?? '-';
+
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MerchantAnalyticsScreen()),
+        );
+      },
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0FDF4),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFBBF7D0)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF16A34A).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.bolt_rounded, color: Color(0xFF16A34A), size: 20),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text('Insight Pintar: ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
+                      Text('Waktu Tersibuk $period', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                    ],
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    'Puncak pesanan sekitar jam $hour. Siapkan stok lebih awal.',
+                    style: const TextStyle(fontSize: 10, color: Color(0xFF166534)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFF16A34A), size: 20),
           ],
         ),
       ),
