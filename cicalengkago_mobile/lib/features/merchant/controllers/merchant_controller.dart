@@ -10,6 +10,7 @@ class MerchantController extends ChangeNotifier {
   List<dynamic> _orders = [];
   List<dynamic> _products = [];
   List<dynamic> _reviews = [];
+  Map<String, dynamic>? _vendorUser;
   Map<String, dynamic>? _wallet;
   List<dynamic> _transactions = [];
   List<dynamic> _withdrawRequests = [];
@@ -19,6 +20,7 @@ class MerchantController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isOpen => _isOpen;
   Map<String, dynamic>? get store => _store;
+  Map<String, dynamic>? get vendorUser => _vendorUser;
   Map<String, dynamic>? get stats => _stats;
   List<dynamic> get orders => _orders;
   List<dynamic> get products => _products;
@@ -46,10 +48,39 @@ class MerchantController extends ChangeNotifier {
       }
       await fetchProducts(silent: true);
       await fetchWallet(silent: true);
+      await fetchProfile(silent: true);
     } catch (_) {}
 
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<void> fetchProfile({bool silent = false}) async {
+    if (!silent) {
+      _isLoading = true;
+      notifyListeners();
+    }
+
+    try {
+      final res = await ApiService.get(ApiConstants.vendorProfile);
+      if (res['success'] == true && res['data'] != null) {
+        final data = res['data'];
+        if (data['store'] != null) {
+          _store = data['store'] as Map<String, dynamic>?;
+        }
+        if (data['user'] != null) {
+          _vendorUser = data['user'] as Map<String, dynamic>?;
+        }
+        if (_store != null) {
+          _isOpen = (_store?['is_open']?.toString() == '1' || _store?['is_open'] == true || _store?['is_open'] == 1);
+        }
+      }
+    } catch (_) {}
+
+    if (!silent) {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> fetchProducts({bool silent = false}) async {

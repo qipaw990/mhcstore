@@ -56,7 +56,7 @@ class Product extends Model
         // Ambil semua produk aktif + produk stock habis (agar customer lihat badge Habis)
         $sql = "SELECT p.*, c.name as category_name
                 FROM `products` p
-                JOIN `categories` c ON p.category_id = c.id
+                LEFT JOIN `categories` c ON p.category_id = c.id
                 WHERE p.store_id = ?
                 ORDER BY p.status DESC, p.stock DESC, c.priority ASC, p.id DESC";
         $products = Database::query($sql, [$storeId]);

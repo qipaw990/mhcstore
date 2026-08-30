@@ -54,7 +54,21 @@ class Store extends Model
 
     public function findByVendorId(int $vendorId): ?array
     {
-        return $this->firstWhere('vendor_id', $vendorId);
+        $sql = "SELECT s.*, 
+                       m.name as module_name, m.module_type, 
+                       z.name as zone_name, 
+                       u.name as vendor_name, u.phone as vendor_phone, u.email as vendor_email, u.avatar as vendor_avatar
+                FROM `stores` s
+                LEFT JOIN `modules` m ON s.module_id = m.id
+                LEFT JOIN `zones` z ON s.zone_id = z.id
+                LEFT JOIN `users` u ON s.vendor_id = u.id
+                WHERE s.vendor_id = ? 
+                ORDER BY s.id DESC LIMIT 1";
+        $store = Database::fetchOne($sql, [$vendorId]);
+        if ($store) {
+            attach_store_schedule_data($store, true);
+        }
+        return $store;
     }
 
     public function search(string $query, ?int $moduleId = null): array

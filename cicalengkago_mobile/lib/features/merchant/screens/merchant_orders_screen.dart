@@ -21,6 +21,9 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
   void initState() {
     super.initState();
     _tabController = TabController(length: _filters.length, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<MerchantController>().fetchOrders();
+    });
   }
 
   @override

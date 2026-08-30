@@ -21,7 +21,10 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<MerchantController>().fetchWallet();
+      final ctrl = context.read<MerchantController>();
+      ctrl.fetchDashboardData();
+      ctrl.fetchProfile();
+      ctrl.fetchWallet();
     });
   }
 
