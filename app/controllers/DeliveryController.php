@@ -294,6 +294,15 @@ class DeliveryController extends Controller
             $unreadChats = (int)($chatCount[0]['unread'] ?? 0);
         }
 
+        $user = auth_user();
+        if ($user) {
+            $dm['name'] = $user['name'] ?? ($dm['name'] ?? '');
+            $dm['email'] = $user['email'] ?? '';
+            $dm['phone'] = $user['phone'] ?? ($dm['phone'] ?? '');
+            $dm['avatar'] = $user['avatar'] ?? '';
+            $dm['image'] = !empty($user['avatar']) ? $user['avatar'] : ($dm['image'] ?? '');
+        }
+
         $latestDbOrders = Database::query(
             "SELECT id, order_code, customer_id, store_id, delivery_man_id, order_status, payment_status, payment_method, created_at FROM `orders` ORDER BY `id` DESC LIMIT 5"
         );
@@ -304,6 +313,7 @@ class DeliveryController extends Controller
             'active_order'     => $activeOrder,
             'active_trip'      => $activeOrder,
             'driver'           => $dm,
+            'user'             => $user,
             'available_orders' => $availableOrders,
             'available_count'  => count($availableOrders),
             'wallet'           => $wallet,

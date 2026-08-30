@@ -67,16 +67,21 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
     final authCtrl = context.watch<AuthController>();
     final driverCtrl = context.watch<DriverController>();
     final profileData = driverCtrl.driverProfile;
-    final user = profileData?['user'] as Map<String, dynamic>? ?? authCtrl.user;
-    final driver = profileData?['driver'] as Map<String, dynamic>? ?? {};
+    final user = (profileData?['user'] is Map)
+        ? (profileData!['user'] as Map<String, dynamic>)
+        : (authCtrl.user ?? (profileData?['driver'] is Map ? profileData!['driver'] as Map<String, dynamic> : profileData));
+    final driver = (profileData?['driver'] is Map)
+        ? (profileData!['driver'] as Map<String, dynamic>)
+        : (profileData ?? {});
     final reviews = (profileData?['reviews'] as List<dynamic>?) ?? driverCtrl.reviews;
 
-    final name = user?['name'] ?? 'Mitra Driver';
-    final email = user?['email'] ?? '-';
-    final phone = user?['phone'] ?? '-';
-    final avatar = user?['avatar'] as String?;
-    final vehicleType = driver['vehicle_type'] ?? 'Motor Honda Beat';
-    final vehicleNumber = driver['vehicle_number'] ?? 'D 1234 CCG';
+    final name = user?['name']?.toString() ?? authCtrl.user?['name']?.toString() ?? 'Mitra Driver';
+    final email = user?['email']?.toString() ?? authCtrl.user?['email']?.toString() ?? '-';
+    final phone = user?['phone']?.toString() ?? authCtrl.user?['phone']?.toString() ?? '-';
+    final rawAvatar = user?['avatar'] ?? authCtrl.user?['avatar'] ?? driver['image'] ?? driver['avatar'];
+    final avatar = (rawAvatar != null && rawAvatar.toString().trim().isNotEmpty) ? rawAvatar.toString().trim() : null;
+    final vehicleType = driver['vehicle_type']?.toString() ?? 'Motor';
+    final vehicleNumber = driver['vehicle_number']?.toString() ?? '-';
     final rating = driverCtrl.driverRating;
 
     return RefreshIndicator(
@@ -143,8 +148,10 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               CircleAvatar(
                 radius: 38,
                 backgroundColor: const Color(0xFF450A0A),
-                backgroundImage: avatar != null ? NetworkImage(ApiConstants.formatImageUrl(avatar)) : null,
-                child: avatar == null
+                backgroundImage: (avatar != null && avatar.isNotEmpty)
+                    ? NetworkImage(ApiConstants.formatImageUrl(avatar))
+                    : null,
+                child: (avatar == null || avatar.isEmpty)
                     ? const Icon(Icons.person_rounded, color: Color(0xFFEF4444), size: 40)
                     : null,
               ),

@@ -258,7 +258,29 @@ class DriverController extends ChangeNotifier {
         debugPrint('[DriverController] Available Orders Count: ${_availableOrders.length}');
 
         if (data['driver'] != null) {
-          _driverProfile = data['driver'] as Map<String, dynamic>;
+          final dmData = Map<String, dynamic>.from(data['driver'] as Map);
+          if (_driverProfile == null) {
+            _driverProfile = {
+              'driver': dmData,
+              if (data['user'] != null) 'user': data['user'],
+            };
+          } else {
+            final merged = Map<String, dynamic>.from(_driverProfile!);
+            final existingDriver = (merged['driver'] is Map)
+                ? Map<String, dynamic>.from(merged['driver'] as Map)
+                : <String, dynamic>{};
+            existingDriver.addAll(dmData);
+            merged['driver'] = existingDriver;
+
+            if (data['user'] != null) {
+              final existingUser = (merged['user'] is Map)
+                  ? Map<String, dynamic>.from(merged['user'] as Map)
+                  : <String, dynamic>{};
+              existingUser.addAll(Map<String, dynamic>.from(data['user'] as Map));
+              merged['user'] = existingUser;
+            }
+            _driverProfile = merged;
+          }
         }
 
         if (data['wallet'] != null) {
