@@ -33,7 +33,7 @@ INSERT INTO `modules` (`id`, `name`, `module_type`, `icon`, `thumbnail`, `theme_
 
 -- Table: zones (1 rows)
 TRUNCATE TABLE `zones`;
-INSERT INTO `zones` (`id`, `name`, `coordinates_json`, `status`, `min_delivery_charge`, `per_km_delivery_charge`, `center_latitude`, `center_longitude`, `created_at`, `updated_at`) VALUES ('1', 'Zona Cicalengka Raya', '[{\"lat\": -6.9700, \"lng\": 107.8200}, {\"lat\": -6.9700, \"lng\": 107.8550}, {\"lat\": -7.0000, \"lng\": 107.8550}, {\"lat\": -7.0000, \"lng\": 107.8200}]', '1', '5000.00', '2500.00', '-6.98400000', '107.83400000', '2026-08-16 16:58:48', '2026-08-16 16:58:48');
+INSERT INTO `zones` (`id`, `name`, `coordinates_json`, `status`, `min_delivery_charge`, `per_km_delivery_charge`, `center_latitude`, `center_longitude`, `created_at`, `updated_at`) VALUES ('1', 'Zona Cicalengka Raya', '[{\"lat\":-6.955741,\"lng\":107.827375},{\"lat\":-6.961527,\"lng\":107.860682},{\"lat\":-7.023885,\"lng\":107.90153},{\"lat\":-7.030012,\"lng\":107.797852},{\"lat\":-6.972775,\"lng\":107.754607},{\"lat\":-6.955071,\"lng\":107.804043}]', '1', '5000.00', '2500.00', '-6.98334000', '107.83390000', '2026-08-16 16:58:48', '2026-08-23 13:44:53');
 
 -- Table: stores (14 rows)
 TRUNCATE TABLE `stores`;

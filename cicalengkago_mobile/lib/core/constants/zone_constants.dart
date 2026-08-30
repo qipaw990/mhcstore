@@ -7,12 +7,14 @@ class ZoneConstants {
   static const double defaultMinFee = 5000.0;
   static const double defaultPerKmFee = 2500.0;
 
-  /// Default Polygon boundary for Cicalengka Raya
+  /// Exact Server Polygon boundary for Zona Cicalengka Raya (from database `zones.coordinates_json`)
   static const List<LatLng> cicalengkaZonePolygon = [
-    LatLng(-6.9700, 107.8200),
-    LatLng(-6.9700, 107.8550),
-    LatLng(-7.0000, 107.8550),
-    LatLng(-7.0000, 107.8200),
+    LatLng(-6.955741, 107.827375),
+    LatLng(-6.961527, 107.860682),
+    LatLng(-7.023885, 107.901530),
+    LatLng(-7.030012, 107.797852),
+    LatLng(-6.972775, 107.754607),
+    LatLng(-6.955071, 107.804043),
   ];
 
   /// Returns a PolygonLayer widget ready to be included in any FlutterMap

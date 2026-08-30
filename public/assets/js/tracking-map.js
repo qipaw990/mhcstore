@@ -106,12 +106,14 @@ function initOrderTrackingMap(orderCode, initialData) {
     maxZoom: 19
   }).addTo(trackingMap);
 
-  // Cakupan Area Zona Cicalengka Raya
+  // Cakupan Area Zona Cicalengka Raya (Sesuai Database Server `zones.coordinates_json`)
   const CICALENGKA_ZONE_POLYGON = [
-    [-6.9700, 107.8200],
-    [-6.9700, 107.8550],
-    [-7.0000, 107.8550],
-    [-7.0000, 107.8200]
+    [-6.955741, 107.827375],
+    [-6.961527, 107.860682],
+    [-7.023885, 107.901530],
+    [-7.030012, 107.797852],
+    [-6.972775, 107.754607],
+    [-6.955071, 107.804043]
   ];
   try {
     L.polygon(CICALENGKA_ZONE_POLYGON, {
