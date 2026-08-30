@@ -249,7 +249,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         ((driverMap['assigned'] == true && driverMap['lat'] != null && driverMap['lng'] != null) ||
         (order['delivery_man_id'] != null && ['processing', 'handover', 'on_the_way'].contains(status)));
 
-    final bool isCanceled = status == 'canceled' || (remainingSeconds <= 0 && !isDriverValid && !['processing', 'handover', 'on_the_way', 'delivered'].contains(status));
+    final String deliveryType = (order['delivery_type'] ?? live['delivery_type'] ?? 'driver').toString().toLowerCase();
+    final double distKm = double.tryParse(order['distance_km']?.toString() ?? live['distance_km']?.toString() ?? '') ?? 999.0;
+    final bool isMerchantDelivery = (deliveryType == 'merchant');
+
+    final bool isCanceled = status == 'canceled' || (!isMerchantDelivery && remainingSeconds <= 0 && !isDriverValid && !['processing', 'handover', 'on_the_way', 'delivered'].contains(status));
     final bool isUnpaidOnline = paymentMethod == 'midtrans' && paymentStatus != 'paid' && !isCanceled;
 
     // Map Coordinates
@@ -286,10 +290,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final Map<String, dynamic>? batchInfo = live['batch_info'] is Map
         ? Map<String, dynamic>.from(live['batch_info'] as Map)
         : (order['batch_stores'] != null ? <String, dynamic>{'is_multi_pickup': true} : null);
-
-    final String deliveryType = (order['delivery_type'] ?? live['delivery_type'] ?? '').toString().toLowerCase();
-    final double distKm = double.tryParse(order['distance_km']?.toString() ?? live['distance_km']?.toString() ?? '') ?? 999.0;
-    final bool isMerchantDelivery = (deliveryType == 'merchant') || (deliveryType != 'driver' && !isDriverValid && distKm <= 0.30) || (deliveryType.isEmpty && !isDriverValid);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),

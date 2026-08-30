@@ -601,8 +601,9 @@ class OrderController extends Controller
         $elapsedSeconds   = max(0, $serverNow - $createdAtTime);
         $remainingSeconds = max(0, 60 - $elapsedSeconds);
 
-        // Immediate inline auto-cancellation if order has exceeded 58 seconds without driver
-        if ($elapsedSeconds >= 58 && empty($order['delivery_man_id']) && !in_array($order['order_status'], ['processing', 'handover', 'on_the_way', 'delivered', 'canceled', 'refunded', 'failed'])) {
+        // Immediate inline auto-cancellation if order has exceeded 58 seconds without driver (only for driver delivery)
+        $isMerchantOrder = (($order['delivery_type'] ?? 'driver') === 'merchant');
+        if (!$isMerchantOrder && $elapsedSeconds >= 58 && empty($order['delivery_man_id']) && !in_array($order['order_status'], ['processing', 'handover', 'on_the_way', 'delivered', 'canceled', 'refunded', 'failed'])) {
             Database::update('orders', [
                 'delivery_man_id'     => null,
                 'order_status'        => 'canceled',
