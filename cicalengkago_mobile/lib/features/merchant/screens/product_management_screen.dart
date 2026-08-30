@@ -98,12 +98,16 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
           child: Column(
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Katalog Menu (${allProducts.length})',
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF0F172A)),
+                  Expanded(
+                    child: Text(
+                      'Katalog Menu (${allProducts.length})',
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF0F172A)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -121,18 +125,18 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                           }
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7.5),
+                          margin: const EdgeInsets.only(right: 6),
                           decoration: BoxDecoration(
                             color: const Color(0xFF059669),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.qr_code_scanner_rounded, size: 16, color: Colors.white),
-                              SizedBox(width: 5),
-                              Text('Stok Masuk', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white)),
+                              Icon(Icons.qr_code_scanner_rounded, size: 14, color: Colors.white),
+                              SizedBox(width: 4),
+                              Text('Stok Masuk', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
                             ],
                           ),
                         ),
@@ -142,12 +146,14 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primaryRed,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7.5),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           elevation: 0,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        icon: const Icon(Icons.add_rounded, size: 16),
-                        label: const Text('Tambah', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
+                        icon: const Icon(Icons.add_rounded, size: 14),
+                        label: const Text('Tambah', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                       ),
                     ],
                   ),
@@ -390,7 +396,10 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                 // HPP + Profit Row
                 if (hpp > 0) ...[
                   const SizedBox(height: 5),
-                  Row(
+                  Wrap(
+                    spacing: 5,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -400,7 +409,6 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                           style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
                         ),
                       ),
-                      const SizedBox(width: 5),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(6)),
