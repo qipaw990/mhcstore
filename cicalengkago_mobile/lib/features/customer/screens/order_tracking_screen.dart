@@ -36,7 +36,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   String? _snapUrl;
   Timer? _refreshTimer;
   Timer? _tickerTimer;
-  int _currentRemainingSeconds = 60;
+  int _currentRemainingSeconds = 300;
   final MapController _mapController = MapController();
   LatLng? _previousDriverPos;
   double _driverBearing = 0.0;
@@ -1347,20 +1347,25 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                             const Icon(Icons.radar_rounded, color: Color(0xFF4ADE80), size: 13),
                             const SizedBox(width: 5),
                             Flexible(
-                              child: Text(
-                                isMerchantDelivery
-                                    ? (status == 'on_the_way'
-                                        ? 'Merchant Mengantar 🚶‍♂️'
-                                        : (status == 'processing'
-                                            ? 'Resto Memasak 👨‍🍳'
-                                            : 'Resto Menyiapkan'))
-                                    : (isDriverValid
-                                        ? '📍 ${driverLat.toStringAsFixed(5)}, ${driverLng.toStringAsFixed(5)}'
-                                        : 'Mencari Kurir...'),
-                                style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                              child: Builder(builder: (context) {
+                                final int m = remainingSeconds ~/ 60;
+                                final int s = remainingSeconds % 60;
+                                final String countdownStr = '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+                                return Text(
+                                  isMerchantDelivery
+                                      ? (status == 'pending'
+                                          ? '⏱️ Konfirmasi: $countdownStr'
+                                          : (status == 'confirmed' || status == 'processing'
+                                              ? '⏱️ Resto Memasak (~15m)'
+                                              : '⏱️ Merchant Menuju Lokasi'))
+                                      : (isDriverValid
+                                          ? '📍 ${driverLat.toStringAsFixed(5)}, ${driverLng.toStringAsFixed(5)}'
+                                          : '⏱️ Cari Kurir: 00:${remainingSeconds.toString().padLeft(2, '0')}'),
+                                  style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                );
+                              }),
                             ),
                           ],
                         ),
@@ -1932,13 +1937,87 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         ],
                       ),
                     ),
-                  // Merchant Pending Confirmation 5-Minute Countdown Card
-                  if (isMerchantDelivery && status == 'pending') ...[
-                    Builder(builder: (context) {
-                      final int mins = remainingSeconds ~/ 60;
-                      final int secs = remainingSeconds % 60;
-                      final String timeStr = '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
-                      return Container(
+                  // Merchant Status & Live Countdown Card
+                  if (isMerchantDelivery && !isDelivered) ...[
+                    if (status == 'pending') ...[
+                      Builder(builder: (context) {
+                        final int mins = remainingSeconds ~/ 60;
+                        final int secs = remainingSeconds % 60;
+                        final String timeStr = '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+                        return Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFF86EFAC)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF16A34A).withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF16A34A)),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Menunggu Konfirmasi Resto...',
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF14532D)),
+                                        ),
+                                        Text(
+                                          'Sisa waktu respon merchant: $timeStr',
+                                          style: const TextStyle(fontSize: 10, color: Color(0xFF166534)),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFDCFCE7),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      timeStr,
+                                      style: const TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w800, fontSize: 11),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: (remainingSeconds / 300.0).clamp(0.0, 1.0),
+                                  backgroundColor: const Color(0xFFF1F5F9),
+                                  color: const Color(0xFF16A34A),
+                                  minHeight: 4,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              const Text(
+                                '💡 Pesanan otomatis dibatalkan & saldo dikembalikan jika resto tidak merespon dalam 5 menit.',
+                                style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ] else if (status == 'confirmed' || status == 'processing') ...[
+                      Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -1952,64 +2031,120 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                             ),
                           ],
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Row(
                           children: [
-                            Row(
-                              children: [
-                                const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF16A34A)),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Menunggu Konfirmasi Resto...',
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF14532D)),
-                                      ),
-                                      Text(
-                                        'Sisa waktu respon merchant: $timeStr',
-                                        style: const TextStyle(fontSize: 10, color: Color(0xFF166534)),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFDCFCE7),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(
-                                    timeStr,
-                                    style: const TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w800, fontSize: 11),
-                                  ),
-                                ),
-                              ],
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFDCFCE7),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.soup_kitchen_rounded, color: Color(0xFF16A34A), size: 20),
                             ),
-                            const SizedBox(height: 10),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: (remainingSeconds / 300.0).clamp(0.0, 1.0),
-                                backgroundColor: const Color(0xFFF1F5F9),
-                                color: const Color(0xFF16A34A),
-                                minHeight: 4,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    status == 'processing' ? 'Pesanan Sedang Dimasak 👨‍🍳' : 'Pesanan Dikonfirmasi Resto ✅',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF14532D)),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  const Text(
+                                    'Resto sedang menyiapkan menu untuk diantar mandiri',
+                                    style: TextStyle(fontSize: 10, color: Color(0xFF166534)),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 6),
-                            const Text(
-                              '💡 Pesanan otomatis dibatalkan & saldo dikembalikan jika resto tidak merespon dalam 5 menit.',
-                              style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDCFCE7),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFF86EFAC)),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.timer_rounded, color: Color(0xFF15803D), size: 12),
+                                  SizedBox(width: 3),
+                                  Text(
+                                    '~15 Menit',
+                                    style: TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w800, fontSize: 10.5),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
-                      );
-                    }),
+                      ),
+                    ] else if (status == 'on_the_way') ...[
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFF86EFAC)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF16A34A).withValues(alpha: 0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFDCFCE7),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.directions_walk_rounded, color: Color(0xFF16A34A), size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Merchant Sedang Mengantar 🚶‍♂️',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF14532D)),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Staff toko berjalan menuju alamat Anda',
+                                    style: TextStyle(fontSize: 10, color: Color(0xFF166534)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDCFCE7),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFF86EFAC)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.timer_rounded, color: Color(0xFF15803D), size: 12),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    '~$calculatedEtaMinutes Menit',
+                                    style: const TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w800, fontSize: 10.5),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ] else if (!isMerchantDelivery && !isDelivered && !isDriverValid)
                     Container(
                       padding: const EdgeInsets.all(14),
