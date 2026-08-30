@@ -49,6 +49,7 @@ dependencies:
   flutter_webrtc: ^1.6.0
   permission_handler: ^11.3.1
   agora_rtc_engine: ^6.3.2
+  mobile_scanner: ^7.4.0
 
 dev_dependencies:
   flutter_test:

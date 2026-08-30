@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../controllers/merchant_controller.dart';
 
 class MerchantPosScreen extends StatefulWidget {
@@ -146,91 +147,14 @@ class _MerchantPosScreenState extends State<MerchantPosScreen> {
     return count;
   }
 
-  void _showBarcodeScannerModal() {
-    final barcodeInputCtrl = TextEditingController();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-        ),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: const [
-                Icon(Icons.qr_code_scanner_rounded, color: AppTheme.primaryRed, size: 24),
-                SizedBox(width: 10),
-                Text(
-                  'Scan / Cari Barcode Produk',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Gunakan scanner barcode fisik / ketikkan kode barcode atau SKU produk.',
-              style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: barcodeInputCtrl,
-              autofocus: true,
-              keyboardType: TextInputType.text,
-              textInputAction: TextInputAction.done,
-              onSubmitted: (code) {
-                _processBarcodeScan(code.trim());
-                Navigator.pop(ctx);
-              },
-              decoration: InputDecoration(
-                hintText: 'Arahkan scanner / ketik barcode...',
-                prefixIcon: const Icon(Icons.barcode_reader, color: Color(0xFF2563EB)),
-                filled: true,
-                fillColor: const Color(0xFFF8FAFC),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.primaryRed, width: 2)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryRed,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                icon: const Icon(Icons.check_rounded),
-                label: const Text('Cari & Tambahkan ke Kasir', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                onPressed: () {
-                  _processBarcodeScan(barcodeInputCtrl.text.trim());
-                  Navigator.pop(ctx);
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+  Future<void> _showBarcodeScannerModal() async {
+    final scannedCode = await BarcodeScannerModal.scan(
+      context,
+      title: 'Scan Barcode Produk Kasir',
     );
+    if (scannedCode != null && scannedCode.trim().isNotEmpty) {
+      _processBarcodeScan(scannedCode.trim());
+    }
   }
 
   void _processBarcodeScan(String barcode) {

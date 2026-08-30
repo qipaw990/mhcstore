@@ -7,6 +7,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/uber_pill_button.dart';
+import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../controllers/merchant_controller.dart';
 
 class ProductManagementScreen extends StatefulWidget {
@@ -562,6 +563,18 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
                       hintText: 'Scan / Masukkan barcode (Contoh: 8991234567890)',
                       hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                       prefixIcon: const Icon(Icons.qr_code_scanner_rounded, size: 20, color: Color(0xFF64748B)),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.camera_alt_rounded, size: 20, color: Color(0xFF2563EB)),
+                        tooltip: 'Scan dengan Kamera',
+                        onPressed: () async {
+                          final code = await BarcodeScannerModal.scan(context, title: 'Scan Barcode Produk');
+                          if (code != null && code.isNotEmpty) {
+                            setState(() {
+                              _barcodeCtrl.text = code;
+                            });
+                          }
+                        },
+                      ),
                       filled: true,
                       fillColor: const Color(0xFFF8FAFC),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
