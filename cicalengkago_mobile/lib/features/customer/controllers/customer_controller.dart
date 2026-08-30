@@ -20,6 +20,7 @@ class CustomerController extends ChangeNotifier {
   List<dynamic> _notifications = [];
   int _unreadNotifCount = 0;
   String? _lastCartError;
+  Map<String, dynamic>? _zoneConfig;
 
   bool get isLoading => _isLoading;
   String? get lastCartError => _lastCartError;
@@ -38,6 +39,14 @@ class CustomerController extends ChangeNotifier {
   Map<String, dynamic>? get profile => _profile;
   List<dynamic> get notifications => _notifications;
   int get unreadNotifCount => _unreadNotifCount;
+  Map<String, dynamic>? get zoneConfig => _zoneConfig;
+
+  double get zoneMinDeliveryCharge =>
+      double.tryParse(_zoneConfig?['min_delivery_charge']?.toString() ?? '5000') ?? 5000.0;
+  double get zonePerKmDeliveryCharge =>
+      double.tryParse(_zoneConfig?['per_km_delivery_charge']?.toString() ?? '2500') ?? 2500.0;
+  String get zoneName =>
+      _zoneConfig?['name']?.toString() ?? 'Zona Cicalengka Raya';
 
   int get cartCount {
     if (_cart == null) return 0;
@@ -302,6 +311,16 @@ class CustomerController extends ChangeNotifier {
 
     await fetchCart();
     return false;
+  }
+
+  Future<void> fetchZoneConfig({int zoneId = 1}) async {
+    try {
+      final res = await ApiService.get('${ApiConstants.zoneConfig}?zone_id=$zoneId');
+      if (res['success'] == true && res['data'] is Map) {
+        _zoneConfig = Map<String, dynamic>.from(res['data'] as Map);
+        notifyListeners();
+      }
+    } catch (_) {}
   }
 
   // ── ORDER & CHECKOUT METHODS (Sesuaian dengan web.php routes /orders/place) ──

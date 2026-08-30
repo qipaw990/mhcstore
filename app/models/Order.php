@@ -264,9 +264,13 @@ class Order extends Model
                        COALESCE(s.latitude, -6.9835) as store_lat, 
                        COALESCE(s.longitude, 107.8335) as store_lng,
                        COALESCE(u.name, 'Pelanggan') as customer_name, 
-                       COALESCE(u.phone, '-') as customer_phone
+                       COALESCE(u.phone, '-') as customer_phone,
+                       COALESCE(z.name, 'Zona Cicalengka Raya') as zone_name,
+                       COALESCE(z.min_delivery_charge, 5000.00) as min_delivery_charge,
+                       COALESCE(z.per_km_delivery_charge, 2500.00) as per_km_delivery_charge
                 FROM `orders` o
                 LEFT JOIN `stores` s ON o.store_id = s.id
+                LEFT JOIN `zones` z ON s.zone_id = z.id
                 LEFT JOIN `users` u ON o.customer_id = u.id
                 WHERE (o.delivery_man_id IS NULL OR o.delivery_man_id = 0 OR o.delivery_man_id = '')
                   AND o.order_status NOT IN ('delivered', 'canceled', 'refunded', 'failed')

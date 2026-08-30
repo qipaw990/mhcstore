@@ -337,6 +337,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     final double extraKm = isBase ? 0.0 : (distKm - 2.0);
     final String zoneName = trip['zone_name']?.toString() ?? 'Zona Cicalengka Raya';
 
+    final double minFee = double.tryParse(trip['min_delivery_charge']?.toString() ?? '5000') ?? 5000.0;
+    final double perKm = double.tryParse(trip['per_km_delivery_charge']?.toString() ?? '2500') ?? 2500.0;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -424,8 +427,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           const SizedBox(height: 6),
           Text(
             isBase
-                ? '✓ Sesuai tarif dasar zona: Rp 5.000 (≤ 2.0 km)'
-                : '✓ Hitungan: Dasar Rp 5.000 + (${extraKm.toStringAsFixed(1)} km × Rp 2.500) = ${CurrencyFormatter.formatRupiah(deliveryCharge)}',
+                ? '✓ Sesuai tarif dasar zona: ${CurrencyFormatter.formatRupiah(minFee)} (≤ 2.0 km)'
+                : '✓ Hitungan: Dasar ${CurrencyFormatter.formatRupiah(minFee)} + (${extraKm.toStringAsFixed(1)} km × ${CurrencyFormatter.formatRupiah(perKm)}) = ${CurrencyFormatter.formatRupiah(deliveryCharge)}',
             style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
           ),
         ],

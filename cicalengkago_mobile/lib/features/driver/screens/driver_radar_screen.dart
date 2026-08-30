@@ -893,33 +893,41 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
           const SizedBox(height: 8),
 
           // Zone & Tariff Info Chip
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E293B),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF334155)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+          Builder(
+            builder: (context) {
+              final double zMin = double.tryParse(order['min_delivery_charge']?.toString() ?? '5000') ?? 5000.0;
+              final double zPerKm = double.tryParse(order['per_km_delivery_charge']?.toString() ?? '2500') ?? 2500.0;
+              final String zName = order['zone_name']?.toString() ?? 'Zona Cicalengka Raya';
+
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF334155)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.shield_outlined, color: Color(0xFF60A5FA), size: 12),
-                    const SizedBox(width: 4),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.shield_outlined, color: Color(0xFF60A5FA), size: 12),
+                        const SizedBox(width: 4),
+                        Text(
+                          zName,
+                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF93C5FD)),
+                        ),
+                      ],
+                    ),
                     Text(
-                      order['zone_name']?.toString() ?? 'Zona Cicalengka Raya',
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF93C5FD)),
+                      'Dasar ${CurrencyFormatter.formatRupiah(zMin)} + ${CurrencyFormatter.formatRupiah(zPerKm)}/km',
+                      style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
                     ),
                   ],
                 ),
-                const Text(
-                  'Dasar Rp 5.000 + Rp 2.500/km',
-                  style: TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
-                ),
-              ],
-            ),
+              );
+            },
           ),
           const SizedBox(height: 8),
 

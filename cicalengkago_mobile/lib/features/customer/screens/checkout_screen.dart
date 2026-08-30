@@ -63,6 +63,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<CustomerController>().fetchWallet();
+        context.read<CustomerController>().fetchZoneConfig();
       }
     });
   }
@@ -250,8 +251,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
     }
 
-    const double zoneMinFee = 5000.0;
-    const double zonePerKm = 2500.0;
+    final double zoneMinFee = customerCtrl.zoneMinDeliveryCharge;
+    final double zonePerKm = customerCtrl.zonePerKmDeliveryCharge;
+    final String zoneName = customerCtrl.zoneName;
     final double dynamicDeliveryFee = _calcZoneDeliveryFee(calculatedDistKm, minFee: zoneMinFee, perKm: zonePerKm);
 
     double subtotal = customerCtrl.cartSubtotal;
@@ -401,7 +403,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             const SizedBox(height: 14),
 
             // Skema Tarif Zona Cicalengka Card (Transparan)
-            _buildZoneTariffCard(calculatedDistKm, zoneMinFee, zonePerKm, dynamicDeliveryFee),
+            _buildZoneTariffCard(calculatedDistKm, zoneMinFee, zonePerKm, dynamicDeliveryFee, zoneName),
 
             const SizedBox(height: 16),
 
@@ -1187,7 +1189,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildZoneTariffCard(double distKm, double minFee, double perKm, double totalOngkir) {
+  Widget _buildZoneTariffCard(double distKm, double minFee, double perKm, double totalOngkir, String zoneName) {
     final bool isBase = distKm <= 2.0;
     final double extraKm = isBase ? 0.0 : (distKm - 2.0);
 
@@ -1233,14 +1235,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFFBFDBFE)),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.shield_rounded, color: Color(0xFF2563EB), size: 10),
-                    SizedBox(width: 3),
+                    const Icon(Icons.shield_rounded, color: Color(0xFF2563EB), size: 10),
+                    const SizedBox(width: 3),
                     Text(
-                      'Zona Cicalengka Raya',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8)),
+                      zoneName,
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8)),
                     ),
                   ],
                 ),
