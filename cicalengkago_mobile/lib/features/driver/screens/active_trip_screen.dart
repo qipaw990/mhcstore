@@ -1497,79 +1497,75 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             }
 
             return Container(
-              margin: EdgeInsets.only(bottom: isMultiStore ? 14 : 6),
-              decoration: isMultiStore
-                  ? BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isPicked ? const Color(0xFFA7F3D0) : const Color(0xFFCBD5E1),
-                        width: 1.2,
-                      ),
-                    )
-                  : null,
-              padding: isMultiStore ? const EdgeInsets.all(12) : EdgeInsets.zero,
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isPicked ? const Color(0xFFA7F3D0) : const Color(0xFFCBD5E1),
+                  width: 1.2,
+                ),
+              ),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (isMultiStore) ...[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: isPicked ? const Color(0xFF059669) : const Color(0xFFD97706),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  'Toko ${groupIdx + 1}',
-                                  style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
-                                ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: isPicked ? const Color(0xFF059669) : const Color(0xFFD97706),
+                                borderRadius: BorderRadius.circular(6),
                               ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  sName,
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                              child: Text(
+                                isMultiStore ? 'Toko ${groupIdx + 1}' : 'Toko Resto',
+                                style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
                               ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: isPicked ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            isPicked ? '✓ Sudah Diambil' : '⏳ Belum Diambil',
-                            style: TextStyle(
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.bold,
-                              color: isPicked ? const Color(0xFF15803D) : const Color(0xFFB45309),
                             ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                sName,
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isPicked ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          isPicked ? '✓ Sudah Diambil' : '⏳ Belum Diambil',
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.bold,
+                            color: isPicked ? const Color(0xFF15803D) : const Color(0xFFB45309),
                           ),
                         ),
-                      ],
-                    ),
-                    if (sAddr.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        sAddr,
-                        style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                    const SizedBox(height: 10),
+                  ),
+                  if (sAddr.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      sAddr,
+                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
+                  const SizedBox(height: 10),
 
                   ...itemsList.map((item) {
                     if (item is! Map) return const SizedBox.shrink();
@@ -1638,7 +1634,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                     );
                   }),
 
-                  if (isMultiStore && groupSubtotal > 0) ...[
+                  if (groupSubtotal > 0) ...[
                     const SizedBox(height: 4),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,

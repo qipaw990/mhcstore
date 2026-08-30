@@ -965,15 +965,23 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (isMulti) ...[
-                              Padding(
-                                padding: const EdgeInsets.only(top: 3, bottom: 2),
-                                child: Text(
-                                  '🏪 $gStoreName:',
-                                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF93C5FD)),
-                                ),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4, bottom: 3),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.storefront_rounded, size: 12, color: Color(0xFF93C5FD)),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      gStoreName,
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF93C5FD)),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                             ...gItems.take(2).map((item) {
                               if (item is! Map) return const SizedBox.shrink();
                               final iName = item['product_name'] ?? item['item_name'] ?? item['name'] ?? 'Menu';
@@ -992,7 +1000,7 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
                               Padding(
                                 padding: const EdgeInsets.only(left: 4, bottom: 2),
                                 child: Text(
-                                  '+ ${gItems.length - 2} menu lainnya di $gStoreName',
+                                  '+ ${gItems.length - 2} menu lainnya...',
                                   style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8), fontStyle: FontStyle.italic),
                                 ),
                               ),
