@@ -1334,79 +1334,83 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.8),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.radar_rounded, color: Color(0xFF4ADE80), size: 14),
-                          const SizedBox(width: 6),
-                          if (isMerchantDelivery) ...[
-                            Text(
-                              status == 'on_the_way'
-                                  ? 'Live Status: Merchant Sedang Mengantar 🚶‍♂️'
-                                  : (status == 'processing'
-                                      ? 'Live Status: Resto Sedang Memasak 👨‍🍳'
-                                      : 'Live Status: Resto Menyiapkan Pesanan'),
-                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.radar_rounded, color: Color(0xFF4ADE80), size: 13),
+                            const SizedBox(width: 5),
+                            Flexible(
+                              child: Text(
+                                isMerchantDelivery
+                                    ? (status == 'on_the_way'
+                                        ? 'Merchant Mengantar 🚶‍♂️'
+                                        : (status == 'processing'
+                                            ? 'Resto Memasak 👨‍🍳'
+                                            : 'Resto Menyiapkan'))
+                                    : (isDriverValid
+                                        ? '📍 ${driverLat.toStringAsFixed(5)}, ${driverLng.toStringAsFixed(5)}'
+                                        : 'Mencari Kurir...'),
+                                style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ] else if (isDriverValid) ...[
-                            Text(
-                              '📍 ${driverLat.toStringAsFixed(6)}, ${driverLng.toStringAsFixed(6)}',
-                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, fontFamily: 'monospace'),
-                            ),
-                          ] else ...[
-                            const Text('Live GPS Radar: Mencari Kurir...', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                           ],
-                        ],
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 6),
                     if (isMerchantDelivery)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
                         decoration: BoxDecoration(
                           color: const Color(0xFFDCFCE7),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: const Color(0xFF86EFAC)),
                         ),
                         child: const Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.directions_walk_rounded, color: Color(0xFF16A34A), size: 13),
-                            SizedBox(width: 5),
-                            Text('Diantar Merchant', style: TextStyle(color: Color(0xFF16A34A), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                            Icon(Icons.directions_walk_rounded, color: Color(0xFF16A34A), size: 12),
+                            SizedBox(width: 3),
+                            Text('Merchant', style: TextStyle(color: Color(0xFF16A34A), fontSize: 9, fontWeight: FontWeight.bold)),
                           ],
                         ),
                       )
                     else if (isDriverValid)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
                         decoration: BoxDecoration(
                           color: const Color(0xFFDCFCE7),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: const Color(0xFF86EFAC)),
                         ),
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             ClipOval(
                               child: Image.asset(
                                 'assets/images/driver_bogo_marker.png',
-                                width: 16,
-                                height: 16,
+                                width: 14,
+                                height: 14,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) => const Icon(
                                   Icons.directions_bike_rounded,
                                   color: Color(0xFF16A34A),
-                                  size: 13,
+                                  size: 12,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 5),
-                            const Text('Kurir Bergerak', style: TextStyle(color: Color(0xFF16A34A), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                            const SizedBox(width: 4),
+                            const Text('Kurir Bergerak', style: TextStyle(color: Color(0xFF16A34A), fontSize: 9, fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),
