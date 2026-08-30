@@ -330,4 +330,35 @@ class MerchantController extends ChangeNotifier {
     } catch (_) {}
     return false;
   }
+
+  Future<Map<String, dynamic>> posCheckout({
+    required List<Map<String, dynamic>> items,
+    required String paymentMethod,
+    double cashGiven = 0.0,
+    double discountAmount = 0.0,
+    String customerName = 'Pelanggan Langsung (POS)',
+    String customerPhone = '-',
+    String notes = '',
+  }) async {
+    try {
+      final res = await ApiService.post(ApiConstants.vendorPosCheckout, {
+        'items': items,
+        'payment_method': paymentMethod,
+        'cash_given': cashGiven.toString(),
+        'discount_amount': discountAmount.toString(),
+        'customer_name': customerName,
+        'customer_phone': customerPhone,
+        'notes': notes,
+      });
+
+      if (res['success'] == true && res['data'] != null) {
+        await fetchProducts(silent: true);
+        await fetchDashboardData();
+        return {'success': true, 'data': res['data']};
+      }
+      return {'success': false, 'message': res['message'] ?? 'Gagal memproses transaksi kasir POS.'};
+    } catch (e) {
+      return {'success': false, 'message': 'Terjadi kesalahan jaringan saat checkout POS.'};
+    }
+  }
 }

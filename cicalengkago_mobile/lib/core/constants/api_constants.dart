@@ -140,6 +140,7 @@ class ApiConstants {
   static const String vendorWallet             = '$domainUrl/vendor/wallet';
   static const String vendorWithdraw           = '$domainUrl/vendor/wallet/withdraw';
   static const String vendorAnalytics          = '$domainUrl/vendor/analytics';
+  static const String vendorPosCheckout        = '$domainUrl/vendor/pos/checkout';
   static const String vendorProfile            = '$domainUrl/vendor/profile';
   static const String vendorUpdateProfile      = '$domainUrl/vendor/profile/update';
   static const String vendorRegister           = '$domainUrl/api/register-merchant';

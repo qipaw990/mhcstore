@@ -99,6 +99,18 @@ class Database
                 }
             } catch (Exception $e) {}
 
+            // Guarantee POS cashier & barcode columns existence
+            try {
+                $stmtBc = $this->pdo->query("SHOW COLUMNS FROM `products` LIKE 'barcode'");
+                if ($stmtBc && !$stmtBc->fetch()) {
+                    $this->pdo->exec("ALTER TABLE `products` ADD COLUMN `barcode` VARCHAR(100) NULL DEFAULT NULL AFTER `name`, ADD INDEX `idx_barcode` (`barcode`)");
+                }
+                $stmtPos = $this->pdo->query("SHOW COLUMNS FROM `orders` LIKE 'is_pos'");
+                if ($stmtPos && !$stmtPos->fetch()) {
+                    $this->pdo->exec("ALTER TABLE `orders` ADD COLUMN `is_pos` TINYINT(1) NOT NULL DEFAULT 0 AFTER `order_type`");
+                }
+            } catch (Exception $e) {}
+
             // Guarantee chats table existence
             try {
                 $this->pdo->exec("CREATE TABLE IF NOT EXISTS `chats` (

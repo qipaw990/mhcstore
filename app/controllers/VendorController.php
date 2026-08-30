@@ -318,6 +318,7 @@ class VendorController extends Controller
             'module_id'      => $store['module_id'],
             'category_id'    => (int)($data['category_id'] ?? 1),
             'name'           => sanitize($data['name']),
+            'barcode'        => !empty($data['barcode']) ? sanitize($data['barcode']) : null,
             'description'    => sanitize($data['description'] ?? ''),
             'image'          => $imagePath,
             'price'          => (float)($data['price'] ?? 0),
@@ -550,6 +551,130 @@ class VendorController extends Controller
             'payment_breakdown'   => $paymentBreakdown,
             'delivery_breakdown'  => $deliveryBreakdown,
             'wallet'              => $wallet,
+        ]);
+    }
+
+    public function posCheckout(): void
+    {
+        $userId = auth_id();
+        $store = $this->storeModel->findByVendorId($userId);
+        if (!$store) {
+            $this->errorResponse('Toko tidak ditemukan.');
+            return;
+        }
+
+        $storeId = (int)$store['id'];
+        $data = $this->getPost();
+
+        $items = $data['items'] ?? [];
+        if (is_string($items)) {
+            $items = json_decode($items, true) ?: [];
+        }
+
+        if (empty($items)) {
+            $this->errorResponse('Keranjang kasir masih kosong.');
+            return;
+        }
+
+        $customerName = sanitize($data['customer_name'] ?? 'Pelanggan Langsung (POS)');
+        $customerPhone = sanitize($data['customer_phone'] ?? '-');
+        $paymentMethod = strtolower($data['payment_method'] ?? 'cash');
+        $notes = sanitize($data['notes'] ?? 'Transaksi Kasir POS Toko');
+        $cashGiven = (float)($data['cash_given'] ?? 0);
+        $discountAmount = (float)($data['discount_amount'] ?? 0);
+
+        $orderAmount = 0.0;
+        $orderItemsToInsert = [];
+
+        foreach ($items as $item) {
+            $pId = (int)($item['product_id'] ?? 0);
+            $qty = max(1, (int)($item['quantity'] ?? 1));
+            $price = (float)($item['price'] ?? 0);
+
+            $prod = $pId ? $this->productModel->find($pId) : null;
+            if ($prod) {
+                if ($price <= 0) {
+                    $price = (float)($prod['price'] ?? 0);
+                }
+                $pName = $prod['name'];
+                
+                // Kurangi stok jika tersedia
+                if ((int)($prod['stock'] ?? 0) > 0) {
+                    $newStock = max(0, (int)$prod['stock'] - $qty);
+                    $this->productModel->update($pId, ['stock' => $newStock]);
+                }
+            } else {
+                $pName = sanitize($item['name'] ?? 'Produk POS');
+            }
+
+            $itemSubtotal = $price * $qty;
+            $orderAmount += $itemSubtotal;
+
+            $orderItemsToInsert[] = [
+                'product_id'   => $pId ?: null,
+                'product_name' => $pName,
+                'quantity'     => $qty,
+                'price'        => $price,
+                'notes'        => sanitize($item['notes'] ?? '')
+            ];
+        }
+
+        $totalAmount = max(0, $orderAmount - $discountAmount);
+        $changeAmount = ($paymentMethod === 'cash' && $cashGiven >= $totalAmount) ? ($cashGiven - $totalAmount) : 0.0;
+
+        $orderCode = 'POS-' . strtoupper(substr(uniqid(), -5)) . date('is');
+        $now = date('Y-m-d H:i:s');
+
+        // Simpan sebagai pesanan selesai langsung (POS Kasir Offline)
+        $orderId = Database::insert('orders', [
+            'order_code'             => $orderCode,
+            'customer_id'            => $userId,
+            'store_id'               => $storeId,
+            'order_amount'           => $orderAmount,
+            'delivery_charge'        => 0.0,
+            'total_amount'           => $totalAmount,
+            'payment_method'         => $paymentMethod === 'cash' ? 'cod' : $paymentMethod,
+            'payment_status'         => 'paid',
+            'order_status'           => 'delivered',
+            'order_type'             => 'pos',
+            'delivery_type'          => 'merchant',
+            'is_pos'                 => 1,
+            'customer_notes'         => $notes . " [Customer: {$customerName}]",
+            'delivery_address_json'  => json_encode(['address' => 'Kasir / Transaksi Langsung di Toko', 'customer_name' => $customerName, 'phone' => $customerPhone]),
+            'confirmed_at'           => $now,
+            'processing_at'          => $now,
+            'picked_up_at'           => $now,
+            'delivered_at'           => $now,
+            'created_at'             => $now,
+            'updated_at'             => $now,
+        ]);
+
+        foreach ($orderItemsToInsert as $oItem) {
+            Database::insert('order_items', [
+                'order_id'     => $orderId,
+                'product_id'   => $oItem['product_id'],
+                'product_name' => $oItem['product_name'],
+                'quantity'     => $oItem['quantity'],
+                'price'        => $oItem['price'],
+                'notes'        => $oItem['notes'],
+            ]);
+        }
+
+        $this->successResponse('Transaksi kasir POS berhasil dicatat!', [
+            'order_id'        => $orderId,
+            'order_code'      => $orderCode,
+            'order_amount'    => $orderAmount,
+            'discount_amount' => $discountAmount,
+            'total_amount'    => $totalAmount,
+            'payment_method'  => $paymentMethod,
+            'cash_given'      => $cashGiven,
+            'change_amount'   => $changeAmount,
+            'customer_name'   => $customerName,
+            'created_at'      => $now,
+            'store_name'      => $store['name'],
+            'store_address'   => $store['address'] ?? '',
+            'store_phone'     => $store['phone'] ?? '',
+            'items'           => $orderItemsToInsert,
         ]);
     }
 

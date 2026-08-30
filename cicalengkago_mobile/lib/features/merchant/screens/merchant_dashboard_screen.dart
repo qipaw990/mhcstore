@@ -9,6 +9,7 @@ import '../../auth/screens/register_merchant_screen.dart';
 import '../controllers/merchant_controller.dart';
 import 'merchant_orders_screen.dart';
 import 'merchant_analytics_screen.dart';
+import 'merchant_pos_screen.dart';
 import 'product_management_screen.dart';
 import 'store_settings_screen.dart';
 
@@ -98,6 +99,16 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MerchantPosScreen()),
+              );
+            },
+            icon: const Icon(Icons.point_of_sale_rounded, color: Color(0xFF16A34A), size: 22),
+            tooltip: 'Aplikasi Kasir POS & Barcode',
+          ),
           IconButton(
             onPressed: () {
               Navigator.push(
@@ -454,10 +465,15 @@ class _MerchantOverviewTab extends StatelessWidget {
             children: [
               Expanded(
                 child: _shortcutButton(
-                  icon: Icons.add_circle_outline_rounded,
-                  color: const Color(0xFF2563EB),
-                  label: 'Tambah Menu',
-                  onTap: () => onNavigateToTab(2),
+                  icon: Icons.point_of_sale_rounded,
+                  color: const Color(0xFF16A34A),
+                  label: 'Kasir POS & Barcode',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const MerchantPosScreen()),
+                    );
+                  },
                 ),
               ),
               const SizedBox(width: 8),
@@ -474,12 +490,25 @@ class _MerchantOverviewTab extends StatelessWidget {
                   },
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _shortcutButton(
+                  icon: Icons.add_circle_outline_rounded,
+                  color: const Color(0xFF2563EB),
+                  label: 'Tambah Menu Baru',
+                  onTap: () => onNavigateToTab(2),
+                ),
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: _shortcutButton(
                   icon: Icons.receipt_long_rounded,
-                  color: const Color(0xFF16A34A),
-                  label: 'Semua Pesanan',
+                  color: const Color(0xFF0D9488),
+                  label: 'Semua Pesanan Toko',
                   onTap: () => onNavigateToTab(1),
                 ),
               ),

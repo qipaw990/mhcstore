@@ -218,7 +218,6 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
     final discount = double.tryParse(product['discount']?.toString() ?? '0') ?? 0.0;
     final stock = int.tryParse(product['stock']?.toString() ?? '100') ?? 100;
     final isAvailable = stock > 0;
-    final isActive = (product['status']?.toString() == '1' || product['status'] == 1 || product['status'] == true);
     final rawImg = product['image']?.toString();
     final imgUrl = ApiConstants.formatImageUrl(rawImg);
 
@@ -246,7 +245,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                   width: 72,
                   height: 72,
                   fit: BoxFit.cover,
-                  errorWidget: (_, __, ___) => Container(
+                  errorWidget: (context, url, error) => Container(
                     width: 72,
                     height: 72,
                     color: const Color(0xFFF1F5F9),
@@ -315,7 +314,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                 ),
                 const SizedBox(height: 3),
 
-                // Price
+                // Price & Barcode
                 Row(
                   children: [
                     Text(
@@ -335,7 +334,20 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                     ],
                   ],
                 ),
-                const SizedBox(height: 8),
+                if (product['barcode'] != null && product['barcode'].toString().trim().isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      const Icon(Icons.qr_code_2_rounded, size: 13, color: Color(0xFF64748B)),
+                      const SizedBox(width: 4),
+                      Text(
+                        product['barcode'].toString(),
+                        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B), fontFamily: 'monospace'),
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 6),
 
                 // In-Stock Switch & Active Toggle
                 Row(
@@ -404,6 +416,7 @@ class _ProductFormBottomSheet extends StatefulWidget {
 class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameCtrl;
+  late TextEditingController _barcodeCtrl;
   late TextEditingController _priceCtrl;
   late TextEditingController _discountCtrl;
   late TextEditingController _descCtrl;
@@ -418,6 +431,7 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
     super.initState();
     final p = widget.product ?? {};
     _nameCtrl = TextEditingController(text: p['name']?.toString() ?? '');
+    _barcodeCtrl = TextEditingController(text: p['barcode']?.toString() ?? '');
     _priceCtrl = TextEditingController(text: (p['price'] as num?)?.toInt().toString() ?? (p['price']?.toString() ?? ''));
     _discountCtrl = TextEditingController(text: (p['discount'] as num?)?.toInt().toString() ?? (p['discount']?.toString() ?? '0'));
     _descCtrl = TextEditingController(text: p['description']?.toString() ?? '');
@@ -427,6 +441,7 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _barcodeCtrl.dispose();
     _priceCtrl.dispose();
     _discountCtrl.dispose();
     _descCtrl.dispose();
@@ -538,6 +553,25 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
                   ),
                   const SizedBox(height: 12),
 
+                  // Kode Barcode Produk (Untuk POS Kasir Scan)
+                  _buildInputLabel('Kode Barcode / SKU Produk (Opsional)'),
+                  TextFormField(
+                    controller: _barcodeCtrl,
+                    keyboardType: TextInputType.text,
+                    decoration: InputDecoration(
+                      hintText: 'Scan / Masukkan barcode (Contoh: 8991234567890)',
+                      hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                      prefixIcon: const Icon(Icons.qr_code_scanner_rounded, size: 20, color: Color(0xFF64748B)),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppTheme.primaryRed)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
                   // Harga & Diskon
                   Row(
                     children: [
@@ -606,6 +640,7 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
 
                       final payload = <String, String>{
                         'name': _nameCtrl.text.trim(),
+                        'barcode': _barcodeCtrl.text.trim(),
                         'price': _priceCtrl.text.trim(),
                         'discount': _discountCtrl.text.trim().isEmpty ? '0' : _discountCtrl.text.trim(),
                         'unit': _unitCtrl.text.trim().isEmpty ? 'porsi' : _unitCtrl.text.trim(),
