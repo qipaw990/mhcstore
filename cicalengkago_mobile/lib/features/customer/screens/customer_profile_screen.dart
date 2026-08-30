@@ -15,6 +15,7 @@ import 'customer_orders_screen.dart';
 import 'customer_wallet_screen.dart';
 import 'vouchers_screen.dart';
 import 'customer_notifications_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CustomerProfileScreen extends StatefulWidget {
   const CustomerProfileScreen({super.key});
@@ -79,6 +80,19 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _launchWhatsAppSupport({String? customMessage}) async {
+    final message = customMessage ?? 'Halo CS CicalengkaGO, saya butuh bantuan mengenai aplikasi / pesanan saya.';
+    final url = 'https://wa.me/6285158397756?text=${Uri.encodeComponent(message)}';
+    try {
+      final uri = Uri.parse(url);
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        await launchUrl(uri);
+      }
+    } catch (e) {
+      debugPrint('[WhatsAppSupport] Error launching WA: $e');
+    }
   }
 
   @override
@@ -768,42 +782,74 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
             const Text('Pertanyaan umum & kontak bantuan kendala aplikasi CicalengkaGO', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
             const SizedBox(height: 14),
 
-            // CS Contact Card
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0FDF4),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFBBF7D0)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF22C55E),
-                      shape: BoxShape.circle,
+            // CS Contact Card (Click to open WhatsApp directly!)
+            InkWell(
+              onTap: () {
+                Navigator.pop(ctx);
+                _launchWhatsAppSupport();
+              },
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFF86EFAC)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF22C55E).withValues(alpha: 0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
-                    child: const Icon(Icons.phone_rounded, color: Colors.white, size: 16),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          'WhatsApp Layanan Pelanggan',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          '0812-3456-7890 • Aktif Setiap Hari',
-                          style: TextStyle(fontSize: 11, color: Color(0xFF166534)),
-                        ),
-                      ],
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF22C55E),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.chat_rounded, color: Colors.white, size: 18),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            'Chat WhatsApp Customer Service',
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            '0851-5839-7756 • Respon Cepat 24 Jam',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF166534), fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF22C55E),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Kirim WA',
+                            style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(width: 3),
+                          Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 8),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 14),

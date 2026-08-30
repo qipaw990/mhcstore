@@ -122,14 +122,14 @@
             </a>
 
             <!-- Bantuan & CS 24 Jam -->
-            <a href="javascript:void(0)" onclick="Swal.fire('Pusat Bantuan', 'Hubungi layanan pelanggan CicalengkaGO via WhatsApp di 0812-3456-7890', 'info')" class="d-flex align-items-center justify-content-between text-decoration-none border-bottom transition" style="padding: 12px 14px !important; background: #FFFFFF;">
+            <a href="https://wa.me/6285158397756?text=Halo%20CS%20CicalengkaGO%2C%20saya%20butuh%20bantuan%20mengenai%20aplikasi." target="_blank" class="d-flex align-items-center justify-content-between text-decoration-none border-bottom transition" style="padding: 12px 14px !important; background: #FFFFFF;">
                 <div class="d-flex align-items-center gap-3 min-w-0">
                     <div style="width: 38px; height: 38px; min-width: 38px; min-height: 38px; border-radius: 12px; background: #CCFBF1; color: #0D9488; display: flex; align-items: center; justify-content: center; flex-shrink: 0; align-self: center;">
-                        <i class="bi bi-question-circle" style="font-size: 18px;"></i>
+                        <i class="bi bi-whatsapp" style="font-size: 18px;"></i>
                     </div>
                     <div class="min-w-0">
                         <div class="fw-bold text-truncate" style="font-size: 13px; color: #0F172A; line-height: 1.3;">Bantuan & CS 24 Jam</div>
-                        <div class="text-muted text-truncate mt-0.5" style="font-size: 10px; color: #64748B;">Pertanyaan umum & bantuan kendala</div>
+                        <div class="text-muted text-truncate mt-0.5" style="font-size: 10px; color: #64748B;">0851-5839-7756 (Chat WhatsApp)</div>
                     </div>
                 </div>
                 <i class="bi bi-chevron-right flex-shrink-0 ms-2" style="font-size: 12px; color: #94A3B8;"></i>

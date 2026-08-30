@@ -436,6 +436,10 @@ class CustomerController extends Controller
     {
         $userId = auth_id();
         if (!$userId) {
+            if ($this->isJsonRequest()) {
+                $this->errorResponse('Sesi autentikasi telah berakhir. Silakan login kembali.', null, 401);
+                return;
+            }
             $this->redirect('login');
             return;
         }
@@ -443,10 +447,14 @@ class CustomerController extends Controller
         $data = $this->getPost();
         $name  = sanitize($data['name'] ?? '');
         $email = sanitize($data['email'] ?? '');
-        $phone = sanitize($data['phone'] ?? '');
+        $phone = sanitize($data['phone'] ?? $data['no_hp'] ?? '');
 
-        if (empty($name) || empty($email) || empty($phone)) {
-            $_SESSION['error'] = 'Nama, email, dan nomor HP wajib diisi.';
+        if (empty($name)) {
+            if ($this->isJsonRequest()) {
+                $this->errorResponse('Nama lengkap tidak boleh kosong.');
+                return;
+            }
+            $_SESSION['error'] = 'Nama lengkap wajib diisi.';
             $this->redirect('profile');
             return;
         }
@@ -456,7 +464,9 @@ class CustomerController extends Controller
             $avatarPath = upload_image($_FILES['avatar'], 'profiles');
             if ($avatarPath) {
                 (new \App\Models\User())->update($userId, ['avatar' => $avatarPath]);
-                $_SESSION['user']['avatar'] = $avatarPath;
+                if (isset($_SESSION['user'])) {
+                    $_SESSION['user']['avatar'] = $avatarPath;
+                }
             }
         }
 
@@ -470,24 +480,40 @@ class CustomerController extends Controller
             $dbUser = $userModel->find($userId);
 
             if (empty($currentPassword)) {
+                if ($this->isJsonRequest()) {
+                    $this->errorResponse('Harap masukkan Kata Sandi Saat Ini.');
+                    return;
+                }
                 $_SESSION['error'] = 'Harap masukkan Kata Sandi Saat Ini untuk memverifikasi perubahan kata sandi.';
                 $this->redirect('profile');
                 return;
             }
 
             if (!password_verify($currentPassword, $dbUser['password'] ?? '')) {
+                if ($this->isJsonRequest()) {
+                    $this->errorResponse('Kata Sandi Saat Ini yang Anda masukkan salah.');
+                    return;
+                }
                 $_SESSION['error'] = 'Kata Sandi Saat Ini yang Anda masukkan salah.';
                 $this->redirect('profile');
                 return;
             }
 
             if (strlen($newPassword) < 6) {
+                if ($this->isJsonRequest()) {
+                    $this->errorResponse('Kata Sandi Baru harus memiliki minimal 6 karakter.');
+                    return;
+                }
                 $_SESSION['error'] = 'Kata Sandi Baru harus memiliki minimal 6 karakter.';
                 $this->redirect('profile');
                 return;
             }
 
             if ($newPassword !== $confirmPassword) {
+                if ($this->isJsonRequest()) {
+                    $this->errorResponse('Konfirmasi Kata Sandi Baru tidak cocok.');
+                    return;
+                }
                 $_SESSION['error'] = 'Konfirmasi Kata Sandi Baru tidak cocok.';
                 $this->redirect('profile');
                 return;
@@ -496,30 +522,77 @@ class CustomerController extends Controller
             $passwordUpdate = password_hash($newPassword, PASSWORD_BCRYPT);
         }
 
+        // Check if email already used by another user
+        if (!empty($email)) {
+            $existing = Database::fetchOne("SELECT id FROM users WHERE email = ? AND id != ? LIMIT 1", [$email, $userId]);
+            if ($existing) {
+                if ($this->isJsonRequest()) {
+                    $this->errorResponse('Alamat email ini sudah terdaftar pada akun lain.');
+                    return;
+                }
+                $_SESSION['error'] = 'Alamat email ini sudah terdaftar pada akun lain.';
+                $this->redirect('profile');
+                return;
+            }
+        }
+
+        // Check if phone already used by another user
+        if (!empty($phone)) {
+            $existingPhone = Database::fetchOne("SELECT id FROM users WHERE phone = ? AND id != ? LIMIT 1", [$phone, $userId]);
+            if ($existingPhone) {
+                if ($this->isJsonRequest()) {
+                    $this->errorResponse('Nomor WhatsApp ini sudah terdaftar pada akun lain.');
+                    return;
+                }
+                $_SESSION['error'] = 'Nomor WhatsApp ini sudah terdaftar pada akun lain.';
+                $this->redirect('profile');
+                return;
+            }
+        }
+
+        // JSON API Flow (Mobile App) -> Update directly
+        if ($this->isJsonRequest()) {
+            $updateFields = [
+                'name' => $name
+            ];
+            if (!empty($phone)) {
+                $updateFields['phone'] = $phone;
+            }
+            if (!empty($email)) {
+                $updateFields['email'] = $email;
+            }
+            if (!empty($passwordUpdate)) {
+                $updateFields['password'] = $passwordUpdate;
+            }
+
+            (new \App\Models\User())->update($userId, $updateFields);
+
+            $freshUser = (new \App\Models\User())->find($userId);
+            if (!empty($freshUser)) {
+                unset($freshUser['password']);
+                if (isset($_SESSION['user'])) {
+                    $_SESSION['user'] = array_merge($_SESSION['user'] ?? [], $freshUser);
+                }
+            }
+
+            $this->successResponse('Profil dan nomor WhatsApp berhasil diperbarui!', [
+                'user' => $freshUser ?? [
+                    'id'    => $userId,
+                    'name'  => $name,
+                    'phone' => $phone,
+                    'email' => $email,
+                ]
+            ]);
+            return;
+        }
+
+        // Web Flow with OTP
         $currentUser = auth_user();
-        $isEmailChanged    = (strtolower($email) !== strtolower($currentUser['email'] ?? ''));
-        $isPhoneChanged    = (trim($phone) !== trim($currentUser['phone'] ?? ''));
+        $isEmailChanged    = (!empty($email) && strtolower($email) !== strtolower($currentUser['email'] ?? ''));
+        $isPhoneChanged    = (!empty($phone) && trim($phone) !== trim($currentUser['phone'] ?? ''));
         $isPasswordChanged = !empty($passwordUpdate);
 
         if ($isEmailChanged || $isPhoneChanged || $isPasswordChanged) {
-            if ($isEmailChanged) {
-                $existing = Database::fetchOne("SELECT id FROM users WHERE email = ? AND id != ? LIMIT 1", [$email, $userId]);
-                if ($existing) {
-                    $_SESSION['error'] = 'Alamat email ini sudah terdaftar pada akun lain.';
-                    $this->redirect('profile');
-                    return;
-                }
-            }
-
-            if ($isPhoneChanged) {
-                $existingPhone = Database::fetchOne("SELECT id FROM users WHERE phone = ? AND id != ? LIMIT 1", [$phone, $userId]);
-                if ($existingPhone) {
-                    $_SESSION['error'] = 'Nomor WhatsApp ini sudah terdaftar pada akun lain.';
-                    $this->redirect('profile');
-                    return;
-                }
-            }
-
             $otpMode = \App\Models\BusinessSetting::get('otp_mode', 'real');
             $isDemo = ($otpMode === 'demo');
             $otp = $isDemo ? '123456' : sprintf("%06d", rand(100000, 999999));
@@ -539,13 +612,12 @@ class CustomerController extends Controller
                 'name'       => $name,
                 'email'      => $email,
                 'phone'      => $phone,
-                'role'       => $currentUser['role'],
+                'role'       => $currentUser['role'] ?? 'customer',
                 'otp'        => $otp,
                 'expires_at' => time() + 600
             ];
             $_SESSION['otp_last_sent'] = time();
 
-            // Set WhatsApp channel details for verify UI
             $targetPhone = $isPhoneChanged ? $phone : ($currentUser['phone'] ?? $phone);
             $_SESSION['otp_channel'] = 'whatsapp';
             $_SESSION['otp_phone_masked'] = !empty($targetPhone)
@@ -573,7 +645,7 @@ class CustomerController extends Controller
             return;
         }
 
-        // Only name / phone changed without password or email changes
+        // Only name changed
         (new \App\Models\User())->update($userId, [
             'name'  => $name,
             'phone' => $phone
@@ -583,18 +655,6 @@ class CustomerController extends Controller
         if (!empty($freshUser)) {
             unset($freshUser['password']);
             $_SESSION['user'] = array_merge($_SESSION['user'] ?? [], $freshUser);
-        }
-
-        if ($this->isJsonRequest()) {
-            $this->successResponse('Profil berhasil diperbarui!', [
-                'user' => $freshUser ?? [
-                    'id'    => $userId,
-                    'name'  => $name,
-                    'phone' => $phone,
-                    'email' => $email,
-                ]
-            ]);
-            return;
         }
 
         $_SESSION['success'] = 'Profil Anda berhasil diperbarui!';
