@@ -814,9 +814,14 @@ class DeliveryController extends Controller
 
     public function ordersHistory(): void
     {
-        $dm = $this->getAuthDriver();
+        $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Silakan login terlebih dahulu.', null, 401);
+            return;
+        }
+        $dm = $this->dmModel->findByUserId($userId);
         if (!$dm) {
-            $this->errorResponse('Driver profile not found.', 404);
+            $this->errorResponse('Driver profile tidak ditemukan.', null, 404);
             return;
         }
 
@@ -900,9 +905,14 @@ class DeliveryController extends Controller
 
     public function orderDetail(): void
     {
-        $dm = $this->getAuthDriver();
+        $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Silakan login terlebih dahulu.', null, 401);
+            return;
+        }
+        $dm = $this->dmModel->findByUserId($userId);
         if (!$dm) {
-            $this->errorResponse('Driver profile not found.', 404);
+            $this->errorResponse('Driver profile tidak ditemukan.', null, 404);
             return;
         }
 
