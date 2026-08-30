@@ -3,6 +3,7 @@
 .env
 .env.example
 *.md
+*.sql
 docker-compose.yml
 update.sh
 tmp/
@@ -15,3 +16,4 @@ vendor/
 .idea/
 .vscode/
 scratch/
+

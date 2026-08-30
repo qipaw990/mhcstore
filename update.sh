@@ -27,9 +27,10 @@ export COMPOSE_DOCKER_CLI_BUILD=0
 # Rebuild dan jalankan ulang container Docker (App, DB, & WhatsApp Gateway)
 echo "📦 Membangun ulang container Docker..."
 if ! docker compose up -d --build; then
-    echo "⚠️ BuildKit RPC gagal, membersihkan cache builder dan menggunakan legacy builder..."
+    echo "⚠️ Build reguler gagal (cache/snapshot korup). Menjalankan build bersih tanpa cache (--no-cache)..."
     docker builder prune -f 2>/dev/null || true
-    DOCKER_BUILDKIT=0 docker compose up -d --build
+    DOCKER_BUILDKIT=0 docker compose build --no-cache
+    docker compose up -d
 fi
 
 # Pastikan permission di dalam container dan host aman
