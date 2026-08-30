@@ -46,14 +46,28 @@ class CicalengkaGoLogo extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFF262626),
-                    Color(0xFF000000),
+                    Color(0xFFEE2737),
+                    Color(0xFF991B1B),
                   ],
                 ),
               ),
-              child: CustomPaint(
-                size: Size(size, size),
-                painter: _CicalengkaGoLogoPainter(),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CustomPaint(
+                    size: Size(size, size),
+                    painter: _CicalengkaGoLogoPainter(),
+                  ),
+                  Text(
+                    'GO',
+                    style: TextStyle(
+                      fontSize: size * 0.22,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
               ),
             );
           },

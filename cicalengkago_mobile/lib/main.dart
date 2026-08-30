@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/controllers/auth_controller.dart';
+import 'features/auth/screens/splash_screen.dart';
 import 'features/customer/controllers/customer_controller.dart';
 import 'features/customer/screens/customer_home_screen.dart';
 import 'features/driver/controllers/driver_controller.dart';
@@ -40,7 +41,7 @@ class CicalengkaGoApp extends StatelessWidget {
       title: 'CicalengkaGO Mobile',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const LocationGuard(child: RoleRouter()),
+      home: const SplashScreen(),
     );
   }
 }
