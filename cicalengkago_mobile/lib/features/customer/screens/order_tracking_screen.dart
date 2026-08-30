@@ -702,6 +702,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             ? (order['batch_stores'] as List)
             : [];
 
+    final String deliveryType = (order['delivery_type'] ?? live['delivery_type'] ?? 'driver').toString().toLowerCase();
+    final bool isMerchantDelivery = (deliveryType == 'merchant');
+
     if (isDelivered) {
       return SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -771,8 +774,51 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             ),
             const SizedBox(height: 16),
 
-            // 2. Driver Profile Summary Card (Without Live GPS)
-            if (driverName.isNotEmpty)
+            // 2. Driver Profile / Merchant Self-Delivery Summary Card (Without Live GPS)
+            if (isMerchantDelivery)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF86EFAC)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF16A34A),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            (batchStores.isNotEmpty && batchStores[0] is Map ? (batchStores[0]['name'] ?? batchStores[0]['store_name']) : null) ?? 'Mitra Toko',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text('Diantar langsung oleh tim resto (Radius Dekat < 300m)', style: TextStyle(fontSize: 11, color: Color(0xFF15803D))),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDCFCE7),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text('Kurir Toko', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
+                    ),
+                  ],
+                ),
+              )
+            else if (driverName.isNotEmpty)
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -1499,10 +1545,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     driverName: driverName,
                     storeName: (batchStores.isNotEmpty && batchStores[0] is Map ? (batchStores[0]['name'] ?? batchStores[0]['store_name']) : null) ?? 'Resto Mitra',
                     batchStores: batchStores,
+                    isMerchantDelivery: isMerchantDelivery,
                   ),
 
-                  // Multi-Store Batch Pickup Notice Card
-                  if (batchInfo != null && batchInfo['is_multi_pickup'] == true) ...[
+                  // Multi-Store Batch Pickup Notice Card (Only for driver multi-pickup)
+                  if (!isMerchantDelivery && batchInfo != null && batchInfo['is_multi_pickup'] == true) ...[
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -1529,8 +1576,82 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     const SizedBox(height: 12),
                   ],
 
-                  // Driver Card (Assigned or Searching)
-                  if (isDriverValid)
+                  // Delivery Info Card (Merchant Self-Delivery vs Assigned Driver vs Searching Driver)
+                  if (isMerchantDelivery)
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFF86EFAC), width: 1.5),
+                        boxShadow: [BoxShadow(color: const Color(0xFF16A34A).withValues(alpha: 0.05), blurRadius: 10)],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF16A34A),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 22),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        (batchStores.isNotEmpty && batchStores[0] is Map ? (batchStores[0]['name'] ?? batchStores[0]['store_name']) : null) ?? 'Mitra Toko Cicalengka',
+                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFDCFCE7),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Text('Kurir Toko', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  status == 'on_the_way'
+                                      ? 'Staff toko sedang berjalan mengantarkan pesanan ke rumah Anda 🚶‍♂️'
+                                      : (status == 'processing'
+                                          ? 'Pesanan sedang disiapkan & dimasak oleh tim toko 👨‍🍳'
+                                          : 'Toko menerima pesanan & bersiap menyiapkan menu'),
+                                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF166534), fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              final authCtrl = context.read<AuthController>();
+                              final uid = int.tryParse(authCtrl.user?['id']?.toString() ?? '0') ?? 0;
+                              InAppChatModal.show(
+                                context,
+                                orderCode: widget.orderCode,
+                                currentUserId: uid,
+                                currentUserRole: 'customer',
+                              );
+                            },
+                            icon: const Icon(Icons.chat_bubble_rounded, color: Color(0xFF16A34A), size: 20),
+                            tooltip: 'Chat Toko',
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (isDriverValid)
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -1666,7 +1787,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                               ),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(10)),
+                                decoration: BoxDecoration(color: const Color(0xFFFEE2E8), borderRadius: BorderRadius.circular(10)),
                                 child: Text('00:${remainingSeconds.toString().padLeft(2, '0')}', style: const TextStyle(color: AppTheme.primaryRed, fontWeight: FontWeight.w800, fontSize: 11)),
                               ),
                             ],
@@ -1688,7 +1809,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   const SizedBox(height: 16),
 
                   // Delivery Stepper Progress (4 Steps matching order_tracking.php)
-                  _buildFourStepStepper(status),
+                  _buildFourStepStepper(status, isMerchant: isMerchantDelivery),
 
                   // Store & Purchased Items Details Card
                   _buildStoreAndItemsCard(order, live),
@@ -1740,7 +1861,52 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     );
   }
 
-  Widget _buildFourStepStepper(String status) {
+  Widget _buildFourStepStepper(String status, {bool isMerchant = false}) {
+    if (isMerchant) {
+      final bool isStep1Done = true;
+      final bool isStep2Done = ['on_the_way', 'delivered'].contains(status);
+      final bool isStep2Active = ['pending', 'confirmed', 'processing'].contains(status);
+
+      final bool isStep3Done = status == 'delivered';
+      final bool isStep3Active = status == 'on_the_way';
+
+      final bool isStep4Done = status == 'delivered';
+      final bool isStep4Active = false;
+
+      final steps = [
+        {
+          'title': 'Pesanan Diterima Resto',
+          'sub': 'Resto menerima & mengonfirmasi pesanan Anda',
+          'done': isStep1Done,
+          'active': false,
+          'icon': Icons.receipt_long_rounded
+        },
+        {
+          'title': 'Dimasak & Dikemas Toko',
+          'sub': 'Staff resto sedang menyiapkan hidangan menu',
+          'done': isStep2Done,
+          'active': isStep2Active,
+          'icon': Icons.soup_kitchen_rounded
+        },
+        {
+          'title': 'Staff Toko Mengantar (< 300m)',
+          'sub': 'Staff toko sedang berjalan mengantarkan ke rumah Anda',
+          'done': isStep3Done,
+          'active': isStep3Active,
+          'icon': Icons.directions_walk_rounded
+        },
+        {
+          'title': 'Pesanan Selesai Sampai',
+          'sub': 'Pesanan telah diterima langsung dari pihak toko',
+          'done': isStep4Done,
+          'active': isStep4Active,
+          'icon': Icons.task_alt_rounded
+        },
+      ];
+
+      return _renderStepperCard(steps, isMerchant: true);
+    }
+
     final bool isStep1Done = true;
     final bool isStep2Done = ['processing', 'handover', 'picked_up', 'on_the_way', 'delivered'].contains(status);
     final bool isStep2Active = status == 'confirmed';
@@ -1782,15 +1948,34 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       },
     ];
 
+    return _renderStepperCard(steps, isMerchant: false);
+  }
+
+  Widget _renderStepperCard(List<Map<String, dynamic>> steps, {bool isMerchant = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Status Pengantaran', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Status Pengantaran', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+            if (isMerchant)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDCFCE7),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text('Kurir Toko', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
+              ),
+          ],
+        ),
         const SizedBox(height: 12),
         ...List.generate(steps.length, (i) {
           final s = steps[i];
           final bool done = s['done'] as bool;
           final bool active = s['active'] as bool;
+          final Color themeColor = isMerchant ? const Color(0xFF16A34A) : AppTheme.primaryRed;
 
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1803,7 +1988,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     decoration: BoxDecoration(
                       color: done
                           ? const Color(0xFF16A34A)
-                          : (active ? AppTheme.primaryRed : const Color(0xFFF1F5F9)),
+                          : (active ? themeColor : const Color(0xFFF1F5F9)),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -3115,8 +3300,123 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     required String driverName,
     required String storeName,
     required List batchStores,
+    bool isMerchantDelivery = false,
   }) {
-    // Determine completed and active steps
+    // Mode 1: Pengantaran Kurir Toko / Merchant (< 300m)
+    if (isMerchantDelivery) {
+      final bool isCooking = ['pending', 'confirmed', 'processing'].contains(status);
+      final bool isWalking = (status == 'on_the_way');
+      final bool isDelivered = (status == 'delivered');
+
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFF86EFAC)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF16A34A).withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFDCFCE7),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.storefront_rounded, color: Color(0xFF16A34A), size: 16),
+                      ),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Tahapan Pengantaran Toko',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF14532D)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCFCE7),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF86EFAC)),
+                  ),
+                  child: const Text(
+                    'Radius Dekat < 300m',
+                    style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 18, color: Color(0xFFF1F5F9)),
+
+            // Step 1: Penyiapan oleh Resto
+            _timelineStepItem(
+              isCompleted: isWalking || isDelivered,
+              isActive: isCooking,
+              stepNum: '1',
+              title: (isWalking || isDelivered)
+                  ? 'Pesanan Selesai Disiapkan di Toko ✅'
+                  : 'Resto Sedang Menyiapkan & Memasak Pesanan 👨‍🍳',
+              desc: storeName.isNotEmpty ? storeName : 'Resto Mitra Cicalengka',
+              icon: Icons.soup_kitchen_rounded,
+            ),
+            _timelineConnector(isCompleted: isWalking || isDelivered),
+
+            // Step 2: Staff Toko Mengantar Langsung
+            _timelineStepItem(
+              isCompleted: isDelivered,
+              isActive: isWalking,
+              stepNum: '2',
+              title: isDelivered
+                  ? 'Pesanan Berhasil Diserahkan Toko ✅'
+                  : (isWalking ? 'Staff Toko Sedang Mengantar ke Lokasi Anda 🚶‍♂️' : 'Menunggu Selesai Dimasak oleh Toko'),
+              desc: isWalking
+                  ? 'Staff toko sedang berjalan mengantarkan pesanan ke rumah Anda'
+                  : 'Pengantaran langsung oleh staff toko tanpa perantara driver',
+              icon: Icons.directions_walk_rounded,
+            ),
+            _timelineConnector(isCompleted: isDelivered),
+
+            // Step 3: Sampai di Lokasi Rumah Pelanggan
+            _timelineStepItem(
+              isCompleted: isDelivered,
+              isActive: false,
+              stepNum: '3',
+              title: isDelivered
+                  ? 'Telah Sampai & Diterima dengan Selamat 🎉'
+                  : 'Tiba di Alamat Rumah Anda',
+              desc: isDelivered
+                  ? 'Selamat menikmati hidangan dari $storeName'
+                  : 'Siap menerima pesanan langsung di depan rumah',
+              icon: Icons.home_rounded,
+              imageAsset: 'assets/images/customer_home_marker.png',
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Mode 2: Pengantaran Standar Mitra Driver CicalengkaGO
     final bool isDelivered = (status == 'delivered');
     final bool isOnTheWay = (status == 'on_the_way') || isDelivered;
     final bool isPickedUp = (status == 'picked_up') || (status == 'handover') || isOnTheWay;
