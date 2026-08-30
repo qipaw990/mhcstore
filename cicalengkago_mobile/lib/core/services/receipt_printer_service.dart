@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -6,9 +7,18 @@ import 'package:url_launcher/url_launcher.dart';
 import '../utils/currency_formatter.dart';
 
 class ReceiptPrinterService {
-  /// Generate and print thermal receipt (58mm/80mm roll format)
+  /// Generate and print thermal receipt (58mm/80mm roll format) with CicalengkaGO logo
   static Future<void> printReceipt(Map<String, dynamic> receipt) async {
     final doc = pw.Document();
+
+    // Load CicalengkaGO logo from assets
+    pw.ImageProvider? logoImage;
+    try {
+      final logoBytes = await rootBundle.load('assets/images/app_logo.png');
+      logoImage = pw.MemoryImage(logoBytes.buffer.asUint8List());
+    } catch (_) {
+      logoImage = null;
+    }
 
     final storeName = receipt['store_name']?.toString() ?? 'Toko Mitra CicalengkaGO';
     final storeAddress = receipt['store_address']?.toString() ?? 'Cicalengka, Kab. Bandung';
@@ -36,7 +46,30 @@ class ReceiptPrinterService {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
-              // Store Header
+              // CicalengkaGO Logo Header
+              if (logoImage != null) ...[
+                pw.Center(
+                  child: pw.Image(logoImage, height: 36, fit: pw.BoxFit.contain),
+                ),
+                pw.SizedBox(height: 2),
+              ],
+
+              // Divider platform branding
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.symmetric(vertical: 2),
+                decoration: const pw.BoxDecoration(color: PdfColors.black),
+                child: pw.Center(
+                  child: pw.Text(
+                    'CicalengkaGO POS',
+                    style: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                ),
+              ),
+              pw.SizedBox(height: 4),
+
+              // Store Name
               pw.Text(
                 storeName.toUpperCase(),
                 style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11),
@@ -127,7 +160,7 @@ class ReceiptPrinterService {
               pw.Text('========================================', style: const pw.TextStyle(fontSize: 7)),
               pw.SizedBox(height: 4),
 
-              // Footer Note
+              // Footer
               pw.Text(
                 'Terima Kasih Atas Kunjungan Anda!',
                 style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold),
@@ -135,8 +168,13 @@ class ReceiptPrinterService {
               ),
               pw.SizedBox(height: 2),
               pw.Text(
-                'Struk Resmi Didukung CicalengkaGO POS',
+                'Berbelanja lebih mudah lewat CicalengkaGO',
                 style: const pw.TextStyle(fontSize: 6.5, color: PdfColors.grey600),
+                textAlign: pw.TextAlign.center,
+              ),
+              pw.Text(
+                'cicago.store',
+                style: pw.TextStyle(fontSize: 6.5, color: PdfColors.grey600, fontWeight: pw.FontWeight.bold),
                 textAlign: pw.TextAlign.center,
               ),
               pw.SizedBox(height: 8),
@@ -197,7 +235,7 @@ class ReceiptPrinterService {
     buffer.writeln('Waktu: $createdAt');
     buffer.writeln('Pelanggan: $customerName');
     buffer.writeln('----------------------------------------');
-    
+
     for (var it in items) {
       final name = it['product_name']?.toString() ?? 'Item';
       final qty = int.tryParse(it['quantity']?.toString() ?? '1') ?? 1;
@@ -214,7 +252,7 @@ class ReceiptPrinterService {
     }
     buffer.writeln('----------------------------------------');
     buffer.writeln('Terima kasih telah berbelanja di *$storeName*! 💚');
-    buffer.writeln('_Layanan Kasir CicalengkaGO POS_');
+    buffer.writeln('_Didukung oleh CicalengkaGO | cicago.store_');
 
     final encodedText = Uri.encodeComponent(buffer.toString());
     String targetPhone = (phone ?? '').replaceAll(RegExp(r'[^0-9]'), '');

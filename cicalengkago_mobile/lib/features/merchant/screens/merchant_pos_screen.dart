@@ -786,6 +786,46 @@ class _MerchantPosScreenState extends State<MerchantPosScreen> {
     );
   }
 
+  /// Builds a gradient placeholder with the product's initial letter when no image is available
+  Widget _buildProductImagePlaceholder(String name, double height) {
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    // Generate a stable color based on product name
+    final colorSeed = name.codeUnits.fold(0, (a, b) => a + b);
+    final colors = [
+      [const Color(0xFFEF4444), const Color(0xFFB91C1C)], // red
+      [const Color(0xFFF59E0B), const Color(0xFFD97706)], // amber
+      [const Color(0xFF10B981), const Color(0xFF059669)], // emerald
+      [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)], // blue
+      [const Color(0xFF8B5CF6), const Color(0xFF6D28D9)], // purple
+      [const Color(0xFFEC4899), const Color(0xFFBE185D)], // pink
+      [const Color(0xFF06B6D4), const Color(0xFF0E7490)], // cyan
+      [const Color(0xFFF97316), const Color(0xFFEA580C)], // orange
+    ];
+    final pair = colors[colorSeed % colors.length];
+    return Container(
+      height: height,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: pair,
+        ),
+      ),
+      child: Center(
+        child: Text(
+          initial,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 32,
+            fontWeight: FontWeight.w900,
+            shadows: [Shadow(color: Colors.black26, blurRadius: 6, offset: Offset(1, 2))],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final merchantCtrl = context.watch<MerchantController>();
@@ -941,17 +981,16 @@ class _MerchantPosScreenState extends State<MerchantPosScreen> {
                                 children: [
                                   ClipRRect(
                                     borderRadius: const BorderRadius.vertical(top: Radius.circular(13)),
-                                    child: CachedNetworkImage(
-                                      imageUrl: imgUrl,
-                                      height: 100,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
-                                      errorWidget: (context, url, error) => Container(
-                                        height: 100,
-                                        color: const Color(0xFFF1F5F9),
-                                        child: const Icon(Icons.restaurant_rounded, size: 30, color: Color(0xFF94A3B8)),
-                                      ),
-                                    ),
+                                    child: imgUrl.isEmpty
+                                        ? _buildProductImagePlaceholder(name, 100)
+                                        : CachedNetworkImage(
+                                            imageUrl: imgUrl,
+                                            height: 100,
+                                            width: double.infinity,
+                                            fit: BoxFit.cover,
+                                            placeholder: (context, url) => _buildProductImagePlaceholder(name, 100),
+                                            errorWidget: (context, url, error) => _buildProductImagePlaceholder(name, 100),
+                                          ),
                                   ),
                                   if (inCart)
                                     Positioned(

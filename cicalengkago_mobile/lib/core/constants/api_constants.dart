@@ -8,9 +8,15 @@ class ApiConstants {
   /// Helper pintar untuk memformat URL Gambar agar selalu valid
   static String formatImageUrl(String? rawUrl) {
     if (rawUrl == null || rawUrl.trim().isEmpty) {
-      return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80';
+      return '';
     }
     String path = rawUrl.trim();
+    // Detect default/placeholder paths that don't exist on server
+    if (path == 'assets/images/products/default.jpg' ||
+        path == '/assets/images/products/default.jpg' ||
+        path.contains('default.jpg')) {
+      return '';
+    }
     if (path.startsWith('http://') || path.startsWith('https://')) {
       return path;
     }
