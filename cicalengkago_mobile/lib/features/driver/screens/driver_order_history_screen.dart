@@ -80,13 +80,13 @@ class _DriverOrderHistoryScreenState extends State<DriverOrderHistoryScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    // Metrics Row (Delivered & Total Earnings)
+                    // Metrics Row (3 columns)
                     Row(
                       children: [
                         // Total Selesai Card
                         Expanded(
                           child: Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               color: const Color(0xFF0F172A),
                               borderRadius: BorderRadius.circular(14),
@@ -98,29 +98,30 @@ class _DriverOrderHistoryScreenState extends State<DriverOrderHistoryScreen> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text('Total Selesai', style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8))),
+                                    const Text('Selesai', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
                                     Container(
-                                      padding: const EdgeInsets.all(4),
+                                      padding: const EdgeInsets.all(3),
                                       decoration: const BoxDecoration(color: Color(0xFF064E3B), shape: BoxShape.circle),
-                                      child: const Icon(Icons.check_circle_rounded, color: Color(0xFF34D399), size: 12),
+                                      child: const Icon(Icons.check_circle_rounded, color: Color(0xFF34D399), size: 11),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  '${driverCtrl.historyDeliveredCount} Trip',
-                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFF34D399)),
+                                  '${driverCtrl.historyDeliveredCount}',
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF34D399)),
                                 ),
+                                const Text('Trip', style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B))),
                               ],
                             ),
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 8),
 
-                        // Total Komisi Card
+                        // Total KM Card
                         Expanded(
                           child: Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               color: const Color(0xFF0F172A),
                               borderRadius: BorderRadius.circular(14),
@@ -132,21 +133,57 @@ class _DriverOrderHistoryScreenState extends State<DriverOrderHistoryScreen> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text('Total Komisi', style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8))),
+                                    const Text('Total Jarak', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
                                     Container(
-                                      padding: const EdgeInsets.all(4),
+                                      padding: const EdgeInsets.all(3),
+                                      decoration: const BoxDecoration(color: Color(0xFF1E3A8A), shape: BoxShape.circle),
+                                      child: const Icon(Icons.route_rounded, color: Color(0xFF60A5FA), size: 11),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  driverCtrl.historyTotalKm.toStringAsFixed(1),
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF60A5FA)),
+                                ),
+                                const Text('km', style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B))),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+
+                        // Total Komisi Card
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0F172A),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: const Color(0xFF1E293B)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Komisi', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                                    Container(
+                                      padding: const EdgeInsets.all(3),
                                       decoration: const BoxDecoration(color: Color(0xFF451A03), shape: BoxShape.circle),
-                                      child: const Icon(Icons.monetization_on_rounded, color: Color(0xFFFBBF24), size: 12),
+                                      child: const Icon(Icons.monetization_on_rounded, color: Color(0xFFFBBF24), size: 11),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   CurrencyFormatter.formatRupiah(driverCtrl.historyTotalEarnings),
-                                  style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900, color: Color(0xFFFBBF24)),
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFFFBBF24)),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
+                                const Text('total', style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B))),
                               ],
                             ),
                           ),
@@ -265,8 +302,8 @@ class _DriverOrderHistoryScreenState extends State<DriverOrderHistoryScreen> {
     final isDelivered = orderStatus == 'delivered' || orderStatus == 'completed';
     final isCanceled = orderStatus == 'canceled';
 
-    final fee = double.tryParse(order['delivery_charge']?.toString() ?? '5000') ?? 5000.0;
-    final totalAmount = double.tryParse(order['total_amount']?.toString() ?? '0') ?? 0.0;
+    final fee = double.tryParse((order['driver_earning'] ?? order['delivery_charge'])?.toString() ?? '5000') ?? 5000.0;
+    final double distKm = double.tryParse(order['distance_km']?.toString() ?? '0') ?? 0.0;
     final createdAt = order['created_at']?.toString() ?? '';
     final customerName = order['customer_name']?.toString() ?? 'Pelanggan';
     final storeName = order['store_name']?.toString() ?? 'Mitra Resto';
@@ -382,6 +419,32 @@ class _DriverOrderHistoryScreenState extends State<DriverOrderHistoryScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 4),
+
+                // Distance & Payment method row
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E3A8A).withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF1E3A8A)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.route_rounded, size: 10, color: Color(0xFF60A5FA)),
+                          const SizedBox(width: 4),
+                          Text(
+                            distKm > 0 ? '${distKm.toStringAsFixed(1)} km' : 'N/A',
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF60A5FA)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
 
                 // Items summary
                 if (rawItems.isNotEmpty) ...[
@@ -409,22 +472,32 @@ class _DriverOrderHistoryScreenState extends State<DriverOrderHistoryScreen> {
                 ],
 
                 const SizedBox(height: 10),
-                // Earnings & Action
+                // Bottom row: Earnings + KM + Action
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Komisi Driver: ', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
-                        Text(
-                          CurrencyFormatter.formatRupiah(fee),
-                          style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900, color: Color(0xFF4ADE80)),
+                        Row(
+                          children: [
+                            const Text('Komisi: ', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                            Text(
+                              CurrencyFormatter.formatRupiah(fee),
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF4ADE80)),
+                            ),
+                          ],
                         ),
+                        if (distKm > 0)
+                          Text(
+                            '⟳ Jarak: ${distKm.toStringAsFixed(1)} km',
+                            style: const TextStyle(fontSize: 9.5, color: Color(0xFF60A5FA)),
+                          ),
                       ],
                     ),
                     const Row(
                       children: [
-                        Text('Lihat Rincian', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFFCA5A5))),
+                        Text('Rincian', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFFCA5A5))),
                         Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFFFCA5A5)),
                       ],
                     ),
@@ -493,6 +566,7 @@ class _DriverOrderDetailSheetState extends State<_DriverOrderDetailSheet> {
 
     final double fee = double.tryParse((order['driver_earning'] ?? order['delivery_charge'])?.toString() ?? '5000') ?? 5000.0;
     final double totalAmount = double.tryParse((order['order_amount'] ?? order['total_amount'])?.toString() ?? '0') ?? 0.0;
+    final double distKm = double.tryParse(order['distance_km']?.toString() ?? '0') ?? 0.0;
     final String customerName = order['customer_name']?.toString() ?? 'Pelanggan';
     final String customerPhone = order['customer_phone']?.toString() ?? '';
     final String createdAt = order['created_at']?.toString() ?? '';
@@ -589,10 +663,10 @@ class _DriverOrderDetailSheetState extends State<_DriverOrderDetailSheet> {
                         Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: isDelivered ? const Color(0xFF064E3B) : const Color(0xFF1E293B),
+                            color: isDelivered ? const Color(0xFF064E3B) : (isCanceled ? const Color(0xFF450A0A) : const Color(0xFF1E293B)),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: isDelivered ? const Color(0xFF059669) : const Color(0xFF334155),
+                              color: isDelivered ? const Color(0xFF059669) : (isCanceled ? const Color(0xFF7F1D1D) : const Color(0xFF334155)),
                             ),
                           ),
                           child: Row(
@@ -618,7 +692,7 @@ class _DriverOrderDetailSheetState extends State<_DriverOrderDetailSheet> {
                                         ),
                                       ),
                                       Text(
-                                        'Metode Bayar: $paymentMethod',
+                                        'Bayar: $paymentMethod',
                                         style: const TextStyle(fontSize: 10.5, color: Color(0xFFCBD5E1)),
                                       ),
                                     ],
@@ -633,12 +707,53 @@ class _DriverOrderDetailSheetState extends State<_DriverOrderDetailSheet> {
                                     CurrencyFormatter.formatRupiah(fee),
                                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF4ADE80)),
                                   ),
+                                  if (distKm > 0) ...[
+                                    const SizedBox(height: 2),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.route_rounded, size: 11, color: Color(0xFF60A5FA)),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          '${distKm.toStringAsFixed(1)} km',
+                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF60A5FA)),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ],
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
+
+                        // Stats detail row (km + tarif per km)
+                        if (distKm > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E293B),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFF334155)),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                _detailStatTile(Icons.route_rounded, '${distKm.toStringAsFixed(2)} km', 'Jarak Antar', const Color(0xFF60A5FA)),
+                                Container(width: 1, height: 32, color: const Color(0xFF334155)),
+                                _detailStatTile(
+                                  Icons.local_atm_rounded,
+                                  'Rp ${distKm > 0 ? (fee / distKm).toStringAsFixed(0) : '0'}/km',
+                                  'Tarif / km',
+                                  const Color(0xFFFBBF24),
+                                ),
+                                Container(width: 1, height: 32, color: const Color(0xFF334155)),
+                                _detailStatTile(Icons.payments_rounded, CurrencyFormatter.formatRupiah(fee), 'Komisi Bersih', const Color(0xFF4ADE80)),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(height: 4),
 
                         // Customer Info Section
                         Container(
@@ -816,6 +931,23 @@ class _DriverOrderDetailSheetState extends State<_DriverOrderDetailSheet> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _detailStatTile(IconData icon, String value, String label, Color color) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(height: 3),
+        Text(
+          value,
+          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900, color: color),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        Text(label, style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B))),
+      ],
     );
   }
 }

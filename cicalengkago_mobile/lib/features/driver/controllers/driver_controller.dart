@@ -21,6 +21,7 @@ class DriverController extends ChangeNotifier {
   int _historyDeliveredCount = 0;
   int _historyCanceledCount = 0;
   double _historyTotalEarnings = 0.0;
+  double _historyTotalKm = 0.0;
   Map<String, dynamic>? _selectedOrderDetail;
   bool _isLoadingOrderDetail = false;
   Timer? _gpsBroadcastTimer;
@@ -46,6 +47,7 @@ class DriverController extends ChangeNotifier {
   int get historyDeliveredCount => _historyDeliveredCount;
   int get historyCanceledCount => _historyCanceledCount;
   double get historyTotalEarnings => _historyTotalEarnings;
+  double get historyTotalKm => _historyTotalKm;
   Map<String, dynamic>? get selectedOrderDetail => _selectedOrderDetail;
   bool get isLoadingOrderDetail => _isLoadingOrderDetail;
   List<dynamic> get deliveredOrders => (_earnings?['delivered_orders'] is List) ? (_earnings!['delivered_orders'] as List) : [];
@@ -372,6 +374,7 @@ class DriverController extends ChangeNotifier {
         _historyDeliveredCount = int.tryParse(d['total_delivered']?.toString() ?? '0') ?? 0;
         _historyCanceledCount = int.tryParse(d['total_canceled']?.toString() ?? '0') ?? 0;
         _historyTotalEarnings = double.tryParse(d['total_earnings']?.toString() ?? '0') ?? 0.0;
+        _historyTotalKm = double.tryParse(d['total_km']?.toString() ?? '0') ?? 0.0;
       }
     } catch (e) {
       debugPrint('[DriverController] fetchOrderHistory Error: $e');

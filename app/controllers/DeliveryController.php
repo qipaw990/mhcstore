@@ -875,6 +875,29 @@ class DeliveryController extends Controller
             if (!empty($order['delivery_batch_id'])) {
                 $this->orderModel->attachMultiStoreDetails($order);
             }
+
+            // Komisi driver per order
+            $dmWalletId = null;
+            if (!isset($dmWalletCache)) {
+                $dmWalletCache = $this->walletModel->getOrCreate($userId, 'delivery_man');
+            }
+            $dmWalletId = $dmWalletCache['id'] ?? null;
+            if ($dmWalletId) {
+                $earningTx = Database::fetchOne(
+                    "SELECT amount FROM `wallet_transactions` 
+                     WHERE `wallet_id` = ? AND `category` = 'order_earning' 
+                       AND (`reference_id` = ? OR `reference_id` = ?) LIMIT 1",
+                    [$dmWalletId, (string)$order['id'], (string)$order['order_code']]
+                );
+                $order['driver_earning'] = $earningTx
+                    ? (float)$earningTx['amount']
+                    : (float)($order['delivery_charge'] ?? 5000);
+            } else {
+                $order['driver_earning'] = (float)($order['delivery_charge'] ?? 5000);
+            }
+
+            // Pastikan distance_km float
+            $order['distance_km'] = round((float)($order['distance_km'] ?? 0), 2);
         }
         unset($order);
 
@@ -892,12 +915,18 @@ class DeliveryController extends Controller
              WHERE w.user_id = ? AND wt.type = 'credit' AND wt.category = 'order_earning'",
             [$userId]
         );
+        $totalKm = (float)Database::fetchColumn(
+            "SELECT COALESCE(SUM(distance_km), 0) FROM `orders`
+             WHERE (`delivery_man_id` = ? OR `delivery_man_id` = ?) AND `order_status` = 'delivered'",
+            [$dmId, $userId]
+        );
 
         $this->successResponse('Riwayat pesanan driver', [
             'orders'          => $orders,
             'total_delivered' => $totalDelivered,
             'total_canceled'  => $totalCanceled,
             'total_earnings'  => $totalEarnings,
+            'total_km'        => round($totalKm, 2),
             'page'            => $page,
             'limit'           => $limit,
         ]);
