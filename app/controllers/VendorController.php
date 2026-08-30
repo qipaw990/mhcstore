@@ -110,16 +110,16 @@ class VendorController extends Controller
             [$storeId]
         );
 
-        // Profit hari ini & bulan ini — dari HPP produk
+        // Profit hari ini & bulan ini — dari detail riwayat pesanan (hpp_snapshot historis)
         $profitStats = Database::fetchOne(
             "SELECT
                 COALESCE(SUM(CASE WHEN DATE(o.created_at) = CURDATE()
-                    THEN oi.quantity * (oi.price - COALESCE(p.hpp, 0)) ELSE 0 END), 0) as today_profit,
+                    THEN oi.quantity * (oi.price - COALESCE(oi.hpp_snapshot, p.hpp, 0)) ELSE 0 END), 0) as today_profit,
                 COALESCE(SUM(CASE WHEN MONTH(o.created_at) = MONTH(CURDATE()) AND YEAR(o.created_at) = YEAR(CURDATE())
-                    THEN oi.quantity * (oi.price - COALESCE(p.hpp, 0)) ELSE 0 END), 0) as month_profit,
-                COALESCE(SUM(oi.quantity * (oi.price - COALESCE(p.hpp, 0))), 0) as total_profit,
+                    THEN oi.quantity * (oi.price - COALESCE(oi.hpp_snapshot, p.hpp, 0)) ELSE 0 END), 0) as month_profit,
+                COALESCE(SUM(oi.quantity * (oi.price - COALESCE(oi.hpp_snapshot, p.hpp, 0))), 0) as total_profit,
                 CASE WHEN SUM(oi.quantity * oi.price) > 0
-                    THEN ROUND(SUM(oi.quantity * (oi.price - COALESCE(p.hpp,0))) / SUM(oi.quantity * oi.price) * 100, 2)
+                    THEN ROUND(SUM(oi.quantity * (oi.price - COALESCE(oi.hpp_snapshot, p.hpp, 0))) / SUM(oi.quantity * oi.price) * 100, 2)
                     ELSE 0 END as avg_margin_pct
              FROM order_items oi
              JOIN orders o ON oi.order_id = o.id
@@ -334,7 +334,11 @@ class VendorController extends Controller
         $data = $this->getPost();
         $id = !empty($data['id']) ? (int)$data['id'] : null;
 
-        $imagePath = $data['existing_image'] ?? 'assets/images/products/default.jpg';
+        // Ambil data produk eksisting jika update
+        $existingProduct = $id ? $this->productModel->find($id) : null;
+
+        // Tentukan foto produk: upload baru -> foto eksisting -> string existing_image -> default
+        $imagePath = $existingProduct['image'] ?? ($data['existing_image'] ?? 'assets/images/products/default.jpg');
         if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
             $uploaded = upload_image($_FILES['image'], 'products');
             if ($uploaded) {
@@ -345,19 +349,19 @@ class VendorController extends Controller
         $productData = [
             'store_id'       => $store['id'],
             'module_id'      => $store['module_id'],
-            'category_id'    => (int)($data['category_id'] ?? 1),
-            'name'           => sanitize($data['name']),
-            'barcode'        => !empty($data['barcode']) ? sanitize($data['barcode']) : null,
-            'description'    => sanitize($data['description'] ?? ''),
+            'category_id'    => !empty($data['category_id']) ? (int)$data['category_id'] : ($existingProduct ? (int)$existingProduct['category_id'] : 1),
+            'name'           => sanitize($data['name'] ?? ($existingProduct['name'] ?? '')),
+            'barcode'        => isset($data['barcode']) ? sanitize($data['barcode']) : ($existingProduct['barcode'] ?? null),
+            'description'    => sanitize($data['description'] ?? ($existingProduct['description'] ?? '')),
             'image'          => $imagePath,
-            'price'          => (float)($data['price'] ?? 0),
-            'hpp'            => (float)($data['hpp'] ?? 0),
-            'discount'       => (float)($data['discount'] ?? 0),
-            'discount_type'  => $data['discount_type'] ?? 'percent',
-            'unit'           => sanitize($data['unit'] ?? 'porsi'),
-            'stock'          => (int)($data['stock'] ?? 100),
-            'is_veg'         => !empty($data['is_veg']) ? 1 : 0,
-            'is_recommended' => !empty($data['is_recommended']) ? 1 : 0,
+            'price'          => isset($data['price']) ? (float)$data['price'] : (float)($existingProduct['price'] ?? 0),
+            'hpp'            => isset($data['hpp']) ? (float)$data['hpp'] : (float)($existingProduct['hpp'] ?? 0),
+            'discount'       => isset($data['discount']) ? (float)$data['discount'] : (float)($existingProduct['discount'] ?? 0),
+            'discount_type'  => $data['discount_type'] ?? ($existingProduct['discount_type'] ?? 'percent'),
+            'unit'           => sanitize($data['unit'] ?? ($existingProduct['unit'] ?? 'porsi')),
+            'stock'          => isset($data['stock']) ? (int)$data['stock'] : ($existingProduct ? (int)$existingProduct['stock'] : 100),
+            'is_veg'         => isset($data['is_veg']) ? (!empty($data['is_veg']) ? 1 : 0) : ($existingProduct['is_veg'] ?? 0),
+            'is_recommended' => isset($data['is_recommended']) ? (!empty($data['is_recommended']) ? 1 : 0) : ($existingProduct['is_recommended'] ?? 0),
             'status'         => 1
         ];
 
@@ -684,22 +688,23 @@ class VendorController extends Controller
             [$storeId]
         );
 
-        // 1b. Profit dari HPP (pakai hpp_snapshot untuk akurasi historis)
+        // 1b. Profit dari detail pesanan historis (pakai hpp_snapshot & oi.price)
         $profitKpi = Database::fetchOne(
             "SELECT
-                COALESCE(SUM(oi.quantity * (oi.price - oi.hpp_snapshot)), 0) as total_gross_profit,
+                COALESCE(SUM(oi.quantity * (oi.price - COALESCE(oi.hpp_snapshot, p.hpp, 0))), 0) as total_gross_profit,
                 COALESCE(SUM(CASE WHEN MONTH(o.created_at) = MONTH(CURDATE()) AND YEAR(o.created_at) = YEAR(CURDATE())
-                    THEN oi.quantity * (oi.price - oi.hpp_snapshot) ELSE 0 END), 0) as month_profit,
+                    THEN oi.quantity * (oi.price - COALESCE(oi.hpp_snapshot, p.hpp, 0)) ELSE 0 END), 0) as month_profit,
                 COALESCE(SUM(CASE WHEN o.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-                    THEN oi.quantity * (oi.price - oi.hpp_snapshot) ELSE 0 END), 0) as week_profit,
+                    THEN oi.quantity * (oi.price - COALESCE(oi.hpp_snapshot, p.hpp, 0)) ELSE 0 END), 0) as week_profit,
                 COALESCE(SUM(CASE WHEN DATE(o.created_at) = CURDATE()
-                    THEN oi.quantity * (oi.price - oi.hpp_snapshot) ELSE 0 END), 0) as today_profit,
-                COALESCE(SUM(oi.quantity * oi.hpp_snapshot), 0) as total_cogs,
+                    THEN oi.quantity * (oi.price - COALESCE(oi.hpp_snapshot, p.hpp, 0)) ELSE 0 END), 0) as today_profit,
+                COALESCE(SUM(oi.quantity * COALESCE(oi.hpp_snapshot, p.hpp, 0)), 0) as total_cogs,
                 CASE WHEN SUM(oi.quantity * oi.price) > 0
-                    THEN ROUND(SUM(oi.quantity * (oi.price - oi.hpp_snapshot)) / SUM(oi.quantity * oi.price) * 100, 2)
+                    THEN ROUND(SUM(oi.quantity * (oi.price - COALESCE(oi.hpp_snapshot, p.hpp, 0))) / SUM(oi.quantity * oi.price) * 100, 2)
                     ELSE 0 END as avg_margin_pct
              FROM `order_items` oi
              JOIN `orders` o ON oi.order_id = o.id
+             LEFT JOIN `products` p ON oi.product_id = p.id
              WHERE o.store_id = ? AND o.order_status = 'delivered'",
             [$storeId]
         );
@@ -727,9 +732,10 @@ class VendorController extends Controller
                     COALESCE(SUM(CASE WHEN o.order_status = 'delivered' THEN o.order_amount * 0.90 ELSE 0 END), 0) as net_revenue,
                     COALESCE(SUM(CASE WHEN o.order_status = 'delivered' THEN o.order_amount ELSE 0 END), 0) as gross_revenue,
                     COALESCE((
-                        SELECT SUM(oi2.quantity * (oi2.price - oi2.hpp_snapshot))
+                        SELECT SUM(oi2.quantity * (oi2.price - COALESCE(oi2.hpp_snapshot, p2.hpp, 0)))
                         FROM order_items oi2
                         JOIN orders o2 ON oi2.order_id = o2.id
+                        LEFT JOIN products p2 ON oi2.product_id = p2.id
                         WHERE o2.store_id = ? AND DATE(o2.created_at) = ? AND o2.order_status = 'delivered'
                     ), 0) as profit
                  FROM `orders` o
@@ -754,19 +760,19 @@ class VendorController extends Controller
             "SELECT
                 COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name,
                 COALESCE(oi.product_image_snapshot, p.image) as product_image,
-                p.price as product_price,
-                oi.hpp_snapshot as product_hpp,
+                COALESCE(p.price, oi.price) as product_price,
+                COALESCE(oi.hpp_snapshot, p.hpp, 0) as product_hpp,
                 SUM(oi.quantity) as total_sold,
                 SUM(oi.quantity * oi.price) as total_sales_amount,
-                SUM(oi.quantity * (oi.price - oi.hpp_snapshot)) as total_profit,
+                SUM(oi.quantity * (oi.price - COALESCE(oi.hpp_snapshot, p.hpp, 0))) as total_profit,
                 CASE WHEN SUM(oi.quantity * oi.price) > 0
-                    THEN ROUND(SUM(oi.quantity * (oi.price - oi.hpp_snapshot)) / SUM(oi.quantity * oi.price) * 100, 2)
+                    THEN ROUND(SUM(oi.quantity * (oi.price - COALESCE(oi.hpp_snapshot, p.hpp, 0))) / SUM(oi.quantity * oi.price) * 100, 2)
                     ELSE 0 END as margin_pct
              FROM `order_items` oi
              JOIN `orders` o ON oi.order_id = o.id
              LEFT JOIN `products` p ON oi.product_id = p.id
              WHERE o.store_id = ? AND o.order_status = 'delivered'
-             GROUP BY oi.product_id, product_name, product_image, p.price, oi.hpp_snapshot
+             GROUP BY oi.product_id, product_name, product_image, product_price, product_hpp
              ORDER BY total_sold DESC
              LIMIT 8",
             [$storeId]
@@ -782,13 +788,15 @@ class VendorController extends Controller
                 o.order_status,
                 o.created_at,
                 COALESCE((
-                    SELECT SUM(oi2.quantity * (oi2.price - oi2.hpp_snapshot))
+                    SELECT SUM(oi2.quantity * (oi2.price - COALESCE(oi2.hpp_snapshot, p2.hpp, 0)))
                     FROM order_items oi2
+                    LEFT JOIN products p2 ON oi2.product_id = p2.id
                     WHERE oi2.order_id = o.id
                 ), 0) as order_profit,
                 COALESCE((
-                    SELECT SUM(oi2.quantity * oi2.hpp_snapshot)
+                    SELECT SUM(oi2.quantity * COALESCE(oi2.hpp_snapshot, p2.hpp, 0))
                     FROM order_items oi2
+                    LEFT JOIN products p2 ON oi2.product_id = p2.id
                     WHERE oi2.order_id = o.id
                 ), 0) as order_cogs
              FROM `orders` o

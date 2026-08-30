@@ -802,6 +802,9 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
                       };
                       if (_isEdit) {
                         payload['id'] = widget.product!['id'].toString();
+                        if (widget.product!['image'] != null && widget.product!['image'].toString().isNotEmpty) {
+                          payload['existing_image'] = widget.product!['image'].toString();
+                        }
                       }
 
                       final ok = await context.read<MerchantController>().saveProduct(

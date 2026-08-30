@@ -172,8 +172,8 @@ class MerchantController extends ChangeNotifier {
 
     if (!silent) {
       _isLoading = false;
-      notifyListeners();
     }
+    notifyListeners();
   }
 
   Future<void> fetchProducts({bool silent = false}) async {
@@ -194,8 +194,8 @@ class MerchantController extends ChangeNotifier {
 
     if (!silent) {
       _isLoading = false;
-      notifyListeners();
     }
+    notifyListeners();
   }
 
   Future<void> fetchOrders({bool silent = false}) async {
@@ -216,8 +216,8 @@ class MerchantController extends ChangeNotifier {
 
     if (!silent) {
       _isLoading = false;
-      notifyListeners();
     }
+    notifyListeners();
   }
 
   Future<void> fetchWallet({bool silent = false}) async {
@@ -240,8 +240,8 @@ class MerchantController extends ChangeNotifier {
 
     if (!silent) {
       _isLoading = false;
-      notifyListeners();
     }
+    notifyListeners();
   }
 
   Future<bool> toggleStoreOpenStatus(bool status) async {

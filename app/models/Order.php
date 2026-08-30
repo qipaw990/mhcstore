@@ -45,7 +45,7 @@ class Order extends Model
                 $order['dm_lng'] = null;
             }
 
-            $order['items'] = Database::query("SELECT oi.*, COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name, p.image as product_image FROM `order_items` oi LEFT JOIN `products` p ON oi.product_id = p.id WHERE oi.`order_id` = ?", [$order['id']]);
+            $order['items'] = Database::query("SELECT oi.*, COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name, COALESCE(oi.product_image_snapshot, p.image) as product_image FROM `order_items` oi LEFT JOIN `products` p ON oi.product_id = p.id WHERE oi.`order_id` = ?", [$order['id']]);
             $order['delivery_address'] = json_decode($order['delivery_address_json'] ?? '{}', true) ?: [];
             $order['parcel_details'] = json_decode($order['parcel_details_json'] ?? '{}', true) ?: [];
 
@@ -81,7 +81,7 @@ class Order extends Model
                     WHERE o.id = ? LIMIT 1";
             $order = Database::fetchOne($sql, [(int)$idOrCode]);
             if ($order) {
-                $order['items'] = Database::query("SELECT oi.*, COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name, p.image as product_image FROM `order_items` oi LEFT JOIN `products` p ON oi.product_id = p.id WHERE oi.`order_id` = ?", [$order['id']]);
+                $order['items'] = Database::query("SELECT oi.*, COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name, COALESCE(oi.product_image_snapshot, p.image) as product_image FROM `order_items` oi LEFT JOIN `products` p ON oi.product_id = p.id WHERE oi.`order_id` = ?", [$order['id']]);
                 $order['delivery_address'] = json_decode($order['delivery_address_json'] ?? '{}', true) ?: [];
                 $order['parcel_details'] = json_decode($order['parcel_details_json'] ?? '{}', true) ?: [];
 
@@ -110,7 +110,7 @@ class Order extends Model
             "SELECT oi.*, 
                     COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name, 
                     COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as item_name, 
-                    p.image as product_image,
+                    COALESCE(oi.product_image_snapshot, p.image) as product_image,
                     s.name as store_name,
                     s.address as store_address,
                     s.id as store_id
@@ -153,7 +153,7 @@ class Order extends Model
             $storeSeen = [];
 
             foreach ($batchOrders as $subOrd) {
-                $subOrd['items'] = Database::query("SELECT oi.*, COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name, p.image as product_image FROM `order_items` oi LEFT JOIN `products` p ON oi.product_id = p.id WHERE oi.`order_id` = ?", [$subOrd['id']]);
+                $subOrd['items'] = Database::query("SELECT oi.*, COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name, COALESCE(oi.product_image_snapshot, p.image) as product_image FROM `order_items` oi LEFT JOIN `products` p ON oi.product_id = p.id WHERE oi.`order_id` = ?", [$subOrd['id']]);
                 $order['batch_sub_orders'][] = $subOrd;
                 $order['batch_total_amount'] += (float)$subOrd['total_amount'];
 
@@ -198,7 +198,7 @@ class Order extends Model
         $batchMap = [];
 
         foreach ($rawOrders as $o) {
-            $o['items'] = Database::query("SELECT oi.*, COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name, p.image as product_image FROM `order_items` oi LEFT JOIN `products` p ON oi.product_id = p.id WHERE oi.`order_id` = ?", [$o['id']]);
+            $o['items'] = Database::query("SELECT oi.*, COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name, COALESCE(oi.product_image_snapshot, p.image) as product_image FROM `order_items` oi LEFT JOIN `products` p ON oi.product_id = p.id WHERE oi.`order_id` = ?", [$o['id']]);
             foreach ($o['items'] as &$it) {
                 $it['store_name'] = $o['store_name'] ?? 'Toko';
             }
@@ -255,7 +255,7 @@ class Order extends Model
                 ORDER BY o.id DESC";
         $orders = Database::query($sql, [$storeId]);
         foreach ($orders as &$o) {
-            $o['items'] = Database::query("SELECT oi.*, COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name, p.image as product_image FROM `order_items` oi LEFT JOIN `products` p ON oi.product_id = p.id WHERE oi.`order_id` = ?", [$o['id']]);
+            $o['items'] = Database::query("SELECT oi.*, COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name, COALESCE(oi.product_image_snapshot, p.image) as product_image FROM `order_items` oi LEFT JOIN `products` p ON oi.product_id = p.id WHERE oi.`order_id` = ?", [$o['id']]);
             $o['delivery_address'] = json_decode($o['delivery_address_json'] ?? '{}', true) ?: [];
         }
         return $orders;
@@ -287,7 +287,7 @@ class Order extends Model
         $batchMap = [];
 
         foreach ($rawOrders as $o) {
-            $o['items'] = Database::query("SELECT oi.*, COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name, p.image as product_image FROM `order_items` oi LEFT JOIN `products` p ON oi.product_id = p.id WHERE oi.`order_id` = ?", [$o['id']]);
+            $o['items'] = Database::query("SELECT oi.*, COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name, COALESCE(oi.product_image_snapshot, p.image) as product_image FROM `order_items` oi LEFT JOIN `products` p ON oi.product_id = p.id WHERE oi.`order_id` = ?", [$o['id']]);
             $o['delivery_address'] = json_decode($o['delivery_address_json'] ?? '{}', true) ?: [];
 
             $batchId = $o['delivery_batch_id'] ?? null;
