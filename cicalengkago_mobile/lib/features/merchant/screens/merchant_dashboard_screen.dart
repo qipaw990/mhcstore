@@ -5,10 +5,10 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/cicalengkago_logo.dart';
-import '../../auth/controllers/auth_controller.dart';
 import '../../auth/screens/register_merchant_screen.dart';
 import '../controllers/merchant_controller.dart';
 import 'merchant_orders_screen.dart';
+import 'merchant_analytics_screen.dart';
 import 'product_management_screen.dart';
 import 'store_settings_screen.dart';
 
@@ -33,7 +33,6 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final merchantCtrl = context.watch<MerchantController>();
-    final authCtrl = context.watch<AuthController>();
     final store = merchantCtrl.store;
     final isOpen = merchantCtrl.isOpen;
     final rawLogo = store?['logo']?.toString();
@@ -56,7 +55,7 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
                       width: 38,
                       height: 38,
                       fit: BoxFit.cover,
-                      errorWidget: (_, __, ___) => const CicalengkaGoLogo(size: 38, borderRadius: 10, showShadow: false),
+                      errorWidget: (context, url, error) => const CicalengkaGoLogo(size: 38, borderRadius: 10, showShadow: false),
                     )
                   : const CicalengkaGoLogo(size: 38, borderRadius: 10, showShadow: false),
             ),
@@ -99,6 +98,16 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MerchantAnalyticsScreen()),
+              );
+            },
+            icon: const Icon(Icons.insights_rounded, color: Color(0xFF2563EB), size: 22),
+            tooltip: 'Statistik & Insight Penjualan',
+          ),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -121,7 +130,7 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
               ),
             ],
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
         ],
       ),
       body: IndexedStack(
@@ -447,16 +456,30 @@ class _MerchantOverviewTab extends StatelessWidget {
                 child: _shortcutButton(
                   icon: Icons.add_circle_outline_rounded,
                   color: const Color(0xFF2563EB),
-                  label: 'Tambah Menu Baru',
+                  label: 'Tambah Menu',
                   onTap: () => onNavigateToTab(2),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _shortcutButton(
+                  icon: Icons.insights_rounded,
+                  color: const Color(0xFF7E22CE),
+                  label: 'Statistik & Insight',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const MerchantAnalyticsScreen()),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: _shortcutButton(
                   icon: Icons.receipt_long_rounded,
                   color: const Color(0xFF16A34A),
-                  label: 'Lihat Semua Pesanan',
+                  label: 'Semua Pesanan',
                   onTap: () => onNavigateToTab(1),
                 ),
               ),

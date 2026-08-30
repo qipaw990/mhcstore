@@ -139,6 +139,7 @@ class ApiConstants {
   static const String updateProductStock       = '$domainUrl/vendor/products/toggle-status';
   static const String vendorWallet             = '$domainUrl/vendor/wallet';
   static const String vendorWithdraw           = '$domainUrl/vendor/wallet/withdraw';
+  static const String vendorAnalytics          = '$domainUrl/vendor/analytics';
   static const String vendorProfile            = '$domainUrl/vendor/profile';
   static const String vendorUpdateProfile      = '$domainUrl/vendor/profile/update';
   static const String vendorRegister           = '$domainUrl/api/register-merchant';

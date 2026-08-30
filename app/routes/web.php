@@ -138,6 +138,7 @@ Router::group(['prefix' => '/vendor', 'middleware' => ['VendorMiddleware']], fun
     Router::post('/products/toggle-status', [VendorController::class, 'toggleProductStatus']);
     Router::get('/wallet', [VendorController::class, 'wallet']);
     Router::post('/wallet/withdraw', [VendorController::class, 'requestWithdraw']);
+    Router::get('/analytics', [VendorController::class, 'analytics']);
     Router::get('/profile', [VendorController::class, 'profile']);
     Router::post('/profile/update', [VendorController::class, 'updateProfile']);
 });

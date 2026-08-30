@@ -17,6 +17,14 @@ class MerchantController extends ChangeNotifier {
   double _totalWithdrawn = 0.0;
   double _pendingWithdrawn = 0.0;
 
+  // Analytics & Insights State
+  bool _isAnalyticsLoading = false;
+  Map<String, dynamic>? _analyticsKpi;
+  List<dynamic> _analyticsDailyTrends = [];
+  List<dynamic> _analyticsTopProducts = [];
+  List<dynamic> _analyticsPaymentBreakdown = [];
+  List<dynamic> _analyticsDeliveryBreakdown = [];
+
   bool get isLoading => _isLoading;
   bool get isOpen => _isOpen;
   Map<String, dynamic>? get store => _store;
@@ -30,6 +38,38 @@ class MerchantController extends ChangeNotifier {
   List<dynamic> get withdrawRequests => _withdrawRequests;
   double get totalWithdrawn => _totalWithdrawn;
   double get pendingWithdrawn => _pendingWithdrawn;
+
+  bool get isAnalyticsLoading => _isAnalyticsLoading;
+  Map<String, dynamic>? get analyticsKpi => _analyticsKpi;
+  List<dynamic> get analyticsDailyTrends => _analyticsDailyTrends;
+  List<dynamic> get analyticsTopProducts => _analyticsTopProducts;
+  List<dynamic> get analyticsPaymentBreakdown => _analyticsPaymentBreakdown;
+  List<dynamic> get analyticsDeliveryBreakdown => _analyticsDeliveryBreakdown;
+
+  Future<void> fetchAnalytics({bool silent = false}) async {
+    if (!silent) {
+      _isAnalyticsLoading = true;
+      notifyListeners();
+    }
+
+    try {
+      final res = await ApiService.get(ApiConstants.vendorAnalytics);
+      if (res['success'] == true && res['data'] != null) {
+        final data = res['data'];
+        _analyticsKpi = data['kpi'] as Map<String, dynamic>?;
+        _analyticsDailyTrends = (data['daily_trends'] as List<dynamic>?) ?? [];
+        _analyticsTopProducts = (data['top_products'] as List<dynamic>?) ?? [];
+        _analyticsPaymentBreakdown = (data['payment_breakdown'] as List<dynamic>?) ?? [];
+        _analyticsDeliveryBreakdown = (data['delivery_breakdown'] as List<dynamic>?) ?? [];
+        if (data['store'] != null) {
+          _store = data['store'] as Map<String, dynamic>?;
+        }
+      }
+    } catch (_) {}
+
+    _isAnalyticsLoading = false;
+    notifyListeners();
+  }
 
   Future<void> fetchDashboardData() async {
     _isLoading = true;
@@ -238,7 +278,7 @@ class MerchantController extends ChangeNotifier {
       final res = await ApiService.post(ApiConstants.updateStoreOrderStatus, {
         'order_id': orderId.toString(),
         'status': status,
-        if (deliveryType != null) 'delivery_type': deliveryType,
+        'delivery_type': ?deliveryType,
       });
 
       if (res['success'] == true) {

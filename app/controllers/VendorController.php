@@ -432,6 +432,127 @@ class VendorController extends Controller
         ], 'vendor_layout');
     }
 
+    public function analytics(): void
+    {
+        $userId = auth_id();
+        $store = $this->storeModel->findByVendorId($userId);
+        if (!$store) {
+            $this->errorResponse('Toko belum terdaftar.');
+            return;
+        }
+
+        $storeId = (int)$store['id'];
+
+        // 1. KPI Summary (Total, Today, Week, Month, AOV)
+        $kpi = Database::fetchOne(
+            "SELECT 
+                COUNT(*) as total_orders,
+                COALESCE(SUM(CASE WHEN order_status = 'delivered' THEN order_amount * 0.90 ELSE 0 END), 0) as total_net_revenue,
+                COALESCE(SUM(CASE WHEN order_status = 'delivered' THEN order_amount ELSE 0 END), 0) as total_gross_sales,
+                COUNT(CASE WHEN order_status = 'delivered' THEN 1 END) as delivered_count,
+                COUNT(CASE WHEN order_status = 'canceled' THEN 1 END) as canceled_count,
+                
+                -- Hari ini
+                COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as today_orders,
+                COALESCE(SUM(CASE WHEN order_status = 'delivered' AND DATE(created_at) = CURDATE() THEN order_amount * 0.90 ELSE 0 END), 0) as today_revenue,
+                
+                -- 7 Hari Terakhir
+                COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 END) as week_orders,
+                COALESCE(SUM(CASE WHEN order_status = 'delivered' AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN order_amount * 0.90 ELSE 0 END), 0) as week_revenue,
+                
+                -- Bulan Ini
+                COUNT(CASE WHEN MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) THEN 1 END) as month_orders,
+                COALESCE(SUM(CASE WHEN order_status = 'delivered' AND MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) THEN order_amount * 0.90 ELSE 0 END), 0) as month_revenue,
+                
+                -- Rata-rata Nilai Pesanan (AOV)
+                COALESCE(AVG(CASE WHEN order_status = 'delivered' THEN order_amount ELSE NULL END), 0) as avg_order_value
+             FROM `orders`
+             WHERE `store_id` = ?",
+            [$storeId]
+        );
+
+        // 2. Trend 7 Hari Terakhir (Daily Trend for Chart)
+        $dailyTrends = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = date('Y-m-d', strtotime("-$i days"));
+            $dayName = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'][date('w', strtotime($date))];
+            
+            $dayRow = Database::fetchOne(
+                "SELECT 
+                    COUNT(CASE WHEN order_status = 'delivered' THEN 1 END) as delivered_orders,
+                    COUNT(*) as total_orders,
+                    COALESCE(SUM(CASE WHEN order_status = 'delivered' THEN order_amount * 0.90 ELSE 0 END), 0) as net_revenue,
+                    COALESCE(SUM(CASE WHEN order_status = 'delivered' THEN order_amount ELSE 0 END), 0) as gross_revenue
+                 FROM `orders`
+                 WHERE `store_id` = ? AND DATE(created_at) = ?",
+                [$storeId, $date]
+            );
+
+            $dailyTrends[] = [
+                'date'             => $date,
+                'day_name'         => $dayName,
+                'formatted_date'   => date('d M', strtotime($date)),
+                'delivered_orders' => (int)($dayRow['delivered_orders'] ?? 0),
+                'total_orders'     => (int)($dayRow['total_orders'] ?? 0),
+                'revenue'          => (float)($dayRow['net_revenue'] ?? 0),
+                'gross_revenue'    => (float)($dayRow['gross_revenue'] ?? 0),
+            ];
+        }
+
+        // 3. Menu Terlaris (Top 5 Best Selling Items)
+        $topProducts = Database::query(
+            "SELECT 
+                COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name,
+                p.image as product_image,
+                p.price as product_price,
+                SUM(oi.quantity) as total_sold,
+                SUM(oi.quantity * oi.price) as total_sales_amount
+             FROM `order_items` oi
+             JOIN `orders` o ON oi.order_id = o.id
+             LEFT JOIN `products` p ON oi.product_id = p.id
+             WHERE o.store_id = ? AND o.order_status = 'delivered'
+             GROUP BY oi.product_id, product_name, p.image, p.price
+             ORDER BY total_sold DESC
+             LIMIT 5",
+            [$storeId]
+        );
+
+        // 4. Breakdown Metode Pembayaran (Payment Method Distribution)
+        $paymentBreakdown = Database::query(
+            "SELECT 
+                COALESCE(payment_method, 'cod') as payment_method,
+                COUNT(*) as count,
+                COALESCE(SUM(order_amount), 0) as total_amount
+             FROM `orders`
+             WHERE store_id = ? AND order_status = 'delivered'
+             GROUP BY payment_method",
+            [$storeId]
+        );
+
+        // 5. Breakdown Tipe Pengantaran (Delivery Type Distribution)
+        $deliveryBreakdown = Database::query(
+            "SELECT 
+                COALESCE(delivery_type, 'driver') as delivery_type,
+                COUNT(*) as count
+             FROM `orders`
+             WHERE store_id = ? AND order_status = 'delivered'
+             GROUP BY delivery_type",
+            [$storeId]
+        );
+
+        $wallet = $this->walletModel->getOrCreate($userId, 'vendor');
+
+        $this->successResponse('Statistik dan insight penjualan toko berhasil diambil', [
+            'store'               => $store,
+            'kpi'                 => $kpi,
+            'daily_trends'        => $dailyTrends,
+            'top_products'        => $topProducts,
+            'payment_breakdown'   => $paymentBreakdown,
+            'delivery_breakdown'  => $deliveryBreakdown,
+            'wallet'              => $wallet,
+        ]);
+    }
+
     public function requestWithdraw(): void
     {
         $userId = auth_id();
