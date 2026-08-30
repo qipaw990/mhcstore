@@ -939,7 +939,7 @@ class VendorController extends Controller
             'payment_method'         => $paymentMethod === 'cash' ? 'cod' : $paymentMethod,
             'payment_status'         => 'paid',
             'order_status'           => 'delivered',
-            'order_type'             => 'pos',
+            'order_type'             => 'takeaway',
             'delivery_type'          => 'merchant',
             'order_notes'            => $notes . " [Customer: {$customerName}]",
             'delivery_address_json'  => json_encode(['address' => 'Kasir / Transaksi Langsung di Toko', 'customer_name' => $customerName, 'phone' => $customerPhone]),
