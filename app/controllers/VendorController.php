@@ -883,11 +883,15 @@ class VendorController extends Controller
             $price = (float)($item['price'] ?? 0);
 
             $prod = $pId ? $this->productModel->find($pId) : null;
+            $hpp = 0.0;
+            $img = null;
             if ($prod) {
                 if ($price <= 0) {
                     $price = (float)($prod['price'] ?? 0);
                 }
                 $pName = $prod['name'];
+                $hpp   = (float)($prod['hpp'] ?? 0);
+                $img   = $prod['image'] ?? null;
                 
                 // Kurangi stok jika tersedia
                 if ((int)($prod['stock'] ?? 0) > 0) {
@@ -902,11 +906,14 @@ class VendorController extends Controller
             $orderAmount += $itemSubtotal;
 
             $orderItemsToInsert[] = [
-                'product_id'   => $pId ?: null,
-                'product_name' => $pName,
-                'quantity'     => $qty,
-                'price'        => $price,
-                'notes'        => sanitize($item['notes'] ?? '')
+                'product_id'             => $pId ?: null,
+                'product_name'           => $pName,
+                'quantity'               => $qty,
+                'price'                  => $price,
+                'total_price'            => $itemSubtotal,
+                'hpp_snapshot'           => $hpp,
+                'product_image_snapshot' => $img,
+                'notes'                  => sanitize($item['notes'] ?? '')
             ];
         }
 
@@ -915,6 +922,7 @@ class VendorController extends Controller
 
         $orderCode = 'POS-' . strtoupper(substr(uniqid(), -5)) . date('is');
         $now = date('Y-m-d H:i:s');
+        $otp = str_pad((string)rand(1000, 9999), 4, '0', STR_PAD_LEFT);
 
         // Simpan sebagai pesanan selesai langsung (POS Kasir Offline)
         $orderData = [
@@ -925,6 +933,8 @@ class VendorController extends Controller
             'zone_id'                => (int)($store['zone_id'] ?? 1),
             'order_amount'           => $orderAmount,
             'delivery_charge'        => 0.0,
+            'tax_amount'             => 0.0,
+            'coupon_discount'        => 0.0,
             'total_amount'           => $totalAmount,
             'payment_method'         => $paymentMethod === 'cash' ? 'cod' : $paymentMethod,
             'payment_status'         => 'paid',
@@ -933,6 +943,8 @@ class VendorController extends Controller
             'delivery_type'          => 'merchant',
             'order_notes'            => $notes . " [Customer: {$customerName}]",
             'delivery_address_json'  => json_encode(['address' => 'Kasir / Transaksi Langsung di Toko', 'customer_name' => $customerName, 'phone' => $customerPhone]),
+            'otp'                    => $otp,
+            'distance_km'            => 0.0,
             'confirmed_at'           => $now,
             'processing_at'          => $now,
             'picked_up_at'           => $now,
@@ -952,12 +964,14 @@ class VendorController extends Controller
 
         foreach ($orderItemsToInsert as $oItem) {
             Database::insert('order_items', [
-                'order_id'     => $orderId,
-                'product_id'   => $oItem['product_id'],
-                'product_name' => $oItem['product_name'],
-                'quantity'     => $oItem['quantity'],
-                'price'        => $oItem['price'],
-                'notes'        => $oItem['notes'],
+                'order_id'               => $orderId,
+                'product_id'             => $oItem['product_id'],
+                'product_name'           => $oItem['product_name'],
+                'quantity'               => $oItem['quantity'],
+                'price'                  => $oItem['price'],
+                'total_price'            => $oItem['total_price'],
+                'hpp_snapshot'           => $oItem['hpp_snapshot'],
+                'product_image_snapshot' => $oItem['product_image_snapshot'],
             ]);
         }
 
