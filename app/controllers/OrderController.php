@@ -7,6 +7,7 @@ use App\Models\Cart;
 use App\Models\Wallet;
 use App\Models\Coupon;
 use App\Models\CustomerAddress;
+use App\Models\Zone;
 use App\Services\OrderService;
 use App\Services\MidtransService;
 use App\Core\Database;
@@ -47,12 +48,21 @@ class OrderController extends Controller
         $addresses = Database::query("SELECT * FROM `customer_addresses` WHERE `user_id` = ? ORDER BY `is_default` DESC", [$userId]);
         $coupons = (new Coupon())->where('status', 1);
 
+        // Ambil tarif zona dari store pertama di cart, fallback ke zona id=1
+        $primaryZoneId = 1;
+        if (!empty($cartData['stores'])) {
+            $firstStore = reset($cartData['stores']);
+            $primaryZoneId = (int)($firstStore['zone_id'] ?? 1);
+        }
+        $zoneTariff = Zone::getZoneTariff($primaryZoneId);
+
         $this->view('customer.checkout', [
             'title'        => 'Checkout Pesanan - CicalengkaGO',
             'cart_data'    => $cartData,
             'wallet'       => $wallet,
             'addresses'    => $addresses,
             'coupons'      => $coupons,
+            'zone_tariff'  => $zoneTariff,
             'active_tab'   => 'cart'
         ], 'customer_layout');
     }

@@ -7,8 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
-import '../../../core/services/global_call_service.dart';
-import '../../../core/services/location_service.dart';
 import '../../../core/services/route_service.dart';
 import '../../common/screens/in_app_chat_modal.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -163,6 +161,28 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                     ],
                   ),
                 ),
+                if (trip['distance_km'] != null) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFBFDBFE)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.route_rounded, color: Color(0xFF2563EB), size: 14),
+                        const SizedBox(width: 5),
+                        Text(
+                          '${double.tryParse(trip['distance_km']?.toString() ?? '0')?.toStringAsFixed(1) ?? '0'} km',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 if (pickupStores.length > 1) ...[
                   const SizedBox(width: 8),
                   Container(

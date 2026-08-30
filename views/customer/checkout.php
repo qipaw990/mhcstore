@@ -141,7 +141,7 @@
                 </div>
                 <div class="d-flex justify-content-between text-muted gap-2 ps-3.5" style="font-size: 10.5px;">
                     <span class="text-truncate">Ongkir Toko #<?= $sIdx + 1 ?></span>
-                    <span class="text-dark fw-bold flex-shrink-0"><?= format_rupiah($sg['delivery_fee']) ?></span>
+                    <span class="text-dark fw-bold flex-shrink-0 store-delivery-display" data-base-delivery="<?= (float)$sg['delivery_fee'] ?>"><?= format_rupiah($sg['delivery_fee']) ?></span>
                 </div>
             </div>
         <?php endforeach; ?>
@@ -185,6 +185,11 @@ const STORES_DATA = <?= json_encode(array_values(array_map(function($s) {
 
 const BASE_SUBTOTAL     = <?= (float)$cart_data['grand_subtotal'] ?>;
 const BASE_DELIVERY_FEE = <?= (float)$cart_data['grand_delivery'] ?>;
+const STORE_COUNT       = <?= count($cart_data['stores']) ?>;
+
+// Tarif zona dari database (admin panel)
+const ZONE_MIN_FEE  = <?= (float)($zone_tariff['min_delivery_charge']    ?? 5000) ?>;
+const ZONE_PER_KM   = <?= (float)($zone_tariff['per_km_delivery_charge'] ?? 2500) ?>;
 
 let map, customerMarker, storeMarkers = [], routeLine;
 let mapInitialized = false;
@@ -336,7 +341,7 @@ function updateLocationData(lat, lng) {
 function updateRouteAndDistance(custLat, custLng) {
     if (routeLine) map.removeLayer(routeLine);
 
-    // Build route points sequentially: Store 1 -> Store 2 -> ... -> Customer
+    // Build route points: Store 1 -> Store 2 -> ... -> Customer
     const routePoints = STORES_DATA.map(s => [s.lat || -6.9835, s.lng || 107.8335]);
     routePoints.push([custLat, custLng]);
 
@@ -350,27 +355,61 @@ function updateRouteAndDistance(custLat, custLng) {
     const bounds = L.latLngBounds(routePoints);
     map.fitBounds(bounds, { padding: [35, 35] });
 
-    // Calculate total multi-leg distance in KM
+    // Haversine: hitung total jarak multi-leg (Store(s) → Customer)
     let totalDistKm = 0;
     for (let i = 0; i < routePoints.length - 1; i++) {
-        const p1 = routePoints[i];
-        const p2 = routePoints[i+1];
-        const dLat = (p2[0] - p1[0]) * Math.PI / 180;
-        const dLng = (p2[1] - p1[1]) * Math.PI / 180;
-        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                  Math.cos(p1[0] * Math.PI / 180) * Math.cos(p2[0] * Math.PI / 180) *
-                  Math.sin(dLng / 2) * Math.sin(dLng / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        totalDistKm += (6371 * c);
+        const [lat1, lng1] = routePoints[i];
+        const [lat2, lng2] = routePoints[i + 1];
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLng = (lng2 - lng1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2 +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLng / 2) ** 2;
+        totalDistKm += 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    const distKm = Math.max(0.5, Math.round(totalDistKm * 10) / 10);
+    // Jarak minimum 0.5 km, dibulatkan 2 desimal
+    const distKm = Math.max(0.5, Math.round(totalDistKm * 100) / 100);
 
-    document.getElementById('input-distance').value = distKm;
-    document.getElementById('distance-badge').innerHTML = `<i class="bi bi-signpost-2 me-1"></i> Est. Total Jarak: ${distKm} Km`;
+    document.getElementById('input-distance').value = distKm.toFixed(2);
+    document.getElementById('distance-badge').innerHTML =
+        `<i class="bi bi-signpost-2 me-1"></i> Est. Jarak: ${distKm.toFixed(1)} Km`;
 
     const feeTextEls = document.querySelectorAll('.fee-dist-text');
-    feeTextEls.forEach(el => el.textContent = `${distKm} Km`);
+    feeTextEls.forEach(el => el.textContent = `${distKm.toFixed(1)} Km`);
+
+    // Recalculate ongkir berdasarkan tarif zona
+    recalcFeeAndTotal(distKm);
+}
+
+/**
+ * Hitung ongkir berdasarkan tarif zona (identik dengan PHP calculate_delivery_fee)
+ * Min fee berlaku sampai 2 km, setelah itu +perKm per km ekstra.
+ */
+function calcDeliveryFee(distKm) {
+    if (distKm <= 2.0) return ZONE_MIN_FEE;
+    return Math.round(ZONE_MIN_FEE + (distKm - 2.0) * ZONE_PER_KM);
+}
+
+function formatRupiah(amount) {
+    return 'Rp ' + Math.round(amount).toLocaleString('id-ID');
+}
+
+function recalcFeeAndTotal(distKm) {
+    // Ongkir per toko: bagi rata total ongkir (atau satu toko = full ongkir)
+    const totalOngkir = calcDeliveryFee(distKm);
+    const perStoreOngkir = STORE_COUNT > 0 ? Math.round(totalOngkir / STORE_COUNT) : totalOngkir;
+
+    // Update tampilan ongkir per toko di breakdown
+    document.querySelectorAll('.store-delivery-display').forEach(el => {
+        el.textContent = formatRupiah(perStoreOngkir);
+    });
+
+    // Grand total = subtotal + ongkir - voucher
+    const voucher = (typeof VOUCHER_DISCOUNT !== 'undefined') ? VOUCHER_DISCOUNT : 0;
+    const grandTotal = BASE_SUBTOTAL + totalOngkir - voucher;
+    const displayEl = document.getElementById('total-amount-display');
+    if (displayEl) displayEl.textContent = formatRupiah(grandTotal);
 }
 
 function getCurrentLocation(isSilent = false) {

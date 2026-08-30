@@ -8,6 +8,7 @@ use App\Models\Coupon;
 use App\Models\Wallet;
 use App\Models\Store;
 use App\Models\Product;
+use App\Models\Zone;
 use Exception;
 
 class OrderService
@@ -102,12 +103,19 @@ class OrderService
 
             if ($destLat != 0 && $destLng != 0 && $storeLat != 0 && $storeLng != 0) {
                 $calculatedDist = haversine_distance($storeLat, $storeLng, $destLat, $destLng);
-                $distanceKm = max(0.5, round($calculatedDist, 1));
+                $distanceKm = max(0.5, round($calculatedDist, 2));
             } else {
                 $distanceKm = (float)($data['distance_km'] ?? 1.5);
             }
 
-            $deliveryCharge = calculate_delivery_fee($distanceKm, (float)$store['delivery_fee']);
+            // Ambil tarif dari zona toko (bukan hardcode)
+            $zoneId  = (int)($store['zone_id'] ?? 1);
+            $tariff  = Zone::getZoneTariff($zoneId);
+            $deliveryCharge = calculate_delivery_fee(
+                $distanceKm,
+                $tariff['min_delivery_charge'],
+                $tariff['per_km_delivery_charge']
+            );
 
             // Coupon
             $couponDiscount = 0.00;
@@ -261,12 +269,18 @@ class OrderService
 
             if ($destLat != 0 && $destLng != 0 && $pickupLat != 0 && $pickupLng != 0) {
                 $calculatedDist = haversine_distance($pickupLat, $pickupLng, $destLat, $destLng);
-                $distanceKm = max(0.5, round($calculatedDist, 1));
+                $distanceKm = max(0.5, round($calculatedDist, 2));
             } else {
                 $distanceKm = (float)($data['distance_km'] ?? 3.0);
             }
 
-            $deliveryCharge = calculate_delivery_fee($distanceKm, 8000.00, 3000.00);
+            // Parcel: ambil tarif dari zona id=1 (zona utama Cicalengka)
+            $parcelTariff   = Zone::getZoneTariff(1);
+            $deliveryCharge = calculate_delivery_fee(
+                $distanceKm,
+                $parcelTariff['min_delivery_charge'],
+                $parcelTariff['per_km_delivery_charge']
+            );
             $totalAmount = $deliveryCharge;
             $paymentMethod = $data['payment_method'] ?? 'cod';
             $paymentStatus = 'unpaid';
