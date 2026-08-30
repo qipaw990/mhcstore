@@ -81,6 +81,10 @@ class Database
             try {
                 $this->pdo->exec("ALTER TABLE `orders` MODIFY COLUMN `payment_method` VARCHAR(50) NOT NULL DEFAULT 'cod'");
                 $this->pdo->exec("ALTER TABLE `orders` MODIFY COLUMN `payment_status` VARCHAR(30) NOT NULL DEFAULT 'unpaid'");
+                $stmtDeliv = $this->pdo->query("SHOW COLUMNS FROM `orders` LIKE 'delivery_type'");
+                if ($stmtDeliv && !$stmtDeliv->fetch()) {
+                    $this->pdo->exec("ALTER TABLE `orders` ADD COLUMN `delivery_type` VARCHAR(30) NOT NULL DEFAULT 'driver' AFTER `order_type`");
+                }
             } catch (Exception $e) {}
 
             // Guarantee stores table grab_url and identity_image column existence
@@ -375,14 +379,16 @@ class Database
         }
         try {
             $result = $callback($pdo);
-            if (!$isNested) {
+            if (!$isNested && $pdo->inTransaction()) {
                 $pdo->commit();
             }
             return $result;
         } catch (\Throwable $e) {
-            if (!$isNested && $pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
+            try {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+            } catch (\Throwable $ignore) {}
             throw $e;
         }
     }

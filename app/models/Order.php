@@ -396,15 +396,6 @@ class Order extends Model
     public static function autoCancelUnclaimedOrders(): void
     {
         try {
-            // Self-healing schema: pastikan kolom delivery_type tersedia di orders
-            static $migrated = false;
-            if (!$migrated) {
-                try {
-                    Database::execute("ALTER TABLE `orders` ADD COLUMN `delivery_type` VARCHAR(30) NOT NULL DEFAULT 'driver' AFTER `order_type`");
-                } catch (\Throwable $ignore) {}
-                $migrated = true;
-            }
-
             // Self-healing: Automatically clean up lingering driver IDs on canceled or unaccepted orders
             Database::execute("UPDATE `orders` SET `delivery_man_id` = NULL WHERE `order_status` = 'canceled' AND `delivery_man_id` IS NOT NULL");
             Database::execute("UPDATE `delivery_men` dm LEFT JOIN `orders` o ON dm.current_order_id = o.id SET dm.current_order_id = NULL WHERE dm.current_order_id IS NOT NULL AND (o.id IS NULL OR o.order_status IN ('delivered', 'canceled'))");
