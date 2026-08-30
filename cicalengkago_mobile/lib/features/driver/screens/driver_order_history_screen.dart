@@ -177,7 +177,17 @@ class _DriverOrderHistoryScreenState extends State<DriverOrderHistoryScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  CurrencyFormatter.formatRupiah(driverCtrl.historyTotalEarnings),
+                                  CurrencyFormatter.formatRupiah(
+                                    driverCtrl.historyTotalEarnings > 0
+                                        ? driverCtrl.historyTotalEarnings
+                                        : orders.where((o) {
+                                            final s = (o['order_status'] ?? '').toString().toLowerCase();
+                                            return s == 'delivered' || s == 'completed';
+                                          }).fold<double>(0.0, (acc, o) {
+                                            final f = double.tryParse((o['driver_earning'] ?? o['delivery_charge'])?.toString() ?? '0') ?? 0.0;
+                                            return acc + f;
+                                          }),
+                                  ),
                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFFFBBF24)),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,

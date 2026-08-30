@@ -826,6 +826,9 @@ class DeliveryController extends Controller
             return;
         }
 
+        // Auto-credit any pending delivered orders immediately
+        $this->ensureDriverDeliveredOrdersCredited($dm);
+
         $status = $_GET['status'] ?? 'all';
         $page   = max(1, (int)($_GET['page'] ?? 1));
         $limit  = max(10, min(100, (int)($_GET['limit'] ?? 50)));
@@ -909,6 +912,13 @@ class DeliveryController extends Controller
              WHERE w.user_id = ? AND wt.type = 'credit' AND wt.category = 'order_earning'",
             [$userId]
         );
+        $sumDeliveredCharges = (float)Database::fetchColumn(
+            "SELECT COALESCE(SUM(delivery_charge), 0) FROM `orders`
+             WHERE (`delivery_man_id` = ? OR `delivery_man_id` = ?) AND `order_status` = 'delivered'",
+            [$dmId, $userId]
+        );
+        $totalEarnings = max($totalEarnings, $sumDeliveredCharges);
+
         $totalKm = (float)Database::fetchColumn(
             "SELECT COALESCE(SUM(distance_km), 0) FROM `orders`
              WHERE (`delivery_man_id` = ? OR `delivery_man_id` = ?) AND `order_status` = 'delivered'",
