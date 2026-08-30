@@ -1273,29 +1273,34 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Radio<String>(
                     value: 'merchant',
                     groupValue: _deliveryType,
                     activeColor: const Color(0xFF16A34A),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
                     onChanged: (val) {
                       if (val != null) setState(() => _deliveryType = val);
                     },
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 6,
+                          runSpacing: 2,
                           children: [
                             const Text(
-                              'Diantar Kurir Toko / Merchant',
+                              'Diantar Kurir Toko',
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
                             ),
-                            const SizedBox(width: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFDCFCE7),
                                 borderRadius: BorderRadius.circular(6),
@@ -1309,12 +1314,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ),
                         const SizedBox(height: 2),
                         const Text(
-                          'Staff toko akan mengantar pesanan langsung ke lokasi Anda.',
+                          'Staff resto akan mengantar pesanan langsung ke lokasi Anda.',
                           style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 6),
                   const Text(
                     'Rp 0',
                     style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF16A34A)),
@@ -1343,16 +1349,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Radio<String>(
                     value: 'driver',
                     groupValue: _deliveryType,
                     activeColor: AppTheme.primaryRed,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
                     onChanged: (val) {
                       if (val != null) setState(() => _deliveryType = val);
                     },
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1369,6 +1378,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 6),
                   Text(
                     CurrencyFormatter.formatRupiah(dynamicDeliveryFee),
                     style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: Color(0xFF0F172A)),
@@ -1411,16 +1421,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: const [
-                  Icon(Icons.info_outline_rounded, color: Color(0xFF2563EB), size: 16),
-                  SizedBox(width: 6),
-                  Text(
-                    'Skema Tarif Zona Pengantaran',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
-                  ),
-                ],
+              Expanded(
+                child: Row(
+                  children: const [
+                    Icon(Icons.info_outline_rounded, color: Color(0xFF2563EB), size: 16),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Skema Tarif Zona',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
