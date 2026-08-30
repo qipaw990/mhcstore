@@ -488,6 +488,7 @@ class DriverController extends ChangeNotifier {
   }
 
   Future<bool> updateTripStatus(int orderId, String status, {String? otpCode}) async {
+    _lastErrorMessage = null;
     try {
       final fields = <String, String>{
         'order_id': orderId.toString(),
@@ -509,8 +510,13 @@ class DriverController extends ChangeNotifier {
         await fetchEarnings(silent: true);
         notifyListeners();
         return true;
+      } else {
+        _lastErrorMessage = res['message']?.toString() ?? 'Gagal memperbarui status pengantaran.';
       }
-    } catch (_) {}
+    } catch (e) {
+      _lastErrorMessage = 'Gagal menghubungi server. Periksa koneksi internet Anda.';
+    }
+    notifyListeners();
     return false;
   }
 

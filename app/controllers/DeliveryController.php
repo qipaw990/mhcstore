@@ -769,7 +769,7 @@ class DeliveryController extends Controller
         $userId = (int)$dm['user_id'];
         $driverWallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
         $deliveredDriverOrders = Database::query(
-            "SELECT id, order_code, delivery_charge, distance_km, delivery_batch_id 
+            "SELECT id, order_code, delivery_charge, distance_km, delivery_batch_id, zone_id 
              FROM `orders` 
              WHERE (`delivery_man_id` = ? OR `delivery_man_id` = ?) AND `order_status` = 'delivered'",
             [(int)$dm['id'], (int)$dm['user_id']]
@@ -794,7 +794,8 @@ class DeliveryController extends Controller
                     $charge = (float)($dOrder['delivery_charge'] ?? 0);
                     if ($charge <= 0) {
                         $km = (float)($dOrder['distance_km'] ?? 0);
-                        $charge = max(5000.0, $km * 2500.0);
+                        $tariff = \App\Models\Zone::getZoneTariff((int)($dOrder['zone_id'] ?? 1));
+                        $charge = calculate_delivery_fee($km, $tariff['min_delivery_charge'], $tariff['per_km_delivery_charge']);
                     }
                     $driverEarning = max(5000.0, round($charge, 0));
                     $this->walletModel->credit(
@@ -876,25 +877,18 @@ class DeliveryController extends Controller
                 $this->orderModel->attachMultiStoreDetails($order);
             }
 
-            // Komisi driver per order
-            $dmWalletId = null;
-            if (!isset($dmWalletCache)) {
-                $dmWalletCache = $this->walletModel->getOrCreate($userId, 'delivery_man');
-            }
-            $dmWalletId = $dmWalletCache['id'] ?? null;
-            if ($dmWalletId) {
-                $earningTx = Database::fetchOne(
-                    "SELECT amount FROM `wallet_transactions` 
-                     WHERE `wallet_id` = ? AND `category` = 'order_earning' 
-                       AND (`reference_id` = ? OR `reference_id` = ?) LIMIT 1",
-                    [$dmWalletId, (string)$order['id'], (string)$order['order_code']]
+            // Komisi driver per order (selaras 100% dengan ongkir yang dibayar pelanggan)
+            $orderDeliveryCharge = (float)($order['delivery_charge'] ?? 0);
+            if ($orderDeliveryCharge <= 0) {
+                $tariff = \App\Models\Zone::getZoneTariff((int)($order['zone_id'] ?? 1));
+                $orderDeliveryCharge = calculate_delivery_fee(
+                    (float)($order['distance_km'] ?? 0),
+                    $tariff['min_delivery_charge'],
+                    $tariff['per_km_delivery_charge']
                 );
-                $order['driver_earning'] = $earningTx
-                    ? (float)$earningTx['amount']
-                    : (float)($order['delivery_charge'] ?? 5000);
-            } else {
-                $order['driver_earning'] = (float)($order['delivery_charge'] ?? 5000);
             }
+            $order['driver_earning'] = $orderDeliveryCharge;
+            $order['delivery_charge'] = $orderDeliveryCharge;
 
             // Pastikan distance_km float
             $order['distance_km'] = round((float)($order['distance_km'] ?? 0), 2);
@@ -987,14 +981,17 @@ class DeliveryController extends Controller
             $this->orderModel->attachMultiStoreDetails($order);
         }
 
-        $dmWallet = $this->walletModel->getOrCreate((int)$dm['user_id'], 'delivery_man');
-        $earningTx = Database::fetchOne(
-            "SELECT * FROM `wallet_transactions` 
-             WHERE `wallet_id` = ? AND `category` = 'order_earning' 
-               AND (`reference_id` = ? OR `reference_id` = ?) LIMIT 1",
-            [$dmWallet['id'], (string)$order['id'], (string)$order['order_code']]
-        );
-        $order['driver_earning'] = $earningTx ? (float)$earningTx['amount'] : (float)($order['delivery_charge'] ?? 5000);
+        $orderDeliveryCharge = (float)($order['delivery_charge'] ?? 0);
+        if ($orderDeliveryCharge <= 0) {
+            $tariff = \App\Models\Zone::getZoneTariff((int)($order['zone_id'] ?? 1));
+            $orderDeliveryCharge = calculate_delivery_fee(
+                (float)($order['distance_km'] ?? 0),
+                $tariff['min_delivery_charge'],
+                $tariff['per_km_delivery_charge']
+            );
+        }
+        $order['driver_earning'] = $orderDeliveryCharge;
+        $order['delivery_charge'] = $orderDeliveryCharge;
 
         $review = Database::fetchOne(
             "SELECT * FROM `reviews` WHERE (`order_id` = ? OR (`delivery_man_id` = ? AND `order_id` = ?)) LIMIT 1",

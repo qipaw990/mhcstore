@@ -563,8 +563,12 @@ class _DriverOrderDetailSheetState extends State<_DriverOrderDetailSheet> {
     final isDelivered = status == 'delivered' || status == 'completed';
     final isCanceled = status == 'canceled';
 
-    final double fee = double.tryParse((order['driver_earning'] ?? order['delivery_charge'])?.toString() ?? '5000') ?? 5000.0;
-    final double totalAmount = double.tryParse((order['order_amount'] ?? order['total_amount'])?.toString() ?? '0') ?? 0.0;
+    final double deliveryFee = double.tryParse((order['delivery_charge'] ?? order['driver_earning'])?.toString() ?? '5000') ?? 5000.0;
+    final double driverEarning = double.tryParse((order['driver_earning'] ?? order['delivery_charge'])?.toString() ?? '5000') ?? deliveryFee;
+    final double orderAmount = double.tryParse(order['order_amount']?.toString() ?? '0') ?? 0.0;
+    final double couponDiscount = double.tryParse(order['coupon_discount']?.toString() ?? '0') ?? 0.0;
+    final double taxAmount = double.tryParse(order['tax_amount']?.toString() ?? '0') ?? 0.0;
+    final double totalAmount = double.tryParse(order['total_amount']?.toString() ?? '') ?? (orderAmount + deliveryFee - couponDiscount + taxAmount);
     final double distKm = double.tryParse(order['distance_km']?.toString() ?? '0') ?? 0.0;
     final String customerName = order['customer_name']?.toString() ?? 'Pelanggan';
     final String customerPhone = order['customer_phone']?.toString() ?? '';
@@ -691,7 +695,7 @@ class _DriverOrderDetailSheetState extends State<_DriverOrderDetailSheet> {
                                         ),
                                       ),
                                       Text(
-                                        'Bayar: $paymentMethod',
+                                        'Metode: $paymentMethod',
                                         style: const TextStyle(fontSize: 10.5, color: Color(0xFFCBD5E1)),
                                       ),
                                     ],
@@ -703,7 +707,7 @@ class _DriverOrderDetailSheetState extends State<_DriverOrderDetailSheet> {
                                 children: [
                                   const Text('Komisi Driver', style: TextStyle(fontSize: 10, color: Color(0xFFCBD5E1))),
                                   Text(
-                                    CurrencyFormatter.formatRupiah(fee),
+                                    CurrencyFormatter.formatRupiah(driverEarning),
                                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF4ADE80)),
                                   ),
                                   if (distKm > 0) ...[
@@ -727,7 +731,7 @@ class _DriverOrderDetailSheetState extends State<_DriverOrderDetailSheet> {
                         ),
                         const SizedBox(height: 12),
 
-                        // Stats detail row (km + tarif per km)
+                        // Stats detail row (km + tarif + komisi)
                         if (distKm > 0)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -739,20 +743,20 @@ class _DriverOrderDetailSheetState extends State<_DriverOrderDetailSheet> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
-                                _detailStatTile(Icons.route_rounded, '${distKm.toStringAsFixed(2)} km', 'Jarak Antar', const Color(0xFF60A5FA)),
+                                _detailStatTile(Icons.route_rounded, '${distKm.toStringAsFixed(1)} km', 'Jarak Antar', const Color(0xFF60A5FA)),
                                 Container(width: 1, height: 32, color: const Color(0xFF334155)),
                                 _detailStatTile(
-                                  Icons.local_atm_rounded,
-                                  'Rp ${distKm > 0 ? (fee / distKm).toStringAsFixed(0) : '0'}/km',
-                                  'Tarif / km',
+                                  Icons.local_shipping_rounded,
+                                  CurrencyFormatter.formatRupiah(deliveryFee),
+                                  'Ongkir User',
                                   const Color(0xFFFBBF24),
                                 ),
                                 Container(width: 1, height: 32, color: const Color(0xFF334155)),
-                                _detailStatTile(Icons.payments_rounded, CurrencyFormatter.formatRupiah(fee), 'Komisi Bersih', const Color(0xFF4ADE80)),
+                                _detailStatTile(Icons.payments_rounded, CurrencyFormatter.formatRupiah(driverEarning), 'Komisi Bersih', const Color(0xFF4ADE80)),
                               ],
                             ),
                           ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 8),
 
                         // Customer Info Section
                         Container(
@@ -896,30 +900,99 @@ class _DriverOrderDetailSheetState extends State<_DriverOrderDetailSheet> {
                         const SizedBox(height: 8),
                         // Total Payment Summary
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: const Color(0xFF1E293B),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFF334155)),
                           ),
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.receipt_long_rounded, color: Color(0xFF38BDF8), size: 16),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Rincian Pembayaran & Ongkir',
+                                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('Ongkos Kirim', style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8))),
-                                  Text(CurrencyFormatter.formatRupiah(fee), style: const TextStyle(fontSize: 11.5, color: Colors.white)),
+                                  const Text('Subtotal Belanja', style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8))),
+                                  Text(CurrencyFormatter.formatRupiah(orderAmount), style: const TextStyle(fontSize: 11.5, color: Colors.white, fontWeight: FontWeight.w600)),
                                 ],
                               ),
                               const SizedBox(height: 6),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('Total Belanja Pesanan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                                  const Text('Ongkos Kirim (Dibayar User)', style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8))),
+                                  Text(CurrencyFormatter.formatRupiah(deliveryFee), style: const TextStyle(fontSize: 11.5, color: Color(0xFF4ADE80), fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                              if (couponDiscount > 0) ...[
+                                const SizedBox(height: 6),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Diskon Voucher', style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8))),
+                                    Text('-${CurrencyFormatter.formatRupiah(couponDiscount)}', style: const TextStyle(fontSize: 11.5, color: Color(0xFFF87171), fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
+                              ],
+                              if (taxAmount > 0) ...[
+                                const SizedBox(height: 6),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Pajak / Biaya Layanan', style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8))),
+                                    Text(CurrencyFormatter.formatRupiah(taxAmount), style: const TextStyle(fontSize: 11.5, color: Colors.white, fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
+                              ],
+                              const Divider(height: 16, color: Color(0xFF334155)),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Total Tagihan Pelanggan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
                                   Text(
                                     CurrencyFormatter.formatRupiah(totalAmount),
                                     style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF38BDF8)),
                                   ),
                                 ],
+                              ),
+                              const SizedBox(height: 10),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF064E3B).withValues(alpha: 0.6),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFF059669)),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Row(
+                                      children: [
+                                        Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF34D399), size: 14),
+                                        SizedBox(width: 6),
+                                        Text(
+                                          'Saldo Masuk ke Dompet Driver',
+                                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF34D399)),
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                      CurrencyFormatter.formatRupiah(driverEarning),
+                                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, color: Color(0xFF4ADE80)),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),

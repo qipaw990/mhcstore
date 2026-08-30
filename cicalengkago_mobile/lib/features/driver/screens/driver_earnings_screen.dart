@@ -391,8 +391,8 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
   }
 
   Widget _buildCommissionCard(Map<String, dynamic> tx) {
-    final isCredit = (tx['type'] ?? '') == 'credit';
-    final amount = double.tryParse(tx['amount']?.toString() ?? '0') ?? 0;
+    final isCredit = (tx['type'] ?? '') == 'credit' || tx['type'] == null;
+    final amount = double.tryParse((tx['amount'] ?? tx['delivery_charge'])?.toString() ?? '0') ?? 0;
     final orderCode = tx['order_code']?.toString();
     final storeName = tx['store_name']?.toString();
     final customerName = tx['customer_name']?.toString();

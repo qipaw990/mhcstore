@@ -279,15 +279,26 @@ class DeliveryService
                     ], 'id = ?', [$dm['id']]);
                 } else {
                     // Single order delivery (no batch)
-                    $dmEarning = $this->calcSingleCommission($order);
-                    $this->walletModel->credit(
-                        $dm['user_id'],
-                        $dmEarning,
-                        'order_earning',
-                        "Komisi pengantaran #{$order['order_code']}",
-                        (string)$order['id'],
-                        'delivery_man'
+                    $driverWallet = $this->walletModel->getOrCreate((int)$dm['user_id'], 'delivery_man');
+                    $alreadyCredited = Database::fetchOne(
+                        "SELECT id FROM `wallet_transactions` 
+                         WHERE `wallet_id` = ? AND `category` = 'order_earning' 
+                           AND (`reference_id` = ? OR `reference_id` = ?) LIMIT 1",
+                        [$driverWallet['id'], (string)$order['id'], (string)$order['order_code']]
                     );
+
+                    if (!$alreadyCredited) {
+                        $dmEarning = $this->calcSingleCommission($order);
+                        $this->walletModel->credit(
+                            (int)$dm['user_id'],
+                            $dmEarning,
+                            'order_earning',
+                            "Komisi pengantaran #{$order['order_code']}",
+                            (string)$order['id'],
+                            'delivery_man'
+                        );
+                    }
+
                     Database::execute(
                         "UPDATE `delivery_men` SET `total_orders` = `total_orders` + 1, `current_order_id` = NULL, `active_batch_id` = NULL, `active_order_ids` = NULL WHERE `id` = ?",
                         [$dm['id']]
@@ -362,7 +373,8 @@ class DeliveryService
         $charge = (float)($order['delivery_charge'] ?? 0);
         if ($charge <= 0) {
             $km = (float)($order['distance_km'] ?? 0);
-            $charge = max(5000.0, $km * 2500.0);
+            $tariff = \App\Models\Zone::getZoneTariff((int)($order['zone_id'] ?? 1));
+            $charge = calculate_delivery_fee($km, $tariff['min_delivery_charge'], $tariff['per_km_delivery_charge']);
         }
         // Guaranteed minimum commission even for distances < 1 meter (or 0 distance)
         return max(5000.0, round($charge, 0));
@@ -377,33 +389,27 @@ class DeliveryService
 
         if (empty($batchOrders)) return;
 
-        $totalKm = $this->calcBatchTotalKm($dm, $batchOrders);
-        $totalCommission = $this->calcBatchCommissionAmount($batchOrders, $totalKm);
+        $driverWallet = $this->walletModel->getOrCreate((int)$dm['user_id'], 'delivery_man');
 
-        // Check if ANY sub-order or the batchId was already credited to driver's wallet
-        $orderIds = array_map(fn($o) => (string)$o['id'], $batchOrders);
-        $orderIds[] = $batchId;
-        $inPlaceholders = implode(',', array_fill(0, count($orderIds), '?'));
-
-        $alreadyCredited = Database::fetchOne(
-            "SELECT wt.id FROM `wallet_transactions` wt
-             JOIN `wallets` w ON wt.wallet_id = w.id
-             WHERE w.user_id = ? 
-               AND wt.category = 'order_earning' 
-               AND wt.reference_id IN ({$inPlaceholders}) LIMIT 1",
-            array_merge([$dm['user_id']], $orderIds)
-        );
-
-        if (!$alreadyCredited) {
-            $storeCount = count($batchOrders);
-            $this->walletModel->credit(
-                $dm['user_id'],
-                $totalCommission,
-                'order_earning',
-                "Komisi Batch {$batchId} ({$storeCount} Toko, {$totalKm} km total)",
-                $batchId,
-                'delivery_man'
+        foreach ($batchOrders as $bOrd) {
+            $alreadyCredited = Database::fetchOne(
+                "SELECT id FROM `wallet_transactions` 
+                 WHERE `wallet_id` = ? AND `category` = 'order_earning' 
+                   AND (`reference_id` = ? OR `reference_id` = ?) LIMIT 1",
+                [$driverWallet['id'], (string)$bOrd['id'], (string)$bOrd['order_code']]
             );
+
+            if (!$alreadyCredited) {
+                $charge = $this->calcSingleCommission($bOrd);
+                $this->walletModel->credit(
+                    (int)$dm['user_id'],
+                    $charge,
+                    'order_earning',
+                    "Komisi pengantaran #{$bOrd['order_code']} (Batch {$batchId})",
+                    (string)$bOrd['id'],
+                    'delivery_man'
+                );
+            }
         }
     }
 
