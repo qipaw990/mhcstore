@@ -626,10 +626,12 @@ class VendorController extends Controller
         $now = date('Y-m-d H:i:s');
 
         // Simpan sebagai pesanan selesai langsung (POS Kasir Offline)
-        $orderId = Database::insert('orders', [
+        $orderData = [
             'order_code'             => $orderCode,
             'customer_id'            => $userId,
             'store_id'               => $storeId,
+            'module_id'              => (int)($store['module_id'] ?? 1),
+            'zone_id'                => (int)($store['zone_id'] ?? 1),
             'order_amount'           => $orderAmount,
             'delivery_charge'        => 0.0,
             'total_amount'           => $totalAmount,
@@ -638,8 +640,7 @@ class VendorController extends Controller
             'order_status'           => 'delivered',
             'order_type'             => 'pos',
             'delivery_type'          => 'merchant',
-            'is_pos'                 => 1,
-            'customer_notes'         => $notes . " [Customer: {$customerName}]",
+            'order_notes'            => $notes . " [Customer: {$customerName}]",
             'delivery_address_json'  => json_encode(['address' => 'Kasir / Transaksi Langsung di Toko', 'customer_name' => $customerName, 'phone' => $customerPhone]),
             'confirmed_at'           => $now,
             'processing_at'          => $now,
@@ -647,7 +648,16 @@ class VendorController extends Controller
             'delivered_at'           => $now,
             'created_at'             => $now,
             'updated_at'             => $now,
-        ]);
+        ];
+
+        // Check if is_pos column exists in orders table
+        try {
+            $orderData['is_pos'] = 1;
+            $orderId = Database::insert('orders', $orderData);
+        } catch (Exception $e) {
+            unset($orderData['is_pos']);
+            $orderId = Database::insert('orders', $orderData);
+        }
 
         foreach ($orderItemsToInsert as $oItem) {
             Database::insert('order_items', [

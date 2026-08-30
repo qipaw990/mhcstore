@@ -11,7 +11,7 @@ class Order extends Model
         'order_code', 'customer_id', 'store_id', 'delivery_man_id', 'module_id', 'zone_id',
         'order_amount', 'delivery_charge', 'coupon_code', 'coupon_discount', 'tax_amount',
         'total_amount', 'payment_status', 'payment_method', 'order_status', 'order_type',
-        'delivery_type', 'delivery_address_json', 'order_notes', 'otp', 'distance_km', 'parcel_details_json',
+        'delivery_type', 'is_pos', 'delivery_address_json', 'order_notes', 'otp', 'distance_km', 'parcel_details_json',
         'is_scheduled', 'scheduled_at', 'confirmed_at', 'processing_at', 'handover_at',
         'picked_up_at', 'delivered_at', 'canceled_at', 'cancellation_reason'
     ];
