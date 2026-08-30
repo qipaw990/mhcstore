@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../core/constants/zone_constants.dart';
 import '../../../core/network/api_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -973,6 +974,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       // Silent handling for aborted/cancelled tile requests
                     },
                     evictErrorTileStrategy: EvictErrorTileStrategy.none,
+                  ),
+                  // Cakupan Area Zona Cicalengka Raya
+                  ZoneConstants.buildZonePolygonLayer(
+                    label: 'Zona Cicalengka Raya',
+                    fillColor: const Color(0x143B82F6),
+                    borderColor: const Color(0xFF2563EB),
+                    strokeWidth: 2.0,
                   ),
                   // Turn-by-Turn Road Polylines
                   PolylineLayer(polylines: polylines),

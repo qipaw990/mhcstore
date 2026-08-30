@@ -106,6 +106,24 @@ function initOrderTrackingMap(orderCode, initialData) {
     maxZoom: 19
   }).addTo(trackingMap);
 
+  // Cakupan Area Zona Cicalengka Raya
+  const CICALENGKA_ZONE_POLYGON = [
+    [-6.9700, 107.8200],
+    [-6.9700, 107.8550],
+    [-7.0000, 107.8550],
+    [-7.0000, 107.8200]
+  ];
+  try {
+    L.polygon(CICALENGKA_ZONE_POLYGON, {
+      color: '#2563eb',
+      fillColor: '#3b82f6',
+      fillOpacity: 0.12,
+      weight: 2,
+      dashArray: '5, 5'
+    }).addTo(trackingMap)
+      .bindPopup('<div class="p-1"><b>📍 Zona Cicalengka Raya</b><br><small class="text-muted">Cakupan Wilayah Pengantaran</small></div>');
+  } catch (e) { console.warn('Zone polygon error:', e); }
+
   // Customer Destination Marker — Green teardrop with person symbol
   const customerSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
     <defs>

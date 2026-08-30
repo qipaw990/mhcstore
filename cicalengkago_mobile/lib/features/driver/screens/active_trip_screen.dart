@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/constants/zone_constants.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/services/route_service.dart';
 import '../../common/screens/in_app_chat_modal.dart';
@@ -815,6 +816,13 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                         userAgentPackageName: 'com.cicalengkago.mobile',
                         errorTileCallback: (tile, error, stackTrace) {},
                         evictErrorTileStrategy: EvictErrorTileStrategy.none,
+                      ),
+                      // Cakupan Wilayah Operasional Zona Cicalengka Raya
+                      ZoneConstants.buildZonePolygonLayer(
+                        label: 'Zona Cicalengka Raya',
+                        fillColor: const Color(0x143B82F6),
+                        borderColor: const Color(0xFF3B82F6),
+                        strokeWidth: 2.0,
                       ),
                       // Turn-by-turn road polyline
                       PolylineLayer(polylines: polylines),

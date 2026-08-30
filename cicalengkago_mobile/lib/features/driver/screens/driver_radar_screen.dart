@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/constants/zone_constants.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../controllers/driver_controller.dart';
 import 'active_trip_screen.dart';
@@ -216,6 +217,13 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
                                     userAgentPackageName: 'com.cicalengkago.mobile',
                                     maxZoom: 19,
                                     evictErrorTileStrategy: EvictErrorTileStrategy.none,
+                                  ),
+                                  // Cakupan Wilayah Operasional Zona Cicalengka Raya
+                                  ZoneConstants.buildZonePolygonLayer(
+                                    label: 'Zona Cicalengka Raya',
+                                    fillColor: const Color(0x143B82F6),
+                                    borderColor: const Color(0xFF3B82F6),
+                                    strokeWidth: 2.0,
                                   ),
                                   CircleLayer(
                                     circles: [

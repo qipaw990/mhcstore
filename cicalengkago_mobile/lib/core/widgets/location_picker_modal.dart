@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import '../theme/app_theme.dart';
 import '../services/location_service.dart';
+import '../constants/zone_constants.dart';
 
 class LocationPickerModal extends StatefulWidget {
   final double initialLat;
@@ -198,6 +199,12 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                         // Silent handling for aborted/cancelled tile requests
                       },
                       evictErrorTileStrategy: EvictErrorTileStrategy.none,
+                    ),
+                    ZoneConstants.buildZonePolygonLayer(
+                      label: 'Batas Zona Cicalengka',
+                      fillColor: const Color(0x183B82F6),
+                      borderColor: const Color(0xFF2563EB),
+                      strokeWidth: 2.0,
                     ),
                   ],
                 ),
