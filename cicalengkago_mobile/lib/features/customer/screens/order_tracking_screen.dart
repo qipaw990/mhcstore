@@ -2154,13 +2154,28 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                               ],
                             ),
                           ),
-                          if (sPhone.isNotEmpty)
+                          if (sPhone.isNotEmpty) ...[
                             IconButton(
-                              onPressed: () => launchUrl(Uri.parse('tel:$sPhone')),
-                              icon: const Icon(Icons.call_rounded, color: Color(0xFF16A34A), size: 18),
+                              onPressed: () {
+                                String clean = sPhone.replaceAll(RegExp(r'[^0-9]'), '');
+                                if (clean.startsWith('0')) clean = '62${clean.substring(1)}';
+                                final msg = 'Halo $sName, saya pelanggan pesanan #${widget.orderCode} di CicalengkaGO ingin menanyakan pesanan saya.';
+                                launchUrl(Uri.parse('https://wa.me/$clean?text=${Uri.encodeComponent(msg)}'), mode: LaunchMode.externalApplication);
+                              },
+                              icon: const Icon(Icons.chat_rounded, color: Color(0xFF16A34A), size: 18),
+                              tooltip: 'Chat Toko via WhatsApp',
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                             ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: () => launchUrl(Uri.parse('tel:$sPhone')),
+                              icon: const Icon(Icons.call_rounded, color: Color(0xFF0284C7), size: 18),
+                              tooltip: 'Telepon Toko',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          ],
                         ],
                       ),
                     );
@@ -2222,12 +2237,23 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       ],
                     ),
                   ),
-                  if (storePhone.isNotEmpty)
+                  if (storePhone.isNotEmpty) ...[
+                    IconButton(
+                      onPressed: () {
+                        String clean = storePhone.replaceAll(RegExp(r'[^0-9]'), '');
+                        if (clean.startsWith('0')) clean = '62${clean.substring(1)}';
+                        final msg = 'Halo $storeName, saya pelanggan pesanan #${widget.orderCode} di CicalengkaGO ingin menanyakan pesanan saya.';
+                        launchUrl(Uri.parse('https://wa.me/$clean?text=${Uri.encodeComponent(msg)}'), mode: LaunchMode.externalApplication);
+                      },
+                      icon: const Icon(Icons.chat_rounded, color: Color(0xFF16A34A), size: 18),
+                      tooltip: 'Chat WhatsApp Toko',
+                    ),
                     IconButton(
                       onPressed: () => launchUrl(Uri.parse('tel:$storePhone')),
-                      icon: const Icon(Icons.call_rounded, color: Color(0xFF16A34A), size: 18),
-                      tooltip: 'Hubungi Toko',
+                      icon: const Icon(Icons.call_rounded, color: Color(0xFF0284C7), size: 18),
+                      tooltip: 'Telepon Toko',
                     ),
+                  ],
                 ],
               ),
             ),

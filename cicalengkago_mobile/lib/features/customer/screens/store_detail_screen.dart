@@ -11,6 +11,7 @@ import '../../../core/widgets/app_alert.dart';
 import '../controllers/customer_controller.dart';
 import '../widgets/product_detail_modal.dart';
 import 'cart_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class StoreDetailScreen extends StatefulWidget {
   final int storeId;
@@ -46,6 +47,29 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _launchMerchantWhatsApp(String? rawPhone, String storeName) async {
+    String phone = (rawPhone ?? '').replaceAll(RegExp(r'[^0-9]'), '');
+    if (phone.startsWith('0')) {
+      phone = '62${phone.substring(1)}';
+    }
+    if (phone.isEmpty) {
+      phone = '6285158397756'; // Fallback CS CicalengkaGO
+    }
+
+    final message = 'Halo $storeName, saya ingin bertanya seputar menu dan produk Anda di aplikasi CicalengkaGO.';
+    final url = 'https://wa.me/$phone?text=${Uri.encodeComponent(message)}';
+    try {
+      final uri = Uri.parse(url);
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        await launchUrl(uri);
+      }
+    } catch (e) {
+      if (mounted) {
+        AppAlert.showError(context, title: 'Gagal Membuka WhatsApp', message: 'Tidak dapat membuka chat ke mitra toko.');
+      }
     }
   }
 
@@ -267,8 +291,8 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    // Address Line
+                    const SizedBox(height: 10),
+                    // Address Line & Chat Button
                     Row(
                       children: [
                         const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF64748B)),
@@ -279,6 +303,37 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                             style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: () => _launchMerchantWhatsApp(
+                            store['phone']?.toString() ?? store['vendor_phone']?.toString(),
+                            store['name']?.toString() ?? 'Mitra Toko',
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0FDF4),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: const Color(0xFF86EFAC)),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.chat_rounded, size: 12, color: Color(0xFF16A34A)),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Chat Toko',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF15803D),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
