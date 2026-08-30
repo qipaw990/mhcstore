@@ -13,6 +13,8 @@ import '../../auth/screens/login_screen.dart';
 import '../controllers/customer_controller.dart';
 import 'customer_orders_screen.dart';
 import 'customer_wallet_screen.dart';
+import 'vouchers_screen.dart';
+import 'customer_notifications_screen.dart';
 
 class CustomerProfileScreen extends StatefulWidget {
   const CustomerProfileScreen({super.key});
@@ -37,6 +39,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
       });
       ctrl.fetchWallet();
       ctrl.fetchNotifications();
+      ctrl.fetchCoupons();
     });
   }
 
@@ -132,38 +135,42 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
           ),
         ),
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFEE2737), Color(0xFFC61524)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFEE2737).withValues(alpha: 0.25),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
+          InkWell(
+            onTap: () => _showClubBenefitsModal(context),
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              margin: const EdgeInsets.only(right: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFEE2737), Color(0xFFC61524)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 13),
-                SizedBox(width: 4),
-                Text(
-                  'CicalengkaClub',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFEE2737).withValues(alpha: 0.25),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
                   ),
-                ),
-              ],
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 13),
+                  SizedBox(width: 4),
+                  Text(
+                    'CicalengkaClub',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -457,40 +464,88 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                   ),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
 
-                  // 3. Voucher & Promo Saya
+                  // 3. Saldo & Dompet CicalengkaPay
+                  _buildMenuItem(
+                    icon: Icons.account_balance_wallet_rounded,
+                    iconBg: const Color(0xFFFEE2E2),
+                    iconColor: const Color(0xFFEE2737),
+                    title: 'Dompet CicalengkaPay',
+                    subtitle: 'Kelola saldo, topup & mutasi transaksi',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const CustomerWalletScreen()),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+
+                  // 4. Voucher & Promo Saya
                   _buildMenuItem(
                     icon: Icons.percent_rounded,
                     iconBg: const Color(0xFFFEF3C7),
                     iconColor: const Color(0xFFD97706),
                     title: 'Voucher & Promo Saya',
                     subtitle: 'Kupon diskon & penawaran menarik',
-                    onTap: () => _showNotificationsModal(context, ctrl),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const VouchersScreen()),
+                      );
+                    },
                   ),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
 
-                  // 4. Pusat Notifikasi
+                  // 5. Pusat Notifikasi
                   _buildMenuItem(
                     icon: Icons.notifications_rounded,
                     iconBg: const Color(0xFFF3E8FF),
                     iconColor: const Color(0xFF9333EA),
                     title: 'Pusat Notifikasi',
                     subtitle: 'Pesan masuk, update pesanan & promo',
-                    onTap: () => _showNotificationsModal(context, ctrl),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const CustomerNotificationsScreen()),
+                      );
+                    },
                   ),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
 
-                  // 5. Bantuan & CS 24 Jam
+                  // 6. Bantuan & CS 24 Jam
                   _buildMenuItem(
-                    icon: Icons.help_outline_rounded,
+                    icon: Icons.support_agent_rounded,
                     iconBg: const Color(0xFFCCFBF1),
                     iconColor: const Color(0xFF0D9488),
                     title: 'Bantuan & CS 24 Jam',
-                    subtitle: 'Pertanyaan umum & bantuan kendala',
+                    subtitle: 'Pertanyaan umum & kontak bantuan',
                     onTap: () => _showFaqModal(context),
                   ),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
 
-                  // 6. Keluar Akun
+                  // 7. Syarat & Ketentuan
+                  _buildMenuItem(
+                    icon: Icons.description_outlined,
+                    iconBg: const Color(0xFFEDE9FE),
+                    iconColor: const Color(0xFF7C3AED),
+                    title: 'Syarat & Ketentuan Layanan',
+                    subtitle: 'Kebijakan privasi & aturan pemakaian',
+                    onTap: () => _showTermsModal(context),
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+
+                  // 8. Tentang CicalengkaGO
+                  _buildMenuItem(
+                    icon: Icons.info_outline_rounded,
+                    iconBg: const Color(0xFFE2E8F0),
+                    iconColor: const Color(0xFF475569),
+                    title: 'Tentang CicalengkaGO',
+                    subtitle: 'Info aplikasi, versi & pengembang',
+                    onTap: () => _showAboutModal(context),
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+
+                  // 9. Keluar Akun
                   _buildMenuItem(
                     icon: Icons.logout_rounded,
                     iconBg: const Color(0xFFFFE4E6),
@@ -681,6 +736,245 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.82),
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: const [
+                Icon(Icons.support_agent_rounded, color: Color(0xFF0D9488), size: 22),
+                SizedBox(width: 8),
+                Text(
+                  'Bantuan & CS 24 Jam',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const Text('Pertanyaan umum & kontak bantuan kendala aplikasi CicalengkaGO', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+            const SizedBox(height: 14),
+
+            // CS Contact Card
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF22C55E),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.phone_rounded, color: Colors.white, size: 16),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'WhatsApp Layanan Pelanggan',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          '0812-3456-7890 • Aktif Setiap Hari',
+                          style: TextStyle(fontSize: 11, color: Color(0xFF166534)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            Expanded(
+              child: ListView(
+                children: [
+                  _faqExpansionTile('Cara Memesan Makanan & Produk', 'Pilih menu makanan atau produk mitra CicalengkaGO favoritmu, atur kuantitas, dan klik "Tambah ke Keranjang". Buka keranjang lalu tekan "Lanjut Checkout".'),
+                  _faqExpansionTile('Metode Pembayaran yang Tersedia', 'CicalengkaGO mendukung pembayaran Cash on Delivery (COD/Bayar di Tempat), Saldo Wallet CicalengkaPay, serta QRIS dan Transfer Bank (Midtrans).'),
+                  _faqExpansionTile('Berapa Biaya Pengantaran Ongkir?', 'Biaya ongkir dihitung secara otomatis berdasarkan jarak lokasi mitra toko ke lokasi pengantaran Anda di wilayah Cicalengka.'),
+                  _faqExpansionTile('Bagaimana Cara Melakukan Top Up Saldo?', 'Buka menu Saldo CicalengkaPay > klik tombol "Isi Saldo" > masukkan nominal lalu pilih metode pembayaran Transfer Bank / QRIS.'),
+                  _faqExpansionTile('Bagaimana Jika Pesanan Bermasalah?', 'Anda dapat menghubungi driver yang bertugas melalui nomor telepon yang tertera di halaman pelacakan atau hubungi CS kami.'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            UberPillButton(
+              label: 'Tutup Bantuan',
+              icon: Icons.check_circle_outline_rounded,
+              onPressed: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── MODAL: CICALENGKACLUB BENEFITS ──
+  void _showClubBenefitsModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.75),
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFEE2737), Color(0xFFC61524)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 20),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'CicalengkaClub Member',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    ),
+                    Text(
+                      'Keuntungan eksklusif pelanggan setia',
+                      style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView(
+                children: [
+                  _benefitItem(
+                    icon: Icons.local_shipping_rounded,
+                    color: const Color(0xFF2563EB),
+                    title: 'Diskon Ongkir Mingguan',
+                    desc: 'Dapatkan potongan biaya pengantaran setiap memesan dari mitra terdekat di Cicalengka.',
+                  ),
+                  _benefitItem(
+                    icon: Icons.percent_rounded,
+                    color: const Color(0xFFD97706),
+                    title: 'Voucher Promo Spesial',
+                    desc: 'Akses khusus ke kode kupon diskon makanan dan promo flash sale.',
+                  ),
+                  _benefitItem(
+                    icon: Icons.speed_rounded,
+                    color: const Color(0xFF16A34A),
+                    title: 'Prioritas Antrian Driver',
+                    desc: 'Pesanan Anda diprioritaskan pencarian driver tercepat di jam-jam sibuk.',
+                  ),
+                  _benefitItem(
+                    icon: Icons.loyalty_rounded,
+                    color: const Color(0xFF9333EA),
+                    title: 'CicalengkaPay Cashback Koin',
+                    desc: 'Kumpulkan poin cashback setiap kali bertransaksi menggunakan CicalengkaPay.',
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            UberPillButton(
+              label: 'Mengerti',
+              icon: Icons.check_circle_outline_rounded,
+              onPressed: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _benefitItem({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String desc,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                const SizedBox(height: 2),
+                Text(desc, style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), height: 1.35)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── MODAL: SYARAT & KETENTUAN ──
+  void _showTermsModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
         constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
@@ -699,27 +993,102 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Bantuan & CS 24 Jam',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+            Row(
+              children: const [
+                Icon(Icons.description_outlined, color: Color(0xFF7C3AED), size: 22),
+                SizedBox(width: 8),
+                Text(
+                  'Syarat & Ketentuan Layanan',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                ),
+              ],
             ),
             const SizedBox(height: 4),
-            const Text('Pertanyaan umum & bantuan kendala aplikasi CicalengkaGO', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+            const Text('Ketentuan penggunaan platform CicalengkaGO', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
             const SizedBox(height: 16),
             Expanded(
               child: ListView(
                 children: [
-                  _faqExpansionTile('Cara Memesan Makanan & Produk', 'Pilih menu makanan atau produk mitra CicalengkaGO favoritmu, atur kuantitas, dan klik "Tambah ke Keranjang". Buka keranjang lalu tekan "Lanjut Checkout".'),
-                  _faqExpansionTile('Metode Pembayaran yang Tersedia', 'CicalengkaGO mendukung pembayaran Cash on Delivery (COD/Bayar di Tempat), Saldo Wallet CicalengkaPay, serta QRIS dan Transfer Bank.'),
-                  _faqExpansionTile('Berapa Biaya Pengantaran Ongkir?', 'Biaya ongkir dihitung secara otomatis berdasarkan jarak lokasi mitra toko ke lokasi pengantaran Anda di wilayah Cicalengka.'),
-                  _faqExpansionTile('Layanan Pelanggan WhatsApp CS 24 Jam', 'Hubungi layanan pelanggan CicalengkaGO via WhatsApp di 0812-3456-7890 untuk bantuan pesanan atau komplain.'),
+                  _faqExpansionTile('1. Penggunaan Layanan', 'Platform CicalengkaGO menghubungkan pelanggan dengan mitra penjual kuliner dan mitra pengemudi di wilayah Cicalengka dan sekitarnya.'),
+                  _faqExpansionTile('2. Transaksi & Pembayaran', 'Pelanggan bertanggung jawab untuk membayar pesanan sesuai total tagihan resmi melalui metode pembayaran yang tersedia.'),
+                  _faqExpansionTile('3. Pembatalan Pesanan', 'Pembatalan pesanan hanya dapat dilakukan sebelum mitra toko mulai menyiapkan pesanan atau sebelum driver menuju ke lokasi toko.'),
+                  _faqExpansionTile('4. Perlindungan Data & Privasi', 'Data nomor telepon, alamat, dan identitas Anda dilindungi dengan standar enkripsi aman dan hanya digunakan untuk keperluan pengantaran pesanan.'),
                 ],
               ),
             ),
             const SizedBox(height: 14),
             UberPillButton(
-              label: 'Selesai',
+              label: 'Tutup',
               icon: Icons.check_circle_outline_rounded,
+              onPressed: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── MODAL: TENTANG CICALENGKAGO ──
+  void _showAboutModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(10)),
+            ),
+            const SizedBox(height: 20),
+            const CicalengkaGoLogo(size: 64, borderRadius: 18),
+            const SizedBox(height: 14),
+            const Text(
+              'CicalengkaGO',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Versi 3.6.0 (Build 2026)',
+              style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Aplikasi pesan antar makanan, pengiriman lokal, dan transaksi digital karya putra daerah untuk memajukan UMKM Cicalengka dan sekitarnya.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12.5, color: Color(0xFF475569), height: 1.45),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.language_rounded, size: 14, color: AppTheme.primaryRed),
+                  SizedBox(width: 6),
+                  Text(
+                    'https://cicago.store',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            UberPillButton(
+              label: 'Tutup',
+              icon: Icons.close_rounded,
               onPressed: () => Navigator.pop(ctx),
             ),
           ],
