@@ -193,6 +193,14 @@ class AdminController extends Controller
 
         if ($status === 'delivered') {
             Database::execute("UPDATE `orders` SET `payment_status` = 'paid' WHERE `id` = ?", [$orderId]);
+            $ordObj = Database::fetchOne("SELECT * FROM `orders` WHERE `id` = ? LIMIT 1", [$orderId]);
+            if ($ordObj && !empty($ordObj['delivery_man_id'])) {
+                $dm = Database::fetchOne("SELECT * FROM `delivery_men` WHERE `id` = ? OR `user_id` = ? LIMIT 1", [$ordObj['delivery_man_id'], $ordObj['delivery_man_id']]);
+                if ($dm) {
+                    $delivCtrl = new \App\Controllers\DeliveryController();
+                    $delivCtrl->ensureDriverDeliveredOrdersCredited($dm);
+                }
+            }
         }
 
         $this->successResponse("Status pesanan berhasil diubah menjadi {$status}.");

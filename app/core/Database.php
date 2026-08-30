@@ -379,7 +379,7 @@ class Database
                 $pdo->commit();
             }
             return $result;
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             if (!$isNested && $pdo->inTransaction()) {
                 $pdo->rollBack();
             }

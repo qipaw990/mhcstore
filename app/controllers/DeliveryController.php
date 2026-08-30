@@ -774,43 +774,38 @@ class DeliveryController extends Controller
              WHERE (`delivery_man_id` = ? OR `delivery_man_id` = ?) AND `order_status` = 'delivered'",
             [(int)$dm['id'], (int)$dm['user_id']]
         );
-        $processedBatches = [];
 
         foreach ($deliveredDriverOrders as $dOrder) {
-            $batchId = $dOrder['delivery_batch_id'] ?? null;
-            if (!empty($batchId)) {
-                if (!in_array($batchId, $processedBatches)) {
-                    $processedBatches[] = $batchId;
-                    $this->deliveryService->creditBatchCommission($dm, $batchId);
+            $batchId = $dOrder['delivery_batch_id'] ?? '';
+            $alreadyCredited = Database::fetchOne(
+                "SELECT id FROM `wallet_transactions` 
+                 WHERE `wallet_id` = ? AND `category` = 'order_earning' 
+                   AND (`reference_id` = ? OR `reference_id` = ?" . (!empty($batchId) ? " OR `reference_id` = ?" : "") . ") LIMIT 1",
+                !empty($batchId)
+                    ? [$driverWallet['id'], (string)$dOrder['id'], (string)$dOrder['order_code'], (string)$batchId]
+                    : [$driverWallet['id'], (string)$dOrder['id'], (string)$dOrder['order_code']]
+            );
+
+            if (!$alreadyCredited) {
+                $charge = (float)($dOrder['delivery_charge'] ?? 0);
+                if ($charge <= 0) {
+                    $km = (float)($dOrder['distance_km'] ?? 0);
+                    $tariff = \App\Models\Zone::getZoneTariff((int)($dOrder['zone_id'] ?? 1));
+                    $charge = calculate_delivery_fee($km, $tariff['min_delivery_charge'], $tariff['per_km_delivery_charge']);
                 }
-            } else {
-                $alreadyCredited = Database::fetchOne(
-                    "SELECT id FROM `wallet_transactions` 
-                     WHERE `wallet_id` = ? AND `category` = 'order_earning' 
-                       AND (`reference_id` = ? OR `reference_id` = ?) LIMIT 1",
-                    [$driverWallet['id'], (string)$dOrder['id'], (string)$dOrder['order_code']]
+                $driverEarning = max(5000.0, round($charge, 0));
+                $this->walletModel->credit(
+                    $userId,
+                    $driverEarning,
+                    'order_earning',
+                    "Komisi pengantaran pesanan #{$dOrder['order_code']}",
+                    (string)$dOrder['id'],
+                    'delivery_man'
                 );
-                if (!$alreadyCredited) {
-                    $charge = (float)($dOrder['delivery_charge'] ?? 0);
-                    if ($charge <= 0) {
-                        $km = (float)($dOrder['distance_km'] ?? 0);
-                        $tariff = \App\Models\Zone::getZoneTariff((int)($dOrder['zone_id'] ?? 1));
-                        $charge = calculate_delivery_fee($km, $tariff['min_delivery_charge'], $tariff['per_km_delivery_charge']);
-                    }
-                    $driverEarning = max(5000.0, round($charge, 0));
-                    $this->walletModel->credit(
-                        $userId,
-                        $driverEarning,
-                        'order_earning',
-                        "Komisi pengantaran pesanan #{$dOrder['order_code']}",
-                        (string)$dOrder['id'],
-                        'delivery_man'
-                    );
-                }
             }
         }
 
-        return $this->walletModel->find($driverWallet['id']) ?: $driverWallet;
+        return Database::fetchOne("SELECT * FROM `wallets` WHERE `id` = ?", [$driverWallet['id']]) ?: $driverWallet;
     }
 
     public function ordersHistory(): void

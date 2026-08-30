@@ -1388,14 +1388,18 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
               final ok = await driverCtrl.updateTripStatus(orderId, 'delivered', otpCode: otp.isNotEmpty ? otp : null);
               if (context.mounted) {
                 if (ok) {
-                  _showCompletionSuccessDialog(
-                    context,
-                    orderCode: orderCode,
-                    commission: deliveryCharge,
-                    customerName: customerName,
-                    storeName: storeName,
-                    newWalletBalance: driverCtrl.walletBalance,
-                  );
+                  await driverCtrl.fetchEarnings(silent: true);
+                  await driverCtrl.fetchOrderHistory(silent: true);
+                  if (context.mounted) {
+                    _showCompletionSuccessDialog(
+                      context,
+                      orderCode: orderCode,
+                      commission: deliveryCharge,
+                      customerName: customerName,
+                      storeName: storeName,
+                      newWalletBalance: driverCtrl.walletBalance,
+                    );
+                  }
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
