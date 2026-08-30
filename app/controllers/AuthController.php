@@ -322,6 +322,52 @@ class AuthController extends Controller
         }
     }
 
+    public function showRegisterMerchant(): void
+    {
+        if ($this->isAuth()) {
+            $this->redirect('');
+            return;
+        }
+
+        $modules = (new \App\Models\Module())->activeModules();
+        $zones = (new \App\Models\Zone())->all();
+        $this->view('auth.register_merchant', [
+            'title'   => 'Daftar Menjadi Mitra Resto / Merchant - CicalengkaGO',
+            'modules' => $modules,
+            'zones'   => $zones,
+        ], 'auth_layout');
+    }
+
+    public function handleRegisterMerchant(): void
+    {
+        $data = $this->getPost();
+        $errors = validate_required($data, ['name', 'email', 'phone', 'password', 'store_name']);
+
+        if (!empty($errors)) {
+            $_SESSION['error'] = implode(' ', $errors);
+            $this->redirect('register-merchant');
+            return;
+        }
+
+        try {
+            $result = $this->authService->registerVendor($data);
+            $_SESSION['merchant_registered_store'] = $result['store']['name'];
+            $this->redirect('register-merchant-success');
+        } catch (Exception $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirect('register-merchant');
+        }
+    }
+
+    public function showRegisterMerchantSuccess(): void
+    {
+        $storeName = $_SESSION['merchant_registered_store'] ?? 'Toko Anda';
+        $this->view('auth.register_merchant_success', [
+            'title'     => 'Pendaftaran Mitra Toko Diterima - CicalengkaGO',
+            'storeName' => $storeName,
+        ], 'auth_layout');
+    }
+
     public function showForgotPassword(): void
     {
         if ($this->isAuth()) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/auth_controller.dart';
+import 'register_merchant_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -192,9 +193,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         )
                       : const Text(
-                          'DAFTAR AKUN SEKARANG',
+                          'DAFTAR PELANGGAN SEKARANG',
                           style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                         ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Center(
+                child: TextButton.icon(
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RegisterMerchantScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.storefront_rounded, size: 16, color: Color(0xFF2563EB)),
+                  label: const Text(
+                    'Ingin Buka Usaha? Daftar Sebagai Mitra Toko',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                  ),
                 ),
               ),
             ],

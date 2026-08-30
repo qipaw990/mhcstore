@@ -201,6 +201,54 @@ class AuthController extends ChangeNotifier {
     return false;
   }
 
+  Future<Map<String, dynamic>> registerMerchant({
+    required String name,
+    required String email,
+    required String phone,
+    required String password,
+    required String storeName,
+    String? storePhone,
+    String? storeAddress,
+    String? moduleId,
+    String? latitude,
+    String? longitude,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    final response = await ApiService.postForm(ApiConstants.vendorRegister, {
+      'name': name,
+      'email': email,
+      'phone': phone,
+      'password': password,
+      'store_name': storeName,
+      'store_phone': storePhone ?? phone,
+      'store_address': storeAddress ?? 'Kecamatan Cicalengka, Kab. Bandung',
+      'module_id': moduleId ?? '1',
+      'latitude': latitude ?? '-6.9840',
+      'longitude': longitude ?? '107.8340',
+    });
+
+    _isLoading = false;
+    notifyListeners();
+
+    if (response['success'] == true) {
+      return {
+        'success': true,
+        'message': response['message'] ?? 'Pendaftaran berhasil! Akun toko Anda sedang dalam peninjauan oleh Tim Admin CicalengkaGO.',
+        'data': response['data'],
+      };
+    }
+
+    _errorMessage = response['message'] ?? 'Gagal mendaftar mitra merchant.';
+    notifyListeners();
+    return {
+      'success': false,
+      'message': _errorMessage!,
+    };
+  }
+
   Future<void> updateUser(Map<String, dynamic> updatedData) async {
     if (_user != null) {
       _user = {..._user!, ...updatedData};

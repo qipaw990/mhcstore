@@ -27,6 +27,17 @@ class AuthService
 
         $role = $user['role'];
 
+        // If vendor, check store approval status
+        if ($role === 'vendor') {
+            $store = Database::fetchOne("SELECT id, name, status FROM `stores` WHERE `vendor_id` = ? LIMIT 1", [$user['id']]);
+            if ($store && $store['status'] === 'pending') {
+                throw new Exception("Pendaftaran Toko '{$store['name']}' sedang dalam proses review oleh Tim Admin CicalengkaGO. Akun akan aktif setelah disetujui.");
+            }
+            if ($store && $store['status'] === 'suspended') {
+                throw new Exception("Akun Toko '{$store['name']}' saat ini ditangguhkan oleh Admin. Silakan hubungi CS CicalengkaGO (0851-5839-7756).");
+            }
+        }
+
         // Determine if OTP is required based on role settings
         $isAdminRole    = in_array($role, ['admin', 'vendor', 'delivery_man']);
         $isCustomer     = ($role === 'customer');
@@ -288,6 +299,74 @@ class AuthService
         }
 
         return $user;
+    }
+
+    public function registerVendor(array $data): array
+    {
+        $existing = Database::fetchOne("SELECT id FROM users WHERE email = ? OR phone = ? LIMIT 1", [$data['email'], $data['phone']]);
+        if ($existing) {
+            throw new Exception("Email atau Nomor WhatsApp pemilik sudah terdaftar pada akun lain.");
+        }
+
+        $apiToken = bin2hex(random_bytes(32));
+        $userId = $this->userModel->create([
+            'role'      => 'vendor',
+            'name'      => sanitize($data['name']),
+            'email'     => sanitize($data['email']),
+            'phone'     => sanitize($data['phone']),
+            'password'  => password_hash($data['password'], PASSWORD_BCRYPT),
+            'avatar'    => 'assets/images/users/default.png',
+            'is_active' => 1,
+            'api_token' => $apiToken
+        ]);
+
+        // Init vendor wallet
+        (new Wallet())->create([
+            'user_id'         => $userId,
+            'user_type'       => 'vendor',
+            'balance'         => 0.00,
+            'total_earned'    => 0.00,
+            'total_withdrawn' => 0.00
+        ]);
+
+        // Create store with status 'pending'
+        $storeName = sanitize($data['store_name'] ?? $data['name'] . ' Store');
+        $storePhone = sanitize($data['store_phone'] ?? $data['phone']);
+        $storeAddress = sanitize($data['store_address'] ?? 'Kecamatan Cicalengka, Kab. Bandung');
+        $moduleId = !empty($data['module_id']) ? (int)$data['module_id'] : 1;
+        $zoneId = !empty($data['zone_id']) ? (int)$data['zone_id'] : 1;
+        $lat = !empty($data['latitude']) ? (float)$data['latitude'] : -6.9840;
+        $lng = !empty($data['longitude']) ? (float)$data['longitude'] : 107.8340;
+
+        $storeId = (new \App\Models\Store())->create([
+            'vendor_id'     => $userId,
+            'module_id'     => $moduleId,
+            'zone_id'       => $zoneId,
+            'name'          => $storeName,
+            'phone'         => $storePhone,
+            'email'         => sanitize($data['email']),
+            'logo'          => 'assets/images/stores/default.jpg',
+            'address'       => $storeAddress,
+            'latitude'      => $lat,
+            'longitude'     => $lng,
+            'minimum_order' => 10000.00,
+            'delivery_time' => '20-30 Menit',
+            'is_open'       => 0,
+            'status'        => 'pending', // Under admin review
+            'rating'        => 5.0,
+            'reviews_count' => 0,
+            'order_count'   => 0
+        ]);
+
+        $store = (new \App\Models\Store())->find($storeId);
+        $user = $this->userModel->find($userId);
+
+        return [
+            'user'    => $user,
+            'store'   => $store,
+            'status'  => 'pending',
+            'message' => 'Pendaftaran berhasil! Akun toko Anda sedang dalam peninjauan oleh Tim Admin CicalengkaGO.'
+        ];
     }
 
     /**

@@ -6,6 +6,7 @@ import '../../../main.dart';
 import '../controllers/auth_controller.dart';
 import '../../driver/controllers/driver_controller.dart';
 import 'register_screen.dart';
+import 'register_merchant_screen.dart';
 import 'otp_verification_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -240,7 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    'Belum memiliki akun CicalengkaGO? ',
+                    'Belum memiliki akun? ',
                     style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                   ),
                   GestureDetector(
@@ -253,15 +254,33 @@ class _LoginScreenState extends State<LoginScreen> {
                       );
                     },
                     child: const Text(
-                      'Daftar Baru',
+                      'Daftar Pelanggan',
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppTheme.inkBlack,
+                        color: AppTheme.primaryRed,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: TextButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RegisterMerchantScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.storefront_rounded, size: 16, color: Color(0xFF2563EB)),
+                  label: const Text(
+                    'Buka Usaha? Daftar Sebagai Mitra Toko',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                  ),
+                ),
               ),
             ],
           ),

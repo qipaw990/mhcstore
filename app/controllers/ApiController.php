@@ -96,6 +96,27 @@ class ApiController extends Controller
         }
     }
 
+    public function registerMerchant(): void
+    {
+        $data = $this->getPost();
+        $errors = validate_required($data, ['name', 'email', 'phone', 'password', 'store_name']);
+        if (!empty($errors)) {
+            $this->errorResponse('Validasi gagal. Harap lengkapi semua kolom wajib.', $errors, 422);
+            return;
+        }
+
+        try {
+            $result = (new AuthService())->registerVendor($data);
+            $this->successResponse('Pendaftaran mitra merchant berhasil! Akun Anda sedang dalam proses review oleh Tim Admin CicalengkaGO.', [
+                'user'   => $result['user'],
+                'store'  => $result['store'],
+                'status' => 'pending',
+            ]);
+        } catch (Exception $e) {
+            $this->errorResponse($e->getMessage(), null, 400);
+        }
+    }
+
     public function modules(): void
     {
         $modules = (new Module())->activeModules();

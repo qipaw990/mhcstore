@@ -155,39 +155,56 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge <?= $s['status'] === 'approved' ? 'bg-success-subtle text-success' : ($s['status'] === 'suspended' ? 'bg-danger-subtle text-danger' : 'bg-warning-subtle text-warning') ?>">
-                                            <?= strtoupper($s['status']) ?>
-                                        </span>
+                                        <?php if ($s['status'] === 'approved'): ?>
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                                <i class="bi bi-check-circle-fill me-1"></i> AKTIF (APPROVED)
+                                            </span>
+                                        <?php elseif ($s['status'] === 'pending'): ?>
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+                                                <i class="bi bi-hourglass-split me-1"></i> REVIEW ADMIN (PENDING)
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                                                <i class="bi bi-slash-circle-fill me-1"></i> SUSPENDED
+                                            </span>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="text-end">
-                                        <div class="dropdown">
-                                            <button class="btn btn-light btn-sm rounded-pill px-3 dropdown-toggle fw-semibold" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport">
-                                                Aksi
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
-                                                <li>
-                                                    <a class="dropdown-item py-2 small" href="javascript:void(0)" onclick='openEditStoreModal(<?= json_encode($s) ?>)'>
-                                                        <i class="bi bi-pencil-square text-primary me-2"></i> Edit Data Toko
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item py-2 small" href="<?= $baseUrl ?>/admin/products?store_id=<?= $s['id'] ?>">
-                                                        <i class="bi bi-box-seam text-info me-2"></i> Kelola Menu & Produk
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item py-2 small" href="javascript:void(0)" onclick="toggleStoreApproval(<?= $s['id'] ?>, '<?= $s['status'] === 'approved' ? 'suspended' : 'approved' ?>')">
-                                                        <i class="bi bi-power <?= $s['status'] === 'approved' ? 'text-warning' : 'text-success' ?> me-2"></i>
-                                                        <?= $s['status'] === 'approved' ? 'Suspend Toko' : 'Aktifkan (Approve)' ?>
-                                                    </a>
-                                                </li>
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li>
-                                                    <a class="dropdown-item py-2 small text-danger" href="javascript:void(0)" onclick="deleteStore(<?= $s['id'] ?>, '<?= addslashes($s['name']) ?>')">
-                                                        <i class="bi bi-trash me-2"></i> Hapus Toko
-                                                    </a>
-                                                </li>
-                                            </ul>
+                                        <div class="d-flex align-items-center justify-content-end gap-1.5">
+                                            <?php if ($s['status'] === 'pending'): ?>
+                                                <button type="button" class="btn btn-success btn-sm rounded-pill px-2.5 py-1 fw-bold shadow-2xs" onclick="toggleStoreApproval(<?= $s['id'] ?>, 'approved')" title="Setujui dan Aktifkan Toko">
+                                                    <i class="bi bi-check-lg me-1"></i> Setujui
+                                                </button>
+                                            <?php endif; ?>
+                                            <div class="dropdown">
+                                                <button class="btn btn-light btn-sm rounded-pill px-3 dropdown-toggle fw-semibold" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport">
+                                                    Aksi
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
+                                                    <li>
+                                                        <a class="dropdown-item py-2 small" href="javascript:void(0)" onclick='openEditStoreModal(<?= json_encode($s) ?>)'>
+                                                            <i class="bi bi-pencil-square text-primary me-2"></i> Edit Data Toko
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item py-2 small" href="<?= $baseUrl ?>/admin/products?store_id=<?= $s['id'] ?>">
+                                                            <i class="bi bi-box-seam text-info me-2"></i> Kelola Menu & Produk
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item py-2 small" href="javascript:void(0)" onclick="toggleStoreApproval(<?= $s['id'] ?>, '<?= $s['status'] === 'approved' ? 'suspended' : 'approved' ?>')">
+                                                            <i class="bi bi-power <?= $s['status'] === 'approved' ? 'text-warning' : 'text-success' ?> me-2"></i>
+                                                            <?= $s['status'] === 'approved' ? 'Suspend Toko' : 'Setujui & Aktifkan Toko' ?>
+                                                        </a>
+                                                    </li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <a class="dropdown-item py-2 small text-danger" href="javascript:void(0)" onclick="deleteStore(<?= $s['id'] ?>, '<?= addslashes($s['name']) ?>')">
+                                                            <i class="bi bi-trash me-2"></i> Hapus Toko
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>

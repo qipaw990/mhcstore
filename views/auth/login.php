@@ -71,7 +71,13 @@
 <!-- Daftar Baru & Beranda -->
 <div style="text-align: center; margin-bottom: 8px;">
     <span style="font-size: 11.5px; color: #64748B;">Belum punya akun?</span>
-    <a href="<?= $baseUrl ?>/register" style="font-size: 11.5px; font-weight: 700; color: #EE2737; text-decoration: none; margin-left: 4px;">Daftar Baru</a>
+    <a href="<?= $baseUrl ?>/register" style="font-size: 11.5px; font-weight: 700; color: #EE2737; text-decoration: none; margin-left: 4px;">Daftar Pelanggan</a>
+</div>
+
+<div style="text-align: center; margin-bottom: 12px;">
+    <a href="<?= $baseUrl ?>/register-merchant" style="font-size: 11.5px; font-weight: 700; color: #2563EB; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+        <i class="bi bi-shop"></i> Buka Usaha? Daftar Sebagai Mitra Toko
+    </a>
 </div>
 
 <div style="text-align: center; margin-top: 12px; padding-top: 10px; border-top: 1px dashed #E2E8F0;">

@@ -14,6 +14,8 @@ Router::group(['prefix' => '/api/v1'], function () {
     Router::post('/login', [ApiController::class, 'login']);
     Router::post('/auth/register', [ApiController::class, 'register']);
     Router::post('/register', [ApiController::class, 'register']);
+    Router::post('/vendor/register', [ApiController::class, 'registerMerchant']);
+    Router::post('/register-merchant', [ApiController::class, 'registerMerchant']);
     Router::post('/payment/midtrans/notification', [PaymentController::class, 'notification']);
     Router::get('/modules', [ApiController::class, 'modules']);
     Router::get('/stores', [ApiController::class, 'stores']);
