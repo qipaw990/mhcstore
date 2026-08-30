@@ -90,6 +90,8 @@ class VendorController extends Controller
 
         $wallet = $this->walletModel->getOrCreate($userId, 'vendor');
 
+        $this->ensureHppColumn(); // Pastikan kolom hpp ada
+
         // Detailed Statistics strictly from orders table for this store
         $stats = Database::fetchOne(
             "SELECT 
@@ -107,6 +109,31 @@ class VendorController extends Controller
              WHERE `store_id` = ?",
             [$storeId]
         );
+
+        // Profit hari ini & bulan ini — dari HPP produk
+        $profitStats = Database::fetchOne(
+            "SELECT
+                COALESCE(SUM(CASE WHEN DATE(o.created_at) = CURDATE()
+                    THEN oi.quantity * (oi.price - COALESCE(p.hpp, 0)) ELSE 0 END), 0) as today_profit,
+                COALESCE(SUM(CASE WHEN MONTH(o.created_at) = MONTH(CURDATE()) AND YEAR(o.created_at) = YEAR(CURDATE())
+                    THEN oi.quantity * (oi.price - COALESCE(p.hpp, 0)) ELSE 0 END), 0) as month_profit,
+                COALESCE(SUM(oi.quantity * (oi.price - COALESCE(p.hpp, 0))), 0) as total_profit,
+                CASE WHEN SUM(oi.quantity * oi.price) > 0
+                    THEN ROUND(SUM(oi.quantity * (oi.price - COALESCE(p.hpp,0))) / SUM(oi.quantity * oi.price) * 100, 2)
+                    ELSE 0 END as avg_margin_pct
+             FROM order_items oi
+             JOIN orders o ON oi.order_id = o.id
+             LEFT JOIN products p ON oi.product_id = p.id
+             WHERE o.store_id = ? AND o.order_status = 'delivered'",
+            [$storeId]
+        );
+
+        if ($stats && $profitStats) {
+            $stats['today_profit']   = (float)($profitStats['today_profit'] ?? 0);
+            $stats['month_profit']   = (float)($profitStats['month_profit'] ?? 0);
+            $stats['total_profit']   = (float)($profitStats['total_profit'] ?? 0);
+            $stats['avg_margin_pct'] = (float)($profitStats['avg_margin_pct'] ?? 0);
+        }
 
         $orders = $this->orderModel->getStoreOrders($storeId);
         $productsCount = $this->productModel->count('store_id = ?', [$storeId]);
@@ -295,6 +322,8 @@ class VendorController extends Controller
 
     public function saveProduct(): void
     {
+        $this->ensureHppColumn(); // Auto-add hpp column jika belum ada
+
         $userId = auth_id();
         $store = $this->storeModel->findByVendorId($userId);
         if (!$store) {
@@ -385,6 +414,22 @@ class VendorController extends Controller
     }
 
     /**
+     * Pastikan kolom hpp ada di tabel products — auto-migrate jika belum
+     */
+    private function ensureHppColumn(): void
+    {
+        try {
+            $cols = Database::query("SHOW COLUMNS FROM `products` LIKE 'hpp'");
+            if (empty($cols)) {
+                Database::query("ALTER TABLE `products` ADD COLUMN `hpp` DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT 'Harga Pokok Penjualan per unit' AFTER `price`");
+                error_log('[VendorController] Auto-migrated: kolom hpp ditambahkan ke products.');
+            }
+        } catch (\Throwable $e) {
+            error_log('[VendorController] ensureHppColumn failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Stock-In: Tambah stok produk + update HPP + recalculate harga jual
      * Markup % dipertahankan: price_baru = hpp_baru * (1 + markup%)
      * POST /vendor/products/stock-in
@@ -392,6 +437,8 @@ class VendorController extends Controller
      */
     public function stockIn(): void
     {
+        $this->ensureHppColumn(); // Auto-add hpp column jika belum ada
+
         $userId = auth_id();
         $store  = $this->storeModel->findByVendorId($userId);
         if (!$store) {
@@ -586,50 +633,87 @@ class VendorController extends Controller
         }
 
         $storeId = (int)$store['id'];
+        $this->ensureHppColumn(); // Pastikan kolom hpp ada
 
-        // 1. KPI Summary (Total, Today, Week, Month, AOV)
+        // 1. KPI Summary — termasuk profit dari HPP
         $kpi = Database::fetchOne(
-            "SELECT 
+            "SELECT
                 COUNT(*) as total_orders,
-                COALESCE(SUM(CASE WHEN order_status = 'delivered' THEN order_amount * 0.90 ELSE 0 END), 0) as total_net_revenue,
-                COALESCE(SUM(CASE WHEN order_status = 'delivered' THEN order_amount ELSE 0 END), 0) as total_gross_sales,
                 COUNT(CASE WHEN order_status = 'delivered' THEN 1 END) as delivered_count,
                 COUNT(CASE WHEN order_status = 'canceled' THEN 1 END) as canceled_count,
-                
+                COALESCE(SUM(CASE WHEN order_status = 'delivered' THEN order_amount ELSE 0 END), 0) as total_gross_sales,
+                COALESCE(SUM(CASE WHEN order_status = 'delivered' THEN order_amount * 0.90 ELSE 0 END), 0) as total_net_revenue,
+                COALESCE(AVG(CASE WHEN order_status = 'delivered' THEN order_amount ELSE NULL END), 0) as avg_order_value,
+
                 -- Hari ini
                 COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as today_orders,
                 COALESCE(SUM(CASE WHEN order_status = 'delivered' AND DATE(created_at) = CURDATE() THEN order_amount * 0.90 ELSE 0 END), 0) as today_revenue,
-                
-                -- 7 Hari Terakhir
+
+                -- 7 Hari
                 COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 END) as week_orders,
                 COALESCE(SUM(CASE WHEN order_status = 'delivered' AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN order_amount * 0.90 ELSE 0 END), 0) as week_revenue,
-                
+
                 -- Bulan Ini
                 COUNT(CASE WHEN MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) THEN 1 END) as month_orders,
-                COALESCE(SUM(CASE WHEN order_status = 'delivered' AND MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) THEN order_amount * 0.90 ELSE 0 END), 0) as month_revenue,
-                
-                -- Rata-rata Nilai Pesanan (AOV)
-                COALESCE(AVG(CASE WHEN order_status = 'delivered' THEN order_amount ELSE NULL END), 0) as avg_order_value
+                COALESCE(SUM(CASE WHEN order_status = 'delivered' AND MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) THEN order_amount * 0.90 ELSE 0 END), 0) as month_revenue
              FROM `orders`
              WHERE `store_id` = ?",
             [$storeId]
         );
 
-        // 2. Trend 7 Hari Terakhir (Daily Trend for Chart)
+        // 1b. Profit dari HPP (berdasarkan order_items JOIN products.hpp)
+        $profitKpi = Database::fetchOne(
+            "SELECT
+                COALESCE(SUM(oi.quantity * (oi.price - COALESCE(p.hpp, 0))), 0) as total_gross_profit,
+                COALESCE(SUM(CASE WHEN MONTH(o.created_at) = MONTH(CURDATE()) AND YEAR(o.created_at) = YEAR(CURDATE())
+                    THEN oi.quantity * (oi.price - COALESCE(p.hpp, 0)) ELSE 0 END), 0) as month_profit,
+                COALESCE(SUM(CASE WHEN o.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                    THEN oi.quantity * (oi.price - COALESCE(p.hpp, 0)) ELSE 0 END), 0) as week_profit,
+                COALESCE(SUM(CASE WHEN DATE(o.created_at) = CURDATE()
+                    THEN oi.quantity * (oi.price - COALESCE(p.hpp, 0)) ELSE 0 END), 0) as today_profit,
+                COALESCE(SUM(oi.quantity * COALESCE(p.hpp, 0)), 0) as total_cogs,
+                CASE WHEN SUM(oi.quantity * oi.price) > 0
+                    THEN ROUND(SUM(oi.quantity * (oi.price - COALESCE(p.hpp,0))) / SUM(oi.quantity * oi.price) * 100, 2)
+                    ELSE 0 END as avg_margin_pct
+             FROM `order_items` oi
+             JOIN `orders` o ON oi.order_id = o.id
+             LEFT JOIN `products` p ON oi.product_id = p.id
+             WHERE o.store_id = ? AND o.order_status = 'delivered'",
+            [$storeId]
+        );
+
+        // Merge profit ke kpi
+        if ($kpi && $profitKpi) {
+            $kpi['total_gross_profit'] = (float)($profitKpi['total_gross_profit'] ?? 0);
+            $kpi['month_profit']       = (float)($profitKpi['month_profit'] ?? 0);
+            $kpi['week_profit']        = (float)($profitKpi['week_profit'] ?? 0);
+            $kpi['today_profit']       = (float)($profitKpi['today_profit'] ?? 0);
+            $kpi['total_cogs']         = (float)($profitKpi['total_cogs'] ?? 0);
+            $kpi['avg_margin_pct']     = (float)($profitKpi['avg_margin_pct'] ?? 0);
+        }
+
+        // 2. Trend 7 Hari — Revenue + Profit
         $dailyTrends = [];
         for ($i = 6; $i >= 0; $i--) {
-            $date = date('Y-m-d', strtotime("-$i days"));
+            $date    = date('Y-m-d', strtotime("-$i days"));
             $dayName = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'][date('w', strtotime($date))];
-            
+
             $dayRow = Database::fetchOne(
-                "SELECT 
-                    COUNT(CASE WHEN order_status = 'delivered' THEN 1 END) as delivered_orders,
+                "SELECT
+                    COUNT(CASE WHEN o.order_status = 'delivered' THEN 1 END) as delivered_orders,
                     COUNT(*) as total_orders,
-                    COALESCE(SUM(CASE WHEN order_status = 'delivered' THEN order_amount * 0.90 ELSE 0 END), 0) as net_revenue,
-                    COALESCE(SUM(CASE WHEN order_status = 'delivered' THEN order_amount ELSE 0 END), 0) as gross_revenue
-                 FROM `orders`
-                 WHERE `store_id` = ? AND DATE(created_at) = ?",
-                [$storeId, $date]
+                    COALESCE(SUM(CASE WHEN o.order_status = 'delivered' THEN o.order_amount * 0.90 ELSE 0 END), 0) as net_revenue,
+                    COALESCE(SUM(CASE WHEN o.order_status = 'delivered' THEN o.order_amount ELSE 0 END), 0) as gross_revenue,
+                    COALESCE((
+                        SELECT SUM(oi2.quantity * (oi2.price - COALESCE(p2.hpp, 0)))
+                        FROM order_items oi2
+                        JOIN orders o2 ON oi2.order_id = o2.id
+                        LEFT JOIN products p2 ON oi2.product_id = p2.id
+                        WHERE o2.store_id = ? AND DATE(o2.created_at) = ? AND o2.order_status = 'delivered'
+                    ), 0) as profit
+                 FROM `orders` o
+                 WHERE o.`store_id` = ? AND DATE(o.created_at) = ?",
+                [$storeId, $date, $storeId, $date]
             );
 
             $dailyTrends[] = [
@@ -640,30 +724,74 @@ class VendorController extends Controller
                 'total_orders'     => (int)($dayRow['total_orders'] ?? 0),
                 'revenue'          => (float)($dayRow['net_revenue'] ?? 0),
                 'gross_revenue'    => (float)($dayRow['gross_revenue'] ?? 0),
+                'profit'           => (float)($dayRow['profit'] ?? 0),
             ];
         }
 
-        // 3. Menu Terlaris (Top 5 Best Selling Items)
+        // 3. Menu Terlaris + Profit per item
         $topProducts = Database::query(
-            "SELECT 
+            "SELECT
                 COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name,
                 p.image as product_image,
                 p.price as product_price,
+                COALESCE(p.hpp, 0) as product_hpp,
                 SUM(oi.quantity) as total_sold,
-                SUM(oi.quantity * oi.price) as total_sales_amount
+                SUM(oi.quantity * oi.price) as total_sales_amount,
+                SUM(oi.quantity * (oi.price - COALESCE(p.hpp, 0))) as total_profit,
+                CASE WHEN SUM(oi.quantity * oi.price) > 0
+                    THEN ROUND(SUM(oi.quantity * (oi.price - COALESCE(p.hpp,0))) / SUM(oi.quantity * oi.price) * 100, 2)
+                    ELSE 0 END as margin_pct
              FROM `order_items` oi
              JOIN `orders` o ON oi.order_id = o.id
              LEFT JOIN `products` p ON oi.product_id = p.id
              WHERE o.store_id = ? AND o.order_status = 'delivered'
-             GROUP BY oi.product_id, product_name, p.image, p.price
+             GROUP BY oi.product_id, product_name, p.image, p.price, p.hpp
              ORDER BY total_sold DESC
-             LIMIT 5",
+             LIMIT 8",
             [$storeId]
         );
 
-        // 4. Breakdown Metode Pembayaran (Payment Method Distribution)
+        // 4. Transaksi terakhir dengan profit per pesanan
+        $recentOrders = Database::query(
+            "SELECT
+                o.id,
+                o.order_code,
+                o.order_amount,
+                o.order_amount * 0.90 as net_amount,
+                o.order_status,
+                o.created_at,
+                COALESCE((
+                    SELECT SUM(oi2.quantity * (oi2.price - COALESCE(p2.hpp, 0)))
+                    FROM order_items oi2
+                    LEFT JOIN products p2 ON oi2.product_id = p2.id
+                    WHERE oi2.order_id = o.id
+                ), 0) as order_profit,
+                COALESCE((
+                    SELECT SUM(oi2.quantity * COALESCE(p2.hpp, 0))
+                    FROM order_items oi2
+                    LEFT JOIN products p2 ON oi2.product_id = p2.id
+                    WHERE oi2.order_id = o.id
+                ), 0) as order_cogs
+             FROM `orders` o
+             WHERE o.store_id = ?
+             ORDER BY o.created_at DESC
+             LIMIT 15",
+            [$storeId]
+        );
+
+        // Hitung margin_pct per order
+        foreach ($recentOrders as &$ord) {
+            $gross = (float)($ord['order_amount'] ?? 0);
+            $profit = (float)($ord['order_profit'] ?? 0);
+            $ord['margin_pct'] = $gross > 0 ? round($profit / $gross * 100, 1) : 0;
+            $ord['order_profit'] = $profit;
+            $ord['order_cogs']   = (float)($ord['order_cogs'] ?? 0);
+        }
+        unset($ord);
+
+        // 5. Breakdown Metode Pembayaran
         $paymentBreakdown = Database::query(
-            "SELECT 
+            "SELECT
                 COALESCE(payment_method, 'cod') as payment_method,
                 COUNT(*) as count,
                 COALESCE(SUM(order_amount), 0) as total_amount
@@ -673,9 +801,9 @@ class VendorController extends Controller
             [$storeId]
         );
 
-        // 5. Breakdown Tipe Pengantaran (Delivery Type Distribution)
+        // 6. Breakdown Tipe Pengantaran
         $deliveryBreakdown = Database::query(
-            "SELECT 
+            "SELECT
                 COALESCE(delivery_type, 'driver') as delivery_type,
                 COUNT(*) as count
              FROM `orders`
@@ -691,6 +819,7 @@ class VendorController extends Controller
             'kpi'                 => $kpi,
             'daily_trends'        => $dailyTrends,
             'top_products'        => $topProducts,
+            'recent_orders'       => $recentOrders,
             'payment_breakdown'   => $paymentBreakdown,
             'delivery_breakdown'  => $deliveryBreakdown,
             'wallet'              => $wallet,

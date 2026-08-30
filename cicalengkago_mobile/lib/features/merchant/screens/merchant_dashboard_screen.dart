@@ -213,6 +213,9 @@ class _MerchantOverviewTab extends StatelessWidget {
     final balance = double.tryParse(wallet['balance']?.toString() ?? '0') ?? 0.0;
     final todayRevenue = double.tryParse(stats['today_revenue']?.toString() ?? '0') ?? 0.0;
     final todayOrders = int.tryParse(stats['today_orders']?.toString() ?? '0') ?? 0;
+    final todayProfit = double.tryParse(stats['today_profit']?.toString() ?? '0') ?? 0.0;
+    final monthProfit = double.tryParse(stats['month_profit']?.toString() ?? '0') ?? 0.0;
+    final avgMarginPct = double.tryParse(stats['avg_margin_pct']?.toString() ?? '0') ?? 0.0;
     final pendingCount = int.tryParse(stats['pending_count']?.toString() ?? '0') ?? 0;
     final processingCount = int.tryParse(stats['processing_count']?.toString() ?? '0') ?? 0;
     final handoverCount = int.tryParse(stats['on_the_way_count']?.toString() ?? '0') ?? 0;
@@ -408,6 +411,139 @@ class _MerchantOverviewTab extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 12),
+
+          // ── PROFIT HARIAN RINGKAS ──
+          if (todayRevenue > 0 || monthProfit != 0)
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: todayProfit >= 0 ? const Color(0xFFBBF7D0) : const Color(0xFFFECACA),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 8,
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color: todayProfit >= 0 ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
+                                borderRadius: BorderRadius.circular(7),
+                              ),
+                              child: Icon(
+                                Icons.trending_up_rounded,
+                                size: 13,
+                                color: todayProfit >= 0 ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Expanded(
+                              child: Text(
+                                'Profit Hari Ini',
+                                style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          CurrencyFormatter.formatRupiah(todayProfit),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            color: todayProfit >= 0 ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          todayProfit == 0 ? 'Set HPP untuk lihat profit' : 'Margin ${avgMarginPct.toStringAsFixed(1)}%',
+                          style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: monthProfit >= 0 ? const Color(0xFFE9D5FF) : const Color(0xFFFECACA),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 8,
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF3E8FF),
+                                borderRadius: BorderRadius.circular(7),
+                              ),
+                              child: const Icon(
+                                Icons.calendar_month_rounded,
+                                size: 13,
+                                color: Color(0xFF7E22CE),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Expanded(
+                              child: Text(
+                                'Profit Bulan Ini',
+                                style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          CurrencyFormatter.formatRupiah(monthProfit),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            color: monthProfit >= 0 ? const Color(0xFF7E22CE) : const Color(0xFFDC2626),
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          monthProfit == 0 ? 'Set HPP produk Anda' : '${DateTime.now().month}/${DateTime.now().year}',
+                          style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           const SizedBox(height: 16),
 
           // ── QUICK STATUS PIPELINE ──

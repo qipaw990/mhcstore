@@ -24,6 +24,7 @@ class MerchantController extends ChangeNotifier {
   List<dynamic> _analyticsTopProducts = [];
   List<dynamic> _analyticsPaymentBreakdown = [];
   List<dynamic> _analyticsDeliveryBreakdown = [];
+  List<dynamic> _analyticsRecentOrders = [];
 
   bool get isLoading => _isLoading;
   bool get isOpen => _isOpen;
@@ -45,6 +46,7 @@ class MerchantController extends ChangeNotifier {
   List<dynamic> get analyticsTopProducts => _analyticsTopProducts;
   List<dynamic> get analyticsPaymentBreakdown => _analyticsPaymentBreakdown;
   List<dynamic> get analyticsDeliveryBreakdown => _analyticsDeliveryBreakdown;
+  List<dynamic> get analyticsRecentOrders => _analyticsRecentOrders;
 
   Future<void> fetchAnalytics({bool silent = false}) async {
     if (!silent) {
@@ -61,6 +63,7 @@ class MerchantController extends ChangeNotifier {
         _analyticsTopProducts = (data['top_products'] as List<dynamic>?) ?? [];
         _analyticsPaymentBreakdown = (data['payment_breakdown'] as List<dynamic>?) ?? [];
         _analyticsDeliveryBreakdown = (data['delivery_breakdown'] as List<dynamic>?) ?? [];
+        _analyticsRecentOrders = (data['recent_orders'] as List<dynamic>?) ?? [];
         if (data['store'] != null) {
           _store = data['store'] as Map<String, dynamic>?;
         }

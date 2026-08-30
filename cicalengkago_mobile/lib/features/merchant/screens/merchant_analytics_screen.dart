@@ -32,6 +32,7 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
     final topProducts = merchantCtrl.analyticsTopProducts;
     final paymentBreakdown = merchantCtrl.analyticsPaymentBreakdown;
     final deliveryBreakdown = merchantCtrl.analyticsDeliveryBreakdown;
+    final recentOrders = merchantCtrl.analyticsRecentOrders;
     final isLoading = merchantCtrl.isAnalyticsLoading;
 
     // Computed Filter Values
@@ -62,6 +63,21 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
       grossSales = double.tryParse(kpi['total_gross_sales']?.toString() ?? '0') ?? 0.0;
       ordersCount = int.tryParse(kpi['delivered_count']?.toString() ?? '0') ?? 0;
     }
+
+    // Profit based on filter
+    double profit = 0.0;
+    double marginPct = 0.0;
+    if (_selectedFilter == 0) {
+      profit = double.tryParse(kpi['today_profit']?.toString() ?? '0') ?? 0.0;
+    } else if (_selectedFilter == 1) {
+      profit = double.tryParse(kpi['week_profit']?.toString() ?? '0') ?? 0.0;
+    } else if (_selectedFilter == 2) {
+      profit = double.tryParse(kpi['month_profit']?.toString() ?? '0') ?? 0.0;
+    } else {
+      profit = double.tryParse(kpi['total_gross_profit']?.toString() ?? '0') ?? 0.0;
+    }
+    marginPct = double.tryParse(kpi['avg_margin_pct']?.toString() ?? '0') ?? 0.0;
+    final totalCogs = double.tryParse(kpi['total_cogs']?.toString() ?? '0') ?? 0.0;
 
     final int totalAllAttempts = (ordersCount + canceledCount);
     final double successRate = totalAllAttempts > 0 ? ((ordersCount / totalAllAttempts) * 100) : 100.0;
@@ -209,6 +225,58 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                   ),
                   const SizedBox(height: 20),
 
+                  // ── PROFIT KPI CARDS ──
+                  _buildSectionHeader('Keuntungan & Margin Usaha', Icons.monetization_on_rounded),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _profitCard(
+                          label: 'Gross Profit',
+                          value: CurrencyFormatter.formatRupiah(profit),
+                          sub: profit > 0 ? '💚 Untung' : (profit < 0 ? '🔴 Rugi' : 'Belum ada data HPP'),
+                          color: profit >= 0 ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                          bgColor: profit >= 0 ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
+                          icon: Icons.trending_up_rounded,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _profitCard(
+                          label: 'Rata-rata Margin',
+                          value: '${marginPct.toStringAsFixed(1)}%',
+                          sub: 'Dari total penjualan',
+                          color: const Color(0xFF7E22CE),
+                          bgColor: const Color(0xFFF3E8FF),
+                          icon: Icons.percent_rounded,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  if (totalCogs > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFBEB),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFDE68A)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.inventory_2_outlined, size: 15, color: Color(0xFFD97706)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Total Modal (HPP): ${CurrencyFormatter.formatRupiah(totalCogs)}',
+                              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF92400E)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: 20),
+
                   // ── 7-DAY SALES BAR CHART ──
                   if (dailyTrends.isNotEmpty) ...[
                     _buildSectionHeader('Tren Penjualan 7 Hari Terakhir', Icons.bar_chart_rounded),
@@ -217,7 +285,15 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                     const SizedBox(height: 22),
                   ],
 
-                  // ── TOP SELLING PRODUCTS / BEST SELLERS ──
+                  // ── RIWAYAT TRANSAKSI + PROFIT PER ORDER ──
+                  if (recentOrders.isNotEmpty) ...[
+                    _buildSectionHeader('Riwayat Transaksi & Profit', Icons.receipt_long_rounded),
+                    const SizedBox(height: 12),
+                    _buildRecentOrdersWithProfit(recentOrders),
+                    const SizedBox(height: 22),
+                  ],
+
+                  // ── TOP SELLING PRODUCTS ──
                   _buildSectionHeader('Menu Terlaris & Paling Diminati', Icons.star_rounded),
                   const SizedBox(height: 12),
                   if (topProducts.isEmpty)
@@ -530,6 +606,9 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
     final imgUrl = ApiConstants.formatImageUrl(rawImg);
     final sold = int.tryParse(item['total_sold']?.toString() ?? '0') ?? 0;
     final totalRev = double.tryParse(item['total_sales_amount']?.toString() ?? '0') ?? 0.0;
+    final totalProfit = double.tryParse(item['total_profit']?.toString() ?? '0') ?? 0.0;
+    final marginPct = double.tryParse(item['margin_pct']?.toString() ?? '0') ?? 0.0;
+    final hasHpp = totalProfit != 0 || (item['product_hpp'] != null && double.tryParse(item['product_hpp'].toString()) != 0);
 
     Color badgeColor = const Color(0xFF94A3B8);
     Color badgeBg = const Color(0xFFF1F5F9);
@@ -552,14 +631,8 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
             width: 24,
             height: 24,
             alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: badgeBg,
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              '#$rank',
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: badgeColor),
-            ),
+            decoration: BoxDecoration(color: badgeBg, shape: BoxShape.circle),
+            child: Text('#$rank', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: badgeColor)),
           ),
           const SizedBox(width: 10),
           ClipRRect(
@@ -589,10 +662,40 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  CurrencyFormatter.formatRupiah(totalRev),
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                Row(
+                  children: [
+                    Text(
+                      CurrencyFormatter.formatRupiah(totalRev),
+                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                    ),
+                    if (hasHpp) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: totalProfit >= 0 ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Text(
+                          'Profit ${marginPct.toStringAsFixed(0)}%',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: totalProfit >= 0 ? const Color(0xFF15803D) : const Color(0xFFDC2626),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
+                if (hasHpp)
+                  Text(
+                    'Untung: ${CurrencyFormatter.formatRupiah(totalProfit)}',
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      color: totalProfit >= 0 ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -609,6 +712,167 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _profitCard({
+    required String label,
+    required String value,
+    required String sub,
+    required Color color,
+    required Color bgColor,
+    required IconData icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(color: color.withValues(alpha: 0.08), blurRadius: 10, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(8)),
+                child: Icon(icon, size: 14, color: color),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: color, letterSpacing: -0.3),
+          ),
+          const SizedBox(height: 2),
+          Text(sub, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentOrdersWithProfit(List<dynamic> orders) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: orders.length,
+        separatorBuilder: (_, _) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+        itemBuilder: (context, index) {
+          final ord = orders[index] as Map<String, dynamic>;
+          final code = ord['order_code']?.toString() ?? '#${ord['id']}';
+          final amount = double.tryParse(ord['order_amount']?.toString() ?? '0') ?? 0.0;
+          final orderProfit = double.tryParse(ord['order_profit']?.toString() ?? '0') ?? 0.0;
+          final marginPct = double.tryParse(ord['margin_pct']?.toString() ?? '0') ?? 0.0;
+          final status = ord['order_status']?.toString() ?? 'pending';
+          final createdAt = ord['created_at']?.toString() ?? '';
+          final hasHpp = orderProfit != 0;
+
+          // Format tanggal
+          String dateStr = '';
+          try {
+            final dt = DateTime.parse(createdAt);
+            dateStr = '${dt.day}/${dt.month} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+          } catch (_) {
+            dateStr = createdAt.length > 10 ? createdAt.substring(5, 16).replaceAll('-', '/') : createdAt;
+          }
+
+          Color statusColor = const Color(0xFFD97706);
+          if (status == 'delivered') statusColor = const Color(0xFF16A34A);
+          if (status == 'canceled') statusColor = const Color(0xFFDC2626);
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    status == 'delivered' ? Icons.check_circle_rounded : (status == 'canceled' ? Icons.cancel_rounded : Icons.access_time_rounded),
+                    color: statusColor,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        code,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        dateStr,
+                        style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      CurrencyFormatter.formatRupiah(amount),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
+                    ),
+                    const SizedBox(height: 2),
+                    if (status == 'delivered' && hasHpp)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            orderProfit >= 0 ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                            size: 10,
+                            color: orderProfit >= 0 ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${CurrencyFormatter.formatRupiah(orderProfit)} (${marginPct.toStringAsFixed(0)}%)',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: orderProfit >= 0 ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      Text(
+                        status == 'delivered' ? 'Set HPP untuk lihat profit' : status,
+                        style: TextStyle(fontSize: 9.5, color: statusColor),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
