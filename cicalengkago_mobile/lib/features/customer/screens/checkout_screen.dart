@@ -1254,7 +1254,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          // Option 1: Diantar Kurir Toko (Gratis Rp 0)
+          // Option 1: Diantar Merchant Langsung (Gratis Rp 0)
           InkWell(
             onTap: () {
               setState(() {
@@ -1290,31 +1290,33 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 6,
-                          runSpacing: 2,
+                        Row(
                           children: [
-                            const Text(
-                              'Diantar Kurir Toko',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                            const Flexible(
+                              child: Text(
+                                'Diantar Merchant',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
+                            const SizedBox(width: 4),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFDCFCE7),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: const Text(
                                 'GRATIS',
-                                style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w900, color: Color(0xFF15803D)),
+                                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Color(0xFF15803D)),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 2),
                         const Text(
-                          'Staff resto akan mengantar pesanan langsung ke lokasi Anda.',
+                          'Staff merchant akan mengantar langsung ke lokasi Anda.',
                           style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
                         ),
                       ],
@@ -1369,6 +1371,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         const Text(
                           'Diantar Driver CicalengkaGO',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2),
                         const Text(
@@ -1421,15 +1425,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
+              const Expanded(
                 child: Row(
-                  children: const [
+                  children: [
                     Icon(Icons.info_outline_rounded, color: Color(0xFF2563EB), size: 16),
                     SizedBox(width: 6),
-                    Expanded(
+                    Flexible(
                       child: Text(
                         'Skema Tarif Zona',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -1437,23 +1441,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
               ),
               const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFBFDBFE)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.shield_rounded, color: Color(0xFF2563EB), size: 10),
-                    const SizedBox(width: 3),
-                    Text(
-                      zoneName,
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8)),
-                    ),
-                  ],
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFBFDBFE)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.shield_rounded, color: Color(0xFF2563EB), size: 10),
+                      const SizedBox(width: 3),
+                      Flexible(
+                        child: Text(
+                          zoneName,
+                          style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8)),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
