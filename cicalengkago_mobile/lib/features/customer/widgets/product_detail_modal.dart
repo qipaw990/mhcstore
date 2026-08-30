@@ -9,6 +9,7 @@ import '../../../core/widgets/uber_pill_button.dart';
 import '../../../core/widgets/app_alert.dart';
 import '../../../core/widgets/require_auth_widget.dart';
 import '../controllers/customer_controller.dart';
+import '../screens/store_detail_screen.dart';
 
 class ProductDetailModal extends StatefulWidget {
   final Map<String, dynamic> product;
@@ -37,6 +38,8 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
   int _reviewsCount = 0;
   Map<dynamic, dynamic> _ratingBreakdown = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0};
   bool? _storeIsOpenOverride;
+  int? _storeIdOverride;
+  String? _storeNameOverride;
 
   @override
   void initState() {
@@ -69,6 +72,12 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
           if (data['store_is_open'] != null || data['is_store_open'] != null) {
             final sOpen = data['store_is_open'] ?? data['is_store_open'];
             _storeIsOpenOverride = (sOpen == 1 || sOpen == true || sOpen == '1');
+          }
+          if (data['store_id'] != null) {
+            _storeIdOverride = int.tryParse(data['store_id'].toString());
+          }
+          if (data['store_name'] != null && data['store_name'].toString().isNotEmpty) {
+            _storeNameOverride = data['store_name'].toString();
           }
           _isLoadingReviews = false;
         });
@@ -114,8 +123,9 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
     final customerCtrl = context.watch<CustomerController>();
     final product = widget.product;
     final productId = int.tryParse(product['id']?.toString() ?? product['product_id']?.toString() ?? '0') ?? 0;
+    final storeId = _storeIdOverride ?? int.tryParse(product['store_id']?.toString() ?? '0') ?? 0;
     final name = product['name'] ?? product['product_name'] ?? 'Menu Kuliner';
-    final storeName = product['store_name'] ?? product['store'] ?? 'Mitra CicalengkaGO';
+    final storeName = _storeNameOverride ?? product['store_name'] ?? product['store'] ?? 'Mitra CicalengkaGO';
     final price = double.tryParse(product['price']?.toString() ?? '0') ?? 0.0;
     final finalPrice = double.tryParse(product['final_price']?.toString() ?? price.toString()) ?? price;
     final description = (product['description'] != null && product['description'].toString().trim().isNotEmpty)
@@ -243,20 +253,73 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                               ),
                             ),
 
-                          // Store Name Tag
-                          Row(
-                            children: [
-                              const Icon(Icons.storefront_rounded, size: 14, color: Color(0xFF64748B)),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  storeName,
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
-                                ),
+                          // Store Name / Visit Store Interactive Card
+                          InkWell(
+                            onTap: storeId > 0
+                                ? () {
+                                    Navigator.pop(context);
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => StoreDetailScreen(storeId: storeId),
+                                      ),
+                                    );
+                                  }
+                                : null,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
                               ),
-                            ],
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.storefront_rounded, size: 16, color: Color(0xFFEF4444)),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      storeName,
+                                      style: const TextStyle(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppTheme.inkBlack,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (storeId > 0) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFEF2F2),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            'Kunjungi Toko',
+                                            style: TextStyle(
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFFEF4444),
+                                            ),
+                                          ),
+                                          SizedBox(width: 2),
+                                          Icon(Icons.arrow_forward_ios_rounded, size: 9, color: Color(0xFFEF4444)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 10),
 
                           // Product Name
                           Text(
