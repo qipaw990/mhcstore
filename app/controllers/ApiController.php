@@ -923,5 +923,15 @@ class ApiController extends Controller
             'reviews'    => $reviews
         ]);
     }
+
+    /**
+     * Get active zone tariff & polygon configuration from database
+     */
+    public function getZoneConfig(): void
+    {
+        $zoneId = (int)($this->getQuery('zone_id') ?? 1);
+        $zoneDetail = \App\Models\Zone::getZoneDetail($zoneId);
+        $this->successResponse('Konfigurasi tarif zona berhasil diambil dari database', $zoneDetail);
+    }
 }
 
