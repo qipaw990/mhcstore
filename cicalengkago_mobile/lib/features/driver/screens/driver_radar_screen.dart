@@ -915,6 +915,57 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
               ),
             ],
           ),
+
+          // Items Preview List
+          if (order['items'] is List && (order['items'] as List).isNotEmpty ||
+              order['all_items'] is List && (order['all_items'] as List).isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF334155)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.shopping_bag_outlined, size: 13, color: Color(0xFFFBBF24)),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Pesanan (${((order['items'] ?? order['all_items']) as List).length} Menu):',
+                        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFFFDE68A)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  ...(((order['items'] ?? order['all_items']) as List).take(3)).map((item) {
+                    if (item is! Map) return const SizedBox.shrink();
+                    final iName = item['product_name'] ?? item['item_name'] ?? item['name'] ?? 'Menu';
+                    final iQty = item['quantity'] ?? '1';
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Text(
+                        '• ${iQty}x $iName',
+                        style: const TextStyle(fontSize: 11, color: Color(0xFFE2E8F0)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  }),
+                  if (((order['items'] ?? order['all_items']) as List).length > 3) ...[
+                    Text(
+                      '+ ${((order['items'] ?? order['all_items']) as List).length - 3} menu lainnya...',
+                      style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontStyle: FontStyle.italic),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+
           const SizedBox(height: 12),
 
           // Accept Order Button

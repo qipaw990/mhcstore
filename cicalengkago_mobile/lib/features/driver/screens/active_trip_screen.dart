@@ -276,6 +276,14 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             status: status,
           ),
 
+          const SizedBox(height: 16),
+
+          // Daftar Item / Menu Kuliner yang Dibeli Pelanggan
+          _buildOrderItemsCard(
+            trip: trip,
+            pickupStores: pickupStores,
+          ),
+
           const SizedBox(height: 20),
 
           // Action Buttons (Sequential 1-by-1 Store Confirmation & Final Customer Delivery)
@@ -1331,6 +1339,251 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildOrderItemsCard({
+    required Map<String, dynamic> trip,
+    required List<Map<String, dynamic>> pickupStores,
+  }) {
+    final List<Map<String, dynamic>> storeGroups = [];
+
+    if (pickupStores.isNotEmpty) {
+      for (var s in pickupStores) {
+        final items = (s['items'] is List) ? (s['items'] as List) : [];
+        if (items.isNotEmpty) {
+          storeGroups.add({
+            'store_name': s['name'] ?? 'Mitra Resto',
+            'items': items,
+          });
+        }
+      }
+    }
+
+    if (storeGroups.isEmpty) {
+      final rawItems = (trip['items'] is List)
+          ? (trip['items'] as List)
+          : ((trip['all_items'] is List) ? (trip['all_items'] as List) : []);
+      if (rawItems.isNotEmpty) {
+        storeGroups.add({
+          'store_name': trip['store_name'] ?? 'Mitra Resto',
+          'items': rawItems,
+        });
+      }
+    }
+
+    if (storeGroups.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    int totalItemCount = 0;
+    for (var g in storeGroups) {
+      final list = g['items'] as List;
+      for (var item in list) {
+        if (item is Map) {
+          final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
+          totalItemCount += qty;
+        }
+      }
+    }
+
+    final double orderAmount = double.tryParse(trip['order_amount']?.toString() ?? '') ??
+        double.tryParse(trip['total_amount']?.toString() ?? '') ?? 0.0;
+    final bool isCod = (trip['payment_method']?.toString().toUpperCase() == 'CASH' ||
+        trip['payment_method']?.toString().toUpperCase() == 'COD');
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(color: Color(0x0A000000), blurRadius: 10, offset: Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.receipt_long_rounded, color: Color(0xFF2563EB), size: 18),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Rincian Menu / Barang Pesanan',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: Text(
+                  '$totalItemCount Menu',
+                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          const SizedBox(height: 12),
+
+          ...storeGroups.map((group) {
+            final sName = group['store_name']?.toString() ?? 'Mitra Resto';
+            final itemsList = group['items'] as List;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (storeGroups.length > 1) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.storefront_rounded, size: 14, color: Color(0xFFD97706)),
+                        const SizedBox(width: 5),
+                        Expanded(
+                          child: Text(
+                            sName,
+                            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF92400E)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                ...itemsList.map((item) {
+                  if (item is! Map) return const SizedBox.shrink();
+                  final name = item['product_name'] ?? item['item_name'] ?? item['name'] ?? 'Menu Kuliner';
+                  final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
+                  final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
+                  final subtotal = double.tryParse(item['subtotal']?.toString() ?? '') ?? (price * qty);
+                  final notes = item['notes']?.toString();
+                  final variations = item['variations_json']?.toString();
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2563EB),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${qty}x',
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.white),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                name.toString(),
+                                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                              ),
+                              if (notes != null && notes.trim().isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Catatan: $notes',
+                                  style: const TextStyle(fontSize: 10.5, fontStyle: FontStyle.italic, color: Color(0xFFD97706)),
+                                ),
+                              ],
+                              if (variations != null && variations.trim().isNotEmpty && variations != '{}' && variations != '[]') ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  variations,
+                                  style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        if (subtotal > 0)
+                          Text(
+                            CurrencyFormatter.formatRupiah(subtotal),
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                          ),
+                      ],
+                    ),
+                  );
+                }),
+                if (storeGroups.length > 1) const SizedBox(height: 6),
+              ],
+            );
+          }),
+
+          const SizedBox(height: 6),
+          // Total Order Amount and Payment Method Info
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isCod ? const Color(0xFFFEF2F2) : const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: isCod ? const Color(0xFFFECACA) : const Color(0xFFBBF7D0)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isCod ? '💰 Tagih Tunai Pelanggan (COD)' : '✅ Pembayaran Non-Tunai (Lunas)',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: isCod ? const Color(0xFFB91C1C) : const Color(0xFF15803D),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isCod ? 'Driver tagih total belanja ini ke pemesan' : 'Driver tidak perlu menagih tunai',
+                      style: TextStyle(fontSize: 9.5, color: isCod ? const Color(0xFFDC2626) : const Color(0xFF16A34A)),
+                    ),
+                  ],
+                ),
+                if (orderAmount > 0)
+                  Text(
+                    CurrencyFormatter.formatRupiah(orderAmount),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      color: isCod ? const Color(0xFFB91C1C) : const Color(0xFF15803D),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
