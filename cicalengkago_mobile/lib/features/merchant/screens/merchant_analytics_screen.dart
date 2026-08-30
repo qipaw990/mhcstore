@@ -166,10 +166,14 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                         const Divider(height: 1, color: Color(0xFFEF4444)),
                         const SizedBox(height: 12),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _heroSubStat('Omzet Kotor (100%)', CurrencyFormatter.formatRupiah(grossSales)),
-                            _heroSubStat('Pesanan Berhasil', '$ordersCount Transaksi'),
+                            Expanded(
+                              child: _heroSubStat('Omzet Kotor (100%)', CurrencyFormatter.formatRupiah(grossSales)),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _heroSubStat('Pesanan Berhasil', '$ordersCount Transaksi', alignRight: true),
+                            ),
                           ],
                         ),
                       ],
@@ -325,15 +329,17 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
     );
   }
 
-  Widget _heroSubStat(String label, String value) {
+  Widget _heroSubStat(String label, String value, {bool alignRight = false}) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: alignRight ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFFFCA5A5))),
+        Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFFFCA5A5)), maxLines: 1, overflow: TextOverflow.ellipsis),
         const SizedBox(height: 2),
         Text(
           value,
           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
@@ -348,7 +354,7 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
     required Color bgColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -364,28 +370,36 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              const SizedBox(width: 4),
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
-                child: Icon(icon, color: iconColor, size: 14),
+                child: Icon(icon, color: iconColor, size: 13),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 2),
           Text(
             subtitle,
-            style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+            style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -662,12 +676,19 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF475569))),
+                        Expanded(
+                          child: Text(
+                            label,
+                            style: const TextStyle(fontSize: 10.5, color: Color(0xFF475569)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
                         Text(
                           '$count (${(percent * 100).toStringAsFixed(0)}%)',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                         ),
                       ],
                     ),
