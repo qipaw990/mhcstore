@@ -199,6 +199,7 @@ class _MerchantOverviewTab extends StatelessWidget {
     final deliveredCount = int.tryParse(stats['delivered_count']?.toString() ?? '0') ?? 0;
     final store = merchantCtrl.store;
     final storeStatus = store?['status']?.toString().toLowerCase();
+    final recentOrders = merchantCtrl.orders.take(5).toList();
 
     return RefreshIndicator(
       onRefresh: () => merchantCtrl.fetchDashboardData(),
