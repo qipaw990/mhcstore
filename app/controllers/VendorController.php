@@ -272,6 +272,14 @@ class VendorController extends Controller
             $id = $this->productModel->create($productData);
         }
 
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Menu produk berhasil disimpan!', [
+                'product_id' => $id,
+                'product'    => $this->productModel->find($id)
+            ]);
+            return;
+        }
+
         $this->redirect('vendor/products');
     }
 
@@ -517,9 +525,28 @@ class VendorController extends Controller
             $passwordUpdate = password_hash($newPassword, PASSWORD_BCRYPT);
         }
 
+        // JSON API Flow (Mobile App) -> Update directly
+        if ($this->isJsonRequest()) {
+            $userUpdates = ['name' => $name];
+            if (!empty($phone)) $userUpdates['phone'] = $phone;
+            if (!empty($email)) $userUpdates['email'] = $email;
+            if (!empty($passwordUpdate)) $userUpdates['password'] = $passwordUpdate;
+            (new \App\Models\User())->update($userId, $userUpdates);
+
+            $freshStore = $this->storeModel->findByVendorId($userId);
+            $freshUser = (new \App\Models\User())->find($userId);
+            if (!empty($freshUser)) unset($freshUser['password']);
+
+            $this->successResponse('Profil toko dan pemilik berhasil diperbarui!', [
+                'user'  => $freshUser,
+                'store' => $freshStore
+            ]);
+            return;
+        }
+
         $currentUser = auth_user();
-        $isEmailChanged    = (strtolower($email) !== strtolower($currentUser['email'] ?? ''));
-        $isPhoneChanged    = (trim($phone) !== trim($currentUser['phone'] ?? ''));
+        $isEmailChanged    = (!empty($email) && strtolower($email) !== strtolower($currentUser['email'] ?? ''));
+        $isPhoneChanged    = (!empty($phone) && trim($phone) !== trim($currentUser['phone'] ?? ''));
         $isPasswordChanged = !empty($passwordUpdate);
 
         if ($isEmailChanged || $isPhoneChanged || $isPasswordChanged) {
@@ -560,7 +587,7 @@ class VendorController extends Controller
                 'name'       => $name,
                 'email'      => $email,
                 'phone'      => $phone,
-                'role'       => $currentUser['role'],
+                'role'       => $currentUser['role'] ?? 'vendor',
                 'otp'        => $otp,
                 'expires_at' => time() + 600
             ];
@@ -600,8 +627,10 @@ class VendorController extends Controller
             'phone' => $phone
         ]);
 
-        $_SESSION['user']['name'] = $name;
-        $_SESSION['user']['phone'] = $phone;
+        if (isset($_SESSION['user'])) {
+            $_SESSION['user']['name'] = $name;
+            $_SESSION['user']['phone'] = $phone;
+        }
 
         $_SESSION['success'] = 'Profil Mitra Toko berhasil diperbarui!';
         $this->redirect('vendor/profile');
