@@ -137,13 +137,14 @@ class Router
                     }
                 }
 
-                // Execute handler
+                // Execute handler with indexed positional arguments to prevent PHP 8 named parameter conflicts
+                $indexedParams = array_values($params);
                 if (is_array($route['handler'])) {
                     [$ctrlClass, $action] = $route['handler'];
                     $controller = new $ctrlClass();
-                    return call_user_func_array([$controller, $action], $params);
+                    return call_user_func_array([$controller, $action], $indexedParams);
                 } elseif (is_callable($route['handler'])) {
-                    return call_user_func_array($route['handler'], $params);
+                    return call_user_func_array($route['handler'], $indexedParams);
                 }
             }
         }

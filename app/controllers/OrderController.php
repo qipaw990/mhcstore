@@ -530,9 +530,9 @@ class OrderController extends Controller
         $this->successResponse('Pesanan berhasil dibatalkan dan pengembalian dana telah dikreditkan ke CicalengkaPay.');
     }
 
-    public function showOrder(string $idOrCode): void
+    public function showOrder(string $code): void
     {
-        $order = $this->orderModel->findByIdOrCode($idOrCode);
+        $order = $this->orderModel->findByIdOrCode($code);
         if (!$order) {
             if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) || (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))) {
                 $this->errorResponse('Pesanan tidak ditemukan.', null, 404);
@@ -598,6 +598,7 @@ class OrderController extends Controller
         );
         $createdAtTime  = (int)($timingRow['created_ts'] ?? strtotime($order['created_at']));
         $serverNow      = (int)($timingRow['now_ts'] ?? time());
+        $elapsedSeconds = max(0, $serverNow - $createdAtTime);
         $isMerchantOrder = (($order['delivery_type'] ?? 'driver') === 'merchant');
 
         if ($isMerchantOrder) {
