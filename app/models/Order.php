@@ -436,6 +436,25 @@ class Order extends Model
 
                 self::refundOrderIfPaid($ord, 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 5 menit lelang');
             }
+
+            // Batalkan pesanan merchant yang tidak direspon merchant setelah 5 menit (300 detik)
+            $expiredMerchantOrders = Database::query(
+                "SELECT id, order_code, customer_id, delivery_man_id, payment_method, payment_status, total_amount, created_at
+                 FROM `orders` 
+                 WHERE delivery_type = 'merchant'
+                   AND order_status = 'pending'
+                   AND created_at <= TIMESTAMPADD(SECOND, -300, NOW())"
+            );
+
+            foreach ($expiredMerchantOrders as $mOrd) {
+                Database::update('orders', [
+                    'order_status'        => 'canceled',
+                    'cancellation_reason' => 'Batal Otomatis: Resto / Merchant tidak merespon dalam 5 menit',
+                    'canceled_at'          => date('Y-m-d H:i:s')
+                ], 'id = ?', [$mOrd['id']]);
+
+                self::refundOrderIfPaid($mOrd, 'Batal Otomatis: Resto tidak merespon dalam 5 menit');
+            }
         } catch (\Exception $e) {
             error_log("autoCancelUnclaimedOrders error: " . $e->getMessage());
         }

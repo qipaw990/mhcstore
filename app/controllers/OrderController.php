@@ -598,22 +598,37 @@ class OrderController extends Controller
         );
         $createdAtTime  = (int)($timingRow['created_ts'] ?? strtotime($order['created_at']));
         $serverNow      = (int)($timingRow['now_ts'] ?? time());
-        $elapsedSeconds   = max(0, $serverNow - $createdAtTime);
-        $remainingSeconds = max(0, 60 - $elapsedSeconds);
-
-        // Immediate inline auto-cancellation if order has exceeded 58 seconds without driver (only for driver delivery)
         $isMerchantOrder = (($order['delivery_type'] ?? 'driver') === 'merchant');
-        if (!$isMerchantOrder && $elapsedSeconds >= 58 && empty($order['delivery_man_id']) && !in_array($order['order_status'], ['processing', 'handover', 'on_the_way', 'delivered', 'canceled', 'refunded', 'failed'])) {
-            Database::update('orders', [
-                'delivery_man_id'     => null,
-                'order_status'        => 'canceled',
-                'cancellation_reason' => 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 1 menit',
-                'canceled_at'          => date('Y-m-d H:i:s')
-            ], 'id = ?', [$order['id']]);
 
-            \App\Models\Order::refundOrderIfPaid($order, 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 1 menit');
-            $order = $this->orderModel->findByIdOrCode($code) ?? $order;
-            $remainingSeconds = 0;
+        if ($isMerchantOrder) {
+            $remainingSeconds = max(0, 300 - $elapsedSeconds);
+            // Immediate inline auto-cancellation if merchant order has exceeded 298 seconds (5 minutes) without response
+            if ($elapsedSeconds >= 298 && in_array($order['order_status'], ['pending', 'unpaid'])) {
+                Database::update('orders', [
+                    'order_status'        => 'canceled',
+                    'cancellation_reason' => 'Batal Otomatis: Resto / Merchant tidak merespon dalam 5 menit',
+                    'canceled_at'          => date('Y-m-d H:i:s')
+                ], 'id = ?', [$order['id']]);
+
+                \App\Models\Order::refundOrderIfPaid($order, 'Batal Otomatis: Resto tidak merespon dalam 5 menit');
+                $order = $this->orderModel->findByIdOrCode($code) ?? $order;
+                $remainingSeconds = 0;
+            }
+        } else {
+            $remainingSeconds = max(0, 60 - $elapsedSeconds);
+            // Immediate inline auto-cancellation if order has exceeded 58 seconds without driver (only for driver delivery)
+            if ($elapsedSeconds >= 58 && empty($order['delivery_man_id']) && !in_array($order['order_status'], ['processing', 'handover', 'on_the_way', 'delivered', 'canceled', 'refunded', 'failed'])) {
+                Database::update('orders', [
+                    'delivery_man_id'     => null,
+                    'order_status'        => 'canceled',
+                    'cancellation_reason' => 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 1 menit',
+                    'canceled_at'          => date('Y-m-d H:i:s')
+                ], 'id = ?', [$order['id']]);
+
+                \App\Models\Order::refundOrderIfPaid($order, 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 1 menit');
+                $order = $this->orderModel->findByIdOrCode($code) ?? $order;
+                $remainingSeconds = 0;
+            }
         }
         $batchInfo = null;
         if (!empty($order['delivery_batch_id'])) {

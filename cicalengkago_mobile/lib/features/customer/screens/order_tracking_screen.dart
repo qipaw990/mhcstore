@@ -238,7 +238,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final status = live['order_status']?.toString() ?? order['order_status']?.toString() ?? 'pending';
     final paymentMethod = live['payment_method']?.toString() ?? order['payment_method']?.toString() ?? 'cod';
     final paymentStatus = live['payment_status']?.toString() ?? order['payment_status']?.toString() ?? 'unpaid';
-    final remainingSeconds = (_liveData != null ? _currentRemainingSeconds : ((live['remaining_seconds'] as num?)?.toInt() ?? 60)).clamp(0, 60);
+    final String deliveryType = (order['delivery_type'] ?? live['delivery_type'] ?? 'driver').toString().toLowerCase();
+    final bool isMerchantDelivery = (deliveryType == 'merchant');
+    final int maxDurationSeconds = isMerchantDelivery ? 300 : 60;
+    final remainingSeconds = (_liveData != null ? _currentRemainingSeconds : ((live['remaining_seconds'] as num?)?.toInt() ?? maxDurationSeconds)).clamp(0, maxDurationSeconds);
     final otpCode = live['otp']?.toString() ?? order['otp']?.toString() ?? '----';
     final unreadChats = (live['unread_chats'] as num?)?.toInt() ?? 0;
     final cancellationReason = live['cancellation_reason']?.toString() ?? order['cancellation_reason']?.toString() ?? '';
@@ -249,11 +252,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         ((driverMap['assigned'] == true && driverMap['lat'] != null && driverMap['lng'] != null) ||
         (order['delivery_man_id'] != null && ['processing', 'handover', 'on_the_way'].contains(status)));
 
-    final String deliveryType = (order['delivery_type'] ?? live['delivery_type'] ?? 'driver').toString().toLowerCase();
-    final double distKm = double.tryParse(order['distance_km']?.toString() ?? live['distance_km']?.toString() ?? '') ?? 999.0;
-    final bool isMerchantDelivery = (deliveryType == 'merchant');
-
-    final bool isCanceled = status == 'canceled' || (!isMerchantDelivery && remainingSeconds <= 0 && !isDriverValid && !['processing', 'handover', 'on_the_way', 'delivered'].contains(status));
+    final bool isCanceled = status == 'canceled' || (remainingSeconds <= 0 && status == 'pending' && !isDriverValid && !['processing', 'handover', 'on_the_way', 'delivered'].contains(status));
     final bool isUnpaidOnline = paymentMethod == 'midtrans' && paymentStatus != 'paid' && !isCanceled;
 
     // Map Coordinates
@@ -1932,8 +1931,86 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           ),
                         ],
                       ),
-                    )
-                  else if (!isMerchantDelivery && !isDelivered && !isDriverValid)
+                    ),
+                  // Merchant Pending Confirmation 5-Minute Countdown Card
+                  if (isMerchantDelivery && status == 'pending') ...[
+                    Builder(builder: (context) {
+                      final int mins = remainingSeconds ~/ 60;
+                      final int secs = remainingSeconds % 60;
+                      final String timeStr = '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+                      return Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFF86EFAC)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF16A34A).withValues(alpha: 0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF16A34A)),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Menunggu Konfirmasi Resto...',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF14532D)),
+                                      ),
+                                      Text(
+                                        'Sisa waktu respon merchant: $timeStr',
+                                        style: const TextStyle(fontSize: 10, color: Color(0xFF166534)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFDCFCE7),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    timeStr,
+                                    style: const TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w800, fontSize: 11),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: (remainingSeconds / 300.0).clamp(0.0, 1.0),
+                                backgroundColor: const Color(0xFFF1F5F9),
+                                color: const Color(0xFF16A34A),
+                                minHeight: 4,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              '💡 Pesanan otomatis dibatalkan & saldo dikembalikan jika resto tidak merespon dalam 5 menit.',
+                              style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ] else if (!isMerchantDelivery && !isDelivered && !isDriverValid)
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
