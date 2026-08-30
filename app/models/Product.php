@@ -9,7 +9,7 @@ class Product extends Model
     protected string $table = 'products';
     protected array $fillable = [
         'store_id', 'module_id', 'category_id', 'name', 'barcode', 'description', 'image',
-        'price', 'discount', 'discount_type', 'unit', 'stock', 'is_veg',
+        'price', 'hpp', 'discount', 'discount_type', 'unit', 'stock', 'is_veg',
         'is_recommended', 'status', 'order_count', 'rating', 'reviews_count'
     ];
 

@@ -361,4 +361,50 @@ class MerchantController extends ChangeNotifier {
       return {'success': false, 'message': 'Terjadi kesalahan jaringan saat checkout POS.'};
     }
   }
+
+  /// Cari produk berdasarkan barcode — untuk modal Stok Masuk
+  Future<Map<String, dynamic>> findProductByBarcode(String barcode) async {
+    try {
+      final res = await ApiService.get(
+        '${ApiConstants.vendorFindByBarcode}?barcode=${Uri.encodeComponent(barcode)}',
+      );
+      if (res['success'] == true && res['data'] != null) {
+        return {
+          'success': true,
+          'found': res['data']['found'] == true,
+          'product': res['data']['product'],
+        };
+      }
+    } catch (_) {}
+    return {'success': false, 'found': false, 'product': null};
+  }
+
+  /// Tambah stok masuk + update HPP (markup dipertahankan otomatis)
+  Future<Map<String, dynamic>> stockIn({
+    required int productId,
+    required int qtyIn,
+    double newHpp = 0,
+  }) async {
+    try {
+      final res = await ApiService.post(ApiConstants.vendorStockIn, {
+        'product_id': productId.toString(),
+        'qty_in': qtyIn.toString(),
+        'new_hpp': newHpp.toString(),
+      });
+      if (res['success'] == true) {
+        await fetchProducts(silent: true);
+        return {'success': true, 'data': res['data'], 'message': res['message'] ?? 'Stok berhasil ditambahkan!'};
+      }
+      return {'success': false, 'message': res['message'] ?? 'Gagal menambah stok.'};
+    } catch (_) {
+      return {'success': false, 'message': 'Terjadi kesalahan jaringan.'};
+    }
+  }
+
+  /// Jalankan migrasi HPP sekali di server (panggil saat pertama kali)
+  Future<void> migrateHpp() async {
+    try {
+      await ApiService.get(ApiConstants.vendorMigrateHpp);
+    } catch (_) {}
+  }
 }

@@ -322,6 +322,7 @@ class VendorController extends Controller
             'description'    => sanitize($data['description'] ?? ''),
             'image'          => $imagePath,
             'price'          => (float)($data['price'] ?? 0),
+            'hpp'            => (float)($data['hpp'] ?? 0),
             'discount'       => (float)($data['discount'] ?? 0),
             'discount_type'  => $data['discount_type'] ?? 'percent',
             'unit'           => sanitize($data['unit'] ?? 'porsi'),
@@ -380,6 +381,148 @@ class VendorController extends Controller
             $this->successResponse($newVal ? 'Menu produk diaktifkan di etalase.' : 'Menu produk dinonaktifkan dari etalase.', [
                 'status' => $newVal
             ]);
+        }
+    }
+
+    /**
+     * Stock-In: Tambah stok produk + update HPP + recalculate harga jual
+     * Markup % dipertahankan: price_baru = hpp_baru * (1 + markup%)
+     * POST /vendor/products/stock-in
+     * Body: { product_id, qty_in, new_hpp }
+     */
+    public function stockIn(): void
+    {
+        $userId = auth_id();
+        $store  = $this->storeModel->findByVendorId($userId);
+        if (!$store) {
+            $this->errorResponse('Toko tidak ditemukan.');
+            return;
+        }
+
+        $data      = $this->getPost();
+        $productId = (int)($data['product_id'] ?? 0);
+        $qtyIn     = max(0, (int)($data['qty_in'] ?? 0));
+        $newHpp    = max(0, (float)($data['new_hpp'] ?? 0));
+
+        if ($productId <= 0) {
+            $this->errorResponse('ID produk tidak valid.');
+            return;
+        }
+
+        $product = $this->productModel->find($productId);
+        if (!$product || (int)$product['store_id'] !== (int)$store['id']) {
+            $this->errorResponse('Produk tidak ditemukan di toko Anda.');
+            return;
+        }
+
+        $currentPrice = (float)($product['price'] ?? 0);
+        $currentHpp   = (float)($product['hpp'] ?? 0);
+
+        // Hitung markup saat ini (dari hpp lama)
+        // markup = (price - hpp) / hpp  — jika hpp = 0, markup = 0 (profit = 0)
+        $markupRate = ($currentHpp > 0)
+            ? (($currentPrice - $currentHpp) / $currentHpp)
+            : 0.0;
+
+        // Harga jual baru = hpp_baru * (1 + markup)
+        $newPrice = ($newHpp > 0)
+            ? round($newHpp * (1 + $markupRate))
+            : $currentPrice; // kalau hpp tidak diisi, jangan ubah harga
+
+        // Stok baru = stok lama + qty_in
+        $newStock = max(0, (int)($product['stock'] ?? 0) + $qtyIn);
+
+        $updateData = [
+            'stock' => $newStock,
+        ];
+        if ($newHpp > 0) {
+            $updateData['hpp']   = $newHpp;
+            $updateData['price'] = $newPrice;
+        }
+
+        $this->productModel->update($productId, $updateData);
+
+        $updatedProduct = $this->productModel->find($productId);
+
+        $this->successResponse('Stok & HPP produk berhasil diperbarui!', [
+            'product_id'   => $productId,
+            'product_name' => $product['name'],
+            'qty_added'    => $qtyIn,
+            'new_stock'    => $newStock,
+            'old_hpp'      => $currentHpp,
+            'new_hpp'      => $newHpp > 0 ? $newHpp : $currentHpp,
+            'markup_pct'   => round($markupRate * 100, 2),
+            'old_price'    => $currentPrice,
+            'new_price'    => $newHpp > 0 ? $newPrice : $currentPrice,
+            'product'      => $updatedProduct,
+        ]);
+    }
+
+    /**
+     * Cari produk berdasarkan barcode — untuk modal Stock-In saat scan
+     * GET /vendor/products/find-by-barcode?barcode=xxxx
+     */
+    public function findProductByBarcode(): void
+    {
+        $userId  = auth_id();
+        $store   = $this->storeModel->findByVendorId($userId);
+        if (!$store) {
+            $this->errorResponse('Toko tidak ditemukan.');
+            return;
+        }
+
+        $barcode = trim($_GET['barcode'] ?? '');
+        if (empty($barcode)) {
+            $this->errorResponse('Barcode tidak boleh kosong.');
+            return;
+        }
+
+        $product = Database::fetchOne(
+            "SELECT * FROM `products` WHERE `store_id` = ? AND `barcode` = ? LIMIT 1",
+            [$store['id'], $barcode]
+        );
+
+        if (!$product) {
+            // Coba cari berdasarkan nama jika barcode tidak ketemu
+            $this->successResponse('Produk tidak ditemukan dengan barcode tersebut.', [
+                'found'   => false,
+                'product' => null,
+            ]);
+            return;
+        }
+
+        $product['hpp']   = (float)($product['hpp'] ?? 0);
+        $product['price'] = (float)($product['price'] ?? 0);
+        $product['stock'] = (int)($product['stock'] ?? 0);
+
+        // Hitung markup pct saat ini
+        $markupPct = ($product['hpp'] > 0)
+            ? round((($product['price'] - $product['hpp']) / $product['hpp']) * 100, 2)
+            : 0.0;
+        $product['markup_pct'] = $markupPct;
+
+        $this->successResponse('Produk ditemukan!', [
+            'found'   => true,
+            'product' => $product,
+        ]);
+    }
+
+    /**
+     * One-time migration: Add hpp column to products table
+     * GET /vendor/migrate-hpp
+     */
+    public function migrateHpp(): void
+    {
+        try {
+            $cols = Database::query("SHOW COLUMNS FROM `products` LIKE 'hpp'");
+            if (empty($cols)) {
+                Database::query("ALTER TABLE `products` ADD COLUMN `hpp` DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT 'Harga Pokok Penjualan per unit' AFTER `price`");
+                $this->successResponse('Kolom hpp berhasil ditambahkan ke tabel products!');
+            } else {
+                $this->successResponse('Kolom hpp sudah ada, tidak perlu migrasi ulang.');
+            }
+        } catch (\Exception $e) {
+            $this->errorResponse('Migrasi gagal: ' . $e->getMessage());
         }
     }
 

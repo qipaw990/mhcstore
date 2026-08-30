@@ -143,6 +143,9 @@ class ApiConstants {
   static const String vendorDeleteProduct      = '$domainUrl/vendor/products/delete';
   static const String toggleProductStatus      = '$domainUrl/vendor/products/toggle-status';
   static const String updateProductStock       = '$domainUrl/vendor/products/toggle-status';
+  static const String vendorStockIn            = '$domainUrl/vendor/products/stock-in';
+  static const String vendorFindByBarcode      = '$domainUrl/vendor/products/find-by-barcode';
+  static const String vendorMigrateHpp         = '$domainUrl/vendor/migrate-hpp';
   static const String vendorWallet             = '$domainUrl/vendor/wallet';
   static const String vendorWithdraw           = '$domainUrl/vendor/wallet/withdraw';
   static const String vendorAnalytics          = '$domainUrl/vendor/analytics';
