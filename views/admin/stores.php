@@ -377,6 +377,36 @@
                             <input type="number" step="any" name="longitude" id="storeLng" class="form-control rounded-3" value="107.8340" required onchange="onManualCoordsChange()">
                         </div>
 
+                        <!-- Review Dokumen Pendaftaran (KTP, Logo, Foto Toko) -->
+                        <div class="col-12" id="storeDocsSection">
+                            <div class="p-3 bg-light rounded-4 border">
+                                <div class="fw-bold small text-dark mb-2"><i class="bi bi-images me-1 text-primary"></i> Dokumen Pendaftaran Toko (KTP, Logo, Foto Toko)</div>
+                                <div class="row g-2 text-center">
+                                    <div class="col-4">
+                                        <small class="fw-bold d-block text-muted mb-1" style="font-size: 10.5px;">Foto KTP Pemilik</small>
+                                        <div id="previewKtpBox" class="border rounded-3 p-1 bg-white shadow-2xs" style="height: 85px; display: flex; align-items: center; justify-content: center; cursor: pointer;" title="Klik untuk memperbesar">
+                                            <img id="storeModalKtp" src="" class="img-fluid rounded-2 object-fit-cover w-100 h-100" style="display:none;" onclick="window.open(this.src, '_blank')">
+                                            <span id="noKtpText" class="text-muted small" style="font-size: 10.5px;"><i class="bi bi-card-heading d-block fs-5 text-secondary"></i> Tidak ada KTP</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="fw-bold d-block text-muted mb-1" style="font-size: 10.5px;">Logo Toko</small>
+                                        <div class="border rounded-3 p-1 bg-white shadow-2xs" style="height: 85px; display: flex; align-items: center; justify-content: center; cursor: pointer;" title="Klik untuk memperbesar">
+                                            <img id="storeModalLogo" src="" class="img-fluid rounded-2 object-fit-cover w-100 h-100" style="display:none;" onclick="window.open(this.src, '_blank')">
+                                            <span id="noLogoText" class="text-muted small" style="font-size: 10.5px;"><i class="bi bi-image d-block fs-5 text-secondary"></i> Default Logo</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="fw-bold d-block text-muted mb-1" style="font-size: 10.5px;">Foto Toko / Banner</small>
+                                        <div class="border rounded-3 p-1 bg-white shadow-2xs" style="height: 85px; display: flex; align-items: center; justify-content: center; cursor: pointer;" title="Klik untuk memperbesar">
+                                            <img id="storeModalCover" src="" class="img-fluid rounded-2 object-fit-cover w-100 h-100" style="display:none;" onclick="window.open(this.src, '_blank')">
+                                            <span id="noCoverText" class="text-muted small" style="font-size: 10.5px;"><i class="bi bi-camera d-block fs-5 text-secondary"></i> Default Foto</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="col-md-4">
                             <label class="form-label small fw-bold">Minimal Order (Rp)</label>
                             <input type="number" name="minimum_order" id="storeMinOrder" class="form-control rounded-3" value="10000">
@@ -408,29 +438,48 @@
 let storeModal = null;
 let pickerMap = null;
 let pickerMarker = null;
+let pickerRadar = null;
 
 function initStorePickerMap(lat, lng) {
     const defaultLat = parseFloat(lat) || -6.9840;
     const defaultLng = parseFloat(lng) || 107.8340;
 
     if (!pickerMap) {
-        pickerMap = L.map('store-picker-map').setView([defaultLat, defaultLng], 15);
+        pickerMap = L.map('store-picker-map').setView([defaultLat, defaultLng], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(pickerMap);
         
         pickerMarker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(pickerMap);
+
+        // Radar Delivery Radius Circle (5000m)
+        pickerRadar = L.circle([defaultLat, defaultLng], {
+            radius: 5000,
+            color: '#EE2737',
+            weight: 2,
+            fillColor: '#EE2737',
+            fillOpacity: 0.12,
+            dashArray: '6, 6'
+        }).addTo(pickerMap);
         
+        pickerMarker.on('drag', function (e) {
+            const position = pickerMarker.getLatLng();
+            if (pickerRadar) pickerRadar.setLatLng(position);
+        });
+
         pickerMarker.on('dragend', function (e) {
             const position = pickerMarker.getLatLng();
+            if (pickerRadar) pickerRadar.setLatLng(position);
             updateCoordsFields(position.lat, position.lng, 'Pin Digeser Manual');
         });
 
         pickerMap.on('click', function(e) {
             pickerMarker.setLatLng(e.latlng);
+            if (pickerRadar) pickerRadar.setLatLng(e.latlng);
             updateCoordsFields(e.latlng.lat, e.latlng.lng, 'Titik Peta Dipilih');
         });
     } else {
-        pickerMap.setView([defaultLat, defaultLng], 15);
+        pickerMap.setView([defaultLat, defaultLng], 14);
         pickerMarker.setLatLng([defaultLat, defaultLng]);
+        if (pickerRadar) pickerRadar.setLatLng([defaultLat, defaultLng]);
         setTimeout(() => pickerMap.invalidateSize(), 300);
     }
     updateCoordsFields(defaultLat, defaultLng, 'Inisialisasi');
@@ -592,6 +641,7 @@ function openAddStoreModal() {
     document.getElementById('storeLat').value = '-6.9840';
     document.getElementById('storeLng').value = '107.8340';
     document.getElementById('vendorAccountSection').style.display = 'block';
+    document.getElementById('storeDocsSection').style.display = 'none';
     
     storeModal = new bootstrap.Modal(document.getElementById('storeModal'));
     storeModal.show();
@@ -616,6 +666,49 @@ function openEditStoreModal(store) {
     document.getElementById('storeTime').value = store.delivery_time || '20-30 Menit';
     document.getElementById('storeStatus').value = store.status || 'approved';
     document.getElementById('vendorAccountSection').style.display = 'none';
+    document.getElementById('storeDocsSection').style.display = 'block';
+
+    // Populate Document Previews
+    const imgBase = window.BASE_URL ? window.BASE_URL + '/' : '/';
+    
+    // KTP Preview
+    const ktpImg = document.getElementById('storeModalKtp');
+    const noKtp = document.getElementById('noKtpText');
+    if (store.identity_image && store.identity_image.trim() !== '') {
+        const ktpSrc = store.identity_image.startsWith('http') ? store.identity_image : imgBase + store.identity_image;
+        ktpImg.src = ktpSrc;
+        ktpImg.style.display = 'block';
+        if (noKtp) noKtp.style.display = 'none';
+    } else {
+        ktpImg.style.display = 'none';
+        if (noKtp) noKtp.style.display = 'block';
+    }
+
+    // Logo Preview
+    const logoImg = document.getElementById('storeModalLogo');
+    const noLogo = document.getElementById('noLogoText');
+    if (store.logo && store.logo.trim() !== '') {
+        const logoSrc = store.logo.startsWith('http') ? store.logo : imgBase + store.logo;
+        logoImg.src = logoSrc;
+        logoImg.style.display = 'block';
+        if (noLogo) noLogo.style.display = 'none';
+    } else {
+        logoImg.style.display = 'none';
+        if (noLogo) noLogo.style.display = 'block';
+    }
+
+    // Cover Photo Preview
+    const coverImg = document.getElementById('storeModalCover');
+    const noCover = document.getElementById('noCoverText');
+    if (store.cover_photo && store.cover_photo.trim() !== '') {
+        const coverSrc = store.cover_photo.startsWith('http') ? store.cover_photo : imgBase + store.cover_photo;
+        coverImg.src = coverSrc;
+        coverImg.style.display = 'block';
+        if (noCover) noCover.style.display = 'none';
+    } else {
+        coverImg.style.display = 'none';
+        if (noCover) noCover.style.display = 'block';
+    }
 
     storeModal = new bootstrap.Modal(document.getElementById('storeModal'));
     storeModal.show();

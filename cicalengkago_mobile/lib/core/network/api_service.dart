@@ -212,6 +212,49 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> postMultipartFiles(
+    String url,
+    Map<String, String> fields,
+    Map<String, String> files,
+  ) async {
+    try {
+      final cookie = await _getSavedCookie();
+      final token = await _getSavedToken();
+      final userId = await _getSavedUserId();
+      final guestSessionId = await _getGuestSessionId();
+
+      final request = http.MultipartRequest('POST', Uri.parse(url));
+      request.headers.addAll({
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        if (cookie != null && cookie.isNotEmpty) 'Cookie': cookie,
+        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        if (userId != null && userId.isNotEmpty) 'X-User-ID': userId,
+        'X-Session-ID': guestSessionId,
+      });
+
+      final Map<String, String> updatedFields = Map.from(fields);
+      if (userId != null && userId.isNotEmpty && !updatedFields.containsKey('user_id')) {
+        updatedFields['user_id'] = userId;
+      }
+      request.fields.addAll(updatedFields);
+
+      for (final entry in files.entries) {
+        if (entry.value.isNotEmpty) {
+          final mf = await http.MultipartFile.fromPath(entry.key, entry.value);
+          request.files.add(mf);
+        }
+      }
+
+      final streamed = await request.send().timeout(const Duration(seconds: 30));
+      final response = await http.Response.fromStream(streamed);
+      await _saveCookiesFromResponse(response);
+      return _parseResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Kesalahan koneksi: $e'};
+    }
+  }
+
   // ── Parse response body ────────────────────────────────────────────
   static Map<String, dynamic> _parseResponse(http.Response response) {
     try {

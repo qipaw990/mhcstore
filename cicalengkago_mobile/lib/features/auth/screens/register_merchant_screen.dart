@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
@@ -33,6 +35,10 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
   bool _isSuccessPending = false;
   String _registeredStoreName = '';
 
+  File? _ktpFile;
+  File? _logoFile;
+  File? _coverFile;
+
   final List<Map<String, String>> _modules = [
     {'id': '1', 'name': 'Kuliner / Resto / Makanan'},
     {'id': '2', 'name': 'Mart / Sembako / Toko'},
@@ -52,6 +58,45 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
     _latCtrl.dispose();
     _lngCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage(String type) async {
+    final picker = ImagePicker();
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt_rounded, color: AppTheme.primaryRed),
+                title: const Text('Ambil Foto Kamera', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_rounded, color: Color(0xFF2563EB)),
+                title: const Text('Pilih dari Galeri', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    final picked = await picker.pickImage(source: source, maxWidth: 1000, imageQuality: 80);
+    if (picked != null) {
+      setState(() {
+        if (type == 'ktp') _ktpFile = File(picked.path);
+        if (type == 'logo') _logoFile = File(picked.path);
+        if (type == 'cover') _coverFile = File(picked.path);
+      });
+    }
   }
 
   Future<void> _detectGps() async {
@@ -155,7 +200,7 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
                           ),
                           SizedBox(height: 3),
                           Text(
-                            'Jangkau ribuan pelanggan di Cicalengka & sekitarnya dengan sistem delivery instan.',
+                            'Lengkapi dokumen KTP, foto toko, & radar pengantaran untuk mulai berjualan.',
                             style: TextStyle(fontSize: 11, color: Color(0xFFFCA5A5), height: 1.3),
                           ),
                         ],
@@ -166,8 +211,8 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
               ),
               const SizedBox(height: 18),
 
-              // ── SEKSI 1: DATA PEMILIK TOKO ──
-              _buildSectionTitle(Icons.person_rounded, '1. Informasi Pemilik Toko'),
+              // ── SEKSI 1: DATA PEMILIK & FOTO KTP ──
+              _buildSectionTitle(Icons.person_rounded, '1. Informasi Pemilik & KTP'),
               const SizedBox(height: 10),
               Container(
                 padding: const EdgeInsets.all(14),
@@ -217,13 +262,24 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 14),
+
+                    // Upload KTP Box
+                    _buildLabel('Foto KTP Pemilik Toko *'),
+                    _buildPhotoUploadBox(
+                      file: _ktpFile,
+                      icon: Icons.card_membership_rounded,
+                      title: 'Upload Foto KTP Pemilik',
+                      subtitle: 'Wajib untuk verifikasi identitas pemilik usaha',
+                      onTap: () => _pickImage('ktp'),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 18),
 
-              // ── SEKSI 2: DATA TOKO / RESTO ──
-              _buildSectionTitle(Icons.storefront_rounded, '2. Profil Usaha & Toko'),
+              // ── SEKSI 2: PROFIL USAHA & FOTO TOKO ──
+              _buildSectionTitle(Icons.storefront_rounded, '2. Profil Usaha & Foto Toko'),
               const SizedBox(height: 10),
               Container(
                 padding: const EdgeInsets.all(14),
@@ -267,10 +323,130 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
                       validator: (v) => (v == null || v.trim().isEmpty) ? 'Alamat lengkap toko wajib diisi' : null,
                       decoration: _inputDecoration('Jl. Raya Cicalengka No. ..., Patokan: ...', Icons.location_on_outlined),
                     ),
+                    const SizedBox(height: 14),
+
+                    // Upload Logo & Foto Toko
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLabel('Logo Toko *'),
+                              _buildPhotoUploadBox(
+                                file: _logoFile,
+                                icon: Icons.image_outlined,
+                                title: 'Logo Toko',
+                                subtitle: 'Avatar bulat',
+                                height: 95,
+                                onTap: () => _pickImage('logo'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLabel('Foto Depan Toko *'),
+                              _buildPhotoUploadBox(
+                                file: _coverFile,
+                                icon: Icons.camera_alt_outlined,
+                                title: 'Foto Toko',
+                                subtitle: 'Tampak depan',
+                                height: 95,
+                                onTap: () => _pickImage('cover'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              // ── SEKSI 3: RADAR DELIVERY & GPS KALIBRASI ──
+              _buildSectionTitle(Icons.radar_rounded, '3. Radar Delivery & Kalibrasi GPS'),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Radar Visualizer Card
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: const [
+                                  Icon(Icons.radar_rounded, color: Color(0xFFEF4444), size: 20),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Radar Jangkauan Antar',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryRed,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text(
+                                  'Radius 5 KM',
+                                  style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.broadcast_on_home_rounded, color: Color(0xFF38BDF8), size: 18),
+                              ),
+                              const SizedBox(width: 10),
+                              const Expanded(
+                                child: Text(
+                                  'Pesanan pelanggan dalam radius radar 5 km akan langsung tersambung otomatis ke toko Anda.',
+                                  style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8), height: 1.3),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 12),
 
-                    // GPS Calibration
-                    _buildLabel('Kalibrasi Koordinat GPS Toko'),
+                    // Coordinates Inputs
                     Row(
                       children: [
                         Expanded(
@@ -292,21 +468,24 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
+
+                    // GPS Button
                     OutlinedButton.icon(
                       onPressed: _isDetectingGps ? null : _detectGps,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF2563EB),
                         side: const BorderSide(color: Color(0xFF93C5FD)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                        minimumSize: const Size(double.infinity, 42),
                       ),
                       icon: _isDetectingGps
                           ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                           : const Icon(Icons.my_location_rounded, size: 16),
                       label: Text(
-                        _isDetectingGps ? 'Mendeteksi Lokasi GPS...' : '📍 Kalibrasi GPS Lokasi Toko Saat Ini',
-                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                        _isDetectingGps ? 'Mendeteksi Koordinat GPS...' : '📍 Kalibrasi GPS Titik Toko Saat Ini',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
@@ -329,7 +508,7 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Pendaftaran Anda akan direview oleh Tim Admin CicalengkaGO sebelum toko dapat dibuka untuk menerima pesanan pelanggan.',
+                        'Dokumen KTP, Logo, Foto Toko, dan Titik Lokasi akan diperiksa oleh Tim Admin CicalengkaGO sebelum toko dapat dibuka untuk menerima pesanan.',
                         style: TextStyle(fontSize: 11, color: Color(0xFF92400E), height: 1.3, fontWeight: FontWeight.w500),
                       ),
                     ),
@@ -340,12 +519,19 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
 
               // Submit Button
               UberPillButton(
-                label: authCtrl.isLoading ? 'Memproses Pendaftaran...' : 'Daftarkan Mitra Toko Sekarang',
-                icon: Icons.check_circle_rounded,
+                label: authCtrl.isLoading ? 'Memproses Pendaftaran...' : 'Ajukan Pendaftaran Toko',
+                icon: Icons.send_rounded,
                 onPressed: authCtrl.isLoading
                     ? null
                     : () async {
                         if (!_formKey.currentState!.validate()) return;
+
+                        if (_ktpFile == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Harap unggah Foto KTP Pemilik Toko.'), backgroundColor: AppTheme.primaryRed),
+                          );
+                          return;
+                        }
 
                         final res = await authCtrl.registerMerchant(
                           name: _nameCtrl.text.trim(),
@@ -358,6 +544,9 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
                           moduleId: _selectedModuleId,
                           latitude: _latCtrl.text.trim(),
                           longitude: _lngCtrl.text.trim(),
+                          ktpPath: _ktpFile?.path,
+                          logoPath: _logoFile?.path,
+                          coverPath: _coverFile?.path,
                         );
 
                         if (res['success'] == true && mounted) {
@@ -376,6 +565,56 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPhotoUploadBox({
+    required File? file,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    double height = 110,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: height,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: file != null ? const Color(0xFF16A34A) : const Color(0xFFCBD5E1), width: 1.5),
+        ),
+        child: file != null
+            ? Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.file(file, width: double.infinity, height: double.infinity, fit: BoxFit.cover),
+                  ),
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                      child: const Icon(Icons.edit_rounded, color: Colors.white, size: 14),
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 24, color: const Color(0xFF64748B)),
+                  const SizedBox(height: 4),
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF1E293B))),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8))),
+                ],
+              ),
       ),
     );
   }
@@ -411,13 +650,13 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Text(
-                  '⏳ Menunggu Review Tim Admin',
+                  '⏳ Menunggu Review Dokumen Admin',
                   style: TextStyle(color: Color(0xFFB45309), fontSize: 11.5, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 16),
               Text(
-                'Terima kasih telah mendaftarkan "$_registeredStoreName". Akun Anda sedang dalam proses peninjauan oleh Tim Admin CicalengkaGO.',
+                'Dokumen KTP, Logo, Foto Toko, dan Radar Lokasi "$_registeredStoreName" sedang diperiksa oleh Tim Admin CicalengkaGO.',
                 style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.4),
                 textAlign: TextAlign.center,
               ),

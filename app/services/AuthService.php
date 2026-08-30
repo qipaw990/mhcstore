@@ -338,24 +338,45 @@ class AuthService
         $lat = !empty($data['latitude']) ? (float)$data['latitude'] : -6.9840;
         $lng = !empty($data['longitude']) ? (float)$data['longitude'] : 107.8340;
 
+        // Handle Photo Uploads (KTP, Logo, Foto Toko)
+        $logoPath = $data['logo'] ?? 'assets/images/stores/default.jpg';
+        if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+            $up = upload_image($_FILES['logo'], 'stores');
+            if ($up) $logoPath = $up;
+        }
+
+        $coverPath = $data['cover_photo'] ?? 'assets/images/stores/default_cover.jpg';
+        if (isset($_FILES['cover_photo']) && $_FILES['cover_photo']['error'] === UPLOAD_ERR_OK) {
+            $up = upload_image($_FILES['cover_photo'], 'stores');
+            if ($up) $coverPath = $up;
+        }
+
+        $ktpPath = $data['identity_image'] ?? null;
+        if (isset($_FILES['identity_image']) && $_FILES['identity_image']['error'] === UPLOAD_ERR_OK) {
+            $up = upload_image($_FILES['identity_image'], 'ktp');
+            if ($up) $ktpPath = $up;
+        }
+
         $storeId = (new \App\Models\Store())->create([
-            'vendor_id'     => $userId,
-            'module_id'     => $moduleId,
-            'zone_id'       => $zoneId,
-            'name'          => $storeName,
-            'phone'         => $storePhone,
-            'email'         => sanitize($data['email']),
-            'logo'          => 'assets/images/stores/default.jpg',
-            'address'       => $storeAddress,
-            'latitude'      => $lat,
-            'longitude'     => $lng,
-            'minimum_order' => 10000.00,
-            'delivery_time' => '20-30 Menit',
-            'is_open'       => 0,
-            'status'        => 'pending', // Under admin review
-            'rating'        => 5.0,
-            'reviews_count' => 0,
-            'order_count'   => 0
+            'vendor_id'      => $userId,
+            'module_id'      => $moduleId,
+            'zone_id'        => $zoneId,
+            'name'           => $storeName,
+            'phone'          => $storePhone,
+            'email'          => sanitize($data['email']),
+            'logo'           => $logoPath,
+            'cover_photo'    => $coverPath,
+            'identity_image' => $ktpPath,
+            'address'        => $storeAddress,
+            'latitude'       => $lat,
+            'longitude'      => $lng,
+            'minimum_order'  => 10000.00,
+            'delivery_time'  => '20-30 Menit',
+            'is_open'        => 0,
+            'status'         => 'pending', // Under admin review
+            'rating'         => 5.0,
+            'reviews_count'  => 0,
+            'order_count'    => 0
         ]);
 
         $store = (new \App\Models\Store())->find($storeId);

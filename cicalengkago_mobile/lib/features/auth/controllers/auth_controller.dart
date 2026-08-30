@@ -212,12 +212,15 @@ class AuthController extends ChangeNotifier {
     String? moduleId,
     String? latitude,
     String? longitude,
+    String? ktpPath,
+    String? logoPath,
+    String? coverPath,
   }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
-    final response = await ApiService.postForm(ApiConstants.vendorRegister, {
+    final fields = <String, String>{
       'name': name,
       'email': email,
       'phone': phone,
@@ -228,7 +231,16 @@ class AuthController extends ChangeNotifier {
       'module_id': moduleId ?? '1',
       'latitude': latitude ?? '-6.9840',
       'longitude': longitude ?? '107.8340',
-    });
+    };
+
+    final files = <String, String>{};
+    if (ktpPath != null && ktpPath.isNotEmpty) files['identity_image'] = ktpPath;
+    if (logoPath != null && logoPath.isNotEmpty) files['logo'] = logoPath;
+    if (coverPath != null && coverPath.isNotEmpty) files['cover_photo'] = coverPath;
+
+    final response = files.isNotEmpty
+        ? await ApiService.postMultipartFiles(ApiConstants.vendorRegister, fields, files)
+        : await ApiService.postForm(ApiConstants.vendorRegister, fields);
 
     _isLoading = false;
     notifyListeners();
