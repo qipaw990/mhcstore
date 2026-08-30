@@ -287,6 +287,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         ? Map<String, dynamic>.from(live['batch_info'] as Map)
         : (order['batch_stores'] != null ? <String, dynamic>{'is_multi_pickup': true} : null);
 
+    final String deliveryType = (order['delivery_type'] ?? live['delivery_type'] ?? '').toString().toLowerCase();
+    final double distKm = double.tryParse(order['distance_km']?.toString() ?? live['distance_km']?.toString() ?? '') ?? 999.0;
+    final bool isMerchantDelivery = (deliveryType == 'merchant') || (deliveryType != 'driver' && !isDriverValid && distKm <= 0.30) || (deliveryType.isEmpty && !isDriverValid);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -310,7 +314,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           Center(
             child: Padding(
               padding: const EdgeInsets.only(right: 14),
-              child: _buildStatusBadge(status, isUnpaidOnline, isCanceled),
+              child: _buildStatusBadge(status, isUnpaidOnline, isCanceled, isMerchant: isMerchantDelivery),
             ),
           ),
         ],
@@ -346,7 +350,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     );
   }
 
-  Widget _buildStatusBadge(String status, bool isUnpaid, bool isCanceled) {
+  Widget _buildStatusBadge(String status, bool isUnpaid, bool isCanceled, {bool isMerchant = false}) {
     if (isCanceled) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -361,25 +365,35 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         child: const Text('MENUNGGU BAYAR', style: TextStyle(color: Color(0xFFD97706), fontSize: 9.5, fontWeight: FontWeight.w900)),
       );
     }
-    final labels = {
-      'pending': 'Mencari Driver',
-      'confirmed': 'Dikonfirmasi Resto',
-      'processing': 'Sedang Disiapkan',
-      'handover': 'Diserahkan ke Kurir',
-      'picked_up': 'Pesanan Diambil Kurir',
-      'on_the_way': 'Kurir Menuju Lokasi',
-      'delivered': 'Pesanan Selesai',
-    };
+    final labels = isMerchant
+        ? {
+            'pending': 'Resto Menerima',
+            'confirmed': 'Dikonfirmasi Resto',
+            'processing': 'Sedang Dimasak',
+            'handover': 'Siap Diantar Toko',
+            'picked_up': 'Diantar Merchant',
+            'on_the_way': 'Merchant Mengantar',
+            'delivered': 'Pesanan Selesai',
+          }
+        : {
+            'pending': 'Mencari Driver',
+            'confirmed': 'Dikonfirmasi Resto',
+            'processing': 'Sedang Disiapkan',
+            'handover': 'Diserahkan ke Kurir',
+            'picked_up': 'Pesanan Diambil Kurir',
+            'on_the_way': 'Kurir Menuju Lokasi',
+            'delivered': 'Pesanan Selesai',
+          };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: status == 'delivered' ? const Color(0xFFDCFCE7) : const Color(0xFFDBEAFE),
+        color: status == 'delivered' ? const Color(0xFFDCFCE7) : (isMerchant ? const Color(0xFFDCFCE7) : const Color(0xFFDBEAFE)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         labels[status] ?? status.toUpperCase(),
         style: TextStyle(
-          color: status == 'delivered' ? const Color(0xFF15803D) : const Color(0xFF1D4ED8),
+          color: status == 'delivered' ? const Color(0xFF15803D) : (isMerchant ? const Color(0xFF15803D) : const Color(0xFF1D4ED8)),
           fontSize: 9.5,
           fontWeight: FontWeight.w900,
         ),
@@ -1326,7 +1340,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         children: [
                           const Icon(Icons.radar_rounded, color: Color(0xFF4ADE80), size: 14),
                           const SizedBox(width: 6),
-                          if (isDriverValid) ...[
+                          if (isMerchantDelivery) ...[
+                            Text(
+                              status == 'on_the_way'
+                                  ? 'Live Status: Merchant Sedang Mengantar 🚶‍♂️'
+                                  : (status == 'processing'
+                                      ? 'Live Status: Resto Sedang Memasak 👨‍🍳'
+                                      : 'Live Status: Resto Menyiapkan Pesanan'),
+                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
+                          ] else if (isDriverValid) ...[
                             Text(
                               '📍 ${driverLat.toStringAsFixed(6)}, ${driverLng.toStringAsFixed(6)}',
                               style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, fontFamily: 'monospace'),
@@ -1337,7 +1360,23 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         ],
                       ),
                     ),
-                    if (isDriverValid)
+                    if (isMerchantDelivery)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF86EFAC)),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.directions_walk_rounded, color: Color(0xFF16A34A), size: 13),
+                            SizedBox(width: 5),
+                            Text('Diantar Merchant', style: TextStyle(color: Color(0xFF16A34A), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      )
+                    else if (isDriverValid)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
@@ -1612,11 +1651,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                   child: const Icon(Icons.shield_rounded, color: Color(0xFFDC2626), size: 20),
                                 ),
                                 const SizedBox(width: 10),
-                                const Expanded(
+                                Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(
+                                      const Text(
                                         'KODE OTP PENERIMAAN',
                                         style: TextStyle(
                                           color: Color(0xFF64748B),
@@ -1626,16 +1665,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                         ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      SizedBox(height: 2),
+                                      const SizedBox(height: 2),
                                       Text(
-                                        'Berikan kode ini kepada kurir',
-                                        style: TextStyle(
-                                          color: Color(0xFF0F172A),
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
+                                         isMerchantDelivery ? 'Berikan kode ini kepada pihak merchant' : 'Berikan kode ini kepada kurir',
+                                         style: const TextStyle(
+                                           color: Color(0xFF0F172A),
+                                           fontSize: 11,
+                                           fontWeight: FontWeight.w600,
+                                         ),
+                                         overflow: TextOverflow.ellipsis,
+                                       ),
                                     ],
                                   ),
                                 ),
@@ -1884,7 +1923,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         ],
                       ),
                     )
-                  else if (!isDelivered)
+                  else if (!isMerchantDelivery && !isDelivered && !isDriverValid)
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(

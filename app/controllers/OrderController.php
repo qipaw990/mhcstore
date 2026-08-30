@@ -649,6 +649,8 @@ class OrderController extends Controller
             'data'    => [
                 'order_code'          => $order['order_code'],
                 'order_status'        => $order['order_status'],
+                'delivery_type'       => $order['delivery_type'] ?? 'driver',
+                'distance_km'         => (float)($order['distance_km'] ?? 0),
                 'cancellation_reason' => $order['cancellation_reason'] ?? '',
                 'payment_status'      => $order['payment_status'],
                 'payment_method'      => $order['payment_method'],
