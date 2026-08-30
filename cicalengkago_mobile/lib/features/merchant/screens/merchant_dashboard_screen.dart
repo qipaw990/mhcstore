@@ -461,19 +461,25 @@ class _MerchantOverviewTab extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          CurrencyFormatter.formatRupiah(todayProfit),
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                            color: todayProfit >= 0 ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
-                            letterSpacing: -0.3,
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            CurrencyFormatter.formatRupiah(todayProfit),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: todayProfit >= 0 ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                              letterSpacing: -0.3,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           todayProfit == 0 ? 'Set HPP untuk lihat profit' : 'Margin ${avgMarginPct.toStringAsFixed(1)}%',
                           style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -524,19 +530,25 @@ class _MerchantOverviewTab extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          CurrencyFormatter.formatRupiah(monthProfit),
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                            color: monthProfit >= 0 ? const Color(0xFF7E22CE) : const Color(0xFFDC2626),
-                            letterSpacing: -0.3,
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            CurrencyFormatter.formatRupiah(monthProfit),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: monthProfit >= 0 ? const Color(0xFF7E22CE) : const Color(0xFFDC2626),
+                              letterSpacing: -0.3,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           monthProfit == 0 ? 'Set HPP produk Anda' : '${DateTime.now().month}/${DateTime.now().year}',
                           style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),

@@ -419,10 +419,33 @@ class VendorController extends Controller
     private function ensureHppColumn(): void
     {
         try {
+            // 1. Kolom hpp di products
             $cols = Database::query("SHOW COLUMNS FROM `products` LIKE 'hpp'");
             if (empty($cols)) {
                 Database::query("ALTER TABLE `products` ADD COLUMN `hpp` DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT 'Harga Pokok Penjualan per unit' AFTER `price`");
                 error_log('[VendorController] Auto-migrated: kolom hpp ditambahkan ke products.');
+            }
+
+            // 2. Kolom hpp_snapshot di order_items (snapshot HPP saat transaksi, untuk akurasi historis)
+            $hppSnap = Database::query("SHOW COLUMNS FROM `order_items` LIKE 'hpp_snapshot'");
+            if (empty($hppSnap)) {
+                Database::query("ALTER TABLE `order_items` ADD COLUMN `hpp_snapshot` DECIMAL(12,2) NOT NULL DEFAULT 0 COMMENT 'HPP saat order dibuat (snapshot)' AFTER `total_price`");
+                error_log('[VendorController] Auto-migrated: kolom hpp_snapshot ditambahkan ke order_items.');
+
+                // Backfill: isi hpp_snapshot dari products.hpp saat ini untuk order lama
+                Database::query("UPDATE `order_items` oi LEFT JOIN `products` p ON oi.product_id = p.id SET oi.hpp_snapshot = COALESCE(p.hpp, 0) WHERE oi.hpp_snapshot = 0");
+                error_log('[VendorController] Backfill hpp_snapshot selesai untuk order lama.');
+            }
+
+            // 3. Kolom product_image_snapshot di order_items (snapshot foto saat transaksi)
+            $imgSnap = Database::query("SHOW COLUMNS FROM `order_items` LIKE 'product_image_snapshot'");
+            if (empty($imgSnap)) {
+                Database::query("ALTER TABLE `order_items` ADD COLUMN `product_image_snapshot` VARCHAR(512) NULL DEFAULT NULL COMMENT 'Foto produk saat order dibuat (snapshot)' AFTER `hpp_snapshot`");
+                error_log('[VendorController] Auto-migrated: kolom product_image_snapshot ditambahkan ke order_items.');
+
+                // Backfill: isi dari products.image untuk order lama
+                Database::query("UPDATE `order_items` oi LEFT JOIN `products` p ON oi.product_id = p.id SET oi.product_image_snapshot = p.image WHERE oi.product_image_snapshot IS NULL AND p.image IS NOT NULL");
+                error_log('[VendorController] Backfill product_image_snapshot selesai untuk order lama.');
             }
         } catch (\Throwable $e) {
             error_log('[VendorController] ensureHppColumn failed: ' . $e->getMessage());
@@ -661,23 +684,22 @@ class VendorController extends Controller
             [$storeId]
         );
 
-        // 1b. Profit dari HPP (berdasarkan order_items JOIN products.hpp)
+        // 1b. Profit dari HPP (pakai hpp_snapshot untuk akurasi historis)
         $profitKpi = Database::fetchOne(
             "SELECT
-                COALESCE(SUM(oi.quantity * (oi.price - COALESCE(p.hpp, 0))), 0) as total_gross_profit,
+                COALESCE(SUM(oi.quantity * (oi.price - oi.hpp_snapshot)), 0) as total_gross_profit,
                 COALESCE(SUM(CASE WHEN MONTH(o.created_at) = MONTH(CURDATE()) AND YEAR(o.created_at) = YEAR(CURDATE())
-                    THEN oi.quantity * (oi.price - COALESCE(p.hpp, 0)) ELSE 0 END), 0) as month_profit,
+                    THEN oi.quantity * (oi.price - oi.hpp_snapshot) ELSE 0 END), 0) as month_profit,
                 COALESCE(SUM(CASE WHEN o.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-                    THEN oi.quantity * (oi.price - COALESCE(p.hpp, 0)) ELSE 0 END), 0) as week_profit,
+                    THEN oi.quantity * (oi.price - oi.hpp_snapshot) ELSE 0 END), 0) as week_profit,
                 COALESCE(SUM(CASE WHEN DATE(o.created_at) = CURDATE()
-                    THEN oi.quantity * (oi.price - COALESCE(p.hpp, 0)) ELSE 0 END), 0) as today_profit,
-                COALESCE(SUM(oi.quantity * COALESCE(p.hpp, 0)), 0) as total_cogs,
+                    THEN oi.quantity * (oi.price - oi.hpp_snapshot) ELSE 0 END), 0) as today_profit,
+                COALESCE(SUM(oi.quantity * oi.hpp_snapshot), 0) as total_cogs,
                 CASE WHEN SUM(oi.quantity * oi.price) > 0
-                    THEN ROUND(SUM(oi.quantity * (oi.price - COALESCE(p.hpp,0))) / SUM(oi.quantity * oi.price) * 100, 2)
+                    THEN ROUND(SUM(oi.quantity * (oi.price - oi.hpp_snapshot)) / SUM(oi.quantity * oi.price) * 100, 2)
                     ELSE 0 END as avg_margin_pct
              FROM `order_items` oi
              JOIN `orders` o ON oi.order_id = o.id
-             LEFT JOIN `products` p ON oi.product_id = p.id
              WHERE o.store_id = ? AND o.order_status = 'delivered'",
             [$storeId]
         );
@@ -705,10 +727,9 @@ class VendorController extends Controller
                     COALESCE(SUM(CASE WHEN o.order_status = 'delivered' THEN o.order_amount * 0.90 ELSE 0 END), 0) as net_revenue,
                     COALESCE(SUM(CASE WHEN o.order_status = 'delivered' THEN o.order_amount ELSE 0 END), 0) as gross_revenue,
                     COALESCE((
-                        SELECT SUM(oi2.quantity * (oi2.price - COALESCE(p2.hpp, 0)))
+                        SELECT SUM(oi2.quantity * (oi2.price - oi2.hpp_snapshot))
                         FROM order_items oi2
                         JOIN orders o2 ON oi2.order_id = o2.id
-                        LEFT JOIN products p2 ON oi2.product_id = p2.id
                         WHERE o2.store_id = ? AND DATE(o2.created_at) = ? AND o2.order_status = 'delivered'
                     ), 0) as profit
                  FROM `orders` o
@@ -728,30 +749,30 @@ class VendorController extends Controller
             ];
         }
 
-        // 3. Menu Terlaris + Profit per item
+        // 3. Menu Terlaris + Profit per item (pakai hpp_snapshot untuk akurasi historis)
         $topProducts = Database::query(
             "SELECT
                 COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name,
-                p.image as product_image,
+                COALESCE(oi.product_image_snapshot, p.image) as product_image,
                 p.price as product_price,
-                COALESCE(p.hpp, 0) as product_hpp,
+                oi.hpp_snapshot as product_hpp,
                 SUM(oi.quantity) as total_sold,
                 SUM(oi.quantity * oi.price) as total_sales_amount,
-                SUM(oi.quantity * (oi.price - COALESCE(p.hpp, 0))) as total_profit,
+                SUM(oi.quantity * (oi.price - oi.hpp_snapshot)) as total_profit,
                 CASE WHEN SUM(oi.quantity * oi.price) > 0
-                    THEN ROUND(SUM(oi.quantity * (oi.price - COALESCE(p.hpp,0))) / SUM(oi.quantity * oi.price) * 100, 2)
+                    THEN ROUND(SUM(oi.quantity * (oi.price - oi.hpp_snapshot)) / SUM(oi.quantity * oi.price) * 100, 2)
                     ELSE 0 END as margin_pct
              FROM `order_items` oi
              JOIN `orders` o ON oi.order_id = o.id
              LEFT JOIN `products` p ON oi.product_id = p.id
              WHERE o.store_id = ? AND o.order_status = 'delivered'
-             GROUP BY oi.product_id, product_name, p.image, p.price, p.hpp
+             GROUP BY oi.product_id, product_name, product_image, p.price, oi.hpp_snapshot
              ORDER BY total_sold DESC
              LIMIT 8",
             [$storeId]
         );
 
-        // 4. Transaksi terakhir dengan profit per pesanan
+        // 4. Transaksi terakhir dengan profit per pesanan (pakai hpp_snapshot)
         $recentOrders = Database::query(
             "SELECT
                 o.id,
@@ -761,15 +782,13 @@ class VendorController extends Controller
                 o.order_status,
                 o.created_at,
                 COALESCE((
-                    SELECT SUM(oi2.quantity * (oi2.price - COALESCE(p2.hpp, 0)))
+                    SELECT SUM(oi2.quantity * (oi2.price - oi2.hpp_snapshot))
                     FROM order_items oi2
-                    LEFT JOIN products p2 ON oi2.product_id = p2.id
                     WHERE oi2.order_id = o.id
                 ), 0) as order_profit,
                 COALESCE((
-                    SELECT SUM(oi2.quantity * COALESCE(p2.hpp, 0))
+                    SELECT SUM(oi2.quantity * oi2.hpp_snapshot)
                     FROM order_items oi2
-                    LEFT JOIN products p2 ON oi2.product_id = p2.id
                     WHERE oi2.order_id = o.id
                 ), 0) as order_cogs
              FROM `orders` o

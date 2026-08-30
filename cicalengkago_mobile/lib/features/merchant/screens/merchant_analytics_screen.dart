@@ -409,13 +409,16 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
     return Column(
       crossAxisAlignment: alignRight ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFFFCA5A5)), maxLines: 1, overflow: TextOverflow.ellipsis),
+        Text(label, style: const TextStyle(fontSize: 10.5, color: Color(0xFFFCA5A5)), maxLines: 1, overflow: TextOverflow.ellipsis),
         const SizedBox(height: 2),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: alignRight ? Alignment.centerRight : Alignment.centerLeft,
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+            maxLines: 1,
+          ),
         ),
       ],
     );
@@ -430,7 +433,7 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
     required Color bgColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -450,30 +453,33 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 4),
               Container(
-                padding: const EdgeInsets.all(5),
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
-                child: Icon(icon, color: iconColor, size: 13),
+                child: Icon(icon, color: iconColor, size: 12),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          const SizedBox(height: 6),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+              maxLines: 1,
+            ),
           ),
           const SizedBox(height: 2),
           Text(
             subtitle,
-            style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
+            style: const TextStyle(fontSize: 9, color: Color(0xFF94A3B8)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -662,14 +668,15 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Row(
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
                   children: [
                     Text(
                       CurrencyFormatter.formatRupiah(totalRev),
                       style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
                     ),
-                    if (hasHpp) ...[
-                      const SizedBox(width: 6),
+                    if (hasHpp)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                         decoration: BoxDecoration(
@@ -685,7 +692,6 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                           ),
                         ),
                       ),
-                    ],
                   ],
                 ),
                 if (hasHpp)
@@ -725,7 +731,7 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
     required IconData icon,
   }) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -740,23 +746,38 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(8)),
-                child: Icon(icon, size: 14, color: color),
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(7)),
+                child: Icon(icon, size: 13, color: color),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Expanded(
-                child: Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                child: Text(
+                  label,
+                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            value,
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: color, letterSpacing: -0.3),
+          const SizedBox(height: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color, letterSpacing: -0.3),
+              maxLines: 1,
+            ),
           ),
           const SizedBox(height: 2),
-          Text(sub, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+          Text(
+            sub,
+            style: const TextStyle(fontSize: 9, color: Color(0xFF94A3B8)),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
@@ -890,7 +911,7 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -907,19 +928,23 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
         children: [
           Row(
             children: [
-              Icon(icon, size: 15, color: iconColor),
-              const SizedBox(width: 6),
-              Text(
-                title,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              Icon(icon, size: 14, color: iconColor),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           if (items.isEmpty)
             const Text(
               'Belum ada data',
-              style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+              style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
             )
           else
             ...items.map((it) {
@@ -944,7 +969,7 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                         Expanded(
                           child: Text(
                             label,
-                            style: const TextStyle(fontSize: 10.5, color: Color(0xFF475569)),
+                            style: const TextStyle(fontSize: 10, color: Color(0xFF475569)),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -952,7 +977,7 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                         const SizedBox(width: 4),
                         Text(
                           '$count (${(percent * 100).toStringAsFixed(0)}%)',
-                          style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                         ),
                       ],
                     ),

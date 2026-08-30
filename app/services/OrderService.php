@@ -197,15 +197,25 @@ class OrderService
 
             // Create Order Items & decrement stock
             foreach ($storeItems as $item) {
+                // Snapshot HPP & foto produk saat order dibuat (untuk akurasi historis)
+                $productSnap = Database::fetchOne(
+                    "SELECT hpp, image FROM `products` WHERE `id` = ? LIMIT 1",
+                    [(int)$item['product_id']]
+                );
+                $hppSnapshot   = (float)($productSnap['hpp'] ?? 0);
+                $imageSnapshot = $productSnap['image'] ?? null;
+
                 Database::insert('order_items', [
-                    'order_id'       => $orderId,
-                    'product_id'     => $item['product_id'],
-                    'product_name'   => $item['product_name'],
-                    'price'          => $item['price'],
-                    'quantity'       => $item['quantity'],
-                    'variation_json' => !empty($item['variation_id']) ? json_encode(['name' => $item['variation_name']]) : null,
-                    'addons_json'    => $item['addons_json'],
-                    'total_price'    => $item['item_total'],
+                    'order_id'               => $orderId,
+                    'product_id'             => $item['product_id'],
+                    'product_name'           => $item['product_name'],
+                    'price'                  => $item['price'],
+                    'quantity'               => $item['quantity'],
+                    'variation_json'         => !empty($item['variation_id']) ? json_encode(['name' => $item['variation_name']]) : null,
+                    'addons_json'            => $item['addons_json'],
+                    'total_price'            => $item['item_total'],
+                    'hpp_snapshot'           => $hppSnapshot,
+                    'product_image_snapshot' => $imageSnapshot,
                 ]);
 
                 Database::execute(
