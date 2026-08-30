@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/uber_pill_button.dart';
+import '../../../core/widgets/location_picker_modal.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/merchant_controller.dart';
 
@@ -549,7 +552,7 @@ class _MerchantWithdrawBottomSheetState extends State<_MerchantWithdrawBottomShe
   }
 }
 
-// ── MODAL: EDIT PROFIL RESTO ──
+// ── MODAL: EDIT PROFIL RESTO & TITIK LOKASI PETA ──
 class _EditStoreProfileBottomSheet extends StatefulWidget {
   final Map<String, dynamic> store;
   const _EditStoreProfileBottomSheet({required this.store});
@@ -563,14 +566,25 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
   late TextEditingController _nameCtrl;
   late TextEditingController _phoneCtrl;
   late TextEditingController _addressCtrl;
+  late double _lat;
+  late double _lng;
+  late final MapController _mapCtrl;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
+    _mapCtrl = MapController();
     _nameCtrl = TextEditingController(text: widget.store['name']?.toString() ?? '');
     _phoneCtrl = TextEditingController(text: widget.store['phone']?.toString() ?? widget.store['vendor_phone']?.toString() ?? '');
     _addressCtrl = TextEditingController(text: widget.store['address']?.toString() ?? '');
+
+    _lat = double.tryParse(widget.store['latitude']?.toString() ?? '') ?? -6.9840;
+    _lng = double.tryParse(widget.store['longitude']?.toString() ?? '') ?? 107.8340;
+    if (_lat == 0 || _lng == 0) {
+      _lat = -6.9840;
+      _lng = 107.8340;
+    }
   }
 
   @override
@@ -578,12 +592,36 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
     _addressCtrl.dispose();
+    _mapCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _openMapPicker() async {
+    final result = await LocationPickerModal.show(
+      context,
+      initialLat: _lat,
+      initialLng: _lng,
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _lat = (result['lat'] as num).toDouble();
+        _lng = (result['lng'] as num).toDouble();
+        final addr = result['address']?.toString() ?? '';
+        if (addr.isNotEmpty && (_addressCtrl.text.isEmpty || _addressCtrl.text == 'Cicalengka, Kab. Bandung')) {
+          _addressCtrl.text = addr;
+        }
+      });
+      try {
+        _mapCtrl.move(LatLng(_lat, _lng), 16.0);
+      } catch (_) {}
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.90),
       padding: EdgeInsets.only(
         left: 20,
         right: 20,
@@ -596,9 +634,8 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
       ),
       child: Form(
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
+          shrinkWrap: true,
           children: [
             Center(
               child: Container(
@@ -608,9 +645,20 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
               ),
             ),
             const SizedBox(height: 14),
-            const Text(
-              'Edit Profil Resto / Toko',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Edit Profil & Titik Lokasi Resto',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF64748B)),
+                  onPressed: () => Navigator.pop(context),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
             ),
             const Divider(height: 20),
 
@@ -641,10 +689,131 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
               validator: (v) => (v == null || v.trim().isEmpty) ? 'Alamat toko wajib diisi' : null,
               decoration: _inputDecoration('Alamat penjemputan pesanan oleh driver...'),
             ),
+            const SizedBox(height: 14),
+
+            // ── TITIK LOKASI PETA & GESER PIN ──
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Titik Koordinat Toko di Peta (GPS) *',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                ),
+                InkWell(
+                  onTap: _openMapPicker,
+                  child: Row(
+                    children: const [
+                      Icon(Icons.edit_location_alt_rounded, size: 14, color: Color(0xFF2563EB)),
+                      SizedBox(width: 4),
+                      Text(
+                        'Geser Pin di Peta',
+                        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            // Preview Mini Map Card
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                height: 145,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: Stack(
+                  children: [
+                    FlutterMap(
+                      mapController: _mapCtrl,
+                      options: MapOptions(
+                        initialCenter: LatLng(_lat, _lng),
+                        initialZoom: 15.5,
+                        interactionOptions: const InteractionOptions(
+                          flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+                        ),
+                        onPositionChanged: (pos, hasGesture) {
+                          if (hasGesture && pos.center != null) {
+                            setState(() {
+                              _lat = pos.center!.latitude;
+                              _lng = pos.center!.longitude;
+                            });
+                          }
+                        },
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.cicalengkago.cicalengkago_mobile',
+                        ),
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: LatLng(_lat, _lng),
+                              width: 40,
+                              height: 40,
+                              child: const Icon(
+                                Icons.location_on_rounded,
+                                color: Color(0xFFDC2626),
+                                size: 38,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+
+                    // Overlay Action Button to Open Full Interactive Map
+                    Positioned(
+                      bottom: 8,
+                      right: 8,
+                      child: ElevatedButton.icon(
+                        onPressed: _openMapPicker,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0F172A),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          elevation: 3,
+                        ),
+                        icon: const Icon(Icons.fullscreen_rounded, size: 16),
+                        label: const Text('Buka Peta & Geser Pin', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+
+            // Coordinate Info Chip
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.my_location_rounded, size: 14, color: Color(0xFF64748B)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Koordinat: ${_lat.toStringAsFixed(6)}, ${_lng.toStringAsFixed(6)}',
+                      style: const TextStyle(fontSize: 11, fontFamily: 'monospace', color: Color(0xFF334155), fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 18),
 
             UberPillButton(
-              label: _isSaving ? 'Menyimpan...' : 'Simpan Perubahan',
+              label: _isSaving ? 'Menyimpan...' : 'Simpan Profil & Titik Lokasi',
               icon: Icons.check_circle_outline_rounded,
               onPressed: _isSaving
                   ? null
@@ -656,6 +825,8 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                         'store_name': _nameCtrl.text.trim(),
                         'store_phone': _phoneCtrl.text.trim(),
                         'store_address': _addressCtrl.text.trim(),
+                        'latitude': _lat.toString(),
+                        'longitude': _lng.toString(),
                         'name': _nameCtrl.text.trim(),
                         'phone': _phoneCtrl.text.trim(),
                       });
@@ -665,7 +836,7 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                       if (ok && context.mounted) {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Profil resto berhasil diperbarui!'), backgroundColor: Color(0xFF10B981)),
+                          const SnackBar(content: Text('Profil dan titik lokasi resto berhasil diperbarui!'), backgroundColor: Color(0xFF10B981)),
                         );
                       }
                     },
