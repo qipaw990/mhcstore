@@ -199,9 +199,9 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     final authCtrl = context.watch<AuthController>();
     final user = authCtrl.user;
 
-    final walletData = customerCtrl.wallet?['wallet'];
-    final double balance = (walletData?['balance'] != null)
-        ? double.parse(walletData['balance'].toString())
+    final walletData = authCtrl.isLoggedIn ? (customerCtrl.wallet?['wallet'] ?? customerCtrl.wallet) : null;
+    final double balance = (authCtrl.isLoggedIn && walletData != null && walletData['balance'] != null)
+        ? (double.tryParse(walletData['balance'].toString()) ?? 0.0)
         : 0.0;
 
     final cartItemsCount = customerCtrl.cartCount;
@@ -510,7 +510,10 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 20),
-                    onPressed: () => authCtrl.logout(),
+                    onPressed: () {
+                      authCtrl.logout();
+                      context.read<CustomerController>().clearUserData();
+                    },
                     tooltip: 'Keluar',
                   ),
                 )

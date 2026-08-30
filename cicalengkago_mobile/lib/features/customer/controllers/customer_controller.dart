@@ -440,14 +440,30 @@ class CustomerController extends ChangeNotifier {
     return null;
   }
 
+  void clearUserData() {
+    _wallet = null;
+    _cart = null;
+    _orders = [];
+    _profile = null;
+    _notifications = [];
+    _unreadNotifCount = 0;
+    _lastCartError = null;
+    notifyListeners();
+  }
+
   Future<void> fetchWallet() async {
     try {
       final res = await ApiService.get(ApiConstants.wallet);
       if (res['success'] == true && res['data'] != null) {
         _wallet = res['data'] as Map<String, dynamic>;
-        notifyListeners();
+      } else {
+        _wallet = null;
       }
-    } catch (_) {}
+      notifyListeners();
+    } catch (_) {
+      _wallet = null;
+      notifyListeners();
+    }
   }
 
   Future<void> fetchProfile() async {
@@ -465,9 +481,16 @@ class CustomerController extends ChangeNotifier {
             _wallet = data['wallet'] as Map<String, dynamic>;
           }
         }
-        notifyListeners();
+      } else {
+        _profile = null;
+        _wallet = null;
       }
-    } catch (_) {}
+      notifyListeners();
+    } catch (_) {
+      _profile = null;
+      _wallet = null;
+      notifyListeners();
+    }
   }
 
   Future<bool> updateProfile(Map<String, dynamic> data, {String? avatarPath}) async {

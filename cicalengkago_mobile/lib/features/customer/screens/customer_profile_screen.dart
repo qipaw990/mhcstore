@@ -1324,6 +1324,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
             ),
             onPressed: () async {
               Navigator.pop(ctx);
+              context.read<CustomerController>().clearUserData();
               await authCtrl.logout();
               if (context.mounted) {
                 Navigator.pushAndRemoveUntil(
