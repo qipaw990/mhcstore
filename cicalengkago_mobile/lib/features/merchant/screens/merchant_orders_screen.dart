@@ -5,6 +5,7 @@ import '../../../core/utils/currency_formatter.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../common/screens/in_app_chat_modal.dart';
 import '../controllers/merchant_controller.dart';
+import 'merchant_delivery_map_modal.dart';
 
 class MerchantOrdersScreen extends StatefulWidget {
   const MerchantOrdersScreen({super.key});
@@ -394,6 +395,20 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
           icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
           label: const Text('Chat', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
         ),
+        const SizedBox(width: 6),
+
+        // Map Button for Merchant
+        OutlinedButton.icon(
+          onPressed: () => MerchantDeliveryMapModal.show(context, order),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF16A34A),
+            side: const BorderSide(color: Color(0xFF86EFAC)),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+          icon: const Icon(Icons.map_outlined, size: 14),
+          label: const Text('Peta', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+        ),
         const SizedBox(width: 8),
 
         // Main Workflow Action
@@ -495,25 +510,47 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
         ),
       );
     } else if (status == 'on_the_way' && deliveryType == 'merchant') {
-      // Toko sedang mengantar sendiri -> tombol konfirmasi sampai
-      return ElevatedButton.icon(
-        onPressed: () async {
-          final ok = await ctrl.updateOrderStatus(orderId, 'delivered', deliveryType: 'merchant');
-          if (ok && context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Pesanan selesai diantar! Pendapatan telah masuk ke saldo toko 🎉'), backgroundColor: Color(0xFF16A34A)),
-            );
-          }
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF16A34A),
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          elevation: 0,
-        ),
-        icon: const Icon(Icons.check_circle_rounded, size: 15),
-        label: const Text('Konfirmasi Telah Diantar', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+      // Toko sedang mengantar sendiri -> tombol navigasi peta + konfirmasi sampai
+      return Row(
+        children: [
+          Expanded(
+            flex: 5,
+            child: OutlinedButton.icon(
+              onPressed: () => MerchantDeliveryMapModal.show(context, order),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF2563EB),
+                side: const BorderSide(color: Color(0xFF93C5FD)),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(Icons.navigation_rounded, size: 14),
+              label: const Text('Buka Peta', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            flex: 6,
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                final ok = await ctrl.updateOrderStatus(orderId, 'delivered', deliveryType: 'merchant');
+                if (ok && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Pesanan selesai diantar! Pendapatan telah masuk ke saldo toko 🎉'), backgroundColor: Color(0xFF16A34A)),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF16A34A),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                elevation: 0,
+              ),
+              icon: const Icon(Icons.check_circle_rounded, size: 14),
+              label: const Text('Konfirmasi Sampai', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
       );
     } else if (status == 'delivered') {
       return Container(

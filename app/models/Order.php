@@ -241,8 +241,13 @@ class Order extends Model
     public function getStoreOrders(int $storeId): array
     {
         $sql = "SELECT o.*, u.name as customer_name, u.phone as customer_phone,
+                       s.name as store_name, s.address as store_address,
+                       COALESCE(s.latitude, -6.9835) as store_lat,
+                       COALESCE(s.longitude, 107.8335) as store_lng,
+                       s.phone as store_phone,
                        dmu.name as dm_name, dmu.phone as dm_phone
                 FROM `orders` o
+                JOIN `stores` s ON o.store_id = s.id
                 JOIN `users` u ON o.customer_id = u.id
                 LEFT JOIN `delivery_men` dm ON o.delivery_man_id = dm.id
                 LEFT JOIN `users` dmu ON dm.user_id = dmu.id

@@ -2766,6 +2766,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
 
   Widget _buildReviewSection(Map<String, dynamic> order, Map<String, dynamic> live) {
+    final String deliveryType = (order['delivery_type'] ?? live['delivery_type'] ?? 'driver').toString().toLowerCase();
+    final bool isMerchantDelivery = (deliveryType == 'merchant');
+
     final Map? reviewInfo = (live['review_info'] is Map ? live['review_info'] : null) ??
         (order['review_info'] is Map ? order['review_info'] : null);
     final bool hasReviewed = reviewInfo != null && reviewInfo['has_reviewed'] == true;
@@ -2863,8 +2866,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               ),
             ],
 
-            // Courier / Driver Review
-            if (dmReview != null) ...[
+            // Courier / Driver Review (Hanya tampil jika pengantaran oleh driver mitra)
+            if (dmReview != null && !isMerchantDelivery) ...[
               const SizedBox(height: 8),
               _buildSingleReviewCardItem(
                 icon: Icons.two_wheeler_rounded,
@@ -2932,9 +2935,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ),
                 ),
                 const SizedBox(height: 2),
-                const Text(
-                  'Beri rating & ulasan untuk toko dan kurir pengantar.',
-                  style: TextStyle(fontSize: 10.5, color: Color(0xFFB45309)),
+                Text(
+                  isMerchantDelivery ? 'Beri rating & ulasan untuk hidangan menu & pengantaran toko.' : 'Beri rating & ulasan untuk toko dan kurir pengantar.',
+                  style: const TextStyle(fontSize: 10.5, color: Color(0xFFB45309)),
                 ),
                 const SizedBox(height: 8),
                 ElevatedButton.icon(
@@ -3023,6 +3026,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
 
   void _showReviewDialog(BuildContext context, Map<String, dynamic> order) {
+    final String deliveryType = (order['delivery_type'] ?? _liveData?['delivery_type'] ?? _orderData?['delivery_type'] ?? 'driver').toString().toLowerCase();
+    final bool isMerchantDelivery = (deliveryType == 'merchant');
+
     final Map? reviewInfo = (_liveData != null && _liveData!['review_info'] is Map ? _liveData!['review_info'] : null) ??
         (_orderData != null && _orderData!['review_info'] is Map ? _orderData!['review_info'] : null) ??
         (order['review_info'] is Map ? order['review_info'] : null);
@@ -3184,49 +3190,51 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ),
                 ],
 
-                // Driver Review
-                const SizedBox(height: 16),
-                const Divider(height: 1, color: Color(0xFFE2E8F0)),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    const Icon(Icons.two_wheeler_rounded, size: 18, color: Color(0xFF2563EB)),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'Rating Kurir ($driverName)',
-                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        overflow: TextOverflow.ellipsis,
+                // Driver Review (Hanya tampil bila diantar mitra driver)
+                if (!isMerchantDelivery) ...[
+                  const SizedBox(height: 16),
+                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      const Icon(Icons.two_wheeler_rounded, size: 18, color: Color(0xFF2563EB)),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Rating Kurir ($driverName)',
+                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(5, (i) => GestureDetector(
-                    onTap: () => setModalState(() => driverRating = i + 1),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Icon(
-                        i < driverRating ? Icons.star_rounded : Icons.star_outline_rounded,
-                        color: Colors.amber,
-                        size: 34,
-                      ),
-                    ),
-                  )),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: driverCommentCtrl,
-                  maxLines: 2,
-                  decoration: InputDecoration(
-                    hintText: 'Tulis ulasan pelayanan kurir...',
-                    hintStyle: const TextStyle(fontSize: 12),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                    contentPadding: const EdgeInsets.all(12),
+                    ],
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (i) => GestureDetector(
+                      onTap: () => setModalState(() => driverRating = i + 1),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Icon(
+                          i < driverRating ? Icons.star_rounded : Icons.star_outline_rounded,
+                          color: Colors.amber,
+                          size: 34,
+                        ),
+                      ),
+                    )),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: driverCommentCtrl,
+                    maxLines: 2,
+                    decoration: InputDecoration(
+                      hintText: 'Tulis ulasan pelayanan kurir...',
+                      hintStyle: const TextStyle(fontSize: 12),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      contentPadding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                ],
 
                 const SizedBox(height: 20),
                 ElevatedButton(
@@ -3240,9 +3248,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     Navigator.pop(ctx);
                     Map<String, String> bodyPayload = {
                       'order_code': widget.orderCode,
-                      'dm_rating': driverRating.toString(),
-                      'dm_comment': driverCommentCtrl.text,
                     };
+                    if (!isMerchantDelivery) {
+                      bodyPayload['dm_rating'] = driverRating.toString();
+                      bodyPayload['dm_comment'] = driverCommentCtrl.text;
+                    }
 
                     if (isMulti && multiRatings.isNotEmpty) {
                       final multiReviews = batchStores.map((st) {
