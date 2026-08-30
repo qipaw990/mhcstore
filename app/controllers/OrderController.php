@@ -48,13 +48,13 @@ class OrderController extends Controller
         $addresses = Database::query("SELECT * FROM `customer_addresses` WHERE `user_id` = ? ORDER BY `is_default` DESC", [$userId]);
         $coupons = (new Coupon())->where('status', 1);
 
-        // Ambil tarif zona dari store pertama di cart, fallback ke zona id=1
+        // Ambil detail zona (nama, tarif, polygon koordinat) dari store pertama di cart
         $primaryZoneId = 1;
         if (!empty($cartData['stores'])) {
             $firstStore = reset($cartData['stores']);
             $primaryZoneId = (int)($firstStore['zone_id'] ?? 1);
         }
-        $zoneTariff = Zone::getZoneTariff($primaryZoneId);
+        $zoneDetail = Zone::getZoneDetail($primaryZoneId);
 
         $this->view('customer.checkout', [
             'title'        => 'Checkout Pesanan - CicalengkaGO',
@@ -62,7 +62,8 @@ class OrderController extends Controller
             'wallet'       => $wallet,
             'addresses'    => $addresses,
             'coupons'      => $coupons,
-            'zone_tariff'  => $zoneTariff,
+            'zone_tariff'  => $zoneDetail,
+            'zone_detail'  => $zoneDetail,
             'active_tab'   => 'cart'
         ], 'customer_layout');
     }

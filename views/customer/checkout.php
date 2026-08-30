@@ -26,6 +26,49 @@
         <input type="hidden" name="distance_km" id="input-distance" value="1.5">
     </div>
 
+    <!-- Info Skema Tarif & Zona Pengantaran -->
+    <div class="p-3 bg-white border shadow-2xs mb-3 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important; background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);">
+        <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom" style="border-color: #F1F5F9 !important;">
+            <div class="d-flex align-items-center gap-1.5 min-w-0">
+                <i class="bi bi-info-circle-fill text-primary" style="font-size: 14px;"></i>
+                <span class="fw-bold text-dark text-truncate" style="font-size: 12px;">Skema Tarif Zona Pengantaran</span>
+            </div>
+            <span class="badge bg-primary-subtle text-primary fw-bold px-2.5 py-1 rounded-pill flex-shrink-0" style="font-size: 9.5px;">
+                <i class="bi bi-geo-alt-fill me-1"></i><?= htmlspecialchars($zone_detail['name'] ?? 'Zona Cicalengka Raya') ?>
+            </span>
+        </div>
+
+        <div class="row g-2 mb-2">
+            <div class="col-6">
+                <div class="p-2 rounded-3 border bg-white h-100" style="border-color: #E2E8F0 !important;">
+                    <div class="text-muted" style="font-size: 9.5px; line-height: 1.2;">Tarif Dasar (≤ 2.0 Km)</div>
+                    <div class="fw-bold text-success mt-0.5" style="font-size: 12.5px;">
+                        <?= format_rupiah($zone_detail['min_delivery_charge'] ?? 5000) ?>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="p-2 rounded-3 border bg-white h-100" style="border-color: #E2E8F0 !important;">
+                    <div class="text-muted" style="font-size: 9.5px; line-height: 1.2;">Tarif per Km (> 2 Km)</div>
+                    <div class="fw-bold text-primary mt-0.5" style="font-size: 12.5px;">
+                        <?= format_rupiah($zone_detail['per_km_delivery_charge'] ?? 2500) ?> <span class="text-muted fw-normal" style="font-size: 10px;">/ Km</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-2 rounded-3 border bg-white d-flex align-items-center justify-content-between flex-wrap gap-1.5" style="border-color: #E2E8F0 !important;">
+            <div class="d-flex align-items-center gap-1.5">
+                <i class="bi bi-signpost-split text-danger" style="font-size: 13px;"></i>
+                <span class="text-muted" style="font-size: 10.5px;">Jarak Ditempuh:</span>
+                <span class="fw-bold text-dark" id="zone-info-distance" style="font-size: 11.5px;">1.5 Km</span>
+            </div>
+            <div id="zone-info-formula" style="font-size: 10.5px;">
+                <span class="badge bg-success-subtle text-success py-1 px-2.5 rounded-pill fw-bold"><i class="bi bi-check-circle me-1"></i>Tarif Minimum <?= format_rupiah($zone_detail['min_delivery_charge'] ?? 5000) ?> (≤ 2.0 Km)</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Delivery Address Details -->
     <div class="p-3 bg-white border shadow-2xs mb-3 overflow-hidden" style="border-radius: 16px; border-color: #E2E8F0 !important; padding: 14px 16px !important;">
         <div class="mb-2.5">
@@ -188,10 +231,12 @@ const BASE_DELIVERY_FEE = <?= (float)$cart_data['grand_delivery'] ?>;
 const STORE_COUNT       = <?= count($cart_data['stores']) ?>;
 
 // Tarif zona dari database (admin panel)
-const ZONE_MIN_FEE  = <?= (float)($zone_tariff['min_delivery_charge']    ?? 5000) ?>;
-const ZONE_PER_KM   = <?= (float)($zone_tariff['per_km_delivery_charge'] ?? 2500) ?>;
+const ZONE_MIN_FEE  = <?= (float)($zone_detail['min_delivery_charge']    ?? 5000) ?>;
+const ZONE_PER_KM   = <?= (float)($zone_detail['per_km_delivery_charge'] ?? 2500) ?>;
+const ZONE_NAME     = <?= json_encode($zone_detail['name'] ?? 'Zona Cicalengka Raya') ?>;
+const ZONE_POLYGON_COORDS = <?= json_encode($zone_detail['polygon_coordinates'] ?? []) ?>;
 
-let map, customerMarker, storeMarkers = [], routeLine;
+let map, customerMarker, storeMarkers = [], routeLine, zonePolygonLayer = null;
 let mapInitialized = false;
 
 function getSafeAccuratePosition(onSuccess, onError, opts = {}) {
@@ -242,6 +287,25 @@ function _buildMap(initLat, initLng, isGPS) {
            .setView([initLat, initLng], isGPS ? 16 : 14);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    // Render Cakupan Polygon Zona Aktif di Peta
+    if (Array.isArray(ZONE_POLYGON_COORDS) && ZONE_POLYGON_COORDS.length >= 3) {
+        zonePolygonLayer = L.polygon(ZONE_POLYGON_COORDS, {
+            color: '#2563eb',
+            fillColor: '#3b82f6',
+            fillOpacity: 0.14,
+            weight: 2,
+            dashArray: '5, 5'
+        }).addTo(map);
+
+        zonePolygonLayer.bindPopup(`
+            <div style="font-size: 11.5px; line-height: 1.4;">
+                <div class="fw-bold text-primary"><i class="bi bi-shield-check me-1"></i>${ZONE_NAME}</div>
+                <div class="text-muted mt-0.5">Area jangkauan operasional pengantaran kurir</div>
+                <div class="mt-1" style="font-size:10.5px;">Tarif: <b>${formatRupiah(ZONE_MIN_FEE)}</b> (≤ 2 Km) + <b>${formatRupiah(ZONE_PER_KM)}/Km</b></div>
+            </div>
+        `);
+    }
 
     const storeSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
       <defs>
@@ -410,6 +474,20 @@ function recalcFeeAndTotal(distKm) {
     const grandTotal = BASE_SUBTOTAL + totalOngkir - voucher;
     const displayEl = document.getElementById('total-amount-display');
     if (displayEl) displayEl.textContent = formatRupiah(grandTotal);
+
+    // Update card info skema tarif zona
+    const distInfoEl = document.getElementById('zone-info-distance');
+    if (distInfoEl) distInfoEl.textContent = `${distKm.toFixed(1)} Km`;
+
+    const formulaEl = document.getElementById('zone-info-formula');
+    if (formulaEl) {
+        if (distKm <= 2.0) {
+            formulaEl.innerHTML = `<span class="badge bg-success-subtle text-success py-1 px-2.5 rounded-pill fw-bold"><i class="bi bi-check-circle me-1"></i>Tarif Dasar ${formatRupiah(ZONE_MIN_FEE)} (≤ 2.0 Km)</span>`;
+        } else {
+            const extraKm = (distKm - 2.0).toFixed(1);
+            formulaEl.innerHTML = `<span class="badge bg-primary-subtle text-primary py-1 px-2.5 rounded-pill fw-bold"><i class="bi bi-calculator me-1"></i>Dasar ${formatRupiah(ZONE_MIN_FEE)} + (${extraKm} km × ${formatRupiah(ZONE_PER_KM)}) = ${formatRupiah(totalOngkir)}</span>`;
+        }
+    }
 }
 
 function getCurrentLocation(isSilent = false) {

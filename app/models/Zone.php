@@ -45,4 +45,39 @@ class Zone extends Model
         self::$_cache[$zoneId] = $tariff;
         return $tariff;
     }
+
+    /**
+     * Return full detail of a zone including name, tariff, and polygon coordinates.
+     */
+    public static function getZoneDetail(int $zoneId): array
+    {
+        $zone = Database::fetchOne(
+            "SELECT * FROM `zones` WHERE `id` = ? LIMIT 1",
+            [$zoneId]
+        );
+
+        if (!$zone) {
+            $zone = Database::fetchOne("SELECT * FROM `zones` WHERE `status` = 1 ORDER BY `id` ASC LIMIT 1") ?: [];
+        }
+
+        $rawCoords = $zone['coordinates_json'] ?? $zone['coordinates'] ?? '[]';
+        $decoded = is_string($rawCoords) ? json_decode($rawCoords, true) : $rawCoords;
+
+        $coordsList = [];
+        if (isset($decoded['coordinates']) && is_array($decoded['coordinates'])) {
+            $coordsList = $decoded['coordinates'][0] ?? [];
+        } elseif (is_array($decoded)) {
+            $coordsList = $decoded;
+        }
+
+        return [
+            'id'                     => (int)($zone['id'] ?? 1),
+            'name'                   => $zone['name'] ?? 'Zona Cicalengka Raya',
+            'min_delivery_charge'    => (float)($zone['min_delivery_charge'] ?? 5000.00),
+            'per_km_delivery_charge' => (float)($zone['per_km_delivery_charge'] ?? 2500.00),
+            'center_latitude'        => (float)($zone['center_latitude'] ?? -6.9833),
+            'center_longitude'       => (float)($zone['center_longitude'] ?? 107.8339),
+            'polygon_coordinates'    => $coordsList,
+        ];
+    }
 }
