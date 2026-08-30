@@ -1591,20 +1591,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Voice Call Button
-                              IconButton(
-                                constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
-                                padding: const EdgeInsets.all(6),
-                                onPressed: () {
-                                  GlobalCallService.instance.openCallScreen(
-                                    context,
-                                    orderCode: widget.orderCode,
-                                    isIncoming: false,
-                                    callerRole: 'customer',
-                                  );
-                                },
-                                icon: const Icon(Icons.phone_in_talk_rounded, color: Color(0xFF2563EB), size: 18),
-                              ),
                               // In-App Chat Button
                               Stack(
                                 children: [
@@ -2154,28 +2140,25 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                               ],
                             ),
                           ),
-                          if (sPhone.isNotEmpty) ...[
-                            IconButton(
-                              onPressed: () {
-                                String clean = sPhone.replaceAll(RegExp(r'[^0-9]'), '');
-                                if (clean.startsWith('0')) clean = '62${clean.substring(1)}';
-                                final msg = 'Halo $sName, saya pelanggan pesanan #${widget.orderCode} di CicalengkaGO ingin menanyakan pesanan saya.';
-                                launchUrl(Uri.parse('https://wa.me/$clean?text=${Uri.encodeComponent(msg)}'), mode: LaunchMode.externalApplication);
-                              },
-                              icon: const Icon(Icons.chat_rounded, color: Color(0xFF16A34A), size: 18),
-                              tooltip: 'Chat Toko via WhatsApp',
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              onPressed: () => launchUrl(Uri.parse('tel:$sPhone')),
-                              icon: const Icon(Icons.call_rounded, color: Color(0xFF0284C7), size: 18),
-                              tooltip: 'Telepon Toko',
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
-                          ],
+                          IconButton(
+                            onPressed: () {
+                              final authCtrl = context.read<AuthController>();
+                              final uid = int.tryParse(authCtrl.user?['id']?.toString() ?? '0') ?? 0;
+                              final sId = int.tryParse(st['id']?.toString() ?? st['store_id']?.toString() ?? '0') ?? 0;
+                              InAppChatModal.show(
+                                context,
+                                storeId: sId > 0 ? sId : null,
+                                orderCode: sId > 0 ? null : widget.orderCode,
+                                initialStoreName: sName,
+                                currentUserId: uid,
+                                currentUserRole: 'customer',
+                              );
+                            },
+                            icon: const Icon(Icons.chat_bubble_rounded, color: AppTheme.primaryRed, size: 18),
+                            tooltip: 'Chat In-App Toko',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
                         ],
                       ),
                     );
@@ -2237,23 +2220,24 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       ],
                     ),
                   ),
-                  if (storePhone.isNotEmpty) ...[
-                    IconButton(
-                      onPressed: () {
-                        String clean = storePhone.replaceAll(RegExp(r'[^0-9]'), '');
-                        if (clean.startsWith('0')) clean = '62${clean.substring(1)}';
-                        final msg = 'Halo $storeName, saya pelanggan pesanan #${widget.orderCode} di CicalengkaGO ingin menanyakan pesanan saya.';
-                        launchUrl(Uri.parse('https://wa.me/$clean?text=${Uri.encodeComponent(msg)}'), mode: LaunchMode.externalApplication);
-                      },
-                      icon: const Icon(Icons.chat_rounded, color: Color(0xFF16A34A), size: 18),
-                      tooltip: 'Chat WhatsApp Toko',
-                    ),
-                    IconButton(
-                      onPressed: () => launchUrl(Uri.parse('tel:$storePhone')),
-                      icon: const Icon(Icons.call_rounded, color: Color(0xFF0284C7), size: 18),
-                      tooltip: 'Telepon Toko',
-                    ),
-                  ],
+                  IconButton(
+                    onPressed: () {
+                      final authCtrl = context.read<AuthController>();
+                      final uid = int.tryParse(authCtrl.user?['id']?.toString() ?? '0') ?? 0;
+                      final sId = int.tryParse(order['store_id']?.toString() ?? liveStore['id']?.toString() ?? '0') ?? 0;
+                      InAppChatModal.show(
+                        context,
+                        storeId: sId > 0 ? sId : null,
+                        orderCode: sId > 0 ? null : widget.orderCode,
+                        initialStoreName: storeName,
+                        initialStoreLogo: rawStoreLogo,
+                        currentUserId: uid,
+                        currentUserRole: 'customer',
+                      );
+                    },
+                    icon: const Icon(Icons.chat_bubble_rounded, color: AppTheme.primaryRed, size: 18),
+                    tooltip: 'Chat In-App Toko',
+                  ),
                 ],
               ),
             ),

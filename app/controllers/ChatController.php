@@ -251,4 +251,101 @@ class ChatController extends Controller
         $unread = $this->chatModel->getUnreadCountForOrder((int)$order['order_id'], $userId);
         $this->successResponse('OK', ['unread_count' => $unread]);
     }
+
+    /**
+     * Get chat messages between customer and a specific store (Direct In-App Chat)
+     */
+    public function getStoreMessages(): void
+    {
+        $userId = auth_id() ?: (int)($_GET['user_id'] ?? 0);
+        $storeId = (int)($_GET['store_id'] ?? 0);
+        $sinceId = (int)($_GET['since_id'] ?? 0);
+        $markRead = (bool)($_GET['mark_read'] ?? false);
+
+        if ($storeId <= 0) {
+            $this->errorResponse('ID Toko wajib diisi.');
+            return;
+        }
+
+        $storeModel = new \App\Models\Store();
+        $store = $storeModel->findWithDetails($storeId);
+        if (!$store) {
+            $this->errorResponse('Toko tidak ditemukan.');
+            return;
+        }
+
+        if ($markRead && $userId > 0) {
+            $this->chatModel->markStoreMessagesRead($storeId, $userId);
+        }
+
+        $messages = $this->chatModel->getStoreMessages($storeId, $userId, $sinceId);
+
+        $partner = [
+            'name'         => $store['name'] ?? 'Mitra Toko',
+            'role'         => 'store',
+            'role_label'   => 'Mitra Toko / Resto',
+            'avatar'       => $store['logo'] ?? 'assets/images/store-default.png',
+            'phone'        => $store['phone'] ?? $store['vendor_phone'] ?? '',
+            'vehicle_info' => $store['address'] ?? 'Cicalengka, Kab. Bandung'
+        ];
+
+        $this->successResponse('Pesan toko berhasil diambil', [
+            'store_id'     => $storeId,
+            'user_id'      => $userId,
+            'partner'      => $partner,
+            'messages'     => $messages,
+            'unread_count' => 0
+        ]);
+    }
+
+    /**
+     * Send a new message to a specific store (Direct In-App Chat)
+     */
+    public function sendStoreMessage(): void
+    {
+        $userId   = auth_id() ?: 0;
+        $userRole = auth_role() ?: 'customer';
+
+        $data = $this->getPost();
+        if (empty($data['store_id']) && empty($data['message'])) {
+            $raw     = file_get_contents('php://input');
+            $decoded = json_decode($raw, true);
+            if (!empty($decoded)) $data = $decoded;
+        }
+
+        $storeId = (int)($data['store_id'] ?? 0);
+        $message = trim($data['message'] ?? '');
+        $senderId = $userId ?: (int)($data['user_id'] ?? 0);
+
+        if ($storeId <= 0) {
+            $this->errorResponse('ID Toko wajib diisi.');
+            return;
+        }
+
+        if ($message === '') {
+            $this->errorResponse('Pesan tidak boleh kosong.');
+            return;
+        }
+
+        $storeModel = new \App\Models\Store();
+        $store = $storeModel->findWithDetails($storeId);
+        if (!$store) {
+            $this->errorResponse('Toko tidak ditemukan.');
+            return;
+        }
+
+        $receiverId = (int)($store['vendor_id'] ?? 0);
+
+        $msgId = $this->chatModel->saveStoreMessage($storeId, $senderId, $receiverId, $message);
+
+        $this->successResponse('Pesan berhasil dikirim', [
+            'id'             => $msgId,
+            'store_id'       => $storeId,
+            'sender_id'      => $senderId,
+            'receiver_id'    => $receiverId,
+            'message'        => $message,
+            'time_formatted' => date('H:i'),
+            'created_at'     => date('Y-m-d H:i:s')
+        ]);
+    }
 }

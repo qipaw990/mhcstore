@@ -1254,34 +1254,12 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                icon: const Icon(Icons.phone_in_talk_rounded, size: 16),
-                label: const Text('Voice Call', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2563EB),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  shape: const StadiumBorder(),
-                  elevation: 0,
-                ),
-                onPressed: () {
-                  GlobalCallService.instance.openCallScreen(
-                    context,
-                    orderCode: orderCode,
-                    isIncoming: false,
-                    callerRole: 'delivery_man',
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton.icon(
                 icon: const Icon(Icons.chat_bubble_rounded, size: 16),
-                label: const Text('Chat', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                label: const Text('Chat In-App Pelanggan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryRed,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: const StadiumBorder(),
                   elevation: 0,
                 ),

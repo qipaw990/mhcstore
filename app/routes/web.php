@@ -84,6 +84,8 @@ Router::get('/orders/{code}', [OrderController::class, 'showOrder']);
 // In-App Chat Routes — no middleware, auth handled inside controller via order_code
 Router::get('/chats/messages', [ChatController::class, 'getMessages']);
 Router::post('/chats/send', [ChatController::class, 'sendMessage']);
+Router::get('/chats/store-messages', [ChatController::class, 'getStoreMessages']);
+Router::post('/chats/store-send', [ChatController::class, 'sendStoreMessage']);
 Router::post('/chats/read', [ChatController::class, 'markAsRead']);
 Router::get('/chats/unread-count', [ChatController::class, 'unreadCount']);
 

@@ -9,6 +9,8 @@ import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/uber_pill_button.dart';
 import '../../../core/widgets/app_alert.dart';
 import '../controllers/customer_controller.dart';
+import '../../auth/controllers/auth_controller.dart';
+import '../../common/screens/in_app_chat_modal.dart';
 import '../widgets/product_detail_modal.dart';
 import 'cart_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -307,10 +309,18 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                         ),
                         const SizedBox(width: 8),
                         InkWell(
-                          onTap: () => _launchMerchantWhatsApp(
-                            store['phone']?.toString() ?? store['vendor_phone']?.toString(),
-                            store['name']?.toString() ?? 'Mitra Toko',
-                          ),
+                          onTap: () {
+                            final authCtrl = context.read<AuthController>();
+                            final uid = int.tryParse(authCtrl.user?['id']?.toString() ?? '0') ?? 0;
+                            InAppChatModal.show(
+                              context,
+                              storeId: widget.storeId,
+                              initialStoreName: store['name']?.toString(),
+                              initialStoreLogo: (store['logo'] ?? store['cover_photo'])?.toString(),
+                              currentUserId: uid,
+                              currentUserRole: 'customer',
+                            );
+                          },
                           borderRadius: BorderRadius.circular(20),
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -325,7 +335,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                                 Icon(Icons.chat_rounded, size: 12, color: Color(0xFF16A34A)),
                                 SizedBox(width: 4),
                                 Text(
-                                  'Chat Toko',
+                                  'Chat In-App',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,

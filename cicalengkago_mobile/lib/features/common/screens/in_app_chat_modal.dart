@@ -4,21 +4,34 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/services/global_call_service.dart';
 
 class InAppChatModal extends StatefulWidget {
-  final String orderCode;
+  final String? orderCode;
+  final int? storeId;
+  final String? initialStoreName;
+  final String? initialStoreLogo;
   final int currentUserId;
   final String currentUserRole;
 
   const InAppChatModal({
     super.key,
-    required this.orderCode,
+    this.orderCode,
+    this.storeId,
+    this.initialStoreName,
+    this.initialStoreLogo,
     required this.currentUserId,
     required this.currentUserRole,
   });
 
-  static void show(BuildContext context, {required String orderCode, required int currentUserId, required String currentUserRole}) {
+  static void show(
+    BuildContext context, {
+    String? orderCode,
+    int? storeId,
+    String? initialStoreName,
+    String? initialStoreLogo,
+    required int currentUserId,
+    required String currentUserRole,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -29,6 +42,9 @@ class InAppChatModal extends StatefulWidget {
           heightFactor: 0.82,
           child: InAppChatModal(
             orderCode: orderCode,
+            storeId: storeId,
+            initialStoreName: initialStoreName,
+            initialStoreLogo: initialStoreLogo,
             currentUserId: currentUserId,
             currentUserRole: currentUserRole,
           ),
@@ -51,9 +67,18 @@ class _InAppChatModalState extends State<InAppChatModal> {
   bool _isLoading = true;
   bool _isSending = false;
 
+  bool get _isStoreChat => widget.storeId != null && widget.storeId! > 0;
+
   @override
   void initState() {
     super.initState();
+    if (_isStoreChat && widget.initialStoreName != null) {
+      _partnerInfo = {
+        'name': widget.initialStoreName,
+        'role_label': 'Mitra Toko / Resto',
+        'avatar': widget.initialStoreLogo ?? '',
+      };
+    }
     _fetchMessages();
     _startPolling();
   }
@@ -67,7 +92,13 @@ class _InAppChatModalState extends State<InAppChatModal> {
 
   Future<void> _fetchMessages({bool isPoll = false}) async {
     try {
-      final url = '${ApiConstants.baseUrl}/chats/messages?order_code=${widget.orderCode}&mark_read=1&user_id=${widget.currentUserId}&user_role=${widget.currentUserRole}';
+      final String url;
+      if (_isStoreChat) {
+        url = '${ApiConstants.baseUrl}/chats/store-messages?store_id=${widget.storeId}&mark_read=1&user_id=${widget.currentUserId}';
+      } else {
+        url = '${ApiConstants.baseUrl}/chats/messages?order_code=${widget.orderCode ?? ''}&mark_read=1&user_id=${widget.currentUserId}&user_role=${widget.currentUserRole}';
+      }
+
       final res = await http.get(Uri.parse(url));
 
       if (res.statusCode == 200) {
@@ -101,16 +132,30 @@ class _InAppChatModalState extends State<InAppChatModal> {
     _msgCtrl.clear();
 
     try {
-      final url = '${ApiConstants.baseUrl}/chats/send';
-      final res = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'order_code': widget.orderCode,
+      final String url;
+      final Map<String, dynamic> bodyPayload;
+
+      if (_isStoreChat) {
+        url = '${ApiConstants.baseUrl}/chats/store-send';
+        bodyPayload = {
+          'store_id': widget.storeId,
+          'message': text,
+          'user_id': widget.currentUserId,
+        };
+      } else {
+        url = '${ApiConstants.baseUrl}/chats/send';
+        bodyPayload = {
+          'order_code': widget.orderCode ?? '',
           'message': text,
           'user_id': widget.currentUserId,
           'user_role': widget.currentUserRole,
-        }),
+        };
+      }
+
+      final res = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(bodyPayload),
       );
 
       if (res.statusCode == 200) {
@@ -144,8 +189,8 @@ class _InAppChatModalState extends State<InAppChatModal> {
 
   @override
   Widget build(BuildContext context) {
-    final partnerName = _partnerInfo?['name'] ?? 'Partner Pesanan';
-    final partnerRole = _partnerInfo?['role_label'] ?? 'CicalengkaGO';
+    final partnerName = _partnerInfo?['name'] ?? (_isStoreChat ? 'Mitra Toko' : 'Partner Pesanan');
+    final partnerRole = _partnerInfo?['role_label'] ?? (_isStoreChat ? 'Mitra Merchant' : 'CicalengkaGO');
     final partnerAvatar = ApiConstants.formatImageUrl(_partnerInfo?['avatar'] ?? '');
 
     return Container(
@@ -198,26 +243,6 @@ class _InAppChatModalState extends State<InAppChatModal> {
                     ],
                   ),
                 ),
-                // Voice Call Action Button
-                GestureDetector(
-                  onTap: () {
-                    GlobalCallService.instance.openCallScreen(
-                      context,
-                      orderCode: widget.orderCode,
-                      isIncoming: false,
-                      callerRole: widget.currentUserRole,
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.phone_in_talk_rounded, color: Color(0xFF2563EB), size: 18),
-                  ),
-                ),
-                const SizedBox(width: 8),
                 IconButton(
                   icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
                   onPressed: () => Navigator.of(context).pop(),

@@ -95,7 +95,8 @@ class Database
             try {
                 $this->pdo->exec("CREATE TABLE IF NOT EXISTS `chats` (
                   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-                  `order_id` bigint(20) unsigned NOT NULL,
+                  `order_id` bigint(20) unsigned NOT NULL DEFAULT 0,
+                  `store_id` bigint(20) unsigned NOT NULL DEFAULT 0,
                   `sender_id` bigint(20) unsigned NOT NULL,
                   `receiver_id` bigint(20) unsigned NOT NULL DEFAULT 0,
                   `message` text NOT NULL,
@@ -104,8 +105,15 @@ class Database
                   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
                   PRIMARY KEY (`id`),
                   KEY `idx_chat_order` (`order_id`),
+                  KEY `idx_chat_store` (`store_id`),
                   KEY `idx_chat_pair` (`sender_id`,`receiver_id`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+
+                // Add store_id if table already existed without it
+                $cols = $this->pdo->query("SHOW COLUMNS FROM `chats` LIKE 'store_id'")->fetchAll();
+                if (empty($cols)) {
+                    $this->pdo->exec("ALTER TABLE `chats` ADD COLUMN `store_id` bigint(20) unsigned NOT NULL DEFAULT 0 AFTER `order_id`");
+                }
             } catch (Exception $e) {}
 
             // Guarantee withdraw_requests table existence
