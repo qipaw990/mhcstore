@@ -16,6 +16,13 @@ class DriverController extends ChangeNotifier {
   Map<String, dynamic>? _earnings;
   Map<String, dynamic>? _driverProfile;
   List<dynamic> _reviews = [];
+  List<dynamic> _orderHistory = [];
+  bool _isLoadingHistory = false;
+  int _historyDeliveredCount = 0;
+  int _historyCanceledCount = 0;
+  double _historyTotalEarnings = 0.0;
+  Map<String, dynamic>? _selectedOrderDetail;
+  bool _isLoadingOrderDetail = false;
   Timer? _gpsBroadcastTimer;
   Timer? _radarPollTimer;
 
@@ -34,6 +41,13 @@ class DriverController extends ChangeNotifier {
   Map<String, dynamic>? get earnings => _earnings;
   Map<String, dynamic>? get driverProfile => _driverProfile;
   List<dynamic> get reviews => _reviews;
+  List<dynamic> get orderHistory => _orderHistory;
+  bool get isLoadingHistory => _isLoadingHistory;
+  int get historyDeliveredCount => _historyDeliveredCount;
+  int get historyCanceledCount => _historyCanceledCount;
+  double get historyTotalEarnings => _historyTotalEarnings;
+  Map<String, dynamic>? get selectedOrderDetail => _selectedOrderDetail;
+  bool get isLoadingOrderDetail => _isLoadingOrderDetail;
   List<dynamic> get deliveredOrders => (_earnings?['delivered_orders'] is List) ? (_earnings!['delivered_orders'] as List) : [];
 
   // Derived stats from earnings & dashboard
@@ -342,6 +356,50 @@ class DriverController extends ChangeNotifier {
         notifyListeners();
       }
     } catch (_) {}
+  }
+
+  Future<void> fetchOrderHistory({String status = 'all', bool silent = false}) async {
+    if (!silent) {
+      _isLoadingHistory = true;
+      notifyListeners();
+    }
+    try {
+      final uri = '${ApiConstants.driverOrdersHistory}?status=$status';
+      final res = await ApiService.get(uri);
+      if (res['success'] == true && res['data'] != null) {
+        final d = res['data'] as Map<String, dynamic>;
+        _orderHistory = (d['orders'] is List) ? (d['orders'] as List) : [];
+        _historyDeliveredCount = int.tryParse(d['total_delivered']?.toString() ?? '0') ?? 0;
+        _historyCanceledCount = int.tryParse(d['total_canceled']?.toString() ?? '0') ?? 0;
+        _historyTotalEarnings = double.tryParse(d['total_earnings']?.toString() ?? '0') ?? 0.0;
+      }
+    } catch (e) {
+      debugPrint('[DriverController] fetchOrderHistory Error: $e');
+    } finally {
+      _isLoadingHistory = false;
+      notifyListeners();
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchOrderDetail(dynamic orderIdOrCode) async {
+    _isLoadingOrderDetail = true;
+    _selectedOrderDetail = null;
+    notifyListeners();
+
+    try {
+      final uri = '${ApiConstants.driverOrderDetail}?id=$orderIdOrCode&order_code=$orderIdOrCode';
+      final res = await ApiService.get(uri);
+      if (res['success'] == true && res['data'] != null && res['data']['order'] != null) {
+        _selectedOrderDetail = Map<String, dynamic>.from(res['data']['order'] as Map);
+        return _selectedOrderDetail;
+      }
+    } catch (e) {
+      debugPrint('[DriverController] fetchOrderDetail Error: $e');
+    } finally {
+      _isLoadingOrderDetail = false;
+      notifyListeners();
+    }
+    return null;
   }
 
   String? _lastErrorMessage;

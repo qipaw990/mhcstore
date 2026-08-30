@@ -615,7 +615,7 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
               backgroundColor: const Color(0xFF451A03),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             ),
-            onPressed: () => widget.onNavigateTab?.call(2),
+            onPressed: () => widget.onNavigateTab?.call(3),
             child: const Row(
               children: [
                 Text('Rincian', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFFFDE68A))),
@@ -634,7 +634,7 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
         // Dompet Card
         Expanded(
           child: GestureDetector(
-            onTap: () => widget.onNavigateTab?.call(1),
+            onTap: () => widget.onNavigateTab?.call(2),
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -679,45 +679,48 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
 
         // Selesai Card
         Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF1E293B)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Selesai', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8))),
-                    Container(
-                      width: 20,
-                      height: 20,
-                      decoration: const BoxDecoration(color: Color(0xFF064E3B), shape: BoxShape.circle),
-                      child: const Icon(Icons.check_circle_rounded, color: Color(0xFF34D399), size: 11),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text('${driverCtrl.totalOrders} ', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white)),
-                    const Text('Order', style: TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8))),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF064E3B),
-                    borderRadius: BorderRadius.circular(8),
+          child: GestureDetector(
+            onTap: () => widget.onNavigateTab?.call(1),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F172A),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFF1E293B)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Selesai', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8))),
+                      Container(
+                        width: 20,
+                        height: 20,
+                        decoration: const BoxDecoration(color: Color(0xFF064E3B), shape: BoxShape.circle),
+                        child: const Icon(Icons.check_circle_rounded, color: Color(0xFF34D399), size: 11),
+                      ),
+                    ],
                   ),
-                  child: const Text('100% Selesai', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFF34D399))),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text('${driverCtrl.totalOrders} ', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white)),
+                      const Text('Order', style: TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8))),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF064E3B),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text('Lihat Riwayat', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFF34D399))),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

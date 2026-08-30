@@ -811,4 +811,160 @@ class DeliveryController extends Controller
 
         return $this->walletModel->find($driverWallet['id']) ?: $driverWallet;
     }
+
+    public function ordersHistory(): void
+    {
+        $dm = $this->getAuthDriver();
+        if (!$dm) {
+            $this->errorResponse('Driver profile not found.', 404);
+            return;
+        }
+
+        $status = $_GET['status'] ?? 'all';
+        $page   = max(1, (int)($_GET['page'] ?? 1));
+        $limit  = max(10, min(100, (int)($_GET['limit'] ?? 50)));
+        $offset = ($page - 1) * $limit;
+
+        $dmId   = (int)$dm['id'];
+        $userId = (int)$dm['user_id'];
+
+        $whereClause = "(`o`.`delivery_man_id` = {$dmId} OR `o`.`delivery_man_id` = {$userId})";
+        if ($status === 'completed' || $status === 'delivered') {
+            $whereClause .= " AND `o`.`order_status` = 'delivered'";
+        } elseif ($status === 'canceled') {
+            $whereClause .= " AND `o`.`order_status` = 'canceled'";
+        } elseif ($status === 'active') {
+            $whereClause .= " AND `o`.`order_status` IN ('accepted', 'confirmed', 'processing', 'handover', 'picked_up', 'on_the_way')";
+        }
+
+        $sql = "SELECT `o`.*, 
+                       `u`.`name` as `customer_name`, 
+                       `u`.`phone` as `customer_phone`, 
+                       `s`.`name` as `store_name`, 
+                       `s`.`address` as `store_address`,
+                       `s`.`phone` as `store_phone`,
+                       `s`.`latitude` as `store_lat`,
+                       `s`.`longitude` as `store_lng`
+                FROM `orders` `o`
+                LEFT JOIN `users` `u` ON `o`.`customer_id` = `u`.`id`
+                LEFT JOIN `stores` `s` ON `o`.`store_id` = `s`.`id`
+                WHERE {$whereClause}
+                ORDER BY `o`.`id` DESC
+                LIMIT {$limit} OFFSET {$offset}";
+
+        $orders = Database::query($sql) ?: [];
+
+        foreach ($orders as &$order) {
+            if (is_string($order['delivery_address_json'] ?? null)) {
+                $order['delivery_address'] = json_decode($order['delivery_address_json'], true);
+            } elseif (is_string($order['delivery_address'] ?? null)) {
+                $decoded = json_decode($order['delivery_address'], true);
+                if (is_array($decoded)) {
+                    $order['delivery_address'] = $decoded;
+                }
+            }
+
+            $order['items'] = $this->orderModel->getItems((int)$order['id']);
+            $order['items_count'] = count($order['items']);
+
+            if (!empty($order['delivery_batch_id'])) {
+                $this->orderModel->attachMultiStoreDetails($order);
+            }
+        }
+        unset($order);
+
+        $totalDelivered = (int)Database::fetchColumn(
+            "SELECT COUNT(DISTINCT id) FROM `orders` WHERE (`delivery_man_id` = ? OR `delivery_man_id` = ?) AND `order_status` = 'delivered'",
+            [$dmId, $userId]
+        );
+        $totalCanceled = (int)Database::fetchColumn(
+            "SELECT COUNT(DISTINCT id) FROM `orders` WHERE (`delivery_man_id` = ? OR `delivery_man_id` = ?) AND `order_status` = 'canceled'",
+            [$dmId, $userId]
+        );
+        $totalEarnings = (float)Database::fetchColumn(
+            "SELECT COALESCE(SUM(amount), 0) FROM `wallet_transactions` wt 
+             JOIN `wallets` w ON wt.wallet_id = w.id 
+             WHERE w.user_id = ? AND wt.type = 'credit' AND wt.category = 'order_earning'",
+            [$userId]
+        );
+
+        $this->successResponse('Riwayat pesanan driver', [
+            'orders'          => $orders,
+            'total_delivered' => $totalDelivered,
+            'total_canceled'  => $totalCanceled,
+            'total_earnings'  => $totalEarnings,
+            'page'            => $page,
+            'limit'           => $limit,
+        ]);
+    }
+
+    public function orderDetail(): void
+    {
+        $dm = $this->getAuthDriver();
+        if (!$dm) {
+            $this->errorResponse('Driver profile not found.', 404);
+            return;
+        }
+
+        $orderId = (int)($_GET['id'] ?? 0);
+        $orderCode = $_GET['order_code'] ?? '';
+
+        if ($orderId <= 0 && empty($orderCode)) {
+            $this->errorResponse('Order ID atau Order Code dibutuhkan.', 400);
+            return;
+        }
+
+        $condition = $orderId > 0 ? "`o`.`id` = {$orderId}" : "`o`.`order_code` = " . Database::quote($orderCode);
+        $sql = "SELECT `o`.*, 
+                       `u`.`name` as `customer_name`, 
+                       `u`.`phone` as `customer_phone`, 
+                       `s`.`name` as `store_name`, 
+                       `s`.`address` as `store_address`,
+                       `s`.`phone` as `store_phone`,
+                       `s`.`latitude` as `store_lat`,
+                       `s`.`longitude` as `store_lng`
+                FROM `orders` `o`
+                LEFT JOIN `users` `u` ON `o`.`customer_id` = `u`.`id`
+                LEFT JOIN `stores` `s` ON `o`.`store_id` = `s`.`id`
+                WHERE {$condition} LIMIT 1";
+
+        $order = Database::fetchOne($sql);
+        if (!$order) {
+            $this->errorResponse('Pesanan tidak ditemukan.', 404);
+            return;
+        }
+
+        if (is_string($order['delivery_address_json'] ?? null)) {
+            $order['delivery_address'] = json_decode($order['delivery_address_json'], true);
+        } elseif (is_string($order['delivery_address'] ?? null)) {
+            $decoded = json_decode($order['delivery_address'], true);
+            if (is_array($decoded)) {
+                $order['delivery_address'] = $decoded;
+            }
+        }
+
+        $order['items'] = $this->orderModel->getItems((int)$order['id']);
+        if (!empty($order['delivery_batch_id'])) {
+            $this->orderModel->attachMultiStoreDetails($order);
+        }
+
+        $dmWallet = $this->walletModel->getOrCreate((int)$dm['user_id'], 'delivery_man');
+        $earningTx = Database::fetchOne(
+            "SELECT * FROM `wallet_transactions` 
+             WHERE `wallet_id` = ? AND `category` = 'order_earning' 
+               AND (`reference_id` = ? OR `reference_id` = ?) LIMIT 1",
+            [$dmWallet['id'], (string)$order['id'], (string)$order['order_code']]
+        );
+        $order['driver_earning'] = $earningTx ? (float)$earningTx['amount'] : (float)($order['delivery_charge'] ?? 5000);
+
+        $review = Database::fetchOne(
+            "SELECT * FROM `reviews` WHERE (`order_id` = ? OR (`delivery_man_id` = ? AND `order_id` = ?)) LIMIT 1",
+            [$order['id'], $dm['id'], $order['id']]
+        );
+        $order['review'] = $review ?: null;
+
+        $this->successResponse('Detail pesanan driver', [
+            'order' => $order,
+        ]);
+    }
 }

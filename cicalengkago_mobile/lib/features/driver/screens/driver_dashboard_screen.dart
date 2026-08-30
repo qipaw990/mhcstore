@@ -6,6 +6,7 @@ import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/driver_controller.dart';
 import 'driver_radar_screen.dart';
+import 'driver_order_history_screen.dart';
 import 'driver_earnings_screen.dart';
 import 'driver_reviews_screen.dart';
 import 'driver_profile_screen.dart';
@@ -29,6 +30,23 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       ctrl.fetchRadarData();
       ctrl.startRadarPolling();
     });
+  }
+
+  void _onTabSelected(int idx) {
+    setState(() => _currentIndex = idx);
+    final ctrl = context.read<DriverController>();
+    if (idx == 0) {
+      ctrl.fetchRadarData();
+    } else if (idx == 1) {
+      ctrl.fetchOrderHistory();
+    } else if (idx == 2) {
+      ctrl.fetchEarnings();
+    } else if (idx == 3) {
+      ctrl.fetchProfile();
+      ctrl.fetchEarnings();
+    } else if (idx == 4) {
+      ctrl.fetchProfile();
+    }
   }
 
   @override
@@ -105,10 +123,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           // Wallet balance mini chip
           if (driverCtrl.walletBalance > 0)
             GestureDetector(
-              onTap: () {
-                setState(() => _currentIndex = 1);
-                context.read<DriverController>().fetchEarnings();
-              },
+              onTap: () => _onTabSelected(2),
               child: Container(
                 margin: const EdgeInsets.only(right: 12),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -140,17 +155,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
         index: _currentIndex,
         children: [
           DriverRadarScreen(
-            onNavigateTab: (idx) {
-              setState(() => _currentIndex = idx);
-              if (idx == 1) {
-                context.read<DriverController>().fetchEarnings();
-              } else if (idx == 2) {
-                context.read<DriverController>().fetchProfile();
-                context.read<DriverController>().fetchEarnings();
-              } else if (idx == 3) {
-                context.read<DriverController>().fetchProfile();
-              }
-            },
+            onNavigateTab: (idx) => _onTabSelected(idx),
+          ),
+          DriverOrderHistoryScreen(
+            onNavigateTab: (idx) => _onTabSelected(idx),
           ),
           const DriverEarningsScreen(),
           const DriverReviewsScreen(),
@@ -168,23 +176,12 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           currentIndex: _currentIndex,
           selectedItemColor: const Color(0xFFEF4444),
           unselectedItemColor: const Color(0xFF94A3B8),
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10.5),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 10.5),
           type: BottomNavigationBarType.fixed,
           elevation: 0,
           backgroundColor: const Color(0xFF0F172A),
-          onTap: (idx) {
-            setState(() => _currentIndex = idx);
-            // Load respective data when tab is selected
-            if (idx == 1) {
-              context.read<DriverController>().fetchEarnings();
-            } else if (idx == 2) {
-              context.read<DriverController>().fetchProfile();
-              context.read<DriverController>().fetchEarnings();
-            } else if (idx == 3) {
-              context.read<DriverController>().fetchProfile();
-            }
-          },
+          onTap: (idx) => _onTabSelected(idx),
           items: [
             BottomNavigationBarItem(
               icon: (driverCtrl.activeTrip != null)
@@ -227,7 +224,12 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                       ],
                     )
                   : const Icon(Icons.radar_rounded, color: Color(0xFFEF4444)),
-              label: (driverCtrl.activeTrip != null) ? 'Trip Aktif' : 'Radar Order',
+              label: (driverCtrl.activeTrip != null) ? 'Trip Aktif' : 'Radar',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.receipt_long_outlined),
+              activeIcon: Icon(Icons.receipt_long_rounded, color: Color(0xFFEF4444)),
+              label: 'Riwayat',
             ),
             const BottomNavigationBarItem(
               icon: Icon(Icons.account_balance_wallet_outlined),
@@ -242,7 +244,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             const BottomNavigationBarItem(
               icon: Icon(Icons.person_outline_rounded),
               activeIcon: Icon(Icons.person_rounded, color: Color(0xFFEF4444)),
-              label: 'Profil Driver',
+              label: 'Profil',
             ),
           ],
         ),

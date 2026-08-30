@@ -117,6 +117,8 @@ class ApiConstants {
   static const String driverBatchStatus     = '$domainUrl/delivery/batch-status';
   static const String driverEarnings        = '$domainUrl/delivery/earnings';
   static const String driverWithdraw        = '$domainUrl/delivery/withdraw';
+  static const String driverOrdersHistory   = '$domainUrl/delivery/orders';
+  static const String driverOrderDetail     = '$domainUrl/delivery/orders/detail';
   static const String driverProfile         = '$domainUrl/delivery/profile';
   static const String driverUpdateProfile   = '$domainUrl/delivery/profile/update';
 

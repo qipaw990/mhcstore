@@ -115,6 +115,8 @@ Router::group(['prefix' => '/delivery', 'middleware' => ['DeliveryMiddleware']],
     Router::get('/batch-status', [DeliveryController::class, 'getBatchStatus']);
     Router::get('/earnings', [DeliveryController::class, 'earnings']);
     Router::post('/withdraw', [DeliveryController::class, 'requestWithdraw']);
+    Router::get('/orders', [DeliveryController::class, 'ordersHistory']);
+    Router::get('/orders/detail', [DeliveryController::class, 'orderDetail']);
     Router::get('/profile', [DeliveryController::class, 'profile']);
     Router::post('/profile/update', [DeliveryController::class, 'updateProfile']);
 });

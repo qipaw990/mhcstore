@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../auth/screens/splash_screen.dart';
 import '../controllers/driver_controller.dart';
+import 'driver_order_history_screen.dart';
 
 class DriverProfileScreen extends StatefulWidget {
   const DriverProfileScreen({super.key});
@@ -641,6 +642,28 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
         clipBehavior: Clip.antiAlias,
         child: Column(
           children: [
+            ListTile(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (ctx) => const Scaffold(
+                      body: SafeArea(child: DriverOrderHistoryScreen()),
+                    ),
+                  ),
+                );
+              },
+              leading: Container(
+                width: 32,
+                height: 32,
+                decoration: const BoxDecoration(color: Color(0xFF451A03), shape: BoxShape.circle),
+                child: const Icon(Icons.history_rounded, color: Color(0xFFFBBF24), size: 18),
+              ),
+              title: const Text('Riwayat Antaran Pesanan', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white)),
+              subtitle: const Text('Lihat semua orderan selesai & dibatalkan', style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8))),
+              trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF64748B)),
+            ),
+            const Divider(height: 1, color: Color(0xFF1E293B), indent: 50),
             ListTile(
               onTap: () {},
               leading: Container(
