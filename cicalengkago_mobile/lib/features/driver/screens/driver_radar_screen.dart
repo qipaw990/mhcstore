@@ -882,7 +882,38 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
+
+          // Zone & Tariff Info Chip
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFF334155)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.shield_outlined, color: Color(0xFF60A5FA), size: 12),
+                    const SizedBox(width: 4),
+                    Text(
+                      order['zone_name']?.toString() ?? 'Zona Cicalengka Raya',
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF93C5FD)),
+                    ),
+                  ],
+                ),
+                const Text(
+                  'Dasar Rp 5.000 + Rp 2.500/km',
+                  style: TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
 
           // Pickup Location
           Row(

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
@@ -6,7 +7,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
-import '../../../core/widgets/uber_pill_button.dart';
 import '../../../core/widgets/app_alert.dart';
 import '../../../core/widgets/require_auth_widget.dart';
 import '../../../core/services/location_service.dart';
@@ -40,6 +40,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   double _userLat = -6.9835;
   double _userLng = 107.8335;
   String _gpsStatusText = 'Mendeteksi lokasi GPS terkini...';
+
+  double _calculateDistanceKm(double sLat, double sLng, double uLat, double uLng) {
+    if (sLat == 0 || sLng == 0 || uLat == 0 || uLng == 0) return 1.5;
+    const double p = 0.017453292519943295; // Math.PI / 180
+    final double a = 0.5 -
+        math.cos((uLat - sLat) * p) / 2 +
+        math.cos(sLat * p) * math.cos(uLat * p) * (1 - math.cos((uLng - sLng) * p)) / 2;
+    final double dist = 12742 * math.asin(math.sqrt(a)); // 2 * R; R = 6371 km
+    return math.max(0.5, double.parse(dist.toStringAsFixed(2)));
+  }
+
+  double _calcZoneDeliveryFee(double distanceKm, {double minFee = 5000, double perKm = 2500}) {
+    if (distanceKm <= 2.0) return minFee;
+    return (minFee + (distanceKm - 2.0) * perKm).roundToDouble();
+  }
 
   @override
   void initState() {
@@ -225,18 +240,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final cart = customerCtrl.cart;
     final stores = (cart?['stores'] as List<dynamic>?) ?? [];
 
-    double subtotal = customerCtrl.cartSubtotal;
-    double deliveryFee = 0.0;
-    if (cart?['grand_delivery'] != null) {
-      deliveryFee = double.tryParse(cart!['grand_delivery'].toString()) ?? 5000.0;
-    } else if (stores.isNotEmpty) {
-      for (var s in stores) {
-        deliveryFee += double.tryParse(s['delivery_fee']?.toString() ?? '5000') ?? 5000.0;
+    // Calculate dynamic distance from store to GPS location
+    double calculatedDistKm = 1.5;
+    if (stores.isNotEmpty) {
+      final double sLat = double.tryParse(stores[0]['latitude']?.toString() ?? '-6.9835') ?? -6.9835;
+      final double sLng = double.tryParse(stores[0]['longitude']?.toString() ?? '107.8335') ?? 107.8335;
+      if (sLat != 0 && sLng != 0 && _userLat != 0 && _userLng != 0) {
+        calculatedDistKm = _calculateDistanceKm(sLat, sLng, _userLat, _userLng);
       }
-    } else {
-      deliveryFee = 5000.0;
     }
-    if (deliveryFee <= 0) deliveryFee = 5000.0;
+
+    const double zoneMinFee = 5000.0;
+    const double zonePerKm = 2500.0;
+    final double dynamicDeliveryFee = _calcZoneDeliveryFee(calculatedDistKm, minFee: zoneMinFee, perKm: zonePerKm);
+
+    double subtotal = customerCtrl.cartSubtotal;
+    double deliveryFee = dynamicDeliveryFee;
 
     const double serviceFee = 1000.0;
     final double grandTotal = (subtotal + deliveryFee + serviceFee - _voucherDiscount).clamp(0.0, double.infinity);
@@ -379,6 +398,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.primaryRed)),
               ),
             ),
+            const SizedBox(height: 14),
+
+            // Skema Tarif Zona Cicalengka Card (Transparan)
+            _buildZoneTariffCard(calculatedDistKm, zoneMinFee, zonePerKm, dynamicDeliveryFee),
+
             const SizedBox(height: 16),
 
             const Text(
@@ -1160,6 +1184,162 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildZoneTariffCard(double distKm, double minFee, double perKm, double totalOngkir) {
+    final bool isBase = distKm <= 2.0;
+    final double extraKm = isBase ? 0.0 : (distKm - 2.0);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.white, Color(0xFFF8FAFC)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: const [
+                  Icon(Icons.info_outline_rounded, color: Color(0xFF2563EB), size: 16),
+                  SizedBox(width: 6),
+                  Text(
+                    'Skema Tarif Zona Pengantaran',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.shield_rounded, color: Color(0xFF2563EB), size: 10),
+                    SizedBox(width: 3),
+                    Text(
+                      'Zona Cicalengka Raya',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Tarif Dasar (≤ 2.0 Km)', style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B))),
+                      const SizedBox(height: 2),
+                      Text(
+                        CurrencyFormatter.formatRupiah(minFee),
+                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, color: Color(0xFF16A34A)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Tarif per Km (> 2 Km)', style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B))),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${CurrencyFormatter.formatRupiah(perKm)}/Km',
+                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, color: Color(0xFF2563EB)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.alt_route_rounded, color: AppTheme.primaryRed, size: 14),
+                    const SizedBox(width: 5),
+                    const Text('Jarak Rute: ', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                    Text(
+                      '${distKm.toStringAsFixed(1)} Km',
+                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isBase ? const Color(0xFFDCFCE7) : const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: isBase ? const Color(0xFF86EFAC) : const Color(0xFF93C5FD)),
+                  ),
+                  child: Text(
+                    isBase
+                        ? 'Tarif Dasar ${CurrencyFormatter.formatRupiah(minFee)}'
+                        : 'Dasar + (${extraKm.toStringAsFixed(1)} km × ${CurrencyFormatter.formatRupiah(perKm)}) = ${CurrencyFormatter.formatRupiah(totalOngkir)}',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: isBase ? const Color(0xFF15803D) : const Color(0xFF1D4ED8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

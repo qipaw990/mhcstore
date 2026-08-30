@@ -285,7 +285,12 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             customerName: customerName,
             status: status,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
+
+          // Zone & Distance Breakdown Card
+          _buildZoneRouteBreakdownCard(trip, deliveryCharge),
+
+          const SizedBox(height: 14),
 
           // Sequential Itinerary Card (Multi-Store Pickups + Final Customer Destination)
           _buildLocationCard(
@@ -319,6 +324,108 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             orderCode: orderCode,
             deliveryCharge: deliveryCharge,
             pickupStores: pickupStores,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildZoneRouteBreakdownCard(Map<String, dynamic> trip, double deliveryCharge) {
+    final double distKm = double.tryParse(trip['distance_km']?.toString() ?? '1.5') ?? 1.5;
+    final bool isBase = distKm <= 2.0;
+    final double extraKm = isBase ? 0.0 : (distKm - 2.0);
+    final String zoneName = trip['zone_name']?.toString() ?? 'Zona Cicalengka Raya';
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: const [
+                  Icon(Icons.route_rounded, color: Color(0xFF2563EB), size: 16),
+                  SizedBox(width: 6),
+                  Text(
+                    'Rute & Skema Tarif Pengantaran',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                ),
+                child: Text(
+                  zoneName,
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Jarak Tempuh', style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B))),
+                      const SizedBox(height: 1),
+                      Text(
+                        '${distKm.toStringAsFixed(1)} Km',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0FDF4),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Komisi Bersih', style: TextStyle(fontSize: 9.5, color: Color(0xFF166534))),
+                      const SizedBox(height: 1),
+                      Text(
+                        CurrencyFormatter.formatRupiah(deliveryCharge),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            isBase
+                ? '✓ Sesuai tarif dasar zona: Rp 5.000 (≤ 2.0 km)'
+                : '✓ Hitungan: Dasar Rp 5.000 + (${extraKm.toStringAsFixed(1)} km × Rp 2.500) = ${CurrencyFormatter.formatRupiah(deliveryCharge)}',
+            style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
           ),
         ],
       ),
