@@ -152,6 +152,11 @@ class MerchantController extends ChangeNotifier {
   }
 
   Future<bool> toggleStoreOpenStatus(bool status) async {
+    if (_store == null) {
+      _isOpen = false;
+      notifyListeners();
+      return false;
+    }
     _isOpen = status;
     notifyListeners();
 

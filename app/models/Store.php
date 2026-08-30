@@ -65,6 +65,43 @@ class Store extends Model
                 WHERE s.vendor_id = ? 
                 ORDER BY s.id DESC LIMIT 1";
         $store = Database::fetchOne($sql, [$vendorId]);
+
+        // Fallback: Check if store exists by user's phone or email
+        if (!$store && $vendorId > 0) {
+            $user = Database::fetchOne("SELECT id, name, phone, email, avatar FROM `users` WHERE id = ? LIMIT 1", [$vendorId]);
+            if ($user) {
+                $phone = trim($user['phone'] ?? '');
+                $email = trim($user['email'] ?? '');
+                $phoneClean = preg_replace('/[^0-9]/', '', $phone);
+                
+                $fallbackSql = "SELECT s.*, 
+                                       m.name as module_name, m.module_type, 
+                                       z.name as zone_name
+                                FROM `stores` s
+                                LEFT JOIN `modules` m ON s.module_id = m.id
+                                LEFT JOIN `zones` z ON s.zone_id = z.id
+                                WHERE (s.phone = ? AND ? != '') 
+                                   OR (s.email = ? AND ? != '')
+                                   OR (REPLACE(REPLACE(s.phone, '+', ''), '-', '') = ? AND ? != '')
+                                ORDER BY s.id DESC LIMIT 1";
+                $foundStore = Database::fetchOne($fallbackSql, [
+                    $phone, $phone, 
+                    $email, $email, 
+                    $phoneClean, $phoneClean
+                ]);
+
+                if ($foundStore) {
+                    Database::execute("UPDATE `stores` SET `vendor_id` = ? WHERE `id` = ?", [$vendorId, $foundStore['id']]);
+                    $foundStore['vendor_id'] = $vendorId;
+                    $foundStore['vendor_name'] = $user['name'];
+                    $foundStore['vendor_phone'] = $user['phone'];
+                    $foundStore['vendor_email'] = $user['email'];
+                    $foundStore['vendor_avatar'] = $user['avatar'];
+                    $store = $foundStore;
+                }
+            }
+        }
+
         if ($store) {
             attach_store_schedule_data($store, true);
         }

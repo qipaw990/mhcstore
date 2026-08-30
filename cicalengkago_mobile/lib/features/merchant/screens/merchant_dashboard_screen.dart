@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../auth/screens/register_merchant_screen.dart';
 import '../controllers/merchant_controller.dart';
 import 'merchant_orders_screen.dart';
 import 'product_management_screen.dart';
@@ -196,13 +197,106 @@ class _MerchantOverviewTab extends StatelessWidget {
     final processingCount = int.tryParse(stats['processing_count']?.toString() ?? '0') ?? 0;
     final handoverCount = int.tryParse(stats['on_the_way_count']?.toString() ?? '0') ?? 0;
     final deliveredCount = int.tryParse(stats['delivered_count']?.toString() ?? '0') ?? 0;
-    final recentOrders = merchantCtrl.orders.take(5).toList();
+    final store = merchantCtrl.store;
+    final storeStatus = store?['status']?.toString().toLowerCase();
 
     return RefreshIndicator(
       onRefresh: () => merchantCtrl.fetchDashboardData(),
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // ── BANNER JIKA TOKO BELUM DIDAFTARKAN ──
+          if (store == null) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF93C5FD)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: const [
+                      Icon(Icons.storefront_rounded, color: Color(0xFF2563EB), size: 22),
+                      SizedBox(width: 8),
+                      Text(
+                        'Toko Belum Didaftarkan',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E40AF)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Lengkapi data toko dan lokasi usaha Anda untuk mulai menerima pesanan pelanggan di CicalengkaGO.',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF3B82F6), height: 1.35),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const RegisterMerchantScreen()),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2563EB),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                      icon: const Icon(Icons.add_business_rounded, size: 16),
+                      label: const Text('Daftarkan Toko Sekarang', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else if (storeStatus == 'pending') ...[
+            Container(
+              padding: const EdgeInsets.all(14),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFBEB),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFFDE68A)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF59E0B),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.hourglass_top_rounded, color: Colors.white, size: 16),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Pendaftaran ${store['name'] ?? 'Toko'} Sedang Ditinjau',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF92400E)),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Tim Admin CicalengkaGO sedang memverifikasi data usaha Anda.',
+                          style: TextStyle(fontSize: 11, color: Color(0xFFB45309)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           // ── KARTU STATISTIK KEUANGAN HARI INI ──
           Container(
             padding: const EdgeInsets.all(18),
