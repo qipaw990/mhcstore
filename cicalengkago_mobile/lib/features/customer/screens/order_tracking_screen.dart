@@ -765,20 +765,22 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ),
                   const SizedBox(height: 14),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: Colors.white24),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.shield_rounded, color: Color(0xFF86EFAC), size: 14),
-                        SizedBox(width: 6),
+                        const Icon(Icons.shield_rounded, color: Color(0xFF86EFAC), size: 13),
+                        const SizedBox(width: 5),
                         Text(
-                          'Radar Lokasi Dinonaktifkan (Privasi Kurir Terlindungi)',
-                          style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          isMerchantDelivery
+                              ? 'Pengantaran Selesai & Terverifikasi'
+                              : 'Radar Lokasi Selesai (Privasi Aman)',
+                          style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -813,8 +815,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            (batchStores.isNotEmpty && batchStores[0] is Map ? (batchStores[0]['name'] ?? batchStores[0]['store_name']) : null) ?? 'Mitra Resto',
+                            (batchStores.isNotEmpty && batchStores[0] is Map ? (batchStores[0]['name'] ?? batchStores[0]['store_name']) : null) ??
+                                (order['store_name'] ?? (live['store'] is Map ? live['store']['name'] : null)) ??
+                                'Mitra Resto',
                             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 2),
                           const Text('Diantar langsung oleh tim resto (Radius Dekat < 300m)', style: TextStyle(fontSize: 11, color: Color(0xFF15803D))),
