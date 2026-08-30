@@ -1283,10 +1283,9 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               final double price = double.tryParse(prod['price']?.toString() ?? '0') ?? 0;
               final double finalPrice = double.tryParse(prod['final_price']?.toString() ?? price.toString()) ?? price;
               final imgUrl = ApiConstants.formatImageUrl(prod['image']?.toString());
-              final bool storeOpen = prod['store_is_open'] == 1
-                  || prod['store_is_open'] == true
-                  || prod['store_is_open'] == '1'
-                  || prod['is_store_open'] == true;
+              final rawStoreOpen = prod['store_is_open'] ?? prod['is_store_open'] ?? prod['is_currently_open'] ?? prod['is_open'];
+              final bool isStoreClosed = rawStoreOpen == 0 || rawStoreOpen == false || rawStoreOpen == '0' || rawStoreOpen == 'false';
+              final bool storeOpen = (rawStoreOpen == 1 || rawStoreOpen == true || rawStoreOpen == '1' || rawStoreOpen == 'true') && !isStoreClosed;
 
               return GestureDetector(
                 onTap: () {
@@ -1693,10 +1692,9 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             final double finalPrice = double.tryParse(prod['final_price']?.toString() ?? price.toString()) ?? price;
             final imgUrl = ApiConstants.formatImageUrl(prod['image']?.toString());
             final bool hasDiscount = price > finalPrice;
-            final bool storeOpen = prod['store_is_open'] == 1
-                || prod['store_is_open'] == true
-                || prod['store_is_open'] == '1'
-                || prod['is_store_open'] == true;
+            final rawStoreOpen = prod['store_is_open'] ?? prod['is_store_open'] ?? prod['is_currently_open'] ?? prod['is_open'];
+            final bool isStoreClosed = rawStoreOpen == 0 || rawStoreOpen == false || rawStoreOpen == '0' || rawStoreOpen == 'false';
+            final bool storeOpen = (rawStoreOpen == 1 || rawStoreOpen == true || rawStoreOpen == '1' || rawStoreOpen == 'true') && !isStoreClosed;
 
             return Container(
               decoration: BoxDecoration(

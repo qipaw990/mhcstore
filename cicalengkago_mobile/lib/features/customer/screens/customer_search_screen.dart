@@ -630,11 +630,9 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
     bool hasDiscount,
   ) {
     final customerCtrl = context.read<CustomerController>();
-    // Cek status toko — field dari SQL JOIN
-    final storeIsOpen = prod['store_is_open'] == 1
-        || prod['store_is_open'] == true
-        || prod['store_is_open'] == '1'
-        || prod['is_store_open'] == true;
+    final rawStoreOpen = prod['store_is_open'] ?? prod['is_store_open'] ?? prod['is_currently_open'] ?? prod['is_open'];
+    final bool isStoreClosed = rawStoreOpen == 0 || rawStoreOpen == false || rawStoreOpen == '0' || rawStoreOpen == 'false';
+    final bool storeIsOpen = (rawStoreOpen == 1 || rawStoreOpen == true || rawStoreOpen == '1' || rawStoreOpen == 'true') && !isStoreClosed;
 
     return Container(
       decoration: BoxDecoration(

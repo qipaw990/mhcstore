@@ -637,10 +637,9 @@ class _CartScreenState extends State<CartScreen> {
               final double foodPrice = double.tryParse(food['final_price']?.toString() ?? food['price']?.toString() ?? '0') ?? 0.0;
               final String rating = food['rating']?.toString() ?? '4.8';
               final String imgUrl = _getFoodImage(food);
-              final bool storeOpen = food['store_is_open'] == 1
-                  || food['store_is_open'] == true
-                  || food['store_is_open'] == '1'
-                  || food['is_store_open'] == true;
+              final rawStoreOpen = food['store_is_open'] ?? food['is_store_open'] ?? food['is_currently_open'] ?? food['is_open'];
+              final bool isStoreClosed = rawStoreOpen == 0 || rawStoreOpen == false || rawStoreOpen == '0' || rawStoreOpen == 'false';
+              final bool storeOpen = (rawStoreOpen == 1 || rawStoreOpen == true || rawStoreOpen == '1' || rawStoreOpen == 'true') && !isStoreClosed;
 
               return GestureDetector(
                 onTap: () => ProductDetailModal.show(context, food),

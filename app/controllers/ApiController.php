@@ -160,11 +160,12 @@ class ApiController extends Controller
                 WHERE p.status = 1 AND s.status = 'approved' 
                 ORDER BY p.id DESC LIMIT 12
             ");
+            foreach ($recommendedProducts as &$p) {
+                $p['final_price'] = $productModel->calculateFinalPrice($p);
+            }
+            unset($p);
+            $productModel->attachStoreStatus($recommendedProducts);
         }
-        foreach ($recommendedProducts as &$p) {
-            $p['final_price'] = $productModel->calculateFinalPrice($p);
-        }
-        unset($p);
 
         $discountedProducts = \App\Core\Database::query("
             SELECT p.*, s.name as store_name, s.is_open as store_is_open
@@ -177,6 +178,7 @@ class ApiController extends Controller
             $p['final_price'] = $productModel->calculateFinalPrice($p);
         }
         unset($p);
+        $productModel->attachStoreStatus($discountedProducts);
 
         $this->successResponse('Home data berhasil diambil', [
             'modules'             => $modules,

@@ -84,6 +84,8 @@ class CustomerController extends Controller
         foreach ($discountedProducts as &$p) {
             $p['final_price'] = $this->productModel->calculateFinalPrice($p);
         }
+        unset($p);
+        $this->productModel->attachStoreStatus($discountedProducts);
 
         $cartSummary = $this->cartModel->getUserCart($userId, session_id());
         
@@ -209,6 +211,8 @@ class CustomerController extends Controller
                 foreach ($recommendProducts as &$p) {
                     $p['final_price'] = $this->productModel->calculateFinalPrice($p);
                 }
+                unset($p);
+                $this->productModel->attachStoreStatus($recommendProducts);
             }
         }
 

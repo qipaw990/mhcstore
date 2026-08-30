@@ -27,6 +27,9 @@ class Product extends Model
             $product['final_price'] = $this->calculateFinalPrice($product);
             $product['variations'] = Database::query("SELECT * FROM `product_variations` WHERE `product_id` = ?", [$id]);
             $product['addons'] = Database::query("SELECT * FROM `product_addons` WHERE `store_id` = ? AND `status` = 1", [$product['store_id']]);
+            $singleArr = [$product];
+            $this->attachStoreStatus($singleArr);
+            $product = $singleArr[0];
         }
         return $product;
     }
@@ -43,6 +46,8 @@ class Product extends Model
         foreach ($products as &$p) {
             $p['final_price'] = $this->calculateFinalPrice($p);
         }
+        unset($p);
+        $this->attachStoreStatus($products);
         return $products;
     }
 
@@ -59,6 +64,8 @@ class Product extends Model
             $p['final_price'] = $this->calculateFinalPrice($p);
             $p['variations'] = Database::query("SELECT * FROM `product_variations` WHERE `product_id` = ?", [$p['id']]);
         }
+        unset($p);
+        $this->attachStoreStatus($products);
         return $products;
     }
 
@@ -81,7 +88,38 @@ class Product extends Model
         foreach ($products as &$p) {
             $p['final_price'] = $this->calculateFinalPrice($p);
         }
+        unset($p);
+        $this->attachStoreStatus($products);
         return $products;
+    }
+
+    public function attachStoreStatus(array &$products): void
+    {
+        $storeStatusCache = [];
+        foreach ($products as &$p) {
+            $stId = (int)($p['store_id'] ?? 0);
+            if ($stId > 0) {
+                if (!isset($storeStatusCache[$stId])) {
+                    $st = Database::fetchOne("SELECT * FROM `stores` WHERE id = ? LIMIT 1", [$stId]);
+                    if ($st) {
+                        if (function_exists('attach_store_schedule_data')) {
+                            attach_store_schedule_data($st, true);
+                        }
+                        $isCurrentlyOpen = !empty($st['is_currently_open']) || (isset($st['is_open']) && ($st['is_open'] == 1 || $st['is_open'] === true || $st['is_open'] === '1' || $st['is_open'] === 'true'));
+                        if (isset($st['is_open']) && ($st['is_open'] === 0 || $st['is_open'] === '0' || $st['is_open'] === false)) {
+                            $isCurrentlyOpen = false;
+                        }
+                        $storeStatusCache[$stId] = $isCurrentlyOpen;
+                    } else {
+                        $storeStatusCache[$stId] = false;
+                    }
+                }
+                $p['store_is_open'] = $storeStatusCache[$stId] ? 1 : 0;
+                $p['is_store_open'] = $storeStatusCache[$stId];
+                $p['is_currently_open'] = $storeStatusCache[$stId];
+            }
+        }
+        unset($p);
     }
 
     public function calculateFinalPrice(array $product): float
