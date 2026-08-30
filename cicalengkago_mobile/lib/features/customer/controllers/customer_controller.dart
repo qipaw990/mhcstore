@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../core/constants/zone_constants.dart';
 import '../../../core/network/api_service.dart';
 
 class CustomerController extends ChangeNotifier {
@@ -47,6 +49,30 @@ class CustomerController extends ChangeNotifier {
       double.tryParse(_zoneConfig?['per_km_delivery_charge']?.toString() ?? '2500') ?? 2500.0;
   String get zoneName =>
       _zoneConfig?['name']?.toString() ?? 'Zona Cicalengka Raya';
+
+  List<LatLng> get zonePolygon {
+    final rawList = _zoneConfig?['polygon_coordinates'];
+    if (rawList is List && rawList.length >= 3) {
+      final List<LatLng> parsed = [];
+      for (final item in rawList) {
+        if (item is List && item.length >= 2) {
+          final lat = double.tryParse(item[0].toString());
+          final lng = double.tryParse(item[1].toString());
+          if (lat != null && lng != null) {
+            parsed.add(LatLng(lat, lng));
+          }
+        } else if (item is Map) {
+          final lat = double.tryParse((item['lat'] ?? item['latitude'])?.toString() ?? '');
+          final lng = double.tryParse((item['lng'] ?? item['longitude'])?.toString() ?? '');
+          if (lat != null && lng != null) {
+            parsed.add(LatLng(lat, lng));
+          }
+        }
+      }
+      if (parsed.length >= 3) return parsed;
+    }
+    return ZoneConstants.cicalengkaZonePolygon;
+  }
 
   int get cartCount {
     if (_cart == null) return 0;

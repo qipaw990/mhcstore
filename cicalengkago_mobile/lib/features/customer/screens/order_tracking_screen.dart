@@ -17,6 +17,7 @@ import '../../../core/services/location_service.dart';
 import '../../../core/services/route_service.dart';
 import '../../common/screens/in_app_chat_modal.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../controllers/customer_controller.dart';
 import '../widgets/order_item_detail_modal.dart';
 import 'customer_wallet_screen.dart';
 
@@ -977,7 +978,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ),
                   // Cakupan Area Zona Cicalengka Raya
                   ZoneConstants.buildZonePolygonLayer(
-                    label: 'Zona Cicalengka Raya',
+                    customCoords: context.watch<CustomerController?>()?.zonePolygon,
+                    label: context.watch<CustomerController?>()?.zoneName ?? 'Zona Cicalengka Raya',
                     fillColor: const Color(0x143B82F6),
                     borderColor: const Color(0xFF2563EB),
                     strokeWidth: 2.0,

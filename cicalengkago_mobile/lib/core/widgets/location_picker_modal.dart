@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import '../theme/app_theme.dart';
 import '../services/location_service.dart';
 import '../constants/zone_constants.dart';
+import 'package:provider/provider.dart';
+import '../../features/customer/controllers/customer_controller.dart';
 
 class LocationPickerModal extends StatefulWidget {
   final double initialLat;
@@ -201,7 +203,8 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                       evictErrorTileStrategy: EvictErrorTileStrategy.none,
                     ),
                     ZoneConstants.buildZonePolygonLayer(
-                      label: 'Batas Zona Cicalengka',
+                      customCoords: context.watch<CustomerController?>()?.zonePolygon,
+                      label: context.watch<CustomerController?>()?.zoneName ?? 'Batas Zona Cicalengka',
                       fillColor: const Color(0x183B82F6),
                       borderColor: const Color(0xFF2563EB),
                       strokeWidth: 2.0,

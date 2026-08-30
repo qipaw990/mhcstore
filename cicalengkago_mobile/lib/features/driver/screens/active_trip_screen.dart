@@ -822,7 +822,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                       ),
                       // Cakupan Wilayah Operasional Zona Cicalengka Raya
                       ZoneConstants.buildZonePolygonLayer(
-                        label: 'Zona Cicalengka Raya',
+                        customCoords: driverCtrl.zonePolygon,
+                        label: driverCtrl.zoneName,
                         fillColor: const Color(0x143B82F6),
                         borderColor: const Color(0xFF3B82F6),
                         strokeWidth: 2.0,

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../core/constants/zone_constants.dart';
 import '../../../core/network/api_service.dart';
 import '../../../core/services/location_service.dart';
 import '../../../main.dart';
@@ -15,6 +16,7 @@ class DriverController extends ChangeNotifier {
   Map<String, dynamic>? _activeTrip;
   Map<String, dynamic>? _earnings;
   Map<String, dynamic>? _driverProfile;
+  Map<String, dynamic>? _zoneConfig;
   List<dynamic> _reviews = [];
   List<dynamic> _orderHistory = [];
   bool _isLoadingHistory = false;
@@ -78,6 +80,48 @@ class DriverController extends ChangeNotifier {
   }
 
   double get rating => driverRating;
+
+  Map<String, dynamic>? get zoneConfig => _zoneConfig;
+  double get zoneMinDeliveryCharge =>
+      double.tryParse(_zoneConfig?['min_delivery_charge']?.toString() ?? '5000') ?? 5000.0;
+  double get zonePerKmDeliveryCharge =>
+      double.tryParse(_zoneConfig?['per_km_delivery_charge']?.toString() ?? '2500') ?? 2500.0;
+  String get zoneName =>
+      _zoneConfig?['name']?.toString() ?? 'Zona Cicalengka Raya';
+
+  List<LatLng> get zonePolygon {
+    final rawList = _zoneConfig?['polygon_coordinates'];
+    if (rawList is List && rawList.length >= 3) {
+      final List<LatLng> parsed = [];
+      for (final item in rawList) {
+        if (item is List && item.length >= 2) {
+          final lat = double.tryParse(item[0].toString());
+          final lng = double.tryParse(item[1].toString());
+          if (lat != null && lng != null) {
+            parsed.add(LatLng(lat, lng));
+          }
+        } else if (item is Map) {
+          final lat = double.tryParse((item['lat'] ?? item['latitude'])?.toString() ?? '');
+          final lng = double.tryParse((item['lng'] ?? item['longitude'])?.toString() ?? '');
+          if (lat != null && lng != null) {
+            parsed.add(LatLng(lat, lng));
+          }
+        }
+      }
+      if (parsed.length >= 3) return parsed;
+    }
+    return ZoneConstants.cicalengkaZonePolygon;
+  }
+
+  Future<void> fetchZoneConfig({int zoneId = 1}) async {
+    try {
+      final res = await ApiService.get('${ApiConstants.zoneConfig}?zone_id=$zoneId');
+      if (res['success'] == true && res['data'] is Map) {
+        _zoneConfig = Map<String, dynamic>.from(res['data'] as Map);
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
 
   void toggleOnline(bool status) {
     _isOnline = status;

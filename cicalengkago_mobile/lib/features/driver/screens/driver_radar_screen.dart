@@ -26,6 +26,7 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<DriverController>().refreshLocation();
+      context.read<DriverController>().fetchZoneConfig();
     });
   }
 
@@ -220,7 +221,8 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
                                   ),
                                   // Cakupan Wilayah Operasional Zona Cicalengka Raya
                                   ZoneConstants.buildZonePolygonLayer(
-                                    label: 'Zona Cicalengka Raya',
+                                    customCoords: driverCtrl.zonePolygon,
+                                    label: driverCtrl.zoneName,
                                     fillColor: const Color(0x143B82F6),
                                     borderColor: const Color(0xFF3B82F6),
                                     strokeWidth: 2.0,
