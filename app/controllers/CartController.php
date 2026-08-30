@@ -33,6 +33,17 @@ class CartController extends Controller
             return;
         }
 
+        // Validasi apakah toko buka atau tutup
+        $store = (new \App\Models\Store())->findWithDetails((int)$product['store_id']);
+        if ($store) {
+            attach_store_schedule_data($store, true);
+            if (empty($store['is_open']) || empty($store['is_currently_open'])) {
+                $storeName = $store['name'] ?? 'Toko';
+                $this->errorResponse("Maaf, {$storeName} sedang TUTUP dan tidak dapat menerima pesanan saat ini.");
+                return;
+            }
+        }
+
         // Validasi stok sebelum tambah ke keranjang
         if ((int)($product['stock'] ?? 0) <= 0) {
             $this->errorResponse('Maaf, stok produk "' . $product['name'] . '" sedang habis.');

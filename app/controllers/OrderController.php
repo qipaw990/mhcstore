@@ -91,6 +91,21 @@ class OrderController extends Controller
                 return;
             }
 
+            // Validasi apakah seluruh toko dalam keranjang masih BUKA
+            $storeModel = new \App\Models\Store();
+            foreach ($stores as $sg) {
+                $stId = (int)($sg['store_id'] ?? 0);
+                $stObj = $storeModel->findWithDetails($stId);
+                if ($stObj) {
+                    attach_store_schedule_data($stObj, true);
+                    if (empty($stObj['is_open']) || empty($stObj['is_currently_open'])) {
+                        $stName = $stObj['name'] ?? 'Toko Mitra';
+                        $this->errorResponse("Maaf, {$stName} sedang TUTUP dan tidak dapat menerima pesanan saat ini. Silakan hapus produk dari toko tersebut atau pesan saat toko buka.");
+                        return;
+                    }
+                }
+            }
+
             if ($paymentMethod === 'wallet') {
                 $walletModel = new \App\Models\Wallet();
                 $wallet = $walletModel->getOrCreate($userId, 'customer');

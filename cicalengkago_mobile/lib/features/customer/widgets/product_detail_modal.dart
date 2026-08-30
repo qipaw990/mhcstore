@@ -119,6 +119,10 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
     final imgUrl = _getFoodImage(product);
     final totalPrice = finalPrice * _quantity;
 
+    final rawStoreOpen = product['store_is_open'] ?? product['is_open'] ?? product['is_currently_open'];
+    final bool isStoreClosed = (rawStoreOpen != null && (rawStoreOpen == 0 || rawStoreOpen == false || rawStoreOpen == '0' || rawStoreOpen == 'false'));
+    final bool isStoreOpen = !isStoreClosed;
+
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.90,
@@ -211,6 +215,29 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          if (!isStoreOpen)
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 14),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFEE2E2),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: const Color(0xFFFCA5A5)),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.storefront_rounded, size: 18, color: Color(0xFFDC2626)),
+                                  SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Toko Sedang Tutup • Menu ini tidak dapat dibeli sekarang',
+                                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF991B1B)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
                           // Store Name Tag
                           Row(
                             children: [
@@ -574,72 +601,93 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
               child: SafeArea(
                 child: Row(
                   children: [
-                    // Quantity Controls
-                    Container(
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(22),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
-                            padding: EdgeInsets.zero,
-                            icon: const Icon(Icons.remove_rounded, size: 18, color: AppTheme.inkBlack),
-                            onPressed: () {
-                              if (_quantity > 1) {
-                                setState(() => _quantity--);
-                              }
-                            },
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: Text(
-                              '$_quantity',
-                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                    if (isStoreOpen) ...[
+                      // Quantity Controls (only when open)
+                      Container(
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                              padding: EdgeInsets.zero,
+                              icon: const Icon(Icons.remove_rounded, size: 18, color: AppTheme.inkBlack),
+                              onPressed: () {
+                                if (_quantity > 1) {
+                                  setState(() => _quantity--);
+                                }
+                              },
                             ),
-                          ),
-                          IconButton(
-                            constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
-                            padding: EdgeInsets.zero,
-                            icon: const Icon(Icons.add_rounded, size: 18, color: AppTheme.inkBlack),
-                            onPressed: () {
-                              setState(() => _quantity++);
-                            },
-                          ),
-                        ],
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              child: Text(
+                                '$_quantity',
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                              ),
+                            ),
+                            IconButton(
+                              constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                              padding: EdgeInsets.zero,
+                              icon: const Icon(Icons.add_rounded, size: 18, color: AppTheme.inkBlack),
+                              onPressed: () {
+                                setState(() => _quantity++);
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
+                      const SizedBox(width: 10),
+                    ],
 
-                    // Add to Cart Button
+                    // Add to Cart Button or Closed Button
                     Expanded(
-                      child: UberPillButton(
-                        label: 'Tambah • ${CurrencyFormatter.formatRupiah(totalPrice)}',
-                        icon: Icons.shopping_bag_outlined,
-                        paddingHorizontal: 12,
-                        fullWidth: true,
-                        onPressed: () async {
-                          if (!RequireAuthWidget.check(context)) {
-                            return;
-                          }
-                          await customerCtrl.addToCart(
-                            productId,
-                            _quantity,
-                            notes: _notesController.text,
-                          );
-                          if (context.mounted) {
-                            Navigator.pop(context);
-                            AppAlert.showCartAdded(
-                              context,
-                              productName: name,
-                              quantity: _quantity,
-                            );
-                          }
-                        },
-                      ),
+                      child: isStoreOpen
+                          ? UberPillButton(
+                              label: 'Tambah • ${CurrencyFormatter.formatRupiah(totalPrice)}',
+                              icon: Icons.shopping_bag_outlined,
+                              paddingHorizontal: 12,
+                              fullWidth: true,
+                              onPressed: () async {
+                                if (!RequireAuthWidget.check(context)) {
+                                  return;
+                                }
+                                await customerCtrl.addToCart(
+                                  productId,
+                                  _quantity,
+                                  notes: _notesController.text,
+                                );
+                                if (context.mounted) {
+                                  Navigator.pop(context);
+                                  AppAlert.showCartAdded(
+                                    context,
+                                    productName: name,
+                                    quantity: _quantity,
+                                  );
+                                }
+                              },
+                            )
+                          : Container(
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF94A3B8),
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.store_outlined, color: Colors.white, size: 18),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Toko Sedang Tutup',
+                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                            ),
                     ),
                   ],
                 ),

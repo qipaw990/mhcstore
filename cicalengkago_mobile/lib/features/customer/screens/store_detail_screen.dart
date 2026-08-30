@@ -286,6 +286,42 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
               ),
             ),
 
+          // Closed Store Banner
+          if (!isOpen)
+            SliverToBoxAdapter(
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEE2E2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFFCA5A5)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.storefront_rounded, color: Color(0xFFDC2626), size: 22),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '🔴 Toko Sedang Tutup',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF991B1B)),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Anda tidak dapat memesan saat ini. Silakan kembali lagi nanti.',
+                            style: TextStyle(fontSize: 11, color: Color(0xFFB91C1C)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
           // Menu Section Header
           SliverToBoxAdapter(
             child: Padding(
@@ -459,9 +495,9 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                           ),
                           const SizedBox(width: 8),
 
-                          // Add to Cart Button
+                          // Add to Cart Button (disabled if store closed)
                           InkWell(
-                            onTap: () async {
+                            onTap: isOpen ? () async {
                               final productId = int.tryParse(product['id']?.toString() ?? '0') ?? 0;
                               final ok = await customerCtrl.addToCart(productId, 1);
                               if (ok && context.mounted) {
@@ -471,24 +507,24 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                                   quantity: 1,
                                 );
                               }
-                            },
+                            } : null,
                             borderRadius: BorderRadius.circular(20),
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFEF4444),
+                                color: isOpen ? const Color(0xFFEF4444) : const Color(0xFF94A3B8),
                                 borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
+                                boxShadow: isOpen ? [
                                   BoxShadow(
                                     color: const Color(0xFFEF4444).withValues(alpha: 0.25),
                                     blurRadius: 6,
                                     offset: const Offset(0, 2),
                                   ),
-                                ],
+                                ] : null,
                               ),
-                              child: const Text(
-                                '+ Tambah',
-                                style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold),
+                              child: Text(
+                                isOpen ? '+ Tambah' : 'Tutup',
+                                style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
