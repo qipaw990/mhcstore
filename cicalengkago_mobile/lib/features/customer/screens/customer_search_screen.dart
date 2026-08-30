@@ -620,7 +620,6 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
     );
   }
 
-  // ── Cool Product Card ──
   Widget _buildProductCard(
     BuildContext context,
     Map<String, dynamic> prod,
@@ -631,6 +630,11 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
     bool hasDiscount,
   ) {
     final customerCtrl = context.read<CustomerController>();
+    // Cek status toko — field dari SQL JOIN
+    final storeIsOpen = prod['store_is_open'] == 1
+        || prod['store_is_open'] == true
+        || prod['store_is_open'] == '1'
+        || prod['is_store_open'] == true;
 
     return Container(
       decoration: BoxDecoration(
@@ -707,6 +711,29 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
                       ),
                     ),
                   ),
+                // Badge TUTUP jika toko tutup
+                if (!storeIsOpen)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.55),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(0),
+                          bottomRight: Radius.circular(0),
+                        ),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          '🔴 TOKO TUTUP',
+                          style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
             Padding(
@@ -750,29 +777,42 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
                   SizedBox(
                     width: double.infinity,
                     height: 30,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEF4444),
-                        foregroundColor: Colors.white,
-                        elevation: 1,
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      onPressed: () async {
-                        final ok = await customerCtrl.addToCart(productId, 1);
-                        if (ok && context.mounted) {
-                          AppAlert.showCartAdded(
-                            context,
-                            productName: prod['name'] ?? 'Menu Kuliner',
-                            quantity: 1,
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.add_rounded, size: 16),
-                      label: const Text('+ Tambah', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                    ),
+                    child: storeIsOpen
+                        ? ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFEF4444),
+                              foregroundColor: Colors.white,
+                              elevation: 1,
+                              padding: EdgeInsets.zero,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            onPressed: () async {
+                              final ok = await customerCtrl.addToCart(productId, 1);
+                              if (ok && context.mounted) {
+                                AppAlert.showCartAdded(
+                                  context,
+                                  productName: prod['name'] ?? 'Menu Kuliner',
+                                  quantity: 1,
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.add_rounded, size: 16),
+                            label: const Text('+ Tambah', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                          )
+                        : Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF94A3B8),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                '🔴 Toko Tutup',
+                                style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
                   ),
                 ],
               ),
