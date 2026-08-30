@@ -371,212 +371,286 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
   Widget _buildActionButtons(BuildContext context, MerchantController ctrl, Map<String, dynamic> order, String status) {
     final orderId = int.tryParse(order['id']?.toString() ?? '0') ?? 0;
     final orderCode = order['order_code']?.toString() ?? order['id']?.toString() ?? '';
-
-    return Row(
-      children: [
-        // Chat Customer In-App
-        OutlinedButton.icon(
-          onPressed: () {
-            final authCtrl = context.read<AuthController>();
-            final uid = int.tryParse(authCtrl.user?['id']?.toString() ?? '0') ?? 0;
-            InAppChatModal.show(
-              context,
-              orderCode: orderCode,
-              currentUserId: uid,
-              currentUserRole: 'vendor',
-            );
-          },
-          style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF475569),
-            side: const BorderSide(color: Color(0xFFCBD5E1)),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-          icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
-          label: const Text('Chat', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
-        ),
-        const SizedBox(width: 6),
-
-        // Map Button for Merchant
-        OutlinedButton.icon(
-          onPressed: () => MerchantDeliveryMapModal.show(context, order),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF16A34A),
-            side: const BorderSide(color: Color(0xFF86EFAC)),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-          icon: const Icon(Icons.map_outlined, size: 14),
-          label: const Text('Peta', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
-        ),
-        const SizedBox(width: 8),
-
-        // Main Workflow Action
-        Expanded(
-          child: _buildWorkflowButton(context, ctrl, order, orderId, status),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWorkflowButton(BuildContext context, MerchantController ctrl, Map<String, dynamic> order, int orderId, String status) {
     final deliveryType = order['delivery_type']?.toString().toLowerCase() ?? 'driver';
     final distanceKm = double.tryParse(order['distance_km']?.toString() ?? '1.5') ?? 1.5;
     final isCloseProximity = distanceKm <= 0.30; // Radius < 300m
 
-    if (status == 'pending' || status == 'confirmed') {
-      return ElevatedButton.icon(
-        onPressed: () async {
-          final ok = await ctrl.updateOrderStatus(orderId, 'processing');
-          if (ok && context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Pesanan diterima & mulai dimasak!'), backgroundColor: Color(0xFF2563EB)),
-            );
-          }
+    // Chat helper button
+    Widget buildChatButton({bool fullWidth = false}) {
+      return OutlinedButton.icon(
+        onPressed: () {
+          final authCtrl = context.read<AuthController>();
+          final uid = int.tryParse(authCtrl.user?['id']?.toString() ?? '0') ?? 0;
+          InAppChatModal.show(
+            context,
+            orderCode: orderCode,
+            currentUserId: uid,
+            currentUserRole: 'vendor',
+          );
         },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF2563EB),
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 10),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFF475569),
+          side: const BorderSide(color: Color(0xFFCBD5E1)),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          elevation: 0,
         ),
-        icon: const Icon(Icons.restaurant_rounded, size: 15),
-        label: const Text('Terima & Masak', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+        icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
+        label: const Text('Chat', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+      );
+    }
+
+    // Map helper button
+    Widget buildMapButton({String label = 'Peta'}) {
+      return OutlinedButton.icon(
+        onPressed: () => MerchantDeliveryMapModal.show(context, order),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFF16A34A),
+          side: const BorderSide(color: Color(0xFF86EFAC)),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+        icon: const Icon(Icons.map_outlined, size: 14),
+        label: Text(label, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+      );
+    }
+
+    if (status == 'pending' || status == 'confirmed') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ElevatedButton.icon(
+            onPressed: () async {
+              final ok = await ctrl.updateOrderStatus(orderId, 'processing');
+              if (ok && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Pesanan diterima & mulai dimasak! 👨‍🍳'), backgroundColor: Color(0xFF2563EB)),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              elevation: 0,
+            ),
+            icon: const Icon(Icons.restaurant_rounded, size: 16),
+            label: const Text('Terima & Mulai Masak', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(child: buildChatButton()),
+              const SizedBox(width: 8),
+              Expanded(child: buildMapButton(label: 'Peta Lokasi')),
+            ],
+          ),
+        ],
       );
     } else if (status == 'processing') {
-      return Row(
+      final bool canSelfDeliver = (isCloseProximity || deliveryType == 'merchant');
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Pilihan 1: Lelang ke Driver
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () async {
-                final ok = await ctrl.updateOrderStatus(orderId, 'handover', deliveryType: 'driver');
-                if (ok && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Pesanan siap & sedang dilelang ke radar driver! 🛵'), backgroundColor: Color(0xFF16A34A)),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF16A34A),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                elevation: 0,
-              ),
-              icon: const Icon(Icons.two_wheeler_rounded, size: 15),
-              label: const Text('Lelang ke Driver', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-            ),
-          ),
-          // Pilihan 2: Antar Sendiri oleh Toko (jika jarak dekat < 300m atau dipilih pelanggan)
-          if (isCloseProximity || deliveryType == 'merchant') ...[
-            const SizedBox(width: 6),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  final ok = await ctrl.updateOrderStatus(orderId, 'on_the_way', deliveryType: 'merchant');
-                  if (ok && context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Toko mengantar pesanan langsung ke pelanggan 🏪'), backgroundColor: Color(0xFFD97706)),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD97706),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  elevation: 0,
+          Row(
+            children: [
+              // Pilihan 1: Lelang ke Driver
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final ok = await ctrl.updateOrderStatus(orderId, 'handover', deliveryType: 'driver');
+                    if (ok && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Pesanan siap & sedang dilelang ke radar driver! 🛵'), backgroundColor: Color(0xFF16A34A)),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF16A34A),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 0,
+                  ),
+                  icon: const Icon(Icons.two_wheeler_rounded, size: 16),
+                  label: const Text('Lelang ke Driver', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold), maxLines: 1),
                 ),
-                icon: const Icon(Icons.directions_walk_rounded, size: 15),
-                label: const Text('Antar Sendiri', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
               ),
-            ),
-          ],
+              // Pilihan 2: Antar Sendiri oleh Toko (jika jarak dekat < 300m atau dipilih pelanggan)
+              if (canSelfDeliver) ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final ok = await ctrl.updateOrderStatus(orderId, 'on_the_way', deliveryType: 'merchant');
+                      if (ok && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Toko mengantar pesanan langsung ke pelanggan 🚶‍♂️'), backgroundColor: Color(0xFFD97706)),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD97706),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
+                    ),
+                    icon: const Icon(Icons.directions_walk_rounded, size: 16),
+                    label: const Text('Antar Sendiri', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold), maxLines: 1),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(child: buildChatButton()),
+              const SizedBox(width: 8),
+              Expanded(child: buildMapButton(label: 'Peta & Rute')),
+            ],
+          ),
         ],
       );
     } else if (status == 'handover') {
-      return Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF3E8FF),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: const Text(
-          '⏳ Sedang Dilelang ke Driver',
-          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF7E22CE)),
-        ),
-      );
-    } else if (status == 'on_the_way' && deliveryType == 'merchant') {
-      // Toko sedang mengantar sendiri -> tombol navigasi peta + konfirmasi sampai
-      return Row(
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            flex: 5,
-            child: OutlinedButton.icon(
-              onPressed: () => MerchantDeliveryMapModal.show(context, order),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF2563EB),
-                side: const BorderSide(color: Color(0xFF93C5FD)),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              icon: const Icon(Icons.navigation_rounded, size: 14),
-              label: const Text('Buka Peta', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3E8FF),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFD8B4FE)),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF7E22CE)),
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Sedang Dilelang ke Radar Driver...',
+                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF7E22CE)),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 6),
-          Expanded(
-            flex: 6,
-            child: ElevatedButton.icon(
-              onPressed: () async {
-                final ok = await ctrl.updateOrderStatus(orderId, 'delivered', deliveryType: 'merchant');
-                if (ok && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Pesanan selesai diantar! Pendapatan telah masuk ke saldo toko 🎉'), backgroundColor: Color(0xFF16A34A)),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF16A34A),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                elevation: 0,
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(child: buildChatButton()),
+              const SizedBox(width: 8),
+              Expanded(child: buildMapButton(label: 'Peta Lokasi')),
+            ],
+          ),
+        ],
+      );
+    } else if (status == 'on_the_way' && deliveryType == 'merchant') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                flex: 5,
+                child: OutlinedButton.icon(
+                  onPressed: () => MerchantDeliveryMapModal.show(context, order),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF2563EB),
+                    side: const BorderSide(color: Color(0xFF93C5FD)),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.navigation_rounded, size: 15),
+                  label: const Text('Buka Peta', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                ),
               ),
-              icon: const Icon(Icons.check_circle_rounded, size: 14),
-              label: const Text('Konfirmasi Sampai', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 6,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final ok = await ctrl.updateOrderStatus(orderId, 'delivered', deliveryType: 'merchant');
+                    if (ok && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Pesanan selesai diantar! Pendapatan telah masuk ke saldo toko 🎉'), backgroundColor: Color(0xFF16A34A)),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF16A34A),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 0,
+                  ),
+                  icon: const Icon(Icons.check_circle_rounded, size: 15),
+                  label: const Text('Konfirmasi Sampai', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          buildChatButton(fullWidth: true),
+        ],
+      );
+    } else if (status == 'delivered') {
+      return Row(
+        children: [
+          buildChatButton(),
+          const SizedBox(width: 6),
+          buildMapButton(),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 9),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: const Color(0xFFDCFCE7),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF86EFAC)),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.check_circle_rounded, color: Color(0xFF15803D), size: 14),
+                  SizedBox(width: 5),
+                  Text(
+                    'Selesai Terkirim',
+                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       );
-    } else if (status == 'delivered') {
-      return Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: const Color(0xFFDCFCE7),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: const Text(
-          '✅ Pesanan Selesai Terkirim',
-          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
-        ),
-      );
     } else {
-      return Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: const Text(
-          'Pesanan Ditutup',
-          style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.bold),
-        ),
+      return Row(
+        children: [
+          buildChatButton(),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 9),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                status == 'canceled' ? '❌ Pesanan Dibatalkan' : 'Pesanan Ditutup',
+                style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+        ],
       );
     }
   }
