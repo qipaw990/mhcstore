@@ -288,13 +288,59 @@
                             <textarea name="address" id="storeAddress" class="form-control rounded-3" rows="2" placeholder="Jl. Raya Cicalengka No. ..." required></textarea>
                         </div>
 
-                        <!-- Interactive Map Pin Picker -->
+                        <!-- Interactive Map Pin Picker with Location Calibration -->
                         <div class="col-12">
-                            <label class="form-label small fw-bold d-flex justify-content-between">
-                                <span><i class="bi bi-pin-map-fill text-danger me-1"></i> Titik Lokasi Peta (Klik atau Geser Pin di Peta)</span>
-                                <span class="text-muted small">Kecamatan Cicalengka</span>
-                            </label>
-                            <div id="store-picker-map" style="width: 100%; height: 220px; border-radius: 12px; border: 1px solid #cbd5e1;"></div>
+                            <div class="p-3 bg-light rounded-4 border">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                                    <div>
+                                        <div class="fw-bold small text-dark"><i class="bi bi-geo-alt-fill text-danger me-1"></i> Kalibrasi Titik Lokasi Peta Toko</div>
+                                        <small class="text-muted" style="font-size: 11px;">Akurasi titik koordinat penjemputan pesanan oleh driver</small>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill fw-bold" onclick="calibrateCurrentGPS()" title="Deteksi lokasi GPS perangkat saya sekarang">
+                                            <i class="bi bi-crosshair me-1"></i> <span id="gpsBtnLabel">Kalibrasi GPS Saya</span>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill fw-bold" onclick="calibrateFromAddress()" title="Cari koordinat berdasarkan teks alamat di atas">
+                                            <i class="bi bi-geo me-1"></i> Dari Alamat
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Search & Quick Calibration Toolbar -->
+                                <div class="row g-2 mb-2">
+                                    <div class="col-12">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                                            <input type="text" id="mapSearchInput" class="form-control border-start-0" placeholder="Ketik nama jalan, tempat, atau patokan di Cicalengka..." onkeydown="if(event.key==='Enter'){event.preventDefault();searchLocationOnMap();}">
+                                            <button type="button" class="btn btn-dark fw-bold px-3" onclick="searchLocationOnMap()"><i class="bi bi-search me-1"></i> Cari</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Preset Chips Cicalengka -->
+                                <div class="d-flex align-items-center gap-1 flex-wrap mb-2">
+                                    <small class="text-muted fw-bold me-1" style="font-size: 10.5px;">Patokan Cepat:</small>
+                                    <button type="button" class="badge bg-white text-dark border text-decoration-none shadow-2xs py-1.5 px-2" onclick="setPresetLocation(-6.983935, 107.834015, 'Alun-Alun Cicalengka')">🏛️ Alun-Alun Cicalengka</button>
+                                    <button type="button" class="badge bg-white text-dark border text-decoration-none shadow-2xs py-1.5 px-2" onclick="setPresetLocation(-6.982230, 107.838520, 'Stasiun KAI Cicalengka')">🚆 Stasiun Cicalengka</button>
+                                    <button type="button" class="badge bg-white text-dark border text-decoration-none shadow-2xs py-1.5 px-2" onclick="setPresetLocation(-6.978050, 107.842010, 'RSUD Cicalengka')">🏥 RSUD Cicalengka</button>
+                                    <button type="button" class="badge bg-white text-dark border text-decoration-none shadow-2xs py-1.5 px-2" onclick="setPresetLocation(-6.981500, 107.835500, 'Pasar Cicalengka')">🏬 Pasar Cicalengka</button>
+                                    <button type="button" class="badge bg-white text-dark border text-decoration-none shadow-2xs py-1.5 px-2" onclick="setPresetLocation(-6.984500, 107.833500, 'Masjid Agung Cicalengka')">🕌 Masjid Agung</button>
+                                    <button type="button" class="badge bg-white text-dark border text-decoration-none shadow-2xs py-1.5 px-2" onclick="setPresetLocation(-6.989000, 107.845000, 'Bypass Cicalengka')">🛣️ Bypass Cicalengka</button>
+                                    <button type="button" class="badge bg-white text-dark border text-decoration-none shadow-2xs py-1.5 px-2" onclick="setPresetLocation(-7.005000, 107.828000, 'Cikancung')">🏞️ Cikancung</button>
+                                    <button type="button" class="badge bg-white text-dark border text-decoration-none shadow-2xs py-1.5 px-2" onclick="setPresetLocation(-7.028000, 107.892000, 'Nagreg Simpang')">🌄 Nagreg</button>
+                                </div>
+
+                                <div id="store-picker-map" style="width: 100%; height: 240px; border-radius: 12px; border: 1px solid #cbd5e1; z-index: 1;"></div>
+                                
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-2" style="font-size: 11px;">
+                                    <div class="text-muted" id="calibrationStatusBadge">
+                                        <i class="bi bi-info-circle text-primary me-1"></i> Klik atau geser pin merah di peta untuk menyetel titik akurat.
+                                    </div>
+                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-primary fw-bold" onclick="reverseGeocodeCurrentPoint()">
+                                        <i class="bi bi-arrow-repeat me-1"></i> Sinkronkan Nama Jalan ke Alamat
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="col-md-4">
@@ -307,11 +353,11 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold">Latitude GPS *</label>
-                            <input type="number" step="any" name="latitude" id="storeLat" class="form-control rounded-3" value="-6.9840" required>
+                            <input type="number" step="any" name="latitude" id="storeLat" class="form-control rounded-3" value="-6.9840" required onchange="onManualCoordsChange()">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold">Longitude GPS *</label>
-                            <input type="number" step="any" name="longitude" id="storeLng" class="form-control rounded-3" value="107.8340" required>
+                            <input type="number" step="any" name="longitude" id="storeLng" class="form-control rounded-3" value="107.8340" required onchange="onManualCoordsChange()">
                         </div>
 
                         <div class="col-md-4">
@@ -347,27 +393,167 @@ let pickerMap = null;
 let pickerMarker = null;
 
 function initStorePickerMap(lat, lng) {
+    const defaultLat = parseFloat(lat) || -6.9840;
+    const defaultLng = parseFloat(lng) || 107.8340;
+
     if (!pickerMap) {
-        pickerMap = L.map('store-picker-map').setView([lat, lng], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(pickerMap);
-        pickerMarker = L.marker([lat, lng], { draggable: true }).addTo(pickerMap);
+        pickerMap = L.map('store-picker-map').setView([defaultLat, defaultLng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(pickerMap);
+        
+        pickerMarker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(pickerMap);
         
         pickerMarker.on('dragend', function (e) {
             const position = pickerMarker.getLatLng();
-            document.getElementById('storeLat').value = position.lat.toFixed(6);
-            document.getElementById('storeLng').value = position.lng.toFixed(6);
+            updateCoordsFields(position.lat, position.lng, 'Pin Digeser Manual');
         });
 
         pickerMap.on('click', function(e) {
             pickerMarker.setLatLng(e.latlng);
-            document.getElementById('storeLat').value = e.latlng.lat.toFixed(6);
-            document.getElementById('storeLng').value = e.latlng.lng.toFixed(6);
+            updateCoordsFields(e.latlng.lat, e.latlng.lng, 'Titik Peta Dipilih');
         });
     } else {
-        pickerMap.setView([lat, lng], 15);
-        pickerMarker.setLatLng([lat, lng]);
+        pickerMap.setView([defaultLat, defaultLng], 15);
+        pickerMarker.setLatLng([defaultLat, defaultLng]);
         setTimeout(() => pickerMap.invalidateSize(), 300);
     }
+    updateCoordsFields(defaultLat, defaultLng, 'Inisialisasi');
+}
+
+function updateCoordsFields(lat, lng, sourceLabel = '') {
+    const latFixed = parseFloat(lat).toFixed(6);
+    const lngFixed = parseFloat(lng).toFixed(6);
+    document.getElementById('storeLat').value = latFixed;
+    document.getElementById('storeLng').value = lngFixed;
+    
+    const badge = document.getElementById('calibrationStatusBadge');
+    if (badge) {
+        badge.innerHTML = `<span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-check-circle-fill me-1"></i> Terkalibrasi: ${latFixed}, ${lngFixed} (${sourceLabel || 'Akurat'})</span>`;
+    }
+}
+
+function onManualCoordsChange() {
+    const lat = parseFloat(document.getElementById('storeLat').value);
+    const lng = parseFloat(document.getElementById('storeLng').value);
+    if (!isNaN(lat) && !isNaN(lng) && pickerMap && pickerMarker) {
+        pickerMarker.setLatLng([lat, lng]);
+        pickerMap.setView([lat, lng], 16);
+        updateCoordsFields(lat, lng, 'Input Manual');
+    }
+}
+
+// ── 1. KALIBRASI GPS REAL-TIME PERANGKAT ──
+function calibrateCurrentGPS() {
+    const btnLabel = document.getElementById('gpsBtnLabel');
+    if (!navigator.geolocation) {
+        Swal.fire({ icon: 'warning', title: 'GPS Tidak Didukung', text: 'Browser tidak mendukung deteksi geolokasi.' });
+        return;
+    }
+
+    if (btnLabel) btnLabel.textContent = 'Mendeteksi GPS...';
+    navigator.geolocation.getCurrentPosition(
+        function (pos) {
+            if (btnLabel) btnLabel.textContent = 'Kalibrasi GPS Saya';
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            const accuracy = Math.round(pos.coords.accuracy || 10);
+            
+            if (pickerMap && pickerMarker) {
+                pickerMarker.setLatLng([lat, lng]);
+                pickerMap.setView([lat, lng], 17);
+            }
+            updateCoordsFields(lat, lng, `GPS Akurat ±${accuracy}m`);
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: `GPS Terkalibrasi (Akurasi ±${accuracy}m)`,
+                showConfirmButton: false,
+                timer: 2500
+            });
+        },
+        function (err) {
+            if (btnLabel) btnLabel.textContent = 'Kalibrasi GPS Saya';
+            Swal.fire({ icon: 'error', title: 'Gagal Akses GPS', text: 'Pastikan izin lokasi telah diizinkan di browser.' });
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+}
+
+// ── 2. PRESET LOKASI PATOKAN CICALENGKA ──
+function setPresetLocation(lat, lng, label) {
+    if (pickerMap && pickerMarker) {
+        pickerMarker.setLatLng([lat, lng]);
+        pickerMap.setView([lat, lng], 16);
+    }
+    updateCoordsFields(lat, lng, label);
+    
+    // Auto update address if still default
+    const addrField = document.getElementById('storeAddress');
+    if (addrField && (addrField.value.trim() === '' || addrField.value.includes('Kec. Cicalengka'))) {
+        addrField.value = `${label}, Kec. Cicalengka, Kab. Bandung`;
+    }
+}
+
+// ── 3. CARI LOKASI DARI INPUT PENCARIAN ──
+async function searchLocationOnMap() {
+    const query = document.getElementById('mapSearchInput').value.trim();
+    if (!query) {
+        Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'Ketik nama lokasi terlebih dahulu', showConfirmButton: false, timer: 2000 });
+        return;
+    }
+
+    const fullQuery = query.toLowerCase().includes('cicalengka') || query.toLowerCase().includes('bandung') 
+        ? query 
+        : `${query}, Cicalengka, Bandung`;
+
+    try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullQuery)}&limit=1`;
+        const res = await fetch(url, { headers: { 'Accept-Language': 'id' } });
+        const data = await res.json();
+        
+        if (data && data.length > 0) {
+            const lat = parseFloat(data[0].lat);
+            const lng = parseFloat(data[0].lon);
+            if (pickerMap && pickerMarker) {
+                pickerMarker.setLatLng([lat, lng]);
+                pickerMap.setView([lat, lng], 16);
+            }
+            updateCoordsFields(lat, lng, data[0].display_name.split(',')[0]);
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `Ditemukan: ${data[0].display_name.split(',')[0]}`, showConfirmButton: false, timer: 2500 });
+        } else {
+            Swal.fire({ icon: 'info', title: 'Lokasi Tidak Ditemukan', text: 'Coba gunakan kata kunci patokan lain di sekitar Cicalengka.' });
+        }
+    } catch (e) {
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Gagal melakukan pencarian geocoding.' });
+    }
+}
+
+// ── 4. KALIBRASI DARI TEKS ALAMAT ──
+async function calibrateFromAddress() {
+    const addr = document.getElementById('storeAddress').value.trim();
+    if (!addr) {
+        Swal.fire({ icon: 'info', title: 'Alamat Kosong', text: 'Isi alamat toko terlebih dahulu pada kolom Alamat Lengkap.' });
+        return;
+    }
+    document.getElementById('mapSearchInput').value = addr;
+    await searchLocationOnMap();
+}
+
+// ── 5. REVERSE GEOCODE: KOORDINAT KE NAMA JALAN ──
+async function reverseGeocodeCurrentPoint() {
+    const lat = document.getElementById('storeLat').value;
+    const lng = document.getElementById('storeLng').value;
+    if (!lat || !lng) return;
+
+    try {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
+        const res = await fetch(url, { headers: { 'Accept-Language': 'id' } });
+        const data = await res.json();
+        if (data && data.display_name) {
+            document.getElementById('storeAddress').value = data.display_name;
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Alamat toko diperbarui dari titik koordinat!', showConfirmButton: false, timer: 2000 });
+        }
+    } catch (e) {}
 }
 
 function filterStoreTable() {
