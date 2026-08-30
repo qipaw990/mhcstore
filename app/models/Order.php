@@ -107,9 +107,17 @@ class Order extends Model
     public function getItems(int $orderId): array
     {
         return Database::query(
-            "SELECT oi.*, COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name, p.image as product_image 
+            "SELECT oi.*, 
+                    COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name, 
+                    COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as item_name, 
+                    p.image as product_image,
+                    s.name as store_name,
+                    s.address as store_address,
+                    s.id as store_id
              FROM `order_items` oi 
              LEFT JOIN `products` p ON oi.product_id = p.id 
+             LEFT JOIN `orders` o ON oi.order_id = o.id
+             LEFT JOIN `stores` s ON o.store_id = s.id
              WHERE oi.`order_id` = ?",
             [$orderId]
         ) ?: [];

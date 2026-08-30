@@ -1348,30 +1348,61 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     required List<Map<String, dynamic>> pickupStores,
   }) {
     final List<Map<String, dynamic>> storeGroups = [];
+    final Map<String, List<dynamic>> itemsByStore = {};
+    final Map<String, String> storeAddresses = {};
 
+    // Helper to register items
+    void addItemToStore(String sName, String sAddr, dynamic item) {
+      if (!itemsByStore.containsKey(sName)) {
+        itemsByStore[sName] = [];
+      }
+      if (sAddr.isNotEmpty) {
+        storeAddresses[sName] = sAddr;
+      }
+      itemsByStore[sName]!.add(item);
+    }
+
+    // 1. Process pickupStores
     if (pickupStores.isNotEmpty) {
       for (var s in pickupStores) {
+        final sName = (s['name'] ?? s['store_name'] ?? trip['store_name'] ?? 'Mitra Resto').toString();
+        final sAddr = (s['address'] ?? s['store_address'] ?? '').toString();
         final items = (s['items'] is List) ? (s['items'] as List) : [];
-        if (items.isNotEmpty) {
-          storeGroups.add({
-            'store_name': s['name'] ?? 'Mitra Resto',
-            'items': items,
-          });
+        for (var item in items) {
+          final iStoreName = (item is Map ? (item['store_name'] ?? sName) : sName).toString();
+          addItemToStore(iStoreName, sAddr, item);
         }
       }
     }
 
-    if (storeGroups.isEmpty) {
-      final rawItems = (trip['items'] is List)
-          ? (trip['items'] as List)
-          : ((trip['all_items'] is List) ? (trip['all_items'] as List) : []);
-      if (rawItems.isNotEmpty) {
-        storeGroups.add({
-          'store_name': trip['store_name'] ?? 'Mitra Resto',
-          'items': rawItems,
-        });
+    // 2. Check trip['items'] / trip['all_items']
+    final rawItems = (trip['items'] is List)
+        ? (trip['items'] as List)
+        : ((trip['all_items'] is List) ? (trip['all_items'] as List) : []);
+
+    for (var item in rawItems) {
+      if (item is Map) {
+        final sName = (item['store_name'] ?? trip['store_name'] ?? 'Mitra Resto').toString();
+        final sAddr = (item['store_address'] ?? trip['store_address'] ?? '').toString();
+        if (!itemsByStore.containsKey(sName) ||
+            !itemsByStore[sName]!.any((existing) => existing is Map && existing['id'] != null && existing['id'] == item['id'])) {
+          addItemToStore(sName, sAddr, item);
+        }
       }
     }
+
+    // 3. Build ordered storeGroups list
+    int sIdx = 0;
+    itemsByStore.forEach((sName, itemsList) {
+      if (itemsList.isNotEmpty) {
+        storeGroups.add({
+          'index': sIdx++,
+          'store_name': sName,
+          'store_address': storeAddresses[sName] ?? '',
+          'items': itemsList,
+        });
+      }
+    });
 
     if (storeGroups.isEmpty) {
       return const SizedBox.shrink();
@@ -1392,6 +1423,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
         double.tryParse(trip['total_amount']?.toString() ?? '') ?? 0.0;
     final bool isCod = (trip['payment_method']?.toString().toUpperCase() == 'CASH' ||
         trip['payment_method']?.toString().toUpperCase() == 'COD');
+    final bool isMultiStore = storeGroups.length > 1;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1414,15 +1446,19 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
+                      color: isMultiStore ? const Color(0xFFFEF3C7) : const Color(0xFFEFF6FF),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.receipt_long_rounded, color: Color(0xFF2563EB), size: 18),
+                    child: Icon(
+                      isMultiStore ? Icons.store_mall_directory_rounded : Icons.receipt_long_rounded,
+                      color: isMultiStore ? const Color(0xFFD97706) : const Color(0xFF2563EB),
+                      size: 18,
+                    ),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    'Rincian Menu / Barang Pesanan',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                  Text(
+                    isMultiStore ? 'Menu Pesanan (${storeGroups.length} Toko)' : 'Rincian Menu / Barang Pesanan',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
                   ),
                 ],
               ),
@@ -1434,7 +1470,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                   border: Border.all(color: const Color(0xFFCBD5E1)),
                 ),
                 child: Text(
-                  '$totalItemCount Menu',
+                  '$totalItemCount Item Total',
                   style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                 ),
               ),
@@ -1445,99 +1481,181 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           const SizedBox(height: 12),
 
           ...storeGroups.map((group) {
-            final sName = group['store_name']?.toString() ?? 'Mitra Resto';
-            final itemsList = group['items'] as List;
+            final int groupIdx = (group['index'] as int?) ?? 0;
+            final String sName = group['store_name']?.toString() ?? 'Mitra Resto';
+            final String sAddr = group['store_address']?.toString() ?? '';
+            final List itemsList = (group['items'] as List?) ?? [];
+            final bool isPicked = _pickedStoreIndices.contains(groupIdx);
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (storeGroups.length > 1) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.storefront_rounded, size: 14, color: Color(0xFFD97706)),
-                        const SizedBox(width: 5),
-                        Expanded(
-                          child: Text(
-                            sName,
-                            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF92400E)),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                ...itemsList.map((item) {
-                  if (item is! Map) return const SizedBox.shrink();
-                  final name = item['product_name'] ?? item['item_name'] ?? item['name'] ?? 'Menu Kuliner';
-                  final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
-                  final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
-                  final subtotal = double.tryParse(item['subtotal']?.toString() ?? '') ?? (price * qty);
-                  final notes = item['notes']?.toString();
-                  final variations = item['variations_json']?.toString();
+            double groupSubtotal = 0.0;
+            for (var item in itemsList) {
+              if (item is Map) {
+                final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
+                final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
+                groupSubtotal += (double.tryParse(item['subtotal']?.toString() ?? '') ?? (price * qty));
+              }
+            }
 
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
+            return Container(
+              margin: EdgeInsets.only(bottom: isMultiStore ? 14 : 6),
+              decoration: isMultiStore
+                  ? BoxDecoration(
                       color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isPicked ? const Color(0xFFA7F3D0) : const Color(0xFFCBD5E1),
+                        width: 1.2,
+                      ),
+                    )
+                  : null,
+              padding: isMultiStore ? const EdgeInsets.all(12) : EdgeInsets.zero,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (isMultiStore) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2563EB),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            '${qty}x',
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.white),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Row(
                             children: [
-                              Text(
-                                name.toString(),
-                                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: isPicked ? const Color(0xFF059669) : const Color(0xFFD97706),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'Toko ${groupIdx + 1}',
+                                  style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
+                                ),
                               ),
-                              if (notes != null && notes.trim().isNotEmpty) ...[
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Catatan: $notes',
-                                  style: const TextStyle(fontSize: 10.5, fontStyle: FontStyle.italic, color: Color(0xFFD97706)),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  sName,
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ],
-                              if (variations != null && variations.trim().isNotEmpty && variations != '{}' && variations != '[]') ...[
-                                const SizedBox(height: 2),
-                                Text(
-                                  variations,
-                                  style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
-                                ),
-                              ],
+                              ),
                             ],
                           ),
                         ),
-                        if (subtotal > 0)
-                          Text(
-                            CurrencyFormatter.formatRupiah(subtotal),
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: isPicked ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
+                            borderRadius: BorderRadius.circular(6),
                           ),
+                          child: Text(
+                            isPicked ? '✓ Sudah Diambil' : '⏳ Belum Diambil',
+                            style: TextStyle(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.bold,
+                              color: isPicked ? const Color(0xFF15803D) : const Color(0xFFB45309),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
-                  );
-                }),
-                if (storeGroups.length > 1) const SizedBox(height: 6),
-              ],
+                    if (sAddr.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        sAddr,
+                        style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    const SizedBox(height: 10),
+                  ],
+
+                  ...itemsList.map((item) {
+                    if (item is! Map) return const SizedBox.shrink();
+                    final name = item['product_name'] ?? item['item_name'] ?? item['name'] ?? 'Menu Kuliner';
+                    final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
+                    final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
+                    final subtotal = double.tryParse(item['subtotal']?.toString() ?? '') ?? (price * qty);
+                    final notes = item['notes']?.toString();
+                    final variations = item['variations_json']?.toString();
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2563EB),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '${qty}x',
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.white),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name.toString(),
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                                ),
+                                if (notes != null && notes.trim().isNotEmpty) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Catatan: $notes',
+                                    style: const TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: Color(0xFFD97706)),
+                                  ),
+                                ],
+                                if (variations != null && variations.trim().isNotEmpty && variations != '{}' && variations != '[]') ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    variations,
+                                    style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          if (subtotal > 0)
+                            Text(
+                              CurrencyFormatter.formatRupiah(subtotal),
+                              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                            ),
+                        ],
+                      ),
+                    );
+                  }),
+
+                  if (isMultiStore && groupSubtotal > 0) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Subtotal $sName: ',
+                          style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                        ),
+                        Text(
+                          CurrencyFormatter.formatRupiah(groupSubtotal),
+                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
             );
           }),
 
