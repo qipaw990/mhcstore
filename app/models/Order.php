@@ -273,7 +273,8 @@ class Order extends Model
                 LEFT JOIN `zones` z ON s.zone_id = z.id
                 LEFT JOIN `users` u ON o.customer_id = u.id
                 WHERE (o.delivery_man_id IS NULL OR o.delivery_man_id = 0 OR o.delivery_man_id = '')
-                  AND o.order_status NOT IN ('delivered', 'canceled', 'refunded', 'failed')
+                  AND (o.delivery_type IS NULL OR o.delivery_type != 'merchant')
+                  AND o.order_status = 'handover'
                 ORDER BY o.id DESC";
         $rawOrders = Database::query($sql);
 
@@ -395,40 +396,49 @@ class Order extends Model
     public static function autoCancelUnclaimedOrders(): void
     {
         try {
+            // Self-healing schema: pastikan kolom delivery_type tersedia di orders
+            static $migrated = false;
+            if (!$migrated) {
+                try {
+                    Database::execute("ALTER TABLE `orders` ADD COLUMN `delivery_type` VARCHAR(30) NOT NULL DEFAULT 'driver' AFTER `order_type`");
+                } catch (\Throwable $ignore) {}
+                $migrated = true;
+            }
+
             // Self-healing: Automatically clean up lingering driver IDs on canceled or unaccepted orders
             Database::execute("UPDATE `orders` SET `delivery_man_id` = NULL WHERE `order_status` = 'canceled' AND `delivery_man_id` IS NOT NULL");
-            Database::execute("UPDATE `orders` SET `delivery_man_id` = NULL WHERE `order_status` IN ('pending', 'confirmed') AND `delivery_man_id` IS NOT NULL");
             Database::execute("UPDATE `delivery_men` dm LEFT JOIN `orders` o ON dm.current_order_id = o.id SET dm.current_order_id = NULL WHERE dm.current_order_id IS NOT NULL AND (o.id IS NULL OR o.order_status IN ('delivered', 'canceled'))");
 
             // Sync rating toko dan driver jika rating bernilai 0.0
             Database::execute("UPDATE `stores` SET `rating` = 5.0 WHERE `rating` = 0.0 OR `rating` IS NULL");
             Database::execute("UPDATE `delivery_men` SET `rating` = 5.0 WHERE `rating` = 0.0 OR `rating` IS NULL");
 
-            // Find active orders without driver (or unclaimed) where created_at is older than 60 seconds (1 minute)
+            // Batalkan pesanan lelang driver (handover) yang tidak diambil driver setelah 5 menit (300 detik)
             $expiredOrders = Database::query(
-                "SELECT id, order_code, customer_id, delivery_man_id, payment_method, payment_status, total_amount, created_at 
+                "SELECT id, order_code, customer_id, delivery_man_id, payment_method, payment_status, total_amount, created_at, handover_at 
                  FROM `orders` 
-                 WHERE (`delivery_man_id` IS NULL OR `order_status` IN ('pending', 'confirmed'))
-                   AND `order_status` NOT IN ('processing', 'handover', 'on_the_way', 'delivered', 'canceled', 'refunded', 'failed')
-                   AND `created_at` <= TIMESTAMPADD(SECOND, -60, NOW())"
+                 WHERE (delivery_man_id IS NULL OR delivery_man_id = 0)
+                   AND order_status = 'handover'
+                   AND (delivery_type IS NULL OR delivery_type != 'merchant')
+                   AND (
+                        (handover_at IS NOT NULL AND handover_at <= TIMESTAMPADD(SECOND, -300, NOW()))
+                        OR (handover_at IS NULL AND created_at <= TIMESTAMPADD(SECOND, -300, NOW()))
+                   )"
             );
 
             foreach ($expiredOrders as $ord) {
-                // Clear active order link from delivery_men if any
                 if (!empty($ord['delivery_man_id'])) {
                     Database::update('delivery_men', ['current_order_id' => null], 'id = ?', [$ord['delivery_man_id']]);
                 }
 
-                // Cancel order & ensure delivery_man_id is NULL
                 Database::update('orders', [
                     'delivery_man_id'     => null,
                     'order_status'        => 'canceled',
-                    'cancellation_reason' => 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 1 menit',
+                    'cancellation_reason' => 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 5 menit lelang',
                     'canceled_at'          => date('Y-m-d H:i:s')
                 ], 'id = ?', [$ord['id']]);
 
-                // Perform robust refund to CicalengkaPay wallet
-                self::refundOrderIfPaid($ord, 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 1 menit');
+                self::refundOrderIfPaid($ord, 'Batal Otomatis: Tidak mendapatkan driver dalam waktu 5 menit lelang');
             }
         } catch (\Exception $e) {
             error_log("autoCancelUnclaimedOrders error: " . $e->getMessage());

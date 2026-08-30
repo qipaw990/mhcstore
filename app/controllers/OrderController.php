@@ -154,6 +154,7 @@ class OrderController extends Controller
                         'order_notes'       => sanitize($data['order_notes'] ?? ''),
                         'distance_km'       => (float)($data['distance_km'] ?? 1.5),
                         'order_type'        => $data['order_type'] ?? 'delivery',
+                        'delivery_type'     => sanitize($data['delivery_type'] ?? 'driver'),
                         'store_id'          => $storeGroup['store_id'],   // scoped to this store
                         'delivery_batch_id' => $batchId,
                         'shared_otp'        => $sharedOtp,

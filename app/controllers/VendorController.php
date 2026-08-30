@@ -187,6 +187,7 @@ class VendorController extends Controller
         $data = $this->getPost();
         $orderId = (int)($data['order_id'] ?? 0);
         $status = sanitize($data['status'] ?? '');
+        $deliveryType = sanitize($data['delivery_type'] ?? '');
 
         $order = $this->orderModel->find($orderId);
         if (!$order) {
@@ -195,10 +196,42 @@ class VendorController extends Controller
         }
 
         $updateData = ['order_status' => $status];
+        if (!empty($deliveryType)) {
+            $updateData['delivery_type'] = $deliveryType;
+        }
+
         if ($status === 'processing') {
             $updateData['processing_at'] = date('Y-m-d H:i:s');
         } elseif ($status === 'handover') {
+            // Ditugaskan untuk dijemput / dilelang ke mitra driver
             $updateData['handover_at'] = date('Y-m-d H:i:s');
+            $updateData['delivery_type'] = 'driver';
+        } elseif ($status === 'on_the_way') {
+            // Toko memilih mengantar sendiri (< 300m atau kurir internal)
+            $updateData['picked_up_at'] = date('Y-m-d H:i:s');
+            $updateData['delivery_type'] = 'merchant';
+        } elseif ($status === 'delivered') {
+            // Pesanan selesai diantar oleh toko
+            $updateData['delivered_at'] = date('Y-m-d H:i:s');
+            $updateData['payment_status'] = 'paid';
+
+            // Auto-credit pendapatan toko (90%)
+            $userId = auth_id();
+            $vendorWallet = $this->walletModel->getOrCreate($userId, 'vendor');
+            $alreadyCredited = Database::fetchOne(
+                "SELECT id FROM `wallet_transactions` WHERE `wallet_id` = ? AND `category` = 'order_earning' AND `reference_id` = ? LIMIT 1",
+                [$vendorWallet['id'], (string)$order['id']]
+            );
+            if (!$alreadyCredited) {
+                $vendorEarning = (float)$order['order_amount'] * 0.90;
+                $this->walletModel->credit(
+                    $userId,
+                    $vendorEarning,
+                    'order_earning',
+                    "Penjualan pesanan #{$order['order_code']}",
+                    (string)$order['id']
+                );
+            }
         } elseif ($status === 'canceled') {
             $updateData['cancellation_reason'] = 'Dibatalkan oleh Mitra Toko';
             $updateData['canceled_at'] = date('Y-m-d H:i:s');
@@ -206,7 +239,11 @@ class VendorController extends Controller
         }
 
         Database::update('orders', $updateData, 'id = ?', [$orderId]);
-        $this->successResponse("Status pesanan #{$order['order_code']} diperbarui menjadi {$status}.");
+        $this->successResponse("Status pesanan #{$order['order_code']} berhasil diperbarui menjadi {$status}.", [
+            'order_id'      => $orderId,
+            'order_status'  => $status,
+            'delivery_type' => $updateData['delivery_type'] ?? ($order['delivery_type'] ?? 'driver')
+        ]);
     }
 
     public function products(): void

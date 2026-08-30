@@ -398,13 +398,17 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
 
         // Main Workflow Action
         Expanded(
-          child: _buildWorkflowButton(context, ctrl, orderId, status),
+          child: _buildWorkflowButton(context, ctrl, order, orderId, status),
         ),
       ],
     );
   }
 
-  Widget _buildWorkflowButton(BuildContext context, MerchantController ctrl, int orderId, String status) {
+  Widget _buildWorkflowButton(BuildContext context, MerchantController ctrl, Map<String, dynamic> order, int orderId, String status) {
+    final deliveryType = order['delivery_type']?.toString().toLowerCase() ?? 'driver';
+    final distanceKm = double.tryParse(order['distance_km']?.toString() ?? '1.5') ?? 1.5;
+    final isCloseProximity = distanceKm <= 0.30; // Radius < 300m
+
     if (status == 'pending' || status == 'confirmed') {
       return ElevatedButton.icon(
         onPressed: () async {
@@ -426,24 +430,56 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
         label: const Text('Terima & Masak', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
       );
     } else if (status == 'processing') {
-      return ElevatedButton.icon(
-        onPressed: () async {
-          final ok = await ctrl.updateOrderStatus(orderId, 'handover');
-          if (ok && context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Pesanan siap! Driver telah dinotifikasi untuk mengambil makanan.'), backgroundColor: Color(0xFF16A34A)),
-            );
-          }
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF16A34A),
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          elevation: 0,
-        ),
-        icon: const Icon(Icons.check_circle_outline_rounded, size: 15),
-        label: const Text('Siap Diambil Driver', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+      return Row(
+        children: [
+          // Pilihan 1: Lelang ke Driver
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                final ok = await ctrl.updateOrderStatus(orderId, 'handover', deliveryType: 'driver');
+                if (ok && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Pesanan siap & sedang dilelang ke radar driver! 🛵'), backgroundColor: Color(0xFF16A34A)),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF16A34A),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                elevation: 0,
+              ),
+              icon: const Icon(Icons.two_wheeler_rounded, size: 15),
+              label: const Text('Lelang ke Driver', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+            ),
+          ),
+          // Pilihan 2: Antar Sendiri oleh Toko (jika jarak dekat < 300m atau dipilih pelanggan)
+          if (isCloseProximity || deliveryType == 'merchant') ...[
+            const SizedBox(width: 6),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final ok = await ctrl.updateOrderStatus(orderId, 'on_the_way', deliveryType: 'merchant');
+                  if (ok && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Toko mengantar pesanan langsung ke pelanggan 🏪'), backgroundColor: Color(0xFFD97706)),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD97706),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
+                icon: const Icon(Icons.directions_walk_rounded, size: 15),
+                label: const Text('Antar Sendiri', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ],
       );
     } else if (status == 'handover') {
       return Container(
@@ -454,9 +490,30 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
           borderRadius: BorderRadius.circular(10),
         ),
         child: const Text(
-          '⏳ Menunggu Penjemputan Driver',
+          '⏳ Sedang Dilelang ke Driver',
           style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF7E22CE)),
         ),
+      );
+    } else if (status == 'on_the_way' && deliveryType == 'merchant') {
+      // Toko sedang mengantar sendiri -> tombol konfirmasi sampai
+      return ElevatedButton.icon(
+        onPressed: () async {
+          final ok = await ctrl.updateOrderStatus(orderId, 'delivered', deliveryType: 'merchant');
+          if (ok && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Pesanan selesai diantar! Pendapatan telah masuk ke saldo toko 🎉'), backgroundColor: Color(0xFF16A34A)),
+            );
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF16A34A),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          elevation: 0,
+        ),
+        icon: const Icon(Icons.check_circle_rounded, size: 15),
+        label: const Text('Konfirmasi Telah Diantar', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
       );
     } else if (status == 'delivered') {
       return Container(

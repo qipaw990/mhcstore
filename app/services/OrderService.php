@@ -117,6 +117,12 @@ class OrderService
                 $tariff['per_km_delivery_charge']
             );
 
+            // delivery_type: 'merchant' (diantar kurir toko langsung < 300m) atau 'driver' (lelang ke mitra driver)
+            $deliveryType = $data['delivery_type'] ?? 'driver';
+            if ($deliveryType === 'merchant') {
+                $deliveryCharge = 0.00;
+            }
+
             // Coupon
             $couponDiscount = 0.00;
             $couponCode     = null;
@@ -181,6 +187,7 @@ class OrderService
                 'payment_method'        => $paymentMethod,
                 'order_status'          => $orderStatus,
                 'order_type'            => $data['order_type'] ?? 'delivery',
+                'delivery_type'         => $deliveryType,
                 'delivery_address_json' => json_encode($data['delivery_address'] ?? []),
                 'order_notes'           => $data['order_notes'] ?? null,
                 'otp'                   => $otp,

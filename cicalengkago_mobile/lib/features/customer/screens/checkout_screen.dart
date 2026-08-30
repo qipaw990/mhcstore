@@ -29,6 +29,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _voucherController = TextEditingController();
 
   String _paymentMethod = 'wallet';
+  String _deliveryType = 'driver'; // 'driver' or 'merchant'
   bool _isSubmitting = false;
   bool _isFetchingLocation = true;
   bool _isValidatingVoucher = false;
@@ -48,7 +49,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         math.cos((uLat - sLat) * p) / 2 +
         math.cos(sLat * p) * math.cos(uLat * p) * (1 - math.cos((uLng - sLng) * p)) / 2;
     final double dist = 12742 * math.asin(math.sqrt(a)); // 2 * R; R = 6371 km
-    return math.max(0.5, double.parse(dist.toStringAsFixed(2)));
+    return double.parse(dist.toStringAsFixed(2));
   }
 
   double _calcZoneDeliveryFee(double distanceKm, {double minFee = 5000, double perKm = 2500}) {
@@ -132,19 +133,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final stores = (cart?['stores'] as List<dynamic>?) ?? [];
     final storeId = int.tryParse(stores.isNotEmpty ? stores[0]['store_id']?.toString() ?? '1' : '1') ?? 1;
 
+    // Calculate real distance
+    double realDistKm = 1.5;
+    if (stores.isNotEmpty) {
+      final double sLat = double.tryParse(stores[0]['latitude']?.toString() ?? '-6.9835') ?? -6.9835;
+      final double sLng = double.tryParse(stores[0]['longitude']?.toString() ?? '107.8335') ?? 107.8335;
+      if (sLat != 0 && sLng != 0 && _userLat != 0 && _userLng != 0) {
+        realDistKm = _calculateDistanceKm(sLat, sLng, _userLat, _userLng);
+      }
+    }
+
+    final bool isCloseProximity = (realDistKm <= 0.30);
+    final String chosenDeliveryType = (isCloseProximity && _deliveryType == 'merchant') ? 'merchant' : 'driver';
+
     // Compute totals for checkout
     final double subtotal = customerCtrl.cartSubtotal;
-    double deliveryFee = 0.0;
-    if (cart?['grand_delivery'] != null) {
-      deliveryFee = double.tryParse(cart!['grand_delivery'].toString()) ?? 5000.0;
-    } else if (stores.isNotEmpty) {
-      for (var s in stores) {
-        deliveryFee += double.tryParse(s['delivery_fee']?.toString() ?? '5000') ?? 5000.0;
-      }
-    } else {
-      deliveryFee = 5000.0;
-    }
-    if (deliveryFee <= 0) deliveryFee = 5000.0;
+    final double dynamicDeliveryFee = _calcZoneDeliveryFee(
+      realDistKm,
+      minFee: customerCtrl.zoneMinDeliveryCharge,
+      perKm: customerCtrl.zonePerKmDeliveryCharge,
+    );
+    final double deliveryFee = (chosenDeliveryType == 'merchant') ? 0.0 : dynamicDeliveryFee;
     final double grandTotal = (subtotal + deliveryFee + 1000.0 - _voucherDiscount).clamp(0.0, double.infinity);
 
     // Check CicalengkaPay wallet balance if wallet payment selected
@@ -174,6 +183,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       paymentMethod: _paymentMethod,
       note: _noteController.text.trim().isNotEmpty ? _noteController.text.trim() : null,
       couponCode: _appliedVoucherCode,
+      deliveryType: chosenDeliveryType,
+      distanceKm: realDistKm,
     );
 
     setState(() {
@@ -210,9 +221,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           AppAlert.showSuccess(
             context,
             title: 'Pesanan Berhasil Dibuat! 🎉',
-            message: _paymentMethod == 'wallet'
-                ? 'Pembayaran berhasil dipotong dari CicalengkaPay. Mencari driver terdekat.'
-                : 'Mencari driver terdekat untuk mengantar pesanan Anda.',
+            message: chosenDeliveryType == 'merchant'
+                ? 'Pesanan diteruskan ke Mitra Toko untuk dimasak & diantar langsung.'
+                : 'Pesanan diteruskan ke Mitra Toko. Driver akan segera ditugaskan setelah pesanan siap.',
           );
         }
 
@@ -251,13 +262,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
     }
 
+    final bool isCloseProximity = (calculatedDistKm <= 0.30); // Jarak < 300 meter
     final double zoneMinFee = customerCtrl.zoneMinDeliveryCharge;
     final double zonePerKm = customerCtrl.zonePerKmDeliveryCharge;
     final String zoneName = customerCtrl.zoneName;
     final double dynamicDeliveryFee = _calcZoneDeliveryFee(calculatedDistKm, minFee: zoneMinFee, perKm: zonePerKm);
 
     double subtotal = customerCtrl.cartSubtotal;
-    double deliveryFee = dynamicDeliveryFee;
+    double deliveryFee = (isCloseProximity && _deliveryType == 'merchant') ? 0.0 : dynamicDeliveryFee;
 
     const double serviceFee = 1000.0;
     final double grandTotal = (subtotal + deliveryFee + serviceFee - _voucherDiscount).clamp(0.0, double.infinity);
@@ -402,8 +414,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
             const SizedBox(height: 14),
 
+            // Pilihan Pengantaran jika radius < 300 meter
+            if (isCloseProximity)
+              _buildDeliveryTypeSelectorCard(calculatedDistKm, dynamicDeliveryFee),
+
             // Skema Tarif Zona Cicalengka Card (Transparan)
-            _buildZoneTariffCard(calculatedDistKm, zoneMinFee, zonePerKm, dynamicDeliveryFee, zoneName),
+            _buildZoneTariffCard(calculatedDistKm, zoneMinFee, zonePerKm, deliveryFee, zoneName),
 
             const SizedBox(height: 16),
 
@@ -1186,6 +1202,183 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildDeliveryTypeSelectorCard(double distKm, double dynamicDeliveryFee) {
+    final int meters = (distKm * 1000).round();
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF86EFAC), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF16A34A).withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF16A34A),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.near_me_rounded, color: Colors.white, size: 14),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Pilihan Pengantaran Radius Dekat 🎯',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF14532D)),
+                    ),
+                    Text(
+                      'Jarak ke resto hanya $meters meter (kurang dari 300m).',
+                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF166534)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Option 1: Diantar Kurir Toko (Gratis Rp 0)
+          InkWell(
+            onTap: () {
+              setState(() {
+                _deliveryType = 'merchant';
+              });
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _deliveryType == 'merchant' ? Colors.white : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _deliveryType == 'merchant' ? const Color(0xFF16A34A) : const Color(0xFFCBD5E1),
+                  width: _deliveryType == 'merchant' ? 2 : 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Radio<String>(
+                    value: 'merchant',
+                    groupValue: _deliveryType,
+                    activeColor: const Color(0xFF16A34A),
+                    onChanged: (val) {
+                      if (val != null) setState(() => _deliveryType = val);
+                    },
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Text(
+                              'Diantar Kurir Toko / Merchant',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDCFCE7),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'GRATIS',
+                                style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w900, color: Color(0xFF15803D)),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Staff toko akan mengantar pesanan langsung ke lokasi Anda.',
+                          style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Text(
+                    'Rp 0',
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF16A34A)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Option 2: Diantar Driver CicalengkaGO
+          InkWell(
+            onTap: () {
+              setState(() {
+                _deliveryType = 'driver';
+              });
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _deliveryType == 'driver' ? Colors.white : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _deliveryType == 'driver' ? AppTheme.primaryRed : const Color(0xFFCBD5E1),
+                  width: _deliveryType == 'driver' ? 2 : 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Radio<String>(
+                    value: 'driver',
+                    groupValue: _deliveryType,
+                    activeColor: AppTheme.primaryRed,
+                    onChanged: (val) {
+                      if (val != null) setState(() => _deliveryType = val);
+                    },
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Diantar Driver CicalengkaGO',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Dilelang ke mitra pengemudi resmi CicalengkaGO.',
+                          style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    CurrencyFormatter.formatRupiah(dynamicDeliveryFee),
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: Color(0xFF0F172A)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

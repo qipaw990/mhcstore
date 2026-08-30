@@ -359,6 +359,8 @@ class CustomerController extends ChangeNotifier {
     required String paymentMethod, // 'cod', 'wallet', 'midtrans'
     String? note,
     String? couponCode,
+    String deliveryType = 'driver', // 'driver' or 'merchant'
+    double? distanceKm,
   }) async {
     try {
       final res = await ApiService.postForm(ApiConstants.placeOrder, {
@@ -373,6 +375,8 @@ class CustomerController extends ChangeNotifier {
         'order_note': note ?? '',
         'order_notes': note ?? '',
         'coupon_code': couponCode ?? '',
+        'delivery_type': deliveryType,
+        if (distanceKm != null) 'distance_km': distanceKm.toString(),
       });
 
       if (res['success'] == true) {
