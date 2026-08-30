@@ -572,74 +572,88 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
         children: [
           // Radar Header
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 30,
-                      height: 30,
-                      decoration: const BoxDecoration(
-                        color: AppTheme.primaryRed,
-                        shape: BoxShape.circle,
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 30,
+                        height: 30,
+                        decoration: const BoxDecoration(
+                          color: AppTheme.primaryRed,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.radar_rounded, color: Colors.white, size: 16),
                       ),
-                      child: const Icon(Icons.radar_rounded, color: Colors.white, size: 16),
-                    ),
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              stageHeaderTitle,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
-                            ),
-                            if (_autoFollow) ...[
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFDCFCE7),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: const Color(0xFF86EFAC)),
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    stageHeaderTitle,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5, color: Color(0xFF0F172A)),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                                child: const Text('Live Jalan', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
-                              ),
-                            ],
+                                if (_autoFollow) ...[
+                                  const SizedBox(width: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFDCFCE7),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: const Color(0xFF86EFAC)),
+                                    ),
+                                    child: const Text('Live', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  margin: const EdgeInsets.only(right: 4),
+                                  decoration: const BoxDecoration(color: Color(0xFF16A34A), shape: BoxShape.circle),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    '${driverCtrl.currentLocation.latitude.toStringAsFixed(6)}, ${driverCtrl.currentLocation.longitude.toStringAsFixed(6)}',
+                                    style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF047857), fontFamily: 'monospace'),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
-                        Row(
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              margin: const EdgeInsets.only(right: 5),
-                              decoration: const BoxDecoration(color: Color(0xFF16A34A), shape: BoxShape.circle),
-                            ),
-                            Text(
-                              '${driverCtrl.currentLocation.latitude.toStringAsFixed(6)}, ${driverCtrl.currentLocation.longitude.toStringAsFixed(6)}',
-                              style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF047857), fontFamily: 'monospace'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
                   decoration: BoxDecoration(
                     color: isDeliveringToCustomer ? const Color(0xFFDCFCE7) : const Color(0xFFEFF6FF),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: isDeliveringToCustomer ? const Color(0xFF86EFAC) : const Color(0xFFBFDBFE)),
                   ),
                   child: Text(
                     isDeliveringToCustomer ? 'Antar Pesanan' : 'Ambil di Resto',
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 9.5,
                       fontWeight: FontWeight.bold,
                       color: isDeliveringToCustomer ? const Color(0xFF16A34A) : const Color(0xFF2563EB),
                     ),
@@ -1441,27 +1455,34 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: isMultiStore ? const Color(0xFFFEF3C7) : const Color(0xFFEFF6FF),
-                      borderRadius: BorderRadius.circular(8),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: isMultiStore ? const Color(0xFFFEF3C7) : const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        isMultiStore ? Icons.store_mall_directory_rounded : Icons.receipt_long_rounded,
+                        color: isMultiStore ? const Color(0xFFD97706) : const Color(0xFF2563EB),
+                        size: 17,
+                      ),
                     ),
-                    child: Icon(
-                      isMultiStore ? Icons.store_mall_directory_rounded : Icons.receipt_long_rounded,
-                      color: isMultiStore ? const Color(0xFFD97706) : const Color(0xFF2563EB),
-                      size: 18,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        isMultiStore ? 'Menu (${storeGroups.length} Toko)' : 'Rincian Menu Pesanan',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    isMultiStore ? 'Menu Pesanan (${storeGroups.length} Toko)' : 'Rincian Menu / Barang Pesanan',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -1470,8 +1491,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                   border: Border.all(color: const Color(0xFFCBD5E1)),
                 ),
                 child: Text(
-                  '$totalItemCount Item Total',
-                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                  '$totalItemCount Item',
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                 ),
               ),
             ],
