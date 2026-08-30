@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/services/receipt_printer_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../common/screens/in_app_chat_modal.dart';
 import '../controllers/merchant_controller.dart';
@@ -235,16 +236,29 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: statusBgColor,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    statusLabel,
-                    style: TextStyle(color: statusTextColor, fontSize: 10.5, fontWeight: FontWeight.bold),
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      icon: const Icon(Icons.print_rounded, size: 18, color: Color(0xFF2563EB)),
+                      tooltip: 'Cetak Struk Pesanan',
+                      onPressed: () => ReceiptPrinterService.printReceipt(order),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: statusBgColor,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        statusLabel,
+                        style: TextStyle(color: statusTextColor, fontSize: 10.5, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -5,6 +5,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/barcode_scanner_modal.dart';
+import '../../../core/services/receipt_printer_service.dart';
 import '../controllers/merchant_controller.dart';
 
 class MerchantPosScreen extends StatefulWidget {
@@ -728,16 +729,50 @@ class _MerchantPosScreenState extends State<MerchantPosScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
+
+              // Action Buttons: Cetak Struk & Transaksi Baru
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E293B),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.print_rounded, size: 18, color: Color(0xFF60A5FA)),
+                      label: const Text('Cetak Struk', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                      onPressed: () => ReceiptPrinterService.printReceipt(receipt),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF16A34A),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.share_rounded, size: 18),
+                      label: const Text('WhatsApp', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                      onPressed: () => ReceiptPrinterService.shareViaWhatsApp(receipt),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
 
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryRed,
-                    foregroundColor: Colors.white,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.primaryRed,
+                    side: const BorderSide(color: AppTheme.primaryRed),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 11),
                   ),
                   icon: const Icon(Icons.add_shopping_cart_rounded, size: 18),
                   label: const Text('Transaksi Baru', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
