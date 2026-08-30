@@ -11,26 +11,48 @@ class VendorMiddleware
             session_start();
         }
 
-        if (empty($_SESSION['user']) || empty($_SESSION['user']['id'])) {
-            $token = get_bearer_token();
-            if (!empty($token)) {
-                $user = Database::fetchOne("SELECT * FROM `users` WHERE `api_token` = ? AND `is_active` = 1 LIMIT 1", [$token]);
-                if (!empty($user)) {
-                    $_SESSION['user'] = $user;
+        $user = auth_user();
+        if ($user) {
+            $_SESSION['user'] = $user;
+        }
+
+        $userId = auth_id();
+        $isVendor = false;
+
+        if ($userId > 0) {
+            $role = $_SESSION['user']['role'] ?? auth_role();
+            if ($role === 'vendor' || $role === 'merchant') {
+                $isVendor = true;
+            } else {
+                // If user owns a store in stores table, recognize as vendor!
+                $store = Database::fetchOne("SELECT id FROM stores WHERE vendor_id = ? LIMIT 1", [$userId]);
+                if ($store) {
+                    $isVendor = true;
+                    // Sync user role to vendor
+                    Database::update('users', ['role' => 'vendor'], 'id = ?', [$userId]);
+                    if (isset($_SESSION['user'])) {
+                        $_SESSION['user']['role'] = 'vendor';
+                    }
                 }
             }
         }
 
-        if (empty($_SESSION['user']) || ($_SESSION['user']['role'] ?? '') !== 'vendor') {
+        if (!$isVendor) {
             $isJson = (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
-                || isset($_SERVER['HTTP_X_REQUESTED_WITH']);
+                || isset($_SERVER['HTTP_X_REQUESTED_WITH'])
+                || !empty(get_bearer_token())
+                || isset($_SERVER['HTTP_X_USER_ID']);
 
             if ($isJson) {
                 if (!headers_sent()) {
                     header('Content-Type: application/json');
                     http_response_code(403);
                 }
-                echo json_encode(['success' => false, 'message' => 'Akses ditolak. Peran Mitra Vendor diperlukan.', 'unauthenticated' => true]);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Akses ditolak. Peran Mitra Vendor diperlukan.',
+                    'unauthenticated' => empty($userId)
+                ]);
                 exit;
             }
 

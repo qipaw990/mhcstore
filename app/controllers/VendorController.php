@@ -34,6 +34,29 @@ class VendorController extends Controller
         $store = $this->storeModel->findByVendorId($userId);
 
         if (!$store) {
+            if ($this->isJsonRequest()) {
+                $this->successResponse('Toko belum terdaftar', [
+                    'store'          => null,
+                    'orders'         => [],
+                    'total_orders'   => 0,
+                    'stats'          => [
+                        'total_orders'    => 0,
+                        'total_revenue'   => 0,
+                        'gross_sales'     => 0,
+                        'pending_count'   => 0,
+                        'processing_count'=> 0,
+                        'on_the_way_count'=> 0,
+                        'delivered_count' => 0,
+                        'canceled_count'  => 0,
+                        'today_orders'    => 0,
+                        'today_revenue'   => 0,
+                    ],
+                    'reviews'        => [],
+                    'products_count' => 0,
+                    'wallet'         => $this->walletModel->getOrCreate($userId, 'vendor'),
+                ]);
+                return;
+            }
             $this->view('vendor.setup_store', ['title' => 'Daftarkan Toko Anda'], 'vendor_layout');
             return;
         }

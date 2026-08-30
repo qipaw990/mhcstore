@@ -51,6 +51,10 @@ class ApiService {
 
   static Future<String?> _getSavedUserId() async {
     final prefs = await SharedPreferences.getInstance();
+    final directId = prefs.getString('user_id');
+    if (directId != null && directId.isNotEmpty) {
+      return directId;
+    }
     final rawUser = prefs.getString(_userDataKey);
     if (rawUser != null && rawUser.isNotEmpty) {
       try {
@@ -84,9 +88,12 @@ class ApiService {
   // ── Simpan session setelah login berhasil ──────────────────────────
   static Future<void> saveSession(Map<String, dynamic> user, {String? token}) async {
     final prefs = await SharedPreferences.getInstance();
-    final apiToken = token ?? user['api_token']?.toString();
+    final apiToken = token ?? user['api_token']?.toString() ?? user['token']?.toString();
     if (apiToken != null && apiToken.isNotEmpty) {
       await prefs.setString('api_token', apiToken);
+    }
+    if (user['id'] != null) {
+      await prefs.setString('user_id', user['id'].toString());
     }
     await prefs.setString(_userRoleKey, user['role']?.toString() ?? 'customer');
     await prefs.setString(_userDataKey, jsonEncode(user));

@@ -25,7 +25,27 @@ class AuthService
             throw new Exception("Email/No. HP atau password salah.");
         }
 
-        $role = $user['role'];
+        $role = $user['role'] ?? 'customer';
+
+        // Auto-detect vendor role if user owns a store in stores table
+        if ($role !== 'vendor' && $role !== 'admin' && $role !== 'delivery_man') {
+            $storeCheck = Database::fetchOne("SELECT id, name, status FROM `stores` WHERE `vendor_id` = ? LIMIT 1", [$user['id']]);
+            if ($storeCheck) {
+                $role = 'vendor';
+                $user['role'] = 'vendor';
+                Database::update('users', ['role' => 'vendor'], 'id = ?', [$user['id']]);
+            }
+        }
+
+        // Auto-detect delivery_man role if profile exists
+        if ($role !== 'delivery_man' && $role !== 'admin' && $role !== 'vendor') {
+            $dmCheck = Database::fetchOne("SELECT id FROM `delivery_men` WHERE `user_id` = ? LIMIT 1", [$user['id']]);
+            if ($dmCheck) {
+                $role = 'delivery_man';
+                $user['role'] = 'delivery_man';
+                Database::update('users', ['role' => 'delivery_man'], 'id = ?', [$user['id']]);
+            }
+        }
 
         // If vendor, check store approval status
         if ($role === 'vendor') {
