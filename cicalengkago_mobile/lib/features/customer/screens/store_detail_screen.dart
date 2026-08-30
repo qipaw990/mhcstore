@@ -514,7 +514,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                               decoration: BoxDecoration(
-                                color: isOpen ? const Color(0xFFEF4444) : const Color(0xFF94A3B8),
+                                color: isOpen ? const Color(0xFFEF4444) : const Color(0xFFE2E8F0),
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: isOpen ? [
                                   BoxShadow(
@@ -525,8 +525,12 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                                 ] : null,
                               ),
                               child: Text(
-                                isOpen ? '+ Tambah' : 'Tutup',
-                                style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold),
+                                isOpen ? 'Tambah' : 'Tutup',
+                                style: TextStyle(
+                                  color: isOpen ? Colors.white : const Color(0xFF64748B),
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),

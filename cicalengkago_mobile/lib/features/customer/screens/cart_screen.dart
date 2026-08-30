@@ -752,12 +752,16 @@ class _CartScreenState extends State<CartScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                   decoration: BoxDecoration(
-                                    color: storeOpen ? AppTheme.inkBlack : const Color(0xFF94A3B8),
+                                    color: storeOpen ? AppTheme.inkBlack : const Color(0xFFE2E8F0),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Text(
-                                    storeOpen ? '+ Tambah' : '🔴 Tutup',
-                                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                    storeOpen ? 'Tambah' : 'Tutup',
+                                    style: TextStyle(
+                                      color: storeOpen ? Colors.white : const Color(0xFF64748B),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ),

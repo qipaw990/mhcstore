@@ -799,17 +799,17 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
                               }
                             },
                             icon: const Icon(Icons.add_rounded, size: 16),
-                            label: const Text('+ Tambah', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            label: const Text('Tambah', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                           )
                         : Container(
                             decoration: BoxDecoration(
-                              color: const Color(0xFF94A3B8),
+                              color: const Color(0xFFE2E8F0),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Center(
                               child: Text(
-                                '🔴 Toko Tutup',
-                                style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                'Tutup',
+                                style: TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
