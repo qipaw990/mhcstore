@@ -526,6 +526,7 @@ class DriverController extends ChangeNotifier {
     required String accountHolder,
     required double amount,
   }) async {
+    _lastErrorMessage = null;
     try {
       final res = await ApiService.postForm(ApiConstants.driverWithdraw, {
         'bank_name': bankName,
@@ -533,21 +534,31 @@ class DriverController extends ChangeNotifier {
         'account_holder': accountHolder,
         'amount': amount.toString(),
       });
+
       if (res['success'] == true) {
         final ctx = rootNavigatorKey.currentContext;
         if (ctx != null && ctx.mounted) {
-          DriverTransactionAlert.showFloatingBanner(
-            ctx,
-            title: 'Penarikan Diajukan 📤',
-            message: 'Permintaan tarik saldo ke $bankName ($accountNumber) berhasil dikirim.',
-            amount: amount,
-            type: 'debit',
-          );
+          try {
+            DriverTransactionAlert.showFloatingBanner(
+              ctx,
+              title: 'Penarikan Diajukan 📤',
+              message: 'Permintaan tarik saldo ke $bankName ($accountNumber) berhasil dikirim.',
+              amount: amount,
+              type: 'debit',
+            );
+          } catch (_) {}
         }
-        await fetchEarnings();
+        await fetchEarnings(silent: true);
+        notifyListeners();
         return true;
+      } else {
+        _lastErrorMessage = res['message']?.toString() ?? 'Gagal mengajukan penarikan.';
       }
-    } catch (_) {}
+    } catch (e) {
+      _lastErrorMessage = 'Gagal menghubungi server. Periksa koneksi internet Anda.';
+      debugPrint('[DriverController] submitWithdraw Exception: $e');
+    }
+    notifyListeners();
     return false;
   }
 

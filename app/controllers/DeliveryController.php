@@ -643,7 +643,7 @@ class DeliveryController extends Controller
             $this->successResponse('Pengajuan penarikan dana berhasil! Dana akan segera ditransfer ke rekening Anda.', [
                 'withdraw' => $req
             ]);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             $this->errorResponse($e->getMessage());
         }
     }

@@ -589,8 +589,10 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(ok ? 'Permintaan penarikan berhasil dikirim!' : 'Gagal mengajukan penarikan'),
-                              backgroundColor: ok ? Colors.green : Colors.red,
+                              content: Text(ok
+                                  ? 'Permintaan penarikan berhasil dikirim! Dana segera diproses.'
+                                  : (ctrl.lastErrorMessage ?? 'Gagal mengajukan penarikan.')),
+                              backgroundColor: ok ? const Color(0xFF059669) : const Color(0xFFDC2626),
                             ),
                           );
                         }
