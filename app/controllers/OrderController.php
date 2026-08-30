@@ -98,7 +98,7 @@ class OrderController extends Controller
                 $stObj = $storeModel->findWithDetails($stId);
                 if ($stObj) {
                     attach_store_schedule_data($stObj, true);
-                    if (empty($stObj['is_open']) || empty($stObj['is_currently_open'])) {
+                    if (empty($stObj['is_open'])) {
                         $stName = $stObj['name'] ?? 'Toko Mitra';
                         $this->errorResponse("Maaf, {$stName} sedang TUTUP dan tidak dapat menerima pesanan saat ini. Silakan hapus produk dari toko tersebut atau pesan saat toko buka.");
                         return;

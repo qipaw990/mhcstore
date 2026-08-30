@@ -19,8 +19,10 @@ class CustomerController extends ChangeNotifier {
   Map<String, dynamic>? _profile;
   List<dynamic> _notifications = [];
   int _unreadNotifCount = 0;
+  String? _lastCartError;
 
   bool get isLoading => _isLoading;
+  String? get lastCartError => _lastCartError;
   List<dynamic> get modules => _modules;
   List<dynamic> get banners => _banners;
   List<dynamic> get categories => _categories;
@@ -213,6 +215,7 @@ class CustomerController extends ChangeNotifier {
   }
 
   Future<bool> addToCart(int productId, int quantity, {String? notes}) async {
+    _lastCartError = null;
     try {
       final Map<String, String> fields = {
         'product_id': productId.toString(),
@@ -228,11 +231,18 @@ class CustomerController extends ChangeNotifier {
       await fetchCart();
 
       if (res['success'] == true || res['status'] == 'success') {
+        _lastCartError = null;
+        notifyListeners();
         return true;
+      } else {
+        _lastCartError = res['message']?.toString() ?? 'Gagal menambahkan ke keranjang';
       }
-    } catch (_) {}
+    } catch (e) {
+      _lastCartError = 'Terjadi kesalahan koneksi: $e';
+    }
 
     await fetchCart();
+    notifyListeners();
     return false;
   }
 

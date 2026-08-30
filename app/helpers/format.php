@@ -118,20 +118,22 @@ function attach_store_schedule_data(&$store, bool $allowLiveCurl = false): void
 
     // 1. If merchant/admin manually toggled OFF (0), store is TUTUP (0)!
     if ($vendorToggle === 0) {
-        $store['is_open']         = 0;
-        $store['opening_time']    = $scheduleData['opening_time'];
-        $store['closing_time']    = $scheduleData['closing_time'];
-        $store['operating_hours'] = $scheduleData['operating_hours'];
+        $store['is_open']            = 0;
+        $store['is_currently_open']  = false;
+        $store['opening_time']       = $scheduleData['opening_time'];
+        $store['closing_time']       = $scheduleData['closing_time'];
+        $store['operating_hours']    = $scheduleData['operating_hours'];
         return;
     }
 
     // 2. If vendorToggle is 1 (BUKA), verify against operating hours schedule
     $isOpen = $scheduleData['is_within_hours'];
 
-    $store['is_open']         = $isOpen ? 1 : 0;
-    $store['opening_time']    = $scheduleData['opening_time'];
-    $store['closing_time']    = $scheduleData['closing_time'];
-    $store['operating_hours'] = $scheduleData['operating_hours'];
+    $store['is_open']            = $isOpen ? 1 : 0;
+    $store['is_currently_open']  = (bool)$isOpen;
+    $store['opening_time']       = $scheduleData['opening_time'];
+    $store['closing_time']       = $scheduleData['closing_time'];
+    $store['operating_hours']    = $scheduleData['operating_hours'];
 }
 
 function check_grab_url_is_open(string $url, bool $allowLiveCurl = false): ?bool

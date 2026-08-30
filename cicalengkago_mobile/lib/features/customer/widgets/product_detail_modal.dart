@@ -720,21 +720,29 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                               paddingHorizontal: 12,
                               fullWidth: true,
                               onPressed: () async {
-                                if (!RequireAuthWidget.check(context)) {
-                                  return;
-                                }
-                                await customerCtrl.addToCart(
+                                final ok = await customerCtrl.addToCart(
                                   productId,
                                   _quantity,
                                   notes: _notesController.text,
                                 );
                                 if (context.mounted) {
-                                  Navigator.pop(context);
-                                  AppAlert.showCartAdded(
-                                    context,
-                                    productName: name,
-                                    quantity: _quantity,
-                                  );
+                                  if (ok) {
+                                    Navigator.pop(context);
+                                    AppAlert.showCartAdded(
+                                      context,
+                                      productName: name,
+                                      quantity: _quantity,
+                                    );
+                                  } else {
+                                    final err = customerCtrl.lastCartError ?? 'Gagal menambahkan ke keranjang';
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(err),
+                                        backgroundColor: AppTheme.primaryRed,
+                                        duration: const Duration(seconds: 3),
+                                      ),
+                                    );
+                                  }
                                 }
                               },
                             )

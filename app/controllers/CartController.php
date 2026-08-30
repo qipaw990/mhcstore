@@ -37,7 +37,7 @@ class CartController extends Controller
         $store = (new \App\Models\Store())->findWithDetails((int)$product['store_id']);
         if ($store) {
             attach_store_schedule_data($store, true);
-            if (empty($store['is_open']) || empty($store['is_currently_open'])) {
+            if (empty($store['is_open'])) {
                 $storeName = $store['name'] ?? 'Toko';
                 $this->errorResponse("Maaf, {$storeName} sedang TUTUP dan tidak dapat menerima pesanan saat ini.");
                 return;
@@ -137,7 +137,7 @@ class CartController extends Controller
         $sessionId = $_SERVER['HTTP_X_SESSION_ID'] ?? session_id();
 
         if ($cartId <= 0 && $productId > 0) {
-            $findItem = Database::fetchOne("SELECT id, quantity FROM cart WHERE product_id = ? AND ((user_id IS NOT NULL AND user_id = ?) OR session_id = ?) ORDER BY id DESC LIMIT 1", [$productId, $userId, $sessionId]);
+            $findItem = Database::fetchOne("SELECT id, quantity FROM `carts` WHERE product_id = ? AND ((user_id IS NOT NULL AND user_id = ?) OR session_id = ?) ORDER BY id DESC LIMIT 1", [$productId, $userId, $sessionId]);
             if ($findItem) {
                 $cartId = (int)$findItem['id'];
             }

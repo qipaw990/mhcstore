@@ -567,12 +567,19 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                             onTap: isOpen ? () async {
                               final productId = int.tryParse(product['id']?.toString() ?? '0') ?? 0;
                               final ok = await customerCtrl.addToCart(productId, 1);
-                              if (ok && context.mounted) {
-                                AppAlert.showCartAdded(
-                                  context,
-                                  productName: product['name'] ?? 'Menu',
-                                  quantity: 1,
-                                );
+                              if (context.mounted) {
+                                if (ok) {
+                                  AppAlert.showCartAdded(
+                                    context,
+                                    productName: product['name'] ?? 'Menu',
+                                    quantity: 1,
+                                  );
+                                } else {
+                                  final err = customerCtrl.lastCartError ?? 'Gagal menambahkan ke keranjang';
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(err), backgroundColor: AppTheme.primaryRed),
+                                  );
+                                }
                               }
                             } : null,
                             borderRadius: BorderRadius.circular(20),
