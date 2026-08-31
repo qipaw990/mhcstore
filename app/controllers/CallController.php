@@ -143,12 +143,11 @@ class CallController extends Controller
     public function poll(): void
     {
         try {
-            $userId   = auth_id() ?: 0;
-            $orderCode = sanitize(trim($_GET['order_code'] ?? ''));
-            $reqUserId = (int)($_GET['user_id'] ?? 0);
-            if ($reqUserId > 0 && $userId === 0) {
-                $userId = $reqUserId;
+            $userId   = (int)($_GET['user_id'] ?? 0);
+            if ($userId === 0) {
+                $userId = auth_id() ?: (int)($_SESSION['user']['id'] ?? ($_SESSION['user_id'] ?? 0));
             }
+            $orderCode = sanitize(trim($_GET['order_code'] ?? ''));
 
             $whereSql = "vc.created_at >= NOW() - INTERVAL 5 MINUTE AND vc.status IN ('calling', 'connected', 'ended', 'rejected')";
             $params = [];

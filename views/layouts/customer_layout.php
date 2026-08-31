@@ -29,6 +29,7 @@ $unreadNotifs = $user ? (new \App\Models\Notification())->getUnreadCount($user['
 
     <script>
         window.BASE_URL = "<?= $baseUrl ?>";
+        window.CURRENT_USER_ID = <?= (int)(auth_id() ?? ($_SESSION['user']['id'] ?? ($_SESSION['user_id'] ?? 0))) ?>;
     </script>
 </head>
 <body>

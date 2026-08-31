@@ -43,6 +43,7 @@ if ($user) {
     <script>
         window.BASE_URL = "<?= $baseUrl ?>";
         window.VENDOR_STORE_ID = <?= $store ? (int)$store['id'] : 0 ?>;
+        window.CURRENT_USER_ID = <?= (int)(auth_id() ?? ($_SESSION['user']['id'] ?? ($_SESSION['user_id'] ?? 0))) ?>;
     </script>
 </head>
 <body class="merchant-pwa-body">
@@ -299,5 +300,6 @@ function dismissVendorToast(id) {
     <?php unset($_SESSION['info']); ?>
 <?php endif; ?>
 
+<script src="<?= $baseUrl ?>/assets/js/mobile-call.js?v=<?= time() ?>"></script>
 </body>
 </html>

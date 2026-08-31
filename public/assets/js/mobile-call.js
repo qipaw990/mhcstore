@@ -1233,12 +1233,24 @@
             if (pollInterval) clearInterval(pollInterval);
 
             pollInterval = setInterval(async () => {
-                const url = currentOrderCode
-                    ? ((window.BASE_URL || '') + `/calls/poll?order_code=${encodeURIComponent(currentOrderCode)}`)
-                    : ((window.BASE_URL || '') + `/calls/poll`);
+                let baseUrl = (window.BASE_URL || '').replace(/\/+$/, '');
+                let url = baseUrl + '/calls/poll';
+                const params = [];
+                if (currentOrderCode) {
+                    params.push('order_code=' + encodeURIComponent(currentOrderCode));
+                }
+                const activeUserId = window.CURRENT_USER_ID || (window.CCG_USER_ID || 0);
+                if (activeUserId > 0) {
+                    params.push('user_id=' + activeUserId);
+                }
+                if (params.length > 0) {
+                    url += '?' + params.join('&');
+                } else if (!currentCallId) {
+                    return; // Wait until order_code or user_id is ready
+                }
 
                 try {
-                    const res = await fetch(url);
+                    const res = await fetch(url, { credentials: 'same-origin' });
                     const data = await res.json();
 
                     if (!data.success || !data.data || !data.data.active_call) {
@@ -1251,6 +1263,7 @@
 
                     // 1. Incoming call for receiver
                     if (activeCall.status === 'calling' && !isCaller && !currentCallId) {
+                        console.log('🚨 [VoiceCall Web] Incoming call received from:', activeCall.caller_name);
                         this.showIncomingCall(activeCall);
                     }
 
