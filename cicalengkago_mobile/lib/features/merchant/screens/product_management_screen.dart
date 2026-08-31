@@ -474,46 +474,81 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                   ],
                 ),
 
-                // Daftar Badge Harga per Varian
+                // Daftar Rincian Variasi Menu (Clean Card Layout)
                 if (hasVariations) ...[
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 4,
-                    runSpacing: 4,
-                    children: variations.map((v) {
-                      final vName = v['name']?.toString() ?? 'Varian';
-                      final vPrice = double.tryParse(v['price']?.toString() ?? '0') ?? 0.0;
-                      final vHpp = double.tryParse(v['hpp']?.toString() ?? '0') ?? 0.0;
-
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEF2F2),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: const Color(0xFFFECACA)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                  Container(
+                    margin: const EdgeInsets.only(top: 6, bottom: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
+                            const Icon(Icons.local_offer_outlined, size: 11, color: Color(0xFF64748B)),
+                            const SizedBox(width: 4),
                             Text(
-                              '$vName: ',
-                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF991B1B)),
+                              '${variations.length} Pilihan Varian:',
+                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
                             ),
-                            Text(
-                              CurrencyFormatter.formatRupiah(vPrice),
-                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTheme.primaryRed),
-                            ),
-                            if (vHpp > 0) ...[
-                              const SizedBox(width: 3),
-                              Text(
-                                '(HPP ${CurrencyFormatter.formatRupiah(vHpp)})',
-                                style: const TextStyle(fontSize: 8.5, color: Color(0xFFB45309), fontWeight: FontWeight.w600),
-                              ),
-                            ],
                           ],
                         ),
-                      );
-                    }).toList(),
+                        const SizedBox(height: 4),
+                        ...variations.map((v) {
+                          final vName = v['name']?.toString() ?? 'Varian';
+                          final vPrice = double.tryParse(v['price']?.toString() ?? '0') ?? 0.0;
+                          final vHpp = double.tryParse(v['hpp']?.toString() ?? '0') ?? 0.0;
+
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 4,
+                                  height: 4,
+                                  margin: const EdgeInsets.only(right: 6),
+                                  decoration: const BoxDecoration(
+                                    color: AppTheme.primaryRed,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    vName,
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  CurrencyFormatter.formatRupiah(vPrice),
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppTheme.primaryRed),
+                                ),
+                                if (vHpp > 0) ...[
+                                  const SizedBox(width: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFEF3C7),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      'HPP ${CurrencyFormatter.formatRupiah(vHpp)}',
+                                      style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
                   ),
                 ],
                 if (product['barcode'] != null && product['barcode'].toString().trim().isNotEmpty) ...[
@@ -529,8 +564,8 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                     ],
                   ),
                 ],
-                // HPP + Profit Row (Tappable to Recipe)
-                if (hpp > 0) ...[
+                // HPP + Profit Row (Hanya ditampilkan jika tidak punya varian, karena varian sudah punya HPP masing-masing)
+                if (!hasVariations && hpp > 0) ...[
                   const SizedBox(height: 5),
                   InkWell(
                     onTap: () async {

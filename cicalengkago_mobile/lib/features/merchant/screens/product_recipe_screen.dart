@@ -1182,10 +1182,15 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          isBaseTab ? 'Komposisi Resep Dasar' : 'Komposisi Varian (${_variations[variantIndex]['name']})',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                        Expanded(
+                          child: Text(
+                            isBaseTab ? 'Komposisi Resep Dasar' : 'Komposisi Varian (${_variations[variantIndex]['name']})',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
+                        const SizedBox(width: 8),
                         TextButton.icon(
                           onPressed: _addIngredient,
                           icon: const Icon(Icons.add_circle_outline_rounded, size: 16, color: Color(0xFF2563EB)),
@@ -1423,18 +1428,25 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
               : null,
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 16, color: isSelected ? Colors.white : const Color(0xFF64748B)),
             const SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    color: isSelected ? Colors.white : const Color(0xFF1E293B),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 140),
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: isSelected ? Colors.white : const Color(0xFF1E293B),
+                    ),
                   ),
                 ),
                 Text(
@@ -1524,9 +1536,10 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
   }
 
   String _fmtPrice(double v) {
-    if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(2)} Jt';
-    if (v >= 1000) return '${(v / 1000).toStringAsFixed(0)} Rb';
-    return v.toStringAsFixed(0);
+    final intVal = v.round();
+    final str = intVal.toString();
+    final reg = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
+    return str.replaceAllMapped(reg, (Match m) => '${m[1]}.');
   }
 }
 
