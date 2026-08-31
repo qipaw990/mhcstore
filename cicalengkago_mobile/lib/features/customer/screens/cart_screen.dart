@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/utils/item_options_helper.dart';
 import '../../../core/widgets/uber_pill_button.dart';
 import '../../../core/widgets/app_alert.dart';
 import '../../../core/widgets/require_auth_widget.dart';
@@ -536,23 +537,61 @@ class _CartScreenState extends State<CartScreen> {
                 Text(
                   item['product_name'] ?? item['name'] ?? 'Produk Kuliner',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.inkBlack),
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (item['variation_name'] != null && item['variation_name'].toString().isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    '• Variasi: ${item['variation_name']}',
-                    style: const TextStyle(fontSize: 10.5, color: AppTheme.primaryRed, fontWeight: FontWeight.bold),
-                  ),
-                ],
-                if (item['addons'] != null && item['addons'] is List && (item['addons'] as List).isNotEmpty) ...[
-                  const SizedBox(height: 1),
-                  Text(
-                    '• Topping: ${(item['addons'] as List).map((a) => a['name']).join(", ")}',
-                    style: const TextStyle(fontSize: 10.5, color: Color(0xFFD97706), fontWeight: FontWeight.w600),
-                  ),
-                ],
+                // Variation badge
+                Builder(
+                  builder: (context) {
+                    final varName = ItemOptionsHelper.getVariationName(item);
+                    if (varName == null || varName.isEmpty) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 2.5),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: const Color(0xFFFECACA)),
+                        ),
+                        child: Text(
+                          '• Varian: $varName',
+                          style: const TextStyle(fontSize: 10, color: AppTheme.primaryRed, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                // Addons / Toppings badge
+                Builder(
+                  builder: (context) {
+                    final addons = ItemOptionsHelper.getAddonNames(item);
+                    if (addons.isEmpty) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        '• Topping: ${addons.join(", ")}',
+                        style: const TextStyle(fontSize: 10.5, color: Color(0xFFD97706), fontWeight: FontWeight.w600),
+                      ),
+                    );
+                  },
+                ),
+                // Special notes
+                Builder(
+                  builder: (context) {
+                    final notes = ItemOptionsHelper.getItemNotes(item);
+                    if (notes == null || notes.isEmpty) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 1.5),
+                      child: Text(
+                        'Catatan: $notes',
+                        style: const TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: Color(0xFF64748B)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  },
+                ),
                 const SizedBox(height: 3),
                 Text(
                   '${CurrencyFormatter.formatRupiah(itemPrice)} / porsi',

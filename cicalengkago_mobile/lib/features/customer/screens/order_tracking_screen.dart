@@ -12,6 +12,7 @@ import '../../../core/constants/zone_constants.dart';
 import '../../../core/network/api_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/utils/item_options_helper.dart';
 import '../../../core/services/global_call_service.dart';
 import '../../../core/services/location_service.dart';
 import '../../../core/services/route_service.dart';
@@ -2523,9 +2524,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
     final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
     final itemTotal = price * qty;
-    final variantText = item['variant']?.toString() ??
-        item['variation_name']?.toString() ??
-        '';
+    final variantText = ItemOptionsHelper.getVariationName(item) ?? '';
+    final addonNames = ItemOptionsHelper.getAddonNames(item);
+    final itemNotes = ItemOptionsHelper.getItemNotes(item);
 
     final rawImg = item['product_image'] ?? item['image'] ?? (item['product'] is Map ? item['product']['image'] : null);
     final imgUrl = rawImg != null && rawImg.toString().isNotEmpty
@@ -2612,7 +2613,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                             child: Text(
                               name,
                               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
-                              maxLines: 1,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -2621,9 +2622,35 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       if (variantText.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(top: 2),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEE2E2),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: const Color(0xFFFECACA)),
+                            ),
+                            child: Text(
+                              '• Varian: $variantText',
+                              style: const TextStyle(fontSize: 9.5, color: AppTheme.primaryRed, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      if (addonNames.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 1.5),
                           child: Text(
-                            'Varian: $variantText',
-                            style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                            '• Topping: ${addonNames.join(", ")}',
+                            style: const TextStyle(fontSize: 10, color: Color(0xFFD97706), fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      if (itemNotes != null && itemNotes.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 1.5),
+                          child: Text(
+                            'Catatan: $itemNotes',
+                            style: const TextStyle(fontSize: 9.5, fontStyle: FontStyle.italic, color: Color(0xFF64748B)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       if (itemStore.isNotEmpty && itemStore != storeName)

@@ -7,6 +7,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/utils/item_options_helper.dart';
 import '../../../core/widgets/app_alert.dart';
 import '../../../core/widgets/require_auth_widget.dart';
 import '../../../core/services/location_service.dart';
@@ -760,7 +761,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final name = (item['product_name'] ?? item['name'] ?? 'Menu Kuliner').toString();
     final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
     final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
-    final notes = item['item_notes'] ?? item['notes'];
     final imageUrl = _getFoodImage(item);
 
     return Padding(
@@ -824,15 +824,58 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (notes != null && notes.toString().trim().isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    'Catatan: ${notes.toString().trim()}',
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                // Variation Badge
+                Builder(
+                  builder: (context) {
+                    final varName = ItemOptionsHelper.getVariationName(item);
+                    if (varName == null || varName.isEmpty) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: const Color(0xFFFECACA)),
+                        ),
+                        child: Text(
+                          '• Varian: $varName',
+                          style: const TextStyle(fontSize: 9.5, color: AppTheme.primaryRed, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                // Addons / Toppings
+                Builder(
+                  builder: (context) {
+                    final addons = ItemOptionsHelper.getAddonNames(item);
+                    if (addons.isEmpty) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 1.5),
+                      child: Text(
+                        '• Topping: ${addons.join(", ")}',
+                        style: const TextStyle(fontSize: 10, color: Color(0xFFD97706), fontWeight: FontWeight.w600),
+                      ),
+                    );
+                  },
+                ),
+                // Item Notes
+                Builder(
+                  builder: (context) {
+                    final noteText = ItemOptionsHelper.getItemNotes(item);
+                    if (noteText == null || noteText.isEmpty) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 1.5),
+                      child: Text(
+                        'Catatan: $noteText',
+                        style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  },
+                ),
                 const SizedBox(height: 2),
                 Text(
                   CurrencyFormatter.formatRupiah(price),

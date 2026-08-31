@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../utils/currency_formatter.dart';
+import '../utils/item_options_helper.dart';
 
 class ReceiptPrinterService {
   /// Generate and print thermal receipt (responsive to 58mm roll, 80mm roll, and A4/Standard PDF)
@@ -187,12 +188,13 @@ class ReceiptPrinterService {
 
                   // Items List
                   ...items.map((it) {
-                    final name = (it['product_name'] ?? it['name'] ?? 'Item').toString();
-                    final qty = int.tryParse(it['quantity']?.toString() ?? it['qty']?.toString() ?? '1') ?? 1;
-                    final price = double.tryParse(it['price']?.toString() ?? '0') ?? 0.0;
+                    final iMap = it is Map ? it : {};
+                    final name = (iMap['product_name'] ?? iMap['name'] ?? 'Item').toString();
+                    final qty = int.tryParse(iMap['quantity']?.toString() ?? iMap['qty']?.toString() ?? '1') ?? 1;
+                    final price = double.tryParse(iMap['price']?.toString() ?? '0') ?? 0.0;
                     final lineTotal = price * qty;
-                    final varName = (it['variation_name'] ?? '').toString();
-                    final addonsText = (it['addons_text'] ?? '').toString();
+                    final varName = ItemOptionsHelper.getVariationName(iMap) ?? '';
+                    final addonNames = ItemOptionsHelper.getAddonNames(iMap);
 
                     return pw.Padding(
                       padding: pw.EdgeInsets.only(bottom: isRoll ? 3 : 6),
@@ -206,8 +208,8 @@ class ReceiptPrinterService {
                           ),
                           if (varName.isNotEmpty)
                             pw.Text('  * Varian: $varName', style: pw.TextStyle(fontSize: isRoll ? 6.2 : 8.8, color: PdfColors.grey700)),
-                          if (addonsText.isNotEmpty)
-                            pw.Text('  * Topping: $addonsText', style: pw.TextStyle(fontSize: isRoll ? 6.2 : 8.8, color: PdfColors.grey700)),
+                          if (addonNames.isNotEmpty)
+                            pw.Text('  * Topping: ${addonNames.join(", ")}', style: pw.TextStyle(fontSize: isRoll ? 6.2 : 8.8, color: PdfColors.grey700)),
                           pw.Row(
                             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                             children: [
@@ -397,10 +399,18 @@ class ReceiptPrinterService {
     buffer.writeln('────────────────────────');
 
     for (var it in items) {
-      final name = (it['product_name'] ?? it['name'] ?? 'Item').toString();
-      final qty = int.tryParse(it['quantity']?.toString() ?? it['qty']?.toString() ?? '1') ?? 1;
-      final price = double.tryParse(it['price']?.toString() ?? '0') ?? 0.0;
-      buffer.writeln('• $name x$qty = ${CurrencyFormatter.formatRupiah(price * qty)}');
+      final iMap = it is Map ? it : {};
+      final name = (iMap['product_name'] ?? iMap['name'] ?? 'Item').toString();
+      final qty = int.tryParse(iMap['quantity']?.toString() ?? iMap['qty']?.toString() ?? '1') ?? 1;
+      final price = double.tryParse(iMap['price']?.toString() ?? '0') ?? 0.0;
+      final varName = ItemOptionsHelper.getVariationName(iMap);
+      final addonNames = ItemOptionsHelper.getAddonNames(iMap);
+
+      String details = '';
+      if (varName != null && varName.isNotEmpty) details += ' (Varian: $varName)';
+      if (addonNames.isNotEmpty) details += ' + [${addonNames.join(", ")}]';
+
+      buffer.writeln('• $name$details x$qty = ${CurrencyFormatter.formatRupiah(price * qty)}');
     }
 
     buffer.writeln('────────────────────────');

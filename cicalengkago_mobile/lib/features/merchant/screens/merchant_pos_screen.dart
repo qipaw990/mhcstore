@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/utils/item_options_helper.dart';
 import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../../../core/services/receipt_printer_service.dart';
 import '../controllers/merchant_controller.dart';
@@ -1157,17 +1158,34 @@ class _MerchantPosScreenState extends State<MerchantPosScreen> {
 
                     // Items List
                     ...((receipt['items'] as List<dynamic>?) ?? []).map((it) {
-                      final name = it['product_name']?.toString() ?? 'Item';
-                      final qty = it['quantity']?.toString() ?? '1';
-                      final price = double.tryParse(it['price']?.toString() ?? '0') ?? 0.0;
+                      final iMap = it is Map ? it : {};
+                      final name = iMap['product_name'] ?? iMap['name'] ?? 'Item';
+                      final qty = iMap['quantity']?.toString() ?? iMap['qty']?.toString() ?? '1';
+                      final price = double.tryParse(iMap['price']?.toString() ?? '0') ?? 0.0;
                       final intQty = int.tryParse(qty) ?? 1;
+                      final varName = ItemOptionsHelper.getVariationName(iMap);
+                      final addonNames = ItemOptionsHelper.getAddonNames(iMap);
+
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        padding: const EdgeInsets.only(bottom: 5),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(child: Text('$name x$qty', style: const TextStyle(fontSize: 11, color: Color(0xFF334155)))),
-                            Text(CurrencyFormatter.formatRupiah(price * intQty), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(child: Text('$name x$qty', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)))),
+                                Text(CurrencyFormatter.formatRupiah(price * intQty), style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            if (varName != null && varName.isNotEmpty) ...[
+                              const SizedBox(height: 1),
+                              Text('  • Varian: $varName', style: const TextStyle(fontSize: 10, color: AppTheme.primaryRed, fontWeight: FontWeight.bold)),
+                            ],
+                            if (addonNames.isNotEmpty) ...[
+                              const SizedBox(height: 1),
+                              Text('  • Topping: ${addonNames.join(", ")}', style: const TextStyle(fontSize: 10, color: Color(0xFFD97706), fontWeight: FontWeight.w600)),
+                            ],
                           ],
                         ),
                       );

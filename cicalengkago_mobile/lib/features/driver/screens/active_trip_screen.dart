@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/zone_constants.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/utils/item_options_helper.dart';
 import '../../../core/services/route_service.dart';
 import '../../../core/services/global_call_service.dart';
 import '../../common/screens/in_app_chat_modal.dart';
@@ -1777,8 +1778,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                     final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
                     final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
                     final subtotal = double.tryParse(item['subtotal']?.toString() ?? '') ?? (price * qty);
-                    final notes = item['notes']?.toString();
-                    final variations = item['variations_json']?.toString();
+                    final notes = ItemOptionsHelper.getItemNotes(item);
+                    final varName = ItemOptionsHelper.getVariationName(item);
+                    final addonNames = ItemOptionsHelper.getAddonNames(item);
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 6),
@@ -1811,18 +1813,33 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                                   name.toString(),
                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                                 ),
+                                if (varName != null && varName.isNotEmpty) ...[
+                                  const SizedBox(height: 2.5),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFEE2E2),
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(color: const Color(0xFFFECACA)),
+                                    ),
+                                    child: Text(
+                                      '• Varian: $varName',
+                                      style: const TextStyle(fontSize: 9.5, color: AppTheme.primaryRed, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                                if (addonNames.isNotEmpty) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '• Topping: ${addonNames.join(", ")}',
+                                    style: const TextStyle(fontSize: 10, color: Color(0xFFD97706), fontWeight: FontWeight.w600),
+                                  ),
+                                ],
                                 if (notes != null && notes.trim().isNotEmpty) ...[
                                   const SizedBox(height: 2),
                                   Text(
                                     'Catatan: $notes',
-                                    style: const TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: Color(0xFFD97706)),
-                                  ),
-                                ],
-                                if (variations != null && variations.trim().isNotEmpty && variations != '{}' && variations != '[]') ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    variations,
-                                    style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),
+                                    style: const TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: Color(0xFF64748B)),
                                   ),
                                 ],
                               ],

@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/utils/item_options_helper.dart';
 
 class OrderItemDetailModal extends StatelessWidget {
   final Map<dynamic, dynamic> item;
@@ -39,9 +40,9 @@ class OrderItemDetailModal extends StatelessWidget {
     final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
     final itemTotal = price * qty;
 
-    final variantText = item['variant']?.toString() ??
-        item['variation_name']?.toString() ??
-        '';
+    final variantText = ItemOptionsHelper.getVariationName(item) ?? '';
+    final addonNames = ItemOptionsHelper.getAddonNames(item);
+    final notes = ItemOptionsHelper.getItemNotes(item) ?? '';
 
     final originStore = item['store_name']?.toString() ?? storeName ?? 'Mitra Resto CicalengkaGO';
 
@@ -54,8 +55,6 @@ class OrderItemDetailModal extends StatelessWidget {
     final storeLogoUrl = (rawStoreLogo != null && rawStoreLogo.toString().isNotEmpty)
         ? ApiConstants.formatImageUrl(rawStoreLogo.toString())
         : null;
-
-    final notes = item['notes']?.toString() ?? item['order_notes']?.toString() ?? '';
 
     return Container(
       constraints: BoxConstraints(
@@ -185,7 +184,13 @@ class OrderItemDetailModal extends StatelessWidget {
                   // Variant Row if available
                   if (variantText.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    _buildDetailRow('Varian / Opsi', variantText),
+                    _buildDetailRow('Varian / Rasa', variantText),
+                  ],
+
+                  // Addons / Toppings Row if available
+                  if (addonNames.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    _buildDetailRow('Topping / Ekstra', addonNames.join(", ")),
                   ],
 
                   // Notes if available
