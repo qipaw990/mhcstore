@@ -1,12 +1,13 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_service.dart';
+import '../../../core/services/location_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../../core/utils/currency_formatter.dart';
-import '../../../core/widgets/uber_pill_button.dart';
 import '../../../core/widgets/app_alert.dart';
 import '../controllers/customer_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -29,10 +30,36 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
   List<dynamic> _products = [];
   List<dynamic> _reviews = [];
 
+  double _userLat = -6.9835;
+  double _userLng = 107.8335;
+
+  double _calculateDistanceKm(double sLat, double sLng, double uLat, double uLng) {
+    if (sLat == 0 || sLng == 0 || uLat == 0 || uLng == 0) return 0.0;
+    const double p = 0.017453292519943295; // Math.PI / 180
+    final double a = 0.5 -
+        math.cos((uLat - sLat) * p) / 2 +
+        math.cos(sLat * p) * math.cos(uLat * p) * (1 - math.cos((uLng - sLng) * p)) / 2;
+    final double dist = 12742 * math.asin(math.sqrt(a)); // 2 * R; R = 6371 km
+    return dist;
+  }
+
   @override
   void initState() {
     super.initState();
+    _fetchGpsLocation();
     _fetchStoreDetail();
+  }
+
+  Future<void> _fetchGpsLocation() async {
+    try {
+      final pos = await LocationService.getCurrentPosition();
+      if (mounted) {
+        setState(() {
+          _userLat = pos.latitude;
+          _userLng = pos.longitude;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchStoreDetail() async {
@@ -76,21 +103,18 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
   }
 
   String _getFoodImage(Map<String, dynamic> product) {
-    final rawImg = product['image']?.toString();
+    final rawImg = product['image']?.toString() ??
+        product['product_image']?.toString() ??
+        product['image_url']?.toString() ??
+        product['photo']?.toString() ??
+        product['product_photo']?.toString() ??
+        product['cover_photo']?.toString() ??
+        product['thumbnail']?.toString();
     if (rawImg != null && rawImg.isNotEmpty && !rawImg.contains('null')) {
-      return ApiConstants.formatImageUrl(rawImg);
+      final formatted = ApiConstants.formatImageUrl(rawImg);
+      if (formatted.isNotEmpty) return formatted;
     }
-    final name = (product['name'] ?? '').toString().toLowerCase();
-    if (name.contains('ayam') || name.contains('chick')) {
-      return 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=300&q=80';
-    } else if (name.contains('nasi') || name.contains('rice')) {
-      return 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=300&q=80';
-    } else if (name.contains('kopi') || name.contains('coffee') || name.contains('boba') || name.contains('es')) {
-      return 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=300&q=80';
-    } else if (name.contains('seblak') || name.contains('bakso') || name.contains('mie') || name.contains('ramen')) {
-      return 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=300&q=80';
-    }
-    return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&q=80';
+    return '';
   }
 
   @override
@@ -348,6 +372,84 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                         ),
                       ],
                     ),
+                    // Delivery Fee & Proximity Highlight
+                    () {
+                      final double sLat = double.tryParse(store['latitude']?.toString() ?? '0') ?? 0.0;
+                      final double sLng = double.tryParse(store['longitude']?.toString() ?? '0') ?? 0.0;
+                      double distKm = 0.0;
+                      bool hasCoords = (sLat != 0.0 && sLng != 0.0 && _userLat != 0.0 && _userLng != 0.0);
+                      if (hasCoords) {
+                        distKm = _calculateDistanceKm(sLat, sLng, _userLat, _userLng);
+                      }
+                      final bool isCloseMerchant = hasCoords && (distKm <= 0.30);
+
+                      if (isCloseMerchant) {
+                        final distMeters = (distKm * 1000).toInt();
+                        return Container(
+                          margin: const EdgeInsets.only(top: 10),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FDF4),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFBBF7D0)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.storefront_rounded, size: 16, color: Color(0xFF16A34A)),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Bebas Ongkir • Diantar Staf Toko ($distMeters m dari Anda)',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF15803D),
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF16A34A),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  'ONGKIR RP 0',
+                                  style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      } else if (hasCoords && distKm > 0) {
+                        return Container(
+                          margin: const EdgeInsets.only(top: 10),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.two_wheeler_rounded, size: 16, color: Color(0xFF64748B)),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Pengantaran Mitra Driver (${distKm.toStringAsFixed(1)} km)',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF475569),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    }(),
                   ],
                 ),
               ),
@@ -473,18 +575,25 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(14),
-                              child: CachedNetworkImage(
-                                imageUrl: imgUrl,
-                                width: 76,
-                                height: 76,
-                                fit: BoxFit.cover,
-                                errorWidget: (_, url, error) => Container(
-                                  width: 76,
-                                  height: 76,
-                                  color: const Color(0xFFF1F5F9),
-                                  child: const Icon(Icons.fastfood_rounded, size: 30, color: AppTheme.inkBlack),
-                                ),
-                              ),
+                              child: (imgUrl.isNotEmpty)
+                                  ? CachedNetworkImage(
+                                      imageUrl: imgUrl,
+                                      width: 76,
+                                      height: 76,
+                                      fit: BoxFit.cover,
+                                      errorWidget: (_, url, error) => Container(
+                                        width: 76,
+                                        height: 76,
+                                        color: const Color(0xFFF1F5F9),
+                                        child: const Icon(Icons.fastfood_rounded, size: 30, color: Color(0xFF94A3B8)),
+                                      ),
+                                    )
+                                  : Container(
+                                      width: 76,
+                                      height: 76,
+                                      color: const Color(0xFFF1F5F9),
+                                      child: const Icon(Icons.fastfood_rounded, size: 30, color: Color(0xFF94A3B8)),
+                                    ),
                             ),
                             if (hasDiscount)
                               Positioned(

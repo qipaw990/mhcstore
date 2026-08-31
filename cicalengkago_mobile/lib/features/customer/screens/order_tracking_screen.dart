@@ -1766,71 +1766,268 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFF86EFAC), width: 1.5),
-                        boxShadow: [BoxShadow(color: const Color(0xFF16A34A).withValues(alpha: 0.05), blurRadius: 10)],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF16A34A),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 22),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF16A34A),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 20),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Flexible(
-                                      child: Text(
-                                        (batchStores.isNotEmpty && batchStores[0] is Map ? (batchStores[0]['name'] ?? batchStores[0]['store_name']) : null) ?? 'Mitra Toko Cicalengka',
-                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
+                                    Text(
+                                      (batchStores.isNotEmpty && batchStores[0] is Map ? (batchStores[0]['name'] ?? batchStores[0]['store_name']) : null) ?? 'Mitra Toko Cicalengka',
+                                      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    const SizedBox(width: 6),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFDCFCE7),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: const Text('Diantar Merchant', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
+                                    const SizedBox(height: 3),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFDCFCE7),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: const Text(
+                                            'Diantar Merchant',
+                                            style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        const Expanded(
+                                          child: Text(
+                                            'Pengantaran Mandiri',
+                                            style: TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  status == 'on_the_way'
-                                      ? 'Staff merchant sedang berjalan mengantarkan pesanan ke rumah Anda 🚶‍♂️'
-                                      : (status == 'processing'
-                                          ? 'Pesanan sedang disiapkan & dimasak oleh tim merchant 👨‍🍳'
-                                          : 'Merchant menerima pesanan & bersiap menyiapkan menu'),
-                                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF166534), fontWeight: FontWeight.w500),
+                              ),
+                              const SizedBox(width: 8),
+                              Stack(
+                                children: [
+                                  Material(
+                                    color: const Color(0xFFF0FDF4),
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(12),
+                                      onTap: () {
+                                        final authCtrl = context.read<AuthController>();
+                                        final uid = int.tryParse(authCtrl.user?['id']?.toString() ?? '0') ?? 0;
+                                        InAppChatModal.show(
+                                          context,
+                                          orderCode: widget.orderCode,
+                                          currentUserId: uid,
+                                          currentUserRole: 'customer',
+                                        );
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: const Color(0xFFBBF7D0)),
+                                        ),
+                                        child: const Icon(Icons.chat_bubble_rounded, color: Color(0xFF16A34A), size: 18),
+                                      ),
+                                    ),
+                                  ),
+                                  if (unreadChats > 0)
+                                    Positioned(
+                                      right: 0,
+                                      top: 0,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                        child: Text('$unreadChats', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+
+                          if (!isDelivered) ...[
+                            const SizedBox(height: 10),
+                            const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                            const SizedBox(height: 10),
+
+                            // Dynamic Live Status Sub-Banner
+                            if (status == 'pending') ...[
+                              Builder(builder: (context) {
+                                final int mins = remainingSeconds ~/ 60;
+                                final int secs = remainingSeconds % 60;
+                                final String timeStr = '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const SizedBox(
+                                          width: 14,
+                                          height: 14,
+                                          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF16A34A)),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        const Expanded(
+                                          child: Text(
+                                            'Menunggu Konfirmasi Resto...',
+                                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5, color: Color(0xFF14532D)),
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFDCFCE7),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            timeStr,
+                                            style: const TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w800, fontSize: 10.5),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(4),
+                                      child: LinearProgressIndicator(
+                                        value: (remainingSeconds / 300.0).clamp(0.0, 1.0),
+                                        backgroundColor: const Color(0xFFF1F5F9),
+                                        color: const Color(0xFF16A34A),
+                                        minHeight: 3.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    const Text(
+                                      '💡 Pesanan otomatis dibatalkan jika resto tidak merespon dalam 5 menit.',
+                                      style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),
+                                    ),
+                                  ],
+                                );
+                              }),
+                            ] else if (status == 'confirmed' || status == 'processing') ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF0FDF4),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFFDCFCE7)),
                                 ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () {
-                              final authCtrl = context.read<AuthController>();
-                              final uid = int.tryParse(authCtrl.user?['id']?.toString() ?? '0') ?? 0;
-                              InAppChatModal.show(
-                                context,
-                                orderCode: widget.orderCode,
-                                currentUserId: uid,
-                                currentUserRole: 'customer',
-                              );
-                            },
-                            icon: const Icon(Icons.chat_bubble_rounded, color: Color(0xFF16A34A), size: 20),
-                            tooltip: 'Chat Toko',
-                          ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.soup_kitchen_rounded, color: Color(0xFF16A34A), size: 18),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            status == 'processing' ? 'Pesanan Sedang Dimasak 👨‍🍳' : 'Pesanan Dikonfirmasi Resto ✅',
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5, color: Color(0xFF14532D)),
+                                          ),
+                                          const Text(
+                                            'Resto sedang menyiapkan menu untuk diantar',
+                                            style: TextStyle(fontSize: 9.5, color: Color(0xFF166534)),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFDCFCE7),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.timer_rounded, color: Color(0xFF15803D), size: 11),
+                                          SizedBox(width: 3),
+                                          Text(
+                                            '~15 Menit',
+                                            style: TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w800, fontSize: 10),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ] else if (status == 'on_the_way') ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF0FDF4),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFFDCFCE7)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.directions_walk_rounded, color: Color(0xFF16A34A), size: 18),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            'Merchant Sedang Mengantar 🚶‍♂️',
+                                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5, color: Color(0xFF14532D)),
+                                          ),
+                                          const Text(
+                                            'Staff toko berjalan menuju alamat Anda',
+                                            style: TextStyle(fontSize: 9.5, color: Color(0xFF166534)),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFDCFCE7),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.timer_rounded, color: Color(0xFF15803D), size: 11),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            '~$calculatedEtaMinutes Menit',
+                                            style: const TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w800, fontSize: 10),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
                         ],
                       ),
                     )
@@ -1838,9 +2035,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Row(
                         children: [
@@ -1849,17 +2053,17 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                             child: (driverAvatar != null && driverAvatar.isNotEmpty)
                                 ? CachedNetworkImage(
                                     imageUrl: ApiConstants.formatImageUrl(driverAvatar),
-                                    width: 46,
-                                    height: 46,
+                                    width: 44,
+                                    height: 44,
                                     fit: BoxFit.cover,
                                     errorWidget: (context, url, error) => Image.asset(
                                       'assets/images/driver_bogo_avatar.png',
-                                      width: 46,
-                                      height: 46,
+                                      width: 44,
+                                      height: 44,
                                       fit: BoxFit.cover,
                                       errorBuilder: (context, error, stackTrace) => Container(
-                                        width: 46,
-                                        height: 46,
+                                        width: 44,
+                                        height: 44,
                                         color: const Color(0xFFE2E8F0),
                                         child: const Icon(Icons.motorcycle_rounded, color: Color(0xFF64748B), size: 24),
                                       ),
@@ -1867,12 +2071,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                   )
                                 : Image.asset(
                                     'assets/images/driver_bogo_avatar.png',
-                                    width: 46,
-                                    height: 46,
+                                    width: 44,
+                                    height: 44,
                                     fit: BoxFit.cover,
                                     errorBuilder: (context, error, stackTrace) => Container(
-                                      width: 46,
-                                      height: 46,
+                                      width: 44,
+                                      height: 44,
                                       color: const Color(0xFFE2E8F0),
                                       child: const Icon(Icons.motorcycle_rounded, color: Color(0xFF64748B), size: 24),
                                     ),
@@ -1939,223 +2143,15 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           ),
                         ],
                       ),
-                    ),
-                  // Merchant Status & Live Countdown Card
-                  if (isMerchantDelivery && !isDelivered) ...[
-                    if (status == 'pending') ...[
-                      Builder(builder: (context) {
-                        final int mins = remainingSeconds ~/ 60;
-                        final int secs = remainingSeconds % 60;
-                        final String timeStr = '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
-                        return Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: const Color(0xFF86EFAC)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF16A34A).withValues(alpha: 0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF16A34A)),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          'Menunggu Konfirmasi Resto...',
-                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF14532D)),
-                                        ),
-                                        Text(
-                                          'Sisa waktu respon merchant: $timeStr',
-                                          style: const TextStyle(fontSize: 10, color: Color(0xFF166534)),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFDCFCE7),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      timeStr,
-                                      style: const TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w800, fontSize: 11),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: LinearProgressIndicator(
-                                  value: (remainingSeconds / 300.0).clamp(0.0, 1.0),
-                                  backgroundColor: const Color(0xFFF1F5F9),
-                                  color: const Color(0xFF16A34A),
-                                  minHeight: 4,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              const Text(
-                                '💡 Pesanan otomatis dibatalkan & saldo dikembalikan jika resto tidak merespon dalam 5 menit.',
-                                style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ] else if (status == 'confirmed' || status == 'processing') ...[
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFF86EFAC)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF16A34A).withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFDCFCE7),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.soup_kitchen_rounded, color: Color(0xFF16A34A), size: 20),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    status == 'processing' ? 'Pesanan Sedang Dimasak 👨‍🍳' : 'Pesanan Dikonfirmasi Resto ✅',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF14532D)),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  const Text(
-                                    'Resto sedang menyiapkan menu untuk diantar mandiri',
-                                    style: TextStyle(fontSize: 10, color: Color(0xFF166534)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFDCFCE7),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFF86EFAC)),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.timer_rounded, color: Color(0xFF15803D), size: 12),
-                                  SizedBox(width: 3),
-                                  Text(
-                                    '~15 Menit',
-                                    style: TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w800, fontSize: 10.5),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ] else if (status == 'on_the_way') ...[
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFF86EFAC)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF16A34A).withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFDCFCE7),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.directions_walk_rounded, color: Color(0xFF16A34A), size: 20),
-                            ),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Merchant Sedang Mengantar 🚶‍♂️',
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF14532D)),
-                                  ),
-                                  SizedBox(height: 2),
-                                  Text(
-                                    'Staff toko berjalan menuju alamat Anda',
-                                    style: TextStyle(fontSize: 10, color: Color(0xFF166534)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFDCFCE7),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFF86EFAC)),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.timer_rounded, color: Color(0xFF15803D), size: 12),
-                                  const SizedBox(width: 3),
-                                  Text(
-                                    '~$calculatedEtaMinutes Menit',
-                                    style: const TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w800, fontSize: 10.5),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ] else if (!isMerchantDelivery && !isDelivered && !isDriverValid)
+                    )
+                  else if (!isMerchantDelivery && !isDelivered && !isDriverValid)
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: const Color(0xFFE2E8F0)),
-                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)],
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)],
                       ),
                       child: Column(
                         children: [
@@ -2197,7 +2193,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       ),
                     ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
 
                   // Delivery Stepper Progress (4 Steps matching order_tracking.php)
                   _buildFourStepStepper(status, isMerchant: isMerchantDelivery),
@@ -2343,86 +2339,112 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
 
   Widget _renderStepperCard(List<Map<String, dynamic>> steps, {bool isMerchant = false}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('Status Pengantaran', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
-            if (isMerchant)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDCFCE7),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Text('Diantar Merchant', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
-              ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        ...List.generate(steps.length, (i) {
-          final s = steps[i];
-          final bool done = s['done'] as bool;
-          final bool active = s['active'] as bool;
-          final Color themeColor = isMerchant ? const Color(0xFF16A34A) : AppTheme.primaryRed;
-
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                children: [
-                  Container(
-                    width: 26,
-                    height: 26,
-                    decoration: BoxDecoration(
-                      color: done
-                          ? const Color(0xFF16A34A)
-                          : (active ? themeColor : const Color(0xFFF1F5F9)),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      done ? Icons.check_rounded : (s['icon'] as IconData),
-                      color: (done || active) ? Colors.white : const Color(0xFFCBD5E1),
-                      size: 13,
-                    ),
+              const Text('Status Pengantaran', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+              if (isMerchant)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCFCE7),
+                    borderRadius: BorderRadius.circular(6),
                   ),
-                  if (i < steps.length - 1)
+                  child: const Text('Diantar Merchant', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF15803D))),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ...List.generate(steps.length, (i) {
+            final s = steps[i];
+            final bool done = s['done'] as bool;
+            final bool active = s['active'] as bool;
+            final Color themeColor = isMerchant ? const Color(0xFF16A34A) : AppTheme.primaryRed;
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  children: [
                     Container(
-                      width: 2,
-                      height: 22,
-                      color: done ? const Color(0xFF16A34A) : const Color(0xFFF1F5F9),
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        color: done
+                            ? const Color(0xFF16A34A)
+                            : (active ? themeColor : const Color(0xFFF1F5F9)),
+                        shape: BoxShape.circle,
+                        boxShadow: active
+                            ? [
+                                BoxShadow(
+                                  color: themeColor.withValues(alpha: 0.3),
+                                  blurRadius: 6,
+                                  spreadRadius: 1,
+                                )
+                              ]
+                            : null,
+                      ),
+                      child: Icon(
+                        done ? Icons.check_rounded : (s['icon'] as IconData),
+                        color: (done || active) ? Colors.white : const Color(0xFFCBD5E1),
+                        size: 13,
+                      ),
                     ),
-                ],
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        s['title'] as String,
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: (done || active) ? FontWeight.bold : FontWeight.w500,
-                          color: (done || active) ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
+                    if (i < steps.length - 1)
+                      Container(
+                        width: 2,
+                        height: 24,
+                        color: done ? const Color(0xFF16A34A) : const Color(0xFFE2E8F0),
+                      ),
+                  ],
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          s['title'] as String,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: (done || active) ? FontWeight.bold : FontWeight.w500,
+                            color: (done || active) ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
+                          ),
                         ),
-                      ),
-                      Text(
-                        s['sub'] as String,
-                        style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),
-                      ),
-                    ],
+                        const SizedBox(height: 1.5),
+                        Text(
+                          s['sub'] as String,
+                          style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          );
-        }),
-      ],
+              ],
+            );
+          }),
+        ],
+      ),
     );
   }
 

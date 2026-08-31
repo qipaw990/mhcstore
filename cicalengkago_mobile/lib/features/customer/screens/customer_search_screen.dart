@@ -133,21 +133,18 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
   }
 
   String _getFoodImage(Map<String, dynamic> product) {
-    final rawImg = product['image']?.toString();
+    final rawImg = product['image']?.toString() ??
+        product['product_image']?.toString() ??
+        product['image_url']?.toString() ??
+        product['photo']?.toString() ??
+        product['product_photo']?.toString() ??
+        product['cover_photo']?.toString() ??
+        product['thumbnail']?.toString();
     if (rawImg != null && rawImg.isNotEmpty && !rawImg.contains('null')) {
-      return ApiConstants.formatImageUrl(rawImg);
+      final formatted = ApiConstants.formatImageUrl(rawImg);
+      if (formatted.isNotEmpty) return formatted;
     }
-    final name = (product['name'] ?? product['product_name'] ?? '').toString().toLowerCase();
-    if (name.contains('ayam') || name.contains('chick')) {
-      return 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=600&q=80';
-    } else if (name.contains('nasi') || name.contains('rice')) {
-      return 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=600&q=80';
-    } else if (name.contains('kopi') || name.contains('coffee') || name.contains('boba') || name.contains('es')) {
-      return 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=600&q=80';
-    } else if (name.contains('seblak') || name.contains('bakso') || name.contains('mie') || name.contains('ramen')) {
-      return 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600&q=80';
-    }
-    return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80';
+    return '';
   }
 
   List<dynamic> _getFilteredProducts() {

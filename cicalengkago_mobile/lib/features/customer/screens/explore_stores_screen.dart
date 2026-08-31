@@ -1,8 +1,9 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/api_constants.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../core/services/location_service.dart';
 import '../controllers/customer_controller.dart';
 import 'store_detail_screen.dart';
 
@@ -21,8 +22,12 @@ class _ExploreStoresScreenState extends State<ExploreStoresScreen> {
   String _selectedFilter = 'Semua';
   String _sortBy = 'popular'; // popular, rating, fastest, name
 
+  double _userLat = -6.9835;
+  double _userLng = 107.8335;
+
   final List<String> _filterCategories = const [
     'Semua',
+    'Gratis Ongkir (<300m)',
     'Buka Sekarang',
     'Rating 4.5+',
     'Diskon Ongkir',
@@ -34,15 +39,38 @@ class _ExploreStoresScreenState extends State<ExploreStoresScreen> {
     'Nasi & Lauk',
   ];
 
+  double _calculateDistanceKm(double sLat, double sLng, double uLat, double uLng) {
+    if (sLat == 0 || sLng == 0 || uLat == 0 || uLng == 0) return 0.0;
+    const double p = 0.017453292519943295; // Math.PI / 180
+    final double a = 0.5 -
+        math.cos((uLat - sLat) * p) / 2 +
+        math.cos(sLat * p) * math.cos(uLat * p) * (1 - math.cos((uLng - sLng) * p)) / 2;
+    final double dist = 12742 * math.asin(math.sqrt(a)); // 2 * R; R = 6371 km
+    return dist;
+  }
+
   @override
   void initState() {
     super.initState();
     if (widget.initialCategory != null && widget.initialCategory!.isNotEmpty) {
       _selectedFilter = widget.initialCategory!;
     }
+    _fetchGpsLocation();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CustomerController>().fetchExploreStores();
     });
+  }
+
+  Future<void> _fetchGpsLocation() async {
+    try {
+      final pos = await LocationService.getCurrentPosition();
+      if (mounted) {
+        setState(() {
+          _userLat = pos.latitude;
+          _userLng = pos.longitude;
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -60,6 +88,12 @@ class _ExploreStoresScreenState extends State<ExploreStoresScreen> {
       final isOpen = store['is_open'] == 1 || store['is_open'] == true || store['is_open'] == '1';
       final rating = double.tryParse(store['rating']?.toString() ?? '4.8') ?? 4.8;
 
+      final double sLat = double.tryParse(store['latitude']?.toString() ?? '0') ?? 0.0;
+      final double sLng = double.tryParse(store['longitude']?.toString() ?? '0') ?? 0.0;
+      final double distKm = (sLat != 0 && sLng != 0 && _userLat != 0 && _userLng != 0)
+          ? _calculateDistanceKm(sLat, sLng, _userLat, _userLng)
+          : 0.0;
+
       // 1. Search Query Filter
       if (_searchQuery.isNotEmpty) {
         final q = _searchQuery.toLowerCase();
@@ -69,7 +103,9 @@ class _ExploreStoresScreenState extends State<ExploreStoresScreen> {
       }
 
       // 2. Chip Category Filter
-      if (_selectedFilter == 'Buka Sekarang') {
+      if (_selectedFilter == 'Gratis Ongkir (<300m)' || _selectedFilter == 'Gratis Ongkir') {
+        if (distKm <= 0.0 || distKm > 0.30) return false;
+      } else if (_selectedFilter == 'Buka Sekarang') {
         if (!isOpen) return false;
       } else if (_selectedFilter == 'Rating 4.5+') {
         if (rating < 4.5) return false;
@@ -463,98 +499,134 @@ class _ExploreStoresScreenState extends State<ExploreStoresScreen> {
                                         ],
                                       ),
                                       const SizedBox(width: 12),
-
-                                      // Store Info Details
                                       Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Flexible(
-                                                  child: Text(
-                                                    store['name'] ?? 'Mitra Resto',
-                                                    style: const TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 13.5,
-                                                      color: Color(0xFF0F172A),
-                                                    ),
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 4),
-                                                const Icon(
-                                                  Icons.verified_rounded,
-                                                  size: 14,
-                                                  color: Color(0xFF0284C7),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 3),
-                                            Text(
-                                              '${store['address'] ?? 'Cicalengka'} • ${store['delivery_time'] ?? '15-25 min'}',
-                                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 6),
-                                            Row(
-                                              children: [
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                  decoration: BoxDecoration(
-                                                    color: const Color(0xFFFFFBEB),
-                                                    borderRadius: BorderRadius.circular(8),
-                                                    border: Border.all(color: const Color(0xFFFDE68A)),
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisSize: MainAxisSize.min,
-                                                    children: [
-                                                      const Icon(Icons.star_rounded, size: 13, color: Colors.amber),
-                                                      const SizedBox(width: 2),
-                                                      Text(
-                                                        '${store['rating'] ?? '4.8'}',
-                                                        style: const TextStyle(
-                                                          fontWeight: FontWeight.bold,
-                                                          fontSize: 10.5,
-                                                          color: Color(0xFF0F172A),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 6),
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                  decoration: BoxDecoration(
-                                                    color: const Color(0xFFFEF2F2),
-                                                    borderRadius: BorderRadius.circular(8),
-                                                    border: Border.all(color: const Color(0xFFFECACA)),
-                                                  ),
-                                                  child: const Row(
-                                                    mainAxisSize: MainAxisSize.min,
-                                                    children: [
-                                                      Icon(Icons.two_wheeler_rounded, size: 11, color: Color(0xFFEF4444)),
-                                                      SizedBox(width: 3),
-                                                      Text(
-                                                        'Diskon Ongkir',
-                                                        style: TextStyle(
-                                                          color: Color(0xFFEF4444),
-                                                          fontSize: 9.5,
-                                                          fontWeight: FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
+                                        child: () {
+                                          final double sLat = double.tryParse(store['latitude']?.toString() ?? '0') ?? 0.0;
+                                          final double sLng = double.tryParse(store['longitude']?.toString() ?? '0') ?? 0.0;
+                                          double distKm = 0.0;
+                                          bool hasCoords = (sLat != 0.0 && sLng != 0.0 && _userLat != 0.0 && _userLng != 0.0);
+                                          if (hasCoords) {
+                                            distKm = _calculateDistanceKm(sLat, sLng, _userLat, _userLng);
+                                          }
+                                          final bool isCloseMerchant = hasCoords && (distKm <= 0.30);
+                                          final String distLabel = hasCoords
+                                              ? (distKm < 1.0 ? '${(distKm * 1000).toInt()} m' : '${distKm.toStringAsFixed(1)} km')
+                                              : (store['address']?.toString() ?? 'Cicalengka');
 
+                                          return Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Flexible(
+                                                    child: Text(
+                                                      store['name'] ?? 'Mitra Resto',
+                                                      style: const TextStyle(
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 13.5,
+                                                        color: Color(0xFF0F172A),
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  const Icon(
+                                                    Icons.verified_rounded,
+                                                    size: 14,
+                                                    color: Color(0xFF0284C7),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 3),
+                                              Text(
+                                                '$distLabel • ${store['delivery_time'] ?? '15-25 min'}',
+                                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFFFFFBEB),
+                                                      borderRadius: BorderRadius.circular(8),
+                                                      border: Border.all(color: const Color(0xFFFDE68A)),
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      children: [
+                                                        const Icon(Icons.star_rounded, size: 13, color: Colors.amber),
+                                                        const SizedBox(width: 2),
+                                                        Text(
+                                                          '${store['rating'] ?? '4.8'}',
+                                                          style: const TextStyle(
+                                                            fontWeight: FontWeight.bold,
+                                                            fontSize: 10.5,
+                                                            color: Color(0xFF0F172A),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  if (isCloseMerchant)
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFFDCFCE7),
+                                                        borderRadius: BorderRadius.circular(8),
+                                                        border: Border.all(color: const Color(0xFF86EFAC)),
+                                                      ),
+                                                      child: const Row(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        children: [
+                                                          Icon(Icons.storefront_rounded, size: 11, color: Color(0xFF16A34A)),
+                                                          SizedBox(width: 3),
+                                                          Text(
+                                                            'Gratis Ongkir • Toko',
+                                                            style: TextStyle(
+                                                              color: Color(0xFF15803D),
+                                                              fontSize: 9.5,
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    )
+                                                  else
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFFFEF2F2),
+                                                        borderRadius: BorderRadius.circular(8),
+                                                        border: Border.all(color: const Color(0xFFFECACA)),
+                                                      ),
+                                                      child: const Row(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        children: [
+                                                          Icon(Icons.two_wheeler_rounded, size: 11, color: Color(0xFFEF4444)),
+                                                          SizedBox(width: 3),
+                                                          Text(
+                                                            'Mitra Driver',
+                                                            style: TextStyle(
+                                                              color: Color(0xFFEF4444),
+                                                              fontSize: 9.5,
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                            ],
+                                          );
+                                        }(),
+                                      ),
                                       const SizedBox(width: 4),
                                       const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8), size: 20),
                                     ],

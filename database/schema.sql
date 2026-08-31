@@ -1,6 +1,6 @@
 -- ==================================================
 -- CicalengkaGO Schema - Exported from Live Database
--- Generated: 2026-08-16 14:59:11
+-- Generated: 2026-08-31 13:11:48
 -- ==================================================
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -26,7 +26,7 @@ CREATE TABLE `users` (
   KEY `idx_role_status` (`role`,`is_active`),
   KEY `idx_email` (`email`),
   KEY `idx_phone` (`phone`)
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `modules`;
 CREATE TABLE `modules` (
@@ -72,6 +72,7 @@ CREATE TABLE `stores` (
   `logo` varchar(255) DEFAULT NULL,
   `cover_photo` varchar(255) DEFAULT NULL,
   `address` text NOT NULL,
+  `grab_url` varchar(500) DEFAULT NULL,
   `latitude` decimal(10,8) NOT NULL,
   `longitude` decimal(11,8) NOT NULL,
   `minimum_order` decimal(12,2) NOT NULL DEFAULT 0.00,
@@ -93,7 +94,7 @@ CREATE TABLE `stores` (
   CONSTRAINT `fk_store_module` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_store_vendor` FOREIGN KEY (`vendor_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_store_zone` FOREIGN KEY (`zone_id`) REFERENCES `zones` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `store_schedules`;
 CREATE TABLE `store_schedules` (
@@ -105,7 +106,7 @@ CREATE TABLE `store_schedules` (
   PRIMARY KEY (`id`),
   KEY `idx_store_schedule` (`store_id`,`day_of_week`),
   CONSTRAINT `fk_schedule_store` FOREIGN KEY (`store_id`) REFERENCES `stores` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=176 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `categories`;
 CREATE TABLE `categories` (
@@ -122,7 +123,7 @@ CREATE TABLE `categories` (
   PRIMARY KEY (`id`),
   KEY `idx_category_module` (`module_id`,`status`),
   CONSTRAINT `fk_cat_module` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `products`;
 CREATE TABLE `products` (
@@ -154,7 +155,7 @@ CREATE TABLE `products` (
   CONSTRAINT `fk_product_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_product_module` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_product_store` FOREIGN KEY (`store_id`) REFERENCES `stores` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=64 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `product_variations`;
 CREATE TABLE `product_variations` (
@@ -235,23 +236,24 @@ CREATE TABLE `delivery_men` (
   `identity_number` varchar(50) NOT NULL,
   `identity_image` varchar(255) DEFAULT NULL,
   `is_online` tinyint(1) NOT NULL DEFAULT 1,
+  `is_mocked` tinyint(1) NOT NULL DEFAULT 0,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `current_latitude` decimal(10,8) DEFAULT NULL,
   `current_longitude` decimal(11,8) DEFAULT NULL,
   `current_order_id` bigint(20) unsigned DEFAULT NULL,
-  `active_batch_id` varchar(24) DEFAULT NULL,
-  `active_order_ids` text DEFAULT NULL,
   `rating` decimal(3,2) NOT NULL DEFAULT 5.00,
   `reviews_count` int(10) unsigned NOT NULL DEFAULT 0,
   `total_orders` int(10) unsigned NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `active_batch_id` varchar(24) DEFAULT NULL,
+  `active_order_ids` text DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id` (`user_id`),
   KEY `idx_dm_zone` (`zone_id`,`is_online`),
   CONSTRAINT `fk_dm_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_dm_zone` FOREIGN KEY (`zone_id`) REFERENCES `zones` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `wallets`;
 CREATE TABLE `wallets` (
@@ -266,7 +268,7 @@ CREATE TABLE `wallets` (
   UNIQUE KEY `user_id` (`user_id`),
   KEY `idx_wallet_user` (`user_id`),
   CONSTRAINT `fk_wallet_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `wallet_transactions`;
 CREATE TABLE `wallet_transactions` (
@@ -274,14 +276,14 @@ CREATE TABLE `wallet_transactions` (
   `wallet_id` bigint(20) unsigned NOT NULL,
   `amount` decimal(14,2) NOT NULL,
   `type` enum('credit','debit') NOT NULL,
-  `category` enum('order_payment','topup','order_earning','withdrawal','refund','bonus','cashback') NOT NULL COMMENT 'order_earning dipakai vendor dan driver',
+  `category` enum('order_payment','topup','order_earning','withdrawal','refund','bonus','cashback') NOT NULL,
   `reference_id` varchar(100) DEFAULT NULL,
   `description` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `idx_wt_wallet` (`wallet_id`),
   CONSTRAINT `fk_wt_wallet` FOREIGN KEY (`wallet_id`) REFERENCES `wallets` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `banners`;
 CREATE TABLE `banners` (
@@ -316,8 +318,6 @@ CREATE TABLE `orders` (
   `customer_id` bigint(20) unsigned NOT NULL,
   `store_id` bigint(20) unsigned DEFAULT NULL,
   `delivery_man_id` bigint(20) unsigned DEFAULT NULL,
-  `delivery_batch_id` varchar(24) DEFAULT NULL,
-  `pickup_sequence` tinyint(3) unsigned NOT NULL DEFAULT 1,
   `module_id` int(10) unsigned NOT NULL,
   `zone_id` int(10) unsigned NOT NULL,
   `order_amount` decimal(12,2) NOT NULL DEFAULT 0.00,
@@ -346,17 +346,19 @@ CREATE TABLE `orders` (
   `cancellation_reason` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `delivery_batch_id` varchar(24) DEFAULT NULL,
+  `pickup_sequence` tinyint(3) unsigned NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `order_code` (`order_code`),
   KEY `idx_order_customer` (`customer_id`),
   KEY `idx_order_store` (`store_id`),
   KEY `idx_order_dm` (`delivery_man_id`),
-  KEY `idx_batch` (`delivery_batch_id`),
   KEY `idx_order_status` (`order_status`),
   KEY `idx_order_code` (`order_code`),
+  KEY `idx_batch` (`delivery_batch_id`),
   CONSTRAINT `fk_order_customer` FOREIGN KEY (`customer_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_order_dm` FOREIGN KEY (`delivery_man_id`) REFERENCES `delivery_men` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `order_items`;
 CREATE TABLE `order_items` (
@@ -373,7 +375,7 @@ CREATE TABLE `order_items` (
   PRIMARY KEY (`id`),
   KEY `idx_item_order` (`order_id`),
   CONSTRAINT `fk_item_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `delivery_trackings`;
 CREATE TABLE `delivery_trackings` (
@@ -385,7 +387,7 @@ CREATE TABLE `delivery_trackings` (
   `recorded_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `idx_dt_order` (`order_id`,`delivery_man_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `reviews`;
 CREATE TABLE `reviews` (
@@ -422,7 +424,7 @@ CREATE TABLE `notifications` (
   PRIMARY KEY (`id`),
   KEY `idx_notif_user` (`user_id`,`is_read`),
   CONSTRAINT `fk_notif_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `carts`;
 CREATE TABLE `carts` (
@@ -443,7 +445,7 @@ CREATE TABLE `carts` (
   KEY `idx_cart_session` (`session_id`),
   KEY `fk_cart_product` (`product_id`),
   CONSTRAINT `fk_cart_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `chats`;
 CREATE TABLE `chats` (
@@ -459,25 +461,6 @@ CREATE TABLE `chats` (
   KEY `idx_chat_order` (`order_id`),
   KEY `idx_chat_pair` (`sender_id`,`receiver_id`),
   CONSTRAINT `fk_chat_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-DROP TABLE IF EXISTS `topup_logs`;
-CREATE TABLE `topup_logs` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `topup_code` varchar(64) NOT NULL,
-  `user_id` bigint(20) unsigned NOT NULL,
-  `amount` decimal(14,2) NOT NULL,
-  `payment_method` varchar(50) NOT NULL DEFAULT 'midtrans',
-  `payment_type` varchar(50) NOT NULL DEFAULT 'midtrans_snap',
-  `status` enum('pending','success','failed','canceled') NOT NULL DEFAULT 'pending',
-  `snap_token` varchar(255) DEFAULT NULL,
-  `notes` varchar(255) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_topup_code` (`topup_code`),
-  KEY `idx_topup_user` (`user_id`),
-  KEY `idx_topup_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

@@ -17,7 +17,7 @@ class Cart extends Model
         $where = $userId ? "c.user_id = ?" : "c.session_id = ?";
         $param = $userId ?: $sessionId;
 
-        $sql = "SELECT c.*, p.name as product_name, p.image as product_image, p.price as base_price,
+        $sql = "SELECT c.*, p.name as product_name, p.image as product_image, p.image as image, p.image as photo, p.price as base_price,
                        s.name as store_name, s.logo as store_logo, s.delivery_fee, s.minimum_order,
                        s.latitude as store_lat, s.longitude as store_lng, s.address as store_address,
                        pv.name as variation_name, pv.price as variation_price

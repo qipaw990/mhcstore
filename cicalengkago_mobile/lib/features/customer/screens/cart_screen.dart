@@ -75,21 +75,19 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   String _getFoodImage(Map<String, dynamic> item) {
-    final rawImg = item['image']?.toString();
+    final rawImg = item['product_image']?.toString() ??
+        item['image']?.toString() ??
+        item['image_url']?.toString() ??
+        item['photo']?.toString() ??
+        item['product_photo']?.toString() ??
+        item['cover_photo']?.toString() ??
+        item['thumbnail']?.toString() ??
+        (item['product'] is Map ? (item['product']['image'] ?? item['product']['product_image'])?.toString() : null);
     if (rawImg != null && rawImg.isNotEmpty && !rawImg.contains('null')) {
-      return ApiConstants.formatImageUrl(rawImg);
+      final formatted = ApiConstants.formatImageUrl(rawImg);
+      if (formatted.isNotEmpty) return formatted;
     }
-    final name = (item['product_name'] ?? item['name'] ?? '').toString().toLowerCase();
-    if (name.contains('ayam') || name.contains('chick')) {
-      return 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=300&q=80';
-    } else if (name.contains('nasi') || name.contains('rice')) {
-      return 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=300&q=80';
-    } else if (name.contains('kopi') || name.contains('coffee') || name.contains('boba') || name.contains('es')) {
-      return 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=300&q=80';
-    } else if (name.contains('seblak') || name.contains('bakso') || name.contains('mie') || name.contains('ramen')) {
-      return 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=300&q=80';
-    }
-    return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&q=80';
+    return '';
   }
 
   @override
@@ -503,24 +501,29 @@ class _CartScreenState extends State<CartScreen> {
             child: SizedBox(
               width: 64,
               height: 64,
-              child: CachedNetworkImage(
-                imageUrl: imageUrl,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: const Color(0xFFF1F5F9),
-                  child: const Center(
-                    child: SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.inkBlack),
+              child: (imageUrl.isNotEmpty)
+                  ? CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: const Color(0xFFF1F5F9),
+                        child: const Center(
+                          child: SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.inkBlack),
+                          ),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: const Color(0xFFF1F5F9),
+                        child: const Icon(Icons.fastfood_rounded, color: Color(0xFF94A3B8), size: 26),
+                      ),
+                    )
+                  : Container(
+                      color: const Color(0xFFF1F5F9),
+                      child: const Icon(Icons.fastfood_rounded, color: Color(0xFF94A3B8), size: 26),
                     ),
-                  ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: const Color(0xFFF1F5F9),
-                  child: const Icon(Icons.fastfood_rounded, color: AppTheme.inkBlack, size: 26),
-                ),
-              ),
             ),
           ),
           const SizedBox(width: 14),

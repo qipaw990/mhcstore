@@ -94,7 +94,7 @@ class _InAppChatModalState extends State<InAppChatModal> {
     try {
       final String url;
       if (_isStoreChat) {
-        url = '${ApiConstants.baseUrl}/chats/store-messages?store_id=${widget.storeId}&mark_read=1&user_id=${widget.currentUserId}';
+        url = '${ApiConstants.baseUrl}/chats/store-messages?store_id=${widget.storeId}&mark_read=1&user_id=${widget.currentUserId}&user_role=${widget.currentUserRole}';
       } else {
         url = '${ApiConstants.baseUrl}/chats/messages?order_code=${widget.orderCode ?? ''}&mark_read=1&user_id=${widget.currentUserId}&user_role=${widget.currentUserRole}';
       }
@@ -141,6 +141,7 @@ class _InAppChatModalState extends State<InAppChatModal> {
           'store_id': widget.storeId,
           'message': text,
           'user_id': widget.currentUserId,
+          'user_role': widget.currentUserRole,
         };
       } else {
         url = '${ApiConstants.baseUrl}/chats/send';

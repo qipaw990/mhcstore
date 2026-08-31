@@ -22,7 +22,8 @@ class ChatController extends Controller
      */
     public function getMessages(): void
     {
-        $userId = auth_id() ?: 0;
+        $userId   = auth_id() ?: (int)($_GET['user_id'] ?? 0);
+        $userRole = auth_role() ?: sanitize($_GET['user_role'] ?? 'customer');
 
         $orderCode = sanitize($_GET['order_code'] ?? '');
         $sinceId = (int)($_GET['since_id'] ?? 0);
@@ -39,14 +40,14 @@ class ChatController extends Controller
             return;
         }
 
-        $userRole   = auth_role();
         $isCustomer = ($userId > 0 && (int)$order['cust_user_id'] === $userId);
-        $isDriver   = $userRole === 'delivery_man';
-        $isAdmin    = $userRole === 'admin';
+        $isDriver   = ($userRole === 'delivery_man' || ($userId > 0 && (int)($order['dm_user_id'] ?? 0) === $userId));
+        $isAdmin    = ($userRole === 'admin');
+        $isMerchant = ($userRole === 'vendor' || $userRole === 'merchant' || ($userId > 0 && (int)($order['store_vendor_user_id'] ?? 0) === $userId));
         // Guests with the order_code can read (public tracking page)
         $isGuest    = ($userId === 0);
 
-        if (!$isCustomer && !$isDriver && !$isAdmin && !$isGuest) {
+        if (!$isCustomer && !$isDriver && !$isAdmin && !$isGuest && !$isMerchant) {
             $this->errorResponse('Akses percakapan ditolak.', null, 403);
             return;
         }
@@ -69,6 +70,15 @@ class ChatController extends Controller
                 'phone'        => $order['customer_phone'] ?? '',
                 'vehicle_info' => 'Tujuan Pengantaran'
             ];
+        } elseif ($isMerchant) {
+            $partner = [
+                'name'         => $order['customer_name'] ?? 'Pelanggan CicalengkaGO',
+                'role'         => 'customer',
+                'role_label'   => 'Pelanggan',
+                'avatar'       => $order['customer_avatar'] ?? 'assets/images/users/customer.png',
+                'phone'        => $order['customer_phone'] ?? '',
+                'vehicle_info' => 'Pesanan #' . $order['order_code']
+            ];
         } elseif ($isAdmin) {
             $partner = [
                 'name'         => $order['customer_name'] ?? 'Pelanggan',
@@ -79,8 +89,9 @@ class ChatController extends Controller
                 'vehicle_info' => 'Pesanan #' . $order['order_code']
             ];
         } else {
-            // Customer or guest: show driver info
-            if (!empty($order['dm_id'])) {
+            // Customer or guest:
+            $isMerchantDelivery = ($order['delivery_type'] ?? '') === 'merchant' || empty($order['dm_id']);
+            if (!empty($order['dm_id']) && !$isMerchantDelivery) {
                 $partner = [
                     'name'           => $order['dm_name'] ?? 'Mitra Driver Cicalengka',
                     'role'           => 'driver',
@@ -91,12 +102,12 @@ class ChatController extends Controller
                 ];
             } else {
                 $partner = [
-                    'name'           => 'Mitra Kurir CicalengkaGO',
-                    'role'           => 'driver',
-                    'role_label'     => 'Menunggu Konfirmasi Kurir',
-                    'avatar'         => 'assets/images/users/driver.png',
-                    'phone'          => '',
-                    'vehicle_info'   => 'Mencari kurir terdekat...'
+                    'name'           => $order['store_name'] ?? 'Mitra Toko / Resto',
+                    'role'           => 'store',
+                    'role_label'     => 'Mitra Toko CicalengkaGO',
+                    'avatar'         => $order['store_logo'] ?? 'assets/images/store-default.png',
+                    'phone'          => $order['store_phone'] ?? '',
+                    'vehicle_info'   => 'Diantar Toko Langsung'
                 ];
             }
         }
@@ -112,6 +123,7 @@ class ChatController extends Controller
             'user_id'      => $userId,
             'cust_user_id' => (int)$order['cust_user_id'],
             'dm_user_id'   => (int)($order['dm_user_id'] ?? 0),
+            'vendor_user_id' => (int)($order['store_vendor_user_id'] ?? 0),
             'partner'      => $partner,
             'messages'     => $messages,
             'unread_count' => $unread
@@ -124,7 +136,7 @@ class ChatController extends Controller
     public function sendMessage(): void
     {
         $userId   = auth_id() ?: 0;
-        $userRole = auth_role();
+        $userRole = auth_role() ?: 'customer';
 
         // Accept both application/json and multipart/form-data
         $data = $this->getPost();
@@ -136,6 +148,15 @@ class ChatController extends Controller
 
         $orderCode = sanitize(trim($data['order_code'] ?? ''));
         $message   = trim($data['message'] ?? '');
+        $reqUserId = (int)($data['user_id'] ?? 0);
+        $reqRole   = sanitize($data['user_role'] ?? $userRole);
+
+        if ($userId === 0 && $reqUserId > 0) {
+            $userId = $reqUserId;
+        }
+        if ($userRole === 'customer' && !empty($reqRole)) {
+            $userRole = $reqRole;
+        }
 
         if (empty($orderCode)) {
             $this->errorResponse('Kode pesanan wajib diisi.');
@@ -153,14 +174,15 @@ class ChatController extends Controller
             return;
         }
 
-        $isDriver   = $userRole === 'delivery_man';
-        $isAdmin    = $userRole === 'admin';
+        $isDriver   = ($userRole === 'delivery_man' || ($userId > 0 && (int)($order['dm_user_id'] ?? 0) === $userId));
+        $isAdmin    = ($userRole === 'admin');
+        $isMerchant = ($userRole === 'vendor' || $userRole === 'merchant' || ($userId > 0 && (int)($order['store_vendor_user_id'] ?? 0) === $userId));
         // Customer: either logged-in owner OR guest accessing by order_code (order is their own page)
         $isLoggedInCustomer = ($userId > 0 && (int)$order['cust_user_id'] === $userId);
         // Guest customer identified by order_code (no session) — allow send on their own order
-        $isGuestCustomer    = ($userId === 0 && !$isDriver && !$isAdmin);
+        $isGuestCustomer    = ($userId === 0 && !$isDriver && !$isAdmin && !$isMerchant);
 
-        if (!$isLoggedInCustomer && !$isGuestCustomer && !$isDriver && !$isAdmin) {
+        if (!$isLoggedInCustomer && !$isGuestCustomer && !$isDriver && !$isAdmin && !$isMerchant) {
             $this->errorResponse('Akses pengiriman pesan ditolak.', null, 403);
             return;
         }
@@ -175,11 +197,21 @@ class ChatController extends Controller
                 $this->errorResponse('Driver harus login untuk mengirim pesan.', null, 401);
                 return;
             }
+        } elseif ($isMerchant) {
+            // Merchant sends to customer
+            $receiverId = (int)$order['cust_user_id'];
+            if ($senderId === 0) {
+                $senderId = (int)($order['store_vendor_user_id'] ?? 0);
+            }
         } elseif ($isAdmin) {
             $receiverId = !empty($order['dm_user_id']) ? (int)$order['dm_user_id'] : (int)$order['cust_user_id'];
         } else {
-            // Customer (logged-in or guest) sends to driver
-            $receiverId = !empty($order['dm_user_id']) ? (int)$order['dm_user_id'] : 0;
+            // Customer (logged-in or guest) sends to driver or merchant
+            if (!empty($order['dm_user_id']) && ($order['delivery_type'] ?? '') !== 'merchant') {
+                $receiverId = (int)$order['dm_user_id'];
+            } else {
+                $receiverId = (int)($order['store_vendor_user_id'] ?? 0);
+            }
             // For guest, use customer_id from order as sender
             if ($senderId === 0) {
                 $senderId = (int)$order['cust_user_id'];
@@ -257,9 +289,10 @@ class ChatController extends Controller
      */
     public function getStoreMessages(): void
     {
-        $userId = auth_id() ?: (int)($_GET['user_id'] ?? 0);
-        $storeId = (int)($_GET['store_id'] ?? 0);
-        $sinceId = (int)($_GET['since_id'] ?? 0);
+        $userId   = auth_id() ?: (int)($_GET['user_id'] ?? 0);
+        $userRole = auth_role() ?: sanitize($_GET['user_role'] ?? 'customer');
+        $storeId  = (int)($_GET['store_id'] ?? 0);
+        $sinceId  = (int)($_GET['since_id'] ?? 0);
         $markRead = (bool)($_GET['mark_read'] ?? false);
 
         if ($storeId <= 0) {
@@ -274,20 +307,39 @@ class ChatController extends Controller
             return;
         }
 
+        $vendorUserId = (int)($store['vendor_id'] ?? 0);
+        $isMerchant   = ($userRole === 'vendor' || $userRole === 'merchant' || $userId === $vendorUserId);
+
+        // If viewer is merchant and customer user id is passed via target_user_id or user_id
+        $chatUserId = $isMerchant ? (int)($_GET['target_user_id'] ?? $_GET['user_id'] ?? 0) : $userId;
+
         if ($markRead && $userId > 0) {
             $this->chatModel->markStoreMessagesRead($storeId, $userId);
         }
 
-        $messages = $this->chatModel->getStoreMessages($storeId, $userId, $sinceId);
+        $messages = $this->chatModel->getStoreMessages($storeId, $chatUserId, $sinceId);
 
-        $partner = [
-            'name'         => $store['name'] ?? 'Mitra Toko',
-            'role'         => 'store',
-            'role_label'   => 'Mitra Toko / Resto',
-            'avatar'       => $store['logo'] ?? 'assets/images/store-default.png',
-            'phone'        => $store['phone'] ?? $store['vendor_phone'] ?? '',
-            'vehicle_info' => $store['address'] ?? 'Cicalengka, Kab. Bandung'
-        ];
+        $partner = null;
+        if ($isMerchant) {
+            $targetUser = $chatUserId > 0 ? (new \App\Models\User())->find($chatUserId) : null;
+            $partner = [
+                'name'         => $targetUser['name'] ?? 'Pelanggan CicalengkaGO',
+                'role'         => 'customer',
+                'role_label'   => 'Pelanggan',
+                'avatar'       => $targetUser['avatar'] ?? 'assets/images/users/customer.png',
+                'phone'        => $targetUser['phone'] ?? '',
+                'vehicle_info' => 'Pelanggan Toko'
+            ];
+        } else {
+            $partner = [
+                'name'         => $store['name'] ?? 'Mitra Toko',
+                'role'         => 'store',
+                'role_label'   => 'Mitra Toko / Resto',
+                'avatar'       => $store['logo'] ?? 'assets/images/store-default.png',
+                'phone'        => $store['phone'] ?? $store['vendor_phone'] ?? '',
+                'vehicle_info' => $store['address'] ?? 'Cicalengka, Kab. Bandung'
+            ];
+        }
 
         $this->successResponse('Pesan toko berhasil diambil', [
             'store_id'     => $storeId,
@@ -313,9 +365,10 @@ class ChatController extends Controller
             if (!empty($decoded)) $data = $decoded;
         }
 
-        $storeId = (int)($data['store_id'] ?? 0);
-        $message = trim($data['message'] ?? '');
+        $storeId  = (int)($data['store_id'] ?? 0);
+        $message  = trim($data['message'] ?? '');
         $senderId = $userId ?: (int)($data['user_id'] ?? 0);
+        $role     = sanitize($data['user_role'] ?? $userRole);
 
         if ($storeId <= 0) {
             $this->errorResponse('ID Toko wajib diisi.');
@@ -334,7 +387,17 @@ class ChatController extends Controller
             return;
         }
 
-        $receiverId = (int)($store['vendor_id'] ?? 0);
+        $vendorUserId = (int)($store['vendor_id'] ?? 0);
+        $isMerchant   = ($role === 'vendor' || $role === 'merchant' || $senderId === $vendorUserId);
+
+        $receiverId = 0;
+        if ($isMerchant) {
+            $receiverId = (int)($data['target_user_id'] ?? $data['receiver_id'] ?? 0);
+            if ($senderId === 0) $senderId = $vendorUserId;
+        } else {
+            $receiverId = $vendorUserId;
+            if ($senderId === 0) $senderId = (int)($data['user_id'] ?? 0);
+        }
 
         $msgId = $this->chatModel->saveStoreMessage($storeId, $senderId, $receiverId, $message);
 

@@ -87,6 +87,7 @@ class Chat extends Model
                        o.order_status, 
                        o.payment_status,
                        o.order_type,
+                       o.delivery_type,
                        o.store_id,
                        s.name as store_name,
                        s.logo as store_logo,
@@ -120,7 +121,14 @@ class Chat extends Model
      */
     public function getStoreMessages(int $storeId, int $userId, int $sinceId = 0): array
     {
-        $params = [$storeId, $userId, $userId];
+        $params = [$storeId];
+        $userClause = '';
+        if ($userId > 0) {
+            $userClause = ' AND (c.sender_id = ? OR c.receiver_id = ?) ';
+            $params[] = $userId;
+            $params[] = $userId;
+        }
+
         $sinceClause = '';
         if ($sinceId > 0) {
             $sinceClause = ' AND c.id > ? ';
@@ -134,7 +142,7 @@ class Chat extends Model
                        DATE_FORMAT(c.created_at, '%H:%i') as time_formatted
                 FROM `chats` c
                 LEFT JOIN `users` u ON c.sender_id = u.id
-                WHERE c.store_id = ? AND (c.sender_id = ? OR c.receiver_id = ?) {$sinceClause}
+                WHERE c.store_id = ? {$userClause} {$sinceClause}
                 ORDER BY c.id ASC";
 
         return Database::query($sql, $params);
@@ -146,7 +154,7 @@ class Chat extends Model
     public function saveStoreMessage(int $storeId, int $senderId, int $receiverId, string $message, ?string $file = null): int
     {
         return (int)Database::insert($this->table, [
-            'order_id'    => 0,
+            'order_id'    => null,
             'store_id'    => $storeId,
             'sender_id'   => $senderId,
             'receiver_id' => $receiverId,

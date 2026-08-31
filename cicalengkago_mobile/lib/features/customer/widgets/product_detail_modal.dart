@@ -7,7 +7,6 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/widgets/uber_pill_button.dart';
 import '../../../core/widgets/app_alert.dart';
-import '../../../core/widgets/require_auth_widget.dart';
 import '../controllers/customer_controller.dart';
 import '../screens/store_detail_screen.dart';
 
@@ -40,6 +39,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
   bool? _storeIsOpenOverride;
   int? _storeIdOverride;
   String? _storeNameOverride;
+  bool _isAdding = false;
 
   @override
   void initState() {
@@ -101,21 +101,59 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
   }
 
   String _getFoodImage(Map<String, dynamic> product) {
-    final rawImg = product['image']?.toString();
+    final rawImg = product['image']?.toString() ??
+        product['product_image']?.toString() ??
+        product['image_url']?.toString() ??
+        product['photo']?.toString() ??
+        product['product_photo']?.toString() ??
+        product['cover_photo']?.toString() ??
+        product['thumbnail']?.toString();
     if (rawImg != null && rawImg.isNotEmpty && !rawImg.contains('null')) {
-      return ApiConstants.formatImageUrl(rawImg);
+      final formatted = ApiConstants.formatImageUrl(rawImg);
+      if (formatted.isNotEmpty) return formatted;
     }
-    final name = (product['name'] ?? product['product_name'] ?? '').toString().toLowerCase();
-    if (name.contains('ayam') || name.contains('chick')) {
-      return 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=600&q=80';
-    } else if (name.contains('nasi') || name.contains('rice')) {
-      return 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=600&q=80';
-    } else if (name.contains('kopi') || name.contains('coffee') || name.contains('boba') || name.contains('es')) {
-      return 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=600&q=80';
-    } else if (name.contains('seblak') || name.contains('bakso') || name.contains('mie') || name.contains('ramen')) {
-      return 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600&q=80';
-    }
-    return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80';
+    return '';
+  }
+
+  Widget _buildImagePlaceholder(String name) {
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : '🍽️';
+    return Container(
+      height: 240,
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF1E293B),
+            Color(0xFF0F172A),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                initial,
+                style: const TextStyle(fontSize: 36, color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              name,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -124,10 +162,14 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
     final product = widget.product;
     final productId = int.tryParse(product['id']?.toString() ?? product['product_id']?.toString() ?? '0') ?? 0;
     final storeId = _storeIdOverride ?? int.tryParse(product['store_id']?.toString() ?? '0') ?? 0;
-    final name = product['name'] ?? product['product_name'] ?? 'Menu Kuliner';
+    final name = (product['name'] ?? product['product_name'] ?? 'Menu Kuliner').toString();
     final storeName = _storeNameOverride ?? product['store_name'] ?? product['store'] ?? 'Mitra CicalengkaGO';
     final price = double.tryParse(product['price']?.toString() ?? '0') ?? 0.0;
     final finalPrice = double.tryParse(product['final_price']?.toString() ?? price.toString()) ?? price;
+    final bool hasDiscount = price > finalPrice;
+    final double discountAmount = hasDiscount ? (price - finalPrice) : 0.0;
+    final int discountPercent = hasDiscount && price > 0 ? (((price - finalPrice) / price) * 100).round() : 0;
+
     final description = (product['description'] != null && product['description'].toString().trim().isNotEmpty)
         ? product['description'].toString()
         : 'Olahan kuliner lezat khas Cicalengka yang disiapkan dengan bahan-bahan segar berkualitas dan cita rasa istimewa.';
@@ -140,7 +182,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
 
     return Container(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.90,
+        maxHeight: MediaQuery.of(context).size.height * 0.92,
       ),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -151,58 +193,143 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Drag Indicator
-            Container(
-              margin: const EdgeInsets.only(top: 10, bottom: 4),
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: const Color(0xFFCBD5E1),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-
+            // Scrollable Content
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Product Cover Image with Close Button
+                    // Header Image Stack
                     Stack(
                       children: [
-                        CachedNetworkImage(
-                          imageUrl: imgUrl,
-                          height: 220,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorWidget: (context, url, error) => Container(
-                            height: 220,
-                            color: const Color(0xFFF1F5F9),
-                            child: const Center(
-                              child: Icon(Icons.fastfood_rounded, size: 60, color: AppTheme.inkBlack),
-                            ),
-                          ),
+                        // Cover Image
+                        Hero(
+                          tag: 'product_img_$productId',
+                          child: (imgUrl.isNotEmpty)
+                              ? CachedNetworkImage(
+                                  imageUrl: imgUrl,
+                                  height: 240,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Container(
+                                    height: 240,
+                                    color: const Color(0xFFF1F5F9),
+                                    child: const Center(
+                                      child: SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryRed),
+                                      ),
+                                    ),
+                                  ),
+                                  errorWidget: (context, url, error) => _buildImagePlaceholder(name),
+                                )
+                              : _buildImagePlaceholder(name),
                         ),
+
+                        // Gradient Scrim Top (for drag bar & close button)
                         Positioned(
-                          top: 12,
-                          right: 12,
-                          child: CircleAvatar(
-                            backgroundColor: Colors.black.withOpacity(0.6),
-                            child: IconButton(
-                              icon: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
-                              onPressed: () => Navigator.pop(context),
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: 70,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.black.withValues(alpha: 0.55),
+                                  Colors.transparent,
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                        // Rating Chip on top of image
+
+                        // Drag Pill Indicator
+                        Positioned(
+                          top: 10,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: Container(
+                              width: 42,
+                              height: 4.5,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.3),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // Close Button Top Right
+                        Positioned(
+                          top: 14,
+                          right: 14,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => Navigator.pop(context),
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.close_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // Gradient Scrim Bottom (for rating & promo chips)
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          height: 75,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                                colors: [
+                                  Colors.black.withValues(alpha: 0.65),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // Rating Chip Bottom Left
                         Positioned(
                           bottom: 12,
-                          left: 12,
+                          left: 14,
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.75),
+                              color: Colors.black.withValues(alpha: 0.65),
                               borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -216,27 +343,62 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                 const SizedBox(width: 4),
                                 Text(
                                   '($_reviewsCount ulasan)',
-                                  style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11),
+                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 11),
                                 ),
                               ],
                             ),
                           ),
                         ),
+
+                        // Promo / Discount Badge Bottom Right
+                        if (hasDiscount)
+                          Positioned(
+                            bottom: 12,
+                            right: 14,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFEF4444).withValues(alpha: 0.4),
+                                    blurRadius: 6,
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.local_offer_rounded, color: Colors.white, size: 13),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    discountPercent > 0 ? 'Diskon $discountPercent%' : 'Hemat ${CurrencyFormatter.formatRupiah(discountAmount)}',
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                       ],
                     ),
 
+                    // Body Details
                     Padding(
-                      padding: const EdgeInsets.all(20.0),
+                      padding: const EdgeInsets.all(18.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Store Closed Banner if applicable
                           if (!isStoreOpen)
                             Container(
                               margin: const EdgeInsets.only(bottom: 14),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFEE2E2),
-                                borderRadius: BorderRadius.circular(14),
+                                color: const Color(0xFFFEF2F2),
+                                borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: const Color(0xFFFCA5A5)),
                               ),
                               child: const Row(
@@ -245,15 +407,15 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                   SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
-                                      'Toko Sedang Tutup • Menu ini tidak dapat dibeli sekarang',
-                                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF991B1B)),
+                                      'Toko Sedang Tutup • Menu ini tidak dapat dipesan saat ini',
+                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF991B1B)),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
 
-                          // Store Name / Visit Store Interactive Card
+                          // Store Interactive Pill Card
                           InkWell(
                             onTap: storeId > 0
                                 ? () {
@@ -268,7 +430,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                 : null,
                             borderRadius: BorderRadius.circular(12),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF8FAFC),
                                 borderRadius: BorderRadius.circular(12),
@@ -276,14 +438,21 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.storefront_rounded, size: 16, color: Color(0xFFEF4444)),
-                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.all(5),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFEF2F2),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(Icons.storefront_rounded, size: 16, color: AppTheme.primaryRed),
+                                  ),
+                                  const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       storeName,
                                       style: const TextStyle(
-                                        fontSize: 12.5,
-                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
                                         color: AppTheme.inkBlack,
                                       ),
                                       maxLines: 1,
@@ -293,7 +462,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                   if (storeId > 0) ...[
                                     const SizedBox(width: 8),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFFEF2F2),
                                         borderRadius: BorderRadius.circular(8),
@@ -304,13 +473,13 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                           Text(
                                             'Kunjungi Toko',
                                             style: TextStyle(
-                                              fontSize: 10.5,
+                                              fontSize: 11,
                                               fontWeight: FontWeight.bold,
-                                              color: Color(0xFFEF4444),
+                                              color: AppTheme.primaryRed,
                                             ),
                                           ),
-                                          SizedBox(width: 2),
-                                          Icon(Icons.arrow_forward_ios_rounded, size: 9, color: Color(0xFFEF4444)),
+                                          SizedBox(width: 3),
+                                          Icon(Icons.arrow_forward_ios_rounded, size: 9, color: AppTheme.primaryRed),
                                         ],
                                       ),
                                     ),
@@ -319,30 +488,42 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 12),
 
                           // Product Name
                           Text(
                             name,
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF0F172A),
+                              letterSpacing: -0.3,
+                            ),
                           ),
                           const SizedBox(height: 8),
 
-                          // Price
+                          // Price Row
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
                             children: [
                               Text(
                                 CurrencyFormatter.formatRupiah(finalPrice),
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.inkBlack),
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppTheme.primaryRed,
+                                ),
                               ),
-                              if (price > finalPrice) ...[
+                              if (hasDiscount) ...[
                                 const SizedBox(width: 8),
                                 Text(
                                   CurrencyFormatter.formatRupiah(price),
                                   style: const TextStyle(
-                                    fontSize: 13,
+                                    fontSize: 13.5,
                                     color: Color(0xFF94A3B8),
                                     decoration: TextDecoration.lineThrough,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ],
@@ -350,36 +531,60 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                           ),
 
                           const SizedBox(height: 16),
-                          const Divider(color: Color(0xFFF1F5F9)),
+                          const Divider(color: Color(0xFFF1F5F9), thickness: 1.2),
                           const SizedBox(height: 12),
 
-                          // Description Header & Body
-                          const Text(
-                            'Deskripsi Menu',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                          // Description Section
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEFF6FF),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.notes_rounded, size: 15, color: Color(0xFF2563EB)),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Deskripsi Menu',
+                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 8),
                           Text(
                             description,
                             style: const TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.5),
                           ),
 
-                          const SizedBox(height: 20),
-                          const Divider(color: Color(0xFFF1F5F9)),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 18),
+                          const Divider(color: Color(0xFFF1F5F9), thickness: 1.2),
+                          const SizedBox(height: 14),
 
-                          // ==========================================
-                          // SYNCHRONIZED REVIEWS SECTION
-                          // ==========================================
+                          // Reviews & Ratings Header
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Penilaian & Ulasan',
-                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(5),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFEF3C7),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(Icons.star_rounded, size: 15, color: Color(0xFFD97706)),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'Penilaian & Ulasan',
+                                    style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                  ),
+                                ],
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFFEF3C7),
                                   borderRadius: BorderRadius.circular(12),
@@ -390,7 +595,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                     const SizedBox(width: 4),
                                     Text(
                                       '${_avgRating.toStringAsFixed(1)} / 5.0',
-                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
+                                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
                                     ),
                                   ],
                                 ),
@@ -416,12 +621,12 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF8FAFC),
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(14),
                                 border: Border.all(color: const Color(0xFFE2E8F0)),
                               ),
                               child: Column(
                                 children: [
-                                  Icon(Icons.rate_review_outlined, size: 36, color: Colors.grey.shade400),
+                                  Icon(Icons.rate_review_outlined, size: 32, color: Colors.grey.shade400),
                                   const SizedBox(height: 8),
                                   const Text(
                                     'Belum Ada Ulasan Menu',
@@ -442,7 +647,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF8FAFC),
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(14),
                                 border: Border.all(color: const Color(0xFFE2E8F0)),
                               ),
                               child: Row(
@@ -486,14 +691,14 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 12),
 
                             // List of reviews
                             ListView.separated(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: _reviews.length > 5 ? 5 : _reviews.length,
-                              separatorBuilder: (_, __) => const Divider(height: 20, color: Color(0xFFF1F5F9)),
+                              separatorBuilder: (_, __) => const Divider(height: 18, color: Color(0xFFF1F5F9)),
                               itemBuilder: (ctx, idx) {
                                 final rev = _reviews[idx];
                                 final cName = (rev['customer_name'] ?? 'Pelanggan').toString();
@@ -509,19 +714,19 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                     Row(
                                       children: [
                                         CircleAvatar(
-                                          radius: 16,
-                                          backgroundColor: AppTheme.primaryRed.withOpacity(0.1),
+                                          radius: 15,
+                                          backgroundColor: AppTheme.primaryRed.withValues(alpha: 0.1),
                                           backgroundImage: (cAvatar != null && cAvatar.isNotEmpty)
                                               ? CachedNetworkImageProvider(ApiConstants.formatImageUrl(cAvatar))
                                               : null,
                                           child: (cAvatar == null || cAvatar.isEmpty)
                                               ? Text(
                                                   cName.isNotEmpty ? cName[0].toUpperCase() : 'U',
-                                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.primaryRed),
+                                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.primaryRed),
                                                 )
                                               : null,
                                         ),
-                                        const SizedBox(width: 10),
+                                        const SizedBox(width: 9),
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -530,7 +735,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                                 children: [
                                                   Text(
                                                     cName,
-                                                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                                                   ),
                                                   const SizedBox(width: 6),
                                                   Container(
@@ -540,7 +745,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                                       borderRadius: BorderRadius.circular(4),
                                                     ),
                                                     child: const Text(
-                                                      'Pembeli Terverifikasi',
+                                                      'Terverifikasi',
                                                       style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
                                                     ),
                                                   ),
@@ -553,7 +758,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                                     children: List.generate(5, (sIdx) {
                                                       return Icon(
                                                         sIdx < rVal ? Icons.star_rounded : Icons.star_outline_rounded,
-                                                        size: 13,
+                                                        size: 12,
                                                         color: const Color(0xFFF59E0B),
                                                       );
                                                     }),
@@ -571,19 +776,19 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                       ],
                                     ),
                                     if (comment.isNotEmpty) ...[
-                                      const SizedBox(height: 8),
+                                      const SizedBox(height: 6),
                                       Text(
                                         comment,
                                         style: const TextStyle(fontSize: 12, color: Color(0xFF334155), height: 1.4),
                                       ),
                                     ],
                                     if (reply != null && reply.isNotEmpty) ...[
-                                      const SizedBox(height: 8),
+                                      const SizedBox(height: 6),
                                       Container(
-                                        padding: const EdgeInsets.all(10),
+                                        padding: const EdgeInsets.all(9),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFF1F5F9),
-                                          borderRadius: BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -613,14 +818,27 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                             ),
                           ],
 
-                          const SizedBox(height: 20),
-                          const Divider(color: Color(0xFFF1F5F9)),
+                          const SizedBox(height: 18),
+                          const Divider(color: Color(0xFFF1F5F9), thickness: 1.2),
                           const SizedBox(height: 12),
 
                           // Special Notes Textfield
-                          const Text(
-                            'Catatan Khusus (Opsional)',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.edit_note_rounded, size: 16, color: Color(0xFF475569)),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Catatan Khusus Pesanan (Opsional)',
+                                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 8),
                           TextField(
@@ -653,14 +871,14 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
               ),
             ),
 
-            // Bottom Action Bar with Quantity Stepper & Add Button
+            // Bottom Action Bar with Quantity Stepper & Add to Cart Button (Add to Cart only, NO direct checkout)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 10,
                     offset: const Offset(0, -3),
                   ),
@@ -681,14 +899,18 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                         child: Row(
                           children: [
                             IconButton(
-                              constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                               padding: EdgeInsets.zero,
-                              icon: const Icon(Icons.remove_rounded, size: 18, color: AppTheme.inkBlack),
-                              onPressed: () {
-                                if (_quantity > 1) {
-                                  setState(() => _quantity--);
-                                }
-                              },
+                              icon: Icon(
+                                Icons.remove_rounded,
+                                size: 18,
+                                color: _quantity > 1 ? AppTheme.inkBlack : const Color(0xFFCBD5E1),
+                              ),
+                              onPressed: _quantity > 1
+                                  ? () {
+                                      setState(() => _quantity--);
+                                    }
+                                  : null,
                             ),
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -698,7 +920,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                               ),
                             ),
                             IconButton(
-                              constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                               padding: EdgeInsets.zero,
                               icon: const Icon(Icons.add_rounded, size: 18, color: AppTheme.inkBlack),
                               onPressed: () {
@@ -708,43 +930,48 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 12),
                     ],
 
-                    // Add to Cart Button or Closed Button
+                    // Add to Cart Button or Closed Indicator
                     Expanded(
                       child: isStoreOpen
                           ? UberPillButton(
-                              label: 'Tambah • ${CurrencyFormatter.formatRupiah(totalPrice)}',
-                              icon: Icons.shopping_bag_outlined,
+                              label: _isAdding ? 'Menambahkan...' : CurrencyFormatter.formatRupiah(totalPrice),
+                              icon: Icons.add_shopping_cart_rounded,
                               paddingHorizontal: 12,
                               fullWidth: true,
-                              onPressed: () async {
-                                final ok = await customerCtrl.addToCart(
-                                  productId,
-                                  _quantity,
-                                  notes: _notesController.text,
-                                );
-                                if (context.mounted) {
-                                  if (ok) {
-                                    Navigator.pop(context);
-                                    AppAlert.showCartAdded(
-                                      context,
-                                      productName: name,
-                                      quantity: _quantity,
-                                    );
-                                  } else {
-                                    final err = customerCtrl.lastCartError ?? 'Gagal menambahkan ke keranjang';
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(err),
-                                        backgroundColor: AppTheme.primaryRed,
-                                        duration: const Duration(seconds: 3),
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
+                              onPressed: _isAdding
+                                  ? null
+                                  : () async {
+                                      setState(() => _isAdding = true);
+                                      final ok = await customerCtrl.addToCart(
+                                        productId,
+                                        _quantity,
+                                        notes: _notesController.text.trim(),
+                                      );
+                                      if (mounted) {
+                                        setState(() => _isAdding = false);
+                                        if (ok) {
+                                          Navigator.pop(context);
+                                          AppAlert.showCartAdded(
+                                            context,
+                                            productName: name,
+                                            quantity: _quantity,
+                                          );
+                                        } else {
+                                          final err = customerCtrl.lastCartError ?? 'Gagal menambahkan ke keranjang';
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(err),
+                                              backgroundColor: AppTheme.primaryRed,
+                                              behavior: SnackBarBehavior.floating,
+                                              duration: const Duration(seconds: 3),
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    },
                             )
                           : Container(
                               height: 48,
