@@ -303,6 +303,8 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
           {'urls': 'stun:stun2.l.google.com:19302'},
           {'urls': 'stun:stun3.l.google.com:19302'},
           {'urls': 'stun:stun4.l.google.com:19302'},
+          {'urls': 'stun:global.stun.twilio.com:3478'},
+          {'urls': 'stun:stun.cloudflare.com:3478'},
         ],
         'sdpSemantics': 'unified-plan',
       };
@@ -426,11 +428,9 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     if (kIsWeb) return;
     try {
       Helper.setSpeakerphoneOn(enable);
-      _localStream?.getAudioTracks().forEach((track) {
-        try {
-          track.enableSpeakerphone(enable);
-        } catch (_) {}
-      });
+      if (_localStream != null && _localStream!.getAudioTracks().isNotEmpty) {
+        Helper.setMicrophoneMute(false, _localStream!.getAudioTracks().first);
+      }
     } catch (e) {
       debugPrint('[WebRTC] Set speaker error: $e');
     }
