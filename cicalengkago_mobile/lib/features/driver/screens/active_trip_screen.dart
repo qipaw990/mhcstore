@@ -1473,6 +1473,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                     orderCode: orderCode,
                     isIncoming: false,
                     callerRole: 'delivery_man',
+                    targetRole: 'customer',
                     initialPartnerName: customerName,
                     initialPartnerAvatar: cAvatar,
                   );

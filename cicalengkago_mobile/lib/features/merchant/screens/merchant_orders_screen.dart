@@ -427,6 +427,7 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
             orderCode: orderCode,
             isIncoming: false,
             callerRole: 'vendor',
+            targetRole: 'customer',
             initialPartnerName: customerName.toString(),
             initialPartnerAvatar: customerAvatar?.toString(),
           );

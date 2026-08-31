@@ -413,6 +413,7 @@ class _MerchantDeliveryMapModalState extends State<MerchantDeliveryMapModal> {
                             orderCode: orderCode,
                             isIncoming: false,
                             callerRole: 'vendor',
+                            targetRole: 'customer',
                             initialPartnerName: customerName,
                             initialPartnerAvatar: cAvatar,
                           );
