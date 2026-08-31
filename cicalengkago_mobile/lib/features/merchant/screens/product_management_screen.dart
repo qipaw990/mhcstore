@@ -1231,13 +1231,9 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
                         'discount': _discountCtrl.text.trim().isEmpty ? '0' : _discountCtrl.text.trim(),
                         'unit': _unitCtrl.text.trim().isEmpty ? 'porsi' : _unitCtrl.text.trim(),
                         'description': _descCtrl.text.trim(),
+                        'variations_json': jsonEncode(_variations),
+                        'addons_json': jsonEncode(_addons),
                       };
-                      if (_variations.isNotEmpty) {
-                        payload['variations_json'] = jsonEncode(_variations);
-                      }
-                      if (_addons.isNotEmpty) {
-                        payload['addons_json'] = jsonEncode(_addons);
-                      }
                       if (_isEdit) {
                         payload['id'] = widget.product!['id'].toString();
                         if (widget.product!['image'] != null && widget.product!['image'].toString().isNotEmpty) {

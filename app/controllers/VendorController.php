@@ -383,9 +383,10 @@ class VendorController extends Controller
                 if (!empty($vName)) {
                     $vPrice = (float)($var['price'] ?? 0);
                     $vStock = (int)($var['stock'] ?? 100);
+                    $vHpp = isset($var['hpp']) ? (float)$var['hpp'] : 0.0;
                     \App\Core\Database::query(
-                        "INSERT INTO `product_variations` (`product_id`, `name`, `price`, `stock`) VALUES (?, ?, ?, ?)",
-                        [$id, $vName, $vPrice, $vStock]
+                        "INSERT INTO `product_variations` (`product_id`, `name`, `price`, `stock`, `hpp`) VALUES (?, ?, ?, ?, ?)",
+                        [$id, $vName, $vPrice, $vStock, $vHpp]
                     );
                 }
             }
@@ -397,18 +398,34 @@ class VendorController extends Controller
             $addonsData = json_decode($addonsData, true);
         }
         if (is_array($addonsData)) {
+            $keptAddonNames = [];
             foreach ($addonsData as $addon) {
                 $aName = trim($addon['name'] ?? '');
                 if (!empty($aName)) {
                     $aPrice = (float)($addon['price'] ?? 0);
+                    $keptAddonNames[] = $aName;
                     $exist = \App\Core\Database::fetchOne("SELECT id FROM `product_addons` WHERE `store_id` = ? AND `name` = ? LIMIT 1", [$store['id'], $aName]);
-                    if (!$exist) {
+                    if ($exist) {
+                        \App\Core\Database::query(
+                            "UPDATE `product_addons` SET `price` = ?, `status` = 1 WHERE `id` = ?",
+                            [$aPrice, $exist['id']]
+                        );
+                    } else {
                         \App\Core\Database::query(
                             "INSERT INTO `product_addons` (`store_id`, `name`, `price`, `status`) VALUES (?, ?, ?, 1)",
                             [$store['id'], $aName, $aPrice]
                         );
                     }
                 }
+            }
+
+            // Hapus topping milik toko ini yang sudah dihapus oleh merchant dari daftar
+            if (empty($keptAddonNames)) {
+                \App\Core\Database::query("DELETE FROM `product_addons` WHERE `store_id` = ?", [$store['id']]);
+            } else {
+                $placeholders = implode(',', array_fill(0, count($keptAddonNames), '?'));
+                $deleteParams = array_merge([$store['id']], $keptAddonNames);
+                \App\Core\Database::query("DELETE FROM `product_addons` WHERE `store_id` = ? AND `name` NOT IN ($placeholders)", $deleteParams);
             }
         }
 
