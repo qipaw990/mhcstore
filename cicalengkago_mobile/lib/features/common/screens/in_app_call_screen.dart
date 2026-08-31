@@ -61,7 +61,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   MediaStream? _localStream;
   final Set<String> _sentCandidateKeys = {};
   final Set<String> _addedCandidateKeys = {};
-  int _pollCount = 0;
+  int _consecutiveNullPolls = 0;
   dynamic _pendingOffer;
 
   @override
@@ -315,10 +315,8 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
             _startTimer();
             _setSpeakerphone(_isSpeakerOn);
           }
-        } else if (state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected ||
-                   state == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
-                   state == RTCPeerConnectionState.RTCPeerConnectionStateClosed) {
-          _handleCallEnded('Panggilan Diakhiri');
+        } else if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed) {
+          debugPrint('⚠️ [WebRTC] Connection state failed, waiting for signaling check...');
         }
       };
 
@@ -402,7 +400,6 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     _statusTimer?.cancel();
     _statusTimer = Timer.periodic(const Duration(milliseconds: 1200), (_) async {
       if (_isEnded) return;
-      _pollCount++;
       try {
         final url = '${ApiConstants.baseUrl}/calls/poll?order_code=${widget.orderCode}';
         final res = await http.get(Uri.parse(url));
@@ -410,6 +407,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         if (res.statusCode == 200) {
           final data = jsonDecode(res.body);
           if (data['success'] == true && data['data'] != null && data['data']['active_call'] != null) {
+            _consecutiveNullPolls = 0;
             final call = data['data']['active_call'] as Map<String, dynamic>;
             final status = call['status'];
             _callId = int.tryParse(call['id']?.toString() ?? '');
@@ -521,7 +519,8 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
               _handleCallEnded('Panggilan Diakhiri');
             }
           } else {
-            if (_isConnected || _pollCount > 30) {
+            _consecutiveNullPolls++;
+            if (_consecutiveNullPolls >= 10) {
               _handleCallEnded('Panggilan Diakhiri');
             }
           }
