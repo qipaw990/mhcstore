@@ -231,24 +231,34 @@ class CallController extends Controller
                 }
             } catch (\Throwable $enrichErr) {}
 
+            $connectedTs = !empty($call['connected_at']) ? strtotime($call['connected_at']) : (!empty($call['updated_at']) ? strtotime($call['updated_at']) : time());
+            if ($call['status'] !== 'connected') {
+                $connectedTs = null;
+            }
+
             $this->successResponse('Status panggilan', [
                 'active_call' => [
-                    'id'              => (int)$call['id'],
-                    'order_code'      => $call['order_code'],
-                    'caller_id'       => (int)$call['caller_id'],
-                    'receiver_id'     => (int)$call['receiver_id'],
-                    'caller_role'     => $call['caller_role'],
-                    'receiver_role'   => $call['receiver_role'],
-                    'caller_name'     => $callerName,
-                    'caller_avatar'   => $callerAvatar,
-                    'receiver_name'   => $receiverName,
-                    'receiver_avatar' => $receiverAvatar,
-                    'store_logo'      => $storeLogo,
-                    'store_name'      => $storeName,
-                    'status'          => $call['status'],
-                    'offer'           => $call['offer'],
-                    'answer'          => $call['answer'],
-                    'ice_candidates'  => $call['ice_candidates']
+                    'id'                  => (int)$call['id'],
+                    'order_code'          => $call['order_code'],
+                    'caller_id'           => (int)$call['caller_id'],
+                    'receiver_id'         => (int)$call['receiver_id'],
+                    'caller_role'         => $call['caller_role'],
+                    'receiver_role'       => $call['receiver_role'],
+                    'caller_name'         => $callerName,
+                    'caller_avatar'       => $callerAvatar,
+                    'receiver_name'       => $receiverName,
+                    'receiver_avatar'     => $receiverAvatar,
+                    'store_logo'          => $storeLogo,
+                    'store_name'          => $storeName,
+                    'status'              => $call['status'],
+                    'offer'               => $call['offer'],
+                    'answer'              => $call['answer'],
+                    'ice_candidates'      => $call['ice_candidates'],
+                    'connected_at'        => $call['connected_at'] ?? $call['updated_at'],
+                    'connected_timestamp' => $connectedTs,
+                    'connected_at_ms'     => $connectedTs ? ($connectedTs * 1000) : null,
+                    'server_time'         => time(),
+                    'server_time_ms'      => time() * 1000
                 ]
             ]);
         } catch (\Throwable $e) {
@@ -270,12 +280,29 @@ class CallController extends Controller
             return;
         }
 
-        Database::update('voice_calls', [
+        try {
+            Database::execute("ALTER TABLE voice_calls ADD COLUMN `connected_at` timestamp NULL DEFAULT NULL");
+        } catch (\Throwable $e) {}
+
+        $nowStr = date('Y-m-d H:i:s');
+        $updateData = [
             'status' => 'connected',
             'answer' => !empty($answer) ? (is_string($answer) ? $answer : json_encode($answer)) : null
-        ], 'id = ?', [$callId]);
+        ];
 
-        $this->successResponse('Panggilan diterima');
+        try {
+            $updateData['connected_at'] = $nowStr;
+            Database::update('voice_calls', $updateData, 'id = ?', [$callId]);
+        } catch (\Throwable $e) {
+            unset($updateData['connected_at']);
+            Database::update('voice_calls', $updateData, 'id = ?', [$callId]);
+        }
+
+        $this->successResponse('Panggilan diterima', [
+            'connected_at'        => $nowStr,
+            'connected_timestamp' => time(),
+            'connected_at_ms'     => time() * 1000
+        ]);
     }
 
     /**

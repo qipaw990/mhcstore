@@ -40,6 +40,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   Timer? _statusTimer;
   Timer? _durationTimer;
   int _callDurationSeconds = 0;
+  int? _connectedAtMs;
   bool _isConnected = false;
   bool _isEnded = false;
   bool _isMuted = false;
@@ -95,6 +96,13 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
           : (widget.callData!['receiver_avatar'] ?? widget.callData!['store_logo'] ?? _partnerAvatar);
       _partnerPhone = widget.callData!['partner_phone'] ?? widget.callData!['phone'] ?? widget.callData!['customer_phone'] ?? widget.callData!['dm_phone'] ?? '';
       _pendingOffer = widget.callData!['offer'];
+
+      if (widget.callData!['connected_at_ms'] != null) {
+        _connectedAtMs = int.tryParse(widget.callData!['connected_at_ms'].toString());
+      } else if (widget.callData!['connected_timestamp'] != null) {
+        final sec = int.tryParse(widget.callData!['connected_timestamp'].toString());
+        if (sec != null) _connectedAtMs = sec * 1000;
+      }
 
       if (widget.callData!['status'] == 'connected') {
         _isConnected = true;
@@ -317,19 +325,23 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       _peerConnection!.onTrack = (RTCTrackEvent event) {
         debugPrint('[WebRTC] Received remote track: ${event.track.kind}');
         if (event.track.kind == 'audio') {
+          event.track.enabled = true;
           if (event.streams.isNotEmpty) {
             _remoteRenderer.srcObject = event.streams[0];
           }
           _stopRingtone();
-          if (mounted && !_isConnected) {
-            setState(() {
-              _isConnected = true;
-              _statusText = 'Panggilan Berlangsung';
-            });
-            _startTimer();
-            _setSpeakerphone(_isSpeakerOn);
-          }
+          _setSpeakerphone(_isSpeakerOn);
         }
+      };
+
+      _peerConnection!.onAddStream = (MediaStream stream) {
+        debugPrint('[WebRTC] Received remote stream: ${stream.id}, audio tracks: ${stream.getAudioTracks().length}');
+        for (var track in stream.getAudioTracks()) {
+          track.enabled = true;
+        }
+        _remoteRenderer.srcObject = stream;
+        _stopRingtone();
+        _setSpeakerphone(_isSpeakerOn);
       };
 
       // Capture local microphone
@@ -344,6 +356,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
       _localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
       for (var track in _localStream!.getAudioTracks()) {
+        track.enabled = true;
         await _peerConnection!.addTrack(track, _localStream!);
       }
 
@@ -440,9 +453,13 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                 try { cands = jsonDecode(cands); } catch (_) { cands = []; }
               }
               if (cands is List) {
+                final myRole = widget.isIncoming ? 'callee' : 'caller';
                 for (var item in cands) {
-                  Map<String, dynamic>? candObj;
                   if (item is Map) {
+                    final senderRole = item['role']?.toString();
+                    if (senderRole == myRole) continue; // IGNORE OWN CANDIDATES
+
+                    Map<String, dynamic>? candObj;
                     if (item['candidate'] is Map) {
                       candObj = Map<String, dynamic>.from(item['candidate']);
                     } else if (item['candidate'] is String) {
@@ -454,28 +471,42 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                         };
                       }
                     }
-                  }
-                  if (candObj != null && candObj['candidate'] != null) {
-                    final key = '${candObj['candidate']}_${candObj['sdpMid']}_${candObj['sdpMLineIndex']}';
-                    if (!_addedCandidateKeys.contains(key)) {
-                      _addedCandidateKeys.add(key);
-                      try {
-                        await _peerConnection!.addCandidate(
-                          RTCIceCandidate(
-                            candObj['candidate']?.toString(),
-                            candObj['sdpMid']?.toString(),
-                            int.tryParse(candObj['sdpMLineIndex']?.toString() ?? '0') ?? 0,
-                          ),
-                        );
-                      } catch (_) {}
+
+                    if (candObj != null && candObj['candidate'] != null) {
+                      final key = '${candObj['candidate']}_${candObj['sdpMid']}_${candObj['sdpMLineIndex']}';
+                      if (_sentCandidateKeys.contains(key)) continue;
+                      if (!_addedCandidateKeys.contains(key)) {
+                        _addedCandidateKeys.add(key);
+                        try {
+                          debugPrint('📥 [WebRTC] Adding remote ICE candidate: ${candObj['candidate']}');
+                          await _peerConnection!.addCandidate(
+                            RTCIceCandidate(
+                              candObj['candidate']?.toString(),
+                              candObj['sdpMid']?.toString(),
+                              int.tryParse(candObj['sdpMLineIndex']?.toString() ?? '0') ?? 0,
+                            ),
+                          );
+                        } catch (e) {
+                          debugPrint('⚠️ [WebRTC] addCandidate error: $e');
+                        }
+                      }
                     }
                   }
                 }
               }
             }
 
+            if (call['connected_at_ms'] != null) {
+              final ms = int.tryParse(call['connected_at_ms'].toString());
+              if (ms != null && ms > 0) _connectedAtMs = ms;
+            } else if (call['connected_timestamp'] != null) {
+              final sec = int.tryParse(call['connected_timestamp'].toString());
+              if (sec != null && sec > 0) _connectedAtMs = sec * 1000;
+            }
+
             if (status == 'connected' && !_isConnected) {
               _stopRingtone();
+              _connectedAtMs ??= DateTime.now().millisecondsSinceEpoch;
               if (mounted) {
                 setState(() {
                   _isConnected = true;
@@ -504,7 +535,12 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     _durationTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) {
         setState(() {
-          _callDurationSeconds++;
+          if (_connectedAtMs != null && _connectedAtMs! > 0) {
+            final diff = (DateTime.now().millisecondsSinceEpoch - _connectedAtMs!) ~/ 1000;
+            _callDurationSeconds = diff >= 0 ? diff : 0;
+          } else {
+            _callDurationSeconds++;
+          }
         });
       }
     });
