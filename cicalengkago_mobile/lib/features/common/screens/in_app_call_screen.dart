@@ -54,6 +54,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   AudioPlayer? _audioPlayer;
 
   // Native WebRTC Engine (In-House, 0 Third Party)
+  final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
   RTCPeerConnection? _peerConnection;
   MediaStream? _localStream;
   final Set<String> _sentCandidateKeys = {};
@@ -71,6 +72,8 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     if (widget.initialPartnerAvatar != null && widget.initialPartnerAvatar!.isNotEmpty) {
       _partnerAvatar = widget.initialPartnerAvatar!;
     }
+
+    _remoteRenderer.initialize();
 
     _pulseController = AnimationController(
       vsync: this,
@@ -312,6 +315,9 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       _peerConnection!.onTrack = (RTCTrackEvent event) {
         debugPrint('[WebRTC] Received remote track: ${event.track.kind}');
         if (event.track.kind == 'audio') {
+          if (event.streams.isNotEmpty) {
+            _remoteRenderer.srcObject = event.streams[0];
+          }
           _stopRingtone();
           if (mounted && !_isConnected) {
             setState(() {
@@ -646,6 +652,11 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       await _peerConnection?.close();
       await _peerConnection?.dispose();
       _peerConnection = null;
+
+      try {
+        _remoteRenderer.srcObject = null;
+        await _remoteRenderer.dispose();
+      } catch (_) {}
     } catch (_) {}
   }
 
