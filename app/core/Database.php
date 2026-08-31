@@ -328,9 +328,9 @@ class Database
         return $stmt->execute($params);
     }
 
-    public static function raw(string $sql, array $params = []): bool
+    public static function lastInsertId(?string $name = null): string|int
     {
-        return self::execute($sql, $params);
+        return self::getPdo()->lastInsertId($name);
     }
 
     public static function insert(string $table, array $data): int|string

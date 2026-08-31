@@ -1743,9 +1743,14 @@ class VendorController extends Controller
     public function rawMaterials(): void
     {
         $userId = auth_id();
-        $store  = $this->storeModel->findByVendorId($userId);
+        if (!$userId) {
+            $this->errorResponse('Unauthorized / Sesi login telah berakhir', null, 401);
+            return;
+        }
+
+        $store = $this->storeModel->findByVendorId($userId);
         if (!$store) {
-            $this->errorResponse('Toko tidak ditemukan', 404);
+            $this->errorResponse('Toko tidak ditemukan', null, 404);
             return;
         }
 
@@ -1763,9 +1768,14 @@ class VendorController extends Controller
     public function saveRawMaterial(): void
     {
         $userId = auth_id();
-        $store  = $this->storeModel->findByVendorId($userId);
+        if (!$userId) {
+            $this->errorResponse('Unauthorized / Sesi login telah berakhir', null, 401);
+            return;
+        }
+
+        $store = $this->storeModel->findByVendorId($userId);
         if (!$store) {
-            $this->errorResponse('Toko tidak ditemukan', 404);
+            $this->errorResponse('Toko tidak ditemukan', null, 404);
             return;
         }
 
@@ -1809,9 +1819,14 @@ class VendorController extends Controller
     public function deleteRawMaterial(): void
     {
         $userId = auth_id();
-        $store  = $this->storeModel->findByVendorId($userId);
+        if (!$userId) {
+            $this->errorResponse('Unauthorized / Sesi login telah berakhir', null, 401);
+            return;
+        }
+
+        $store = $this->storeModel->findByVendorId($userId);
         if (!$store) {
-            $this->errorResponse('Toko tidak ditemukan', 404);
+            $this->errorResponse('Toko tidak ditemukan', null, 404);
             return;
         }
 
@@ -1835,11 +1850,16 @@ class VendorController extends Controller
     public function getProductRecipe(string $id = '0'): void
     {
         $userId    = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Unauthorized / Sesi login telah berakhir', null, 401);
+            return;
+        }
+
         $store     = $this->storeModel->findByVendorId($userId);
         $productId = (int)$id;
 
         if (!$store) {
-            $this->errorResponse('Toko tidak ditemukan', 404);
+            $this->errorResponse('Toko tidak ditemukan', null, 404);
             return;
         }
 
@@ -1849,7 +1869,7 @@ class VendorController extends Controller
             [$productId, $store['id']]
         );
         if (!$product) {
-            $this->errorResponse('Produk tidak ditemukan', 404);
+            $this->errorResponse('Produk tidak ditemukan', null, 404);
             return;
         }
 
@@ -1875,9 +1895,14 @@ class VendorController extends Controller
     public function saveProductRecipe(): void
     {
         $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Unauthorized / Sesi login telah berakhir', null, 401);
+            return;
+        }
+
         $store  = $this->storeModel->findByVendorId($userId);
         if (!$store) {
-            $this->errorResponse('Toko tidak ditemukan', 404);
+            $this->errorResponse('Toko tidak ditemukan', null, 404);
             return;
         }
 
@@ -1896,7 +1921,7 @@ class VendorController extends Controller
             [$productId, $store['id']]
         );
         if (!$product) {
-            $this->errorResponse('Produk tidak ditemukan', 404);
+            $this->errorResponse('Produk tidak ditemukan', null, 404);
             return;
         }
 

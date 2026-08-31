@@ -97,7 +97,7 @@ class RawMaterial
             "INSERT INTO `raw_materials` (`store_id`,`name`,`unit`,`price_per_unit`,`stock_qty`,`description`) VALUES (?,?,?,?,?,?)",
             [$data['store_id'], $data['name'], $data['unit'], $data['price_per_unit'], $data['stock_qty'] ?? 0, $data['description'] ?? null]
         );
-        return (int)Database::lastInsertId();
+        return (int)Database::getPdo()->lastInsertId();
     }
 
     public function delete(int $id, int $storeId): bool
