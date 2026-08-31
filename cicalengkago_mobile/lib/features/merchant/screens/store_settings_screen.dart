@@ -15,6 +15,8 @@ import '../../../core/widgets/location_picker_modal.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../auth/screens/splash_screen.dart';
 import '../controllers/merchant_controller.dart';
+import 'raw_materials_screen.dart';
+
 
 class StoreSettingsScreen extends StatefulWidget {
   const StoreSettingsScreen({super.key});
@@ -394,6 +396,47 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
             const SizedBox(height: 16),
           ],
 
+          // ── KARTU BAHAN BAKU & HPP ──
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const RawMaterialsScreen()),
+              );
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFBEB),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFFDE68A)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(color: Color(0xFFD97706), shape: BoxShape.circle),
+                    child: const Icon(Icons.science_outlined, color: Colors.white, size: 16),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text('Bahan Baku & Resep HPP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF92400E))),
+                        SizedBox(height: 2),
+                        Text('Kelola bahan baku & hitung otomatis HPP produk', style: TextStyle(fontSize: 11, color: Color(0xFFB45309))),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded, color: Color(0xFF92400E)),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+
           // ── KARTU BANTUAN CS ──
           InkWell(
             onTap: _launchWhatsAppSupport,
@@ -429,6 +472,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
             ),
           ),
           const SizedBox(height: 14),
+
 
           // ── TOMBOL LOGOUT MITRA ──
           OutlinedButton.icon(

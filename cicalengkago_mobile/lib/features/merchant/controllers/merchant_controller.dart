@@ -468,4 +468,99 @@ class MerchantController extends ChangeNotifier {
       await ApiService.get(ApiConstants.vendorMigrateHpp);
     } catch (_) {}
   }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // BAHAN BAKU (RAW MATERIALS)
+  // ════════════════════════════════════════════════════════════════════════
+
+  List<dynamic> _rawMaterials = [];
+  List<dynamic> get rawMaterials => _rawMaterials;
+
+  bool _isRawMatsLoading = false;
+  bool get isRawMatsLoading => _isRawMatsLoading;
+
+  Future<void> fetchRawMaterials() async {
+    _isRawMatsLoading = true;
+    notifyListeners();
+    try {
+      final res = await ApiService.get(ApiConstants.vendorRawMaterials);
+      _rawMaterials = (res['data']?['raw_materials'] as List?) ?? [];
+    } catch (_) {}
+    _isRawMatsLoading = false;
+    notifyListeners();
+  }
+
+  Future<Map<String, dynamic>> saveRawMaterial(Map<String, dynamic> data) async {
+    try {
+      final res = await ApiService.post(ApiConstants.vendorSaveRawMaterial, data);
+      if (res['success'] == true) {
+        await fetchRawMaterials();
+        return {'success': true, 'message': res['message'] ?? 'Berhasil disimpan'};
+      }
+      return {'success': false, 'message': res['message'] ?? 'Gagal menyimpan'};
+    } catch (_) {
+      return {'success': false, 'message': 'Terjadi kesalahan jaringan'};
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteRawMaterial(int id) async {
+    try {
+      final res = await ApiService.post(ApiConstants.vendorDeleteRawMaterial, {'id': id});
+      if (res['success'] == true) {
+        _rawMaterials.removeWhere((m) => m['id']?.toString() == id.toString());
+        notifyListeners();
+        return {'success': true, 'message': res['message'] ?? 'Berhasil dihapus'};
+      }
+      return {'success': false, 'message': res['message'] ?? 'Gagal menghapus'};
+    } catch (_) {
+      return {'success': false, 'message': 'Terjadi kesalahan jaringan'};
+    }
+  }
+
+  // ── Resep Produk ──────────────────────────────────────────────────────────
+
+  Map<String, dynamic> _productRecipe = {};
+  Map<String, dynamic> get productRecipe => _productRecipe;
+  bool _isRecipeLoading = false;
+  bool get isRecipeLoading => _isRecipeLoading;
+
+  Future<void> fetchProductRecipe(int productId) async {
+    _isRecipeLoading = true;
+    _productRecipe = {};
+    notifyListeners();
+    try {
+      final url = '${ApiConstants.vendorProductRecipeBase}/$productId/recipe';
+      final res = await ApiService.get(url);
+      if (res['success'] == true) {
+        _productRecipe = (res['data'] as Map<String, dynamic>?) ?? {};
+      }
+    } catch (_) {}
+    _isRecipeLoading = false;
+    notifyListeners();
+  }
+
+  Future<Map<String, dynamic>> saveProductRecipe(
+      int productId, List<Map<String, dynamic>> ingredients) async {
+    try {
+      final res = await ApiService.post(ApiConstants.vendorSaveProductRecipe, {
+        'product_id': productId,
+        'ingredients': ingredients,
+      });
+      if (res['success'] == true) {
+        // Refresh recipe
+        await fetchProductRecipe(productId);
+        // Refresh products so HPP column updates
+        await fetchProducts(silent: true);
+        return {
+          'success': true,
+          'message': res['message'] ?? 'Resep berhasil disimpan',
+          'total_hpp': res['data']?['total_hpp'] ?? 0,
+        };
+      }
+      return {'success': false, 'message': res['message'] ?? 'Gagal menyimpan resep'};
+    } catch (_) {
+      return {'success': false, 'message': 'Terjadi kesalahan jaringan'};
+    }
+  }
 }
+

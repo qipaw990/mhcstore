@@ -11,6 +11,8 @@ import '../../../core/widgets/uber_pill_button.dart';
 import '../../../core/widgets/barcode_scanner_modal.dart';
 import '../controllers/merchant_controller.dart';
 import '../widgets/stock_input_modal.dart';
+import 'raw_materials_screen.dart';
+import 'product_recipe_screen.dart';
 
 class ProductManagementScreen extends StatefulWidget {
   const ProductManagementScreen({super.key});
@@ -138,6 +140,31 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                               Icon(Icons.qr_code_scanner_rounded, size: 14, color: Colors.white),
                               SizedBox(width: 4),
                               Text('Stok Masuk', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Tombol Kelola Bahan Baku
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const RawMaterialsScreen()),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7.5),
+                          margin: const EdgeInsets.only(right: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD97706),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.science_outlined, size: 14, color: Colors.white),
+                              SizedBox(width: 4),
+                              Text('Bahan Baku', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
                             ],
                           ),
                         ),
@@ -336,10 +363,25 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    // Action Buttons (Edit / Delete)
+                    // Action Buttons (Resep / Edit / Delete)
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: const Icon(Icons.science_outlined, size: 18, color: Color(0xFFD97706)),
+                          tooltip: 'Resep & HPP',
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ProductRecipeScreen(product: product),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 8),
                         IconButton(
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
@@ -778,6 +820,42 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
                       _buildMarkupChip(100),
                     ],
                   ),
+                  if (_isEdit && widget.product != null) ...[
+                    const SizedBox(height: 10),
+                    InkWell(
+                      onTap: () async {
+                        Navigator.pop(context); // Tutup form modal
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ProductRecipeScreen(product: widget.product!),
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFFBEB),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFFDE68A)),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.science_outlined, size: 16, color: Color(0xFFD97706)),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Hitung HPP Otomatis dari Resep Bahan Baku',
+                                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
+                              ),
+                            ),
+                            Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFFB45309)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
 
                   // Satuan Unit

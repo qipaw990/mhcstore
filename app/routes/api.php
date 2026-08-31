@@ -50,6 +50,13 @@ Router::group(['prefix' => '/api/v1'], function () {
         Router::post('/calls/reject', [\App\Controllers\CallController::class, 'reject']);
         Router::post('/calls/end', [\App\Controllers\CallController::class, 'end']);
         Router::post('/calls/ice-candidate', [\App\Controllers\CallController::class, 'iceCandidate']);
+
+        // Vendor / Merchant API (requires token)
+        Router::get('/vendor/raw-materials', [\App\Controllers\VendorController::class, 'rawMaterials']);
+        Router::post('/vendor/raw-materials/save', [\App\Controllers\VendorController::class, 'saveRawMaterial']);
+        Router::post('/vendor/raw-materials/delete', [\App\Controllers\VendorController::class, 'deleteRawMaterial']);
+        Router::get('/vendor/products/{id}/recipe', [\App\Controllers\VendorController::class, 'getProductRecipe']);
+        Router::post('/vendor/products/recipe/save', [\App\Controllers\VendorController::class, 'saveProductRecipe']);
     });
 });
 
@@ -90,4 +97,11 @@ Router::group(['prefix' => '/api'], function () {
     Router::post('/calls/reject', [\App\Controllers\CallController::class, 'reject']);
     Router::post('/calls/end', [\App\Controllers\CallController::class, 'end']);
     Router::post('/calls/ice-candidate', [\App\Controllers\CallController::class, 'iceCandidate']);
+
+    // Vendor / Merchant API (token checked inside controller via auth_id)
+    Router::get('/vendor/raw-materials', [\App\Controllers\VendorController::class, 'rawMaterials']);
+    Router::post('/vendor/raw-materials/save', [\App\Controllers\VendorController::class, 'saveRawMaterial']);
+    Router::post('/vendor/raw-materials/delete', [\App\Controllers\VendorController::class, 'deleteRawMaterial']);
+    Router::get('/vendor/products/{id}/recipe', [\App\Controllers\VendorController::class, 'getProductRecipe']);
+    Router::post('/vendor/products/recipe/save', [\App\Controllers\VendorController::class, 'saveProductRecipe']);
 });

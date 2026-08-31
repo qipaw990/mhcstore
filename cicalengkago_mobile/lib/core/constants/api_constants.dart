@@ -154,4 +154,12 @@ class ApiConstants {
   static const String vendorProfile            = '$domainUrl/vendor/profile';
   static const String vendorUpdateProfile      = '$domainUrl/vendor/profile/update';
   static const String vendorRegister           = '$domainUrl/api/register-merchant';
+
+  // ── Bahan Baku (Raw Materials) & Resep Produk ──────────────────────────────
+  static const String vendorRawMaterials       = '$domainUrl/api/vendor/raw-materials';
+  static const String vendorSaveRawMaterial    = '$domainUrl/api/vendor/raw-materials/save';
+  static const String vendorDeleteRawMaterial  = '$domainUrl/api/vendor/raw-materials/delete';
+  // + /{productId}/recipe
+  static const String vendorProductRecipeBase  = '$domainUrl/api/vendor/products';
+  static const String vendorSaveProductRecipe  = '$domainUrl/api/vendor/products/recipe/save';
 }

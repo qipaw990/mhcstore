@@ -114,4 +114,26 @@ abstract class Controller
         }
         return $_GET[$key] ?? $default;
     }
+
+    /**
+     * Parse JSON request body (for API endpoints).
+     * Falls back to $_POST if Content-Type is not application/json.
+     */
+    protected function getJsonBody(): array
+    {
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+        if (str_contains($contentType, 'application/json')) {
+            $input = json_decode(file_get_contents('php://input'), true);
+            return is_array($input) ? $input : [];
+        }
+        // Try raw input anyway (Flutter sometimes omits Content-Type)
+        $raw = file_get_contents('php://input');
+        if ($raw !== '') {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+        return $_POST;
+    }
 }

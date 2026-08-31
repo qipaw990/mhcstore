@@ -1731,4 +1731,184 @@ class VendorController extends Controller
         $_SESSION['success'] = 'Profil Mitra Toko berhasil diperbarui!';
         $this->redirect('vendor/profile');
     }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // BAHAN BAKU (RAW MATERIALS)
+    // ════════════════════════════════════════════════════════════════════════
+
+    /**
+     * GET /api/v1/vendor/raw-materials
+     * Daftar semua bahan baku milik toko
+     */
+    public function rawMaterials(): void
+    {
+        $userId = auth_id();
+        $store  = $this->storeModel->findByVendorId($userId);
+        if (!$store) {
+            $this->errorResponse('Toko tidak ditemukan', 404);
+            return;
+        }
+
+        $rm = new \App\Models\RawMaterial();
+        $list = $rm->getByStore((int)$store['id']);
+
+        $this->successResponse('OK', ['raw_materials' => $list]);
+    }
+
+    /**
+     * POST /api/v1/vendor/raw-materials/save
+     * Buat atau update bahan baku
+     * Body: { id?, name, unit, price_per_unit, stock_qty, description? }
+     */
+    public function saveRawMaterial(): void
+    {
+        $userId = auth_id();
+        $store  = $this->storeModel->findByVendorId($userId);
+        if (!$store) {
+            $this->errorResponse('Toko tidak ditemukan', 404);
+            return;
+        }
+
+        $body = $this->getJsonBody();
+        $name          = trim($body['name'] ?? '');
+        $unit          = trim($body['unit'] ?? 'gr');
+        $pricePerUnit  = (float)($body['price_per_unit'] ?? 0);
+        $stockQty      = (float)($body['stock_qty'] ?? 0);
+        $description   = trim($body['description'] ?? '');
+
+        if ($name === '') {
+            $this->errorResponse('Nama bahan baku wajib diisi');
+            return;
+        }
+        if ($pricePerUnit < 0) {
+            $this->errorResponse('Harga tidak boleh negatif');
+            return;
+        }
+
+        $rm = new \App\Models\RawMaterial();
+        $data = [
+            'id'             => !empty($body['id']) ? (int)$body['id'] : null,
+            'store_id'       => (int)$store['id'],
+            'name'           => $name,
+            'unit'           => $unit,
+            'price_per_unit' => $pricePerUnit,
+            'stock_qty'      => $stockQty,
+            'description'    => $description ?: null,
+        ];
+
+        $savedId = $rm->save($data);
+        $saved   = $rm->find($savedId);
+
+        $this->successResponse('Bahan baku berhasil disimpan', ['raw_material' => $saved]);
+    }
+
+    /**
+     * POST /api/v1/vendor/raw-materials/delete
+     * Body: { id }
+     */
+    public function deleteRawMaterial(): void
+    {
+        $userId = auth_id();
+        $store  = $this->storeModel->findByVendorId($userId);
+        if (!$store) {
+            $this->errorResponse('Toko tidak ditemukan', 404);
+            return;
+        }
+
+        $body = $this->getJsonBody();
+        $id   = (int)($body['id'] ?? 0);
+        if ($id <= 0) {
+            $this->errorResponse('ID bahan baku tidak valid');
+            return;
+        }
+
+        $rm = new \App\Models\RawMaterial();
+        $rm->delete($id, (int)$store['id']);
+
+        $this->successResponse('Bahan baku berhasil dihapus');
+    }
+
+    /**
+     * GET /api/v1/vendor/products/{id}/recipe
+     * Ambil resep produk beserta bahan bakunya
+     */
+    public function getProductRecipe(string $id = '0'): void
+    {
+        $userId    = auth_id();
+        $store     = $this->storeModel->findByVendorId($userId);
+        $productId = (int)$id;
+
+        if (!$store) {
+            $this->errorResponse('Toko tidak ditemukan', 404);
+            return;
+        }
+
+        // Pastikan produk milik toko ini
+        $product = Database::fetchOne(
+            "SELECT id, name, hpp FROM `products` WHERE `id` = ? AND `store_id` = ?",
+            [$productId, $store['id']]
+        );
+        if (!$product) {
+            $this->errorResponse('Produk tidak ditemukan', 404);
+            return;
+        }
+
+        $rm      = new \App\Models\RawMaterial();
+        $recipe  = $rm->getProductRecipe($productId);
+        $allMats = $rm->getByStore((int)$store['id']);
+
+        $totalHpp = array_sum(array_column($recipe, 'cost'));
+
+        $this->successResponse('OK', [
+            'product'       => $product,
+            'recipe'        => $recipe,
+            'all_materials' => $allMats,
+            'total_hpp'     => $totalHpp,
+        ]);
+    }
+
+    /**
+     * POST /api/v1/vendor/products/recipe/save
+     * Simpan / update resep produk
+     * Body: { product_id, ingredients: [{ raw_material_id, qty_used }, ...] }
+     */
+    public function saveProductRecipe(): void
+    {
+        $userId = auth_id();
+        $store  = $this->storeModel->findByVendorId($userId);
+        if (!$store) {
+            $this->errorResponse('Toko tidak ditemukan', 404);
+            return;
+        }
+
+        $body       = $this->getJsonBody();
+        $productId  = (int)($body['product_id'] ?? 0);
+        $ingredients = $body['ingredients'] ?? [];
+
+        if ($productId <= 0) {
+            $this->errorResponse('product_id wajib diisi');
+            return;
+        }
+
+        // Pastikan produk milik toko ini
+        $product = Database::fetchOne(
+            "SELECT id, name FROM `products` WHERE `id` = ? AND `store_id` = ?",
+            [$productId, $store['id']]
+        );
+        if (!$product) {
+            $this->errorResponse('Produk tidak ditemukan', 404);
+            return;
+        }
+
+        $rm      = new \App\Models\RawMaterial();
+        $hpp     = $rm->saveProductRecipe($productId, (array)$ingredients);
+        $recipe  = $rm->getProductRecipe($productId);
+
+        $this->successResponse('Resep berhasil disimpan', [
+            'product_id' => $productId,
+            'total_hpp'  => $hpp,
+            'recipe'     => $recipe,
+        ]);
+    }
 }
+

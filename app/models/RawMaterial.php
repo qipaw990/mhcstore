@@ -1,0 +1,118 @@
+<?php
+namespace App\Models;
+
+use App\Core\Database;
+
+class RawMaterial
+{
+    // ── CRUD Bahan Baku per Toko ──────────────────────────────────────────────
+
+    public function getByStore(int $storeId): array
+    {
+        return Database::query(
+            "SELECT * FROM `raw_materials` WHERE `store_id` = ? ORDER BY `name` ASC",
+            [$storeId]
+        );
+    }
+
+    public function find(int $id): ?array
+    {
+        return Database::fetchOne(
+            "SELECT * FROM `raw_materials` WHERE `id` = ? LIMIT 1",
+            [$id]
+        );
+    }
+
+    public function save(array $data): int|false
+    {
+        if (!empty($data['id'])) {
+            $id = (int)$data['id'];
+            Database::query(
+                "UPDATE `raw_materials` SET `name`=?, `unit`=?, `price_per_unit`=?, `stock_qty`=?, `description`=?, `updated_at`=NOW()
+                 WHERE `id`=? AND `store_id`=?",
+                [$data['name'], $data['unit'], $data['price_per_unit'], $data['stock_qty'] ?? 0, $data['description'] ?? null, $id, $data['store_id']]
+            );
+            return $id;
+        }
+        Database::query(
+            "INSERT INTO `raw_materials` (`store_id`,`name`,`unit`,`price_per_unit`,`stock_qty`,`description`) VALUES (?,?,?,?,?,?)",
+            [$data['store_id'], $data['name'], $data['unit'], $data['price_per_unit'], $data['stock_qty'] ?? 0, $data['description'] ?? null]
+        );
+        return (int)Database::lastInsertId();
+    }
+
+    public function delete(int $id, int $storeId): bool
+    {
+        // Hapus dari resep produk juga
+        Database::query("DELETE FROM `product_raw_materials` WHERE `raw_material_id` = ?", [$id]);
+        Database::query("DELETE FROM `raw_materials` WHERE `id` = ? AND `store_id` = ?", [$id, $storeId]);
+        return true;
+    }
+
+    // ── Resep Produk (Product Recipe) ────────────────────────────────────────
+
+    public function getProductRecipe(int $productId): array
+    {
+        return Database::query(
+            "SELECT prm.*, rm.name as material_name, rm.unit, rm.price_per_unit,
+                    (prm.qty_used * rm.price_per_unit) as cost
+             FROM `product_raw_materials` prm
+             JOIN `raw_materials` rm ON prm.raw_material_id = rm.id
+             WHERE prm.product_id = ?
+             ORDER BY rm.name ASC",
+            [$productId]
+        );
+    }
+
+    /**
+     * Simpan resep produk (replace semua bahan baku produk)
+     * @param int   $productId
+     * @param array $ingredients [['raw_material_id' => 1, 'qty_used' => 100], ...]
+     * @return float  HPP total yang dihitung
+     */
+    public function saveProductRecipe(int $productId, array $ingredients): float
+    {
+        // Hapus resep lama
+        Database::query("DELETE FROM `product_raw_materials` WHERE `product_id` = ?", [$productId]);
+
+        $totalHpp = 0.0;
+        foreach ($ingredients as $item) {
+            $rmId    = (int)($item['raw_material_id'] ?? 0);
+            $qtyUsed = (float)($item['qty_used'] ?? 0);
+            if ($rmId <= 0 || $qtyUsed <= 0) continue;
+
+            Database::query(
+                "INSERT INTO `product_raw_materials` (`product_id`,`raw_material_id`,`qty_used`) VALUES (?,?,?)",
+                [$productId, $rmId, $qtyUsed]
+            );
+
+            // Ambil harga per unit
+            $rm = Database::fetchOne("SELECT `price_per_unit` FROM `raw_materials` WHERE `id`=?", [$rmId]);
+            if ($rm) {
+                $totalHpp += $qtyUsed * (float)$rm['price_per_unit'];
+            }
+        }
+
+        // Update HPP di tabel products
+        Database::query("UPDATE `products` SET `hpp` = ? WHERE `id` = ?", [$totalHpp, $productId]);
+
+        return $totalHpp;
+    }
+
+    /**
+     * Hitung ulang HPP dari resep yang tersimpan (tanpa merubah resep)
+     */
+    public function recalculateHpp(int $productId): float
+    {
+        $row = Database::fetchOne(
+            "SELECT SUM(prm.qty_used * rm.price_per_unit) as total
+             FROM `product_raw_materials` prm
+             JOIN `raw_materials` rm ON prm.raw_material_id = rm.id
+             WHERE prm.product_id = ?",
+            [$productId]
+        );
+        $hpp = (float)($row['total'] ?? 0);
+        Database::query("UPDATE `products` SET `hpp` = ? WHERE `id` = ?", [$hpp, $productId]);
+        return $hpp;
+    }
+}
