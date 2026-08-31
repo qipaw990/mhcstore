@@ -41,6 +41,10 @@ echo "🗄️ Menjalankan migrasi database otomatis & indeks performa..."
 docker compose exec -T cicalengkago_app php database/run_casaos_migration.php 2>/dev/null || php database/run_casaos_migration.php 2>/dev/null || true
 docker compose exec -T cicalengkago_app php database/optimize_performance_indexes.php 2>/dev/null || php database/optimize_performance_indexes.php 2>/dev/null || true
 
+# Bersihkan gambar sampah / tidak terpakai
+echo "🧹 Membersihkan gambar yang tidak terpakai..."
+docker compose exec -T cicalengkago_app php database/clean_unused_images.php 2>/dev/null || php database/clean_unused_images.php 2>/dev/null || true
+
 # Auto-reconnect Cloudflare Tunnel jika service terhenti
 systemctl restart cloudflared 2>/dev/null || docker restart cloudflared 2>/dev/null || true
 
