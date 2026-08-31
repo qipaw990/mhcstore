@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -48,9 +48,13 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   String _partnerAvatar = '';
   String _partnerPhone = '';
 
-  RtcEngine? _agoraEngine;
-  bool _isAgoraInitialized = false;
+  // Native WebRTC Engine (In-House, 0 Third Party)
+  RTCPeerConnection? _peerConnection;
+  MediaStream? _localStream;
+  final Set<String> _sentCandidateKeys = {};
+  final Set<String> _addedCandidateKeys = {};
   int _pollCount = 0;
+  dynamic _pendingOffer;
 
   @override
   void initState() {
@@ -81,6 +85,8 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
           ? (widget.callData!['caller_avatar'] ?? _partnerAvatar)
           : (widget.callData!['receiver_avatar'] ?? widget.callData!['store_logo'] ?? _partnerAvatar);
       _partnerPhone = widget.callData!['partner_phone'] ?? widget.callData!['phone'] ?? widget.callData!['customer_phone'] ?? widget.callData!['dm_phone'] ?? '';
+      _pendingOffer = widget.callData!['offer'];
+
       if (widget.callData!['status'] == 'connected') {
         _isConnected = true;
         _statusText = 'Panggilan Berlangsung';
@@ -102,7 +108,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       }
       return status.isGranted;
     } catch (e) {
-      debugPrint('[AgoraVoice] Permission check error: $e');
+      debugPrint('[WebRTC] Permission check error: $e');
       return true;
     }
   }
@@ -123,16 +129,26 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         return;
       }
 
-      await _setupAgoraEngine();
+      await _setupWebRtcEngine();
 
       if (!widget.isIncoming) {
-        // Outgoing call: inform backend
+        // Outgoing call: create WebRTC SDP offer
+        final offer = await _peerConnection!.createOffer({
+          'offerToReceiveAudio': 1,
+          'offerToReceiveVideo': 0,
+        });
+        await _peerConnection!.setLocalDescription(offer);
+
         final res = await http.post(
           Uri.parse('${ApiConstants.baseUrl}/calls/initiate'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'order_code': widget.orderCode,
             'caller_role': widget.callerRole ?? 'customer',
+            'offer': {
+              'sdp': offer.sdp,
+              'type': offer.type,
+            },
           }),
         );
 
@@ -166,100 +182,128 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
             return;
           }
         }
-        // Join Agora voice channel immediately for outgoing call
-        await _joinAgoraChannel();
       }
     } catch (e) {
-      debugPrint('[AgoraVoice] Error initializing call: $e');
+      debugPrint('[WebRTC] Error initializing call session: $e');
     }
   }
 
-  Future<void> _setupAgoraEngine() async {
-    if (_isAgoraInitialized && _agoraEngine != null) return;
+  Future<void> _setupWebRtcEngine() async {
+    if (_peerConnection != null) return;
 
     try {
-      _agoraEngine = createAgoraRtcEngine();
-      await _agoraEngine!.initialize(const RtcEngineContext(
-        appId: ApiConstants.agoraAppId,
-        channelProfile: ChannelProfileType.channelProfileCommunication,
-      ));
+      final Map<String, dynamic> configuration = {
+        'iceServers': [
+          {'urls': 'stun:stun.l.google.com:19302'},
+          {'urls': 'stun:stun1.l.google.com:19302'},
+          {'urls': 'stun:stun2.l.google.com:19302'},
+          {'urls': 'stun:stun3.l.google.com:19302'},
+          {'urls': 'stun:stun4.l.google.com:19302'},
+        ],
+        'sdpSemantics': 'unified-plan',
+      };
 
-      _agoraEngine!.registerEventHandler(
-        RtcEngineEventHandler(
-          onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-            debugPrint('[AgoraVoice] Local user joined channel: ${connection.channelId}');
-            _safeSetSpeakerphone(_isSpeakerOn);
-          },
-          onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
-            debugPrint('[AgoraVoice] Remote user joined channel: $remoteUid');
-            if (mounted) {
-              setState(() {
-                _isConnected = true;
-                _statusText = 'Panggilan Berlangsung';
-              });
-              _startTimer();
-              _safeSetSpeakerphone(_isSpeakerOn);
-            }
-          },
-          onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
-            debugPrint('[AgoraVoice] Remote user left channel: $remoteUid');
-            _handleCallEnded('Panggilan Diakhiri');
-          },
-          onError: (ErrorCodeType err, String msg) {
-            debugPrint('[AgoraVoice] Agora error: $err, $msg');
-          },
-        ),
-      );
+      final Map<String, dynamic> loopbackConstraints = {
+        'mandatory': {},
+        'optional': [
+          {'DtlsSrtpKeyAgreement': true},
+        ],
+      };
 
-      await _agoraEngine!.enableAudio();
-      await _agoraEngine!.setAudioProfile(
-        profile: AudioProfileType.audioProfileSpeechStandard,
-        scenario: AudioScenarioType.audioScenarioGameStreaming,
-      );
-      try {
-        await _agoraEngine!.setDefaultAudioRouteToSpeakerphone(_isSpeakerOn);
-      } catch (_) {}
-      await _safeSetSpeakerphone(_isSpeakerOn);
+      _peerConnection = await createPeerConnection(configuration, loopbackConstraints);
 
-      _isAgoraInitialized = true;
+      _peerConnection!.onIceCandidate = (RTCIceCandidate candidate) {
+        if (candidate.candidate == null) return;
+        _sendLocalIceCandidate(candidate);
+      };
+
+      _peerConnection!.onConnectionState = (RTCPeerConnectionState state) {
+        debugPrint('[WebRTC] Connection state changed: $state');
+        if (state == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
+          if (mounted && !_isConnected) {
+            setState(() {
+              _isConnected = true;
+              _statusText = 'Panggilan Berlangsung';
+            });
+            _startTimer();
+            _setSpeakerphone(_isSpeakerOn);
+          }
+        } else if (state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected ||
+                   state == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
+                   state == RTCPeerConnectionState.RTCPeerConnectionStateClosed) {
+          _handleCallEnded('Panggilan Diakhiri');
+        }
+      };
+
+      _peerConnection!.onTrack = (RTCTrackEvent event) {
+        debugPrint('[WebRTC] Received remote track: ${event.track.kind}');
+        if (event.track.kind == 'audio') {
+          if (mounted && !_isConnected) {
+            setState(() {
+              _isConnected = true;
+              _statusText = 'Panggilan Berlangsung';
+            });
+            _startTimer();
+            _setSpeakerphone(_isSpeakerOn);
+          }
+        }
+      };
+
+      // Capture local microphone
+      final Map<String, dynamic> mediaConstraints = {
+        'audio': {
+          'echoCancellation': true,
+          'noiseSuppression': true,
+          'autoGainControl': true,
+        },
+        'video': false,
+      };
+
+      _localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+      for (var track in _localStream!.getAudioTracks()) {
+        await _peerConnection!.addTrack(track, _localStream!);
+      }
+
+      _setSpeakerphone(_isSpeakerOn);
     } catch (e) {
-      debugPrint('[AgoraVoice] Setup engine error: $e');
+      debugPrint('[WebRTC] Setup peer connection error: $e');
     }
   }
 
-  Future<void> _safeSetSpeakerphone(bool enable) async {
+  void _sendLocalIceCandidate(RTCIceCandidate candidate) async {
+    final candKey = '${candidate.candidate}_${candidate.sdpMid}_${candidate.sdpMLineIndex}';
+    if (_sentCandidateKeys.contains(candKey)) return;
+    _sentCandidateKeys.add(candKey);
+
     try {
-      await _agoraEngine?.setEnableSpeakerphone(enable);
-    } catch (e) {
-      debugPrint('[AgoraVoice] setEnableSpeakerphone safe catch: $e');
-    }
+      await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/calls/ice-candidate'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'call_id': _callId,
+          'order_code': widget.orderCode,
+          'role': widget.callerRole ?? (widget.isIncoming ? 'callee' : 'caller'),
+          'candidate': {
+            'candidate': candidate.candidate,
+            'sdpMid': candidate.sdpMid,
+            'sdpMLineIndex': candidate.sdpMLineIndex,
+          },
+        }),
+      );
+    } catch (_) {}
   }
 
-  Future<void> _joinAgoraChannel() async {
-    if (_agoraEngine == null) return;
+  void _setSpeakerphone(bool enable) {
     try {
-      final cleanChannel = widget.orderCode.replaceAll(RegExp(r'[^a-zA-Z0-9_\-]'), '');
-      final channelName = cleanChannel.isNotEmpty ? cleanChannel : 'cicalengkago_call';
-
-      debugPrint('[AgoraVoice] Joining Agora Channel: $channelName');
-      await _agoraEngine!.joinChannel(
-        token: '',
-        channelId: channelName,
-        uid: 0,
-        options: const ChannelMediaOptions(
-          clientRoleType: ClientRoleType.clientRoleBroadcaster,
-          autoSubscribeAudio: true,
-          publishMicrophoneTrack: true,
-        ),
-      );
+      Helper.setSpeakerphoneOn(enable);
     } catch (e) {
-      debugPrint('[AgoraVoice] Join channel error: $e');
+      debugPrint('[WebRTC] Set speaker error: $e');
     }
   }
 
   void _startStatusPolling() {
     _statusTimer?.cancel();
-    _statusTimer = Timer.periodic(const Duration(milliseconds: 1500), (_) async {
+    _statusTimer = Timer.periodic(const Duration(milliseconds: 1200), (_) async {
       if (_isEnded) return;
       _pollCount++;
       try {
@@ -273,6 +317,10 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
             final status = call['status'];
             _callId = int.tryParse(call['id']?.toString() ?? '');
 
+            if (call['offer'] != null) {
+              _pendingOffer = call['offer'];
+            }
+
             if (mounted) {
               setState(() {
                 _partnerName = widget.isIncoming
@@ -280,9 +328,66 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                     : (call['receiver_name'] ?? _partnerName);
                 _partnerAvatar = widget.isIncoming
                     ? (call['caller_avatar'] ?? _partnerAvatar)
-                    : (call['receiver_avatar'] ?? _partnerAvatar);
+                    : (call['receiver_avatar'] ?? call['store_logo'] ?? _partnerAvatar);
                 _partnerPhone = call['partner_phone'] ?? call['phone'] ?? _partnerPhone;
               });
+            }
+
+            // If caller: process incoming answer from callee
+            if (!widget.isIncoming && call['answer'] != null && _peerConnection != null) {
+              final remoteDesc = await _peerConnection!.getRemoteDescription();
+              if (remoteDesc == null) {
+                dynamic ans = call['answer'];
+                if (ans is String) {
+                  try { ans = jsonDecode(ans); } catch (_) {}
+                }
+                if (ans is Map && ans['sdp'] != null) {
+                  await _peerConnection!.setRemoteDescription(
+                    RTCSessionDescription(ans['sdp'], ans['type'] ?? 'answer'),
+                  );
+                }
+              }
+            }
+
+            // Process remote ICE candidates
+            if (call['ice_candidates'] != null && _peerConnection != null) {
+              dynamic cands = call['ice_candidates'];
+              if (cands is String) {
+                try { cands = jsonDecode(cands); } catch (_) { cands = []; }
+              }
+              if (cands is List) {
+                for (var item in cands) {
+                  Map<String, dynamic>? candObj;
+                  if (item is Map) {
+                    if (item['candidate'] is Map) {
+                      candObj = Map<String, dynamic>.from(item['candidate']);
+                    } else if (item['candidate'] is String) {
+                      try { candObj = jsonDecode(item['candidate']); } catch (_) {
+                        candObj = {
+                          'candidate': item['candidate'],
+                          'sdpMid': item['sdpMid'],
+                          'sdpMLineIndex': item['sdpMLineIndex'],
+                        };
+                      }
+                    }
+                  }
+                  if (candObj != null && candObj['candidate'] != null) {
+                    final key = '${candObj['candidate']}_${candObj['sdpMid']}_${candObj['sdpMLineIndex']}';
+                    if (!_addedCandidateKeys.contains(key)) {
+                      _addedCandidateKeys.add(key);
+                      try {
+                        await _peerConnection!.addCandidate(
+                          RTCIceCandidate(
+                            candObj['candidate']?.toString(),
+                            candObj['sdpMid']?.toString(),
+                            int.tryParse(candObj['sdpMLineIndex']?.toString() ?? '0') ?? 0,
+                          ),
+                        );
+                      } catch (_) {}
+                    }
+                  }
+                }
+              }
             }
 
             if (status == 'connected' && !_isConnected) {
@@ -293,14 +398,14 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                 });
               }
               _startTimer();
-              _safeSetSpeakerphone(_isSpeakerOn);
+              _setSpeakerphone(_isSpeakerOn);
             } else if (status == 'rejected') {
               _handleCallEnded('Panggilan Ditolak');
             } else if (status == 'ended') {
               _handleCallEnded('Panggilan Diakhiri');
             }
           } else {
-            if (_isConnected || _pollCount > 25) {
+            if (_isConnected || _pollCount > 30) {
               _handleCallEnded('Panggilan Diakhiri');
             }
           }
@@ -336,17 +441,47 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         return;
       }
 
-      await _setupAgoraEngine();
-      await _joinAgoraChannel();
+      await _setupWebRtcEngine();
 
-      if (_callId != null) {
-        await http.post(
-          Uri.parse('${ApiConstants.baseUrl}/calls/answer'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'call_id': _callId,
-          }),
+      dynamic offerData = _pendingOffer;
+      if (offerData is String) {
+        try { offerData = jsonDecode(offerData); } catch (_) {}
+      }
+
+      if (offerData is Map && offerData['sdp'] != null && _peerConnection != null) {
+        await _peerConnection!.setRemoteDescription(
+          RTCSessionDescription(offerData['sdp'], offerData['type'] ?? 'offer'),
         );
+
+        final answer = await _peerConnection!.createAnswer({
+          'offerToReceiveAudio': 1,
+          'offerToReceiveVideo': 0,
+        });
+        await _peerConnection!.setLocalDescription(answer);
+
+        if (_callId != null) {
+          await http.post(
+            Uri.parse('${ApiConstants.baseUrl}/calls/answer'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'call_id': _callId,
+              'answer': {
+                'sdp': answer.sdp,
+                'type': answer.type,
+              },
+            }),
+          );
+        }
+      } else {
+        if (_callId != null) {
+          await http.post(
+            Uri.parse('${ApiConstants.baseUrl}/calls/answer'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'call_id': _callId,
+            }),
+          );
+        }
       }
 
       if (mounted) {
@@ -356,9 +491,9 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         });
       }
       _startTimer();
-      _safeSetSpeakerphone(_isSpeakerOn);
+      _setSpeakerphone(_isSpeakerOn);
     } catch (e) {
-      debugPrint('[AgoraVoice] Answer error: $e');
+      debugPrint('[WebRTC] Answer error: $e');
       _handleCallEnded('Gagal menjawab panggilan');
     }
   }
@@ -390,9 +525,11 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       _isMuted = !_isMuted;
     });
     try {
-      _agoraEngine?.muteLocalAudioStream(_isMuted);
+      _localStream?.getAudioTracks().forEach((track) {
+        track.enabled = !_isMuted;
+      });
     } catch (e) {
-      debugPrint('[AgoraVoice] Toggle mute error: $e');
+      debugPrint('[WebRTC] Toggle mute error: $e');
     }
   }
 
@@ -400,7 +537,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     setState(() {
       _isSpeakerOn = !_isSpeakerOn;
     });
-    _safeSetSpeakerphone(_isSpeakerOn);
+    _setSpeakerphone(_isSpeakerOn);
   }
 
   void _handleCallEnded(String message) {
@@ -409,7 +546,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     _statusTimer?.cancel();
     _durationTimer?.cancel();
 
-    _cleanupAgora();
+    _cleanupWebRtc();
 
     if (mounted) {
       setState(() {
@@ -421,13 +558,16 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     }
   }
 
-  Future<void> _cleanupAgora() async {
+  Future<void> _cleanupWebRtc() async {
     try {
-      await _agoraEngine?.leaveChannel();
-      await _agoraEngine?.release();
+      _localStream?.getTracks().forEach((track) => track.stop());
+      await _localStream?.dispose();
+      _localStream = null;
+
+      await _peerConnection?.close();
+      await _peerConnection?.dispose();
+      _peerConnection = null;
     } catch (_) {}
-    _agoraEngine = null;
-    _isAgoraInitialized = false;
   }
 
   String _formatDuration(int seconds) {
@@ -441,7 +581,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     _statusTimer?.cancel();
     _durationTimer?.cancel();
     _pulseController.dispose();
-    _cleanupAgora();
+    _cleanupWebRtc();
     super.dispose();
   }
 
@@ -546,71 +686,77 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
                       // Status or Duration
                       if (_isConnected)
-                        Text(
-                          _formatDuration(_callDurationSeconds),
-                          style: const TextStyle(color: Color(0xFF10B981), fontSize: 28, fontWeight: FontWeight.w900, fontFamily: 'monospace'),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF16A34A).withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFF16A34A).withValues(alpha: 0.4)),
+                          ),
+                          child: Text(
+                            _formatDuration(_callDurationSeconds),
+                            style: const TextStyle(color: Color(0xFF4ADE80), fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1),
+                          ),
                         )
                       else
                         Text(
                           _statusText,
-                          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
 
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 48),
 
-                      // Action Buttons Section
-                      if (widget.isIncoming && !_isConnected) ...[
+                      // Action Buttons Row
+                      if (widget.isIncoming && !_isConnected)
+                        // Incoming call controls (Reject & Answer)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            // Reject Button
-                            _callActionButton(
+                            _buildCircleButton(
                               icon: Icons.call_end_rounded,
-                              label: 'Tolak',
                               color: const Color(0xFFEF4444),
-                              onTap: _rejectCall,
+                              label: 'Tolak',
+                              onPressed: _rejectCall,
                             ),
-                            // Answer Button
-                            _callActionButton(
+                            _buildCircleButton(
                               icon: Icons.call_rounded,
-                              label: 'Jawab',
                               color: const Color(0xFF10B981),
-                              onTap: _answerCall,
+                              label: 'Terima',
+                              onPressed: _answerCall,
                             ),
                           ],
-                        ),
-                      ] else ...[
+                        )
+                      else
+                        // Connected or Outgoing call controls (Mute, Speaker, End)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            // Mute Button
-                            _callActionButton(
+                            _buildCircleButton(
                               icon: _isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
-                              label: _isMuted ? 'Unmute' : 'Mute',
-                              color: _isMuted ? const Color(0xFFF59E0B) : Colors.white.withValues(alpha: 0.2),
-                              iconColor: Colors.white,
-                              onTap: _toggleMute,
+                              color: _isMuted ? Colors.white : Colors.white.withValues(alpha: 0.2),
+                              iconColor: _isMuted ? const Color(0xFF0F172A) : Colors.white,
+                              label: _isMuted ? 'Muted' : 'Mute',
+                              onPressed: _toggleMute,
                             ),
-                            // Speaker Button
-                            _callActionButton(
-                              icon: _isSpeakerOn ? Icons.volume_up_rounded : Icons.volume_off_rounded,
-                              label: _isSpeakerOn ? 'Speaker On' : 'Speaker Off',
+                            _buildCircleButton(
+                              icon: _isSpeakerOn ? Icons.volume_up_rounded : Icons.volume_down_rounded,
                               color: _isSpeakerOn ? const Color(0xFF3B82F6) : Colors.white.withValues(alpha: 0.2),
                               iconColor: Colors.white,
-                              onTap: _toggleSpeaker,
+                              label: _isSpeakerOn ? 'Speaker On' : 'Speaker Off',
+                              onPressed: _toggleSpeaker,
                             ),
-                            // End Call Button
-                            _callActionButton(
+                            _buildCircleButton(
                               icon: Icons.call_end_rounded,
-                              label: 'Akhiri',
                               color: const Color(0xFFEF4444),
-                              onTap: _endCall,
+                              label: 'Akhiri',
+                              onPressed: _endCall,
                             ),
                           ],
                         ),
-                      ],
-
-                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
@@ -622,37 +768,35 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     );
   }
 
-  Widget _callActionButton({
+  Widget _buildCircleButton({
     required IconData icon,
-    required String label,
     required Color color,
     Color iconColor = Colors.white,
-    required VoidCallback onTap,
+    required String label,
+    required VoidCallback onPressed,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 16, offset: const Offset(0, 6)),
-              ],
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Material(
+          color: color,
+          shape: const CircleBorder(),
+          elevation: 4,
+          child: InkWell(
+            onTap: onPressed,
+            customBorder: const CircleBorder(),
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Icon(icon, color: iconColor, size: 28),
             ),
-            child: Icon(icon, color: iconColor, size: 28),
           ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+        ),
+      ],
     );
   }
 }
-

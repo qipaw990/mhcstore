@@ -3,7 +3,6 @@ class ApiConstants {
   static const String domainUrl    = 'https://cicago.store';
   static const String baseUrl      = domainUrl;
   static const String imageBaseUrl = domainUrl;
-  static const String agoraAppId   = 'a34217d291644e47afe172d16c14d17b';
 
   /// Helper pintar untuk memformat URL Gambar agar selalu valid
   static String formatImageUrl(String? rawUrl) {

@@ -41,7 +41,6 @@ if (!isset($driverRating)) {
 
     <script>
         window.BASE_URL = "<?= $baseUrl ?>";
-        window.AGORA_APP_ID = "<?= htmlspecialchars($appConfig['agora_app_id'] ?? '') ?>";
     </script>
 </head>
 <body style="background-color: #f1f5f9;">
@@ -124,7 +123,6 @@ if (!isset($driverRating)) {
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="<?= $baseUrl ?>/assets/js/delivery-pwa.js?v=<?= time() ?>"></script>
-<script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.20.0.js"></script>
 <script src="<?= $baseUrl ?>/assets/js/mobile-call.js?v=<?= time() ?>"></script>
 
 <script>
