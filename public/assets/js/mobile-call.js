@@ -455,10 +455,10 @@
 
         try {
             const baseUrl = (window.BASE_URL && window.BASE_URL !== '') ? window.BASE_URL : window.location.origin;
-            const dialtoneUrl = baseUrl + '/assets/audio/dialtone.wav?v=' + Date.now();
+            const dialtoneUrl = baseUrl + '/assets/audio/outgoing.wav?v=' + Date.now();
             outgoingAudio = new Audio(dialtoneUrl);
             outgoingAudio.loop = true;
-            outgoingAudio.volume = 0.20;
+            outgoingAudio.volume = 0.85;
             const p = outgoingAudio.play();
             if (p !== undefined) {
                 p.catch(() => {
@@ -504,8 +504,8 @@
 
                 const now = audioContext.currentTime;
                 gain.gain.setValueAtTime(0.0001, now);
-                gain.gain.linearRampToValueAtTime(0.015, now + 0.05);
-                gain.gain.setValueAtTime(0.015, now + 0.95);
+                gain.gain.linearRampToValueAtTime(0.20, now + 0.05);
+                gain.gain.setValueAtTime(0.20, now + 0.95);
                 gain.gain.linearRampToValueAtTime(0.0001, now + 1.0);
 
                 osc.connect(filter);
@@ -528,7 +528,7 @@
             const ringtoneUrl = (window.BASE_URL || '') + '/assets/audio/ringtone.mp3?v=' + Date.now();
             ringtoneAudio = new Audio(ringtoneUrl);
             ringtoneAudio.loop = true;
-            ringtoneAudio.volume = 0.15;
+            ringtoneAudio.volume = 1.0;
             const p = ringtoneAudio.play();
             if (p !== undefined) {
                 p.catch(() => {

@@ -5,6 +5,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:audioplayers/audioplayers.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -47,6 +48,9 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   String _partnerName = 'Pengguna';
   String _partnerAvatar = '';
   String _partnerPhone = '';
+
+  // Audio Player for Ringing Sound
+  AudioPlayer? _audioPlayer;
 
   // Native WebRTC Engine (In-House, 0 Third Party)
   RTCPeerConnection? _peerConnection;
@@ -96,8 +100,36 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       _statusText = 'Panggilan Masuk...';
     }
 
+    if (!_isConnected) {
+      _startRingtone();
+    }
+
     _initCallSession();
     _startStatusPolling();
+  }
+
+  Future<void> _startRingtone() async {
+    try {
+      _audioPlayer = AudioPlayer();
+      await _audioPlayer!.setReleaseMode(ReleaseMode.loop);
+      if (widget.isIncoming) {
+        // Suara dering panggilan masuk (Incoming ringtone)
+        await _audioPlayer!.play(AssetSource('audio/ringtone.mp3'), volume: 1.0);
+      } else {
+        // Suara nada sambung saat memanggil (Outgoing ringback tone "tut... tut... tut...")
+        await _audioPlayer!.play(AssetSource('audio/outgoing.wav'), volume: 0.85);
+      }
+    } catch (e) {
+      debugPrint('[InAppCall] Error playing ringtone: $e');
+    }
+  }
+
+  Future<void> _stopRingtone() async {
+    try {
+      await _audioPlayer?.stop();
+      await _audioPlayer?.dispose();
+      _audioPlayer = null;
+    } catch (_) {}
   }
 
   Future<bool> _requestMicrophonePermission() async {
@@ -220,6 +252,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       _peerConnection!.onConnectionState = (RTCPeerConnectionState state) {
         debugPrint('[WebRTC] Connection state changed: $state');
         if (state == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
+          _stopRingtone();
           if (mounted && !_isConnected) {
             setState(() {
               _isConnected = true;
@@ -238,6 +271,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       _peerConnection!.onTrack = (RTCTrackEvent event) {
         debugPrint('[WebRTC] Received remote track: ${event.track.kind}');
         if (event.track.kind == 'audio') {
+          _stopRingtone();
           if (mounted && !_isConnected) {
             setState(() {
               _isConnected = true;
@@ -391,6 +425,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
             }
 
             if (status == 'connected' && !_isConnected) {
+              _stopRingtone();
               if (mounted) {
                 setState(() {
                   _isConnected = true;
@@ -427,6 +462,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
   Future<void> _answerCall() async {
     try {
+      await _stopRingtone();
       final hasPermission = await _requestMicrophonePermission();
       if (!hasPermission) {
         if (mounted) {
@@ -543,6 +579,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   void _handleCallEnded(String message) {
     if (_isEnded) return;
     _isEnded = true;
+    _stopRingtone();
     _statusTimer?.cancel();
     _durationTimer?.cancel();
 
@@ -578,6 +615,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
   @override
   void dispose() {
+    _stopRingtone();
     _statusTimer?.cancel();
     _durationTimer?.cancel();
     _pulseController.dispose();
