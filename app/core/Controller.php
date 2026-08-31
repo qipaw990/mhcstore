@@ -99,8 +99,12 @@ abstract class Controller
     protected function isJsonRequest(): bool
     {
         return (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
+            || (isset($_SERVER['CONTENT_TYPE']) && str_contains($_SERVER['CONTENT_TYPE'], 'application/json'))
             || isset($_SERVER['HTTP_X_REQUESTED_WITH'])
-            || (isset($_SERVER['REQUEST_URI']) && str_contains($_SERVER['REQUEST_URI'], '/api/'));
+            || (isset($_SERVER['REQUEST_URI']) && str_contains($_SERVER['REQUEST_URI'], '/api/'))
+            || isset($_SERVER['HTTP_AUTHORIZATION'])
+            || isset($_SERVER['HTTP_X_USER_ID'])
+            || (isset($_POST['user_id']) || isset($_GET['user_id']));
     }
 
     protected function getQuery(?string $key = null, $default = null)

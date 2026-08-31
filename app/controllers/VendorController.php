@@ -1417,21 +1417,21 @@ class VendorController extends Controller
         $userModel = new \App\Models\User();
         $dbUser = $userModel->find($userId);
 
-        $name         = sanitize($data['name'] ?? ($dbUser['name'] ?? ''));
+        $name         = sanitize($data['name'] ?? ($data['store_name'] ?? ($dbUser['name'] ?? 'Mitra Resto')));
         $email        = sanitize($data['email'] ?? ($dbUser['email'] ?? ''));
-        $phone        = sanitize($data['phone'] ?? ($dbUser['phone'] ?? ''));
+        $phone        = sanitize($data['phone'] ?? ($data['store_phone'] ?? ($dbUser['phone'] ?? '')));
         $storeName    = sanitize($data['store_name'] ?? ($name ?: 'Toko Mitra'));
-        $storeAddress = sanitize($data['store_address'] ?? '');
-        $storePhone   = sanitize($data['store_phone'] ?? $phone);
+        $storeAddress = sanitize($data['store_address'] ?? ($data['address'] ?? ''));
+        $storePhone   = sanitize($data['store_phone'] ?? ($phone ?: ''));
         $storeLat     = isset($data['latitude']) ? (float)$data['latitude'] : null;
         $storeLng     = isset($data['longitude']) ? (float)$data['longitude'] : null;
 
-        if (empty($name) || empty($phone)) {
+        if (empty($name) && empty($storeName)) {
             if ($this->isJsonRequest()) {
-                $this->errorResponse('Nama dan nomor HP pemilik/toko wajib diisi.');
+                $this->errorResponse('Nama resto wajib diisi.');
                 return;
             }
-            $_SESSION['error'] = 'Nama, email, dan nomor HP pemilik wajib diisi.';
+            $_SESSION['error'] = 'Nama resto wajib diisi.';
             $this->redirect('vendor/profile');
             return;
         }
@@ -1468,7 +1468,7 @@ class VendorController extends Controller
                 $storeUpdates['tax_percent'] = (float)$data['tax'];
             }
             if (isset($data['service_charge'])) $storeUpdates['service_charge'] = (float)$data['service_charge'];
-            if (isset($data['is_open'])) $storeUpdates['is_open'] = (!empty($data['is_open']) ? 1 : 0);
+            if (isset($data['is_open'])) $storeUpdates['is_open'] = (!empty($data['is_open']) && $data['is_open'] != '0') ? 1 : 0;
             if (isset($data['opening_time'])) {
                 $storeUpdates['opening_time'] = !empty($data['opening_time']) ? date('H:i:s', strtotime($data['opening_time'])) : '08:00:00';
             }
@@ -1495,8 +1495,12 @@ class VendorController extends Controller
                 }
             }
 
-            if (!empty($storeUpdates)) {
-                $this->storeModel->update($store['id'], $storeUpdates);
+            try {
+                if (!empty($storeUpdates)) {
+                    $this->storeModel->update($store['id'], $storeUpdates);
+                }
+            } catch (\Throwable $e) {
+                error_log("[VendorController] Store update error: " . $e->getMessage());
             }
 
             // Sync with store_schedules table (Day 0 to 6)
@@ -1603,17 +1607,27 @@ class VendorController extends Controller
 
         // JSON API Flow (Mobile App) -> Update directly
         if ($this->isJsonRequest()) {
-            $userUpdates = ['name' => $name];
-            if (!empty($phone)) $userUpdates['phone'] = $phone;
-            if (!empty($email)) $userUpdates['email'] = $email;
-            if (!empty($passwordUpdate)) $userUpdates['password'] = $passwordUpdate;
-            $userModel->update($userId, $userUpdates);
+            try {
+                $userUpdates = ['name' => $name];
+                if (!empty($phone)) $userUpdates['phone'] = $phone;
+                if (!empty($email)) $userUpdates['email'] = $email;
+                if (!empty($passwordUpdate)) $userUpdates['password'] = $passwordUpdate;
+                $userModel->update($userId, $userUpdates);
+            } catch (\Throwable $e) {
+                error_log("[VendorController] User update error: " . $e->getMessage());
+            }
 
             $freshStore = $this->storeModel->findByVendorId($userId);
+            if (!$freshStore && !empty($store['id'])) {
+                $freshStore = $this->storeModel->find($store['id']);
+            }
+            if ($freshStore) {
+                attach_store_schedule_data($freshStore);
+            }
             $freshUser = $userModel->find($userId);
             if (!empty($freshUser)) unset($freshUser['password']);
 
-            $this->successResponse('Profil toko dan titik lokasi berhasil diperbarui!', [
+            $this->successResponse('Profil toko dan pengaturan resto berhasil diperbarui!', [
                 'user'  => $freshUser,
                 'store' => $freshStore
             ]);

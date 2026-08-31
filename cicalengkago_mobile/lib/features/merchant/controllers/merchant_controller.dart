@@ -367,7 +367,7 @@ class MerchantController extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateStoreProfile(Map<String, String> fields, {String? logoPath}) async {
+  Future<Map<String, dynamic>> updateStoreProfile(Map<String, String> fields, {String? logoPath}) async {
     try {
       final res = await ApiService.postForm(
         ApiConstants.vendorUpdateProfile,
@@ -383,10 +383,13 @@ class MerchantController extends ChangeNotifier {
         await fetchProfile();
         await fetchDashboardData();
         notifyListeners();
-        return true;
+        return {'success': true, 'message': res['message'] ?? 'Profil dan pengaturan resto berhasil diperbarui!'};
+      } else {
+        return {'success': false, 'message': res['message'] ?? 'Gagal menyimpan profil resto.'};
       }
-    } catch (_) {}
-    return false;
+    } catch (e) {
+      return {'success': false, 'message': 'Terjadi kesalahan jaringan: $e'};
+    }
   }
 
   Future<Map<String, dynamic>> posCheckout({

@@ -1227,7 +1227,7 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                       final email = authUser?['email']?.toString() ?? merchantUser?['email']?.toString() ?? '';
                       final userId = authUser?['id']?.toString() ?? merchantUser?['id']?.toString() ?? '';
 
-                      final ok = await context.read<MerchantController>().updateStoreProfile({
+                      final result = await context.read<MerchantController>().updateStoreProfile({
                         'store_id': widget.store['id']?.toString() ?? '',
                         'user_id': userId,
                         'store_name': _nameCtrl.text.trim(),
@@ -1252,14 +1252,20 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
 
                       if (mounted) setState(() => _isSaving = false);
 
-                      if (ok && context.mounted) {
+                      if (result['success'] == true && context.mounted) {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Profil dan pengaturan resto berhasil diperbarui!'), backgroundColor: Color(0xFF10B981)),
+                          SnackBar(
+                            content: Text(result['message']?.toString() ?? 'Profil dan pengaturan resto berhasil diperbarui!'),
+                            backgroundColor: const Color(0xFF10B981),
+                          ),
                         );
                       } else if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Gagal menyimpan profil resto. Silakan coba lagi.'), backgroundColor: AppTheme.primaryRed),
+                          SnackBar(
+                            content: Text(result['message']?.toString() ?? 'Gagal menyimpan profil resto. Silakan coba lagi.'),
+                            backgroundColor: AppTheme.primaryRed,
+                          ),
                         );
                       }
                     },
