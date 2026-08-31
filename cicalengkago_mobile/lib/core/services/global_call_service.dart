@@ -38,9 +38,13 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
     _navigatorContext = context;
   }
 
+  String? _cachedCookie;
+  bool _hasResolvedPrefs = false;
+
   void setUserAndOrder({int? userId, String? orderCode}) {
     if (userId != null && userId > 0) _userId = userId;
     if (orderCode != null && orderCode.isNotEmpty) _orderCode = orderCode;
+    _hasResolvedPrefs = false;
     debugPrint('👤 [GlobalCallService] Updated user/order (userId: $_userId, orderCode: $_orderCode)');
   }
 
@@ -55,8 +59,11 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> _ensureUserId() async {
+    if (_hasResolvedPrefs && _userId != null && _userId! > 0) return;
     try {
       final prefs = await SharedPreferences.getInstance();
+      _cachedCookie = prefs.getString('php_session_cookie');
+
       if (_userId == null || _userId! <= 0) {
         final directId = prefs.getString('user_id');
         if (directId != null && directId.isNotEmpty) {
@@ -84,6 +91,7 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
           debugPrint('📦 [GlobalCallService] Resolved orderCode from SharedPreferences: $_orderCode');
         }
       }
+      _hasResolvedPrefs = true;
     } catch (_) {}
   }
 
@@ -104,6 +112,7 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       debugPrint('📱 [GlobalCallService] App resumed -> checking incoming calls immediately');
+      _hasResolvedPrefs = false;
       startPolling();
     }
   }
@@ -124,14 +133,12 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
         url += '?${queryParams.join('&')}';
       }
 
-      final prefs = await SharedPreferences.getInstance();
-      final cookie = prefs.getString('php_session_cookie');
       final headers = <String, String>{};
-      if (cookie != null && cookie.isNotEmpty) {
-        headers['Cookie'] = cookie;
+      if (_cachedCookie != null && _cachedCookie!.isNotEmpty) {
+        headers['Cookie'] = _cachedCookie!;
       }
 
-      debugPrint('📡 [GlobalCallService Poll] GET $url (Cookie: ${cookie != null ? 'Yes' : 'None'})');
+      debugPrint('📡 [GlobalCallService Poll] GET $url (Cookie: ${_cachedCookie != null ? 'Yes' : 'None'})');
       final res = await http.get(Uri.parse(url), headers: headers).timeout(const Duration(seconds: 4));
       debugPrint('📥 [GlobalCallService Poll] [${res.statusCode}] -> ${res.body}');
 

@@ -137,9 +137,9 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
             android: const AudioContextAndroid(
               isSpeakerphoneOn: true,
               stayAwake: true,
-              contentType: AndroidContentType.sonification,
-              usageType: AndroidUsageType.voiceCommunicationSignalling,
-              audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+              contentType: AndroidContentType.music,
+              usageType: AndroidUsageType.media,
+              audioFocus: AndroidAudioFocus.gainTransient,
             ),
             iOS: AudioContextIOS(
               category: AVAudioSessionCategory.playback,
@@ -156,16 +156,20 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       await _audioPlayer!.setVolume(1.0);
 
       final assetPath = widget.isIncoming ? 'audio/ringtone.mp3' : 'audio/outgoing.wav';
-      final remoteUrl = widget.isIncoming
-          ? '${ApiConstants.baseUrl}/assets/audio/ringtone.mp3'
-          : '${ApiConstants.baseUrl}/assets/audio/outgoing.wav';
-
       try {
-        debugPrint('[InAppCall] Playing local ringtone asset: $assetPath');
+        debugPrint('[InAppCall] Playing local asset: $assetPath');
         await _audioPlayer!.play(AssetSource(assetPath));
       } catch (assetErr) {
-        debugPrint('[InAppCall] Asset playback fallback to URL ($assetErr): $remoteUrl');
-        await _audioPlayer!.play(UrlSource(remoteUrl));
+        debugPrint('[InAppCall] Retrying with assets/ prefix ($assetErr)');
+        try {
+          await _audioPlayer!.play(AssetSource('assets/$assetPath'));
+        } catch (e2) {
+          final remoteUrl = widget.isIncoming
+              ? '${ApiConstants.baseUrl}/assets/audio/ringtone.mp3'
+              : '${ApiConstants.baseUrl}/assets/audio/outgoing.wav';
+          debugPrint('[InAppCall] Fallback to URL ($e2): $remoteUrl');
+          await _audioPlayer!.play(UrlSource(remoteUrl));
+        }
       }
     } catch (e) {
       debugPrint('[InAppCall] Error playing ringtone: $e');
@@ -419,15 +423,19 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
               _pendingOffer = call['offer'];
             }
 
-            if (mounted) {
+            final newPartnerName = widget.isIncoming
+                ? (call['caller_name'] ?? _partnerName)
+                : (call['receiver_name'] ?? _partnerName);
+            final newPartnerAvatar = widget.isIncoming
+                ? (call['caller_avatar'] ?? _partnerAvatar)
+                : (call['receiver_avatar'] ?? call['store_logo'] ?? _partnerAvatar);
+            final newPartnerPhone = call['partner_phone'] ?? call['phone'] ?? _partnerPhone;
+
+            if (mounted && (newPartnerName != _partnerName || newPartnerAvatar != _partnerAvatar || newPartnerPhone != _partnerPhone)) {
               setState(() {
-                _partnerName = widget.isIncoming
-                    ? (call['caller_name'] ?? _partnerName)
-                    : (call['receiver_name'] ?? _partnerName);
-                _partnerAvatar = widget.isIncoming
-                    ? (call['caller_avatar'] ?? _partnerAvatar)
-                    : (call['receiver_avatar'] ?? call['store_logo'] ?? _partnerAvatar);
-                _partnerPhone = call['partner_phone'] ?? call['phone'] ?? _partnerPhone;
+                _partnerName = newPartnerName;
+                _partnerAvatar = newPartnerAvatar;
+                _partnerPhone = newPartnerPhone;
               });
             }
 
@@ -801,10 +809,11 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
                       const SizedBox(height: 32),
 
-                      // Avatar & Animated Ring Pulse
-                      ScaleTransition(
-                        scale: _isConnected ? const AlwaysStoppedAnimation(1.0) : _pulseAnimation,
-                        child: Container(
+                      // Avatar & Animated Ring Pulse (Optimized RepaintBoundary)
+                      RepaintBoundary(
+                        child: ScaleTransition(
+                          scale: _isConnected ? const AlwaysStoppedAnimation(1.0) : _pulseAnimation,
+                          child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
@@ -830,6 +839,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                             ),
                           ),
                         ),
+                      ),
                       ),
 
                       const SizedBox(height: 20),
