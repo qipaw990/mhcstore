@@ -70,6 +70,42 @@ try {
         echo "[=] Column `delivery_men.active_order_ids` already exists.\n";
     }
 
+    // 3. Cek & Tambah kolom pada tabel `chats`
+    $colsChats = $pdo->query("SHOW COLUMNS FROM `chats`")->fetchAll(PDO::FETCH_COLUMN);
+
+    try {
+        $fks = $pdo->query("SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_NAME = 'chats' AND CONSTRAINT_SCHEMA = '{$dbname}' AND REFERENCED_TABLE_NAME = 'orders'")->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($fks as $fk) {
+            $pdo->exec("ALTER TABLE `chats` DROP FOREIGN KEY `{$fk}`");
+            echo "[+] Dropped old foreign key `{$fk}` on `chats`\n";
+        }
+        $pdo->exec("ALTER TABLE `chats` MODIFY COLUMN `order_id` bigint(20) unsigned NULL DEFAULT NULL");
+        echo "[+] Modified `chats.order_id` to be NULLABLE\n";
+    } catch (Exception $e) {
+        echo "[=] Notice on chats.order_id: " . $e->getMessage() . "\n";
+    }
+
+    if (!in_array('store_id', $colsChats)) {
+        $pdo->exec("ALTER TABLE `chats` ADD COLUMN `store_id` bigint(20) unsigned NULL DEFAULT NULL AFTER `order_id`");
+        echo "[+] Added column `chats.store_id`\n";
+    } else {
+        echo "[=] Column `chats.store_id` already exists.\n";
+    }
+
+    try {
+        $pdo->exec("CREATE INDEX `idx_chat_store` ON `chats` (`store_id`)");
+        echo "[+] Created index `idx_chat_store` on `chats`\n";
+    } catch (Exception $e) {
+        echo "[=] Index `idx_chat_store` already exists or skipped.\n";
+    }
+
+    try {
+        $pdo->exec("CREATE INDEX `idx_chat_order_store` ON `chats` (`order_id`, `store_id`)");
+        echo "[+] Created index `idx_chat_order_store` on `chats`\n";
+    } catch (Exception $e) {
+        echo "[=] Index `idx_chat_order_store` already exists or skipped.\n";
+    }
+
     echo "\n=========================================================\n";
     echo " SUCCESS: Migrasi struktur tabel ke CasaOS berhasil!\n";
     echo "=========================================================\n";

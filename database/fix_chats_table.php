@@ -2,11 +2,11 @@
 /**
  * Migration Script to fix and enhance chats table
  */
-$host   = '127.0.0.1';
-$user   = 'root';
-$pass   = '';
-$dbname = 'cicalengkago_db';
-$port   = '3306';
+$host   = $argv[1] ?? getenv('DB_HOST') ?: '127.0.0.1';
+$user   = $argv[2] ?? getenv('DB_USERNAME') ?: 'root';
+$pass   = $argv[3] ?? getenv('DB_PASSWORD') ?: '';
+$dbname = $argv[4] ?? getenv('DB_DATABASE') ?: 'cicalengkago_db';
+$port   = $argv[5] ?? getenv('DB_PORT') ?: '3306';
 
 try {
     $dsn = "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4";
