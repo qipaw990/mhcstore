@@ -47,6 +47,19 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final oCode = widget.trip['order_code']?.toString() ?? widget.trip['code']?.toString() ?? '';
+      GlobalCallService.instance.updateContext(context);
+      if (oCode.isNotEmpty) {
+        GlobalCallService.instance.setUserAndOrder(orderCode: oCode);
+      }
+      GlobalCallService.instance.startPolling();
+    });
+  }
+
+  @override
   void dispose() {
     _otpCtrl.dispose();
     super.dispose();

@@ -25,6 +25,8 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
     super.initState();
     _tabController = TabController(length: _filters.length, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      GlobalCallService.instance.updateContext(context);
+      GlobalCallService.instance.startPolling();
       context.read<MerchantController>().fetchOrders();
     });
   }

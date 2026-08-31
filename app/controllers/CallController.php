@@ -47,10 +47,18 @@ class CallController extends Controller
         }
 
         $vendorUserId = (int)($order['store_vendor_user_id'] ?? 0);
-        $dmUserId     = (int)($order['dm_user_id'] ?? $order['delivery_man_id'] ?? 0);
+        $dmUserId     = (int)($order['dm_user_id'] ?? 0);
+        if ($dmUserId === 0 && !empty($order['delivery_man_id'])) {
+            $dmRec = Database::fetchOne("SELECT user_id FROM delivery_men WHERE id = ? LIMIT 1", [(int)$order['delivery_man_id']]);
+            if ($dmRec) {
+                $dmUserId = (int)($dmRec['user_id'] ?? 0);
+            }
+        }
         $custUserId   = (int)($order['cust_user_id'] ?? 0);
 
         $requestedRole = sanitize(trim($data['caller_role'] ?? $data['role'] ?? $_GET['role'] ?? ''));
+        $targetRole    = sanitize(trim($data['target_role'] ?? $data['receiver_role'] ?? ''));
+
         $isDriver   = in_array($userRole, ['delivery_man', 'driver', 'delivery'], true) 
                     || in_array($requestedRole, ['delivery_man', 'driver', 'delivery'], true)
                     || ($userId > 0 && $dmUserId === $userId);
@@ -91,7 +99,9 @@ class CallController extends Controller
             $storeLogo = !empty($order['store_logo']) ? $order['store_logo'] : (!empty($order['store_cover']) ? $order['store_cover'] : '');
             $storeName = !empty($order['store_name']) ? $order['store_name'] : 'Mitra Toko';
 
-            if ($isMerchantDelivery) {
+            $shouldCallVendor = in_array($targetRole, ['vendor', 'store', 'merchant'], true) || ($isMerchantDelivery && empty($targetRole));
+
+            if ($shouldCallVendor) {
                 $receiverId   = $vendorUserId;
                 $receiverRole = 'vendor';
                 $partnerName  = $storeName;

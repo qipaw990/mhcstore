@@ -1898,6 +1898,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                         orderCode: widget.orderCode,
                                         isIncoming: false,
                                         callerRole: 'customer',
+                                        targetRole: 'vendor',
                                         initialPartnerName: sName,
                                         initialPartnerAvatar: sLogoRaw,
                                       );
@@ -2194,6 +2195,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                     orderCode: widget.orderCode,
                                     isIncoming: false,
                                     callerRole: 'customer',
+                                    targetRole: 'delivery_man',
                                     initialPartnerName: driverName,
                                     initialPartnerAvatar: driverAvatar,
                                   );

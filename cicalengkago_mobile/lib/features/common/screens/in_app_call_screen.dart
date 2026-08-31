@@ -15,6 +15,7 @@ class InAppCallScreen extends StatefulWidget {
   final String orderCode;
   final bool isIncoming;
   final String? callerRole;
+  final String? targetRole;
   final String? initialPartnerName;
   final String? initialPartnerAvatar;
   final Map<String, dynamic>? callData;
@@ -24,6 +25,7 @@ class InAppCallScreen extends StatefulWidget {
     required this.orderCode,
     this.isIncoming = false,
     this.callerRole,
+    this.targetRole,
     this.initialPartnerName,
     this.initialPartnerAvatar,
     this.callData,
@@ -220,13 +222,14 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         });
         await _peerConnection!.setLocalDescription(offer);
 
-        debugPrint('📤 [InAppCallScreen] Sending POST /calls/initiate for order ${widget.orderCode} (callerRole: ${widget.callerRole})...');
+        debugPrint('📤 [InAppCallScreen] Sending POST /calls/initiate for order ${widget.orderCode} (callerRole: ${widget.callerRole}, targetRole: ${widget.targetRole})...');
         final res = await http.post(
           Uri.parse('${ApiConstants.baseUrl}/calls/initiate'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'order_code': widget.orderCode,
             'caller_role': widget.callerRole ?? 'customer',
+            'target_role': widget.targetRole,
             'offer': {
               'sdp': offer.sdp,
               'type': offer.type,

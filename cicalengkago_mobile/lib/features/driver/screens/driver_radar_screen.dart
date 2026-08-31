@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+import '../../../core/services/global_call_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/zone_constants.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -25,6 +26,8 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      GlobalCallService.instance.updateContext(context);
+      GlobalCallService.instance.startPolling();
       context.read<DriverController>().refreshLocation();
       context.read<DriverController>().fetchZoneConfig();
     });
