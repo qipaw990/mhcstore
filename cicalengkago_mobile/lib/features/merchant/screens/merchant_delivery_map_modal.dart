@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/services/global_call_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../common/screens/in_app_chat_modal.dart';
 import '../controllers/merchant_controller.dart';
@@ -403,13 +404,19 @@ class _MerchantDeliveryMapModalState extends State<MerchantDeliveryMapModal> {
                       ),
                       const SizedBox(width: 8),
 
-                      // Call Customer Button
-                      if (customerPhone.isNotEmpty && customerPhone != '-')
-                        IconButton(
-                          onPressed: () => _callCustomer(customerPhone),
-                          icon: const Icon(Icons.phone_rounded, color: Color(0xFF16A34A), size: 22),
-                          tooltip: 'Telepon',
-                        ),
+                      // In-App Voice Call Customer Button
+                      IconButton(
+                        onPressed: () {
+                          GlobalCallService.instance.openCallScreen(
+                            context,
+                            orderCode: orderCode,
+                            isIncoming: false,
+                            callerRole: 'vendor',
+                          );
+                        },
+                        icon: const Icon(Icons.phone_in_talk_rounded, color: Color(0xFF16A34A), size: 22),
+                        tooltip: 'Telepon In-App',
+                      ),
 
                       // Chat Customer Button
                       IconButton(

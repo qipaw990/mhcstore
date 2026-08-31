@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/services/receipt_printer_service.dart';
+import '../../../core/services/global_call_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../common/screens/in_app_chat_modal.dart';
 import '../controllers/merchant_controller.dart';
@@ -405,11 +406,33 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFF475569),
           side: const BorderSide(color: Color(0xFFCBD5E1)),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
         icon: const Icon(Icons.chat_bubble_outline_rounded, size: 14),
         label: const Text('Chat', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+      );
+    }
+
+    // Voice Call helper button
+    Widget buildCallButton() {
+      return OutlinedButton.icon(
+        onPressed: () {
+          GlobalCallService.instance.openCallScreen(
+            context,
+            orderCode: orderCode,
+            isIncoming: false,
+            callerRole: 'vendor',
+          );
+        },
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFF2563EB),
+          side: const BorderSide(color: Color(0xFF93C5FD)),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+        icon: const Icon(Icons.phone_in_talk_rounded, size: 14),
+        label: const Text('Telepon', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
       );
     }
 
@@ -420,7 +443,7 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFF16A34A),
           side: const BorderSide(color: Color(0xFF86EFAC)),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
         icon: const Icon(Icons.map_outlined, size: 14),
@@ -455,8 +478,10 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
           Row(
             children: [
               Expanded(child: buildChatButton()),
-              const SizedBox(width: 8),
-              Expanded(child: buildMapButton(label: 'Peta Lokasi')),
+              const SizedBox(width: 6),
+              Expanded(child: buildCallButton()),
+              const SizedBox(width: 6),
+              Expanded(child: buildMapButton(label: 'Lokasi')),
             ],
           ),
         ],
@@ -521,8 +546,10 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
           Row(
             children: [
               Expanded(child: buildChatButton()),
-              const SizedBox(width: 8),
-              Expanded(child: buildMapButton(label: 'Peta & Rute')),
+              const SizedBox(width: 6),
+              Expanded(child: buildCallButton()),
+              const SizedBox(width: 6),
+              Expanded(child: buildMapButton(label: 'Peta')),
             ],
           ),
         ],
@@ -559,8 +586,10 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
           Row(
             children: [
               Expanded(child: buildChatButton()),
-              const SizedBox(width: 8),
-              Expanded(child: buildMapButton(label: 'Peta Lokasi')),
+              const SizedBox(width: 6),
+              Expanded(child: buildCallButton()),
+              const SizedBox(width: 6),
+              Expanded(child: buildMapButton(label: 'Lokasi')),
             ],
           ),
         ],
@@ -611,13 +640,21 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
             ],
           ),
           const SizedBox(height: 8),
-          buildChatButton(fullWidth: true),
+          Row(
+            children: [
+              Expanded(child: buildChatButton()),
+              const SizedBox(width: 6),
+              Expanded(child: buildCallButton()),
+            ],
+          ),
         ],
       );
     } else if (status == 'delivered') {
       return Row(
         children: [
           buildChatButton(),
+          const SizedBox(width: 6),
+          buildCallButton(),
           const SizedBox(width: 6),
           buildMapButton(),
           const SizedBox(width: 8),
@@ -636,7 +673,7 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
                   Icon(Icons.check_circle_rounded, color: Color(0xFF15803D), size: 14),
                   SizedBox(width: 5),
                   Text(
-                    'Selesai Terkirim',
+                    'Selesai',
                     style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
                   ),
                 ],
@@ -649,6 +686,8 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
       return Row(
         children: [
           buildChatButton(),
+          const SizedBox(width: 6),
+          buildCallButton(),
           const SizedBox(width: 8),
           Expanded(
             child: Container(
@@ -659,7 +698,7 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
-                status == 'canceled' ? '❌ Pesanan Dibatalkan' : 'Pesanan Ditutup',
+                status == 'canceled' ? '❌ Dibatalkan' : 'Pesanan Ditutup',
                 style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.bold),
               ),
             ),

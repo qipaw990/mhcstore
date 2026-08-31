@@ -106,6 +106,31 @@ try {
         echo "[=] Index `idx_chat_order_store` already exists or skipped.\n";
     }
 
+    // 4. Cek & Buat tabel `voice_calls` untuk In-App Voice Call
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `voice_calls` (
+          `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+          `order_code` varchar(50) NOT NULL,
+          `caller_id` bigint(20) unsigned NOT NULL,
+          `receiver_id` bigint(20) unsigned NOT NULL,
+          `caller_role` varchar(20) NOT NULL DEFAULT 'customer',
+          `receiver_role` varchar(20) NOT NULL DEFAULT 'delivery_man',
+          `status` enum('calling','connected','rejected','ended','no_answer') NOT NULL DEFAULT 'calling',
+          `offer` longtext DEFAULT NULL,
+          `answer` longtext DEFAULT NULL,
+          `ice_candidates` longtext DEFAULT NULL,
+          `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+          `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+          PRIMARY KEY (`id`),
+          KEY `idx_vc_order` (`order_code`),
+          KEY `idx_vc_receiver` (`receiver_id`),
+          KEY `idx_vc_status` (`status`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+        echo "[+] Ensured table `voice_calls` exists.\n";
+    } catch (Exception $e) {
+        echo "[=] Notice on voice_calls table: " . $e->getMessage() . "\n";
+    }
+
     echo "\n=========================================================\n";
     echo " SUCCESS: Migrasi struktur tabel ke CasaOS berhasil!\n";
     echo "=========================================================\n";

@@ -9,6 +9,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/zone_constants.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/services/route_service.dart';
+import '../../../core/services/global_call_service.dart';
 import '../../common/screens/in_app_chat_modal.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/driver_controller.dart';
@@ -1419,13 +1420,13 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                icon: const Icon(Icons.chat_bubble_rounded, size: 16),
-                label: const Text('Chat In-App Pelanggan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                icon: const Icon(Icons.chat_bubble_rounded, size: 15),
+                label: const Text('Chat Pelanggan', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryRed,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: const StadiumBorder(),
+                  padding: const EdgeInsets.symmetric(vertical: 11),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
                 onPressed: () {
@@ -1436,6 +1437,28 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                     orderCode: orderCode,
                     currentUserId: uid,
                     currentUserRole: 'delivery_man',
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.phone_in_talk_rounded, size: 15),
+                label: const Text('Telepon In-App', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 11),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                onPressed: () {
+                  GlobalCallService.instance.openCallScreen(
+                    context,
+                    orderCode: orderCode,
+                    isIncoming: false,
+                    callerRole: 'delivery_man',
                   );
                 },
               ),

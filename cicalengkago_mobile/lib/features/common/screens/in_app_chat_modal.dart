@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/services/global_call_service.dart';
 
 class InAppChatModal extends StatefulWidget {
   final String? orderCode;
@@ -244,6 +245,22 @@ class _InAppChatModalState extends State<InAppChatModal> {
                     ],
                   ),
                 ),
+                if (widget.orderCode != null && widget.orderCode!.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.phone_in_talk_rounded, color: Color(0xFF2563EB), size: 21),
+                    tooltip: 'Telepon In-App',
+                    onPressed: () {
+                      final oCode = widget.orderCode!;
+                      final role = widget.currentUserRole;
+                      Navigator.of(context).pop();
+                      GlobalCallService.instance.openCallScreen(
+                        context,
+                        orderCode: oCode,
+                        isIncoming: false,
+                        callerRole: role,
+                      );
+                    },
+                  ),
                 IconButton(
                   icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
                   onPressed: () => Navigator.of(context).pop(),

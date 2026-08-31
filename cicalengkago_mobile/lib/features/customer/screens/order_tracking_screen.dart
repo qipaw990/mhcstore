@@ -1868,6 +1868,31 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                     ),
                                 ],
                               ),
+                              const SizedBox(width: 6),
+                              // In-App Voice Call Button
+                              Material(
+                                color: const Color(0xFFEFF6FF),
+                                borderRadius: BorderRadius.circular(12),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: () {
+                                    GlobalCallService.instance.openCallScreen(
+                                      context,
+                                      orderCode: widget.orderCode,
+                                      isIncoming: false,
+                                      callerRole: 'customer',
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: const Color(0xFFBFDBFE)),
+                                    ),
+                                    child: const Icon(Icons.phone_in_talk_rounded, color: Color(0xFF2563EB), size: 18),
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
 

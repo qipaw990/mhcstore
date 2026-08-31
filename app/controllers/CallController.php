@@ -27,34 +27,43 @@ class CallController extends Controller
         // Fetch order details with correct column names (customer_id & avatar)
         $order = Database::fetchOne("
             SELECT o.id as order_id, o.order_code, o.customer_id as cust_user_id, o.delivery_man_id,
+                   o.store_id, o.delivery_type,
                    dm.user_id as dm_user_id, u_cust.name as cust_name, u_cust.phone as cust_phone,
                    u_cust.avatar as cust_avatar, u_dm.name as dm_name, u_dm.phone as dm_phone,
-                   u_dm.avatar as dm_avatar
+                   u_dm.avatar as dm_avatar,
+                   s.name as store_name, s.logo as store_logo, s.phone as store_phone,
+                   s.vendor_id as store_vendor_user_id
             FROM orders o
             LEFT JOIN users u_cust ON o.customer_id = u_cust.id
             LEFT JOIN delivery_men dm ON o.delivery_man_id = dm.id
             LEFT JOIN users u_dm ON dm.user_id = u_dm.id
-            WHERE o.order_code = ? LIMIT 1
-        ", [$orderCode]);
+            LEFT JOIN stores s ON o.store_id = s.id
+            WHERE o.order_code = ? OR o.id = ? LIMIT 1
+        ", [$orderCode, is_numeric($orderCode) ? (int)$orderCode : 0]);
 
         if (!$order) {
             $this->errorResponse('Pesanan tidak ditemukan.');
             return;
         }
 
-        $dmUserId   = (int)($order['dm_user_id'] ?? $order['delivery_man_id'] ?? 0);
-        $custUserId = (int)($order['cust_user_id'] ?? 0);
+        $vendorUserId = (int)($order['store_vendor_user_id'] ?? 0);
+        $dmUserId     = (int)($order['dm_user_id'] ?? $order['delivery_man_id'] ?? 0);
+        $custUserId   = (int)($order['cust_user_id'] ?? 0);
 
         $requestedRole = sanitize(trim($data['caller_role'] ?? $data['role'] ?? $_GET['role'] ?? ''));
         $isDriver   = in_array($userRole, ['delivery_man', 'driver', 'delivery'], true) 
                     || in_array($requestedRole, ['delivery_man', 'driver', 'delivery'], true)
                     || ($userId > 0 && $dmUserId === $userId);
 
+        $isMerchant = in_array($userRole, ['vendor', 'merchant'], true)
+                    || in_array($requestedRole, ['vendor', 'merchant'], true)
+                    || ($userId > 0 && $vendorUserId === $userId);
+
         $isCustomer = ($userId > 0 && $custUserId === $userId) 
                     || ($requestedRole === 'customer')
-                    || ($userId === 0 && !$isDriver);
+                    || ($userId === 0 && !$isDriver && !$isMerchant);
 
-        if (!$isDriver && !$isCustomer) {
+        if (!$isDriver && !$isCustomer && !$isMerchant) {
             $this->errorResponse('Akses panggilan ditolak.', null, 403);
             return;
         }
@@ -67,18 +76,35 @@ class CallController extends Controller
             $partnerName  = $order['cust_name'] ?? 'Pelanggan';
             $partnerAvatar= $order['cust_avatar'] ?? 'assets/images/users/customer.png';
             $partnerPhone = $order['cust_phone'] ?? '';
+        } elseif ($isMerchant) {
+            $callerId     = ($userId > 0) ? $userId : $vendorUserId;
+            $callerRole   = 'vendor';
+            $receiverId   = $custUserId;
+            $receiverRole = 'customer';
+            $partnerName  = $order['cust_name'] ?? 'Pelanggan';
+            $partnerAvatar= $order['cust_avatar'] ?? 'assets/images/users/customer.png';
+            $partnerPhone = $order['cust_phone'] ?? '';
         } else {
             $callerId     = ($userId > 0) ? $userId : $custUserId;
             $callerRole   = 'customer';
-            $receiverId   = $dmUserId;
-            $receiverRole = 'delivery_man';
-            $partnerName  = $order['dm_name'] ?? 'Mitra Driver';
-            $partnerAvatar= $order['dm_avatar'] ?? 'assets/images/users/driver.png';
-            $partnerPhone = $order['dm_phone'] ?? '';
+            $isMerchantDelivery = ($order['delivery_type'] ?? '') === 'merchant' || empty($dmUserId);
+            if ($isMerchantDelivery) {
+                $receiverId   = $vendorUserId;
+                $receiverRole = 'vendor';
+                $partnerName  = $order['store_name'] ?? 'Mitra Toko';
+                $partnerAvatar= $order['store_logo'] ?? 'assets/images/store-default.png';
+                $partnerPhone = $order['store_phone'] ?? '';
+            } else {
+                $receiverId   = $dmUserId;
+                $receiverRole = 'delivery_man';
+                $partnerName  = $order['dm_name'] ?? 'Mitra Driver';
+                $partnerAvatar= $order['dm_avatar'] ?? 'assets/images/users/driver.png';
+                $partnerPhone = $order['dm_phone'] ?? '';
+            }
         }
 
         if (!$receiverId) {
-            $this->errorResponse('Mitra kurir belum ditugaskan untuk pesanan ini.');
+            $this->errorResponse('Tujuan panggilan tidak ditemukan untuk pesanan ini.');
             return;
         }
 
