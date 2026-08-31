@@ -45,6 +45,10 @@ docker compose exec -T cicalengkago_app php database/optimize_performance_indexe
 echo "🍧 Memastikan variasi & topping produk tersedia..."
 docker compose exec -T cicalengkago_app php database/seed_product_variations_addons.php 2>/dev/null || php database/seed_product_variations_addons.php 2>/dev/null || true
 
+# Seed master bahan baku, resep produk & kalkulasi HPP otomatis
+echo "🌾 Menanam master bahan baku, resep produk & kalkulasi HPP otomatis..."
+docker compose exec -T cicalengkago_app php database/seed_raw_materials_and_recipes.php 2>/dev/null || php database/seed_raw_materials_and_recipes.php 2>/dev/null || true
+
 # Bersihkan gambar sampah / tidak terpakai
 echo "🧹 Membersihkan gambar yang tidak terpakai..."
 docker compose exec -T cicalengkago_app php database/clean_unused_images.php 2>/dev/null || php database/clean_unused_images.php 2>/dev/null || true
