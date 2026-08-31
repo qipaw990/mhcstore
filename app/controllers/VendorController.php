@@ -1381,8 +1381,14 @@ class VendorController extends Controller
         $userId = auth_id();
         $user = auth_user();
         $store = $this->storeModel->findByVendorId($userId);
+        if ($store) {
+            attach_store_schedule_data($store);
+        }
 
         if ($this->isJsonRequest()) {
+            if ($user && isset($user['password'])) {
+                unset($user['password']);
+            }
             $this->successResponse('Data profil toko berhasil diambil', [
                 'user'  => $user,
                 'store' => $store,

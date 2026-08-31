@@ -622,6 +622,9 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
   late TextEditingController _serviceChargeCtrl;
   late TextEditingController _bankAccNumCtrl;
   late TextEditingController _bankAccNameCtrl;
+  late TextEditingController _currentPasswordCtrl;
+  late TextEditingController _newPasswordCtrl;
+  late TextEditingController _confirmPasswordCtrl;
 
   late bool _isOpen;
   late String _selectedBank;
@@ -630,6 +633,10 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
   late final MapController _mapCtrl;
   bool _isSaving = false;
   bool _isResolvingAddress = false;
+  bool _showPasswordSection = false;
+  bool _obscureCurrent = true;
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
   Timer? _debounceTimer;
 
   final List<String> _bankOptions = ['BCA', 'BRI', 'Mandiri', 'BNI', 'BSI', 'GoPay', 'OVO', 'DANA', 'ShopeePay'];
@@ -642,6 +649,9 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
     _nameCtrl = TextEditingController(text: s['name']?.toString() ?? '');
     _phoneCtrl = TextEditingController(text: s['phone']?.toString() ?? s['vendor_phone']?.toString() ?? '');
     _addressCtrl = TextEditingController(text: s['address']?.toString() ?? '');
+    _currentPasswordCtrl = TextEditingController();
+    _newPasswordCtrl = TextEditingController();
+    _confirmPasswordCtrl = TextEditingController();
     String op = s['opening_time']?.toString().trim() ?? '08:00';
     if (op.length > 5 && op.contains(':')) {
       final parts = op.split(':');
@@ -688,6 +698,9 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
     _serviceChargeCtrl.dispose();
     _bankAccNumCtrl.dispose();
     _bankAccNameCtrl.dispose();
+    _currentPasswordCtrl.dispose();
+    _newPasswordCtrl.dispose();
+    _confirmPasswordCtrl.dispose();
     _mapCtrl.dispose();
     super.dispose();
   }
@@ -890,13 +903,19 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
             ),
             const SizedBox(height: 12),
 
-            const Text('No. WhatsApp Resto *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+            // ── NO. WHATSAPP RESTO (DISABLED / TERKUNCI) ──
+            const Text('No. WhatsApp Resto (Akun Terkunci)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
             const SizedBox(height: 5),
             TextFormField(
               controller: _phoneCtrl,
-              keyboardType: TextInputType.phone,
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Nomor HP/WA wajib diisi' : null,
-              decoration: _inputDecoration('Contoh: 081234567890'),
+              readOnly: true,
+              style: const TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w600),
+              decoration: _inputDecoration('Nomor HP/WA').copyWith(
+                fillColor: const Color(0xFFF1F5F9),
+                suffixIcon: const Icon(Icons.lock_outline_rounded, size: 18, color: Color(0xFF94A3B8)),
+                helperText: 'Nomor WhatsApp terdaftar permanen sebagai identitas akun mitra.',
+                helperStyle: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+              ),
             ),
             const SizedBox(height: 12),
 
@@ -1061,6 +1080,95 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
             ),
             const SizedBox(height: 14),
 
+            // ── GANTI KATA SANDI (PASSWORD AKUN) ──
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                children: [
+                  InkWell(
+                    onTap: () => setState(() => _showPasswordSection = !_showPasswordSection),
+                    borderRadius: BorderRadius.circular(14),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(Icons.lock_reset_rounded, size: 20, color: AppTheme.primaryRed),
+                              SizedBox(width: 10),
+                              Text(
+                                'Ubah Kata Sandi (Opsional)',
+                                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              ),
+                            ],
+                          ),
+                          Icon(
+                            _showPasswordSection ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                            color: const Color(0xFF64748B),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (_showPasswordSection) ...[
+                    const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                    Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Kata Sandi Saat Ini', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                          const SizedBox(height: 5),
+                          TextFormField(
+                            controller: _currentPasswordCtrl,
+                            obscureText: _obscureCurrent,
+                            decoration: _inputDecoration('Masukkan kata sandi saat ini').copyWith(
+                              suffixIcon: IconButton(
+                                icon: Icon(_obscureCurrent ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 18, color: const Color(0xFF94A3B8)),
+                                onPressed: () => setState(() => _obscureCurrent = !_obscureCurrent),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          const Text('Kata Sandi Baru (Min. 6 Karakter)', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                          const SizedBox(height: 5),
+                          TextFormField(
+                            controller: _newPasswordCtrl,
+                            obscureText: _obscureNew,
+                            decoration: _inputDecoration('Masukkan kata sandi baru').copyWith(
+                              suffixIcon: IconButton(
+                                icon: Icon(_obscureNew ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 18, color: const Color(0xFF94A3B8)),
+                                onPressed: () => setState(() => _obscureNew = !_obscureNew),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          const Text('Konfirmasi Kata Sandi Baru', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                          const SizedBox(height: 5),
+                          TextFormField(
+                            controller: _confirmPasswordCtrl,
+                            obscureText: _obscureConfirm,
+                            decoration: _inputDecoration('Ulangi kata sandi baru').copyWith(
+                              suffixIcon: IconButton(
+                                icon: Icon(_obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 18, color: const Color(0xFF94A3B8)),
+                                onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
             // ── ALAMAT LENGKAP TOKO ──
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1220,6 +1328,29 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                   ? null
                   : () async {
                       if (!_formKey.currentState!.validate()) return;
+
+                      // Validate password if user filled new password
+                      if (_newPasswordCtrl.text.isNotEmpty) {
+                        if (_currentPasswordCtrl.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Harap masukkan Kata Sandi Saat Ini untuk verifikasi.'), backgroundColor: AppTheme.primaryRed),
+                          );
+                          return;
+                        }
+                        if (_newPasswordCtrl.text.length < 6) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Kata Sandi Baru minimal harus 6 karakter.'), backgroundColor: AppTheme.primaryRed),
+                          );
+                          return;
+                        }
+                        if (_newPasswordCtrl.text != _confirmPasswordCtrl.text) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Konfirmasi Kata Sandi Baru tidak cocok.'), backgroundColor: AppTheme.primaryRed),
+                          );
+                          return;
+                        }
+                      }
+
                       setState(() => _isSaving = true);
 
                       final authUser = context.read<AuthController>().user;
@@ -1227,7 +1358,7 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                       final email = authUser?['email']?.toString() ?? merchantUser?['email']?.toString() ?? '';
                       final userId = authUser?['id']?.toString() ?? merchantUser?['id']?.toString() ?? '';
 
-                      final result = await context.read<MerchantController>().updateStoreProfile({
+                      final payload = <String, String>{
                         'store_id': widget.store['id']?.toString() ?? '',
                         'user_id': userId,
                         'store_name': _nameCtrl.text.trim(),
@@ -1248,7 +1379,15 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                         'bank_name': _selectedBank,
                         'bank_account_number': _bankAccNumCtrl.text.trim(),
                         'bank_account_name': _bankAccNameCtrl.text.trim(),
-                      });
+                      };
+
+                      if (_newPasswordCtrl.text.isNotEmpty) {
+                        payload['current_password'] = _currentPasswordCtrl.text;
+                        payload['new_password'] = _newPasswordCtrl.text;
+                        payload['confirm_password'] = _confirmPasswordCtrl.text;
+                      }
+
+                      final result = await context.read<MerchantController>().updateStoreProfile(payload);
 
                       if (mounted) setState(() => _isSaving = false);
 
