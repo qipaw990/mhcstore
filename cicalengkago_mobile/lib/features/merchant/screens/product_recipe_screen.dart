@@ -568,7 +568,7 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
                           physics: const NeverScrollableScrollPhysics(),
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           itemCount: _recipeItems.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 8),
+                          separatorBuilder: (_, _) => const SizedBox(height: 8),
                           itemBuilder: (ctx, i) {
                             final item = _recipeItems[i];
                             final matId = item['raw_material_id'];
@@ -582,65 +582,110 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
                             final cost = qty * price;
 
                             return Container(
-                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(color: const Color(0xFFE2E8F0)),
+                                boxShadow: [
+                                  BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 1)),
+                                ],
                               ),
-                              child: Row(
+                              child: Column(
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(color: const Color(0xFFF0FDF4), borderRadius: BorderRadius.circular(10)),
-                                    child: const Icon(Icons.eco_outlined, color: Color(0xFF16A34A), size: 18),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                  // ── Row 1: Icon + Nama Bahan + Tombol Hapus
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(12, 12, 8, 6),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
-                                        Text(matName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
-                                        Text('Rp ${_fmtPrice(price)}/$unit', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                        Container(
+                                          padding: const EdgeInsets.all(7),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFF0FDF4),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: const Icon(Icons.eco_outlined, color: Color(0xFF16A34A), size: 16),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                matName,
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              Text(
+                                                'Rp ${_fmtPrice(price)} / $unit',
+                                                style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        InkWell(
+                                          onTap: () => setState(() => _recipeItems.removeAt(i)),
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: const Padding(
+                                            padding: EdgeInsets.all(6),
+                                            child: Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFDC2626)),
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
-                                  // Qty input
-                                  SizedBox(
-                                    width: 80,
-                                    child: TextFormField(
-                                      initialValue: qty == qty.toInt() ? qty.toInt().toString() : qty.toStringAsFixed(2),
-                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                      decoration: InputDecoration(
-                                        suffix: Text(unit, style: const TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF0F172A))),
-                                        filled: true,
-                                        fillColor: const Color(0xFFF8FAFC),
-                                      ),
-                                      onChanged: (v) {
-                                        final parsed = double.tryParse(v.replaceAll(',', '.')) ?? 0;
-                                        setState(() => _recipeItems[i]['qty_used'] = parsed);
-                                      },
+
+                                  // ── Row 2: Input Qty + Total Biaya
+                                  Container(
+                                    padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
+                                    decoration: const BoxDecoration(
+                                      border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Column(
-                                    children: [
-                                      Text('Rp ${_fmtPrice(cost)}',
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF2563EB))),
-                                      IconButton(
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                                        icon: const Icon(Icons.remove_circle_outline, size: 18, color: Color(0xFFDC2626)),
-                                        onPressed: () => setState(() => _recipeItems.removeAt(i)),
-                                      ),
-                                    ],
+                                    child: Row(
+                                      children: [
+                                        // Label jumlah
+                                        const Text('Jumlah:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                        const SizedBox(width: 10),
+                                        // Qty input
+                                        SizedBox(
+                                          width: 90,
+                                          height: 36,
+                                          child: TextFormField(
+                                            initialValue: qty == qty.toInt() ? qty.toInt().toString() : qty.toStringAsFixed(2),
+                                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                            decoration: InputDecoration(
+                                              suffix: Text(unit, style: const TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF0F172A), width: 1.5)),
+                                              filled: true,
+                                              fillColor: const Color(0xFFF8FAFC),
+                                            ),
+                                            onChanged: (v) {
+                                              final parsed = double.tryParse(v.replaceAll(',', '.')) ?? 0;
+                                              setState(() => _recipeItems[i]['qty_used'] = parsed);
+                                            },
+                                          ),
+                                        ),
+                                        const Spacer(),
+                                        // Total biaya bahan ini
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            const Text('Biaya', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                                            Text(
+                                              'Rp ${_fmtPrice(cost)}',
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF2563EB)),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
@@ -916,7 +961,7 @@ class _AddIngredientSheetState extends State<_AddIngredientSheet> {
                 : ListView.separated(
                     shrinkWrap: true,
                     itemCount: filtered.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 6),
+                    separatorBuilder: (_, _) => const SizedBox(height: 6),
                     itemBuilder: (ctx, i) {
                       final m = filtered[i] as Map<String, dynamic>;
                       final isSelected = _selected?['id']?.toString() == m['id']?.toString();
