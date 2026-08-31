@@ -66,9 +66,29 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     final res = await ApiService.get('${ApiConstants.storeDetail}/${widget.storeId}');
     if (res['success'] == true && res['data'] != null) {
       final data = res['data'];
+      final List<dynamic> storeAddons = data['addons'] is List ? data['addons'] : [];
+      final List<dynamic> rawProducts = data['products'] is List ? data['products'] : [];
+      final processedProducts = rawProducts.map((p) {
+        if (p is Map<String, dynamic>) {
+          final pAddons = p['addons'];
+          if (pAddons == null || (pAddons is List && pAddons.isEmpty)) {
+            p['addons'] = storeAddons;
+          }
+          return p;
+        } else if (p is Map) {
+          final map = Map<String, dynamic>.from(p);
+          final pAddons = map['addons'];
+          if (pAddons == null || (pAddons is List && pAddons.isEmpty)) {
+            map['addons'] = storeAddons;
+          }
+          return map;
+        }
+        return p;
+      }).toList();
+
       setState(() {
         _storeData = data['store'] is Map<String, dynamic> ? data['store'] : (data is Map<String, dynamic> ? data : {});
-        _products = data['products'] is List ? data['products'] : [];
+        _products = processedProducts;
         _reviews = data['reviews'] is List ? data['reviews'] : [];
         _isLoading = false;
       });

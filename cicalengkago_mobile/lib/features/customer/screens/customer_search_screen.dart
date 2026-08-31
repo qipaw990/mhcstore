@@ -783,18 +783,11 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            onPressed: () async {
-                              final ok = await customerCtrl.addToCart(productId, 1);
-                              if (ok && context.mounted) {
-                                AppAlert.showCartAdded(
-                                  context,
-                                  productName: prod['name'] ?? 'Menu Kuliner',
-                                  quantity: 1,
-                                );
-                              }
+                            onPressed: () {
+                              ProductDetailModal.show(context, prod);
                             },
                             icon: const Icon(Icons.add_rounded, size: 16),
-                            label: const Text('Tambah', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            label: const Text('Pilih', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                           )
                         : Container(
                             decoration: BoxDecoration(

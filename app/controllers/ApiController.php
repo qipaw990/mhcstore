@@ -908,6 +908,14 @@ class ApiController extends Controller
         $product['rating_breakdown'] = $ratingDistribution;
         $product['reviews'] = $reviews;
 
+        // Attach variations and store addons
+        $product['variations'] = \App\Core\Database::query("SELECT * FROM `product_variations` WHERE `product_id` = ? ORDER BY `price` ASC", [$id]);
+        if (!empty($product['store_id'])) {
+            $product['addons'] = \App\Core\Database::query("SELECT * FROM `product_addons` WHERE `store_id` = ? AND `status` = 1 ORDER BY `price` ASC", [(int)$product['store_id']]);
+        } else {
+            $product['addons'] = [];
+        }
+
         $this->successResponse('Detail produk dan ulasan berhasil diambil', $product);
     }
 
