@@ -154,7 +154,7 @@ class CallController extends Controller
                 return;
             }
 
-            // 1. Try to find ACTIVE call ('calling' or 'connected') first
+            // 1. Build WHERE conditions
             $whereAct = [];
             $paramsAct = [];
 
@@ -172,31 +172,18 @@ class CallController extends Controller
                 $paramsAct[] = $userId;
             }
 
-            $sqlBase = "
-                SELECT vc.*,
-                       u_caller.name as caller_name, u_caller.avatar as caller_avatar,
-                       u_recv.name as receiver_name, u_recv.avatar as receiver_avatar,
-                       o.store_id, o.delivery_type,
-                       s.name as store_name, s.logo as store_logo, s.cover_photo as store_cover,
-                       dm.id as dm_id, u_dm.name as dm_name, u_dm.avatar as dm_avatar
-                FROM voice_calls vc
-                LEFT JOIN orders o ON (vc.order_code = o.order_code OR vc.order_code = CAST(o.id AS CHAR))
-                LEFT JOIN stores s ON o.store_id = s.id
-                LEFT JOIN delivery_men dm ON o.delivery_man_id = dm.id
-                LEFT JOIN users u_dm ON dm.user_id = u_dm.id
-                LEFT JOIN users u_caller ON vc.caller_id = u_caller.id
-                LEFT JOIN users u_recv ON vc.receiver_id = u_recv.id
-            ";
+            $whereSql = implode(' AND ', $whereAct);
 
+            // 2. Fetch active call ('calling' or 'connected') directly from voice_calls
             $call = Database::fetchOne(
-                $sqlBase . " WHERE vc.status IN ('calling', 'connected') AND " . implode(' AND ', $whereAct) . " ORDER BY vc.id DESC LIMIT 1",
+                "SELECT * FROM voice_calls vc WHERE vc.status IN ('calling', 'connected') AND {$whereSql} ORDER BY vc.id DESC LIMIT 1",
                 $paramsAct
             );
 
-            // 2. If no active call, check if there was a recently ended/rejected call
+            // 3. If no active call, check if there was a recently ended/rejected call
             if (!$call) {
                 $call = Database::fetchOne(
-                    $sqlBase . " WHERE vc.status IN ('rejected', 'ended') AND " . implode(' AND ', $whereAct) . " ORDER BY vc.id DESC LIMIT 1",
+                    "SELECT * FROM voice_calls vc WHERE vc.status IN ('rejected', 'ended') AND {$whereSql} ORDER BY vc.id DESC LIMIT 1",
                     $paramsAct
                 );
             }
@@ -206,28 +193,43 @@ class CallController extends Controller
                 return;
             }
 
-            $storeLogo = !empty($call['store_logo']) ? $call['store_logo'] : (!empty($call['store_cover']) ? $call['store_cover'] : '');
-            $storeName = !empty($call['store_name']) ? $call['store_name'] : 'Mitra Toko';
+            // 4. Safely enrich caller & receiver details
+            $callerName   = 'Pengguna';
+            $callerAvatar = '';
+            $receiverName = 'Pengguna';
+            $receiverAvatar = '';
+            $storeName    = 'Mitra Toko';
+            $storeLogo    = '';
 
-            $callerName   = $call['caller_name'] ?? 'Pengguna';
-            $callerAvatar = $call['caller_avatar'] ?? '';
-            if (in_array($call['caller_role'], ['vendor', 'store'], true)) {
-                $callerName   = $storeName;
-                $callerAvatar = $storeLogo ?: $callerAvatar;
-            } elseif ($call['caller_role'] === 'delivery_man') {
-                $callerName   = $call['dm_name'] ?? $callerName;
-                $callerAvatar = $call['dm_avatar'] ?? $callerAvatar;
-            }
+            try {
+                $uCaller = Database::fetchOne("SELECT name, avatar FROM users WHERE id = ? LIMIT 1", [(int)$call['caller_id']]);
+                if ($uCaller) {
+                    $callerName   = $uCaller['name'] ?? $callerName;
+                    $callerAvatar = $uCaller['avatar'] ?? $callerAvatar;
+                }
 
-            $receiverName   = $call['receiver_name'] ?? 'Pengguna';
-            $receiverAvatar = $call['receiver_avatar'] ?? '';
-            if (in_array($call['receiver_role'], ['vendor', 'store'], true)) {
-                $receiverName   = $storeName;
-                $receiverAvatar = $storeLogo ?: $receiverAvatar;
-            } elseif ($call['receiver_role'] === 'delivery_man') {
-                $receiverName   = $call['dm_name'] ?? $receiverName;
-                $receiverAvatar = $call['dm_avatar'] ?? $receiverAvatar;
-            }
+                $uRecv = Database::fetchOne("SELECT name, avatar FROM users WHERE id = ? LIMIT 1", [(int)$call['receiver_id']]);
+                if ($uRecv) {
+                    $receiverName   = $uRecv['name'] ?? $receiverName;
+                    $receiverAvatar = $uRecv['avatar'] ?? $receiverAvatar;
+                }
+
+                // Check store info from order
+                $ord = Database::fetchOne("SELECT s.name as store_name, s.logo as store_logo FROM orders o LEFT JOIN stores s ON o.store_id = s.id WHERE o.order_code = ? OR o.id = ? LIMIT 1", [$call['order_code'], is_numeric($call['order_code']) ? (int)$call['order_code'] : 0]);
+                if ($ord) {
+                    $storeName = $ord['store_name'] ?? $storeName;
+                    $storeLogo = $ord['store_logo'] ?? $storeLogo;
+                }
+
+                if (in_array($call['caller_role'], ['vendor', 'store'], true) && !empty($storeName)) {
+                    $callerName = $storeName;
+                    $callerAvatar = $storeLogo ?: $callerAvatar;
+                }
+                if (in_array($call['receiver_role'], ['vendor', 'store'], true) && !empty($storeName)) {
+                    $receiverName = $storeName;
+                    $receiverAvatar = $storeLogo ?: $receiverAvatar;
+                }
+            } catch (\Throwable $enrichErr) {}
 
             $this->successResponse('Status panggilan', [
                 'active_call' => [
