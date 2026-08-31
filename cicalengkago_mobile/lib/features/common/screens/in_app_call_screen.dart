@@ -456,15 +456,26 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
             // If caller: process incoming answer from callee
             if (!widget.isIncoming && call['answer'] != null && _peerConnection != null) {
               final remoteDesc = await _peerConnection!.getRemoteDescription();
-              if (remoteDesc == null) {
+              if (remoteDesc == null || (remoteDesc.sdp == null || remoteDesc.sdp!.isEmpty)) {
                 dynamic ans = call['answer'];
                 if (ans is String) {
                   try { ans = jsonDecode(ans); } catch (_) {}
+                  if (ans is String) {
+                    try { ans = jsonDecode(ans); } catch (_) {}
+                  }
                 }
                 if (ans is Map && ans['sdp'] != null) {
-                  await _peerConnection!.setRemoteDescription(
-                    RTCSessionDescription(ans['sdp'], ans['type'] ?? 'answer'),
-                  );
+                  debugPrint('📥 [InAppCallScreen] Setting remote SDP answer on caller (type: ${ans['type']})...');
+                  try {
+                    await _peerConnection!.setRemoteDescription(
+                      RTCSessionDescription(ans['sdp']?.toString(), ans['type']?.toString() ?? 'answer'),
+                    );
+                    debugPrint('✅ [InAppCallScreen] Remote SDP answer successfully applied on caller!');
+                    _stopRingtone();
+                    _setSpeakerphone(_isSpeakerOn);
+                  } catch (e) {
+                    debugPrint('⚠️ [InAppCallScreen] setRemoteDescription error on caller: $e');
+                  }
                 }
               }
             }
