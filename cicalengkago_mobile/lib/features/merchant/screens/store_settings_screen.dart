@@ -1,9 +1,12 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:http/http.dart' as http;
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -626,6 +629,8 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
   late double _lng;
   late final MapController _mapCtrl;
   bool _isSaving = false;
+  bool _isResolvingAddress = false;
+  Timer? _debounceTimer;
 
   final List<String> _bankOptions = ['BCA', 'BRI', 'Mandiri', 'BNI', 'BSI', 'GoPay', 'OVO', 'DANA', 'ShopeePay'];
 
@@ -660,6 +665,7 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
     _addressCtrl.dispose();
@@ -675,6 +681,63 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
     super.dispose();
   }
 
+  Future<void> _selectTime(TextEditingController ctrl) async {
+    TimeOfDay initial = const TimeOfDay(hour: 8, minute: 0);
+    final parts = ctrl.text.split(':');
+    if (parts.length >= 2) {
+      final h = int.tryParse(parts[0]) ?? 8;
+      final m = int.tryParse(parts[1]) ?? 0;
+      initial = TimeOfDay(hour: h, minute: m);
+    }
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initial,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: child ?? const SizedBox(),
+        );
+      },
+    );
+    if (picked != null) {
+      final formatted = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+      setState(() {
+        ctrl.text = formatted;
+      });
+    }
+  }
+
+  Future<void> _reverseGeocode(double lat, double lng) async {
+    if (!mounted) return;
+    setState(() => _isResolvingAddress = true);
+    try {
+      final url = Uri.parse(
+          'https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lng&accept-language=id');
+      final res = await http.get(url, headers: {'User-Agent': 'CicalengkaGO-Mobile/1.0'}).timeout(
+          const Duration(seconds: 4));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data != null && data['display_name'] != null) {
+          final addr = data['display_name'].toString();
+          if (mounted && addr.isNotEmpty) {
+            setState(() {
+              _addressCtrl.text = addr;
+            });
+          }
+        }
+      }
+    } catch (_) {} finally {
+      if (mounted) setState(() => _isResolvingAddress = false);
+    }
+  }
+
+  void _debounceReverseGeocode() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 700), () {
+      _reverseGeocode(_lat, _lng);
+    });
+  }
+
   Future<void> _openMapPicker() async {
     final result = await LocationPickerModal.show(
       context,
@@ -683,17 +746,22 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
     );
 
     if (result != null && mounted) {
+      final newLat = (result['lat'] as num).toDouble();
+      final newLng = (result['lng'] as num).toDouble();
+      final addr = result['address']?.toString() ?? '';
       setState(() {
-        _lat = (result['lat'] as num).toDouble();
-        _lng = (result['lng'] as num).toDouble();
-        final addr = result['address']?.toString() ?? '';
-        if (addr.isNotEmpty && (_addressCtrl.text.isEmpty || _addressCtrl.text == 'Cicalengka, Kab. Bandung')) {
+        _lat = newLat;
+        _lng = newLng;
+        if (addr.isNotEmpty) {
           _addressCtrl.text = addr;
         }
       });
       try {
         _mapCtrl.move(LatLng(_lat, _lng), 16.0);
       } catch (_) {}
+      if (addr.isEmpty) {
+        _reverseGeocode(_lat, _lng);
+      }
     }
   }
 
@@ -781,7 +849,7 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                   ),
                   Switch(
                     value: _isOpen,
-                    activeColor: const Color(0xFF16A34A),
+                    activeThumbColor: const Color(0xFF16A34A),
                     onChanged: (val) => setState(() => _isOpen = val),
                   ),
                 ],
@@ -817,9 +885,17 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                     children: [
                       const Text('Jam Buka *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
                       const SizedBox(height: 5),
-                      TextFormField(
-                        controller: _openingTimeCtrl,
-                        decoration: _inputDecoration('08:00'),
+                      InkWell(
+                        onTap: () => _selectTime(_openingTimeCtrl),
+                        borderRadius: BorderRadius.circular(10),
+                        child: IgnorePointer(
+                          child: TextFormField(
+                            controller: _openingTimeCtrl,
+                            decoration: _inputDecoration('08:00').copyWith(
+                              suffixIcon: const Icon(Icons.access_time_rounded, size: 18, color: Color(0xFF64748B)),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -831,9 +907,17 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                     children: [
                       const Text('Jam Tutup *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
                       const SizedBox(height: 5),
-                      TextFormField(
-                        controller: _closingTimeCtrl,
-                        decoration: _inputDecoration('22:00'),
+                      InkWell(
+                        onTap: () => _selectTime(_closingTimeCtrl),
+                        borderRadius: BorderRadius.circular(10),
+                        child: IgnorePointer(
+                          child: TextFormField(
+                            controller: _closingTimeCtrl,
+                            decoration: _inputDecoration('22:00').copyWith(
+                              suffixIcon: const Icon(Icons.access_time_rounded, size: 18, color: Color(0xFF64748B)),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -930,7 +1014,7 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
-                    value: _selectedBank,
+                    initialValue: _selectedBank,
                     items: _bankOptions.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
                     onChanged: (v) => setState(() => _selectedBank = v ?? 'BCA'),
                     decoration: _inputDecoration('Bank / E-Wallet'),
@@ -951,13 +1035,33 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
             ),
             const SizedBox(height: 14),
 
-            const Text('Alamat Lengkap Toko *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+            // ── ALAMAT LENGKAP TOKO ──
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Alamat Lengkap Toko *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                if (_isResolvingAddress)
+                  Row(
+                    children: const [
+                      SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryRed)),
+                      SizedBox(width: 6),
+                      Text('Mendeteksi alamat...', style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
+                    ],
+                  ),
+              ],
+            ),
             const SizedBox(height: 5),
             TextFormField(
               controller: _addressCtrl,
               maxLines: 2,
               validator: (v) => (v == null || v.trim().isEmpty) ? 'Alamat toko wajib diisi' : null,
-              decoration: _inputDecoration('Alamat penjemputan pesanan oleh driver...'),
+              decoration: _inputDecoration('Alamat penjemputan pesanan oleh driver...').copyWith(
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.my_location_rounded, size: 18, color: Color(0xFF2563EB)),
+                  tooltip: 'Deteksi otomatis dari pin peta',
+                  onPressed: () => _reverseGeocode(_lat, _lng),
+                ),
+              ),
             ),
             const SizedBox(height: 14),
 
@@ -1011,6 +1115,7 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                               _lat = pos.center!.latitude;
                               _lng = pos.center!.longitude;
                             });
+                            _debounceReverseGeocode();
                           }
                         },
                       ),
@@ -1094,8 +1199,11 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                       final authUser = context.read<AuthController>().user;
                       final merchantUser = context.read<MerchantController>().vendorUser;
                       final email = authUser?['email']?.toString() ?? merchantUser?['email']?.toString() ?? '';
+                      final userId = authUser?['id']?.toString() ?? merchantUser?['id']?.toString() ?? '';
 
                       final ok = await context.read<MerchantController>().updateStoreProfile({
+                        'store_id': widget.store['id']?.toString() ?? '',
+                        'user_id': userId,
                         'store_name': _nameCtrl.text.trim(),
                         'store_phone': _phoneCtrl.text.trim(),
                         'store_address': _addressCtrl.text.trim(),

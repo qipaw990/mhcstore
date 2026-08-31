@@ -10,7 +10,9 @@ class Store extends Model
     protected array $fillable = [
         'vendor_id', 'module_id', 'zone_id', 'name', 'phone', 'email', 'logo', 'cover_photo', 'identity_image',
         'address', 'latitude', 'longitude', 'minimum_order', 'delivery_time', 'delivery_fee',
-        'tax_percent', 'is_open', 'status', 'rating', 'reviews_count', 'order_count'
+        'tax_percent', 'tax', 'service_charge', 'is_open', 'opening_time', 'closing_time',
+        'bank_name', 'bank_account_number', 'bank_account_name',
+        'status', 'rating', 'reviews_count', 'order_count'
     ];
 
     public function findWithDetails(int $id): ?array

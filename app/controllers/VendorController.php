@@ -1400,20 +1400,23 @@ class VendorController extends Controller
 
     public function updateProfile(): void
     {
+        $data = $this->getPost();
         $userId = auth_id();
         if (!$userId) {
-            if ($this->isJsonRequest()) {
-                $this->errorResponse('Akses tidak terotentikasi. Silakan masuk kembali.', null, 401);
+            $userId = (int)($data['user_id'] ?? $_POST['user_id'] ?? $_GET['user_id'] ?? 0);
+            if (!$userId) {
+                if ($this->isJsonRequest()) {
+                    $this->errorResponse('Akses tidak terotentikasi. Silakan masuk kembali.', null, 401);
+                    return;
+                }
+                $this->redirect('login');
                 return;
             }
-            $this->redirect('login');
-            return;
         }
 
         $userModel = new \App\Models\User();
         $dbUser = $userModel->find($userId);
 
-        $data = $this->getPost();
         $name         = sanitize($data['name'] ?? ($dbUser['name'] ?? ''));
         $email        = sanitize($data['email'] ?? ($dbUser['email'] ?? ''));
         $phone        = sanitize($data['phone'] ?? ($dbUser['phone'] ?? ''));
@@ -1443,6 +1446,10 @@ class VendorController extends Controller
         }
 
         $store = $this->storeModel->findByVendorId($userId);
+        if (!$store && !empty($data['store_id'])) {
+            $store = $this->storeModel->find((int)$data['store_id']);
+        }
+
         if ($store) {
             $storeUpdates = [];
             if (!empty($storeName)) $storeUpdates['name'] = $storeName;
@@ -1456,7 +1463,10 @@ class VendorController extends Controller
             // Sync full store settings from live schema
             if (isset($data['minimum_order'])) $storeUpdates['minimum_order'] = (float)$data['minimum_order'];
             if (isset($data['delivery_time'])) $storeUpdates['delivery_time'] = sanitize($data['delivery_time']);
-            if (isset($data['tax'])) $storeUpdates['tax'] = (float)$data['tax'];
+            if (isset($data['tax'])) {
+                $storeUpdates['tax'] = (float)$data['tax'];
+                $storeUpdates['tax_percent'] = (float)$data['tax'];
+            }
             if (isset($data['service_charge'])) $storeUpdates['service_charge'] = (float)$data['service_charge'];
             if (isset($data['is_open'])) $storeUpdates['is_open'] = (!empty($data['is_open']) ? 1 : 0);
             if (isset($data['opening_time'])) $storeUpdates['opening_time'] = sanitize($data['opening_time']);

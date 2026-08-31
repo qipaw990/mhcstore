@@ -377,7 +377,12 @@ class MerchantController extends ChangeNotifier {
       );
 
       if (res['success'] == true) {
+        if (res['data'] != null && res['data']['store'] != null) {
+          _store = Map<String, dynamic>.from(res['data']['store']);
+        }
+        await fetchProfile();
         await fetchDashboardData();
+        notifyListeners();
         return true;
       }
     } catch (_) {}
