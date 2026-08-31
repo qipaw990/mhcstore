@@ -357,25 +357,61 @@ class _AddIngredientSheet extends StatefulWidget {
 
   @override
   State<_AddIngredientSheet> createState() => _AddIngredientSheetState();
-}
-
 class _AddIngredientSheetState extends State<_AddIngredientSheet> {
   Map<String, dynamic>? _selected;
-  final _qtyCtrl = TextEditingController();
+  final TextEditingController _searchCtrl = TextEditingController();
+  final TextEditingController _qtyCtrl = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    // Default select first item if only 1 available
+    if (widget.availableMats.length == 1) {
+      _selected = widget.availableMats.first as Map<String, dynamic>;
+    }
+  }
 
   @override
   void dispose() {
+    _searchCtrl.dispose();
     _qtyCtrl.dispose();
     super.dispose();
+  }
+
+  List<dynamic> get _filteredMats {
+    if (_searchQuery.trim().isEmpty) return widget.availableMats;
+    final q = _searchQuery.trim().toLowerCase();
+    return widget.availableMats.where((m) {
+      final name = m['name']?.toString().toLowerCase() ?? '';
+      final unit = m['unit']?.toString().toLowerCase() ?? '';
+      final desc = m['description']?.toString().toLowerCase() ?? '';
+      return name.contains(q) || unit.contains(q) || desc.contains(q);
+    }).toList();
+  }
+
+  String _fmtPrice(double v) {
+    if (v == v.toInt()) return v.toInt().toString();
+    return v.toStringAsFixed(0);
   }
 
   @override
   Widget build(BuildContext context) {
     final unit = _selected?['unit']?.toString() ?? '';
+    final filtered = _filteredMats;
+    final pricePerUnit = double.tryParse(_selected?['price_per_unit']?.toString() ?? '0') ?? 0;
+    final qty = double.tryParse(_qtyCtrl.text.replaceAll(',', '.')) ?? 0;
+    final subtotal = qty * pricePerUnit;
+
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.88,
+      ),
       padding: EdgeInsets.only(
-        left: 20, right: 20, top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        left: 20,
+        right: 20,
+        top: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
       ),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -385,102 +421,268 @@ class _AddIngredientSheetState extends State<_AddIngredientSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Drag handle
           Center(
-            child: Container(width: 40, height: 4,
-                decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(2))),
-          ),
-          const SizedBox(height: 20),
-          const Text('Tambah Bahan ke Resep', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-          const SizedBox(height: 16),
-
-          // Pilih bahan
-          const Text('Pilih Bahan Baku', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5, color: Color(0xFF374151))),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<Map<String, dynamic>>(
-            value: _selected,
-            hint: const Text('-- Pilih Bahan --'),
-            items: widget.availableMats.map((m) {
-              final mat = m as Map<String, dynamic>;
-              return DropdownMenuItem(
-                value: mat,
-                child: Text('${mat['name']} (${mat['unit']}) — Rp ${mat['price_per_unit']}/${mat['unit']}'),
-              );
-            }).toList(),
-            onChanged: (v) => setState(() => _selected = v),
-            decoration: InputDecoration(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-              filled: true, fillColor: const Color(0xFFF8FAFC),
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
           const SizedBox(height: 16),
 
-          // Jumlah takaran
-          Text('Jumlah Dipakai${unit.isNotEmpty ? " ($unit)" : ""} *',
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5, color: Color(0xFF374151))),
-          const SizedBox(height: 8),
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Tambah Bahan ke Resep',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Color(0xFF0F172A)),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${widget.availableMats.length} bahan',
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Search Field
           TextField(
-            controller: _qtyCtrl,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
+            controller: _searchCtrl,
+            onChanged: (v) => setState(() => _searchQuery = v),
             decoration: InputDecoration(
-              hintText: 'contoh: 100',
-              suffixText: unit,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              hintText: 'Cari nama bahan (contoh: Susu, Gula, Kopi...)',
+              hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
+              prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF64748B)),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_rounded, size: 16, color: Color(0xFF94A3B8)),
+                      onPressed: () {
+                        _searchCtrl.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
               enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
               focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF0F172A))),
-              filled: true, fillColor: const Color(0xFFF8FAFC),
             ),
           ),
+          const SizedBox(height: 12),
 
-          // Hitung biaya preview
-          if (_selected != null && _qtyCtrl.text.isNotEmpty) ...[
+          // Material List (Selectable Cards)
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 160),
+            child: filtered.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.search_off_rounded, size: 32, color: Color(0xFF94A3B8)),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Tidak ada bahan dengan kata kunci "$_searchQuery"',
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 6),
+                    itemBuilder: (ctx, i) {
+                      final m = filtered[i] as Map<String, dynamic>;
+                      final isSelected = _selected?['id']?.toString() == m['id']?.toString();
+                      final matName = m['name']?.toString() ?? '';
+                      final matUnit = m['unit']?.toString() ?? 'gr';
+                      final matPrice = double.tryParse(m['price_per_unit']?.toString() ?? '0') ?? 0;
+
+                      return InkWell(
+                        onTap: () {
+                          setState(() {
+                            _selected = m;
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isSelected ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected ? const Color(0xFF3B82F6) : const Color(0xFFE2E8F0),
+                              width: isSelected ? 1.5 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: isSelected ? const Color(0xFF3B82F6) : const Color(0xFFE2E8F0),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  isSelected ? Icons.check_rounded : Icons.science_outlined,
+                                  size: 16,
+                                  color: isSelected ? Colors.white : const Color(0xFF64748B),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      matName,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        color: isSelected ? const Color(0xFF1E40AF) : const Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    Text(
+                                      'Rp ${_fmtPrice(matPrice)} / $matUnit',
+                                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (isSelected)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF3B82F6),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Text(
+                                    'Dipilih',
+                                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          const SizedBox(height: 14),
+
+          // Takaran Input & Calculation Preview
+          if (_selected != null) ...[
+            Text(
+              'Takaran yang Digunakan ($unit) *',
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5, color: Color(0xFF374151)),
+            ),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _qtyCtrl,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: 'Contoh: 100 (takaran per 1 porsi)',
+                suffixText: unit,
+                suffixStyle: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF0F172A))),
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+              ),
+            ),
             const SizedBox(height: 10),
-            Builder(builder: (_) {
-              final qty = double.tryParse(_qtyCtrl.text.replaceAll(',', '.')) ?? 0;
-              final price = double.tryParse(_selected!['price_per_unit']?.toString() ?? '0') ?? 0;
-              final cost = qty * price;
-              return Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: const Color(0xFFF0FDF4), borderRadius: BorderRadius.circular(10)),
-                child: Row(
-                  children: [
-                    const Icon(Icons.calculate_outlined, size: 16, color: Color(0xFF16A34A)),
-                    const SizedBox(width: 8),
-                    Text('Biaya: Rp ${cost.toStringAsFixed(0)}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF16A34A), fontSize: 13)),
-                  ],
-                ),
-              );
-            }),
+
+            // Live Calculation Card
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.calculate_rounded, size: 20, color: Color(0xFF16A34A)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$qty $unit × Rp ${_fmtPrice(pricePerUnit)}/$unit',
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF15803D)),
+                        ),
+                        const SizedBox(height: 1),
+                        Text(
+                          'Estimasi Biaya: Rp ${_fmtPrice(subtotal)}',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF15803D)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+
+          // Submit Button
           SizedBox(
             width: double.infinity,
-            height: 50,
+            height: 48,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0F172A),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
               ),
               onPressed: () {
                 if (_selected == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih bahan terlebih dahulu')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Pilih bahan baku terlebih dahulu')),
+                  );
                   return;
                 }
-                final qty = double.tryParse(_qtyCtrl.text.replaceAll(',', '.')) ?? 0;
-                if (qty <= 0) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Masukkan jumlah takaran')));
+                final parsedQty = double.tryParse(_qtyCtrl.text.replaceAll(',', '.')) ?? 0;
+                if (parsedQty <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Masukkan jumlah takaran yang valid (> 0)')),
+                  );
                   return;
                 }
                 final id = int.tryParse(_selected!['id'].toString()) ?? 0;
-                widget.onAdd(id, qty);
+                widget.onAdd(id, parsedQty);
                 Navigator.pop(context);
               },
-              child: const Text('Tambahkan ke Resep', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+              child: const Text(
+                'Tambahkan ke Resep',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5),
+              ),
             ),
           ),
         ],

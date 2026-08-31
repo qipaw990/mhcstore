@@ -17,12 +17,21 @@ class RawMaterialsScreen extends StatefulWidget {
 }
 
 class _RawMaterialsScreenState extends State<RawMaterialsScreen> {
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _searchQuery = '';
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<MerchantController>().fetchRawMaterials();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
   void _showFormDialog({Map<String, dynamic>? existing}) {
@@ -67,6 +76,15 @@ class _RawMaterialsScreenState extends State<RawMaterialsScreen> {
   Widget build(BuildContext context) {
     final ctrl = context.watch<MerchantController>();
     final materials = ctrl.rawMaterials;
+    final filtered = _searchQuery.trim().isEmpty
+        ? materials
+        : materials.where((m) {
+            final name = m['name']?.toString().toLowerCase() ?? '';
+            final unit = m['unit']?.toString().toLowerCase() ?? '';
+            final desc = m['description']?.toString().toLowerCase() ?? '';
+            final q = _searchQuery.trim().toLowerCase();
+            return name.contains(q) || unit.contains(q) || desc.contains(q);
+          }).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -96,20 +114,66 @@ class _RawMaterialsScreenState extends State<RawMaterialsScreen> {
           ? const Center(child: CircularProgressIndicator())
           : materials.isEmpty
               ? _buildEmpty()
-              : RefreshIndicator(
-                  onRefresh: ctrl.fetchRawMaterials,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: materials.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (ctx, i) {
-                      final m = materials[i] as Map;
-                      final id = int.tryParse(m['id']?.toString() ?? '0') ?? 0;
-                      final name = m['name']?.toString() ?? '';
-                      final unit = m['unit']?.toString() ?? 'gr';
-                      final price = double.tryParse(m['price_per_unit']?.toString() ?? '0') ?? 0;
-                      final stock = double.tryParse(m['stock_qty']?.toString() ?? '0') ?? 0;
-                      final desc = m['description']?.toString() ?? '';
+              : Column(
+                  children: [
+                    // Search bar
+                    Container(
+                      color: Colors.white,
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                      child: TextField(
+                        controller: _searchCtrl,
+                        onChanged: (val) => setState(() => _searchQuery = val),
+                        decoration: InputDecoration(
+                          hintText: 'Cari nama bahan baku...',
+                          hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
+                          prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF64748B)),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear_rounded, size: 16, color: Color(0xFF94A3B8)),
+                                  onPressed: () {
+                                    _searchCtrl.clear();
+                                    setState(() => _searchQuery = '');
+                                  },
+                                )
+                              : null,
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF0F172A))),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: filtered.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.search_off_rounded, size: 40, color: Color(0xFF94A3B8)),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Tidak ada bahan dengan kata kunci "$_searchQuery"',
+                                    style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : RefreshIndicator(
+                              onRefresh: ctrl.fetchRawMaterials,
+                              child: ListView.separated(
+                                padding: const EdgeInsets.all(16),
+                                itemCount: filtered.length,
+                                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                                itemBuilder: (ctx, i) {
+                                  final m = filtered[i] as Map;
+                                  final id = int.tryParse(m['id']?.toString() ?? '0') ?? 0;
+                                  final name = m['name']?.toString() ?? '';
+                                  final unit = m['unit']?.toString() ?? 'gr';
+                                  final price = double.tryParse(m['price_per_unit']?.toString() ?? '0') ?? 0;
+                                  final stock = double.tryParse(m['stock_qty']?.toString() ?? '0') ?? 0;
+                                  final desc = m['description']?.toString() ?? '';
 
                       return Container(
                         padding: const EdgeInsets.all(14),
