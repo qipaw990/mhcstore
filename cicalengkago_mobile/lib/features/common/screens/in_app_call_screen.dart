@@ -774,7 +774,11 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
   Future<void> _cleanupWebRtc() async {
     try {
-      _localStream?.getTracks().forEach((track) => track.stop());
+      _localStream?.getTracks().forEach((track) {
+        try {
+          track.stop();
+        } catch (_) {}
+      });
       await _localStream?.dispose();
       _localStream = null;
 
@@ -784,7 +788,6 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
       try {
         _remoteRenderer.srcObject = null;
-        await _remoteRenderer.dispose();
       } catch (_) {}
     } catch (_) {}
   }
@@ -802,6 +805,9 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     _durationTimer?.cancel();
     _pulseController.dispose();
     _cleanupWebRtc();
+    try {
+      _remoteRenderer.dispose();
+    } catch (_) {}
     GlobalCallService.instance.setCallScreenClosed();
     super.dispose();
   }
