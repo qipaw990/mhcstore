@@ -164,16 +164,47 @@ function authMiddleware(req, res, next) {
     next();
 }
 
-// ─── Helper: Format nomor HP Indonesia ───────────────────────────────────────
+// ─── Helper: Format nomor HP / Group ID ───────────────────────────────────────
 function formatPhoneNumber(phone) {
-    let p = String(phone).replace(/\D/g, '');
+    const raw = String(phone).trim();
+    if (raw.endsWith('@g.us') || raw.endsWith('@c.us')) {
+        return raw;
+    }
+    // Jika format ID grup angka (misal 120363028394829102 atau 628xxx-xxx)
+    if (raw.includes('-') || raw.length >= 16) {
+        return raw.replace(/[^0-9\-]/g, '') + '@g.us';
+    }
+    let p = raw.replace(/\D/g, '');
     if (p.startsWith('0'))   p = '62' + p.slice(1);
     if (p.startsWith('+'))   p = p.slice(1);
     if (!p.startsWith('62')) p = '62' + p;
-    return p + '@c.us'; // format WhatsApp
+    return p + '@c.us'; // format WhatsApp pribadi
 }
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
+
+/**
+ * GET /groups — Ambil daftar semua grup WhatsApp beserta Group ID
+ */
+app.get('/groups', async (req, res) => {
+    if (waStatus !== 'READY' || !waClient) {
+        return res.status(503).json({ success: false, message: 'Gateway belum siap.', groups: [] });
+    }
+    try {
+        const chats = await waClient.getChats();
+        const groups = chats
+            .filter(c => c.isGroup)
+            .map(g => ({
+                id: g.id._serialized,
+                name: g.name,
+                unreadCount: g.unreadCount,
+                participantsCount: g.participants ? g.participants.length : 0
+            }));
+        res.json({ success: true, count: groups.length, groups });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message, groups: [] });
+    }
+});
 
 /**
  * GET / — Dashboard HTML
