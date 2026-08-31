@@ -710,43 +710,20 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
     } else if (status == 'delivered') {
       return Row(
         children: [
-          buildChatButton(),
+          Expanded(child: buildChatButton()),
           const SizedBox(width: 6),
-          buildCallButton(),
+          Expanded(child: buildCallButton()),
           const SizedBox(width: 6),
-          buildMapButton(),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 9),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: const Color(0xFFDCFCE7),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFF86EFAC)),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.check_circle_rounded, color: Color(0xFF15803D), size: 14),
-                  SizedBox(width: 5),
-                  Text(
-                    'Selesai',
-                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          Expanded(child: buildMapButton(label: 'Lokasi')),
         ],
       );
     } else {
       return Row(
         children: [
-          buildChatButton(),
+          Expanded(child: buildChatButton()),
           const SizedBox(width: 6),
-          buildCallButton(),
-          const SizedBox(width: 8),
+          Expanded(child: buildCallButton()),
+          const SizedBox(width: 6),
           Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 9),
@@ -756,8 +733,8 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
-                status == 'canceled' ? '❌ Dibatalkan' : 'Pesanan Ditutup',
-                style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.bold),
+                status == 'canceled' ? 'Dibatalkan' : 'Ditutup',
+                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.bold),
               ),
             ),
           ),
