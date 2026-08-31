@@ -279,7 +279,7 @@ class Order extends Model
                 LEFT JOIN `users` u ON o.customer_id = u.id
                 WHERE (o.delivery_man_id IS NULL OR o.delivery_man_id = 0 OR o.delivery_man_id = '')
                   AND (o.delivery_type IS NULL OR o.delivery_type != 'merchant')
-                  AND o.order_status = 'handover'
+                  AND o.order_status IN ('confirmed', 'processing', 'handover')
                 ORDER BY o.id DESC";
         $rawOrders = Database::query($sql);
 
