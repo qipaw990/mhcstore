@@ -1941,7 +1941,7 @@ class VendorController extends Controller
 
         // Pastikan produk milik toko ini
         $product = Database::fetchOne(
-            "SELECT id, name, hpp FROM `products` WHERE `id` = ? AND `store_id` = ?",
+            "SELECT id, name, price, hpp, unit, stock, discount, description FROM `products` WHERE `id` = ? AND `store_id` = ?",
             [$productId, $store['id']]
         );
         if (!$product) {
@@ -1949,15 +1949,18 @@ class VendorController extends Controller
             return;
         }
 
-        $rm      = new \App\Models\RawMaterial();
-        $recipe  = $rm->getProductRecipe($productId);
-        $allMats = $rm->getByStore((int)$store['id']);
+        $rm         = new \App\Models\RawMaterial();
+        $recipeData = $rm->getProductRecipe($productId);
+        $allMats    = $rm->getByStore((int)$store['id']);
 
-        $totalHpp = array_sum(array_column($recipe, 'cost'));
+        $baseRecipe = $recipeData['base_recipe'] ?? [];
+        $variations = $recipeData['variations'] ?? [];
+        $totalHpp   = array_sum(array_column($baseRecipe, 'cost'));
 
         $this->successResponse('OK', [
             'product'       => $product,
-            'recipe'        => $recipe,
+            'recipe'        => $baseRecipe,
+            'variations'    => $variations,
             'all_materials' => $allMats,
             'total_hpp'     => $totalHpp,
         ]);
@@ -1965,8 +1968,13 @@ class VendorController extends Controller
 
     /**
      * POST /api/v1/vendor/products/recipe/save
-     * Simpan / update resep produk
-     * Body: { product_id, ingredients: [{ raw_material_id, qty_used }, ...] }
+     * Simpan / update resep produk beserta resep variasi produk
+     * Body: {
+     *   product_id: int,
+     *   ingredients: [{ raw_material_id, qty_used }],
+     *   new_price?: float,
+     *   variations?: [{ id?, name, price, stock, ingredients: [{ raw_material_id, qty_used }] }]
+     * }
      */
     public function saveProductRecipe(): void
     {
@@ -1982,9 +1990,10 @@ class VendorController extends Controller
             return;
         }
 
-        $body       = $this->getJsonBody();
-        $productId  = (int)($body['product_id'] ?? 0);
-        $ingredients = $body['ingredients'] ?? [];
+        $body        = $this->getJsonBody();
+        $productId   = (int)($body['product_id'] ?? 0);
+        $ingredients = (array)($body['ingredients'] ?? []);
+        $variations  = isset($body['variations']) ? (array)$body['variations'] : null;
 
         if ($productId <= 0) {
             $this->errorResponse('product_id wajib diisi');
@@ -2001,9 +2010,8 @@ class VendorController extends Controller
             return;
         }
 
-        $rm      = new \App\Models\RawMaterial();
-        $hpp     = $rm->saveProductRecipe($productId, (array)$ingredients);
-        $recipe  = $rm->getProductRecipe($productId);
+        $rm  = new \App\Models\RawMaterial();
+        $res = $rm->saveProductRecipe($productId, $ingredients, $variations);
 
         $newPrice = isset($body['new_price']) ? (float)$body['new_price'] : null;
         if ($newPrice !== null && $newPrice > 0) {
@@ -2011,12 +2019,14 @@ class VendorController extends Controller
         }
 
         $updatedProduct = Database::fetchOne("SELECT id, name, price, hpp FROM `products` WHERE `id` = ?", [$productId]);
+        $latestRecipe   = $rm->getProductRecipe($productId);
 
-        $this->successResponse('Resep dan harga berhasil disimpan', [
+        $this->successResponse('Resep dan variasi berhasil disimpan', [
             'product_id' => $productId,
-            'total_hpp'  => $hpp,
+            'total_hpp'  => (float)($res['base_hpp'] ?? 0),
             'price'      => (float)($updatedProduct['price'] ?? 0),
-            'recipe'     => $recipe,
+            'recipe'     => $latestRecipe['base_recipe'] ?? [],
+            'variations' => $latestRecipe['variations'] ?? [],
         ]);
     }
 }

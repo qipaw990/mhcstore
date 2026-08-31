@@ -540,12 +540,14 @@ class MerchantController extends ChangeNotifier {
   }
 
   Future<Map<String, dynamic>> saveProductRecipe(
-      int productId, List<Map<String, dynamic>> ingredients, {double? newPrice}) async {
+      int productId, List<Map<String, dynamic>> ingredients,
+      {double? newPrice, List<Map<String, dynamic>>? variations}) async {
     try {
       final payload = <String, dynamic>{
         'product_id': productId,
         'ingredients': ingredients,
         if (newPrice != null && newPrice > 0) 'new_price': newPrice,
+        ...?variations == null ? null : {'variations': variations},
       };
       final res = await ApiService.post(ApiConstants.vendorSaveProductRecipe, payload);
       if (res['success'] == true) {
@@ -555,9 +557,10 @@ class MerchantController extends ChangeNotifier {
         await fetchProducts(silent: true);
         return {
           'success': true,
-          'message': res['message'] ?? 'Resep dan harga berhasil disimpan',
+          'message': res['message'] ?? 'Resep dan variasi berhasil disimpan',
           'total_hpp': res['data']?['total_hpp'] ?? 0,
           'price': res['data']?['price'],
+          'variations': res['data']?['variations'],
         };
       }
       return {'success': false, 'message': res['message'] ?? 'Gagal menyimpan resep'};
