@@ -77,7 +77,11 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       _partnerAvatar = widget.initialPartnerAvatar!;
     }
 
-    _remoteRenderer.initialize();
+    try {
+      _remoteRenderer.initialize();
+    } catch (e) {
+      debugPrint('[InAppCall] Remote renderer init error: $e');
+    }
 
     _pulseController = AnimationController(
       vsync: this,
@@ -132,24 +136,28 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       
       // Set audio context to force loud speaker output on Android/iOS (Native only)
       if (!kIsWeb) {
-        await _audioPlayer!.setAudioContext(
-          AudioContext(
-            android: const AudioContextAndroid(
-              isSpeakerphoneOn: true,
-              stayAwake: true,
-              contentType: AndroidContentType.music,
-              usageType: AndroidUsageType.media,
-              audioFocus: AndroidAudioFocus.gainTransient,
+        try {
+          await _audioPlayer!.setAudioContext(
+            AudioContext(
+              android: const AudioContextAndroid(
+                isSpeakerphoneOn: true,
+                stayAwake: true,
+                contentType: AndroidContentType.music,
+                usageType: AndroidUsageType.media,
+                audioFocus: AndroidAudioFocus.gainTransient,
+              ),
+              iOS: AudioContextIOS(
+                category: AVAudioSessionCategory.playback,
+                options: const {
+                  AVAudioSessionOptions.mixWithOthers,
+                  AVAudioSessionOptions.defaultToSpeaker,
+                },
+              ),
             ),
-            iOS: AudioContextIOS(
-              category: AVAudioSessionCategory.playback,
-              options: const {
-                AVAudioSessionOptions.mixWithOthers,
-                AVAudioSessionOptions.defaultToSpeaker,
-              },
-            ),
-          ),
-        );
+          );
+        } catch (audioCtxErr) {
+          debugPrint('[InAppCall] AudioContext setup error: $audioCtxErr');
+        }
       }
 
       await _audioPlayer!.setReleaseMode(ReleaseMode.loop);
@@ -178,10 +186,11 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
   Future<void> _stopRingtone() async {
     try {
-      if (_audioPlayer != null) {
-        await _audioPlayer!.stop();
-        await _audioPlayer!.dispose();
-        _audioPlayer = null;
+      final ap = _audioPlayer;
+      _audioPlayer = null;
+      if (ap != null) {
+        await ap.stop();
+        await ap.dispose();
       }
     } catch (_) {}
   }

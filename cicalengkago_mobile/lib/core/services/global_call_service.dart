@@ -144,43 +144,46 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
 
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        if (data['success'] == true && data['data'] != null && data['data']['active_call'] != null) {
-          final call = data['data']['active_call'] as Map<String, dynamic>;
-          final callStatus = call['status']?.toString();
-          final callId = call['id'];
-          final receiverId = int.tryParse(call['receiver_id']?.toString() ?? '0');
-          final callerId = int.tryParse(call['caller_id']?.toString() ?? '0');
+        if (data is Map && data['success'] == true && data['data'] != null && data['data']['active_call'] != null) {
+          final rawCall = data['data']['active_call'];
+          if (rawCall is Map) {
+            final call = Map<String, dynamic>.from(rawCall);
+            final callStatus = call['status']?.toString();
+            final callId = call['id'];
+            final receiverId = int.tryParse(call['receiver_id']?.toString() ?? '0');
+            final callerId = int.tryParse(call['caller_id']?.toString() ?? '0');
 
-          debugPrint('📞 [GlobalCallService] Active call found (ID: $callId, status: $callStatus, caller: $callerId, receiver: $receiverId, myUserId: $_userId)');
+            debugPrint('📞 [GlobalCallService] Active call found (ID: $callId, status: $callStatus, caller: $callerId, receiver: $receiverId, myUserId: $_userId)');
 
-          if (callStatus == 'calling' || callStatus == 'connected') {
-            _activeCallData = call;
-            notifyListeners();
-
-            // Auto show call UI if receiving an incoming call and screen not yet open
-            if (!_isCallScreenOpen) {
-              final isCaller = (_userId != null && _userId! > 0 && callerId == _userId);
-              final isReceiver = (_userId != null && _userId! > 0 && receiverId == _userId);
-              final isMatchingOrder = (_orderCode != null && _orderCode!.isNotEmpty && _orderCode == call['order_code']);
-
-              final isIncoming = (callStatus == 'calling' && !isCaller && (isReceiver || isMatchingOrder));
-              
-              if (isIncoming) {
-                debugPrint('🚨 [GlobalCallService] INCOMING CALL DETECTED! Opening call popup for order ${call['order_code']} (Caller: ${call['caller_name']})...');
-                openCallScreen(
-                  _navigatorContext,
-                  orderCode: call['order_code'] ?? _orderCode ?? '',
-                  isIncoming: true,
-                  initialPartnerName: call['caller_name'] ?? 'Panggilan Masuk',
-                  initialPartnerAvatar: call['caller_avatar'] ?? '',
-                  callData: call,
-                );
-              }
-            }
-          } else {
-            if (_activeCallData != null) {
-              _activeCallData = null;
+            if (callStatus == 'calling' || callStatus == 'connected') {
+              _activeCallData = call;
               notifyListeners();
+
+              // Auto show call UI if receiving an incoming call and screen not yet open
+              if (!_isCallScreenOpen) {
+                final isCaller = (_userId != null && _userId! > 0 && callerId == _userId);
+                final isReceiver = (_userId != null && _userId! > 0 && receiverId == _userId);
+                final isMatchingOrder = (_orderCode != null && _orderCode!.isNotEmpty && _orderCode == call['order_code']);
+
+                final isIncoming = (callStatus == 'calling' && !isCaller && (isReceiver || isMatchingOrder));
+                
+                if (isIncoming) {
+                  debugPrint('🚨 [GlobalCallService] INCOMING CALL DETECTED! Opening call popup for order ${call['order_code']} (Caller: ${call['caller_name']})...');
+                  openCallScreen(
+                    _navigatorContext,
+                    orderCode: call['order_code'] ?? _orderCode ?? '',
+                    isIncoming: true,
+                    initialPartnerName: call['caller_name'] ?? 'Panggilan Masuk',
+                    initialPartnerAvatar: call['caller_avatar'] ?? '',
+                    callData: call,
+                  );
+                }
+              }
+            } else {
+              if (_activeCallData != null) {
+                _activeCallData = null;
+                notifyListeners();
+              }
             }
           }
         } else {
@@ -218,22 +221,30 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
     _isCallScreenOpen = true;
     debugPrint('🚀 [GlobalCallService] Navigating to InAppCallScreen (isIncoming: $isIncoming, orderCode: $orderCode, partner: $initialPartnerName)');
 
-    Navigator.of(targetContext, rootNavigator: true).push(
-      MaterialPageRoute(
-        builder: (_) => InAppCallScreen(
-          orderCode: orderCode,
-          isIncoming: isIncoming,
-          callerRole: callerRole,
-          targetRole: targetRole,
-          initialPartnerName: initialPartnerName,
-          initialPartnerAvatar: initialPartnerAvatar,
-          callData: callData ?? _activeCallData,
+    try {
+      Navigator.of(targetContext, rootNavigator: true).push(
+        MaterialPageRoute(
+          builder: (_) => InAppCallScreen(
+            orderCode: orderCode,
+            isIncoming: isIncoming,
+            callerRole: callerRole,
+            targetRole: targetRole,
+            initialPartnerName: initialPartnerName,
+            initialPartnerAvatar: initialPartnerAvatar,
+            callData: callData ?? _activeCallData,
+          ),
         ),
-      ),
-    ).then((_) {
-      debugPrint('🏁 [GlobalCallService] InAppCallScreen closed');
+      ).then((_) {
+        debugPrint('🏁 [GlobalCallService] InAppCallScreen closed');
+        _isCallScreenOpen = false;
+      }).catchError((err) {
+        debugPrint('❌ [GlobalCallService] InAppCallScreen navigation error: $err');
+        _isCallScreenOpen = false;
+      });
+    } catch (e) {
+      debugPrint('❌ [GlobalCallService] Push error: $e');
       _isCallScreenOpen = false;
-    });
+    }
   }
 
   @override
