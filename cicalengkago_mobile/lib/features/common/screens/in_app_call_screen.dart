@@ -110,14 +110,42 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
   Future<void> _startRingtone() async {
     try {
-      _audioPlayer = AudioPlayer();
+      _audioPlayer = AudioPlayer(playerId: 'cicalengkago_call_ringtone');
+      
+      // Set audio context to force loud speaker output on Android/iOS
+      await _audioPlayer!.setAudioContext(
+        AudioContext(
+          android: const AudioContextAndroid(
+            isSpeakerphoneOn: true,
+            stayAwake: true,
+            contentType: AndroidContentType.sonification,
+            usageType: AndroidUsageType.voiceCommunicationSignalling,
+            audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+          ),
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.playback,
+            options: const {
+              AVAudioSessionOptions.mixWithOthers,
+              AVAudioSessionOptions.defaultToSpeaker,
+            },
+          ),
+        ),
+      );
+
       await _audioPlayer!.setReleaseMode(ReleaseMode.loop);
-      if (widget.isIncoming) {
-        // Suara dering panggilan masuk (Incoming ringtone)
-        await _audioPlayer!.play(AssetSource('audio/ringtone.mp3'), volume: 1.0);
-      } else {
-        // Suara nada sambung saat memanggil (Outgoing ringback tone "tut... tut... tut...")
-        await _audioPlayer!.play(AssetSource('audio/outgoing.wav'), volume: 0.85);
+      await _audioPlayer!.setVolume(1.0);
+
+      final assetPath = widget.isIncoming ? 'audio/ringtone.mp3' : 'audio/outgoing.wav';
+      final remoteUrl = widget.isIncoming
+          ? '${ApiConstants.baseUrl}/assets/audio/ringtone.mp3'
+          : '${ApiConstants.baseUrl}/assets/audio/outgoing.wav';
+
+      try {
+        debugPrint('[InAppCall] Playing local ringtone asset: $assetPath');
+        await _audioPlayer!.play(AssetSource(assetPath));
+      } catch (assetErr) {
+        debugPrint('[InAppCall] Asset playback fallback to URL ($assetErr): $remoteUrl');
+        await _audioPlayer!.play(UrlSource(remoteUrl));
       }
     } catch (e) {
       debugPrint('[InAppCall] Error playing ringtone: $e');
@@ -126,9 +154,11 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
   Future<void> _stopRingtone() async {
     try {
-      await _audioPlayer?.stop();
-      await _audioPlayer?.dispose();
-      _audioPlayer = null;
+      if (_audioPlayer != null) {
+        await _audioPlayer!.stop();
+        await _audioPlayer!.dispose();
+        _audioPlayer = null;
+      }
     } catch (_) {}
   }
 
