@@ -2,13 +2,72 @@
 namespace App\Models;
 
 use App\Core\Database;
+use Exception;
 
 class RawMaterial
 {
+    private static bool $tablesChecked = false;
+
+    public function __construct()
+    {
+        self::ensureTablesExist();
+    }
+
+    /**
+     * Auto-create tables & columns on the fly if they don't exist yet
+     */
+    public static function ensureTablesExist(): void
+    {
+        if (self::$tablesChecked) {
+            return;
+        }
+
+        try {
+            // 1. Table raw_materials
+            Database::query("CREATE TABLE IF NOT EXISTS `raw_materials` (
+                `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                `store_id` bigint(20) unsigned NOT NULL,
+                `name` varchar(255) NOT NULL,
+                `unit` varchar(50) NOT NULL DEFAULT 'gr',
+                `price_per_unit` decimal(15,2) NOT NULL DEFAULT 0.00,
+                `stock_qty` decimal(15,2) NOT NULL DEFAULT 0.00,
+                `description` text DEFAULT NULL,
+                `created_at` timestamp NULL DEFAULT current_timestamp(),
+                `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+                PRIMARY KEY (`id`),
+                KEY `idx_rm_store` (`store_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+
+            // 2. Table product_raw_materials
+            Database::query("CREATE TABLE IF NOT EXISTS `product_raw_materials` (
+                `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                `product_id` bigint(20) unsigned NOT NULL,
+                `raw_material_id` bigint(20) unsigned NOT NULL,
+                `qty_used` decimal(15,4) NOT NULL DEFAULT 0.0000,
+                `created_at` timestamp NULL DEFAULT current_timestamp(),
+                PRIMARY KEY (`id`),
+                KEY `idx_prm_product` (`product_id`),
+                KEY `idx_prm_material` (`raw_material_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+
+            // 3. Pastikan kolom hpp ada di tabel products
+            $cols = Database::query("SHOW COLUMNS FROM `products` LIKE 'hpp'");
+            if (empty($cols)) {
+                Database::query("ALTER TABLE `products` ADD COLUMN `hpp` decimal(15,2) NOT NULL DEFAULT 0.00 AFTER `price`");
+            }
+
+            self::$tablesChecked = true;
+        } catch (Exception $e) {
+            // Log or silence to prevent crashing if user has limited DDL permissions
+            error_log("[RawMaterial AutoMigrate] " . $e->getMessage());
+        }
+    }
+
     // ── CRUD Bahan Baku per Toko ──────────────────────────────────────────────
 
     public function getByStore(int $storeId): array
     {
+        self::ensureTablesExist();
         return Database::query(
             "SELECT * FROM `raw_materials` WHERE `store_id` = ? ORDER BY `name` ASC",
             [$storeId]

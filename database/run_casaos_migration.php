@@ -163,6 +163,49 @@ try {
         echo "[+] Added `stores.bank_account_name`\n";
     }
 
+    // 6. Cek & Buat tabel `raw_materials` dan `product_raw_materials`
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `raw_materials` (
+            `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            `store_id` bigint(20) unsigned NOT NULL,
+            `name` varchar(255) NOT NULL,
+            `unit` varchar(50) NOT NULL DEFAULT 'gr',
+            `price_per_unit` decimal(15,2) NOT NULL DEFAULT 0.00,
+            `stock_qty` decimal(15,2) NOT NULL DEFAULT 0.00,
+            `description` text DEFAULT NULL,
+            `created_at` timestamp NULL DEFAULT current_timestamp(),
+            `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+            PRIMARY KEY (`id`),
+            KEY `idx_rm_store` (`store_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+        echo "[+] Ensured table `raw_materials` exists.\n";
+    } catch (Exception $e) {
+        echo "[=] Notice on raw_materials table: " . $e->getMessage() . "\n";
+    }
+
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `product_raw_materials` (
+            `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            `product_id` bigint(20) unsigned NOT NULL,
+            `raw_material_id` bigint(20) unsigned NOT NULL,
+            `qty_used` decimal(15,4) NOT NULL DEFAULT 0.0000,
+            `created_at` timestamp NULL DEFAULT current_timestamp(),
+            PRIMARY KEY (`id`),
+            KEY `idx_prm_product` (`product_id`),
+            KEY `idx_prm_material` (`raw_material_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+        echo "[+] Ensured table `product_raw_materials` exists.\n";
+    } catch (Exception $e) {
+        echo "[=] Notice on product_raw_materials table: " . $e->getMessage() . "\n";
+    }
+
+    // Pastikan kolom hpp pada products
+    $colsProducts = $pdo->query("SHOW COLUMNS FROM `products`")->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('hpp', $colsProducts)) {
+        $pdo->exec("ALTER TABLE `products` ADD COLUMN `hpp` DECIMAL(15,2) NOT NULL DEFAULT 0.00 AFTER `price`");
+        echo "[+] Added `products.hpp`\n";
+    }
+
     echo "\n=========================================================\n";
     echo " SUCCESS: Migrasi struktur tabel ke CasaOS berhasil!\n";
     echo "=========================================================\n";
@@ -171,3 +214,4 @@ try {
     echo "\n[X] ERROR: " . $e->getMessage() . "\n";
     exit(1);
 }
+
