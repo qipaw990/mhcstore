@@ -578,14 +578,22 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
               _startTimer();
               _setSpeakerphone(_isSpeakerOn);
             } else if (status == 'rejected') {
-              _handleCallEnded('Panggilan Ditolak');
+              final pollCallId = int.tryParse(call['id']?.toString() ?? '0');
+              if (_callId != null && pollCallId != null && pollCallId == _callId) {
+                _handleCallEnded('Panggilan Ditolak');
+              }
             } else if (status == 'ended') {
-              _handleCallEnded('Panggilan Diakhiri');
+              final pollCallId = int.tryParse(call['id']?.toString() ?? '0');
+              if (_callId != null && pollCallId != null && pollCallId == _callId) {
+                _handleCallEnded('Panggilan Diakhiri');
+              }
             }
           } else {
-            _consecutiveNullPolls++;
-            if (_consecutiveNullPolls >= 10) {
-              _handleCallEnded('Panggilan Diakhiri');
+            if (_callId != null) {
+              _consecutiveNullPolls++;
+              if (_consecutiveNullPolls >= 15) {
+                _handleCallEnded('Panggilan Diakhiri');
+              }
             }
           }
         }

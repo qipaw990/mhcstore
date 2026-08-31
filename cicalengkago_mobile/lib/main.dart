@@ -16,6 +16,7 @@ import 'core/widgets/cicalengkago_logo.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  GlobalCallService.instance.startPolling();
   runApp(
     MultiProvider(
       providers: [

@@ -190,10 +190,16 @@ class CallController extends Controller
                 $paramsAct
             );
 
-            // 3. If no active call, check if there was a recently ended/rejected call
-            if (!$call) {
+            // 3. If no active call, only check recently ended call for specific call_id or recent 6 seconds
+            $callIdParam = (int)($data['call_id'] ?? $_GET['call_id'] ?? 0);
+            if (!$call && $callIdParam > 0) {
                 $call = Database::fetchOne(
-                    "SELECT * FROM voice_calls vc WHERE vc.status IN ('rejected', 'ended') AND {$whereSql} ORDER BY vc.id DESC LIMIT 1",
+                    "SELECT * FROM voice_calls vc WHERE vc.id = ? AND vc.status IN ('rejected', 'ended') LIMIT 1",
+                    [$callIdParam]
+                );
+            } elseif (!$call && !empty($orderCode)) {
+                $call = Database::fetchOne(
+                    "SELECT * FROM voice_calls vc WHERE vc.status IN ('rejected', 'ended') AND {$whereSql} AND (vc.updated_at >= NOW() - INTERVAL 6 SECOND OR vc.created_at >= NOW() - INTERVAL 6 SECOND) ORDER BY vc.id DESC LIMIT 1",
                     $paramsAct
                 );
             }

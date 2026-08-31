@@ -97,7 +97,7 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
 
   void startPolling() {
     _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+    _pollTimer = Timer.periodic(const Duration(milliseconds: 1500), (_) {
       checkIncomingCall();
     });
     checkIncomingCall();
@@ -114,6 +114,8 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
       debugPrint('📱 [GlobalCallService] App resumed -> checking incoming calls immediately');
       _hasResolvedPrefs = false;
       startPolling();
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      debugPrint('📱 [GlobalCallService] App in background -> keeping call polling active');
     }
   }
 
