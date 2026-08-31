@@ -531,10 +531,30 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
       dynamic offerData = _pendingOffer;
       if (offerData is String) {
-        try { offerData = jsonDecode(offerData); } catch (_) {}
+        try {
+          offerData = jsonDecode(offerData);
+          if (offerData is String) {
+            offerData = jsonDecode(offerData);
+          }
+        } catch (_) {}
+      }
+
+      if ((offerData == null || (offerData is Map && offerData['sdp'] == null)) && _callId != null) {
+        try {
+          final pollRes = await http.get(Uri.parse('${ApiConstants.baseUrl}/calls/poll?order_code=${widget.orderCode}'));
+          if (pollRes.statusCode == 200) {
+            final pollJson = jsonDecode(pollRes.body);
+            final rawOff = pollJson['data']?['active_call']?['offer'];
+            if (rawOff != null) {
+              offerData = rawOff is String ? jsonDecode(rawOff) : rawOff;
+              if (offerData is String) offerData = jsonDecode(offerData);
+            }
+          }
+        } catch (_) {}
       }
 
       if (offerData is Map && offerData['sdp'] != null && _peerConnection != null) {
+        debugPrint('📥 [InAppCallScreen] Setting remote SDP offer...');
         await _peerConnection!.setRemoteDescription(
           RTCSessionDescription(offerData['sdp'], offerData['type'] ?? 'offer'),
         );
