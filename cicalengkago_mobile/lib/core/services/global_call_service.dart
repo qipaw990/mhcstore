@@ -44,17 +44,44 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
     debugPrint('👤 [GlobalCallService] Updated user/order (userId: $_userId, orderCode: $_orderCode)');
   }
 
+  void setCallScreenOpen(bool open) {
+    _isCallScreenOpen = open;
+  }
+
+  void setCallScreenClosed() {
+    _isCallScreenOpen = false;
+    _activeCallData = null;
+    notifyListeners();
+  }
+
   Future<void> _ensureUserId() async {
-    if (_userId != null && _userId! > 0) return;
     try {
       final prefs = await SharedPreferences.getInstance();
-      final userStr = prefs.getString('user_data');
-      if (userStr != null && userStr.isNotEmpty) {
-        final u = jsonDecode(userStr);
-        final id = int.tryParse(u['id']?.toString() ?? '');
-        if (id != null && id > 0) {
-          _userId = id;
+      if (_userId == null || _userId! <= 0) {
+        final directId = prefs.getString('user_id');
+        if (directId != null && directId.isNotEmpty) {
+          _userId = int.tryParse(directId);
+        }
+        if (_userId == null || _userId! <= 0) {
+          final userStr = prefs.getString('user_data');
+          if (userStr != null && userStr.isNotEmpty) {
+            final u = jsonDecode(userStr);
+            final id = int.tryParse(u['id']?.toString() ?? '');
+            if (id != null && id > 0) {
+              _userId = id;
+            }
+          }
+        }
+        if (_userId != null && _userId! > 0) {
           debugPrint('🔑 [GlobalCallService] Resolved userId from SharedPreferences: $_userId');
+        }
+      }
+
+      if (_orderCode == null || _orderCode!.isEmpty) {
+        final lastOrder = prefs.getString('active_order_code') ?? prefs.getString('last_order_code');
+        if (lastOrder != null && lastOrder.isNotEmpty) {
+          _orderCode = lastOrder;
+          debugPrint('📦 [GlobalCallService] Resolved orderCode from SharedPreferences: $_orderCode');
         }
       }
     } catch (_) {}
@@ -95,11 +122,16 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
       }
       if (queryParams.isNotEmpty) {
         url += '?${queryParams.join('&')}';
-      } else {
-        return;
       }
 
-      final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 4));
+      final prefs = await SharedPreferences.getInstance();
+      final cookie = prefs.getString('php_session_cookie');
+      final headers = <String, String>{};
+      if (cookie != null && cookie.isNotEmpty) {
+        headers['Cookie'] = cookie;
+      }
+
+      final res = await http.get(Uri.parse(url), headers: headers).timeout(const Duration(seconds: 4));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         if (data['success'] == true && data['data'] != null && data['data']['active_call'] != null) {

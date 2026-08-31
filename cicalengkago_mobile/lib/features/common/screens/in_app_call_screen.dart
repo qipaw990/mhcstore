@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../core/services/global_call_service.dart';
 import '../../../core/theme/app_theme.dart';
 
 class InAppCallScreen extends StatefulWidget {
@@ -104,6 +105,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       _statusText = 'Panggilan Masuk...';
     }
 
+    GlobalCallService.instance.setCallScreenOpen(true);
     debugPrint('📱 [InAppCallScreen] Opened (order: ${widget.orderCode}, isIncoming: ${widget.isIncoming}, role: ${widget.callerRole}, callId: $_callId, partner: $_partnerName)');
 
     if (!_isConnected) {
@@ -673,6 +675,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     _durationTimer?.cancel();
     _pulseController.dispose();
     _cleanupWebRtc();
+    GlobalCallService.instance.setCallScreenClosed();
     super.dispose();
   }
 
