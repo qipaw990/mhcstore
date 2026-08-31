@@ -64,7 +64,13 @@ function upload_image(array $file, string $folder = 'general'): ?string
     $filename = uniqid('img_', true) . '.' . $ext;
     $destination = $targetDir . '/' . $filename;
 
-    // Strategy 1: move_uploaded_file
+    // Strategy 0: High-Performance Image Compression & Downscaling (GD)
+    if ($ext !== 'svg' && compress_and_resize_image($file['tmp_name'], $destination, 1200, 1200, 80)) {
+        @chmod($destination, 0664);
+        return 'uploads/' . $folder . '/' . $filename;
+    }
+
+    // Strategy 1: move_uploaded_file fallback
     if (@move_uploaded_file($file['tmp_name'], $destination)) {
         @chmod($destination, 0664);
         return 'uploads/' . $folder . '/' . $filename;
@@ -80,6 +86,88 @@ function upload_image(array $file, string $folder = 'general'): ?string
     }
 
     return null;
+}
+
+/**
+ * Compresses and resizes an image file preserving aspect ratio.
+ */
+function compress_and_resize_image(string $sourcePath, string $destinationPath, int $maxWidth = 1200, int $maxHeight = 1200, int $quality = 80): bool
+{
+    if (!extension_loaded('gd') || !function_exists('imagecreatefromstring')) {
+        return false;
+    }
+
+    $fileData = @file_get_contents($sourcePath);
+    if ($fileData === false || empty($fileData)) {
+        return false;
+    }
+
+    $srcImg = @imagecreatefromstring($fileData);
+    if (!$srcImg) {
+        return false;
+    }
+
+    // Auto-rotate based on EXIF camera orientation
+    if (function_exists('exif_read_data')) {
+        try {
+            $exif = @exif_read_data($sourcePath);
+            if (!empty($exif['Orientation'])) {
+                switch ((int)$exif['Orientation']) {
+                    case 3:
+                        $srcImg = imagerotate($srcImg, 180, 0);
+                        break;
+                    case 6:
+                        $srcImg = imagerotate($srcImg, -90, 0);
+                        break;
+                    case 8:
+                        $srcImg = imagerotate($srcImg, 90, 0);
+                        break;
+                }
+            }
+        } catch (\Throwable $e) {}
+    }
+
+    $origWidth  = imagesx($srcImg);
+    $origHeight = imagesy($srcImg);
+
+    if ($origWidth <= 0 || $origHeight <= 0) {
+        imagedestroy($srcImg);
+        return false;
+    }
+
+    $ratio = min($maxWidth / $origWidth, $maxHeight / $origHeight, 1.0);
+    $newWidth  = (int)round($origWidth * $ratio);
+    $newHeight = (int)round($origHeight * $ratio);
+
+    $dstImg = imagecreatetruecolor($newWidth, $newHeight);
+    $ext = strtolower(pathinfo($destinationPath, PATHINFO_EXTENSION));
+
+    if (in_array($ext, ['png', 'webp', 'gif'], true)) {
+        imagealphablending($dstImg, false);
+        imagesavealpha($dstImg, true);
+        $transparent = imagecolorallocatealpha($dstImg, 255, 255, 255, 127);
+        imagefilledrectangle($dstImg, 0, 0, $newWidth, $newHeight, $transparent);
+    } else {
+        $white = imagecolorallocate($dstImg, 255, 255, 255);
+        imagefilledrectangle($dstImg, 0, 0, $newWidth, $newHeight, $white);
+    }
+
+    imagecopyresampled($dstImg, $srcImg, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
+
+    $saved = false;
+    if ($ext === 'webp' && function_exists('imagewebp')) {
+        $saved = @imagewebp($dstImg, $destinationPath, $quality);
+    } elseif ($ext === 'png') {
+        $pngQuality = (int)round((100 - $quality) / 10);
+        $saved = @imagepng($dstImg, $destinationPath, min(9, max(0, $pngQuality)));
+    } else {
+        $saved = @imagejpeg($dstImg, $destinationPath, $quality);
+    }
+
+    imagedestroy($srcImg);
+    imagedestroy($dstImg);
+
+    return $saved;
 }
 
 /**
@@ -170,6 +258,7 @@ function download_and_save_image(string $url, string $folder = 'general'): strin
 
     if (@file_put_contents($destination, $imgData)) {
         @chmod($destination, 0664);
+        @compress_and_resize_image($destination, $destination, 1200, 1200, 80);
         return 'uploads/' . $folder . '/' . $filename;
     }
 

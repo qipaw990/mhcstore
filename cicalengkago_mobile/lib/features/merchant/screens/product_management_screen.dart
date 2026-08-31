@@ -555,7 +555,12 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
 
   Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: source, maxWidth: 800, imageQuality: 80);
+    final picked = await picker.pickImage(
+      source: source,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 75,
+    );
     if (picked != null) {
       setState(() => _selectedImage = File(picked.path));
     }

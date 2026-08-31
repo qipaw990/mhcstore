@@ -1411,7 +1411,7 @@ class _EditProfileModalSheetState extends State<_EditProfileModalSheet> {
         source: source,
         maxWidth: 800,
         maxHeight: 800,
-        imageQuality: 85,
+        imageQuality: 75,
       );
 
       if (picked != null) {

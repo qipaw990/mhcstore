@@ -89,7 +89,12 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
 
     if (source == null) return;
 
-    final picked = await picker.pickImage(source: source, maxWidth: 1000, imageQuality: 80);
+    final picked = await picker.pickImage(
+      source: source,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 75,
+    );
     if (picked != null) {
       setState(() {
         if (type == 'ktp') _ktpFile = File(picked.path);
