@@ -173,7 +173,7 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
     );
   }
 
-  Future<void> _saveRecipe({bool silent = false}) async {
+  Future<void> _saveRecipe({bool silent = false, bool closeOnSuccess = false}) async {
     if (!silent) setState(() => _saving = true);
     final productId = int.tryParse(widget.product['id'].toString()) ?? 0;
     final targetPrice = _autoUpdatePrice ? _calculatedSellingPrice : null;
@@ -206,6 +206,10 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
         backgroundColor: res['success'] == true ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
         duration: const Duration(seconds: 2),
       ));
+
+      if (res['success'] == true && closeOnSuccess) {
+        Navigator.pop(context, true);
+      }
     }
   }
 
@@ -240,7 +244,7 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
         actions: [
           if (!_saving)
             TextButton.icon(
-              onPressed: _recipeItems.isEmpty ? null : _saveRecipe,
+              onPressed: _recipeItems.isEmpty ? null : () => _saveRecipe(closeOnSuccess: true),
               icon: const Icon(Icons.save_alt_rounded, size: 16),
               label: const Text('Simpan'),
               style: TextButton.styleFrom(foregroundColor: const Color(0xFF0F172A)),
@@ -763,7 +767,7 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   elevation: 0,
                 ),
-                onPressed: (_saving || _recipeItems.isEmpty) ? null : _saveRecipe,
+                onPressed: (_saving || _recipeItems.isEmpty) ? null : () => _saveRecipe(closeOnSuccess: true),
                 icon: _saving
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                     : const Icon(Icons.save_alt_rounded, size: 18, color: Colors.white),

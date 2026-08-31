@@ -391,13 +391,16 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         InkWell(
-                          onTap: () {
-                            Navigator.push(
+                          onTap: () async {
+                            await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => ProductRecipeScreen(product: product),
                               ),
                             );
+                            if (context.mounted) {
+                              context.read<MerchantController>().fetchProducts(silent: true);
+                            }
                           },
                           borderRadius: BorderRadius.circular(6),
                           child: const Padding(
@@ -466,13 +469,16 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                 if (hpp > 0) ...[
                   const SizedBox(height: 5),
                   InkWell(
-                    onTap: () {
-                      Navigator.push(
+                    onTap: () async {
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => ProductRecipeScreen(product: product),
                         ),
                       );
+                      if (context.mounted) {
+                        context.read<MerchantController>().fetchProducts(silent: true);
+                      }
                     },
                     borderRadius: BorderRadius.circular(6),
                     child: Wrap(
