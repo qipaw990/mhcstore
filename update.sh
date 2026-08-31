@@ -36,9 +36,10 @@ fi
 # Pastikan permission di dalam container dan host aman
 docker compose exec -u root cicalengkago_app chmod -R 777 /var/www/html/public/uploads 2>/dev/null || true
 
-# Jalankan migrasi database otomatis
-echo "🗄️ Menjalankan migrasi database otomatis..."
+# Jalankan migrasi database otomatis & indeks performa
+echo "🗄️ Menjalankan migrasi database otomatis & indeks performa..."
 docker compose exec -T cicalengkago_app php database/run_casaos_migration.php 2>/dev/null || php database/run_casaos_migration.php 2>/dev/null || true
+docker compose exec -T cicalengkago_app php database/optimize_performance_indexes.php 2>/dev/null || php database/optimize_performance_indexes.php 2>/dev/null || true
 
 # Auto-reconnect Cloudflare Tunnel jika service terhenti
 systemctl restart cloudflared 2>/dev/null || docker restart cloudflared 2>/dev/null || true

@@ -580,6 +580,8 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                                       imageUrl: imgUrl,
                                       width: 76,
                                       height: 76,
+                                      memCacheWidth: 200,
+                                      memCacheHeight: 200,
                                       fit: BoxFit.cover,
                                       errorWidget: (_, url, error) => Container(
                                         width: 76,

@@ -1210,6 +1210,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     imageUrl: imgUrl,
                     fit: BoxFit.cover,
                     width: double.infinity,
+                    memCacheWidth: 600,
                     errorWidget: (context, url, error) => Container(
                       color: Colors.red.shade50,
                       child: const Center(
@@ -1339,6 +1340,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                               imageUrl: imgUrl,
                               height: 105,
                               width: double.infinity,
+                              memCacheWidth: 350,
                               fit: BoxFit.cover,
                               errorWidget: (context, url, error) => Container(
                                 height: 105,
@@ -1572,6 +1574,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                                 imageUrl: coverUrl,
                                 height: 95,
                                 width: double.infinity,
+                                memCacheWidth: 350,
                                 fit: BoxFit.cover,
                                 errorWidget: (context, url, error) => Container(
                                   height: 95,
@@ -1824,6 +1827,8 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                                 imageUrl: coverUrl,
                                 height: 76,
                                 width: 76,
+                                memCacheWidth: 200,
+                                memCacheHeight: 200,
                                 fit: BoxFit.cover,
                                 errorWidget: (context, url, error) => Container(
                                   height: 76,
@@ -2043,6 +2048,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                             imageUrl: imgUrl,
                             height: 115,
                             width: double.infinity,
+                            memCacheWidth: 350,
                             fit: BoxFit.cover,
                             errorWidget: (context, url, error) => Container(
                               height: 115,
