@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -317,6 +318,26 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
     final rawImg = product['image']?.toString();
     final imgUrl = ApiConstants.formatImageUrl(rawImg);
 
+    final rawVars = product['variations'];
+    final List variations = (rawVars is List) ? rawVars : [];
+    final bool hasVariations = variations.isNotEmpty;
+
+    final varPrices = variations
+        .map((v) => double.tryParse(v['price']?.toString() ?? '0') ?? 0.0)
+        .where((p) => p > 0)
+        .toList();
+
+    String priceDisplay = CurrencyFormatter.formatRupiah(price);
+    if (hasVariations && varPrices.isNotEmpty) {
+      final minP = varPrices.reduce(math.min);
+      final maxP = varPrices.reduce(math.max);
+      if (minP != maxP) {
+        priceDisplay = '${CurrencyFormatter.formatRupiah(minP)} - ${CurrencyFormatter.formatRupiah(maxP)}';
+      } else {
+        priceDisplay = CurrencyFormatter.formatRupiah(minP);
+      }
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -436,7 +457,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                 Row(
                   children: [
                     Text(
-                      CurrencyFormatter.formatRupiah(price),
+                      priceDisplay,
                       style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppTheme.primaryRed),
                     ),
                     if (discount > 0) ...[
@@ -452,6 +473,49 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                     ],
                   ],
                 ),
+
+                // Daftar Badge Harga per Varian
+                if (hasVariations) ...[
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: variations.map((v) {
+                      final vName = v['name']?.toString() ?? 'Varian';
+                      final vPrice = double.tryParse(v['price']?.toString() ?? '0') ?? 0.0;
+                      final vHpp = double.tryParse(v['hpp']?.toString() ?? '0') ?? 0.0;
+
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFFECACA)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '$vName: ',
+                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF991B1B)),
+                            ),
+                            Text(
+                              CurrencyFormatter.formatRupiah(vPrice),
+                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTheme.primaryRed),
+                            ),
+                            if (vHpp > 0) ...[
+                              const SizedBox(width: 3),
+                              Text(
+                                '(HPP ${CurrencyFormatter.formatRupiah(vHpp)})',
+                                style: const TextStyle(fontSize: 8.5, color: Color(0xFFB45309), fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
                 if (product['barcode'] != null && product['barcode'].toString().trim().isNotEmpty) ...[
                   const SizedBox(height: 3),
                   Row(
