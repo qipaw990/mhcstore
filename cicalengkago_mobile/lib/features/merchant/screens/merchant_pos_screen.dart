@@ -25,8 +25,8 @@ class _MerchantPosScreenState extends State<MerchantPosScreen> {
   String _searchQuery = '';
   String _paymentMethod = 'cash'; // cash, qris, transfer
 
-  // POS Cart State: Map of productId -> { 'product': item, 'qty': int, 'notes': String }
-  final Map<int, Map<String, dynamic>> _cart = {};
+  // POS Cart State: Map of cartKey -> { ... }
+  final Map<String, Map<String, dynamic>> _cart = {};
 
   bool _isProcessing = false;
 
@@ -48,18 +48,53 @@ class _MerchantPosScreenState extends State<MerchantPosScreen> {
     super.dispose();
   }
 
-  void _addToCart(Map<String, dynamic> product) {
+  void _addToCartDirect(Map<String, dynamic> product, {
+    int? variationId,
+    String? variationName,
+    double? variationPrice,
+    List<Map<String, dynamic>>? selectedAddons,
+    int quantity = 1,
+    String notes = '',
+  }) {
     final id = int.tryParse(product['id']?.toString() ?? '0') ?? 0;
     if (id <= 0) return;
 
+    final basePrice = double.tryParse(product['price']?.toString() ?? '0') ?? 0.0;
+    final effVarPrice = (variationPrice != null && variationPrice > 0) ? variationPrice : basePrice;
+
+    double addonsTotal = 0.0;
+    List<String> addonNames = [];
+    if (selectedAddons != null && selectedAddons.isNotEmpty) {
+      for (final ad in selectedAddons) {
+        addonsTotal += (double.tryParse(ad['price']?.toString() ?? '0') ?? 0.0);
+        addonNames.add(ad['name'].toString());
+      }
+    }
+
+    final unitPrice = effVarPrice + addonsTotal;
+    final addonsHash = selectedAddons != null ? selectedAddons.map((a) => a['id']).join('_') : '';
+    final cartKey = '${id}_v${variationId ?? 0}_a$addonsHash';
+
     setState(() {
-      if (_cart.containsKey(id)) {
-        _cart[id]!['qty'] = (_cart[id]!['qty'] as int) + 1;
+      if (_cart.containsKey(cartKey)) {
+        _cart[cartKey]!['qty'] = (_cart[cartKey]!['qty'] as int) + quantity;
+        if (notes.isNotEmpty) {
+          _cart[cartKey]!['notes'] = notes;
+        }
       } else {
-        _cart[id] = {
+        _cart[cartKey] = {
+          'cart_key': cartKey,
+          'product_id': id,
           'product': product,
-          'qty': 1,
-          'notes': '',
+          'product_name': product['name'] ?? 'Menu',
+          'qty': quantity,
+          'price': unitPrice,
+          'base_price': basePrice,
+          'variation_id': variationId,
+          'variation_name': variationName,
+          'addons': selectedAddons ?? [],
+          'addons_text': addonNames.join(', '),
+          'notes': notes,
         };
       }
     });
@@ -75,22 +110,402 @@ class _MerchantPosScreenState extends State<MerchantPosScreen> {
     );
   }
 
-  void _removeFromCart(int productId) {
+  void _addToCart(Map<String, dynamic> product) {
+    final rawVars = product['variations'];
+    final bool hasVars = (rawVars is List && rawVars.isNotEmpty);
+    final rawAddons = product['addons'];
+    final bool hasAddons = (rawAddons is List && rawAddons.isNotEmpty);
+
+    if (hasVars || hasAddons) {
+      _showPosCustomizationModal(product);
+    } else {
+      _addToCartDirect(product);
+    }
+  }
+
+  void _showPosCustomizationModal(Map<String, dynamic> product) {
+    final rawVars = product['variations'];
+    final List<dynamic> variations = (rawVars is List) ? rawVars : [];
+    final rawAddons = product['addons'];
+    final List<dynamic> addons = (rawAddons is List) ? rawAddons : [];
+
+    int? selectedVariationId;
+    String? selectedVariationName;
+    double? selectedVariationPrice;
+
+    if (variations.isNotEmpty) {
+      final firstVar = variations.first as Map<String, dynamic>;
+      selectedVariationId = int.tryParse(firstVar['id']?.toString() ?? '0');
+      selectedVariationName = firstVar['name']?.toString() ?? '';
+      selectedVariationPrice = double.tryParse(firstVar['price']?.toString() ?? '0') ?? 0.0;
+    }
+
+    final Set<int> selectedAddonIds = {};
+    final TextEditingController itemNotesCtrl = TextEditingController();
+    int qty = 1;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final basePrice = double.tryParse(product['price']?.toString() ?? '0') ?? 0.0;
+          final currentVarPrice = (selectedVariationPrice != null && selectedVariationPrice! > 0)
+              ? selectedVariationPrice!
+              : basePrice;
+
+          double addonsSum = 0.0;
+          final List<Map<String, dynamic>> chosenAddons = [];
+          for (var ad in addons) {
+            if (ad is Map<String, dynamic>) {
+              final adId = int.tryParse(ad['id']?.toString() ?? '0') ?? 0;
+              if (selectedAddonIds.contains(adId)) {
+                final adPrice = double.tryParse(ad['price']?.toString() ?? '0') ?? 0.0;
+                addonsSum += adPrice;
+                chosenAddons.add(ad);
+              }
+            }
+          }
+
+          final singleUnitPrice = currentVarPrice + addonsSum;
+          final totalCustomPrice = singleUnitPrice * qty;
+
+          return Container(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.88),
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 20,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            product['name']?.toString() ?? 'Menu Kasir',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            'Harga Dasar: ${CurrencyFormatter.formatRupiah(basePrice)}',
+                            style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF64748B)),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const Divider(height: 16),
+
+                Expanded(
+                  child: ListView(
+                    children: [
+                      // ── PILIHAN VARIASI (UKURAN / LEVEL) ──
+                      if (variations.isNotEmpty) ...[
+                        Row(
+                          children: const [
+                            Icon(Icons.tune_rounded, size: 16, color: AppTheme.primaryRed),
+                            SizedBox(width: 6),
+                            Text(
+                              'Pilihan Variasi / Ukuran / Level',
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: variations.map((v) {
+                            final vMap = v as Map<String, dynamic>;
+                            final vId = int.tryParse(vMap['id']?.toString() ?? '0') ?? 0;
+                            final vName = vMap['name']?.toString() ?? '';
+                            final vPrice = double.tryParse(vMap['price']?.toString() ?? '0') ?? 0.0;
+                            final isSelected = (selectedVariationId == vId);
+
+                            return InkWell(
+                              onTap: () {
+                                setModalState(() {
+                                  selectedVariationId = vId;
+                                  selectedVariationName = vName;
+                                  selectedVariationPrice = vPrice;
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? const Color(0xFFFEF2F2) : const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: isSelected ? AppTheme.primaryRed : const Color(0xFFE2E8F0),
+                                    width: isSelected ? 1.5 : 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                                      size: 16,
+                                      color: isSelected ? AppTheme.primaryRed : const Color(0xFF94A3B8),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      vName,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                        color: isSelected ? AppTheme.primaryRed : const Color(0xFF334155),
+                                      ),
+                                    ),
+                                    if (vPrice > 0) ...[
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '(${CurrencyFormatter.formatRupiah(vPrice)})',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: isSelected ? AppTheme.primaryRed : const Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // ── PILIHAN TOPPING & TAMBAHAN ──
+                      if (addons.isNotEmpty) ...[
+                        Row(
+                          children: const [
+                            Icon(Icons.add_task_rounded, size: 16, color: Color(0xFF16A34A)),
+                            SizedBox(width: 6),
+                            Text(
+                              'Topping & Tambahan Lezat',
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ...addons.map((ad) {
+                          final adMap = ad as Map<String, dynamic>;
+                          final adId = int.tryParse(adMap['id']?.toString() ?? '0') ?? 0;
+                          final adName = adMap['name']?.toString() ?? '';
+                          final adPrice = double.tryParse(adMap['price']?.toString() ?? '0') ?? 0.0;
+                          final isChecked = selectedAddonIds.contains(adId);
+
+                          return InkWell(
+                            onTap: () {
+                              setModalState(() {
+                                if (isChecked) {
+                                  selectedAddonIds.remove(adId);
+                                } else {
+                                  selectedAddonIds.add(adId);
+                                }
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isChecked ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: isChecked ? const Color(0xFF16A34A) : const Color(0xFFE2E8F0),
+                                  width: isChecked ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        isChecked ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
+                                        size: 18,
+                                        color: isChecked ? const Color(0xFF16A34A) : const Color(0xFF94A3B8),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        adName,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: isChecked ? FontWeight.bold : FontWeight.w500,
+                                          color: isChecked ? const Color(0xFF15803D) : const Color(0xFF334155),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    '+${CurrencyFormatter.formatRupiah(adPrice)}',
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: isChecked ? const Color(0xFF15803D) : const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 14),
+                      ],
+
+                      // ── CATATAN ITEM ──
+                      const Text('Catatan Pesanan (Opsional)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                      const SizedBox(height: 5),
+                      TextField(
+                        controller: itemNotesCtrl,
+                        decoration: InputDecoration(
+                          hintText: 'Contoh: Jangan terlalu pedas / pisah sambal...',
+                          hintStyle: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // ── JUMLAH QTY ──
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Jumlah Porsi', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                          Row(
+                            children: [
+                              InkWell(
+                                onTap: () {
+                                  if (qty > 1) {
+                                    setModalState(() => qty--);
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.remove_rounded, size: 18, color: Color(0xFF0F172A)),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 14),
+                                child: Text(
+                                  '$qty',
+                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                ),
+                              ),
+                              InkWell(
+                                onTap: () {
+                                  setModalState(() => qty++);
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.add_rounded, size: 18, color: Color(0xFF0F172A)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Tombol Simpan ke Kasir
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryRed,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 2,
+                    ),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _addToCartDirect(
+                        product,
+                        variationId: selectedVariationId,
+                        variationName: selectedVariationName,
+                        variationPrice: selectedVariationPrice,
+                        selectedAddons: chosenAddons,
+                        quantity: qty,
+                        notes: itemNotesCtrl.text.trim(),
+                      );
+                    },
+                    child: Text(
+                      'Tambah ke Kasir (${CurrencyFormatter.formatRupiah(totalCustomPrice)})',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _removeFromCart(String cartKey) {
     setState(() {
-      if (_cart.containsKey(productId)) {
-        final currentQty = _cart[productId]!['qty'] as int;
+      if (_cart.containsKey(cartKey)) {
+        final currentQty = _cart[cartKey]!['qty'] as int;
         if (currentQty > 1) {
-          _cart[productId]!['qty'] = currentQty - 1;
+          _cart[cartKey]!['qty'] = currentQty - 1;
         } else {
-          _cart.remove(productId);
+          _cart.remove(cartKey);
         }
       }
     });
   }
 
-  void _deleteCartItem(int productId) {
+  void _deleteCartItem(String cartKey) {
     setState(() {
-      _cart.remove(productId);
+      _cart.remove(cartKey);
     });
   }
 
@@ -123,8 +538,9 @@ class _MerchantPosScreenState extends State<MerchantPosScreen> {
   double get _subtotal {
     double sum = 0.0;
     for (var item in _cart.values) {
-      final p = item['product'] as Map<String, dynamic>;
-      final price = double.tryParse(p['price']?.toString() ?? '0') ?? 0.0;
+      final price = (item['price'] != null)
+          ? (double.tryParse(item['price'].toString()) ?? 0.0)
+          : (double.tryParse((item['product'] as Map<String, dynamic>)['price']?.toString() ?? '0') ?? 0.0);
       final qty = item['qty'] as int;
       sum += (price * qty);
     }
@@ -266,9 +682,11 @@ class _MerchantPosScreenState extends State<MerchantPosScreen> {
                             const SizedBox(height: 8),
                             ..._cart.values.map((it) {
                               final p = it['product'] as Map<String, dynamic>;
-                              final pId = int.tryParse(p['id']?.toString() ?? '0') ?? 0;
+                              final cartKey = it['cart_key']?.toString() ?? '${p['id']}';
                               final qty = it['qty'] as int;
-                              final price = double.tryParse(p['price']?.toString() ?? '0') ?? 0.0;
+                              final price = (it['price'] != null)
+                                  ? (double.tryParse(it['price'].toString()) ?? 0.0)
+                                  : (double.tryParse(p['price']?.toString() ?? '0') ?? 0.0);
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 8),
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -298,6 +716,27 @@ class _MerchantPosScreenState extends State<MerchantPosScreen> {
                                         ),
                                       ],
                                     ),
+                                    if (it['variation_name'] != null && it['variation_name'].toString().isNotEmpty) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '• Varian: ${it['variation_name']}',
+                                        style: const TextStyle(fontSize: 10.5, color: AppTheme.primaryRed, fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                    if (it['addons_text'] != null && it['addons_text'].toString().isNotEmpty) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '• Topping: ${it['addons_text']}',
+                                        style: const TextStyle(fontSize: 10.5, color: Color(0xFF16A34A), fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                    if (it['notes'] != null && it['notes'].toString().isNotEmpty) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '• Catatan: "${it['notes']}"',
+                                        style: const TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: Color(0xFF64748B)),
+                                      ),
+                                    ],
                                     const SizedBox(height: 6),
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -311,7 +750,7 @@ class _MerchantPosScreenState extends State<MerchantPosScreen> {
                                           children: [
                                             InkWell(
                                               onTap: () {
-                                                _removeFromCart(pId);
+                                                _removeFromCart(cartKey);
                                                 setSheetState(() {});
                                               },
                                               borderRadius: BorderRadius.circular(6),
@@ -349,7 +788,7 @@ class _MerchantPosScreenState extends State<MerchantPosScreen> {
                                             const SizedBox(width: 10),
                                             InkWell(
                                               onTap: () {
-                                                _deleteCartItem(pId);
+                                                _deleteCartItem(cartKey);
                                                 setSheetState(() {});
                                               },
                                               borderRadius: BorderRadius.circular(6),
@@ -611,13 +1050,19 @@ class _MerchantPosScreenState extends State<MerchantPosScreen> {
 
     final itemsPayload = _cart.values.map((it) {
       final p = it['product'] as Map<String, dynamic>;
-      final price = double.tryParse(p['price']?.toString() ?? '0') ?? 0.0;
+      final price = (it['price'] != null)
+          ? double.tryParse(it['price'].toString()) ?? 0.0
+          : double.tryParse(p['price']?.toString() ?? '0') ?? 0.0;
       final qty = it['qty'] as int;
       return {
         'product_id': p['id'],
         'name': p['name'],
         'quantity': qty,
         'price': price,
+        'variation_id': it['variation_id'],
+        'variation_name': it['variation_name'],
+        'addons': it['addons'],
+        'addons_text': it['addons_text'],
         'notes': it['notes'] ?? '',
       };
     }).toList();
@@ -986,8 +1431,10 @@ class _MerchantPosScreenState extends State<MerchantPosScreen> {
                       final imgUrl = ApiConstants.formatImageUrl(rawImg);
                       final price = double.tryParse(p['price']?.toString() ?? '0') ?? 0.0;
                       final barcode = p['barcode']?.toString().trim() ?? '';
-                      final inCart = _cart.containsKey(id);
-                      final inCartQty = inCart ? (_cart[id]!['qty'] as int) : 0;
+                      final inCart = _cart.values.any((item) => item['product_id'] == id);
+                      final inCartQty = _cart.values.where((item) => item['product_id'] == id).fold<int>(0, (sum, item) => sum + (item['qty'] as int));
+                      final hasVars = (p['variations'] is List && (p['variations'] as List).isNotEmpty);
+                      final hasAds = (p['addons'] is List && (p['addons'] as List).isNotEmpty);
 
                       return InkWell(
                         onTap: () => _addToCart(p),
@@ -1060,6 +1507,20 @@ class _MerchantPosScreenState extends State<MerchantPosScreen> {
                                       CurrencyFormatter.formatRupiah(price),
                                       style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: AppTheme.primaryRed),
                                     ),
+                                    if (hasVars || hasAds) ...[
+                                      const SizedBox(height: 3),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFEF2F2),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: const Text(
+                                          'Ada Varian / Topping',
+                                          style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+                                        ),
+                                      ),
+                                    ],
                                     if (barcode.isNotEmpty) ...[
                                       const SizedBox(height: 2),
                                       Row(

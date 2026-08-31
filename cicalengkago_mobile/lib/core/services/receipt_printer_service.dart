@@ -121,6 +121,8 @@ class ReceiptPrinterService {
                 final qty = int.tryParse(it['quantity']?.toString() ?? '1') ?? 1;
                 final price = double.tryParse(it['price']?.toString() ?? '0') ?? 0.0;
                 final lineTotal = price * qty;
+                final varName = it['variation_name']?.toString() ?? '';
+                final addonsText = it['addons_text']?.toString() ?? '';
 
                 return pw.Padding(
                   padding: const pw.EdgeInsets.only(bottom: 3),
@@ -128,6 +130,10 @@ class ReceiptPrinterService {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(name, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                      if (varName.isNotEmpty)
+                        pw.Text('  * Varian: $varName', style: const pw.TextStyle(fontSize: 6.5, color: PdfColors.grey700)),
+                      if (addonsText.isNotEmpty)
+                        pw.Text('  * Topping: $addonsText', style: const pw.TextStyle(fontSize: 6.5, color: PdfColors.grey700)),
                       pw.Row(
                         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                         children: [

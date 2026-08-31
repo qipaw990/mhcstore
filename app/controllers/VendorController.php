@@ -954,12 +954,29 @@ class VendorController extends Controller
             $itemSubtotal = $price * $qty;
             $orderAmount += $itemSubtotal;
 
+            // Variation & Addons JSON
+            $varJson = null;
+            if (!empty($item['variation_name'])) {
+                $varJson = json_encode(['id' => $item['variation_id'] ?? null, 'name' => $item['variation_name'], 'price' => $price]);
+            }
+
+            $addonsJson = null;
+            if (!empty($item['addons']) && is_array($item['addons'])) {
+                $addonsJson = json_encode(['items' => $item['addons']]);
+            } elseif (!empty($item['addons_text'])) {
+                $addonsJson = json_encode(['text' => $item['addons_text']]);
+            }
+
             $orderItemsToInsert[] = [
                 'product_id'             => $pId ?: null,
                 'product_name'           => $pName,
                 'quantity'               => $qty,
                 'price'                  => $price,
                 'total_price'            => $itemSubtotal,
+                'variation_json'         => $varJson,
+                'variation_name'         => $item['variation_name'] ?? null,
+                'addons_json'            => $addonsJson,
+                'addons_text'            => $item['addons_text'] ?? null,
                 'hpp_snapshot'           => $hpp,
                 'product_image_snapshot' => $img,
                 'notes'                  => sanitize($item['notes'] ?? '')
@@ -983,7 +1000,7 @@ class VendorController extends Controller
             'order_amount'           => $orderAmount,
             'delivery_charge'        => 0.0,
             'tax_amount'             => 0.0,
-            'coupon_discount'        => 0.0,
+            'coupon_discount'        => $discountAmount,
             'total_amount'           => $totalAmount,
             'payment_method'         => $paymentMethod === 'cash' ? 'cod' : $paymentMethod,
             'payment_status'         => 'paid',
@@ -1019,6 +1036,8 @@ class VendorController extends Controller
                 'quantity'               => $oItem['quantity'],
                 'price'                  => $oItem['price'],
                 'total_price'            => $oItem['total_price'],
+                'variation_json'         => $oItem['variation_json'],
+                'addons_json'            => $oItem['addons_json'],
                 'hpp_snapshot'           => $oItem['hpp_snapshot'],
                 'product_image_snapshot' => $oItem['product_image_snapshot'],
             ]);
@@ -1034,7 +1053,7 @@ class VendorController extends Controller
             'cash_given'      => $cashGiven,
             'change_amount'   => $changeAmount,
             'customer_name'   => $customerName,
-            'created_at'      => $now,
+            'created_at'      => date('d/m/Y H:i'),
             'store_name'      => $store['name'],
             'store_address'   => $store['address'] ?? '',
             'store_phone'     => $store['phone'] ?? '',
@@ -1434,11 +1453,31 @@ class VendorController extends Controller
                 $storeUpdates['longitude'] = $storeLng;
             }
 
+            // Sync full store settings from live schema
+            if (isset($data['minimum_order'])) $storeUpdates['minimum_order'] = (float)$data['minimum_order'];
+            if (isset($data['delivery_time'])) $storeUpdates['delivery_time'] = sanitize($data['delivery_time']);
+            if (isset($data['tax'])) $storeUpdates['tax'] = (float)$data['tax'];
+            if (isset($data['service_charge'])) $storeUpdates['service_charge'] = (float)$data['service_charge'];
+            if (isset($data['is_open'])) $storeUpdates['is_open'] = (!empty($data['is_open']) ? 1 : 0);
+            if (isset($data['opening_time'])) $storeUpdates['opening_time'] = sanitize($data['opening_time']);
+            if (isset($data['closing_time'])) $storeUpdates['closing_time'] = sanitize($data['closing_time']);
+            if (isset($data['bank_name'])) $storeUpdates['bank_name'] = sanitize($data['bank_name']);
+            if (isset($data['bank_account_number'])) $storeUpdates['bank_account_number'] = sanitize($data['bank_account_number']);
+            if (isset($data['bank_account_name'])) $storeUpdates['bank_account_name'] = sanitize($data['bank_account_name']);
+
             // Handle Store Logo Upload
             if (isset($_FILES['store_logo']) && $_FILES['store_logo']['error'] === UPLOAD_ERR_OK) {
                 $logoPath = upload_image($_FILES['store_logo'], 'stores');
                 if ($logoPath) {
                     $storeUpdates['logo'] = $logoPath;
+                }
+            }
+
+            // Handle Store Cover / Banner Upload
+            if (isset($_FILES['cover_photo']) && $_FILES['cover_photo']['error'] === UPLOAD_ERR_OK) {
+                $coverPath = upload_image($_FILES['cover_photo'], 'stores');
+                if ($coverPath) {
+                    $storeUpdates['cover_photo'] = $coverPath;
                 }
             }
 

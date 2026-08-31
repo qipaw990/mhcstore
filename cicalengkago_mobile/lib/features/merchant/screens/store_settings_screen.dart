@@ -611,21 +611,47 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
   late TextEditingController _nameCtrl;
   late TextEditingController _phoneCtrl;
   late TextEditingController _addressCtrl;
+  late TextEditingController _openingTimeCtrl;
+  late TextEditingController _closingTimeCtrl;
+  late TextEditingController _deliveryTimeCtrl;
+  late TextEditingController _minOrderCtrl;
+  late TextEditingController _taxCtrl;
+  late TextEditingController _serviceChargeCtrl;
+  late TextEditingController _bankAccNumCtrl;
+  late TextEditingController _bankAccNameCtrl;
+
+  late bool _isOpen;
+  late String _selectedBank;
   late double _lat;
   late double _lng;
   late final MapController _mapCtrl;
   bool _isSaving = false;
 
+  final List<String> _bankOptions = ['BCA', 'BRI', 'Mandiri', 'BNI', 'BSI', 'GoPay', 'OVO', 'DANA', 'ShopeePay'];
+
   @override
   void initState() {
     super.initState();
+    final s = widget.store;
     _mapCtrl = MapController();
-    _nameCtrl = TextEditingController(text: widget.store['name']?.toString() ?? '');
-    _phoneCtrl = TextEditingController(text: widget.store['phone']?.toString() ?? widget.store['vendor_phone']?.toString() ?? '');
-    _addressCtrl = TextEditingController(text: widget.store['address']?.toString() ?? '');
+    _nameCtrl = TextEditingController(text: s['name']?.toString() ?? '');
+    _phoneCtrl = TextEditingController(text: s['phone']?.toString() ?? s['vendor_phone']?.toString() ?? '');
+    _addressCtrl = TextEditingController(text: s['address']?.toString() ?? '');
+    _openingTimeCtrl = TextEditingController(text: s['opening_time']?.toString() ?? '08:00');
+    _closingTimeCtrl = TextEditingController(text: s['closing_time']?.toString() ?? '22:00');
+    _deliveryTimeCtrl = TextEditingController(text: s['delivery_time']?.toString() ?? '20-30 Menit');
+    _minOrderCtrl = TextEditingController(text: (double.tryParse(s['minimum_order']?.toString() ?? '10000') ?? 10000).toInt().toString());
+    _taxCtrl = TextEditingController(text: (double.tryParse(s['tax']?.toString() ?? '0') ?? 0).toString());
+    _serviceChargeCtrl = TextEditingController(text: (double.tryParse(s['service_charge']?.toString() ?? '0') ?? 0).toInt().toString());
+    _bankAccNumCtrl = TextEditingController(text: s['bank_account_number']?.toString() ?? '');
+    _bankAccNameCtrl = TextEditingController(text: s['bank_account_name']?.toString() ?? '');
 
-    _lat = double.tryParse(widget.store['latitude']?.toString() ?? '') ?? -6.9840;
-    _lng = double.tryParse(widget.store['longitude']?.toString() ?? '') ?? 107.8340;
+    _isOpen = s['is_open'] == 1 || s['is_open'] == true || s['is_open'] == '1';
+    final currentBank = s['bank_name']?.toString() ?? 'BCA';
+    _selectedBank = _bankOptions.contains(currentBank) ? currentBank : 'BCA';
+
+    _lat = double.tryParse(s['latitude']?.toString() ?? '') ?? -6.9840;
+    _lng = double.tryParse(s['longitude']?.toString() ?? '') ?? 107.8340;
     if (_lat == 0 || _lng == 0) {
       _lat = -6.9840;
       _lng = 107.8340;
@@ -637,6 +663,14 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
     _addressCtrl.dispose();
+    _openingTimeCtrl.dispose();
+    _closingTimeCtrl.dispose();
+    _deliveryTimeCtrl.dispose();
+    _minOrderCtrl.dispose();
+    _taxCtrl.dispose();
+    _serviceChargeCtrl.dispose();
+    _bankAccNumCtrl.dispose();
+    _bankAccNameCtrl.dispose();
     _mapCtrl.dispose();
     super.dispose();
   }
@@ -666,7 +700,7 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.90),
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
       padding: EdgeInsets.only(
         left: 20,
         right: 20,
@@ -694,7 +728,7 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Edit Profil & Titik Lokasi Resto',
+                  'Edit Pengaturan & Profil Resto',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 IconButton(
@@ -706,6 +740,54 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
               ],
             ),
             const Divider(height: 20),
+
+            // ── STATUS OPERASIONAL BUKA / TUTUP TOKO ──
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: _isOpen ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _isOpen ? const Color(0xFFBBF7D0) : const Color(0xFFFECACA)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        _isOpen ? Icons.storefront_rounded : Icons.store_mall_directory_outlined,
+                        color: _isOpen ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                        size: 24,
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _isOpen ? 'Toko Sedang BUKA' : 'Toko Sedang TUTUP',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: _isOpen ? const Color(0xFF15803D) : const Color(0xFFB91C1C),
+                            ),
+                          ),
+                          Text(
+                            _isOpen ? 'Menerima pesanan online dari customer' : 'Pelanggan tidak dapat membuat pesanan',
+                            style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Switch(
+                    value: _isOpen,
+                    activeColor: const Color(0xFF16A34A),
+                    onChanged: (val) => setState(() => _isOpen = val),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
 
             const Text('Nama Resto / Toko *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
             const SizedBox(height: 5),
@@ -725,6 +807,149 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
               decoration: _inputDecoration('Contoh: 081234567890'),
             ),
             const SizedBox(height: 12),
+
+            // ── JAM OPERASIONAL ──
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Jam Buka *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                      const SizedBox(height: 5),
+                      TextFormField(
+                        controller: _openingTimeCtrl,
+                        decoration: _inputDecoration('08:00'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Jam Tutup *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                      const SizedBox(height: 5),
+                      TextFormField(
+                        controller: _closingTimeCtrl,
+                        decoration: _inputDecoration('22:00'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // ── ESTIMASI PENGANTARAN & MIN ORDER ──
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Estimasi Antar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                      const SizedBox(height: 5),
+                      TextFormField(
+                        controller: _deliveryTimeCtrl,
+                        decoration: _inputDecoration('20-30 Menit'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Min. Belanja (Rp)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                      const SizedBox(height: 5),
+                      TextFormField(
+                        controller: _minOrderCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: _inputDecoration('10000'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // ── PAJAK & SERVICE CHARGE ──
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Pajak Resto (%)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                      const SizedBox(height: 5),
+                      TextFormField(
+                        controller: _taxCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: _inputDecoration('0'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Biaya Layanan (Rp)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                      const SizedBox(height: 5),
+                      TextFormField(
+                        controller: _serviceChargeCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: _inputDecoration('0'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            // ── REKENING PENCAIRAN SALDO RESTO ──
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Rekening Pencairan Dana Toko',
+                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: _selectedBank,
+                    items: _bankOptions.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
+                    onChanged: (v) => setState(() => _selectedBank = v ?? 'BCA'),
+                    decoration: _inputDecoration('Bank / E-Wallet'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _bankAccNumCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: _inputDecoration('Nomor Rekening / No. E-Wallet'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _bankAccNameCtrl,
+                    decoration: _inputDecoration('Nama Pemilik Rekening'),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
 
             const Text('Alamat Lengkap Toko *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
             const SizedBox(height: 5),
@@ -858,7 +1083,7 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
             const SizedBox(height: 18),
 
             UberPillButton(
-              label: _isSaving ? 'Menyimpan...' : 'Simpan Profil & Titik Lokasi',
+              label: _isSaving ? 'Menyimpan...' : 'Simpan Profil & Pengaturan Resto',
               icon: Icons.check_circle_outline_rounded,
               onPressed: _isSaving
                   ? null
@@ -879,6 +1104,16 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                         'name': _nameCtrl.text.trim(),
                         'phone': _phoneCtrl.text.trim(),
                         'email': email,
+                        'is_open': _isOpen ? '1' : '0',
+                        'opening_time': _openingTimeCtrl.text.trim(),
+                        'closing_time': _closingTimeCtrl.text.trim(),
+                        'delivery_time': _deliveryTimeCtrl.text.trim(),
+                        'minimum_order': _minOrderCtrl.text.trim(),
+                        'tax': _taxCtrl.text.trim(),
+                        'service_charge': _serviceChargeCtrl.text.trim(),
+                        'bank_name': _selectedBank,
+                        'bank_account_number': _bankAccNumCtrl.text.trim(),
+                        'bank_account_name': _bankAccNameCtrl.text.trim(),
                       });
 
                       if (mounted) setState(() => _isSaving = false);
@@ -886,7 +1121,7 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                       if (ok && context.mounted) {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Profil dan titik lokasi resto berhasil diperbarui!'), backgroundColor: Color(0xFF10B981)),
+                          const SnackBar(content: Text('Profil dan pengaturan resto berhasil diperbarui!'), backgroundColor: Color(0xFF10B981)),
                         );
                       } else if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
