@@ -1239,14 +1239,12 @@
                 if (currentOrderCode) {
                     params.push('order_code=' + encodeURIComponent(currentOrderCode));
                 }
-                const activeUserId = window.CURRENT_USER_ID || (window.CCG_USER_ID || 0);
+                const activeUserId = window.CURRENT_USER_ID || window.CCG_USER_ID || 0;
                 if (activeUserId > 0) {
                     params.push('user_id=' + activeUserId);
                 }
                 if (params.length > 0) {
                     url += '?' + params.join('&');
-                } else if (!currentCallId) {
-                    return; // Wait until order_code or user_id is ready
                 }
 
                 try {

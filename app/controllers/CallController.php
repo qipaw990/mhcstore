@@ -143,34 +143,36 @@ class CallController extends Controller
     public function poll(): void
     {
         try {
-            $userId   = (int)($_GET['user_id'] ?? 0);
+            $userId    = (int)($_GET['user_id'] ?? 0);
             if ($userId === 0) {
                 $userId = auth_id() ?: (int)($_SESSION['user']['id'] ?? ($_SESSION['user_id'] ?? 0));
             }
             $orderCode = sanitize(trim($_GET['order_code'] ?? ''));
 
-            $whereSql = "vc.created_at >= NOW() - INTERVAL 5 MINUTE AND vc.status IN ('calling', 'connected', 'ended', 'rejected')";
-            $params = [];
-
-            if (!empty($orderCode) && $userId > 0) {
-                $whereSql .= " AND vc.order_code = ? AND (vc.receiver_id = ? OR vc.caller_id = ?)";
-                $params[] = $orderCode;
-                $params[] = $userId;
-                $params[] = $userId;
-            } elseif (!empty($orderCode)) {
-                $whereSql .= " AND vc.order_code = ?";
-                $params[] = $orderCode;
-            } elseif ($userId > 0) {
-                $whereSql .= " AND (vc.receiver_id = ? OR vc.caller_id = ?)";
-                $params[] = $userId;
-                $params[] = $userId;
-            } else {
+            if (empty($orderCode) && $userId === 0) {
                 $this->successResponse('Tidak ada panggilan aktif', ['active_call' => null]);
                 return;
             }
 
-            // Fetch active call for order or user with store & driver details
-            $call = Database::fetchOne("
+            // 1. Try to find ACTIVE call ('calling' or 'connected') first
+            $whereAct = [];
+            $paramsAct = [];
+
+            if (!empty($orderCode) && $userId > 0) {
+                $whereAct[] = "(vc.order_code = ? OR vc.receiver_id = ? OR vc.caller_id = ?)";
+                $paramsAct[] = $orderCode;
+                $paramsAct[] = $userId;
+                $paramsAct[] = $userId;
+            } elseif (!empty($orderCode)) {
+                $whereAct[] = "vc.order_code = ?";
+                $paramsAct[] = $orderCode;
+            } elseif ($userId > 0) {
+                $whereAct[] = "(vc.receiver_id = ? OR vc.caller_id = ?)";
+                $paramsAct[] = $userId;
+                $paramsAct[] = $userId;
+            }
+
+            $sqlBase = "
                 SELECT vc.*,
                        u_caller.name as caller_name, u_caller.avatar as caller_avatar,
                        u_recv.name as receiver_name, u_recv.avatar as receiver_avatar,
@@ -184,9 +186,20 @@ class CallController extends Controller
                 LEFT JOIN users u_dm ON dm.user_id = u_dm.id
                 LEFT JOIN users u_caller ON vc.caller_id = u_caller.id
                 LEFT JOIN users u_recv ON vc.receiver_id = u_recv.id
-                WHERE {$whereSql}
-                ORDER BY vc.id DESC LIMIT 1
-            ", $params);
+            ";
+
+            $call = Database::fetchOne(
+                $sqlBase . " WHERE vc.status IN ('calling', 'connected') AND " . implode(' AND ', $whereAct) . " ORDER BY vc.id DESC LIMIT 1",
+                $paramsAct
+            );
+
+            // 2. If no active call, check if there was a recently ended/rejected call
+            if (!$call) {
+                $call = Database::fetchOne(
+                    $sqlBase . " WHERE vc.status IN ('rejected', 'ended') AND " . implode(' AND ', $whereAct) . " ORDER BY vc.id DESC LIMIT 1",
+                    $paramsAct
+                );
+            }
 
             if (!$call) {
                 $this->successResponse('Tidak ada panggilan aktif', ['active_call' => null]);
