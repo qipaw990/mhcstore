@@ -392,7 +392,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         body: jsonEncode({
           'call_id': _callId,
           'order_code': widget.orderCode,
-          'role': widget.callerRole ?? (widget.isIncoming ? 'callee' : 'caller'),
+          'role': widget.isIncoming ? 'callee' : 'caller',
           'candidate': {
             'candidate': candidate.candidate,
             'sdpMid': candidate.sdpMid,
@@ -407,6 +407,11 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     if (kIsWeb) return;
     try {
       Helper.setSpeakerphoneOn(enable);
+      _localStream?.getAudioTracks().forEach((track) {
+        try {
+          track.enableSpeakerphone(enable);
+        } catch (_) {}
+      });
     } catch (e) {
       debugPrint('[WebRTC] Set speaker error: $e');
     }
@@ -475,7 +480,12 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                 for (var item in cands) {
                   if (item is Map) {
                     final senderRole = item['role']?.toString();
-                    if (senderRole == myRole) continue; // IGNORE OWN CANDIDATES
+                    // Ignore own candidates
+                    if (senderRole == myRole ||
+                        (widget.isIncoming && (senderRole == 'callee' || senderRole == 'receiver')) ||
+                        (!widget.isIncoming && (senderRole == 'caller' || senderRole == 'delivery_man' || senderRole == 'driver' || senderRole == 'vendor' || senderRole == 'customer'))) {
+                      continue;
+                    }
 
                     Map<String, dynamic>? candObj;
                     if (item['candidate'] is Map) {
