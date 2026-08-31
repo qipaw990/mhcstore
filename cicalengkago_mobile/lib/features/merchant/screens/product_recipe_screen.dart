@@ -17,16 +17,39 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
   List<Map<String, dynamic>> _recipeItems = [];
   bool _saving = false;
 
+  // ── Mode Kalkulator Margin & Harga Jual ─────────────────────────────────────
+  bool _autoUpdatePrice = true;
+  String _marginMode = 'percent'; // 'percent' | 'nominal' | 'manual'
+  double _marginPercent = 50.0;
+  double _marginNominal = 5000.0;
+  double _customSellingPrice = 0.0;
+  late TextEditingController _percentCtrl;
+  late TextEditingController _nominalCtrl;
+  late TextEditingController _customPriceCtrl;
+
   @override
   void initState() {
     super.initState();
+    final initialPrice = double.tryParse(widget.product['price']?.toString() ?? '0') ?? 0.0;
+    _customSellingPrice = initialPrice;
+    _percentCtrl = TextEditingController(text: '50');
+    _nominalCtrl = TextEditingController(text: '5000');
+    _customPriceCtrl = TextEditingController(text: initialPrice > 0 ? initialPrice.toInt().toString() : '');
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final ctrl = context.read<MerchantController>();
-      // Pastikan daftar bahan baku sudah ada
       if (ctrl.rawMaterials.isEmpty) await ctrl.fetchRawMaterials();
       await ctrl.fetchProductRecipe(int.parse(widget.product['id'].toString()));
       _loadFromController();
     });
+  }
+
+  @override
+  void dispose() {
+    _percentCtrl.dispose();
+    _nominalCtrl.dispose();
+    _customPriceCtrl.dispose();
+    super.dispose();
   }
 
   void _loadFromController() {
@@ -39,6 +62,7 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
                 'qty_used': double.tryParse(r['qty_used']?.toString() ?? '0') ?? 0.0,
               })
           .toList();
+      _recalcPricing();
     });
   }
 
@@ -56,6 +80,38 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
       total += qty * price;
     }
     return total;
+  }
+
+  double get _calculatedSellingPrice {
+    final hpp = _totalHpp;
+    if (hpp <= 0) {
+      return double.tryParse(widget.product['price']?.toString() ?? '0') ?? 0.0;
+    }
+    if (_marginMode == 'percent') {
+      return hpp * (1 + (_marginPercent / 100));
+    } else if (_marginMode == 'nominal') {
+      return hpp + _marginNominal;
+    } else {
+      return _customSellingPrice > 0 ? _customSellingPrice : hpp;
+    }
+  }
+
+  double get _calculatedProfit {
+    return _calculatedSellingPrice - _totalHpp;
+  }
+
+  double get _calculatedMarginPct {
+    if (_totalHpp <= 0) return 0.0;
+    return (_calculatedProfit / _totalHpp) * 100;
+  }
+
+  void _recalcPricing() {
+    if (_marginMode == 'manual') {
+      if (_totalHpp > 0 && _customSellingPrice > 0) {
+        _marginPercent = ((_customSellingPrice - _totalHpp) / _totalHpp) * 100;
+        _marginNominal = _customSellingPrice - _totalHpp;
+      }
+    }
   }
 
   void _addIngredient() {
@@ -100,14 +156,26 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
   Future<void> _saveRecipe() async {
     setState(() => _saving = true);
     final productId = int.tryParse(widget.product['id'].toString()) ?? 0;
-    final res = await context.read<MerchantController>().saveProductRecipe(productId, _recipeItems);
+    final targetPrice = _autoUpdatePrice ? _calculatedSellingPrice : null;
+
+    final res = await context.read<MerchantController>().saveProductRecipe(
+      productId,
+      _recipeItems,
+      newPrice: targetPrice,
+    );
     setState(() => _saving = false);
 
     if (mounted) {
       final hpp = (res['total_hpp'] as num?)?.toDouble() ?? 0;
+      final newPrice = (res['price'] as num?)?.toDouble();
+      String priceMsg = '';
+      if (newPrice != null && newPrice > 0) {
+        priceMsg = ' • Harga Jual: Rp ${_fmtPrice(newPrice)}';
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(res['success'] == true
-            ? '✅ ${res['message']} • HPP: Rp ${_fmtPrice(hpp)}'
+            ? '✅ ${res['message']} (HPP: Rp ${_fmtPrice(hpp)}$priceMsg)'
             : '❌ ${res['message']}'),
         backgroundColor: res['success'] == true ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
         duration: const Duration(seconds: 3),
@@ -120,7 +188,11 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
     final ctrl = context.watch<MerchantController>();
     final mats = ctrl.rawMaterials;
     final pName = widget.product['name']?.toString() ?? 'Produk';
-    final hppDb = double.tryParse(widget.product['hpp']?.toString() ?? '0') ?? 0;
+    final currentMenuPrice = double.tryParse(widget.product['price']?.toString() ?? '0') ?? 0;
+    final hpp = _totalHpp;
+    final sellingPrice = _calculatedSellingPrice;
+    final profit = _calculatedProfit;
+    final marginPct = _calculatedMarginPct;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -135,7 +207,7 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Resep & HPP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A))),
+            const Text('Resep & Hitung HPP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A))),
             Text(pName, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis),
           ],
         ),
@@ -151,54 +223,349 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
       ),
       body: ctrl.isRecipeLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                // ── HPP Summary Card ──
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+          : SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 100),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── 1. SUMMARY CARD (HPP, UNTUNG & HARGA JUAL) ──
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 14, offset: const Offset(0, 4)),
+                      ],
                     ),
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12, offset: const Offset(0, 4))],
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('HPP Terhitung', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w500)),
-                            const SizedBox(height: 4),
-                            Text('Rp ${_fmtPrice(_totalHpp)}',
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22)),
-                            const SizedBox(height: 4),
-                            Text('(tersimpan: Rp ${_fmtPrice(hppDb)})',
-                                style: const TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('HPP (Total Biaya Bahan)', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w500)),
+                                const SizedBox(height: 3),
+                                Text(
+                                  'Rp ${_fmtPrice(hpp)}',
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 24),
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF334155),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.menu_book_rounded, color: Color(0xFF94A3B8), size: 14),
+                                  const SizedBox(width: 5),
+                                  Text('${_recipeItems.length} bahan', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
-                      ),
-                      Column(
-                        children: [
-                          const Icon(Icons.calculate_outlined, color: Color(0xFF64748B), size: 28),
-                          const SizedBox(height: 4),
-                          Text('${_recipeItems.length} bahan', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10)),
+                        const SizedBox(height: 14),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Harga Jual Disarankan', style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Rp ${_fmtPrice(sellingPrice)}',
+                                    style: const TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 17),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  const Text('Keuntungan Bersih', style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '+Rp ${_fmtPrice(profit)} (+${marginPct.toStringAsFixed(1)}%)',
+                                    style: TextStyle(
+                                      color: profit >= 0 ? const Color(0xFF4ADE80) : const Color(0xFFF87171),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // ── 2. KALKULATOR TARGET KEUNTUNGAN & HARGA JUAL ──
+                  if (hpp > 0)
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2)),
                         ],
                       ),
-                    ],
-                  ),
-                ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFEF3C7),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.price_change_outlined, size: 16, color: Color(0xFFD97706)),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Target Keuntungan & Harga Jual',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
 
-                // ── Daftar Bahan di Resep ──
-                Expanded(
-                  child: _recipeItems.isEmpty
+                          // Mode Selector Chips (Persentase % vs Nominal Rp vs Custom)
+                          Row(
+                            children: [
+                              _buildModeChip('percent', 'Margin (%)'),
+                              const SizedBox(width: 6),
+                              _buildModeChip('nominal', 'Nominal (+Rp)'),
+                              const SizedBox(width: 6),
+                              _buildModeChip('manual', 'Ketik Harga'),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Input Section based on mode
+                          if (_marginMode == 'percent') ...[
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _percentCtrl,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
+                                    decoration: InputDecoration(
+                                      labelText: 'Margin Keuntungan',
+                                      suffixText: '%',
+                                      suffixStyle: const TextStyle(fontWeight: FontWeight.bold),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                      filled: true,
+                                      fillColor: const Color(0xFFF8FAFC),
+                                    ),
+                                    onChanged: (v) {
+                                      final val = double.tryParse(v.replaceAll(',', '.')) ?? 0;
+                                      setState(() => _marginPercent = val);
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            // Quick preset chips
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: [20.0, 30.0, 50.0, 75.0, 100.0].map((p) {
+                                final isSelected = _marginPercent == p;
+                                return InkWell(
+                                  onTap: () {
+                                    _percentCtrl.text = p.toInt().toString();
+                                    setState(() => _marginPercent = p);
+                                  },
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '+${p.toInt()}%',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: isSelected ? Colors.white : const Color(0xFF475569),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ] else if (_marginMode == 'nominal') ...[
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _nominalCtrl,
+                                    keyboardType: TextInputType.number,
+                                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                    decoration: InputDecoration(
+                                      labelText: 'Tambah Untung Nominal',
+                                      prefixText: 'Rp ',
+                                      prefixStyle: const TextStyle(fontWeight: FontWeight.bold),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                      filled: true,
+                                      fillColor: const Color(0xFFF8FAFC),
+                                    ),
+                                    onChanged: (v) {
+                                      final val = double.tryParse(v) ?? 0;
+                                      setState(() => _marginNominal = val);
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            // Quick preset nominal chips
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: [2000.0, 5000.0, 10000.0, 15000.0, 20000.0].map((n) {
+                                final isSelected = _marginNominal == n;
+                                return InkWell(
+                                  onTap: () {
+                                    _nominalCtrl.text = n.toInt().toString();
+                                    setState(() => _marginNominal = n);
+                                  },
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '+Rp ${_fmtPrice(n)}',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: isSelected ? Colors.white : const Color(0xFF475569),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ] else ...[
+                            TextField(
+                              controller: _customPriceCtrl,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              decoration: InputDecoration(
+                                labelText: 'Ketik Langsung Harga Jual',
+                                prefixText: 'Rp ',
+                                prefixStyle: const TextStyle(fontWeight: FontWeight.bold),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                filled: true,
+                                fillColor: const Color(0xFFF8FAFC),
+                              ),
+                              onChanged: (v) {
+                                final val = double.tryParse(v) ?? 0;
+                                setState(() {
+                                  _customSellingPrice = val;
+                                  _recalcPricing();
+                                });
+                              },
+                            ),
+                          ],
+
+                          const SizedBox(height: 12),
+                          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                          const SizedBox(height: 10),
+
+                          // Switch Auto Update Selling Price
+                          InkWell(
+                            onTap: () => setState(() => _autoUpdatePrice = !_autoUpdatePrice),
+                            borderRadius: BorderRadius.circular(10),
+                            child: Row(
+                              children: [
+                                Checkbox(
+                                  value: _autoUpdatePrice,
+                                  activeColor: const Color(0xFF0F172A),
+                                  onChanged: (v) => setState(() => _autoUpdatePrice = v ?? true),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Perbarui Harga Jual Menu Otomatis',
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
+                                      ),
+                                      Text(
+                                        'Harga di menu akan diset ke Rp ${_fmtPrice(sellingPrice)} (sebelumnya Rp ${_fmtPrice(currentMenuPrice)})',
+                                        style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  // ── 3. SECTION DAFTAR BAHAN BAKU ──
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Komposisi Bahan Baku',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                        ),
+                        TextButton.icon(
+                          onPressed: _addIngredient,
+                          icon: const Icon(Icons.add_circle_outline_rounded, size: 16, color: Color(0xFF2563EB)),
+                          label: const Text('Tambah Bahan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  _recipeItems.isEmpty
                       ? _buildEmptyRecipe()
                       : ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           itemCount: _recipeItems.length,
                           separatorBuilder: (_, __) => const SizedBox(height: 8),
@@ -280,8 +647,8 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
                             );
                           },
                         ),
-                ),
-              ],
+                ],
+              ),
             ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -315,8 +682,8 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
                 icon: _saving
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                     : const Icon(Icons.save_alt_rounded, size: 18, color: Colors.white),
-                label: Text(_saving ? 'Menyimpan...' : 'Simpan Resep',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                label: Text(_saving ? 'Menyimpan...' : 'Simpan Resep & Harga',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
               ),
             ),
           ],
@@ -325,18 +692,58 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
     );
   }
 
+  Widget _buildModeChip(String mode, String label) {
+    final isSelected = _marginMode == mode;
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _marginMode = mode;
+            _recalcPricing();
+          });
+        },
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: isSelected ? Colors.white : const Color(0xFF64748B),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildEmptyRecipe() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.menu_book_outlined, size: 52, color: Color(0xFFCBD5E1)),
-          const SizedBox(height: 12),
-          const Text('Resep Kosong', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A))),
-          const SizedBox(height: 6),
-          const Text('Tekan "+ Tambah Bahan" untuk memulai resep.',
-              style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 30),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.menu_book_outlined, size: 48, color: Color(0xFFCBD5E1)),
+            const SizedBox(height: 10),
+            const Text(
+              'Belum Ada Bahan di Resep',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Tekan tombol "+ Tambah Bahan" di bawah untuk memulai.',
+              style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -357,6 +764,8 @@ class _AddIngredientSheet extends StatefulWidget {
 
   @override
   State<_AddIngredientSheet> createState() => _AddIngredientSheetState();
+}
+
 class _AddIngredientSheetState extends State<_AddIngredientSheet> {
   Map<String, dynamic>? _selected;
   final TextEditingController _searchCtrl = TextEditingController();

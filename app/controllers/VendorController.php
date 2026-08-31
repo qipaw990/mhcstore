@@ -1929,9 +1929,17 @@ class VendorController extends Controller
         $hpp     = $rm->saveProductRecipe($productId, (array)$ingredients);
         $recipe  = $rm->getProductRecipe($productId);
 
-        $this->successResponse('Resep berhasil disimpan', [
+        $newPrice = isset($body['new_price']) ? (float)$body['new_price'] : null;
+        if ($newPrice !== null && $newPrice > 0) {
+            Database::query("UPDATE `products` SET `price` = ? WHERE `id` = ?", [$newPrice, $productId]);
+        }
+
+        $updatedProduct = Database::fetchOne("SELECT id, name, price, hpp FROM `products` WHERE `id` = ?", [$productId]);
+
+        $this->successResponse('Resep dan harga berhasil disimpan', [
             'product_id' => $productId,
             'total_hpp'  => $hpp,
+            'price'      => (float)($updatedProduct['price'] ?? 0),
             'recipe'     => $recipe,
         ]);
     }
