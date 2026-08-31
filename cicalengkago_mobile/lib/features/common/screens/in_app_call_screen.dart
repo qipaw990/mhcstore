@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:http/http.dart' as http;
@@ -114,25 +115,27 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     try {
       _audioPlayer = AudioPlayer(playerId: 'cicalengkago_call_ringtone');
       
-      // Set audio context to force loud speaker output on Android/iOS
-      await _audioPlayer!.setAudioContext(
-        AudioContext(
-          android: const AudioContextAndroid(
-            isSpeakerphoneOn: true,
-            stayAwake: true,
-            contentType: AndroidContentType.sonification,
-            usageType: AndroidUsageType.voiceCommunicationSignalling,
-            audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+      // Set audio context to force loud speaker output on Android/iOS (Native only)
+      if (!kIsWeb) {
+        await _audioPlayer!.setAudioContext(
+          AudioContext(
+            android: const AudioContextAndroid(
+              isSpeakerphoneOn: true,
+              stayAwake: true,
+              contentType: AndroidContentType.sonification,
+              usageType: AndroidUsageType.voiceCommunicationSignalling,
+              audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+            ),
+            iOS: AudioContextIOS(
+              category: AVAudioSessionCategory.playback,
+              options: const {
+                AVAudioSessionOptions.mixWithOthers,
+                AVAudioSessionOptions.defaultToSpeaker,
+              },
+            ),
           ),
-          iOS: AudioContextIOS(
-            category: AVAudioSessionCategory.playback,
-            options: const {
-              AVAudioSessionOptions.mixWithOthers,
-              AVAudioSessionOptions.defaultToSpeaker,
-            },
-          ),
-        ),
-      );
+        );
+      }
 
       await _audioPlayer!.setReleaseMode(ReleaseMode.loop);
       await _audioPlayer!.setVolume(1.0);
@@ -165,6 +168,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   }
 
   Future<bool> _requestMicrophonePermission() async {
+    if (kIsWeb) return true;
     try {
       var status = await Permission.microphone.status;
       if (!status.isGranted) {
@@ -365,6 +369,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   }
 
   void _setSpeakerphone(bool enable) {
+    if (kIsWeb) return;
     try {
       Helper.setSpeakerphoneOn(enable);
     } catch (e) {
