@@ -249,7 +249,7 @@ class CustomerController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> addToCart(int productId, int quantity, {String? notes}) async {
+  Future<bool> addToCart(int productId, int quantity, {String? notes, int? variationId, List<int>? addons}) async {
     _lastCartError = null;
     try {
       final Map<String, String> fields = {
@@ -259,6 +259,14 @@ class CustomerController extends ChangeNotifier {
       if (notes != null && notes.isNotEmpty) {
         fields['item_notes'] = notes;
         fields['notes'] = notes;
+      }
+      if (variationId != null && variationId > 0) {
+        fields['variation_id'] = variationId.toString();
+      }
+      if (addons != null && addons.isNotEmpty) {
+        for (int i = 0; i < addons.length; i++) {
+          fields['addons[$i]'] = addons[i].toString();
+        }
       }
 
       final res = await ApiService.postForm(ApiConstants.cartAdd, fields);

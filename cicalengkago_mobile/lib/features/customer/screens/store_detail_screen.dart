@@ -668,6 +668,21 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                                     ],
                                   ],
                                 ),
+                                if ((product['variations'] is List && (product['variations'] as List).isNotEmpty) ||
+                                    (product['addons'] is List && (product['addons'] as List).isNotEmpty)) ...[
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFEF2F2),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text(
+                                      'Ada Varian / Topping',
+                                      style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -676,6 +691,14 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                           // Add to Cart Button (disabled if store closed)
                           InkWell(
                             onTap: isOpen ? () async {
+                              final bool hasVars = (product['variations'] is List && (product['variations'] as List).isNotEmpty);
+                              final bool hasAds = (product['addons'] is List && (product['addons'] as List).isNotEmpty);
+
+                              if (hasVars || hasAds) {
+                                ProductDetailModal.show(context, product);
+                                return;
+                              }
+
                               final productId = int.tryParse(product['id']?.toString() ?? '0') ?? 0;
                               final ok = await customerCtrl.addToCart(productId, 1);
                               if (context.mounted) {
@@ -708,7 +731,11 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                                 ] : null,
                               ),
                               child: Text(
-                                isOpen ? 'Tambah' : 'Tutup',
+                                !isOpen
+                                    ? 'Tutup'
+                                    : ((product['variations'] is List && (product['variations'] as List).isNotEmpty)
+                                        ? 'Pilih'
+                                        : 'Tambah'),
                                 style: TextStyle(
                                   color: isOpen ? Colors.white : const Color(0xFF64748B),
                                   fontSize: 11.5,

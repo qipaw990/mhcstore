@@ -539,6 +539,20 @@ class _CartScreenState extends State<CartScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (item['variation_name'] != null && item['variation_name'].toString().isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    '• Variasi: ${item['variation_name']}',
+                    style: const TextStyle(fontSize: 10.5, color: AppTheme.primaryRed, fontWeight: FontWeight.bold),
+                  ),
+                ],
+                if (item['addons'] != null && item['addons'] is List && (item['addons'] as List).isNotEmpty) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    '• Topping: ${(item['addons'] as List).map((a) => a['name']).join(", ")}',
+                    style: const TextStyle(fontSize: 10.5, color: Color(0xFFD97706), fontWeight: FontWeight.w600),
+                  ),
+                ],
                 const SizedBox(height: 3),
                 Text(
                   '${CurrencyFormatter.formatRupiah(itemPrice)} / porsi',

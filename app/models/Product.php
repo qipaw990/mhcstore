@@ -60,9 +60,11 @@ class Product extends Model
                 WHERE p.store_id = ?
                 ORDER BY p.status DESC, p.stock DESC, c.priority ASC, p.id DESC";
         $products = Database::query($sql, [$storeId]);
+        $storeAddons = Database::query("SELECT * FROM `product_addons` WHERE `store_id` = ? AND `status` = 1 ORDER BY `price` ASC", [$storeId]);
         foreach ($products as &$p) {
             $p['final_price'] = $this->calculateFinalPrice($p);
-            $p['variations'] = Database::query("SELECT * FROM `product_variations` WHERE `product_id` = ?", [$p['id']]);
+            $p['variations'] = Database::query("SELECT * FROM `product_variations` WHERE `product_id` = ? ORDER BY `price` ASC", [$p['id']]);
+            $p['addons'] = $storeAddons;
         }
         unset($p);
         $this->attachStoreStatus($products);

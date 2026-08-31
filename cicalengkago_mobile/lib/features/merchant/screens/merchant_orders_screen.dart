@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
@@ -311,23 +312,73 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
                         final name = iMap['product_name'] ?? iMap['name'] ?? 'Menu';
                         final qty = iMap['quantity'] ?? iMap['qty'] ?? 1;
                         final itemPrice = double.tryParse(iMap['price']?.toString() ?? '0') ?? 0.0;
+
+                        // Variation extraction
+                        String? varName;
+                        if (iMap['variation_json'] != null) {
+                          try {
+                            final dynamic vData = (iMap['variation_json'] is String)
+                                ? jsonDecode(iMap['variation_json'])
+                                : iMap['variation_json'];
+                            if (vData is Map && vData['name'] != null) {
+                              varName = vData['name'].toString();
+                            }
+                          } catch (_) {}
+                        }
+
+                        // Addons extraction
+                        List<String> addonNames = [];
+                        if (iMap['addons_json'] != null) {
+                          try {
+                            final dynamic aData = (iMap['addons_json'] is String)
+                                ? jsonDecode(iMap['addons_json'])
+                                : iMap['addons_json'];
+                            if (aData is Map && aData['items'] is List) {
+                              for (final ad in aData['items']) {
+                                if (ad is Map && ad['name'] != null) {
+                                  addonNames.add(ad['name'].toString());
+                                }
+                              }
+                            }
+                          } catch (_) {}
+                        }
+
                         return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 2.5),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          padding: const EdgeInsets.symmetric(vertical: 3),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: Text(
-                                  '${qty}x $name',
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '${qty}x $name',
+                                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Text(
+                                    CurrencyFormatter.formatRupiah(itemPrice * qty),
+                                    style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                                  ),
+                                ],
+                              ),
+                              if (varName != null && varName.isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  '  • Variasi: $varName',
+                                  style: const TextStyle(fontSize: 10.5, color: AppTheme.primaryRed, fontWeight: FontWeight.bold),
                                 ),
-                              ),
-                              Text(
-                                CurrencyFormatter.formatRupiah(itemPrice * qty),
-                                style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                              ),
+                              ],
+                              if (addonNames.isNotEmpty) ...[
+                                const SizedBox(height: 1.5),
+                                Text(
+                                  '  • Topping: ${addonNames.join(", ")}',
+                                  style: const TextStyle(fontSize: 10.5, color: Color(0xFFD97706), fontWeight: FontWeight.w600),
+                                ),
+                              ],
                             ],
                           ),
                         );

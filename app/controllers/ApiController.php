@@ -287,9 +287,11 @@ class ApiController extends Controller
             return;
         }
         $products = (new Product())->getByStore($id);
+        $addons   = \App\Core\Database::query("SELECT * FROM `product_addons` WHERE `store_id` = ? AND `status` = 1 ORDER BY `price` ASC", [$id]);
         $this->successResponse('Detail toko berhasil diambil', [
             'store'    => $store,
-            'products' => $products
+            'products' => $products,
+            'addons'   => $addons,
         ]);
     }
 

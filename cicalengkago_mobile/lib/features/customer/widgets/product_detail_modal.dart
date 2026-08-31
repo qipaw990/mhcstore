@@ -41,6 +41,15 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
   String? _storeNameOverride;
   bool _isAdding = false;
 
+  // Variations and Addons / Toppings State
+  List<dynamic> _variations = [];
+  List<dynamic> _addons = [];
+  int? _selectedVariationId;
+  double? _selectedVariationPrice;
+  String? _selectedVariationName;
+  final Set<int> _selectedAddonIds = {};
+  final Map<int, Map<String, dynamic>> _selectedAddonsMap = {};
+
   @override
   void initState() {
     super.initState();
@@ -48,6 +57,22 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
     final initialCount = int.tryParse(widget.product['reviews_count']?.toString() ?? '0') ?? 0;
     _avgRating = initialRating;
     _reviewsCount = initialCount;
+
+    // Load initial variations from widget
+    final rawVars = widget.product['variations'];
+    if (rawVars is List && rawVars.isNotEmpty) {
+      _variations = rawVars;
+      final firstVar = _variations.first;
+      _selectedVariationId = int.tryParse(firstVar['id']?.toString() ?? '');
+      _selectedVariationPrice = double.tryParse(firstVar['price']?.toString() ?? '');
+      _selectedVariationName = firstVar['name']?.toString();
+    }
+
+    // Load initial addons from widget
+    final rawAddons = widget.product['addons'];
+    if (rawAddons is List && rawAddons.isNotEmpty) {
+      _addons = rawAddons;
+    }
 
     final pid = int.tryParse(widget.product['id']?.toString() ?? widget.product['product_id']?.toString() ?? '0') ?? 0;
     if (pid > 0) {
@@ -79,6 +104,23 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
           if (data['store_name'] != null && data['store_name'].toString().isNotEmpty) {
             _storeNameOverride = data['store_name'].toString();
           }
+
+          // Update variations if provided by detail endpoint
+          if (data['variations'] is List && (data['variations'] as List).isNotEmpty) {
+            _variations = data['variations'];
+            if (_selectedVariationId == null) {
+              final firstVar = _variations.first;
+              _selectedVariationId = int.tryParse(firstVar['id']?.toString() ?? '');
+              _selectedVariationPrice = double.tryParse(firstVar['price']?.toString() ?? '');
+              _selectedVariationName = firstVar['name']?.toString();
+            }
+          }
+
+          // Update addons if provided by detail endpoint
+          if (data['addons'] is List && (data['addons'] as List).isNotEmpty) {
+            _addons = data['addons'];
+          }
+
           _isLoadingReviews = false;
         });
         return;
@@ -174,7 +216,13 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
         ? product['description'].toString()
         : 'Olahan kuliner lezat khas Cicalengka yang disiapkan dengan bahan-bahan segar berkualitas dan cita rasa istimewa.';
     final imgUrl = _getFoodImage(product);
-    final totalPrice = finalPrice * _quantity;
+    final double effectiveItemBasePrice = (_selectedVariationPrice != null && _selectedVariationPrice! > 0) ? _selectedVariationPrice! : finalPrice;
+    double addonsSubtotal = 0;
+    for (final ad in _selectedAddonsMap.values) {
+      addonsSubtotal += (double.tryParse(ad['price']?.toString() ?? '0') ?? 0);
+    }
+    final double singleUnitPrice = effectiveItemBasePrice + addonsSubtotal;
+    final double totalPrice = singleUnitPrice * _quantity;
 
     final rawStoreOpen = _storeIsOpenOverride ?? product['store_is_open'] ?? product['is_open'] ?? product['is_currently_open'];
     final bool isStoreClosed = (rawStoreOpen != null && (rawStoreOpen == 0 || rawStoreOpen == false || rawStoreOpen == '0' || rawStoreOpen == 'false'));
@@ -508,14 +556,14 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                             textBaseline: TextBaseline.alphabetic,
                             children: [
                               Text(
-                                CurrencyFormatter.formatRupiah(finalPrice),
+                                CurrencyFormatter.formatRupiah(singleUnitPrice),
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w900,
                                   color: AppTheme.primaryRed,
                                 ),
                               ),
-                              if (hasDiscount) ...[
+                              if (hasDiscount && _selectedVariationPrice == null) ...[
                                 const SizedBox(width: 8),
                                 Text(
                                   CurrencyFormatter.formatRupiah(price),
@@ -527,8 +575,28 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                   ),
                                 ),
                               ],
+                              if (_selectedVariationName != null) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFEF2F2),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    _selectedVariationName!,
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
+
+                          // Section Variasi Pilihan (Ukuran / Level / Porsi)
+                          _buildVariationsSection(finalPrice),
+
+                          // Section Topping & Tambahan Lezat
+                          _buildAddonsSection(),
 
                           const SizedBox(height: 16),
                           const Divider(color: Color(0xFFF1F5F9), thickness: 1.2),
@@ -949,6 +1017,8 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                         productId,
                                         _quantity,
                                         notes: _notesController.text.trim(),
+                                        variationId: _selectedVariationId,
+                                        addons: _selectedAddonIds.toList(),
                                       );
                                       if (mounted) {
                                         setState(() => _isAdding = false);
@@ -1035,6 +1105,250 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildVariationsSection(double baseFinalPrice) {
+    if (_variations.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 14),
+        const Divider(color: Color(0xFFF1F5F9), thickness: 1.2),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.tune_rounded, size: 15, color: AppTheme.primaryRed),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Pilihan Variasi Menu',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                ),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF2F2),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text(
+                'Pilih 1 (Wajib)',
+                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Column(
+          children: _variations.map((v) {
+            final vId = int.tryParse(v['id']?.toString() ?? '0') ?? 0;
+            final vName = (v['name'] ?? 'Variasi').toString();
+            final vPrice = double.tryParse(v['price']?.toString() ?? '0') ?? 0.0;
+            final isSelected = (_selectedVariationId == vId);
+
+            return InkWell(
+              onTap: () {
+                setState(() {
+                  _selectedVariationId = vId;
+                  _selectedVariationPrice = vPrice;
+                  _selectedVariationName = vName;
+                });
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFFFEF2F2) : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected ? AppTheme.primaryRed : const Color(0xFFE2E8F0),
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isSelected ? AppTheme.primaryRed : Colors.transparent,
+                        border: Border.all(
+                          color: isSelected ? AppTheme.primaryRed : const Color(0xFFCBD5E1),
+                          width: 2,
+                        ),
+                      ),
+                      child: isSelected
+                          ? const Center(
+                              child: Icon(Icons.check, size: 13, color: Colors.white),
+                            )
+                          : null,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        vName,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                          color: isSelected ? AppTheme.primaryRed : const Color(0xFF1E293B),
+                        ),
+                      ),
+                    ),
+                    Text(
+                      CurrencyFormatter.formatRupiah(vPrice > 0 ? vPrice : baseFinalPrice),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected ? AppTheme.primaryRed : const Color(0xFF475569),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAddonsSection() {
+    if (_addons.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 14),
+        const Divider(color: Color(0xFFF1F5F9), thickness: 1.2),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.add_circle_outline_rounded, size: 15, color: Color(0xFFD97706)),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Topping & Tambahan Lezat',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                ),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text(
+                'Opsional (Bisa Pilih Banyak)',
+                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Column(
+          children: _addons.map((ad) {
+            final aId = int.tryParse(ad['id']?.toString() ?? '0') ?? 0;
+            final aName = (ad['name'] ?? 'Topping').toString();
+            final aPrice = double.tryParse(ad['price']?.toString() ?? '0') ?? 0.0;
+            final isSelected = _selectedAddonIds.contains(aId);
+
+            return InkWell(
+              onTap: () {
+                setState(() {
+                  if (isSelected) {
+                    _selectedAddonIds.remove(aId);
+                    _selectedAddonsMap.remove(aId);
+                  } else {
+                    _selectedAddonIds.add(aId);
+                    _selectedAddonsMap[aId] = {
+                      'id': aId,
+                      'name': aName,
+                      'price': aPrice,
+                    };
+                  }
+                });
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFFFFFBEB) : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected ? const Color(0xFFF59E0B) : const Color(0xFFE2E8F0),
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                        color: isSelected ? const Color(0xFFF59E0B) : Colors.transparent,
+                        border: Border.all(
+                          color: isSelected ? const Color(0xFFF59E0B) : const Color(0xFFCBD5E1),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: isSelected
+                          ? const Center(
+                              child: Icon(Icons.check, size: 14, color: Colors.white),
+                            )
+                          : null,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        aName,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                          color: isSelected ? const Color(0xFF92400E) : const Color(0xFF1E293B),
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '+${CurrencyFormatter.formatRupiah(aPrice)}',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected ? const Color(0xFFB45309) : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 }

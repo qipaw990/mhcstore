@@ -371,10 +371,51 @@ class VendorController extends Controller
             $id = $this->productModel->create($productData);
         }
 
+        // Handle Variations (Ukuran / Level / Porsi)
+        $variationsData = $data['variations'] ?? ($data['variations_json'] ?? null);
+        if (is_string($variationsData)) {
+            $variationsData = json_decode($variationsData, true);
+        }
+        if (is_array($variationsData)) {
+            \App\Core\Database::query("DELETE FROM `product_variations` WHERE `product_id` = ?", [$id]);
+            foreach ($variationsData as $var) {
+                $vName = trim($var['name'] ?? '');
+                if (!empty($vName)) {
+                    $vPrice = (float)($var['price'] ?? 0);
+                    $vStock = (int)($var['stock'] ?? 100);
+                    \App\Core\Database::query(
+                        "INSERT INTO `product_variations` (`product_id`, `name`, `price`, `stock`) VALUES (?, ?, ?, ?)",
+                        [$id, $vName, $vPrice, $vStock]
+                    );
+                }
+            }
+        }
+
+        // Handle Addons (Toppings)
+        $addonsData = $data['addons'] ?? ($data['addons_json'] ?? null);
+        if (is_string($addonsData)) {
+            $addonsData = json_decode($addonsData, true);
+        }
+        if (is_array($addonsData)) {
+            foreach ($addonsData as $addon) {
+                $aName = trim($addon['name'] ?? '');
+                if (!empty($aName)) {
+                    $aPrice = (float)($addon['price'] ?? 0);
+                    $exist = \App\Core\Database::fetchOne("SELECT id FROM `product_addons` WHERE `store_id` = ? AND `name` = ? LIMIT 1", [$store['id'], $aName]);
+                    if (!$exist) {
+                        \App\Core\Database::query(
+                            "INSERT INTO `product_addons` (`store_id`, `name`, `price`, `status`) VALUES (?, ?, ?, 1)",
+                            [$store['id'], $aName, $aPrice]
+                        );
+                    }
+                }
+            }
+        }
+
         if ($this->isJsonRequest()) {
             $this->successResponse('Menu produk berhasil disimpan!', [
                 'product_id' => $id,
-                'product'    => $this->productModel->find($id)
+                'product'    => $this->productModel->findWithDetails($id)
             ]);
             return;
         }

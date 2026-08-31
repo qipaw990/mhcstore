@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -516,6 +517,9 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
   File? _selectedImage;
   bool _isSaving = false;
 
+  List<Map<String, dynamic>> _variations = [];
+  List<Map<String, dynamic>> _addons = [];
+
   bool get _isEdit => widget.product != null;
 
   @override
@@ -539,6 +543,15 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
 
     _descCtrl = TextEditingController(text: p['description']?.toString() ?? '');
     _unitCtrl = TextEditingController(text: p['unit']?.toString() ?? 'porsi');
+
+    final rawVars = p['variations'];
+    if (rawVars is List) {
+      _variations = List<Map<String, dynamic>>.from(rawVars.map((v) => Map<String, dynamic>.from(v)));
+    }
+    final rawAddons = p['addons'];
+    if (rawAddons is List) {
+      _addons = List<Map<String, dynamic>>.from(rawAddons.map((a) => Map<String, dynamic>.from(a)));
+    }
   }
 
   @override
@@ -782,6 +795,200 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
                     maxLines: 2,
                     decoration: _inputDecoration('Jelaskan rasa, lauk pelengkap, atau level pedas...'),
                   ),
+                  const SizedBox(height: 16),
+
+                  // Section: Variasi Menu (Ukuran / Level / Porsi)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFCA5A5)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.tune_rounded, size: 16, color: AppTheme.primaryRed),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Variasi Menu (Ukuran / Level)',
+                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF991B1B)),
+                                ),
+                              ],
+                            ),
+                            InkWell(
+                              onTap: _addVariationDialog,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryRed,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.add, size: 13, color: Colors.white),
+                                    SizedBox(width: 2),
+                                    Text('Tambah', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_variations.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Column(
+                            children: _variations.asMap().entries.map((entry) {
+                              final idx = entry.key;
+                              final v = entry.value;
+                              final vName = v['name']?.toString() ?? 'Variasi';
+                              final vPrice = double.tryParse(v['price']?.toString() ?? '0') ?? 0.0;
+
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 6),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: const Color(0xFFFECACA)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        vName,
+                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                                      ),
+                                    ),
+                                    Text(
+                                      CurrencyFormatter.formatRupiah(vPrice),
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    InkWell(
+                                      onTap: () {
+                                        setState(() => _variations.removeAt(idx));
+                                      },
+                                      child: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEF4444)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ] else ...[
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Contoh: Regular (Rp 15.000), Large (Rp 20.000), Level 3 Pedas',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF7F1D1D)),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Section: Topping & Tambahan Lezat (Addons)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFBEB),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFDE68A)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.add_circle_outline_rounded, size: 16, color: Color(0xFFD97706)),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Topping & Tambahan (Addons)',
+                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
+                                ),
+                              ],
+                            ),
+                            InkWell(
+                              onTap: _addAddonDialog,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFD97706),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.add, size: 13, color: Colors.white),
+                                    SizedBox(width: 2),
+                                    Text('Tambah', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_addons.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Column(
+                            children: _addons.asMap().entries.map((entry) {
+                              final idx = entry.key;
+                              final a = entry.value;
+                              final aName = a['name']?.toString() ?? 'Topping';
+                              final aPrice = double.tryParse(a['price']?.toString() ?? '0') ?? 0.0;
+
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 6),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: const Color(0xFFFEF3C7)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        aName,
+                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                                      ),
+                                    ),
+                                    Text(
+                                      '+${CurrencyFormatter.formatRupiah(aPrice)}',
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    InkWell(
+                                      onTap: () {
+                                        setState(() => _addons.removeAt(idx));
+                                      },
+                                      child: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEF4444)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ] else ...[
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Contoh: Popping Boba (+Rp 3.000), Keju Mozarella (+Rp 5.000)',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF92400E)),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -805,6 +1012,12 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
                         'unit': _unitCtrl.text.trim().isEmpty ? 'porsi' : _unitCtrl.text.trim(),
                         'description': _descCtrl.text.trim(),
                       };
+                      if (_variations.isNotEmpty) {
+                        payload['variations_json'] = jsonEncode(_variations);
+                      }
+                      if (_addons.isNotEmpty) {
+                        payload['addons_json'] = jsonEncode(_addons);
+                      }
                       if (_isEdit) {
                         payload['id'] = widget.product!['id'].toString();
                         if (widget.product!['image'] != null && widget.product!['image'].toString().isNotEmpty) {
@@ -874,6 +1087,142 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
           '+${percent.toInt()}%',
           style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8)),
         ),
+      ),
+    );
+  }
+
+  void _addVariationDialog() {
+    final nameCtrl = TextEditingController();
+    final priceCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Tambah Variasi Menu', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Nama Variasi (Ukuran / Level / Porsi):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(
+                hintText: 'Contoh: Ukuran Jumbo / Level 3 Pedas',
+                isDense: true,
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text('Harga Jual Variasi (Rp):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            TextField(
+              controller: priceCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                hintText: 'Contoh: 24000',
+                isDense: true,
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryRed,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              final vName = nameCtrl.text.trim();
+              final vPrice = double.tryParse(priceCtrl.text.trim()) ?? 0.0;
+              if (vName.isNotEmpty) {
+                setState(() {
+                  _variations.add({
+                    'name': vName,
+                    'price': vPrice > 0 ? vPrice : (double.tryParse(_priceCtrl.text.trim()) ?? 0.0),
+                    'stock': 100,
+                  });
+                });
+                Navigator.pop(ctx);
+              }
+            },
+            child: const Text('Simpan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _addAddonDialog() {
+    final nameCtrl = TextEditingController();
+    final priceCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Tambah Topping / Addon', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Nama Topping / Tambahan:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(
+                hintText: 'Contoh: Popping Boba / Keju Mozarella',
+                isDense: true,
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text('Harga Tambahan (Rp):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            TextField(
+              controller: priceCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                hintText: 'Contoh: 3000',
+                isDense: true,
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD97706),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              final aName = nameCtrl.text.trim();
+              final aPrice = double.tryParse(priceCtrl.text.trim()) ?? 0.0;
+              if (aName.isNotEmpty) {
+                setState(() {
+                  _addons.add({
+                    'name': aName,
+                    'price': aPrice,
+                    'status': 1,
+                  });
+                });
+                Navigator.pop(ctx);
+              }
+            },
+            child: const Text('Simpan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }
