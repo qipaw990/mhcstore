@@ -6,9 +6,9 @@
  */
 
 $host   = $argv[1] ?? getenv('DB_HOST') ?: '127.0.0.1';
-$user   = $argv[2] ?? getenv('DB_USERNAME') ?: 'root';
-$pass   = $argv[3] ?? getenv('DB_PASSWORD') ?: '';
-$dbname = $argv[4] ?? getenv('DB_DATABASE') ?: 'cicalengkago_db';
+$user   = $argv[2] ?? getenv('DB_USERNAME') ?: getenv('DB_USER') ?: 'root';
+$pass   = $argv[3] ?? getenv('DB_PASSWORD') ?: getenv('DB_PASS') ?: '';
+$dbname = $argv[4] ?? getenv('DB_DATABASE') ?: getenv('DB_NAME') ?: 'cicalengkago_db';
 $port   = $argv[5] ?? getenv('DB_PORT') ?: '3306';
 
 echo "---------------------------------------------------------\n";
