@@ -165,7 +165,7 @@ class _RawMaterialsScreenState extends State<RawMaterialsScreen> {
                               child: ListView.separated(
                                 padding: const EdgeInsets.all(16),
                                 itemCount: filtered.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                                separatorBuilder: (_, _) => const SizedBox(height: 10),
                                 itemBuilder: (ctx, i) {
                                   final m = filtered[i] as Map;
                                   final id = int.tryParse(m['id']?.toString() ?? '0') ?? 0;
@@ -181,58 +181,86 @@ class _RawMaterialsScreenState extends State<RawMaterialsScreen> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: const Color(0xFFE2E8F0)),
-                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2))],
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2)),
+                          ],
                         ),
                         child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Icon
                             Container(
-                              width: 44,
-                              height: 44,
+                              width: 42,
+                              height: 42,
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF1F5F9),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(Icons.science_outlined, color: Color(0xFF64748B), size: 22),
+                              child: const Icon(Icons.science_outlined, color: Color(0xFF64748B), size: 20),
                             ),
                             const SizedBox(width: 12),
-                            // Info
+                            // Info & Badges
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A))),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          name,
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      // Actions
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          InkWell(
+                                            onTap: () => _showFormDialog(existing: Map<String, dynamic>.from(m)),
+                                            borderRadius: BorderRadius.circular(6),
+                                            child: const Padding(
+                                              padding: EdgeInsets.all(4),
+                                              child: Icon(Icons.edit_outlined, size: 17, color: Color(0xFF2563EB)),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          InkWell(
+                                            onTap: () => _confirmDelete(context, id, name),
+                                            borderRadius: BorderRadius.circular(6),
+                                            child: const Padding(
+                                              padding: EdgeInsets.all(4),
+                                              child: Icon(Icons.delete_outline_rounded, size: 17, color: Color(0xFFDC2626)),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                   if (desc.isNotEmpty) ...[
                                     const SizedBox(height: 2),
-                                    Text(desc, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    Text(
+                                      desc,
+                                      style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ],
-                                  const SizedBox(height: 6),
-                                  Row(
+                                  const SizedBox(height: 8),
+                                  Wrap(
+                                    spacing: 6,
+                                    runSpacing: 4,
                                     children: [
                                       _pill('Rp ${_fmtPrice(price)}/$unit', const Color(0xFF2563EB), const Color(0xFFEFF6FF)),
-                                      const SizedBox(width: 6),
                                       _pill('Stok: ${_fmtQty(stock)} $unit', const Color(0xFF16A34A), const Color(0xFFF0FDF4)),
                                     ],
                                   ),
                                 ],
                               ),
-                            ),
-                            // Actions
-                            Column(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF0F172A)),
-                                  onPressed: () => _showFormDialog(existing: Map<String, dynamic>.from(m)),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFDC2626)),
-                                  onPressed: () => _confirmDelete(context, id, name),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                ),
-                              ],
                             ),
                           ],
                         ),
@@ -426,7 +454,7 @@ class _RawMaterialFormSheetState extends State<_RawMaterialFormSheet> {
               // Satuan
               _label('Satuan *'),
               DropdownButtonFormField<String>(
-                value: _selectedUnit,
+                initialValue: _selectedUnit,
                 decoration: _inputDec(''),
                 items: _kUnits.map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
                 onChanged: (v) => setState(() => _selectedUnit = v!),

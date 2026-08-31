@@ -100,90 +100,112 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
           color: Colors.white,
           child: Column(
             children: [
+              // Row 1: Title & Tambah Menu Button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        'Katalog Menu',
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF0F172A)),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '${allProducts.length}',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => _showProductFormModal(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryRed,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    icon: const Icon(Icons.add_rounded, size: 15),
+                    label: const Text('Tambah Menu', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Row 2: Quick Action Chips (Stok Masuk & Kelola Bahan Baku)
               Row(
                 children: [
+                  // Scan Stok Masuk
                   Expanded(
-                    child: Text(
-                      'Katalog Menu (${allProducts.length})',
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Color(0xFF0F172A)),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    child: InkWell(
+                      onTap: () async {
+                        final ok = await StockInputModal.scanAndOpen(context);
+                        if (ok == true && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Stok berhasil diperbarui!'),
+                              backgroundColor: Color(0xFF059669),
+                            ),
+                          );
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFBBF7D0)),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.qr_code_scanner_rounded, size: 14, color: Color(0xFF16A34A)),
+                            SizedBox(width: 5),
+                            Text('Scan Stok Masuk', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Scan Stok Masuk Button
-                      GestureDetector(
-                        onTap: () async {
-                          final ok = await StockInputModal.scanAndOpen(context);
-                          if (ok == true && context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Stok berhasil diperbarui!'),
-                                backgroundColor: Color(0xFF059669),
-                              ),
-                            );
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7.5),
-                          margin: const EdgeInsets.only(right: 6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF059669),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.qr_code_scanner_rounded, size: 14, color: Colors.white),
-                              SizedBox(width: 4),
-                              Text('Stok Masuk', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
-                            ],
-                          ),
+                  // Kelola Bahan Baku & HPP
+                  Expanded(
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const RawMaterialsScreen()),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFFBEB),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFFDE68A)),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.science_outlined, size: 14, color: Color(0xFFD97706)),
+                            SizedBox(width: 5),
+                            Text('Bahan Baku & HPP', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFD97706))),
+                          ],
                         ),
                       ),
-                      // Tombol Kelola Bahan Baku
-                      InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const RawMaterialsScreen()),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7.5),
-                          margin: const EdgeInsets.only(right: 6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFD97706),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.science_outlined, size: 14, color: Colors.white),
-                              SizedBox(width: 4),
-                              Text('Bahan Baku', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
-                            ],
-                          ),
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () => _showProductFormModal(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryRed,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7.5),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          elevation: 0,
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        icon: const Icon(Icons.add_rounded, size: 14),
-                        label: const Text('Tambah', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
@@ -353,26 +375,23 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       child: Text(
                         name,
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF0F172A)),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 6),
                     // Action Buttons (Resep / Edit / Delete)
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          icon: const Icon(Icons.science_outlined, size: 18, color: Color(0xFFD97706)),
-                          tooltip: 'Resep & HPP',
-                          onPressed: () {
+                        InkWell(
+                          onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -380,22 +399,29 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                               ),
                             );
                           },
+                          borderRadius: BorderRadius.circular(6),
+                          child: const Padding(
+                            padding: EdgeInsets.all(4),
+                            child: Icon(Icons.science_outlined, size: 17, color: Color(0xFFD97706)),
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF2563EB)),
-                          tooltip: 'Edit Menu',
-                          onPressed: () => _showProductFormModal(context, product: product),
+                        const SizedBox(width: 2),
+                        InkWell(
+                          onTap: () => _showProductFormModal(context, product: product),
+                          borderRadius: BorderRadius.circular(6),
+                          child: const Padding(
+                            padding: EdgeInsets.all(4),
+                            child: Icon(Icons.edit_outlined, size: 17, color: Color(0xFF2563EB)),
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFDC2626)),
-                          tooltip: 'Hapus Menu',
-                          onPressed: () => _confirmDelete(context, productId, name),
+                        const SizedBox(width: 2),
+                        InkWell(
+                          onTap: () => _confirmDelete(context, productId, name),
+                          borderRadius: BorderRadius.circular(6),
+                          child: const Padding(
+                            padding: EdgeInsets.all(4),
+                            child: Icon(Icons.delete_outline_rounded, size: 17, color: Color(0xFFDC2626)),
+                          ),
                         ),
                       ],
                     ),
@@ -436,31 +462,42 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                     ],
                   ),
                 ],
-                // HPP + Profit Row
+                // HPP + Profit Row (Tappable to Recipe)
                 if (hpp > 0) ...[
                   const SizedBox(height: 5),
-                  Wrap(
-                    spacing: 5,
-                    runSpacing: 4,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(6)),
-                        child: Text(
-                          'HPP ${CurrencyFormatter.formatRupiah(hpp)}',
-                          style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ProductRecipeScreen(product: product),
                         ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(6)),
-                        child: Text(
-                          '+${CurrencyFormatter.formatRupiah(profit)} (${markupPct.toStringAsFixed(0)}%)',
-                          style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF065F46)),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(6),
+                    child: Wrap(
+                      spacing: 5,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(6)),
+                          child: Text(
+                            'HPP ${CurrencyFormatter.formatRupiah(hpp)}',
+                            style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
+                          ),
                         ),
-                      ),
-                    ],
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(6)),
+                          child: Text(
+                            '+${CurrencyFormatter.formatRupiah(profit)} (${markupPct.toStringAsFixed(0)}%)',
+                            style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF065F46)),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
                 const SizedBox(height: 6),
