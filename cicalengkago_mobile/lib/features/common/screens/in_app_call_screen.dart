@@ -63,8 +63,9 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   MediaStream? _localStream;
   final Set<String> _sentCandidateKeys = {};
   final Set<String> _addedCandidateKeys = {};
-  int _consecutiveNullPolls = 0;
+  final List<RTCIceCandidate> _pendingLocalCandidates = [];
   dynamic _pendingOffer;
+  int _consecutiveNullPolls = 0;
 
   @override
   void initState() {
@@ -256,6 +257,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
           final data = jsonDecode(res.body);
           if (data['success'] == true && data['data'] != null) {
             _callId = int.tryParse(data['data']['call_id']?.toString() ?? '');
+            _flushPendingIceCandidates();
             debugPrint('✅ [InAppCallScreen] Call initiated successfully! (Call ID: $_callId, receiverId: ${data['data']['receiver_id']})');
             if (data['data']['partner_name'] != null && mounted) {
               setState(() {
@@ -381,11 +383,18 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   }
 
   void _sendLocalIceCandidate(RTCIceCandidate candidate) async {
+    if (_callId == null) {
+      debugPrint('⏳ [WebRTC] Buffering local candidate until call_id is established...');
+      _pendingLocalCandidates.add(candidate);
+      return;
+    }
+
     final candKey = '${candidate.candidate}_${candidate.sdpMid}_${candidate.sdpMLineIndex}';
     if (_sentCandidateKeys.contains(candKey)) return;
     _sentCandidateKeys.add(candKey);
 
     try {
+      debugPrint('📤 [WebRTC] Posting local ICE candidate to server for call ID $_callId...');
       await http.post(
         Uri.parse('${ApiConstants.baseUrl}/calls/ice-candidate'),
         headers: {'Content-Type': 'application/json'},
@@ -401,6 +410,16 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         }),
       );
     } catch (_) {}
+  }
+
+  void _flushPendingIceCandidates() {
+    if (_callId == null || _pendingLocalCandidates.isEmpty) return;
+    debugPrint('🚀 [WebRTC] Flushing ${_pendingLocalCandidates.length} buffered local ICE candidates...');
+    final list = List<RTCIceCandidate>.from(_pendingLocalCandidates);
+    _pendingLocalCandidates.clear();
+    for (var c in list) {
+      _sendLocalIceCandidate(c);
+    }
   }
 
   void _setSpeakerphone(bool enable) {
@@ -428,8 +447,12 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         if (res.statusCode == 200) {
           final data = jsonDecode(res.body);
           if (data['success'] == true && data['data'] != null && data['data']['active_call'] != null) {
-            _consecutiveNullPolls = 0;
             final call = data['data']['active_call'] as Map<String, dynamic>;
+            _consecutiveNullPolls = 0;
+            if (_callId == null && call['id'] != null) {
+              _callId = int.tryParse(call['id']?.toString() ?? '');
+              _flushPendingIceCandidates();
+            }
             final status = call['status'];
             _callId = int.tryParse(call['id']?.toString() ?? '');
 
