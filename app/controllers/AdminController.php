@@ -1060,13 +1060,20 @@ class AdminController extends Controller
                     @mkdir($targetDir, 0777, true);
                     @chmod($targetDir, 0777);
                 }
-                $ext = 'jpg';
-                if (str_contains($parts[0], 'png')) $ext = 'png';
-                elseif (str_contains($parts[0], 'webp')) $ext = 'webp';
-                $filename = uniqid('img_', true) . '.' . $ext;
-                if (@file_put_contents($targetDir . '/' . $filename, $decoded) !== false) {
-                    @chmod($targetDir . '/' . $filename, 0664);
-                    $imagePath = 'uploads/banners/' . $filename;
+                $outputExt = function_exists('imagewebp') ? 'webp' : 'jpg';
+                $filename = uniqid('img_', true) . '.' . $outputExt;
+                $destination = $targetDir . '/' . $filename;
+                $tmpPath = sys_get_temp_dir() . '/' . uniqid('tmp_b64_', true);
+                if (@file_put_contents($tmpPath, $decoded) !== false) {
+                    if (compress_and_resize_image($tmpPath, $destination, 1200, 1200, 80)) {
+                        @chmod($destination, 0664);
+                        $imagePath = 'uploads/banners/' . $filename;
+                    } else {
+                        @file_put_contents($destination, $decoded);
+                        @chmod($destination, 0664);
+                        $imagePath = 'uploads/banners/' . $filename;
+                    }
+                    @unlink($tmpPath);
                 }
             }
         }
