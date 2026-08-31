@@ -389,6 +389,8 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
     final deliveryType = order['delivery_type']?.toString().toLowerCase() ?? 'driver';
     final distanceKm = double.tryParse(order['distance_km']?.toString() ?? '1.5') ?? 1.5;
     final isCloseProximity = distanceKm <= 0.30; // Radius < 300m
+    final customerName = order['customer_name'] ?? order['customer']?['name'] ?? 'Pelanggan';
+    final customerAvatar = order['customer_avatar'] ?? order['customer']?['avatar'] ?? '';
 
     // Chat helper button
     Widget buildChatButton({bool fullWidth = false}) {
@@ -423,6 +425,8 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
             orderCode: orderCode,
             isIncoming: false,
             callerRole: 'vendor',
+            initialPartnerName: customerName.toString(),
+            initialPartnerAvatar: customerAvatar?.toString(),
           );
         },
         style: OutlinedButton.styleFrom(

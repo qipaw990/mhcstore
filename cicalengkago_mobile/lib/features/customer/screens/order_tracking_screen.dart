@@ -1778,123 +1778,135 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF16A34A),
-                                  shape: BoxShape.circle,
+                          Builder(builder: (context) {
+                            final firstStore = (batchStores.isNotEmpty && batchStores[0] is Map) ? batchStores[0] : null;
+                            final sName = (firstStore?['name'] ?? firstStore?['store_name'] ?? order?['store_name'] ?? 'Mitra Toko Cicalengka').toString();
+                            final sLogoRaw = (firstStore?['logo'] ?? firstStore?['store_logo'] ?? order?['store_logo'] ?? order?['store_cover'] ?? '').toString();
+                            final sLogoFormatted = sLogoRaw.isNotEmpty ? ApiConstants.formatImageUrl(sLogoRaw) : '';
+
+                            return Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFDCFCE7),
+                                    shape: BoxShape.circle,
+                                    image: sLogoFormatted.isNotEmpty
+                                        ? DecorationImage(image: CachedNetworkImageProvider(sLogoFormatted), fit: BoxFit.cover)
+                                        : null,
+                                  ),
+                                  child: sLogoFormatted.isEmpty ? const Icon(Icons.storefront_rounded, color: Color(0xFF16A34A), size: 20) : null,
                                 ),
-                                child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 20),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        sName,
+                                        style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFDCFCE7),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: const Text(
+                                              'Diantar Merchant',
+                                              style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          const Expanded(
+                                            child: Text(
+                                              'Pengantaran Mandiri',
+                                              style: TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Stack(
                                   children: [
-                                    Text(
-                                      (batchStores.isNotEmpty && batchStores[0] is Map ? (batchStores[0]['name'] ?? batchStores[0]['store_name']) : null) ?? 'Mitra Toko Cicalengka',
-                                      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                    Material(
+                                      color: const Color(0xFFF0FDF4),
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(12),
+                                        onTap: () {
+                                          final authCtrl = context.read<AuthController>();
+                                          final uid = int.tryParse(authCtrl.user?['id']?.toString() ?? '0') ?? 0;
+                                          InAppChatModal.show(
+                                            context,
+                                            orderCode: widget.orderCode,
+                                            currentUserId: uid,
+                                            currentUserRole: 'customer',
+                                          );
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFDCFCE7),
-                                            borderRadius: BorderRadius.circular(6),
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(color: const Color(0xFFBBF7D0)),
                                           ),
-                                          child: const Text(
-                                            'Diantar Merchant',
-                                            style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
-                                          ),
+                                          child: const Icon(Icons.chat_bubble_rounded, color: Color(0xFF16A34A), size: 18),
                                         ),
-                                        const SizedBox(width: 6),
-                                        const Expanded(
-                                          child: Text(
-                                            'Pengantaran Mandiri',
-                                            style: TextStyle(fontSize: 10, color: Color(0xFF64748B)),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
+                                      ),
                                     ),
+                                    if (unreadChats > 0)
+                                      Positioned(
+                                        right: 0,
+                                        top: 0,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                          child: Text('$unreadChats', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                                        ),
+                                      ),
                                   ],
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Stack(
-                                children: [
-                                  Material(
-                                    color: const Color(0xFFF0FDF4),
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(12),
-                                      onTap: () {
-                                        final authCtrl = context.read<AuthController>();
-                                        final uid = int.tryParse(authCtrl.user?['id']?.toString() ?? '0') ?? 0;
-                                        InAppChatModal.show(
-                                          context,
-                                          orderCode: widget.orderCode,
-                                          currentUserId: uid,
-                                          currentUserRole: 'customer',
-                                        );
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: const Color(0xFFBBF7D0)),
-                                        ),
-                                        child: const Icon(Icons.chat_bubble_rounded, color: Color(0xFF16A34A), size: 18),
-                                      ),
-                                    ),
-                                  ),
-                                  if (unreadChats > 0)
-                                    Positioned(
-                                      right: 0,
-                                      top: 0,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                                        child: Text('$unreadChats', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(width: 6),
-                              // In-App Voice Call Button
-                              Material(
-                                color: const Color(0xFFEFF6FF),
-                                borderRadius: BorderRadius.circular(12),
-                                child: InkWell(
+                                const SizedBox(width: 6),
+                                // In-App Voice Call Button
+                                Material(
+                                  color: const Color(0xFFEFF6FF),
                                   borderRadius: BorderRadius.circular(12),
-                                  onTap: () {
-                                    GlobalCallService.instance.openCallScreen(
-                                      context,
-                                      orderCode: widget.orderCode,
-                                      isIncoming: false,
-                                      callerRole: 'customer',
-                                    );
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: const Color(0xFFBFDBFE)),
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(12),
+                                    onTap: () {
+                                      GlobalCallService.instance.openCallScreen(
+                                        context,
+                                        orderCode: widget.orderCode,
+                                        isIncoming: false,
+                                        callerRole: 'customer',
+                                        initialPartnerName: sName,
+                                        initialPartnerAvatar: sLogoRaw,
+                                      );
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: const Color(0xFFBFDBFE)),
+                                      ),
+                                      child: const Icon(Icons.phone_in_talk_rounded, color: Color(0xFF2563EB), size: 18),
                                     ),
-                                    child: const Icon(Icons.phone_in_talk_rounded, color: Color(0xFF2563EB), size: 18),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            );
+                          }),
 
                           if (!isDelivered) ...[
                             const SizedBox(height: 10),
@@ -2163,6 +2175,22 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                       ),
                                     ),
                                 ],
+                              ),
+                              // In-App Voice Call Button to Driver
+                              IconButton(
+                                constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                                padding: const EdgeInsets.all(6),
+                                onPressed: () {
+                                  GlobalCallService.instance.openCallScreen(
+                                    context,
+                                    orderCode: widget.orderCode,
+                                    isIncoming: false,
+                                    callerRole: 'customer',
+                                    initialPartnerName: driverName,
+                                    initialPartnerAvatar: driverAvatar,
+                                  );
+                                },
+                                icon: const Icon(Icons.phone_in_talk_rounded, color: Color(0xFF2563EB), size: 18),
                               ),
                             ],
                           ),

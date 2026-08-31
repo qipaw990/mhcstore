@@ -109,7 +109,15 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
     } catch (_) {}
   }
 
-  void openCallScreen(BuildContext? context, {required String orderCode, required bool isIncoming, String? callerRole, Map<String, dynamic>? callData}) {
+  void openCallScreen(
+    BuildContext? context, {
+    required String orderCode,
+    required bool isIncoming,
+    String? callerRole,
+    String? initialPartnerName,
+    String? initialPartnerAvatar,
+    Map<String, dynamic>? callData,
+  }) {
     if (_isCallScreenOpen) return;
     final targetContext = (context != null && context.mounted) ? context : rootNavigatorKey.currentContext;
     if (targetContext == null) return;
@@ -122,6 +130,8 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
           orderCode: orderCode,
           isIncoming: isIncoming,
           callerRole: callerRole,
+          initialPartnerName: initialPartnerName,
+          initialPartnerAvatar: initialPartnerAvatar,
           callData: callData ?? _activeCallData,
         ),
       ),

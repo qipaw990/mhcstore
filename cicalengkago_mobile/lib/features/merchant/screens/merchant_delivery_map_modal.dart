@@ -407,11 +407,14 @@ class _MerchantDeliveryMapModalState extends State<MerchantDeliveryMapModal> {
                       // In-App Voice Call Customer Button
                       IconButton(
                         onPressed: () {
+                          final cAvatar = order['customer_avatar']?.toString() ?? order['customer']?['avatar']?.toString() ?? '';
                           GlobalCallService.instance.openCallScreen(
                             context,
                             orderCode: orderCode,
                             isIncoming: false,
                             callerRole: 'vendor',
+                            initialPartnerName: customerName,
+                            initialPartnerAvatar: cAvatar,
                           );
                         },
                         icon: const Icon(Icons.phone_in_talk_rounded, color: Color(0xFF16A34A), size: 22),

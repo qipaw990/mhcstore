@@ -1454,11 +1454,14 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                   elevation: 0,
                 ),
                 onPressed: () {
+                  final cAvatar = trip['customer_avatar']?.toString() ?? trip['cust_avatar']?.toString() ?? trip['customer']?['avatar']?.toString() ?? '';
                   GlobalCallService.instance.openCallScreen(
                     context,
                     orderCode: orderCode,
                     isIncoming: false,
                     callerRole: 'delivery_man',
+                    initialPartnerName: customerName,
+                    initialPartnerAvatar: cAvatar,
                   );
                 },
               ),

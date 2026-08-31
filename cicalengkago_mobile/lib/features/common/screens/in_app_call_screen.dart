@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -11,6 +12,8 @@ class InAppCallScreen extends StatefulWidget {
   final String orderCode;
   final bool isIncoming;
   final String? callerRole;
+  final String? initialPartnerName;
+  final String? initialPartnerAvatar;
   final Map<String, dynamic>? callData;
 
   const InAppCallScreen({
@@ -18,6 +21,8 @@ class InAppCallScreen extends StatefulWidget {
     required this.orderCode,
     this.isIncoming = false,
     this.callerRole,
+    this.initialPartnerName,
+    this.initialPartnerAvatar,
     this.callData,
   });
 
@@ -40,7 +45,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   int? _callId;
 
   String _partnerName = 'Pengguna';
-  String _partnerAvatar = 'assets/images/users/driver.png';
+  String _partnerAvatar = '';
   String _partnerPhone = '';
 
   RtcEngine? _agoraEngine;
@@ -50,6 +55,13 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   @override
   void initState() {
     super.initState();
+
+    if (widget.initialPartnerName != null && widget.initialPartnerName!.isNotEmpty) {
+      _partnerName = widget.initialPartnerName!;
+    }
+    if (widget.initialPartnerAvatar != null && widget.initialPartnerAvatar!.isNotEmpty) {
+      _partnerAvatar = widget.initialPartnerAvatar!;
+    }
 
     _pulseController = AnimationController(
       vsync: this,
@@ -63,11 +75,11 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     if (widget.callData != null) {
       _callId = int.tryParse(widget.callData!['id']?.toString() ?? '');
       _partnerName = widget.isIncoming
-          ? (widget.callData!['caller_name'] ?? 'Mitra CicalengkaGO')
-          : (widget.callData!['receiver_name'] ?? 'Mitra CicalengkaGO');
+          ? (widget.callData!['caller_name'] ?? _partnerName)
+          : (widget.callData!['receiver_name'] ?? _partnerName);
       _partnerAvatar = widget.isIncoming
-          ? (widget.callData!['caller_avatar'] ?? 'assets/images/users/driver.png')
-          : (widget.callData!['receiver_avatar'] ?? 'assets/images/users/driver.png');
+          ? (widget.callData!['caller_avatar'] ?? _partnerAvatar)
+          : (widget.callData!['receiver_avatar'] ?? widget.callData!['store_logo'] ?? _partnerAvatar);
       _partnerPhone = widget.callData!['partner_phone'] ?? widget.callData!['phone'] ?? widget.callData!['customer_phone'] ?? widget.callData!['dm_phone'] ?? '';
       if (widget.callData!['status'] == 'connected') {
         _isConnected = true;
@@ -435,7 +447,16 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final formattedAvatar = ApiConstants.formatImageUrl(_partnerAvatar);
+    final rawAvatar = _partnerAvatar.trim();
+    final isStaticDefault = rawAvatar.contains('driver.png') || rawAvatar.contains('customer.png') || rawAvatar.contains('default.png');
+    final formattedAvatar = (!isStaticDefault && rawAvatar.isNotEmpty) ? ApiConstants.formatImageUrl(rawAvatar) : '';
+    final isStore = _partnerName.toLowerCase().contains('warung') ||
+                    _partnerName.toLowerCase().contains('toko') ||
+                    _partnerName.toLowerCase().contains('resto') ||
+                    _partnerName.toLowerCase().contains('kedai') ||
+                    _partnerName.toLowerCase().contains('cafe') ||
+                    _partnerName.toLowerCase().contains('mart') ||
+                    widget.callerRole == 'customer';
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
@@ -495,8 +516,14 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                             child: CircleAvatar(
                               radius: 54,
                               backgroundColor: const Color(0xFF1E293B),
-                              backgroundImage: formattedAvatar.isNotEmpty ? NetworkImage(formattedAvatar) : null,
-                              child: formattedAvatar.isEmpty ? const Icon(Icons.person, size: 50, color: Colors.white) : null,
+                              backgroundImage: formattedAvatar.isNotEmpty ? CachedNetworkImageProvider(formattedAvatar) : null,
+                              child: formattedAvatar.isEmpty
+                                  ? Icon(
+                                      isStore ? Icons.storefront_rounded : Icons.person_rounded,
+                                      size: 52,
+                                      color: Colors.white,
+                                    )
+                                  : null,
                             ),
                           ),
                         ),

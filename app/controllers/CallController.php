@@ -88,17 +88,20 @@ class CallController extends Controller
             $callerId     = ($userId > 0) ? $userId : $custUserId;
             $callerRole   = 'customer';
             $isMerchantDelivery = ($order['delivery_type'] ?? '') === 'merchant' || empty($dmUserId);
+            $storeLogo = !empty($order['store_logo']) ? $order['store_logo'] : (!empty($order['store_cover']) ? $order['store_cover'] : '');
+            $storeName = !empty($order['store_name']) ? $order['store_name'] : 'Mitra Toko';
+
             if ($isMerchantDelivery) {
                 $receiverId   = $vendorUserId;
                 $receiverRole = 'vendor';
-                $partnerName  = $order['store_name'] ?? 'Mitra Toko';
-                $partnerAvatar= $order['store_logo'] ?? 'assets/images/store-default.png';
+                $partnerName  = $storeName;
+                $partnerAvatar= $storeLogo;
                 $partnerPhone = $order['store_phone'] ?? '';
             } else {
                 $receiverId   = $dmUserId;
                 $receiverRole = 'delivery_man';
                 $partnerName  = $order['dm_name'] ?? 'Mitra Driver';
-                $partnerAvatar= $order['dm_avatar'] ?? 'assets/images/users/driver.png';
+                $partnerAvatar= $order['dm_avatar'] ?? '';
                 $partnerPhone = $order['dm_phone'] ?? '';
             }
         }
@@ -167,12 +170,19 @@ class CallController extends Controller
                 return;
             }
 
-            // Fetch active call for order or user
+            // Fetch active call for order or user with store & driver details
             $call = Database::fetchOne("
                 SELECT vc.*,
                        u_caller.name as caller_name, u_caller.avatar as caller_avatar,
-                       u_recv.name as receiver_name, u_recv.avatar as receiver_avatar
+                       u_recv.name as receiver_name, u_recv.avatar as receiver_avatar,
+                       o.store_id, o.delivery_type,
+                       s.name as store_name, s.logo as store_logo, s.cover_photo as store_cover,
+                       dm.id as dm_id, u_dm.name as dm_name, u_dm.avatar as dm_avatar
                 FROM voice_calls vc
+                LEFT JOIN orders o ON (vc.order_code = o.order_code OR vc.order_code = CAST(o.id AS CHAR))
+                LEFT JOIN stores s ON o.store_id = s.id
+                LEFT JOIN delivery_men dm ON o.delivery_man_id = dm.id
+                LEFT JOIN users u_dm ON dm.user_id = u_dm.id
                 LEFT JOIN users u_caller ON vc.caller_id = u_caller.id
                 LEFT JOIN users u_recv ON vc.receiver_id = u_recv.id
                 WHERE {$whereSql}
@@ -184,6 +194,29 @@ class CallController extends Controller
                 return;
             }
 
+            $storeLogo = !empty($call['store_logo']) ? $call['store_logo'] : (!empty($call['store_cover']) ? $call['store_cover'] : '');
+            $storeName = !empty($call['store_name']) ? $call['store_name'] : 'Mitra Toko';
+
+            $callerName   = $call['caller_name'] ?? 'Pengguna';
+            $callerAvatar = $call['caller_avatar'] ?? '';
+            if (in_array($call['caller_role'], ['vendor', 'store'], true)) {
+                $callerName   = $storeName;
+                $callerAvatar = $storeLogo ?: $callerAvatar;
+            } elseif ($call['caller_role'] === 'delivery_man') {
+                $callerName   = $call['dm_name'] ?? $callerName;
+                $callerAvatar = $call['dm_avatar'] ?? $callerAvatar;
+            }
+
+            $receiverName   = $call['receiver_name'] ?? 'Pengguna';
+            $receiverAvatar = $call['receiver_avatar'] ?? '';
+            if (in_array($call['receiver_role'], ['vendor', 'store'], true)) {
+                $receiverName   = $storeName;
+                $receiverAvatar = $storeLogo ?: $receiverAvatar;
+            } elseif ($call['receiver_role'] === 'delivery_man') {
+                $receiverName   = $call['dm_name'] ?? $receiverName;
+                $receiverAvatar = $call['dm_avatar'] ?? $receiverAvatar;
+            }
+
             $this->successResponse('Status panggilan', [
                 'active_call' => [
                     'id'              => (int)$call['id'],
@@ -192,10 +225,12 @@ class CallController extends Controller
                     'receiver_id'     => (int)$call['receiver_id'],
                     'caller_role'     => $call['caller_role'],
                     'receiver_role'   => $call['receiver_role'],
-                    'caller_name'     => $call['caller_name'] ?? 'Pengguna',
-                    'caller_avatar'   => $call['caller_avatar'] ?? 'assets/images/users/customer.png',
-                    'receiver_name'   => $call['receiver_name'] ?? 'Pengguna',
-                    'receiver_avatar' => $call['receiver_avatar'] ?? 'assets/images/users/driver.png',
+                    'caller_name'     => $callerName,
+                    'caller_avatar'   => $callerAvatar,
+                    'receiver_name'   => $receiverName,
+                    'receiver_avatar' => $receiverAvatar,
+                    'store_logo'      => $storeLogo,
+                    'store_name'      => $storeName,
                     'status'          => $call['status'],
                     'offer'           => $call['offer'],
                     'answer'          => $call['answer'],
