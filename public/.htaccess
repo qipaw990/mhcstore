@@ -41,3 +41,16 @@
         Header set Cache-Control "public, max-age=604800"
     </FilesMatch>
 </IfModule>
+
+<IfModule mod_deflate.c>
+    # Compress JSON, HTML, CSS, JS, and SVG responses
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/javascript
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
