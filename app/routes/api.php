@@ -104,4 +104,5 @@ Router::group(['prefix' => '/api'], function () {
     Router::post('/vendor/raw-materials/delete', [\App\Controllers\VendorController::class, 'deleteRawMaterial']);
     Router::get('/vendor/products/{id}/recipe', [\App\Controllers\VendorController::class, 'getProductRecipe']);
     Router::post('/vendor/products/recipe/save', [\App\Controllers\VendorController::class, 'saveProductRecipe']);
+    Router::post('/vendor/addons/delete', [\App\Controllers\VendorController::class, 'deleteAddon']);
 });

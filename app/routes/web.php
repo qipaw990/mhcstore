@@ -137,6 +137,7 @@ Router::group(['prefix' => '/vendor', 'middleware' => ['VendorMiddleware']], fun
     Router::post('/products/delete', [VendorController::class, 'deleteProduct']);
     Router::post('/products/toggle-status', [VendorController::class, 'toggleProductStatus']);
     Router::post('/products/stock-in', [VendorController::class, 'stockIn']);
+    Router::post('/addons/delete', [VendorController::class, 'deleteAddon']);
     Router::get('/products/find-by-barcode', [VendorController::class, 'findProductByBarcode']);
     Router::get('/migrate-hpp', [VendorController::class, 'migrateHpp']);
     Router::get('/wallet', [VendorController::class, 'wallet']);

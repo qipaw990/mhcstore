@@ -430,34 +430,52 @@ class VendorController extends Controller
             $addonsData = json_decode($addonsData, true);
         }
         if (is_array($addonsData)) {
-            $keptAddonNames = [];
+            $targetStoreId = (int)($existingProduct['store_id'] ?? $store['id']);
+            $keptAddonIds = [];
             foreach ($addonsData as $addon) {
                 $aName = trim($addon['name'] ?? '');
                 if (!empty($aName)) {
                     $aPrice = (float)($addon['price'] ?? 0);
-                    $keptAddonNames[] = $aName;
-                    $exist = \App\Core\Database::fetchOne("SELECT id FROM `product_addons` WHERE `store_id` = ? AND `name` = ? LIMIT 1", [$store['id'], $aName]);
-                    if ($exist) {
+                    $aId = (int)($addon['id'] ?? 0);
+
+                    if ($aId > 0) {
+                        $exist = \App\Core\Database::fetchOne("SELECT id FROM `product_addons` WHERE `id` = ? AND `store_id` = ?", [$aId, $targetStoreId]);
+                        if ($exist) {
+                            \App\Core\Database::query(
+                                "UPDATE `product_addons` SET `name` = ?, `price` = ?, `status` = 1 WHERE `id` = ?",
+                                [$aName, $aPrice, $aId]
+                            );
+                            $keptAddonIds[] = $aId;
+                            continue;
+                        }
+                    }
+
+                    $existByName = \App\Core\Database::fetchOne("SELECT id FROM `product_addons` WHERE `store_id` = ? AND `name` = ? LIMIT 1", [$targetStoreId, $aName]);
+                    if ($existByName) {
                         \App\Core\Database::query(
                             "UPDATE `product_addons` SET `price` = ?, `status` = 1 WHERE `id` = ?",
-                            [$aPrice, $exist['id']]
+                            [$aPrice, $existByName['id']]
                         );
+                        $keptAddonIds[] = (int)$existByName['id'];
                     } else {
                         \App\Core\Database::query(
                             "INSERT INTO `product_addons` (`store_id`, `name`, `price`, `status`) VALUES (?, ?, ?, 1)",
-                            [$store['id'], $aName, $aPrice]
+                            [$targetStoreId, $aName, $aPrice]
                         );
+                        $newAddonId = (int)\App\Core\Database::getPdo()->lastInsertId();
+                        if ($newAddonId > 0) {
+                            $keptAddonIds[] = $newAddonId;
+                        }
                     }
                 }
             }
 
-            // Hapus topping milik toko ini yang sudah dihapus oleh merchant dari daftar
-            if (empty($keptAddonNames)) {
-                \App\Core\Database::query("DELETE FROM `product_addons` WHERE `store_id` = ?", [$store['id']]);
+            // Hapus topping milik toko ini yang sudah dihapus oleh merchant dari daftar modal
+            if (empty($keptAddonIds)) {
+                \App\Core\Database::query("DELETE FROM `product_addons` WHERE `store_id` = ?", [$targetStoreId]);
             } else {
-                $placeholders = implode(',', array_fill(0, count($keptAddonNames), '?'));
-                $deleteParams = array_merge([$store['id']], $keptAddonNames);
-                \App\Core\Database::query("DELETE FROM `product_addons` WHERE `store_id` = ? AND `name` NOT IN ($placeholders)", $deleteParams);
+                $inClause = implode(',', array_map('intval', $keptAddonIds));
+                \App\Core\Database::query("DELETE FROM `product_addons` WHERE `store_id` = ? AND `id` NOT IN ($inClause)", [$targetStoreId]);
             }
         }
 
@@ -470,6 +488,24 @@ class VendorController extends Controller
         }
 
         $this->redirect('vendor/products');
+    }
+
+    public function deleteAddon(): void
+    {
+        $userId = auth_id();
+        $store = $this->storeModel->findByVendorId($userId);
+        $data = $this->getPost();
+        $id = (int)($data['id'] ?? 0);
+        $name = trim($data['name'] ?? '');
+
+        if ($store) {
+            if ($id > 0) {
+                \App\Core\Database::query("DELETE FROM `product_addons` WHERE `id` = ? AND `store_id` = ?", [$id, $store['id']]);
+            } else if (!empty($name)) {
+                \App\Core\Database::query("DELETE FROM `product_addons` WHERE `name` = ? AND `store_id` = ?", [$name, $store['id']]);
+            }
+        }
+        $this->successResponse('Topping berhasil dihapus.');
     }
 
     public function deleteProduct(): void
