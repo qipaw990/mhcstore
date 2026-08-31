@@ -131,7 +131,10 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
         headers['Cookie'] = cookie;
       }
 
+      debugPrint('📡 [GlobalCallService Poll] GET $url (Cookie: ${cookie != null ? 'Yes' : 'None'})');
       final res = await http.get(Uri.parse(url), headers: headers).timeout(const Duration(seconds: 4));
+      debugPrint('📥 [GlobalCallService Poll] [${res.statusCode}] -> ${res.body}');
+
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         if (data['success'] == true && data['data'] != null && data['data']['active_call'] != null) {
