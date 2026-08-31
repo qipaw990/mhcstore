@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../../../core/theme/app_theme.dart';
 import '../controllers/merchant_controller.dart';
 
 class ProductRecipeScreen extends StatefulWidget {
@@ -18,7 +19,7 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
   bool _saving = false;
 
   // ── Mode Kalkulator Margin & Harga Jual ─────────────────────────────────────
-  bool _autoUpdatePrice = true;
+  bool _autoUpdatePrice = false; // Default: FALSE agar tidak menimpa harga produk/variasi secara otomatis!
   String _marginMode = 'percent'; // 'percent' | 'nominal' | 'manual'
   double _marginPercent = 50.0;
   double _marginNominal = 5000.0;
@@ -176,7 +177,9 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
   Future<void> _saveRecipe({bool silent = false, bool closeOnSuccess = false}) async {
     if (!silent) setState(() => _saving = true);
     final productId = int.tryParse(widget.product['id'].toString()) ?? 0;
-    final targetPrice = _autoUpdatePrice ? _calculatedSellingPrice : null;
+    // JANGAN PERNAH ubah harga jual saat silent auto-save bahan baku!
+    // Hanya kirim newPrice jika tombol simpan diklik manual dan opsi auto-update harga dicentang.
+    final targetPrice = (!silent && _autoUpdatePrice) ? _calculatedSellingPrice : null;
 
     final res = await context.read<MerchantController>().saveProductRecipe(
       productId,
@@ -189,8 +192,8 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
       final hpp = (res['total_hpp'] as num?)?.toDouble() ?? 0;
       final newPrice = (res['price'] as num?)?.toDouble();
       String priceMsg = '';
-      if (newPrice != null && newPrice > 0) {
-        priceMsg = ' • Harga Jual: Rp ${_fmtPrice(newPrice)}';
+      if (targetPrice != null && newPrice != null && newPrice > 0) {
+        priceMsg = ' • Harga Jual Diperbarui: Rp ${_fmtPrice(newPrice)}';
       }
 
       if (res['success'] == true) {
@@ -200,8 +203,8 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(res['success'] == true
             ? (silent
-                ? '✅ Bahan & Resep berhasil disimpan otomatis! (HPP: Rp ${_fmtPrice(hpp)})'
-                : '✅ ${res['message']} (HPP: Rp ${_fmtPrice(hpp)}$priceMsg)')
+                ? '✅ Bahan baku disimpan! (HPP: Rp ${_fmtPrice(hpp)})'
+                : '✅ Resep & HPP berhasil disimpan! (HPP: Rp ${_fmtPrice(hpp)}$priceMsg)')
             : '❌ ${res['message']}'),
         backgroundColor: res['success'] == true ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
         duration: const Duration(seconds: 2),
@@ -223,6 +226,10 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
     final sellingPrice = _calculatedSellingPrice;
     final profit = _calculatedProfit;
     final marginPct = _calculatedMarginPct;
+
+    final rawVars = widget.product['variations'];
+    final List variationsList = (rawVars is List) ? rawVars : [];
+    final bool hasVariations = variationsList.isNotEmpty;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -352,6 +359,40 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
                   ),
 
                   // ── 2. KALKULATOR TARGET KEUNTUNGAN & HARGA JUAL ──
+                  if (hasVariations)
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFFECACA)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.info_outline_rounded, color: AppTheme.primaryRed, size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Produk Memiliki ${variationsList.length} Variasi Menu',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF991B1B)),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Resep bahan baku ini digunakan untuk mencatat HPP dasar produk (Rp ${_fmtPrice(hpp)}). Harga variasi masing-masing menu (${variationsList.map((v) => "${v['name']} Rp ${_fmtPrice(double.tryParse(v['price']?.toString() ?? '0') ?? 0)}").join(', ')}) tetap aman dan tidak akan tertimpa.',
+                                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF7F1D1D), height: 1.3),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
                   if (hpp > 0)
                     Container(
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -548,18 +589,20 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
                                 Checkbox(
                                   value: _autoUpdatePrice,
                                   activeColor: const Color(0xFF0F172A),
-                                  onChanged: (v) => setState(() => _autoUpdatePrice = v ?? true),
+                                  onChanged: (v) => setState(() => _autoUpdatePrice = v ?? false),
                                 ),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text(
-                                        'Perbarui Harga Jual Menu Otomatis',
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
+                                      Text(
+                                        hasVariations ? 'Perbarui Harga Dasar Menu Otomatis' : 'Perbarui Harga Jual Menu Otomatis',
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
                                       ),
                                       Text(
-                                        'Harga di menu akan diset ke Rp ${_fmtPrice(sellingPrice)} (sebelumnya Rp ${_fmtPrice(currentMenuPrice)})',
+                                        hasVariations
+                                            ? 'Hanya mengubah harga dasar ke Rp ${_fmtPrice(sellingPrice)} (tidak merubah harga variasi).'
+                                            : 'Harga di menu akan diset ke Rp ${_fmtPrice(sellingPrice)} (sebelumnya Rp ${_fmtPrice(currentMenuPrice)})',
                                         style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
                                       ),
                                     ],
