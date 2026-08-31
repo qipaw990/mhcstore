@@ -69,9 +69,18 @@ function get_store_schedule_status(int $storeId, int $vendorIsOpen = 1): array
     }
 
     if (empty($schedules)) {
-        $schedules = [
-            ['opening_time' => '08:00:00', 'closing_time' => '22:00:00']
-        ];
+        try {
+            $st = \App\Core\Database::fetchOne("SELECT opening_time, closing_time FROM stores WHERE id = ? LIMIT 1", [$storeId]);
+            $defaultOp = !empty($st['opening_time']) ? $st['opening_time'] : '08:00:00';
+            $defaultCl = !empty($st['closing_time']) ? $st['closing_time'] : '22:00:00';
+            $schedules = [
+                ['opening_time' => $defaultOp, 'closing_time' => $defaultCl]
+            ];
+        } catch (\Throwable $e) {
+            $schedules = [
+                ['opening_time' => '08:00:00', 'closing_time' => '22:00:00']
+            ];
+        }
     }
 
     $isWithinHours = false;

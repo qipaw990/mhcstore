@@ -642,8 +642,19 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
     _nameCtrl = TextEditingController(text: s['name']?.toString() ?? '');
     _phoneCtrl = TextEditingController(text: s['phone']?.toString() ?? s['vendor_phone']?.toString() ?? '');
     _addressCtrl = TextEditingController(text: s['address']?.toString() ?? '');
-    _openingTimeCtrl = TextEditingController(text: s['opening_time']?.toString() ?? '08:00');
-    _closingTimeCtrl = TextEditingController(text: s['closing_time']?.toString() ?? '22:00');
+    String op = s['opening_time']?.toString().trim() ?? '08:00';
+    if (op.length > 5 && op.contains(':')) {
+      final parts = op.split(':');
+      op = '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
+    }
+    String cl = s['closing_time']?.toString().trim() ?? '22:00';
+    if (cl.length > 5 && cl.contains(':')) {
+      final parts = cl.split(':');
+      cl = '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
+    }
+
+    _openingTimeCtrl = TextEditingController(text: op);
+    _closingTimeCtrl = TextEditingController(text: cl);
     _deliveryTimeCtrl = TextEditingController(text: s['delivery_time']?.toString() ?? '20-30 Menit');
     _minOrderCtrl = TextEditingController(text: (double.tryParse(s['minimum_order']?.toString() ?? '10000') ?? 10000).toInt().toString());
     _taxCtrl = TextEditingController(text: (double.tryParse(s['tax']?.toString() ?? '0') ?? 0).toString());
@@ -683,19 +694,32 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
 
   Future<void> _selectTime(TextEditingController ctrl) async {
     TimeOfDay initial = const TimeOfDay(hour: 8, minute: 0);
-    final parts = ctrl.text.split(':');
-    if (parts.length >= 2) {
-      final h = int.tryParse(parts[0]) ?? 8;
-      final m = int.tryParse(parts[1]) ?? 0;
-      initial = TimeOfDay(hour: h, minute: m);
+    final text = ctrl.text.trim();
+    if (text.isNotEmpty) {
+      final parts = text.split(':');
+      if (parts.length >= 2) {
+        final h = int.tryParse(parts[0]) ?? 8;
+        final m = int.tryParse(parts[1]) ?? 0;
+        initial = TimeOfDay(hour: h.clamp(0, 23), minute: m.clamp(0, 59));
+      }
     }
     final picked = await showTimePicker(
       context: context,
       initialTime: initial,
+      initialEntryMode: TimePickerEntryMode.dial,
       builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-          child: child ?? const SizedBox(),
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppTheme.primaryRed,
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF0F172A),
+            ),
+          ),
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+            child: child ?? const SizedBox(),
+          ),
         );
       },
     );
@@ -885,15 +909,16 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                     children: [
                       const Text('Jam Buka *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
                       const SizedBox(height: 5),
-                      InkWell(
+                      TextFormField(
+                        controller: _openingTimeCtrl,
+                        readOnly: true,
                         onTap: () => _selectTime(_openingTimeCtrl),
-                        borderRadius: BorderRadius.circular(10),
-                        child: IgnorePointer(
-                          child: TextFormField(
-                            controller: _openingTimeCtrl,
-                            decoration: _inputDecoration('08:00').copyWith(
-                              suffixIcon: const Icon(Icons.access_time_rounded, size: 18, color: Color(0xFF64748B)),
-                            ),
+                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Jam buka wajib diisi' : null,
+                        decoration: _inputDecoration('08:00').copyWith(
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.access_time_rounded, size: 20, color: AppTheme.primaryRed),
+                            tooltip: 'Pilih Jam Buka',
+                            onPressed: () => _selectTime(_openingTimeCtrl),
                           ),
                         ),
                       ),
@@ -907,15 +932,16 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                     children: [
                       const Text('Jam Tutup *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
                       const SizedBox(height: 5),
-                      InkWell(
+                      TextFormField(
+                        controller: _closingTimeCtrl,
+                        readOnly: true,
                         onTap: () => _selectTime(_closingTimeCtrl),
-                        borderRadius: BorderRadius.circular(10),
-                        child: IgnorePointer(
-                          child: TextFormField(
-                            controller: _closingTimeCtrl,
-                            decoration: _inputDecoration('22:00').copyWith(
-                              suffixIcon: const Icon(Icons.access_time_rounded, size: 18, color: Color(0xFF64748B)),
-                            ),
+                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Jam tutup wajib diisi' : null,
+                        decoration: _inputDecoration('22:00').copyWith(
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.access_time_rounded, size: 20, color: AppTheme.primaryRed),
+                            tooltip: 'Pilih Jam Tutup',
+                            onPressed: () => _selectTime(_closingTimeCtrl),
                           ),
                         ),
                       ),

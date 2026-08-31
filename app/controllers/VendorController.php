@@ -1469,8 +1469,12 @@ class VendorController extends Controller
             }
             if (isset($data['service_charge'])) $storeUpdates['service_charge'] = (float)$data['service_charge'];
             if (isset($data['is_open'])) $storeUpdates['is_open'] = (!empty($data['is_open']) ? 1 : 0);
-            if (isset($data['opening_time'])) $storeUpdates['opening_time'] = sanitize($data['opening_time']);
-            if (isset($data['closing_time'])) $storeUpdates['closing_time'] = sanitize($data['closing_time']);
+            if (isset($data['opening_time'])) {
+                $storeUpdates['opening_time'] = !empty($data['opening_time']) ? date('H:i:s', strtotime($data['opening_time'])) : '08:00:00';
+            }
+            if (isset($data['closing_time'])) {
+                $storeUpdates['closing_time'] = !empty($data['closing_time']) ? date('H:i:s', strtotime($data['closing_time'])) : '22:00:00';
+            }
             if (isset($data['bank_name'])) $storeUpdates['bank_name'] = sanitize($data['bank_name']);
             if (isset($data['bank_account_number'])) $storeUpdates['bank_account_number'] = sanitize($data['bank_account_number']);
             if (isset($data['bank_account_name'])) $storeUpdates['bank_account_name'] = sanitize($data['bank_account_name']);
@@ -1493,6 +1497,29 @@ class VendorController extends Controller
 
             if (!empty($storeUpdates)) {
                 $this->storeModel->update($store['id'], $storeUpdates);
+            }
+
+            // Sync with store_schedules table (Day 0 to 6)
+            if (isset($data['opening_time']) || isset($data['closing_time'])) {
+                $finalOp = $storeUpdates['opening_time'] ?? (!empty($store['opening_time']) ? date('H:i:s', strtotime($store['opening_time'])) : '08:00:00');
+                $finalCl = $storeUpdates['closing_time'] ?? (!empty($store['closing_time']) ? date('H:i:s', strtotime($store['closing_time'])) : '22:00:00');
+                try {
+                    for ($d = 0; $d <= 6; $d++) {
+                        $existingSch = Database::fetchOne("SELECT id FROM store_schedules WHERE store_id = ? AND day_of_week = ? LIMIT 1", [$store['id'], $d]);
+                        if ($existingSch) {
+                            Database::execute("UPDATE store_schedules SET opening_time = ?, closing_time = ? WHERE id = ?", [$finalOp, $finalCl, $existingSch['id']]);
+                        } else {
+                            Database::insert('store_schedules', [
+                                'store_id'     => $store['id'],
+                                'day_of_week'  => $d,
+                                'opening_time' => $finalOp,
+                                'closing_time' => $finalCl,
+                            ]);
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    error_log("[VendorController] Sync store_schedules error: " . $e->getMessage());
+                }
             }
         } else {
             // Auto-create store if vendor does not have a store record yet
