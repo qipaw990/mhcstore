@@ -750,18 +750,29 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
+      body: Stack(
+        children: [
+          // Embedded WebRTC Renderer View (Required for Chrome & Native Audio Playback)
+          SizedBox(
+            width: 1,
+            height: 1,
+            child: Opacity(
+              opacity: 0.01,
+              child: RTCVideoView(_remoteRenderer),
+            ),
+          ),
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
                       // Header badge
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -915,7 +926,9 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
           },
         ),
       ),
-    );
+    ],
+  ),
+);
   }
 
   Widget _buildCircleButton({
