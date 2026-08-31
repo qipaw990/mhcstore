@@ -240,6 +240,9 @@ class _RawMaterialsScreenState extends State<RawMaterialsScreen> {
                     },
                   ),
                 ),
+              ),
+            ],
+          ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showFormDialog(),
         backgroundColor: const Color(0xFF0F172A),
