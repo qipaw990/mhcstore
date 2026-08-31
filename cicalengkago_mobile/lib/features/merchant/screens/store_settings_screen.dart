@@ -249,11 +249,82 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
                 const SizedBox(height: 6),
                 _infoRow(Icons.phone_outlined, store['phone'] ?? store['vendor_phone'] ?? '-'),
                 const SizedBox(height: 6),
-                _infoRow(Icons.access_time_rounded, '${store['opening_time'] ?? '08:00'} - ${store['closing_time'] ?? '22:00'} WIB'),
+                _infoRow(Icons.email_outlined, store['email'] ?? '-'),
+                const SizedBox(height: 6),
+                _infoRow(Icons.access_time_rounded,
+                    '${_fmtTime(store['opening_time'])} - ${_fmtTime(store['closing_time'])} WIB'),
+                const SizedBox(height: 10),
+                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                const SizedBox(height: 10),
+                // ── GRID DETAIL PENGATURAN RESTO ──
+                Row(
+                  children: [
+                    _infoChip(
+                        Icons.access_time_filled_rounded,
+                        'Estimasi Antar',
+                        store['delivery_time']?.toString() ?? '20-30 Menit',
+                        const Color(0xFFEFF6FF),
+                        const Color(0xFF2563EB)),
+                    const SizedBox(width: 8),
+                    _infoChip(
+                        Icons.shopping_bag_outlined,
+                        'Min. Belanja',
+                        'Rp ${_fmtNum(store['minimum_order'])}',
+                        const Color(0xFFF0FDF4),
+                        const Color(0xFF16A34A)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    _infoChip(
+                        Icons.percent_rounded,
+                        'Pajak Resto',
+                        '${_fmtDbl(store['tax']?.toString() ?? store['tax_percent']?.toString())}%',
+                        const Color(0xFFFFFBEB),
+                        const Color(0xFFD97706)),
+                    const SizedBox(width: 8),
+                    _infoChip(
+                        Icons.local_offer_outlined,
+                        'Biaya Layanan',
+                        'Rp ${_fmtNum(store['service_charge'])}',
+                        const Color(0xFFFDF4FF),
+                        const Color(0xFF9333EA)),
+                  ],
+                ),
+                if ((store['bank_name'] ?? '').toString().isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  const SizedBox(height: 10),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.account_balance_outlined, size: 14, color: Color(0xFF64748B)),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: RichText(
+                          text: TextSpan(
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
+                            children: [
+                              TextSpan(
+                                text: '${store['bank_name'] ?? ''} ',
+                                style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              ),
+                              TextSpan(text: store['bank_account_number']?.toString() ?? ''),
+                              if ((store['bank_account_name'] ?? '').toString().isNotEmpty)
+                                TextSpan(text: ' • ${store['bank_account_name']}'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
           const SizedBox(height: 16),
+
 
           // ── ULASAN TERBARU PELANGGAN ──
           if (reviews.isNotEmpty) ...[
@@ -430,6 +501,59 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
         ),
       ],
     );
+  }
+
+  Widget _infoChip(IconData icon, String label, String value, Color bgColor, Color iconColor) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: iconColor.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 14, color: iconColor),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: TextStyle(fontSize: 9.5, color: iconColor, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 1),
+                  Text(value, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)), overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _fmtTime(dynamic val) {
+    final s = val?.toString().trim() ?? '';
+    if (s.isEmpty) return '--:--';
+    final parts = s.split(':');
+    if (parts.length >= 2) {
+      return '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
+    }
+    return s;
+  }
+
+  String _fmtNum(dynamic val) {
+    final n = double.tryParse(val?.toString() ?? '0') ?? 0.0;
+    if (n == 0) return '0';
+    if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)} Jt';
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(0)} Rb';
+    return n.toInt().toString();
+  }
+
+  String _fmtDbl(dynamic val) {
+    final n = double.tryParse(val?.toString() ?? '0') ?? 0.0;
+    if (n == n.toInt()) return n.toInt().toString();
+    return n.toStringAsFixed(1);
   }
 }
 
