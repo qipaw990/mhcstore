@@ -144,25 +144,20 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) => _AddIngredientSheet(
         availableMats: available,
-        onAdd: (id, qty) {
+        onAdd: (id, qty) async {
           setState(() {
             _recipeItems.add({'raw_material_id': id, 'qty_used': qty});
             _recalcPricing();
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ Bahan berhasil ditambahkan! Jangan lupa tekan "Simpan Resep"'),
-              backgroundColor: Color(0xFF16A34A),
-              duration: Duration(seconds: 2),
-            ),
-          );
+          // Auto-save to server immediately
+          await _saveRecipe(silent: true);
         },
       ),
     );
   }
 
-  Future<void> _saveRecipe() async {
-    setState(() => _saving = true);
+  Future<void> _saveRecipe({bool silent = false}) async {
+    if (!silent) setState(() => _saving = true);
     final productId = int.tryParse(widget.product['id'].toString()) ?? 0;
     final targetPrice = _autoUpdatePrice ? _calculatedSellingPrice : null;
 
@@ -171,7 +166,7 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
       _recipeItems,
       newPrice: targetPrice,
     );
-    setState(() => _saving = false);
+    if (!silent) setState(() => _saving = false);
 
     if (mounted) {
       final hpp = (res['total_hpp'] as num?)?.toDouble() ?? 0;
@@ -183,10 +178,12 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(res['success'] == true
-            ? '✅ ${res['message']} (HPP: Rp ${_fmtPrice(hpp)}$priceMsg)'
+            ? (silent
+                ? '✅ Bahan & Resep berhasil disimpan otomatis! (HPP: Rp ${_fmtPrice(hpp)})'
+                : '✅ ${res['message']} (HPP: Rp ${_fmtPrice(hpp)}$priceMsg)')
             : '❌ ${res['message']}'),
         backgroundColor: res['success'] == true ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 2),
       ));
     }
   }
@@ -633,7 +630,13 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
                                           ),
                                         ),
                                         InkWell(
-                                          onTap: () => setState(() => _recipeItems.removeAt(i)),
+                                          onTap: () async {
+                                            setState(() {
+                                              _recipeItems.removeAt(i);
+                                              _recalcPricing();
+                                            });
+                                            await _saveRecipe(silent: true);
+                                          },
                                           borderRadius: BorderRadius.circular(8),
                                           child: const Padding(
                                             padding: EdgeInsets.all(6),
@@ -870,11 +873,12 @@ class _AddIngredientSheetState extends State<_AddIngredientSheet> {
   void _submitForm() {
     if (_selected == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih bahan baku terlebih dahulu')),
+        const SnackBar(content: Text('Pilih salah satu bahan baku di daftar terlebih dahulu')),
       );
       return;
     }
-    final parsedQty = double.tryParse(_qtyCtrl.text.replaceAll(',', '.')) ?? 0;
+    final rawText = _qtyCtrl.text.trim().isEmpty ? '1' : _qtyCtrl.text.trim();
+    final parsedQty = double.tryParse(rawText.replaceAll(',', '.')) ?? 1.0;
     if (parsedQty <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Masukkan jumlah takaran yang valid (> 0)')),
@@ -882,6 +886,12 @@ class _AddIngredientSheetState extends State<_AddIngredientSheet> {
       return;
     }
     final id = int.tryParse(_selected!['id'].toString()) ?? 0;
+    if (id <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Data bahan tidak valid')),
+      );
+      return;
+    }
     widget.onAdd(id, parsedQty);
     Navigator.pop(context);
   }
@@ -1017,6 +1027,9 @@ class _AddIngredientSheetState extends State<_AddIngredientSheet> {
                                   onTap: () {
                                     setState(() {
                                       _selected = m;
+                                      if (_qtyCtrl.text.trim().isEmpty) {
+                                        _qtyCtrl.text = '1';
+                                      }
                                     });
                                   },
                                   borderRadius: BorderRadius.circular(12),
