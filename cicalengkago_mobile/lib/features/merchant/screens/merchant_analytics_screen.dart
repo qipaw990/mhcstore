@@ -16,6 +16,7 @@ class MerchantAnalyticsScreen extends StatefulWidget {
 
 class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
   int _selectedFilter = 1; // 0: Hari Ini, 1: 7 Hari Terakhir, 2: Bulan Ini, 3: Semua Waktu
+  String _trendMetric = 'revenue'; // 'revenue', 'profit', 'orders'
 
   @override
   void initState() {
@@ -44,46 +45,59 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
     int ordersCount = 0;
     int canceledCount = int.tryParse(kpi['canceled_count']?.toString() ?? '0') ?? 0;
     double aov = double.tryParse(kpi['avg_order_value']?.toString() ?? '0') ?? 0.0;
+    double profit = 0.0;
+    double cogs = 0.0;
+    double? growthPct;
+    String growthLabel = '';
 
     if (_selectedFilter == 0) {
       // Hari Ini
       netRevenue = double.tryParse(kpi['today_revenue']?.toString() ?? '0') ?? 0.0;
-      ordersCount = int.tryParse(kpi['today_orders']?.toString() ?? '0') ?? 0;
-      grossSales = netRevenue / 0.90;
+      final todayGross = double.tryParse(kpi['today_gross']?.toString() ?? '0') ?? 0.0;
+      grossSales = todayGross > 0 ? todayGross : (netRevenue / 0.90);
+      ordersCount = int.tryParse(kpi['today_delivered']?.toString() ?? kpi['today_orders']?.toString() ?? '0') ?? 0;
+      profit = double.tryParse(kpi['today_profit']?.toString() ?? '0') ?? 0.0;
+      cogs = double.tryParse(kpi['today_cogs']?.toString() ?? '0') ?? 0.0;
+      growthPct = double.tryParse(kpi['today_growth_pct']?.toString() ?? '');
+      growthLabel = 'vs Kemarin';
     } else if (_selectedFilter == 1) {
       // 7 Hari Terakhir
       netRevenue = double.tryParse(kpi['week_revenue']?.toString() ?? '0') ?? 0.0;
-      ordersCount = int.tryParse(kpi['week_orders']?.toString() ?? '0') ?? 0;
-      grossSales = netRevenue / 0.90;
+      final weekGross = double.tryParse(kpi['week_gross']?.toString() ?? '0') ?? 0.0;
+      grossSales = weekGross > 0 ? weekGross : (netRevenue / 0.90);
+      ordersCount = int.tryParse(kpi['week_delivered']?.toString() ?? kpi['week_orders']?.toString() ?? '0') ?? 0;
+      profit = double.tryParse(kpi['week_profit']?.toString() ?? '0') ?? 0.0;
+      cogs = double.tryParse(kpi['week_cogs']?.toString() ?? '0') ?? 0.0;
+      growthPct = double.tryParse(kpi['week_growth_pct']?.toString() ?? '');
+      growthLabel = 'vs 7 Hari Lalu';
     } else if (_selectedFilter == 2) {
       // Bulan Ini
       netRevenue = double.tryParse(kpi['month_revenue']?.toString() ?? '0') ?? 0.0;
-      ordersCount = int.tryParse(kpi['month_orders']?.toString() ?? '0') ?? 0;
-      grossSales = netRevenue / 0.90;
+      final monthGross = double.tryParse(kpi['month_gross']?.toString() ?? '0') ?? 0.0;
+      grossSales = monthGross > 0 ? monthGross : (netRevenue / 0.90);
+      ordersCount = int.tryParse(kpi['month_delivered']?.toString() ?? kpi['month_orders']?.toString() ?? '0') ?? 0;
+      profit = double.tryParse(kpi['month_profit']?.toString() ?? '0') ?? 0.0;
+      cogs = double.tryParse(kpi['month_cogs']?.toString() ?? '0') ?? 0.0;
+      growthPct = double.tryParse(kpi['month_growth_pct']?.toString() ?? '');
+      growthLabel = 'vs Bulan Lalu';
     } else {
       // Semua Waktu
       netRevenue = double.tryParse(kpi['total_net_revenue']?.toString() ?? '0') ?? 0.0;
       grossSales = double.tryParse(kpi['total_gross_sales']?.toString() ?? '0') ?? 0.0;
       ordersCount = int.tryParse(kpi['delivered_count']?.toString() ?? '0') ?? 0;
+      profit = double.tryParse(kpi['total_gross_profit']?.toString() ?? '0') ?? 0.0;
+      cogs = double.tryParse(kpi['total_cogs']?.toString() ?? '0') ?? 0.0;
+      growthPct = null;
     }
 
-    // Profit based on filter
-    double profit = 0.0;
-    double marginPct = 0.0;
-    if (_selectedFilter == 0) {
-      profit = double.tryParse(kpi['today_profit']?.toString() ?? '0') ?? 0.0;
-    } else if (_selectedFilter == 1) {
-      profit = double.tryParse(kpi['week_profit']?.toString() ?? '0') ?? 0.0;
-    } else if (_selectedFilter == 2) {
-      profit = double.tryParse(kpi['month_profit']?.toString() ?? '0') ?? 0.0;
-    } else {
-      profit = double.tryParse(kpi['total_gross_profit']?.toString() ?? '0') ?? 0.0;
-    }
-    marginPct = double.tryParse(kpi['avg_margin_pct']?.toString() ?? '0') ?? 0.0;
-    final totalCogs = double.tryParse(kpi['total_cogs']?.toString() ?? '0') ?? 0.0;
+    final double marginPct = grossSales > 0 ? ((profit / grossSales) * 100) : 0.0;
+    final int uniqueCust = int.tryParse(kpi['unique_customers']?.toString() ?? '0') ?? 0;
+    final int repeatCust = int.tryParse(kpi['repeat_customers']?.toString() ?? '0') ?? 0;
+    final double repeatRate = double.tryParse(kpi['repeat_rate_pct']?.toString() ?? '0') ?? 0.0;
 
     final int totalAllAttempts = (ordersCount + canceledCount);
     final double successRate = totalAllAttempts > 0 ? ((ordersCount / totalAllAttempts) * 100) : 100.0;
+    final double platformFee = grossSales > netRevenue ? (grossSales - netRevenue) : (grossSales * 0.10);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -95,6 +109,20 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
         ),
         actions: [
+          IconButton(
+            onPressed: () => _shareAnalyticsWhatsApp(
+              storeName: merchantCtrl.store?['name']?.toString() ?? 'Toko Mitra',
+              periodName: _filterLabel(_selectedFilter),
+              grossSales: grossSales,
+              netRevenue: netRevenue,
+              profit: profit,
+              cogs: cogs,
+              ordersCount: ordersCount,
+              topProducts: topProducts,
+            ),
+            icon: const Icon(Icons.share_rounded, color: Color(0xFF16A34A), size: 20),
+            tooltip: 'Bagikan Laporan ke WA',
+          ),
           IconButton(
             onPressed: () => merchantCtrl.fetchAnalytics(),
             icon: const Icon(Icons.refresh_rounded, color: AppTheme.primaryRed),
@@ -190,20 +218,45 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                               'Pendapatan Bersih Toko (90%)',
                               style: TextStyle(fontSize: 13, color: Color(0xFFFCA5A5), fontWeight: FontWeight.w600),
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                _selectedFilter == 0
-                                    ? 'Hari Ini'
-                                    : (_selectedFilter == 1
-                                        ? '7 Hari'
-                                        : (_selectedFilter == 2 ? 'Bulan Ini' : 'Total')),
-                                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                              ),
+                            Row(
+                              children: [
+                                if (growthPct != null) ...[
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                                    decoration: BoxDecoration(
+                                      color: growthPct >= 0 ? const Color(0xFF16A34A) : Colors.black.withValues(alpha: 0.3),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          growthPct >= 0 ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                                          size: 11,
+                                          color: Colors.white,
+                                        ),
+                                        const SizedBox(width: 2),
+                                        Text(
+                                          '${growthPct >= 0 ? '+' : ''}${growthPct.toStringAsFixed(1)}%',
+                                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                ],
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    _filterLabel(_selectedFilter),
+                                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -217,6 +270,13 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                             letterSpacing: -0.5,
                           ),
                         ),
+                        if (growthLabel.isNotEmpty && growthPct != null) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            '$growthLabel (${growthPct >= 0 ? '+' : ''}${growthPct.toStringAsFixed(1)}%)',
+                            style: const TextStyle(fontSize: 10.5, color: Color(0xFFFECACA)),
+                          ),
+                        ],
                         const SizedBox(height: 14),
                         const Divider(height: 1, color: Color(0xFFEF4444)),
                         const SizedBox(height: 12),
@@ -233,6 +293,17 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                         ),
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ── FINANCIAL WATERFALL FLOW CARD (ARUS KEUANGAN) ──
+                  _buildFinancialFlowCard(
+                    grossSales: grossSales,
+                    platformFee: platformFee,
+                    netRevenue: netRevenue,
+                    cogs: cogs,
+                    netProfit: profit,
+                    marginPct: marginPct,
                   ),
                   const SizedBox(height: 16),
 
@@ -262,7 +333,69 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
+
+                  // ── CUSTOMER RETENTION & LOYALTY CARD ──
+                  if (uniqueCust > 0) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEEF2FF),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.people_alt_rounded, size: 20, color: Color(0xFF4F46E5)),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Pelanggan & Retensi Toko',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '$uniqueCust Pelanggan Unik • $repeatCust Pelanggan Setia (≥2x order)',
+                                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFECFDF5),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFFA7F3D0)),
+                            ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  '${repeatRate.toStringAsFixed(0)}%',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFF059669)),
+                                ),
+                                const Text('Repeat Rate', style: TextStyle(fontSize: 8.5, color: Color(0xFF059669), fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
 
                   // ── PROFIT KPI CARDS ──
                   _buildSectionHeader('Keuntungan & Margin Usaha', Icons.monetization_on_rounded),
@@ -271,7 +404,7 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                     children: [
                       Expanded(
                         child: _profitCard(
-                          label: 'Gross Profit',
+                          label: 'Laba Bersih Riil',
                           value: CurrencyFormatter.formatRupiah(profit),
                           sub: profit > 0 ? '💚 Untung' : (profit < 0 ? '🔴 Rugi' : 'Belum ada data HPP'),
                           color: profit >= 0 ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
@@ -282,9 +415,9 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: _profitCard(
-                          label: 'Rata-rata Margin',
+                          label: 'Margin Keuntungan',
                           value: '${marginPct.toStringAsFixed(1)}%',
-                          sub: 'Dari total penjualan',
+                          sub: 'Dari omzet penjualan',
                           color: const Color(0xFF7E22CE),
                           bgColor: const Color(0xFFF3E8FF),
                           icon: Icons.percent_rounded,
@@ -293,7 +426,7 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  if (totalCogs > 0)
+                  if (cogs > 0)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
@@ -307,7 +440,7 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Total Modal (HPP): ${CurrencyFormatter.formatRupiah(totalCogs)}',
+                              'Total Biaya Modal (HPP): ${CurrencyFormatter.formatRupiah(cogs)}',
                               style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF92400E)),
                             ),
                           ),
@@ -316,11 +449,11 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                     ),
                   const SizedBox(height: 20),
 
-                  // ── 7-DAY SALES BAR CHART ──
+                  // ── 7-DAY SALES & PROFIT BAR CHART (INTERAKTIF TOGGLE) ──
                   if (dailyTrends.isNotEmpty) ...[
                     _buildSectionHeader('Tren Penjualan 7 Hari Terakhir', Icons.bar_chart_rounded),
-                    const SizedBox(height: 12),
-                    _buildDailySalesChart(dailyTrends),
+                    const SizedBox(height: 10),
+                    _buildDailyTrendsInteractiveChart(dailyTrends),
                     const SizedBox(height: 22),
                   ],
 
@@ -333,7 +466,7 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                   ],
 
                   // ── TOP SELLING PRODUCTS ──
-                  _buildSectionHeader('Menu Terlaris & Paling Diminati', Icons.star_rounded),
+                  _buildSectionHeader('Menu Terlaris & Kontribusi Omzet', Icons.star_rounded),
                   const SizedBox(height: 12),
                   if (topProducts.isEmpty)
                     Container(
@@ -412,6 +545,109 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                   const SizedBox(height: 24),
                 ],
               ),
+      ),
+    );
+  }
+
+  String _filterLabel(int filter) {
+    switch (filter) {
+      case 0:
+        return 'Hari Ini';
+      case 1:
+        return '7 Hari';
+      case 2:
+        return 'Bulan Ini';
+      default:
+        return 'Total';
+    }
+  }
+
+  Widget _buildFinancialFlowCard({
+    required double grossSales,
+    required double platformFee,
+    required double netRevenue,
+    required double cogs,
+    required double netProfit,
+    required double marginPct,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.account_balance_wallet_outlined, size: 16, color: Color(0xFF334155)),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Arus & Laba Keuangan Transparan',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _flowItem('1. Total Omzet Kotor Pelanggan (100%)', CurrencyFormatter.formatRupiah(grossSales), const Color(0xFF0F172A), isHeader: true),
+          _flowItem('2. Biaya Layanan CicalengkaGO (10%)', '- ${CurrencyFormatter.formatRupiah(platformFee)}', const Color(0xFFDC2626)),
+          _flowItem('3. Pendapatan Bersih Mitra (90%)', CurrencyFormatter.formatRupiah(netRevenue), const Color(0xFF2563EB), isBold: true),
+          _flowItem('4. Estimasi Biaya Bahan / Modal (HPP)', '- ${CurrencyFormatter.formatRupiah(cogs)}', const Color(0xFFD97706)),
+          const Divider(height: 14, color: Color(0xFFE2E8F0)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Laba Bersih Toko (Net Profit):',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: Color(0xFF0F172A)),
+              ),
+              Text(
+                '${CurrencyFormatter.formatRupiah(netProfit)} (${marginPct.toStringAsFixed(1)}%)',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13,
+                  color: netProfit >= 0 ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _flowItem(String title, String value, Color color, {bool isHeader = false, bool isBold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 11,
+              color: isHeader ? const Color(0xFF334155) : const Color(0xFF64748B),
+              fontWeight: (isHeader || isBold) ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: (isHeader || isBold) ? FontWeight.w800 : FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -548,11 +784,18 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
     );
   }
 
-  Widget _buildDailySalesChart(List<dynamic> dailyTrends) {
-    double maxRevenue = 1.0;
+  Widget _buildDailyTrendsInteractiveChart(List<dynamic> dailyTrends) {
+    double maxValue = 1.0;
     for (var d in dailyTrends) {
-      final rev = double.tryParse(d['revenue']?.toString() ?? '0') ?? 0.0;
-      if (rev > maxRevenue) maxRevenue = rev;
+      double val = 0.0;
+      if (_trendMetric == 'revenue') {
+        val = double.tryParse(d['revenue']?.toString() ?? '0') ?? 0.0;
+      } else if (_trendMetric == 'profit') {
+        val = double.tryParse(d['profit']?.toString() ?? '0') ?? 0.0;
+      } else {
+        val = (int.tryParse(d['delivered_orders']?.toString() ?? '0') ?? 0).toDouble();
+      }
+      if (val > maxValue) maxValue = val;
     }
 
     return Container(
@@ -572,29 +815,77 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Metric Switcher Chips
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Pendapatan Bersih Harian',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
-              ),
+              _chartMetricChip('revenue', '💰 Omzet'),
+              const SizedBox(width: 6),
+              _chartMetricChip('profit', '📈 Laba'),
+              const SizedBox(width: 6),
+              _chartMetricChip('orders', '📦 Order'),
+              const Spacer(),
               Text(
-                'Maks: ${CurrencyFormatter.formatRupiah(maxRevenue)}',
-                style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                _trendMetric == 'orders'
+                    ? 'Puncak: ${maxValue.toInt()} pesanan'
+                    : 'Puncak: ${CurrencyFormatter.formatRupiah(maxValue)}',
+                style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
           SizedBox(
-            height: 130,
+            height: 135,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: dailyTrends.map((d) {
-                final rev = double.tryParse(d['revenue']?.toString() ?? '0') ?? 0.0;
+                double val = 0.0;
+                if (_trendMetric == 'revenue') {
+                  val = double.tryParse(d['revenue']?.toString() ?? '0') ?? 0.0;
+                } else if (_trendMetric == 'profit') {
+                  val = double.tryParse(d['profit']?.toString() ?? '0') ?? 0.0;
+                } else {
+                  val = (int.tryParse(d['delivered_orders']?.toString() ?? '0') ?? 0).toDouble();
+                }
+
                 final dayName = d['day_name']?.toString() ?? '';
                 final isToday = d['date'] == DateTime.now().toIso8601String().substring(0, 10);
-                final ratio = (rev / maxRevenue).clamp(0.06, 1.0);
+                final ratio = (val / maxValue).clamp(0.06, 1.0);
+
+                String topLabel = '';
+                if (val > 0) {
+                  if (_trendMetric == 'orders') {
+                    topLabel = '${val.toInt()}';
+                  } else {
+                    topLabel = '${(val / 1000).toStringAsFixed(0)}k';
+                  }
+                }
+
+                LinearGradient gradient;
+                if (isToday) {
+                  gradient = const LinearGradient(
+                    colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  );
+                } else if (_trendMetric == 'profit') {
+                  gradient = const LinearGradient(
+                    colors: [Color(0xFF34D399), Color(0xFF059669)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  );
+                } else if (_trendMetric == 'orders') {
+                  gradient = const LinearGradient(
+                    colors: [Color(0xFFA78BFA), Color(0xFF7C3AED)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  );
+                } else {
+                  gradient = const LinearGradient(
+                    colors: [Color(0xFF60A5FA), Color(0xFF2563EB)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  );
+                }
 
                 return Expanded(
                   child: Padding(
@@ -602,9 +893,9 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        if (rev > 0)
+                        if (topLabel.isNotEmpty)
                           Text(
-                            '${(rev / 1000).toStringAsFixed(0)}k',
+                            topLabel,
                             style: TextStyle(
                               fontSize: 8.5,
                               fontWeight: FontWeight.bold,
@@ -618,17 +909,7 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                           duration: const Duration(milliseconds: 300),
                           height: 80 * ratio,
                           decoration: BoxDecoration(
-                            gradient: isToday
-                                ? const LinearGradient(
-                                    colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                  )
-                                : const LinearGradient(
-                                    colors: [Color(0xFF60A5FA), Color(0xFF3B82F6)],
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                  ),
+                            gradient: gradient,
                             borderRadius: BorderRadius.circular(6),
                           ),
                         ),
@@ -653,6 +934,29 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
     );
   }
 
+  Widget _chartMetricChip(String metricKey, String label) {
+    final isSelected = _trendMetric == metricKey;
+    return InkWell(
+      onTap: () => setState(() => _trendMetric = metricKey),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 10.5,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+            color: isSelected ? Colors.white : const Color(0xFF64748B),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTopProductItem(Map<String, dynamic> item, int rank) {
     final name = item['product_name']?.toString() ?? 'Menu Kuliner';
     final rawImg = item['product_image']?.toString();
@@ -661,6 +965,7 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
     final totalRev = double.tryParse(item['total_sales_amount']?.toString() ?? '0') ?? 0.0;
     final totalProfit = double.tryParse(item['total_profit']?.toString() ?? '0') ?? 0.0;
     final marginPct = double.tryParse(item['margin_pct']?.toString() ?? '0') ?? 0.0;
+    final contributionPct = double.tryParse(item['contribution_pct']?.toString() ?? '0') ?? 0.0;
     final hasHpp = totalProfit != 0 || (item['product_hpp'] != null && double.tryParse(item['product_hpp'].toString()) != 0);
 
     Color badgeColor = const Color(0xFF94A3B8);
@@ -678,95 +983,172 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 24,
-            height: 24,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: badgeBg, shape: BoxShape.circle),
-            child: Text('#$rank', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: badgeColor)),
-          ),
-          const SizedBox(width: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: CachedNetworkImage(
-              imageUrl: imgUrl,
-              width: 42,
-              height: 42,
-              fit: BoxFit.cover,
-              errorWidget: (context, url, error) => Container(
-                width: 42,
-                height: 42,
-                color: const Color(0xFFF1F5F9),
-                child: const Icon(Icons.restaurant_rounded, size: 20, color: Color(0xFF94A3B8)),
+          Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(color: badgeBg, shape: BoxShape.circle),
+                child: Text('#$rank', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: badgeColor)),
               ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              const SizedBox(width: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: CachedNetworkImage(
+                  imageUrl: imgUrl,
+                  width: 42,
+                  height: 42,
+                  fit: BoxFit.cover,
+                  errorWidget: (context, url, error) => Container(
+                    width: 42,
+                    height: 42,
+                    color: const Color(0xFFF1F5F9),
+                    child: const Icon(Icons.restaurant_rounded, size: 20, color: Color(0xFF94A3B8)),
+                  ),
                 ),
-                const SizedBox(height: 2),
-                Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 6,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      CurrencyFormatter.formatRupiah(totalRev),
-                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                      name,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 6,
+                      children: [
+                        Text(
+                          CurrencyFormatter.formatRupiah(totalRev),
+                          style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                        ),
+                        if (hasHpp)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: totalProfit >= 0 ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Text(
+                              'Profit ${marginPct.toStringAsFixed(0)}%',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: totalProfit >= 0 ? const Color(0xFF15803D) : const Color(0xFFDC2626),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     if (hasHpp)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: totalProfit >= 0 ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Text(
-                          'Profit ${marginPct.toStringAsFixed(0)}%',
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                            color: totalProfit >= 0 ? const Color(0xFF15803D) : const Color(0xFFDC2626),
-                          ),
+                      Text(
+                        'Untung: ${CurrencyFormatter.formatRupiah(totalProfit)}',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          color: totalProfit >= 0 ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
                         ),
                       ),
                   ],
                 ),
-                if (hasHpp)
-                  Text(
-                    'Untung: ${CurrencyFormatter.formatRupiah(totalProfit)}',
-                    style: TextStyle(
-                      fontSize: 9.5,
-                      color: totalProfit >= 0 ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                ),
+                child: Text(
+                  '$sold Terjual',
+                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                ),
+              ),
+            ],
+          ),
+          if (contributionPct > 0) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: LinearProgressIndicator(
+                      value: (contributionPct / 100).clamp(0.01, 1.0),
+                      minHeight: 4,
+                      backgroundColor: const Color(0xFFF1F5F9),
+                      color: const Color(0xFF3B82F6),
                     ),
                   ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${contributionPct.toStringAsFixed(1)}% dari total omzet',
+                  style: const TextStyle(fontSize: 9, color: Color(0xFF94A3B8)),
+                ),
               ],
             ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEFF6FF),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFBFDBFE)),
-            ),
-            child: Text(
-              '$sold Terjual',
-              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
-            ),
-          ),
+          ],
         ],
       ),
     );
+  }
+
+  void _shareAnalyticsWhatsApp({
+    required String storeName,
+    required String periodName,
+    required double grossSales,
+    required double netRevenue,
+    required double profit,
+    required double cogs,
+    required int ordersCount,
+    required List<dynamic> topProducts,
+  }) async {
+    final now = DateTime.now();
+    final dateFormatted = '${now.day}/${now.month}/${now.year} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
+    final buffer = StringBuffer();
+    buffer.writeln('📊 *LAPORAN PENJUALAN & LABA TOKO*');
+    buffer.writeln('🏢 *Toko*: $storeName');
+    buffer.writeln('📅 *Periode*: $periodName');
+    buffer.writeln('⏱️ *Waktu Ekspor*: $dateFormatted');
+    buffer.writeln('────────────────────────');
+    buffer.writeln('💰 *Omzet Kotor (100%)*: ${CurrencyFormatter.formatRupiah(grossSales)}');
+    buffer.writeln('💵 *Pendapatan Bersih (90%)*: ${CurrencyFormatter.formatRupiah(netRevenue)}');
+    if (cogs > 0) {
+      buffer.writeln('📦 *Estimasi Modal (HPP)*: ${CurrencyFormatter.formatRupiah(cogs)}');
+    }
+    buffer.writeln('📈 *Laba Bersih Riil*: ${CurrencyFormatter.formatRupiah(profit)}');
+    buffer.writeln('📦 *Pesanan Berhasil*: $ordersCount Transaksi');
+    buffer.writeln('────────────────────────');
+
+    if (topProducts.isNotEmpty) {
+      buffer.writeln('⭐ *Top 3 Menu Terlaris*:');
+      final maxTop = topProducts.take(3).toList();
+      for (int i = 0; i < maxTop.length; i++) {
+        final tp = maxTop[i] as Map<String, dynamic>;
+        final pName = tp['product_name'] ?? 'Menu';
+        final sold = tp['total_sold'] ?? 0;
+        final rev = double.tryParse(tp['total_sales_amount']?.toString() ?? '0') ?? 0;
+        buffer.writeln('  ${i + 1}. $pName ($sold porsi - ${CurrencyFormatter.formatRupiah(rev)})');
+      }
+      buffer.writeln('────────────────────────');
+    }
+    buffer.writeln('_Laporan digenerate otomatis oleh CicalengkaGO Merchant Analytics_');
+
+    final encoded = Uri.encodeComponent(buffer.toString());
+    final url = Uri.parse('https://api.whatsapp.com/send?text=$encoded');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
   }
 
   Widget _profitCard({

@@ -703,7 +703,7 @@ class VendorController extends Controller
         $storeId = (int)$store['id'];
         $this->ensureHppColumn(); // Pastikan kolom hpp ada
 
-        // 1. KPI Summary — termasuk profit dari HPP
+        // 1. KPI Summary — omzet, transaksi, perbandingan waktu & pertumbuhan
         $kpi = Database::fetchOne(
             "SELECT
                 COUNT(*) as total_orders,
@@ -713,17 +713,36 @@ class VendorController extends Controller
                 COALESCE(SUM(CASE WHEN order_status = 'delivered' THEN order_amount * 0.90 ELSE 0 END), 0) as total_net_revenue,
                 COALESCE(AVG(CASE WHEN order_status = 'delivered' THEN order_amount ELSE NULL END), 0) as avg_order_value,
 
-                -- Hari ini
+                -- Hari Ini
                 COUNT(CASE WHEN DATE(created_at) = CURDATE() THEN 1 END) as today_orders,
+                COUNT(CASE WHEN order_status = 'delivered' AND DATE(created_at) = CURDATE() THEN 1 END) as today_delivered,
                 COALESCE(SUM(CASE WHEN order_status = 'delivered' AND DATE(created_at) = CURDATE() THEN order_amount * 0.90 ELSE 0 END), 0) as today_revenue,
+                COALESCE(SUM(CASE WHEN order_status = 'delivered' AND DATE(created_at) = CURDATE() THEN order_amount ELSE 0 END), 0) as today_gross,
 
-                -- 7 Hari
+                -- Kemarin (untuk perbandingan pertumbuhan harian)
+                COALESCE(SUM(CASE WHEN order_status = 'delivered' AND DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN order_amount * 0.90 ELSE 0 END), 0) as yesterday_revenue,
+                COUNT(CASE WHEN order_status = 'delivered' AND DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY) THEN 1 END) as yesterday_delivered,
+
+                -- 7 Hari Terakhir
                 COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 END) as week_orders,
+                COUNT(CASE WHEN order_status = 'delivered' AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 END) as week_delivered,
                 COALESCE(SUM(CASE WHEN order_status = 'delivered' AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN order_amount * 0.90 ELSE 0 END), 0) as week_revenue,
+                COALESCE(SUM(CASE WHEN order_status = 'delivered' AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN order_amount ELSE 0 END), 0) as week_gross,
+
+                -- 7 Hari Sebelumnya (untuk perbandingan mingguan)
+                COALESCE(SUM(CASE WHEN order_status = 'delivered' AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY) AND created_at < DATE_SUB(NOW(), INTERVAL 7 DAY) THEN order_amount * 0.90 ELSE 0 END), 0) as prev_week_revenue,
 
                 -- Bulan Ini
                 COUNT(CASE WHEN MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) THEN 1 END) as month_orders,
-                COALESCE(SUM(CASE WHEN order_status = 'delivered' AND MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) THEN order_amount * 0.90 ELSE 0 END), 0) as month_revenue
+                COUNT(CASE WHEN order_status = 'delivered' AND MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) THEN 1 END) as month_delivered,
+                COALESCE(SUM(CASE WHEN order_status = 'delivered' AND MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) THEN order_amount * 0.90 ELSE 0 END), 0) as month_revenue,
+                COALESCE(SUM(CASE WHEN order_status = 'delivered' AND MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) THEN order_amount ELSE 0 END), 0) as month_gross,
+
+                -- Bulan Lalu (untuk perbandingan bulanan)
+                COALESCE(SUM(CASE WHEN order_status = 'delivered' AND MONTH(created_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND YEAR(created_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) THEN order_amount * 0.90 ELSE 0 END), 0) as prev_month_revenue,
+
+                -- Jumlah Pelanggan Unik
+                COUNT(DISTINCT user_id) as total_unique_customers
              FROM `orders`
              WHERE `store_id` = ?",
             [$storeId]
@@ -740,6 +759,9 @@ class VendorController extends Controller
                 COALESCE(SUM(CASE WHEN DATE(o.created_at) = CURDATE()
                     THEN oi.quantity * (oi.price - COALESCE(oi.hpp_snapshot, p.hpp, 0)) ELSE 0 END), 0) as today_profit,
                 COALESCE(SUM(oi.quantity * COALESCE(oi.hpp_snapshot, p.hpp, 0)), 0) as total_cogs,
+                COALESCE(SUM(CASE WHEN DATE(o.created_at) = CURDATE() THEN oi.quantity * COALESCE(oi.hpp_snapshot, p.hpp, 0) ELSE 0 END), 0) as today_cogs,
+                COALESCE(SUM(CASE WHEN o.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN oi.quantity * COALESCE(oi.hpp_snapshot, p.hpp, 0) ELSE 0 END), 0) as week_cogs,
+                COALESCE(SUM(CASE WHEN MONTH(o.created_at) = MONTH(CURDATE()) AND YEAR(o.created_at) = YEAR(CURDATE()) THEN oi.quantity * COALESCE(oi.hpp_snapshot, p.hpp, 0) ELSE 0 END), 0) as month_cogs,
                 CASE WHEN SUM(oi.quantity * oi.price) > 0
                     THEN ROUND(SUM(oi.quantity * (oi.price - COALESCE(oi.hpp_snapshot, p.hpp, 0))) / SUM(oi.quantity * oi.price) * 100, 2)
                     ELSE 0 END as avg_margin_pct
@@ -750,17 +772,55 @@ class VendorController extends Controller
             [$storeId]
         );
 
-        // Merge profit ke kpi
+        // 1c. Hitung repeat customer count
+        $repeatCustomerData = Database::fetchOne(
+            "SELECT COUNT(*) as repeat_count FROM (
+                SELECT user_id, COUNT(*) as cnt
+                FROM `orders`
+                WHERE `store_id` = ? AND `order_status` = 'delivered'
+                GROUP BY user_id
+                HAVING cnt >= 2
+            ) as t",
+            [$storeId]
+        );
+
+        // Hitung persentase pertumbuhan
+        $todayRev = (float)($kpi['today_revenue'] ?? 0);
+        $yestRev  = (float)($kpi['yesterday_revenue'] ?? 0);
+        $todayGrowth = $yestRev > 0 ? round((($todayRev - $yestRev) / $yestRev) * 100, 1) : ($todayRev > 0 ? 100.0 : 0.0);
+
+        $weekRev  = (float)($kpi['week_revenue'] ?? 0);
+        $prevWeekRev = (float)($kpi['prev_week_revenue'] ?? 0);
+        $weekGrowth = $prevWeekRev > 0 ? round((($weekRev - $prevWeekRev) / $prevWeekRev) * 100, 1) : ($weekRev > 0 ? 100.0 : 0.0);
+
+        $monthRev = (float)($kpi['month_revenue'] ?? 0);
+        $prevMonthRev = (float)($kpi['prev_month_revenue'] ?? 0);
+        $monthGrowth = $prevMonthRev > 0 ? round((($monthRev - $prevMonthRev) / $prevMonthRev) * 100, 1) : ($monthRev > 0 ? 100.0 : 0.0);
+
+        $uniqueCust = (int)($kpi['total_unique_customers'] ?? 0);
+        $repeatCust = (int)($repeatCustomerData['repeat_count'] ?? 0);
+        $repeatRate = $uniqueCust > 0 ? round(($repeatCust / $uniqueCust) * 100, 1) : 0.0;
+
+        // Merge profit dan metrik lanjutan ke kpi
         if ($kpi && $profitKpi) {
             $kpi['total_gross_profit'] = (float)($profitKpi['total_gross_profit'] ?? 0);
             $kpi['month_profit']       = (float)($profitKpi['month_profit'] ?? 0);
             $kpi['week_profit']        = (float)($profitKpi['week_profit'] ?? 0);
             $kpi['today_profit']       = (float)($profitKpi['today_profit'] ?? 0);
             $kpi['total_cogs']         = (float)($profitKpi['total_cogs'] ?? 0);
+            $kpi['today_cogs']         = (float)($profitKpi['today_cogs'] ?? 0);
+            $kpi['week_cogs']          = (float)($profitKpi['week_cogs'] ?? 0);
+            $kpi['month_cogs']         = (float)($profitKpi['month_cogs'] ?? 0);
             $kpi['avg_margin_pct']     = (float)($profitKpi['avg_margin_pct'] ?? 0);
+            $kpi['today_growth_pct']   = $todayGrowth;
+            $kpi['week_growth_pct']    = $weekGrowth;
+            $kpi['month_growth_pct']   = $monthGrowth;
+            $kpi['unique_customers']   = $uniqueCust;
+            $kpi['repeat_customers']   = $repeatCust;
+            $kpi['repeat_rate_pct']    = $repeatRate;
         }
 
-        // 2. Trend 7 Hari — Revenue + Profit
+        // 2. Trend 7 Hari — Revenue + Profit + Orders
         $dailyTrends = [];
         for ($i = 6; $i >= 0; $i--) {
             $date    = date('Y-m-d', strtotime("-$i days"));
@@ -778,10 +838,17 @@ class VendorController extends Controller
                         JOIN orders o2 ON oi2.order_id = o2.id
                         LEFT JOIN products p2 ON oi2.product_id = p2.id
                         WHERE o2.store_id = ? AND DATE(o2.created_at) = ? AND o2.order_status = 'delivered'
-                    ), 0) as profit
+                    ), 0) as profit,
+                    COALESCE((
+                        SELECT SUM(oi2.quantity * COALESCE(oi2.hpp_snapshot, p2.hpp, 0))
+                        FROM order_items oi2
+                        JOIN orders o2 ON oi2.order_id = o2.id
+                        LEFT JOIN products p2 ON oi2.product_id = p2.id
+                        WHERE o2.store_id = ? AND DATE(o2.created_at) = ? AND o2.order_status = 'delivered'
+                    ), 0) as cogs
                  FROM `orders` o
                  WHERE o.`store_id` = ? AND DATE(o.created_at) = ?",
-                [$storeId, $date, $storeId, $date]
+                [$storeId, $date, $storeId, $date, $storeId, $date]
             );
 
             $dailyTrends[] = [
@@ -793,6 +860,7 @@ class VendorController extends Controller
                 'revenue'          => (float)($dayRow['net_revenue'] ?? 0),
                 'gross_revenue'    => (float)($dayRow['gross_revenue'] ?? 0),
                 'profit'           => (float)($dayRow['profit'] ?? 0),
+                'cogs'             => (float)($dayRow['cogs'] ?? 0),
             ];
         }
 
@@ -815,9 +883,17 @@ class VendorController extends Controller
              WHERE o.store_id = ? AND o.order_status = 'delivered'
              GROUP BY oi.product_id, product_name, product_image, product_price, product_hpp
              ORDER BY total_sold DESC
-             LIMIT 8",
+             LIMIT 10",
             [$storeId]
         );
+
+        // Hitung kontribusi omzet per produk
+        $totalSalesAll = array_sum(array_column($topProducts, 'total_sales_amount'));
+        foreach ($topProducts as &$tp) {
+            $tpAmt = (float)($tp['total_sales_amount'] ?? 0);
+            $tp['contribution_pct'] = $totalSalesAll > 0 ? round(($tpAmt / $totalSalesAll) * 100, 1) : 0.0;
+        }
+        unset($tp);
 
         // 4. Transaksi terakhir dengan profit per pesanan (pakai hpp_snapshot)
         $recentOrders = Database::query(
