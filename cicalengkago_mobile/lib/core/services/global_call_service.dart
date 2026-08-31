@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
@@ -10,7 +12,9 @@ import '../../main.dart';
 class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
   static final GlobalCallService instance = GlobalCallService._internal();
   factory GlobalCallService() => instance;
-  GlobalCallService._internal();
+  GlobalCallService._internal() {
+    _initForegroundService();
+  }
 
   Timer? _pollTimer;
   Map<String, dynamic>? _activeCallData;
@@ -22,6 +26,46 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
   Map<String, dynamic>? get activeCallData => _activeCallData;
   bool get hasActiveCall => _activeCallData != null;
   int? get currentUserId => _userId;
+
+  Future<void> _initForegroundService() async {
+    if (kIsWeb) return;
+    try {
+      FlutterForegroundTask.init(
+        androidNotificationOptions: AndroidNotificationOptions(
+          channelId: 'cicalengkago_foreground_service',
+          channelName: 'Layanan Panggilan CicalengkaGO',
+          channelDescription: 'Menjaga panggilan telepon tetap aktif',
+          channelImportance: NotificationChannelImportance.LOW,
+          priority: NotificationPriority.LOW,
+        ),
+        iosNotificationOptions: const IOSNotificationOptions(
+          showNotification: false,
+          playSound: false,
+        ),
+        foregroundTaskOptions: ForegroundTaskOptions(
+          eventAction: ForegroundTaskEventAction.repeat(3000),
+          autoRunOnBoot: true,
+          allowWakeLock: true,
+          allowWifiLock: true,
+        ),
+      );
+    } catch (e) {
+      debugPrint('[ForegroundService] Init error: $e');
+    }
+  }
+
+  Future<void> _startForegroundService() async {
+    if (kIsWeb) return;
+    try {
+      if (await FlutterForegroundTask.isRunningService) return;
+      await FlutterForegroundTask.startService(
+        notificationTitle: 'CicalengkaGO Aktif',
+        notificationText: 'Siap menerima panggilan dan pesanan',
+      );
+    } catch (e) {
+      debugPrint('[ForegroundService] Start error: $e');
+    }
+  }
 
   void init(BuildContext context, {int? userId, String? orderCode}) {
     _navigatorContext = context;
@@ -96,6 +140,7 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void startPolling() {
+    _startForegroundService();
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(const Duration(milliseconds: 1500), (_) {
       checkIncomingCall();

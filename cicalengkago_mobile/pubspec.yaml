@@ -52,6 +52,7 @@ dependencies:
   printing: ^5.15.0
   pdf: ^3.13.0
   audioplayers: ^6.1.0
+  flutter_foreground_task: ^11.0.1
 
 dev_dependencies:
   flutter_test:
