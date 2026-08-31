@@ -63,6 +63,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   @override
   void initState() {
     super.initState();
+    GlobalCallService.instance.setUserAndOrder(orderCode: widget.orderCode);
+    GlobalCallService.instance.updateContext(context);
+    GlobalCallService.instance.checkIncomingCall();
+
     _fetchFullOrderDetails();
     _pollLiveTracking();
     // Real-time polling every 3 seconds matching order_tracking.php
@@ -102,6 +106,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             _orderData = orderMap;
             _snapUrl = data['snap_url']?.toString();
           });
+          final custId = int.tryParse(orderMap['customer_id']?.toString() ?? orderMap['user_id']?.toString() ?? '');
+          if (custId != null && custId > 0) {
+            GlobalCallService.instance.setUserAndOrder(userId: custId, orderCode: widget.orderCode);
+          }
         }
       }
     } catch (_) {}

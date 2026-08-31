@@ -117,10 +117,14 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
 
             // Auto show call UI if receiving an incoming call and screen not yet open
             if (!_isCallScreenOpen) {
-              final isIncoming = (callStatus == 'calling' && _userId != null && _userId! > 0 && receiverId == _userId);
+              final isCaller = (_userId != null && _userId! > 0 && callerId == _userId);
+              final isReceiver = (_userId != null && _userId! > 0 && receiverId == _userId);
+              final isMatchingOrder = (_orderCode != null && _orderCode!.isNotEmpty && _orderCode == call['order_code']);
+
+              final isIncoming = (callStatus == 'calling' && !isCaller && (isReceiver || isMatchingOrder));
               
               if (isIncoming) {
-                debugPrint('🚨 [GlobalCallService] INCOMING CALL DETECTED! Opening call popup for order ${call['order_code']}...');
+                debugPrint('🚨 [GlobalCallService] INCOMING CALL DETECTED! Opening call popup for order ${call['order_code']} (Caller: ${call['caller_name']})...');
                 openCallScreen(
                   _navigatorContext,
                   orderCode: call['order_code'] ?? _orderCode ?? '',
