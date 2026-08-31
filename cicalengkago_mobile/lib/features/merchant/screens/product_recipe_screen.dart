@@ -55,15 +55,20 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
   void _loadFromController() {
     final data = context.read<MerchantController>().productRecipe;
     final recipe = (data['recipe'] as List?) ?? [];
-    setState(() {
-      _recipeItems = recipe
-          .map((r) => {
-                'raw_material_id': int.tryParse(r['raw_material_id']?.toString() ?? '0') ?? 0,
-                'qty_used': double.tryParse(r['qty_used']?.toString() ?? '0') ?? 0.0,
-              })
-          .toList();
-      _recalcPricing();
-    });
+    if (recipe.isNotEmpty) {
+      setState(() {
+        _recipeItems = recipe
+            .map((r) => {
+                  'raw_material_id': int.tryParse(r['raw_material_id']?.toString() ?? '0') ?? 0,
+                  'qty_used': double.tryParse(r['qty_used']?.toString() ?? '0') ?? 0.0,
+                  'material_name': r['material_name'],
+                  'unit': r['unit'],
+                  'price_per_unit': r['price_per_unit'],
+                })
+            .toList();
+        _recalcPricing();
+      });
+    }
   }
 
   double get _totalHpp {
@@ -72,11 +77,11 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
     double total = 0;
     for (final item in _recipeItems) {
       final id = item['raw_material_id'];
-      final qty = (item['qty_used'] as double?) ?? 0;
+      final qty = (item['qty_used'] as double?) ?? (double.tryParse(item['qty_used']?.toString() ?? '0') ?? 0.0);
       final mat = mats.firstWhere(
           (m) => m['id']?.toString() == id.toString(),
-          orElse: () => {});
-      final price = double.tryParse(mat['price_per_unit']?.toString() ?? '0') ?? 0;
+          orElse: () => <String, dynamic>{});
+      final price = double.tryParse((mat['price_per_unit'] ?? item['price_per_unit'] ?? '0').toString()) ?? 0.0;
       total += qty * price;
     }
     return total;
@@ -145,8 +150,20 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
       builder: (_) => _AddIngredientSheet(
         availableMats: available,
         onAdd: (id, qty) async {
+          final mat = mats.firstWhere((m) => m['id']?.toString() == id.toString(), orElse: () => <String, dynamic>{});
           setState(() {
-            _recipeItems.add({'raw_material_id': id, 'qty_used': qty});
+            final existingIndex = _recipeItems.indexWhere((r) => r['raw_material_id'].toString() == id.toString());
+            if (existingIndex >= 0) {
+              _recipeItems[existingIndex]['qty_used'] = qty;
+            } else {
+              _recipeItems.add({
+                'raw_material_id': id,
+                'qty_used': qty,
+                'material_name': mat['name'],
+                'unit': mat['unit'],
+                'price_per_unit': mat['price_per_unit'],
+              });
+            }
             _recalcPricing();
           });
           // Auto-save to server immediately
@@ -174,6 +191,10 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
       String priceMsg = '';
       if (newPrice != null && newPrice > 0) {
         priceMsg = ' • Harga Jual: Rp ${_fmtPrice(newPrice)}';
+      }
+
+      if (res['success'] == true) {
+        _loadFromController();
       }
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -226,7 +247,7 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
             ),
         ],
       ),
-      body: ctrl.isRecipeLoading
+      body: ctrl.isRecipeLoading && _recipeItems.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 100),
@@ -580,13 +601,14 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
                             final mat = mats.firstWhere(
                                 (m) => m['id']?.toString() == matId.toString(),
                                 orElse: () => <String, dynamic>{});
-                            final matName = mat['name']?.toString() ?? 'Bahan #$matId';
-                            final unit = mat['unit']?.toString() ?? '';
-                            final price = double.tryParse(mat['price_per_unit']?.toString() ?? '0') ?? 0;
-                            final qty = (item['qty_used'] as double?) ?? 0;
+                            final matName = (mat['name'] ?? item['material_name'] ?? 'Bahan #$matId').toString();
+                            final unit = (mat['unit'] ?? item['unit'] ?? '').toString();
+                            final price = double.tryParse((mat['price_per_unit'] ?? item['price_per_unit'] ?? '0').toString()) ?? 0.0;
+                            final qty = double.tryParse((item['qty_used'] ?? 0).toString()) ?? 0.0;
                             final cost = qty * price;
 
                             return Container(
+                              key: ValueKey('recipe_item_${matId}_$i'),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(14),
@@ -663,6 +685,7 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
                                           width: 90,
                                           height: 36,
                                           child: TextFormField(
+                                            key: ValueKey('qty_field_${matId}_${qty}_$i'),
                                             initialValue: qty == qty.toInt() ? qty.toInt().toString() : qty.toStringAsFixed(2),
                                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
