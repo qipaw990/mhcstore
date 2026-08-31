@@ -100,6 +100,8 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       _statusText = 'Panggilan Masuk...';
     }
 
+    debugPrint('📱 [InAppCallScreen] Opened (order: ${widget.orderCode}, isIncoming: ${widget.isIncoming}, role: ${widget.callerRole}, callId: $_callId, partner: $_partnerName)');
+
     if (!_isConnected) {
       _startRingtone();
     }
@@ -201,6 +203,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         });
         await _peerConnection!.setLocalDescription(offer);
 
+        debugPrint('📤 [InAppCallScreen] Sending POST /calls/initiate for order ${widget.orderCode} (callerRole: ${widget.callerRole})...');
         final res = await http.post(
           Uri.parse('${ApiConstants.baseUrl}/calls/initiate'),
           headers: {'Content-Type': 'application/json'},
@@ -214,10 +217,13 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
           }),
         );
 
+        debugPrint('📥 [InAppCallScreen] /calls/initiate response [${res.statusCode}]: ${res.body}');
+
         if (res.statusCode == 200) {
           final data = jsonDecode(res.body);
           if (data['success'] == true && data['data'] != null) {
             _callId = int.tryParse(data['data']['call_id']?.toString() ?? '');
+            debugPrint('✅ [InAppCallScreen] Call initiated successfully! (Call ID: $_callId, receiverId: ${data['data']['receiver_id']})');
             if (data['data']['partner_name'] != null && mounted) {
               setState(() {
                 _partnerName = data['data']['partner_name'];
@@ -235,6 +241,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
             }
           } else {
             final msg = data['message'] ?? 'Gagal memulai panggilan';
+            debugPrint('❌ [InAppCallScreen] Initiate failed: $msg');
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(msg), backgroundColor: Colors.red),
@@ -246,7 +253,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         }
       }
     } catch (e) {
-      debugPrint('[WebRTC] Error initializing call session: $e');
+      debugPrint('❌ [InAppCallScreen] Error initializing call session: $e');
     }
   }
 

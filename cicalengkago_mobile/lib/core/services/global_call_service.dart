@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
 import '../../features/common/screens/in_app_call_screen.dart';
 import '../../main.dart';
@@ -20,11 +21,14 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
 
   Map<String, dynamic>? get activeCallData => _activeCallData;
   bool get hasActiveCall => _activeCallData != null;
+  int? get currentUserId => _userId;
 
   void init(BuildContext context, {int? userId, String? orderCode}) {
     _navigatorContext = context;
-    if (userId != null) _userId = userId;
-    if (orderCode != null) _orderCode = orderCode;
+    if (userId != null && userId > 0) _userId = userId;
+    if (orderCode != null && orderCode.isNotEmpty) _orderCode = orderCode;
+
+    debugPrint('🔔 [GlobalCallService] Initialized (userId: $_userId, orderCode: $_orderCode)');
 
     WidgetsBinding.instance.addObserver(this);
     startPolling();
@@ -35,13 +39,30 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void setUserAndOrder({int? userId, String? orderCode}) {
-    if (userId != null) _userId = userId;
-    if (orderCode != null) _orderCode = orderCode;
+    if (userId != null && userId > 0) _userId = userId;
+    if (orderCode != null && orderCode.isNotEmpty) _orderCode = orderCode;
+    debugPrint('👤 [GlobalCallService] Updated user/order (userId: $_userId, orderCode: $_orderCode)');
+  }
+
+  Future<void> _ensureUserId() async {
+    if (_userId != null && _userId! > 0) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userStr = prefs.getString('user_data');
+      if (userStr != null && userStr.isNotEmpty) {
+        final u = jsonDecode(userStr);
+        final id = int.tryParse(u['id']?.toString() ?? '');
+        if (id != null && id > 0) {
+          _userId = id;
+          debugPrint('🔑 [GlobalCallService] Resolved userId from SharedPreferences: $_userId');
+        }
+      }
+    } catch (_) {}
   }
 
   void startPolling() {
     _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+    _pollTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       checkIncomingCall();
     });
     checkIncomingCall();
@@ -55,12 +76,15 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      debugPrint('📱 [GlobalCallService] App resumed -> checking incoming calls immediately');
       startPolling();
     }
   }
 
   Future<void> checkIncomingCall() async {
     try {
+      await _ensureUserId();
+
       String url = '${ApiConstants.baseUrl}/calls/poll';
       List<String> queryParams = [];
       if (_orderCode != null && _orderCode!.isNotEmpty) {
@@ -80,17 +104,31 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
         final data = jsonDecode(res.body);
         if (data['success'] == true && data['data'] != null && data['data']['active_call'] != null) {
           final call = data['data']['active_call'] as Map<String, dynamic>;
-          final callStatus = call['status'];
+          final callStatus = call['status']?.toString();
+          final callId = call['id'];
+          final receiverId = int.tryParse(call['receiver_id']?.toString() ?? '0');
+          final callerId = int.tryParse(call['caller_id']?.toString() ?? '0');
+
+          debugPrint('📞 [GlobalCallService] Active call found (ID: $callId, status: $callStatus, caller: $callerId, receiver: $receiverId, myUserId: $_userId)');
 
           if (callStatus == 'calling' || callStatus == 'connected') {
             _activeCallData = call;
             notifyListeners();
 
-            // Auto show call UI if receiving an incoming call or active call
+            // Auto show call UI if receiving an incoming call and screen not yet open
             if (!_isCallScreenOpen) {
-              final isIncoming = (callStatus == 'calling' && _userId != null && (call['receiver_id'] == _userId || call['receiver_id'].toString() == _userId.toString()));
+              final isIncoming = (callStatus == 'calling' && _userId != null && _userId! > 0 && receiverId == _userId);
+              
               if (isIncoming) {
-                openCallScreen(_navigatorContext, orderCode: call['order_code'] ?? _orderCode ?? '', isIncoming: true, callData: call);
+                debugPrint('🚨 [GlobalCallService] INCOMING CALL DETECTED! Opening call popup for order ${call['order_code']}...');
+                openCallScreen(
+                  _navigatorContext,
+                  orderCode: call['order_code'] ?? _orderCode ?? '',
+                  isIncoming: true,
+                  initialPartnerName: call['caller_name'] ?? 'Panggilan Masuk',
+                  initialPartnerAvatar: call['caller_avatar'] ?? '',
+                  callData: call,
+                );
               }
             }
           } else {
@@ -106,7 +144,9 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
           }
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('⚠️ [GlobalCallService] Poll error: $e');
+    }
   }
 
   void openCallScreen(
@@ -118,11 +158,18 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
     String? initialPartnerAvatar,
     Map<String, dynamic>? callData,
   }) {
-    if (_isCallScreenOpen) return;
+    if (_isCallScreenOpen) {
+      debugPrint('⚠️ [GlobalCallService] Call screen already open, skipping duplicate push');
+      return;
+    }
     final targetContext = (context != null && context.mounted) ? context : rootNavigatorKey.currentContext;
-    if (targetContext == null) return;
+    if (targetContext == null) {
+      debugPrint('❌ [GlobalCallService] Cannot open call screen: context is null');
+      return;
+    }
 
     _isCallScreenOpen = true;
+    debugPrint('🚀 [GlobalCallService] Navigating to InAppCallScreen (isIncoming: $isIncoming, orderCode: $orderCode, partner: $initialPartnerName)');
 
     Navigator.of(targetContext, rootNavigator: true).push(
       MaterialPageRoute(
@@ -136,6 +183,7 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
         ),
       ),
     ).then((_) {
+      debugPrint('🏁 [GlobalCallService] InAppCallScreen closed');
       _isCallScreenOpen = false;
     });
   }
@@ -147,4 +195,3 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
     super.dispose();
   }
 }
-
