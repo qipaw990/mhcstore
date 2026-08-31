@@ -377,18 +377,50 @@ class VendorController extends Controller
             $variationsData = json_decode($variationsData, true);
         }
         if (is_array($variationsData)) {
-            \App\Core\Database::query("DELETE FROM `product_variations` WHERE `product_id` = ?", [$id]);
+            $keptVarIds = [];
             foreach ($variationsData as $var) {
                 $vName = trim($var['name'] ?? '');
                 if (!empty($vName)) {
                     $vPrice = (float)($var['price'] ?? 0);
                     $vStock = (int)($var['stock'] ?? 100);
                     $vHpp = isset($var['hpp']) ? (float)$var['hpp'] : 0.0;
-                    \App\Core\Database::query(
-                        "INSERT INTO `product_variations` (`product_id`, `name`, `price`, `stock`, `hpp`) VALUES (?, ?, ?, ?, ?)",
-                        [$id, $vName, $vPrice, $vStock, $vHpp]
-                    );
+                    $vId = (int)($var['id'] ?? 0);
+
+                    if ($vId > 0) {
+                        $exist = \App\Core\Database::fetchOne("SELECT id FROM `product_variations` WHERE `id` = ? AND `product_id` = ?", [$vId, $id]);
+                        if ($exist) {
+                            \App\Core\Database::query(
+                                "UPDATE `product_variations` SET `name` = ?, `price` = ?, `stock` = ?, `hpp` = ? WHERE `id` = ?",
+                                [$vName, $vPrice, $vStock, $vHpp, $vId]
+                            );
+                        } else {
+                            \App\Core\Database::query(
+                                "INSERT INTO `product_variations` (`product_id`, `name`, `price`, `stock`, `hpp`) VALUES (?, ?, ?, ?, ?)",
+                                [$id, $vName, $vPrice, $vStock, $vHpp]
+                            );
+                            $vId = (int)\App\Core\Database::getPdo()->lastInsertId();
+                        }
+                    } else {
+                        \App\Core\Database::query(
+                            "INSERT INTO `product_variations` (`product_id`, `name`, `price`, `stock`, `hpp`) VALUES (?, ?, ?, ?, ?)",
+                            [$id, $vName, $vPrice, $vStock, $vHpp]
+                        );
+                        $vId = (int)\App\Core\Database::getPdo()->lastInsertId();
+                    }
+                    if ($vId > 0) {
+                        $keptVarIds[] = $vId;
+                    }
                 }
+            }
+
+            // Hapus variasi yang dihapus oleh merchant dari daftar modal
+            if (empty($keptVarIds)) {
+                \App\Core\Database::query("DELETE FROM `product_raw_materials` WHERE `product_id` = ? AND `variation_id` IS NOT NULL", [$id]);
+                \App\Core\Database::query("DELETE FROM `product_variations` WHERE `product_id` = ?", [$id]);
+            } else {
+                $inClause = implode(',', array_map('intval', $keptVarIds));
+                \App\Core\Database::query("DELETE FROM `product_raw_materials` WHERE `product_id` = ? AND `variation_id` IS NOT NULL AND `variation_id` NOT IN ($inClause)", [$id]);
+                \App\Core\Database::query("DELETE FROM `product_variations` WHERE `product_id` = ? AND `id` NOT IN ($inClause)", [$id]);
             }
         }
 
