@@ -7,15 +7,86 @@ use App\Services\MidtransService;
 use App\Models\Wallet;
 use App\Models\TopupLog;
 use App\Models\Notification;
+use App\Services\DokuService;
 use Exception;
 
 class PaymentController extends Controller
 {
     private MidtransService $midtransService;
+    private DokuService $dokuService;
 
     public function __construct()
     {
         $this->midtransService = new MidtransService();
+        $this->dokuService = new DokuService();
+    }
+
+    /**
+     * Generate DOKU Checkout URL for CicalengkaPay Wallet Top-Up
+     */
+    public function topupDoku(): void
+    {
+        $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Silakan login terlebih dahulu.', null, 401);
+            return;
+        }
+
+        $user = auth_user();
+        $data = $this->getPost();
+        $amount = (float)($data['amount'] ?? 0);
+
+        if ($amount < 10000) {
+            $this->errorResponse('Nominal top up minimal Rp 10.000.');
+            return;
+        }
+
+        $orderId = 'TOPUP-' . $userId . '-' . time() . '-' . rand(100, 999);
+
+        try {
+            $appConfig = require APP_PATH . '/config/app.php';
+            $publicUrl = rtrim($appConfig['public_url'] ?? '', '/');
+
+            $params = [
+                'invoice_number' => $orderId,
+                'amount'         => (int)$amount,
+                'callback_url'   => $publicUrl . '/wallet',
+                'customer'       => [
+                    'id'    => (string)$userId,
+                    'name'  => $user['name'] ?? 'Pengguna CicalengkaGO',
+                    'email' => $user['email'] ?? 'customer@cicalengkago.id',
+                    'phone' => $user['phone'] ?? '081234567890'
+                ],
+                'line_items' => [
+                    [
+                        'name'     => 'Top Up Saldo CicalengkaPay',
+                        'price'    => (int)$amount,
+                        'quantity' => 1
+                    ]
+                ]
+            ];
+
+            $dokuResult = $this->dokuService->createPaymentUrl($params);
+
+            // Record pending log in topup_logs
+            (new \App\Models\TopupLog())->recordPending(
+                $userId,
+                $orderId,
+                $amount,
+                null,
+                'doku_checkout',
+                'Menunggu pembayaran via DOKU'
+            );
+
+            $this->successResponse('Sesi pembayaran DOKU berhasil dibuat', [
+                'payment_url'    => $dokuResult['payment_url'],
+                'redirect_url'   => $dokuResult['redirect_url'],
+                'order_id'       => $orderId,
+                'invoice_number' => $orderId,
+            ]);
+        } catch (\Throwable $e) {
+            $this->errorResponse($e->getMessage());
+        }
     }
 
     /**
@@ -328,6 +399,32 @@ class PaymentController extends Controller
 
         try {
             $result = $this->midtransService->processNotification($payload);
+            http_response_code(200);
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'success', 'result' => $result]);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Webhook Notification Handler from DOKU Payment Gateway
+     */
+    public function dokuNotification(): void
+    {
+        $rawInput = file_get_contents('php://input');
+        $payload = json_decode($rawInput, true);
+
+        if (!$payload) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid payload']);
+            return;
+        }
+
+        try {
+            $result = $this->dokuService->processNotification($payload);
             http_response_code(200);
             header('Content-Type: application/json');
             echo json_encode(['status' => 'success', 'result' => $result]);

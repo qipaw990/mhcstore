@@ -301,10 +301,17 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
           {'urls': 'stun:stun.l.google.com:19302'},
           {'urls': 'stun:stun1.l.google.com:19302'},
           {'urls': 'stun:stun2.l.google.com:19302'},
-          {'urls': 'stun:stun3.l.google.com:19302'},
-          {'urls': 'stun:stun4.l.google.com:19302'},
-          {'urls': 'stun:global.stun.twilio.com:3478'},
           {'urls': 'stun:stun.cloudflare.com:3478'},
+          // TURN Server Relay — Wajib untuk menghubungkan perangkat beda jaringan / 4G / Cloudflare
+          {
+            'urls': [
+              'turn:openrelay.metered.ca:80',
+              'turn:openrelay.metered.ca:443',
+              'turn:openrelay.metered.ca:443?transport=tcp',
+            ],
+            'username': 'openrelayproject',
+            'credential': 'openrelayproject',
+          },
         ],
         'sdpSemantics': 'unified-plan',
       };
@@ -340,12 +347,18 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         }
       };
 
-      _peerConnection!.onTrack = (RTCTrackEvent event) {
-        debugPrint('[WebRTC] Received remote track: ${event.track.kind}');
+      _peerConnection!.onTrack = (RTCTrackEvent event) async {
+        debugPrint('[WebRTC] Received remote track: ${event.track.kind}, streams: ${event.streams.length}');
         if (event.track.kind == 'audio') {
           event.track.enabled = true;
           if (event.streams.isNotEmpty) {
             _remoteRenderer.srcObject = event.streams[0];
+          } else {
+            try {
+              final newStream = await createLocalMediaStream('remote_audio_stream');
+              await newStream.addTrack(event.track);
+              _remoteRenderer.srcObject = newStream;
+            } catch (_) {}
           }
           _stopRingtone();
           _setSpeakerphone(_isSpeakerOn);
@@ -830,12 +843,17 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       body: Stack(
         children: [
           // Embedded WebRTC Renderer View (Required for Chrome & Native Audio Playback)
-          SizedBox(
-            width: 1,
-            height: 1,
-            child: Opacity(
-              opacity: 0.01,
-              child: RTCVideoView(_remoteRenderer),
+          // Di Web, posisikan off-screen dengan ukuran valid agar browser tidak mendeteksi sebagai hidden-media muted
+          Positioned(
+            left: -500,
+            top: -500,
+            child: SizedBox(
+              width: 50,
+              height: 50,
+              child: RTCVideoView(
+                _remoteRenderer,
+                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+              ),
             ),
           ),
           SafeArea(

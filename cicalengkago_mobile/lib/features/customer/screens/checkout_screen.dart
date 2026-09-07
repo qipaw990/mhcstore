@@ -211,13 +211,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         final orderCode = res['data']?['order_code'] ?? res['data']?['order_id']?.toString() ?? res['order_code'] ?? '';
         
         final snapToken = res['data']?['snap_token'];
-        String? redirectUrl = res['data']?['redirect_url'] ?? res['redirect_url'];
+        String? redirectUrl = res['data']?['redirect_url'] ?? res['data']?['payment_url'] ?? res['redirect_url'];
         if ((redirectUrl == null || redirectUrl.isEmpty) && snapToken != null) {
           redirectUrl = 'https://app.sandbox.midtrans.com/snap/v2/vtweb/$snapToken';
         }
 
-        // If Midtrans is chosen and Snap URL is available, open InAppPaymentScreen
-        if (_paymentMethod == 'midtrans' && redirectUrl != null && redirectUrl.isNotEmpty) {
+        // If online payment (Midtrans or DOKU) is chosen and URL is available, open InAppPaymentScreen
+        if ((_paymentMethod == 'midtrans' || _paymentMethod == 'doku') && redirectUrl != null && redirectUrl.isNotEmpty) {
           await Navigator.push<bool>(
             context,
             MaterialPageRoute(
@@ -225,7 +225,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 paymentUrl: redirectUrl!,
                 orderId: orderCode,
                 amount: grandTotal,
-                title: 'Pembayaran Pesanan Midtrans',
+                title: _paymentMethod == 'doku' ? 'Pembayaran DOKU Checkout' : 'Pembayaran Pesanan Midtrans',
                 onPaymentComplete: () {
                   context.read<CustomerController>().fetchOrders();
                 },
@@ -549,7 +549,32 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   const Divider(height: 1),
 
-                  // 3. Bayar Tunai / COD
+                  // 3. DOKU Payment Gateway (QRIS, VA Bank, E-Wallet, Retail)
+                  RadioListTile<String>(
+                    value: 'doku',
+                    groupValue: _paymentMethod,
+                    title: const Text('DOKU Payment Gateway (QRIS, VA, E-Wallet)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    subtitle: const Text(
+                      'QRIS, Semua Bank, OVO, DANA, ShopeePay, Alfamart',
+                      style: TextStyle(fontSize: 11, color: Color(0xFFE1251B), fontWeight: FontWeight.w600),
+                    ),
+                    secondary: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE1251B).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.account_balance_wallet_rounded,
+                        color: Color(0xFFE1251B),
+                        size: 20,
+                      ),
+                    ),
+                    onChanged: (val) => setState(() => _paymentMethod = val!),
+                  ),
+                  const Divider(height: 1),
+
+                  // 4. Bayar Tunai / COD
                   RadioListTile<String>(
                     value: 'cod',
                     groupValue: _paymentMethod,

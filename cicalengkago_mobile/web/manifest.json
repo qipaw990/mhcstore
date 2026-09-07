@@ -1,11 +1,11 @@
 {
-    "name": "cicalengkago_mobile",
-    "short_name": "cicalengkago_mobile",
+    "name": "CicalengkaGO Super App",
+    "short_name": "CicalengkaGO",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#000000",
+    "theme_color": "#000000",
+    "description": "CicalengkaGO Super App - Food, Mart, Delivery, Ride & Merchant Solution",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

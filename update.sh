@@ -40,6 +40,7 @@ docker compose exec -u root cicalengkago_app chmod -R 777 /var/www/html/public/u
 echo "🗄️ Menjalankan migrasi database otomatis & indeks performa..."
 docker compose exec -T cicalengkago_app php database/run_casaos_migration.php 2>/dev/null || php database/run_casaos_migration.php 2>/dev/null || true
 docker compose exec -T cicalengkago_app php database/optimize_performance_indexes.php 2>/dev/null || php database/optimize_performance_indexes.php 2>/dev/null || true
+docker compose exec -T cicalengkago_app php database/add_doku_settings.php 2>/dev/null || php database/add_doku_settings.php 2>/dev/null || true
 
 # Seed variasi & topping produk
 echo "🍧 Memastikan variasi & topping produk tersedia..."
@@ -58,6 +59,7 @@ systemctl restart cloudflared 2>/dev/null || docker restart cloudflared 2>/dev/n
 
 echo "======================================================="
 echo " ✅ UPDATE SELESAI!"
-echo " 🌐 CicalengkaGO Web App  : Port 8090 (https://cicago.store)"
-echo " 📱 WhatsApp Gateway     : Port 3005 (http://<ip-casaos>:3005/qr)"
+echo " 🌐 CicalengkaGO Backend & Admin : Port 8090 (https://cicago.store)"
+echo " 💻 CicalengkaGO Flutter Web     : Port 8095 (http://<ip-casaos>:8095)"
+echo " 📱 WhatsApp Gateway            : Port 3005 (http://<ip-casaos>:3005/qr)"
 echo "======================================================="

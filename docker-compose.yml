@@ -54,6 +54,16 @@ services:
     volumes:
       - cicago_wa_auth_data:/app/.wwebjs_auth
 
+  cicalengkago_web:
+    build:
+      context: ./cicalengkago_mobile
+      dockerfile: Dockerfile
+    image: cicalengkago-web:latest
+    container_name: cicalengkago_web
+    restart: always
+    ports:
+      - "8095:80"
+
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
     container_name: cicalengkago_pma
@@ -72,3 +82,4 @@ services:
 volumes:
   cicalengkago_db_data:
   cicago_wa_auth_data:
+

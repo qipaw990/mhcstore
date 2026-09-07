@@ -10,6 +10,7 @@ use App\Models\CustomerAddress;
 use App\Models\Zone;
 use App\Services\OrderService;
 use App\Services\MidtransService;
+use App\Services\DokuService;
 use App\Core\Database;
 use Exception;
 
@@ -20,6 +21,7 @@ class OrderController extends Controller
     private Wallet $walletModel;
     private OrderService $orderService;
     private MidtransService $midtransService;
+    private DokuService $dokuService;
 
     public function __construct()
     {
@@ -28,6 +30,7 @@ class OrderController extends Controller
         $this->walletModel = new Wallet();
         $this->orderService = new OrderService();
         $this->midtransService = new MidtransService();
+        $this->dokuService = new DokuService();
     }
 
     public function checkout(): void
@@ -213,6 +216,34 @@ class OrderController extends Controller
                 $responseData['redirect_url'] = $snapResult['redirect_url'];
             }
 
+            // Online payment: DOKU Checkout URL covering grand total of all stores
+            if ($paymentMethod === 'doku') {
+                $user        = auth_user();
+                $appConfig   = require APP_PATH . '/config/app.php';
+                $publicUrl   = rtrim($appConfig['public_url'] ?? '', '/');
+                $dokuInvoice = 'ORD-' . $firstCode . '-' . time();
+                $dokuParams  = [
+                    'invoice_number' => $dokuInvoice,
+                    'amount'         => (int)round($grandTotal),
+                    'callback_url'   => $publicUrl . '/orders/' . $firstCode . '/tracking',
+                    'customer'       => [
+                        'id'    => (string)($user['id'] ?? $userId),
+                        'name'  => $deliveryAddress['contact_name'] ?: ($user['name'] ?? 'Pelanggan'),
+                        'email' => $user['email'] ?? 'customer@cicalengkago.id',
+                        'phone' => $deliveryAddress['contact_phone'] ?: ($user['phone'] ?? '081234567890'),
+                    ],
+                    'line_items'     => array_map(fn($code) => [
+                        'name'     => 'Pesanan CicalengkaGO #' . $code,
+                        'price'    => (int)round($grandTotal / count($allOrderCodes)),
+                        'quantity' => 1,
+                    ], $allOrderCodes),
+                ];
+
+                $dokuResult = $this->dokuService->createPaymentUrl($dokuParams);
+                $responseData['payment_url']  = $dokuResult['payment_url'];
+                $responseData['redirect_url'] = $dokuResult['redirect_url'];
+            }
+
             $this->successResponse(
                 count($allOrderCodes) > 1
                     ? count($allOrderCodes) . ' pesanan dari toko berbeda berhasil dibuat!'
@@ -278,6 +309,34 @@ class OrderController extends Controller
                 $responseData['snap_token']   = $snapResult['token'];
                 $responseData['client_key']   = $snapResult['client_key'];
                 $responseData['redirect_url'] = $snapResult['redirect_url'];
+            }
+
+            // If online payment via DOKU
+            if ($paymentMethod === 'doku') {
+                $user = auth_user();
+                $dokuInvoice = 'PCL-' . $result['order_code'] . '-' . time();
+                $dokuParams = [
+                    'invoice_number' => $dokuInvoice,
+                    'amount'         => (int)round($result['total']),
+                    'callback_url'   => $publicUrl . '/orders/' . $result['order_code'] . '/tracking',
+                    'customer'       => [
+                        'id'    => (string)($user['id'] ?? $userId),
+                        'name'  => sanitize($data['sender_name'] ?? ($user['name'] ?? 'Pengirim')),
+                        'email' => $user['email'] ?? 'customer@cicalengkago.id',
+                        'phone' => sanitize($data['sender_phone'] ?? ($user['phone'] ?? '081234567890')),
+                    ],
+                    'line_items'     => [
+                        [
+                            'name'     => 'Ongkir CicalengkaSend #' . $result['order_code'],
+                            'price'    => (int)round($result['total']),
+                            'quantity' => 1,
+                        ]
+                    ],
+                ];
+
+                $dokuResult = $this->dokuService->createPaymentUrl($dokuParams);
+                $responseData['payment_url']  = $dokuResult['payment_url'];
+                $responseData['redirect_url'] = $dokuResult['redirect_url'];
             }
 
             $this->successResponse('Pengiriman Parcel berhasil dipesan!', $responseData);
@@ -400,6 +459,34 @@ class OrderController extends Controller
             }
         }
 
+        $dokuUrl = null;
+        if ($order['payment_method'] === 'doku' && $order['payment_status'] !== 'paid' && $order['order_status'] !== 'canceled') {
+            try {
+                $user = auth_user() ?: ['name' => 'Pelanggan', 'email' => 'customer@cicalengkago.id', 'phone' => '081234567890'];
+                $appConfig = require APP_PATH . '/config/app.php';
+                $publicUrl = rtrim($appConfig['public_url'] ?? '', '/');
+                $dokuRes = $this->dokuService->createPaymentUrl([
+                    'invoice_number' => 'REPAY-' . $order['order_code'] . '-' . time(),
+                    'amount'         => (int)round((float)$order['total_amount']),
+                    'callback_url'   => $publicUrl . '/orders/' . $order['order_code'] . '/tracking',
+                    'customer'       => [
+                        'id'    => (string)($order['user_id'] ?? 'GUEST'),
+                        'name'  => $order['delivery_address']['contact_name'] ?? ($user['name'] ?? 'Pelanggan'),
+                        'email' => $user['email'] ?? 'customer@cicalengkago.id',
+                        'phone' => $order['delivery_address']['contact_phone'] ?? ($user['phone'] ?? '081234567890'),
+                    ],
+                    'line_items'     => [
+                        [
+                            'name'     => 'Pesanan CicalengkaGO #' . $order['order_code'],
+                            'price'    => (int)round((float)$order['total_amount']),
+                            'quantity' => 1,
+                        ]
+                    ]
+                ]);
+                $dokuUrl = $dokuRes['payment_url'] ?? null;
+            } catch (\Throwable $e) {}
+        }
+
         if ($this->isJsonRequest()) {
             $this->successResponse('Tracking pesanan berhasil diambil', [
                 'order'      => $order,
@@ -407,6 +494,7 @@ class OrderController extends Controller
                 'client_key' => $clientKey,
                 'snap_url'   => $snapUrl,
                 'is_sandbox' => $this->midtransService->isSandbox(),
+                'doku_url'   => $dokuUrl,
             ]);
             return;
         }

@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -26,7 +26,8 @@ class CustomerProfileScreen extends StatefulWidget {
 }
 
 class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
-  File? _selectedAvatarFile;
+  XFile? _selectedAvatarFile;
+  Uint8List? _avatarBytes;
 
   @override
   void initState() {
@@ -72,10 +73,12 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         ctrl: ctrl,
         authCtrl: authCtrl,
         initialAvatarFile: _selectedAvatarFile,
-        onAvatarUpdated: (file) {
+        initialAvatarBytes: _avatarBytes,
+        onAvatarUpdated: (file, bytes) {
           if (mounted) {
             setState(() {
               _selectedAvatarFile = file;
+              _avatarBytes = bytes;
             });
           }
         },
@@ -225,8 +228,8 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                             border: Border.all(color: const Color(0xFFEE2737), width: 2),
                           ),
                           child: ClipOval(
-                            child: _selectedAvatarFile != null
-                                ? Image.file(_selectedAvatarFile!, fit: BoxFit.cover)
+                            child: _avatarBytes != null
+                                ? Image.memory(_avatarBytes!, fit: BoxFit.cover)
                                 : (avatarUrl != null
                                     ? CachedNetworkImage(
                                         imageUrl: avatarUrl,
@@ -859,7 +862,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
               child: ListView(
                 children: [
                   _faqExpansionTile('Cara Memesan Makanan & Produk', 'Pilih menu makanan atau produk mitra CicalengkaGO favoritmu, atur kuantitas, dan klik "Tambah ke Keranjang". Buka keranjang lalu tekan "Lanjut Checkout".'),
-                  _faqExpansionTile('Metode Pembayaran yang Tersedia', 'CicalengkaGO mendukung pembayaran Cash on Delivery (COD/Bayar di Tempat), Saldo Wallet CicalengkaPay, serta QRIS dan Transfer Bank (Midtrans).'),
+                  _faqExpansionTile('Metode Pembayaran yang Tersedia', 'CicalengkaGO mendukung pembayaran Cash on Delivery (COD/Bayar di Tempat), Saldo Wallet CicalengkaPay, serta QRIS, Transfer Bank Virtual Account, dan E-Wallet via DOKU atau Midtrans.'),
                   _faqExpansionTile('Berapa Biaya Pengantaran Ongkir?', 'Biaya ongkir dihitung secara otomatis berdasarkan jarak lokasi mitra toko ke lokasi pengantaran Anda di wilayah Cicalengka.'),
                   _faqExpansionTile('Bagaimana Cara Melakukan Top Up Saldo?', 'Buka menu Saldo CicalengkaPay > klik tombol "Isi Saldo" > masukkan nominal lalu pilih metode pembayaran Transfer Bank / QRIS.'),
                   _faqExpansionTile('Bagaimana Jika Pesanan Bermasalah?', 'Anda dapat menghubungi driver yang bertugas melalui nomor telepon yang tertera di halaman pelacakan atau hubungi CS kami.'),
@@ -1347,14 +1350,16 @@ class _EditProfileModalSheet extends StatefulWidget {
   final Map<String, dynamic>? user;
   final CustomerController ctrl;
   final AuthController authCtrl;
-  final File? initialAvatarFile;
-  final ValueChanged<File?> onAvatarUpdated;
+  final XFile? initialAvatarFile;
+  final Uint8List? initialAvatarBytes;
+  final void Function(XFile?, Uint8List?) onAvatarUpdated;
 
   const _EditProfileModalSheet({
     required this.user,
     required this.ctrl,
     required this.authCtrl,
     required this.initialAvatarFile,
+    required this.initialAvatarBytes,
     required this.onAvatarUpdated,
   });
 
@@ -1376,7 +1381,8 @@ class _EditProfileModalSheetState extends State<_EditProfileModalSheet> {
   bool _showConfirmPass = false;
   bool _isSaving = false;
 
-  File? _selectedAvatarFile;
+  XFile? _selectedAvatarFile;
+  Uint8List? _avatarBytes;
 
   @override
   void initState() {
@@ -1391,6 +1397,7 @@ class _EditProfileModalSheetState extends State<_EditProfileModalSheet> {
     _confirmPassCtrl = TextEditingController();
 
     _selectedAvatarFile = widget.initialAvatarFile;
+    _avatarBytes = widget.initialAvatarBytes;
   }
 
   @override
@@ -1415,13 +1422,14 @@ class _EditProfileModalSheetState extends State<_EditProfileModalSheet> {
       );
 
       if (picked != null) {
-        final file = File(picked.path);
+        final bytes = await picked.readAsBytes();
         if (mounted) {
           setState(() {
-            _selectedAvatarFile = file;
+            _selectedAvatarFile = picked;
+            _avatarBytes = bytes;
           });
         }
-        widget.onAvatarUpdated(file);
+        widget.onAvatarUpdated(picked, bytes);
       }
     } catch (e) {
       if (mounted) {
@@ -1634,8 +1642,8 @@ class _EditProfileModalSheetState extends State<_EditProfileModalSheet> {
                           border: Border.all(color: AppTheme.primaryRed, width: 2),
                         ),
                         child: ClipOval(
-                          child: _selectedAvatarFile != null
-                              ? Image.file(_selectedAvatarFile!, fit: BoxFit.cover)
+                          child: _avatarBytes != null
+                              ? Image.memory(_avatarBytes!, fit: BoxFit.cover)
                               : (avatarUrl != null
                                   ? CachedNetworkImage(
                                       imageUrl: avatarUrl,
@@ -1646,14 +1654,17 @@ class _EditProfileModalSheetState extends State<_EditProfileModalSheet> {
                                   : _defaultAvatar(name)),
                         ),
                       ),
-                      if (_selectedAvatarFile != null)
+                      if (_avatarBytes != null)
                         Positioned(
                           top: 0,
                           right: 0,
                           child: GestureDetector(
                             onTap: () {
-                              setState(() => _selectedAvatarFile = null);
-                              widget.onAvatarUpdated(null);
+                              setState(() {
+                                _selectedAvatarFile = null;
+                                _avatarBytes = null;
+                              });
+                              widget.onAvatarUpdated(null, null);
                             },
                             child: Container(
                               padding: const EdgeInsets.all(3),
@@ -1880,7 +1891,7 @@ class _EditProfileModalSheetState extends State<_EditProfileModalSheet> {
                                   'avatar': avatarUrlStr.toString(),
                               });
 
-                              widget.onAvatarUpdated(null);
+                              widget.onAvatarUpdated(null, null);
 
                               if (context.mounted) {
                                 Navigator.pop(context);

@@ -83,12 +83,14 @@ class ApiConstants {
   static const String orderReview    = '$domainUrl/orders/review';
 
   // Wallet & Payment
-  static const String wallet              = '$domainUrl/wallet';
-  static const String walletTopup         = '$domainUrl/wallet/topup-midtrans';
-  static const String paymentTopupSnap    = '$domainUrl/payment/topup-snap';
-  static const String paymentVerify       = '$domainUrl/payment/verify';
-  static const String paymentSimulate     = '$domainUrl/payment/simulate-sandbox-success';
-  static const String paymentNotification = '$domainUrl/payment/midtrans/notification';
+  static const String wallet                 = '$domainUrl/wallet';
+  static const String walletTopup            = '$domainUrl/wallet/topup-midtrans';
+  static const String walletTopupDoku        = '$domainUrl/wallet/topup-doku';
+  static const String paymentTopupSnap       = '$domainUrl/payment/topup-snap';
+  static const String paymentVerify          = '$domainUrl/payment/verify';
+  static const String paymentSimulate        = '$domainUrl/payment/simulate-sandbox-success';
+  static const String paymentNotification    = '$domainUrl/payment/midtrans/notification';
+  static const String paymentDokuNotification = '$domainUrl/payment/doku/notification';
 
   static const String walletTransfer      = '$domainUrl/wallet/transfer';
   static const String paymentTransfer     = '$domainUrl/api/payment/transfer';

@@ -1,6 +1,6 @@
-import 'dart:io';
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -698,7 +698,8 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
   late TextEditingController _discountCtrl;
   late TextEditingController _descCtrl;
   late TextEditingController _unitCtrl;
-  File? _selectedImage;
+  XFile? _selectedImage;
+  Uint8List? _selectedImageBytes;
   bool _isSaving = false;
 
   List<Map<String, dynamic>> _variations = [];
@@ -759,7 +760,11 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
       imageQuality: 75,
     );
     if (picked != null) {
-      setState(() => _selectedImage = File(picked.path));
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        _selectedImage = picked;
+        _selectedImageBytes = bytes;
+      });
     }
   }
 
@@ -824,10 +829,10 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: const Color(0xFFCBD5E1), style: BorderStyle.solid),
                         ),
-                        child: _selectedImage != null
+                        child: _selectedImageBytes != null
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(14),
-                                child: Image.file(_selectedImage!, fit: BoxFit.cover),
+                                child: Image.memory(_selectedImageBytes!, fit: BoxFit.cover),
                               )
                             : (existingImg != null && existingImg.isNotEmpty)
                                 ? ClipRRect(

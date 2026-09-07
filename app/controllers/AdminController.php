@@ -1176,7 +1176,8 @@ class AdminController extends Controller
             'wallet_payment_status',
             'single_active_order_driver',
             'require_login_otp',
-            'require_customer_otp'
+            'require_customer_otp',
+            'doku_enabled'
         ];
 
         // Explicitly set boolean switches: if unchecked (missing from POST), save as '0'; if checked, save as '1'
@@ -1227,6 +1228,17 @@ class AdminController extends Controller
         try {
             $midtransService = new \App\Services\MidtransService();
             $result = $midtransService->testApiConnection();
+            $this->json($result);
+        } catch (Exception $e) {
+            $this->errorResponse($e->getMessage());
+        }
+    }
+
+    public function testDokuApi(): void
+    {
+        try {
+            $dokuService = new \App\Services\DokuService();
+            $result = $dokuService->testApiConnection();
             $this->json($result);
         } catch (Exception $e) {
             $this->errorResponse($e->getMessage());

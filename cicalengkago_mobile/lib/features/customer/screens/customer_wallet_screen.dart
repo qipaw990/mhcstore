@@ -431,59 +431,136 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Isi Saldo CicalengkaPay', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-              const SizedBox(height: 4),
-              const Text('Minimal Rp 10.000', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-              const SizedBox(height: 16),
-              TextField(
-                controller: amountCtrl,
-                keyboardType: TextInputType.number,
-                autofocus: true,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                decoration: InputDecoration(
-                  prefixText: 'Rp ',
-                  prefixStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.primaryRed, width: 2)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.primaryRed, width: 2)),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.inkBlack,
-                    foregroundColor: AppTheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: const StadiumBorder(),
-                    elevation: 0,
+          child: StatefulBuilder(
+            builder: (ctx, setModalState) {
+              String selectedGateway = 'doku';
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Isi Saldo CicalengkaPay', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                  const SizedBox(height: 4),
+                  const Text('Minimal Rp 10.000', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: amountCtrl,
+                    keyboardType: TextInputType.number,
+                    autofocus: true,
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    decoration: InputDecoration(
+                      prefixText: 'Rp ',
+                      prefixStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.primaryRed, width: 2)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.primaryRed, width: 2)),
+                    ),
                   ),
-                  onPressed: () {
-                    final amount = int.tryParse(amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-                    if (amount < 10000) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Minimal top up Rp 10.000')),
-                      );
-                      return;
-                    }
-                    Navigator.pop(ctx);
-                    _initiateTopUp(context, amount);
-                  },
-                  child: const Text('Lanjut bayar', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                ),
-              ),
-            ],
+                  const SizedBox(height: 16),
+                  const Text('Pilih Saluran Pembayaran:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
+                  const SizedBox(height: 8),
+                  // Option 1: DOKU
+                  InkWell(
+                    onTap: () => setModalState(() => selectedGateway = 'doku'),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: selectedGateway == 'doku' ? const Color(0xFFE1251B) : Colors.grey.shade300, width: selectedGateway == 'doku' ? 2 : 1),
+                        borderRadius: BorderRadius.circular(12),
+                        color: selectedGateway == 'doku' ? const Color(0xFFE1251B).withValues(alpha: 0.05) : Colors.transparent,
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFFE1251B), size: 22),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('DOKU Payment Gateway', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                Text('QRIS, Semua Bank, OVO, DANA, Alfamart', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                              ],
+                            ),
+                          ),
+                          Radio<String>(
+                            value: 'doku',
+                            groupValue: selectedGateway,
+                            activeColor: const Color(0xFFE1251B),
+                            onChanged: (val) => setModalState(() => selectedGateway = val!),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Option 2: Midtrans
+                  InkWell(
+                    onTap: () => setModalState(() => selectedGateway = 'midtrans'),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: selectedGateway == 'midtrans' ? const Color(0xFF2563EB) : Colors.grey.shade300, width: selectedGateway == 'midtrans' ? 2 : 1),
+                        borderRadius: BorderRadius.circular(12),
+                        color: selectedGateway == 'midtrans' ? const Color(0xFF2563EB).withValues(alpha: 0.05) : Colors.transparent,
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.qr_code_2_rounded, color: Color(0xFF2563EB), size: 22),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Midtrans Snap', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                Text('QRIS, Virtual Account, ShopeePay, Indomaret', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                              ],
+                            ),
+                          ),
+                          Radio<String>(
+                            value: 'midtrans',
+                            groupValue: selectedGateway,
+                            activeColor: const Color(0xFF2563EB),
+                            onChanged: (val) => setModalState(() => selectedGateway = val!),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.inkBlack,
+                        foregroundColor: AppTheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: const StadiumBorder(),
+                        elevation: 0,
+                      ),
+                      onPressed: () {
+                        final amount = int.tryParse(amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+                        if (amount < 10000) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Minimal top up Rp 10.000')),
+                          );
+                          return;
+                        }
+                        Navigator.pop(ctx);
+                        _initiateTopUp(context, amount, gateway: selectedGateway);
+                      },
+                      child: const Text('Lanjut bayar', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
     );
   }
 
-  Future<void> _initiateTopUp(BuildContext context, int amount) async {
+  Future<void> _initiateTopUp(BuildContext context, int amount, {String gateway = 'doku'}) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -493,7 +570,8 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
     );
 
     try {
-      final res = await ApiService.post(ApiConstants.paymentTopupSnap, {
+      final endpoint = (gateway == 'doku') ? ApiConstants.walletTopupDoku : ApiConstants.paymentTopupSnap;
+      final res = await ApiService.post(endpoint, {
         'amount': amount,
       });
 
@@ -502,9 +580,10 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
       }
 
       if (res['success'] == true && res['data'] != null) {
-        final redirectUrl = res['data']['redirect_url']?.toString() ??
+        final redirectUrl = res['data']['payment_url']?.toString() ??
+            res['data']['redirect_url']?.toString() ??
             'https://app.sandbox.midtrans.com/snap/v2/vtweb/${res['data']['snap_token']}';
-        final orderId = res['data']['order_id']?.toString() ?? '';
+        final orderId = res['data']['order_id']?.toString() ?? res['data']['invoice_number']?.toString() ?? '';
 
         if (context.mounted) {
           final completed = await Navigator.push<bool>(
@@ -514,7 +593,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                 paymentUrl: redirectUrl,
                 orderId: orderId,
                 amount: amount.toDouble(),
-                title: 'Top Up CicalengkaPay',
+                title: gateway == 'doku' ? 'Top Up via DOKU' : 'Top Up via Midtrans',
                 onPaymentComplete: () {
                   context.read<CustomerController>().fetchWallet();
                 },
@@ -533,7 +612,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
         AppAlert.showError(
           context,
           title: 'Gagal Membuat Tiket',
-          message: res['message'] ?? 'Gagal membuat tiket pembayaran Top-Up via Midtrans.',
+          message: res['message'] ?? 'Gagal membuat tiket pembayaran Top-Up via ${gateway.toUpperCase()}.',
         );
       }
     } catch (e) {

@@ -1,0 +1,28 @@
+name: cicalengkago-web
+services:
+  cicalengkago_web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cicalengkago-web:latest
+    container_name: cicalengkago_web
+    restart: always
+    ports:
+      - "8095:80"
+    environment:
+      - TZ=Asia/Jakarta
+    x-casaos:
+      envs:
+        - container: TZ
+          description: Timezone
+      ports:
+        - container: "80"
+          description: "Web Port"
+      index: /
+      icon: https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/flutter.png
+      title:
+        en_us: CicalengkaGO Web
+        id_id: CicalengkaGO Web
+      category: Utility
+      port_map: "8095"
+      scheme: http

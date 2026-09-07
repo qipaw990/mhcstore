@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -35,9 +35,12 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
   bool _isSuccessPending = false;
   String _registeredStoreName = '';
 
-  File? _ktpFile;
-  File? _logoFile;
-  File? _coverFile;
+  XFile? _ktpFile;
+  XFile? _logoFile;
+  XFile? _coverFile;
+  Uint8List? _ktpBytes;
+  Uint8List? _logoBytes;
+  Uint8List? _coverBytes;
 
   final List<Map<String, String>> _modules = [
     {'id': '1', 'name': 'Kuliner / Resto / Makanan'},
@@ -96,10 +99,20 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
       imageQuality: 75,
     );
     if (picked != null) {
+      final bytes = await picked.readAsBytes();
       setState(() {
-        if (type == 'ktp') _ktpFile = File(picked.path);
-        if (type == 'logo') _logoFile = File(picked.path);
-        if (type == 'cover') _coverFile = File(picked.path);
+        if (type == 'ktp') {
+          _ktpFile = picked;
+          _ktpBytes = bytes;
+        }
+        if (type == 'logo') {
+          _logoFile = picked;
+          _logoBytes = bytes;
+        }
+        if (type == 'cover') {
+          _coverFile = picked;
+          _coverBytes = bytes;
+        }
       });
     }
   }
@@ -272,7 +285,7 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
                     // Upload KTP Box
                     _buildLabel('Foto KTP Pemilik Toko *'),
                     _buildPhotoUploadBox(
-                      file: _ktpFile,
+                      imageBytes: _ktpBytes,
                       icon: Icons.card_membership_rounded,
                       title: 'Upload Foto KTP Pemilik',
                       subtitle: 'Wajib untuk verifikasi identitas pemilik usaha',
@@ -339,7 +352,7 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
                             children: [
                               _buildLabel('Logo Toko *'),
                               _buildPhotoUploadBox(
-                                file: _logoFile,
+                                imageBytes: _logoBytes,
                                 icon: Icons.image_outlined,
                                 title: 'Logo Toko',
                                 subtitle: 'Avatar bulat',
@@ -356,7 +369,7 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
                             children: [
                               _buildLabel('Foto Depan Toko *'),
                               _buildPhotoUploadBox(
-                                file: _coverFile,
+                                imageBytes: _coverBytes,
                                 icon: Icons.camera_alt_outlined,
                                 title: 'Foto Toko',
                                 subtitle: 'Tampak depan',
@@ -575,7 +588,7 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
   }
 
   Widget _buildPhotoUploadBox({
-    required File? file,
+    required Uint8List? imageBytes,
     required IconData icon,
     required String title,
     required String subtitle,
@@ -590,14 +603,14 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
         decoration: BoxDecoration(
           color: const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: file != null ? const Color(0xFF16A34A) : const Color(0xFFCBD5E1), width: 1.5),
+          border: Border.all(color: imageBytes != null ? const Color(0xFF16A34A) : const Color(0xFFCBD5E1), width: 1.5),
         ),
-        child: file != null
+        child: imageBytes != null
             ? Stack(
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: Image.file(file, width: double.infinity, height: double.infinity, fit: BoxFit.cover),
+                    child: Image.memory(imageBytes, width: double.infinity, height: double.infinity, fit: BoxFit.cover),
                   ),
                   Positioned(
                     top: 4,

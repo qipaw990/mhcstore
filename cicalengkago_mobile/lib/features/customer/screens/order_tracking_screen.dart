@@ -35,6 +35,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   Map<String, dynamic>? _orderData;
   Map<String, dynamic>? _liveData;
   String? _snapUrl;
+  String? _dokuUrl;
   Timer? _refreshTimer;
   Timer? _tickerTimer;
   int _currentRemainingSeconds = 300;
@@ -106,6 +107,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           setState(() {
             _orderData = orderMap;
             _snapUrl = data['snap_url']?.toString();
+            _dokuUrl = data['doku_url']?.toString();
           });
           final custId = int.tryParse(orderMap['customer_id']?.toString() ?? orderMap['user_id']?.toString() ?? '');
           if (custId != null && custId > 0) {
@@ -204,7 +206,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
 
   Future<void> _payNow() async {
-    final url = _snapUrl ?? '${ApiConstants.domainUrl}/orders/${widget.orderCode}/tracking';
+    final payMethod = _orderData?['payment_method']?.toString() ?? '';
+    final url = (payMethod == 'doku')
+        ? (_dokuUrl ?? '${ApiConstants.domainUrl}/orders/${widget.orderCode}/tracking')
+        : (_snapUrl ?? '${ApiConstants.domainUrl}/orders/${widget.orderCode}/tracking');
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -265,7 +270,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         (order['delivery_man_id'] != null && ['processing', 'handover', 'on_the_way'].contains(status)));
 
     final bool isCanceled = status == 'canceled' || (remainingSeconds <= 0 && status == 'pending' && !isDriverValid && !['processing', 'handover', 'on_the_way', 'delivered'].contains(status));
-    final bool isUnpaidOnline = paymentMethod == 'midtrans' && paymentStatus != 'paid' && !isCanceled;
+    final bool isUnpaidOnline = (paymentMethod == 'midtrans' || paymentMethod == 'doku') && paymentStatus != 'paid' && !isCanceled;
 
     // Map Coordinates
     final storeMap = live['store'] is Map ? (live['store'] as Map) : {};
@@ -459,7 +464,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppTheme.primaryRed),
                       ),
                       const SizedBox(height: 4),
-                      const Text('Midtrans QRIS / VA / E-Wallet', style: TextStyle(fontSize: 10, color: Color(0xFF16A34A), fontWeight: FontWeight.w700)),
+                      Text(paymentMethod == 'doku' ? 'DOKU QRIS / VA / E-Wallet' : 'Midtrans QRIS / VA / E-Wallet', style: const TextStyle(fontSize: 10, color: Color(0xFF16A34A), fontWeight: FontWeight.w700)),
                     ],
                   ),
                 ),
@@ -496,7 +501,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ),
                   onPressed: _payNow,
                   icon: const Icon(Icons.wallet_rounded, size: 18),
-                  label: const Text('Bayar Sekarang (Midtrans)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  label: Text(paymentMethod == 'doku' ? 'Bayar Sekarang (DOKU)' : 'Bayar Sekarang (Midtrans)', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                 ),
                 const SizedBox(height: 10),
                 Row(
@@ -544,7 +549,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     String paymentStatus,
     double totalAmount,
   ) {
-    final bool isRefundable = ['wallet', 'midtrans', 'online', 'qris', 'va', 'credit_card'].contains(paymentMethod) && paymentStatus == 'refunded';
+    final bool isRefundable = ['wallet', 'midtrans', 'doku', 'online', 'qris', 'va', 'credit_card'].contains(paymentMethod) && paymentStatus == 'refunded';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -3126,6 +3131,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     if (paymentMethod == 'wallet' || paymentMethod == 'cicalengkapay') {
       methodLabel = 'CicalengkaPay';
       methodIcon = Icons.account_balance_wallet_rounded;
+    } else if (paymentMethod == 'doku') {
+      methodLabel = 'DOKU Checkout (QRIS / VA / E-Wallet)';
+      methodIcon = Icons.account_balance_wallet_rounded;
+      methodColor = const Color(0xFFE1251B);
     } else if (paymentMethod == 'midtrans' || paymentMethod == 'online' || paymentMethod == 'qris') {
       methodLabel = 'Midtrans QRIS / VA';
       methodIcon = Icons.qr_code_2_rounded;

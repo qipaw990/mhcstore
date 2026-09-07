@@ -57,7 +57,57 @@
                     </div>
                 </div>
 
-                <!-- 2. SETUP INTEGRASI WHATSAPP GATEWAY API & OTP -->
+                <!-- 2. SETUP INTEGRASI API PAYMENT GATEWAY (DOKU CHECKOUT) -->
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 p-4" style="border-top: 4px solid #E1251B !important;">
+                        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-danger text-white rounded-pill px-2.5 py-1" style="font-size: 11px; font-weight: 800; letter-spacing: 0.5px;">DOKU</span>
+                                <h6 class="fw-bold text-dark m-0">DOKU Payment Gateway API</h6>
+                            </div>
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" name="doku_enabled" value="1" id="dokuEnabledSwitch" <?= ($settings['doku_enabled'] ?? '1') === '1' ? 'checked' : '' ?>>
+                                <label class="form-check-label small fw-bold text-muted" for="dokuEnabledSwitch">Aktif</label>
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label small fw-bold">Mode Lingkungan (Environment)</label>
+                                <select name="doku_environment" class="form-select rounded-3">
+                                    <option value="sandbox" <?= ($settings['doku_environment'] ?? 'sandbox') === 'sandbox' ? 'selected' : '' ?>>🔴 Sandbox / Testing Mode (Development)</option>
+                                    <option value="production" <?= ($settings['doku_environment'] ?? '') === 'production' ? 'selected' : '' ?>>🟢 Production / Live Mode (Real Money)</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold">DOKU Client ID (Mall ID)</label>
+                                <input type="text" name="doku_client_id" class="form-control rounded-3 font-monospace" value="<?= htmlspecialchars($settings['doku_client_id'] ?? '') ?>" placeholder="Contoh: MALLID-12345678">
+                                <small class="text-muted" style="font-size: 10px;">Dapatkan Client ID dari DOKU Back Office (Menu Integrasi / API Keys).</small>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold">DOKU Secret Key (Shared Key)</label>
+                                <input type="password" name="doku_secret_key" class="form-control rounded-3 font-monospace" value="<?= htmlspecialchars($settings['doku_secret_key'] ?? '') ?>" placeholder="SK-xxxxxxxxxxxxxxxxxxxx">
+                                <small class="text-muted" style="font-size: 10px;">Secret Key digunakan untuk enkripsi HMAC-SHA256.</small>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-dark"><i class="bi bi-link-45deg me-1"></i>URL Notifikasi Webhook (Salin ke DOKU Dashboard)</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control bg-light rounded-start-3 text-secondary font-monospace" value="<?= $baseUrl ?>/payment/doku/notification" id="dokuWebhookUrl" readonly>
+                                    <button class="btn btn-outline-secondary rounded-end-3" type="button" onclick="navigator.clipboard.writeText(document.getElementById('dokuWebhookUrl').value); Swal.fire({icon:'success', title:'URL Disalin!', timer:1200, showConfirmButton:false});">
+                                        <i class="bi bi-clipboard"></i> Salin
+                                    </button>
+                                </div>
+                                <small class="text-muted" style="font-size: 10px;">Masukkan URL ini di menu <em>Settings &gt; Notification / Webhook URL</em> di DOKU Back Office.</small>
+                            </div>
+                            <div class="col-12 mt-2">
+                                <button type="button" onclick="testDokuConnection()" class="btn btn-outline-danger btn-sm rounded-pill w-100 fw-bold py-2" id="btn-test-doku">
+                                    <i class="bi bi-lightning-charge-fill me-1"></i> Tes Koneksi & Kredensial DOKU API
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. SETUP INTEGRASI WHATSAPP GATEWAY API & OTP -->
                 <div class="col-lg-6">
                     <div class="card border-0 shadow-sm rounded-4 h-100 p-4" style="background: linear-gradient(145deg, #f0fdf4 0%, #ffffff 100%); border: 1px solid #bbf7d0 !important;">
                         <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
@@ -318,6 +368,43 @@ async function testMidtransConnection() {
         }
     } catch (err) {
         Swal.fire('Error', 'Terjadi kesalahan saat menguji koneksi API.', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
+async function testDokuConnection() {
+    const btn = document.getElementById('btn-test-doku');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Menguji Koneksi DOKU API...';
+
+    try {
+        const res = await fetch(window.BASE_URL + '/admin/doku/test-connection', {
+            method: 'POST'
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Koneksi DOKU Sukses! 🎉',
+                html: `<div class="text-start small p-3 bg-light rounded-3 mt-2">
+                    <p class="mb-1"><strong>Status:</strong> <span class="badge bg-success">Terhubung</span></p>
+                    <p class="mb-1"><strong>Mode:</strong> ${data.environment || 'Sandbox'}</p>
+                    <p class="mb-0 text-muted">${data.message}</p>
+                </div>`
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Koneksi DOKU Gagal',
+                text: data.message || 'Periksa kembali Client ID dan Secret Key Anda.'
+            });
+        }
+    } catch (err) {
+        Swal.fire('Error', 'Terjadi kesalahan saat menguji koneksi DOKU API.', 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = originalText;

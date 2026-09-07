@@ -206,6 +206,27 @@ try {
         echo "[+] Added `products.hpp`\n";
     }
 
+    // Inisialisasi pengaturan default DOKU Payment Gateway jika belum ada
+    $dokuSettings = [
+        'doku_enabled'     => '1',
+        'doku_environment' => 'sandbox',
+        'doku_client_id'   => '',
+        'doku_secret_key'  => '',
+    ];
+    foreach ($dokuSettings as $k => $defVal) {
+        try {
+            $st = $pdo->prepare("SELECT id FROM `business_settings` WHERE `key_name` = ? LIMIT 1");
+            $st->execute([$k]);
+            if (!$st->fetch()) {
+                $ins = $pdo->prepare("INSERT INTO `business_settings` (`key_name`, `value_text`, `created_at`, `updated_at`) VALUES (?, ?, NOW(), NOW())");
+                $ins->execute([$k, $defVal]);
+                echo "[+] Initialized setting `{$k}` for DOKU\n";
+            }
+        } catch (Exception $e) {
+            echo "[=] Notice on setting `{$k}`: " . $e->getMessage() . "\n";
+        }
+    }
+
     echo "\n=========================================================\n";
     echo " SUCCESS: Migrasi struktur tabel ke CasaOS berhasil!\n";
     echo "=========================================================\n";

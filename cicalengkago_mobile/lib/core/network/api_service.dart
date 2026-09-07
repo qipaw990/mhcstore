@@ -199,7 +199,7 @@ class ApiService {
       }
       request.fields.addAll(updatedFields);
 
-      if (fileFieldName != null && filePath != null && filePath.isNotEmpty) {
+      if (!kIsWeb && fileFieldName != null && filePath != null && filePath.isNotEmpty) {
         final multipartFile = await http.MultipartFile.fromPath(fileFieldName, filePath);
         request.files.add(multipartFile);
       }
@@ -246,10 +246,12 @@ class ApiService {
       }
       request.fields.addAll(updatedFields);
 
-      for (final entry in files.entries) {
-        if (entry.value.isNotEmpty) {
-          final mf = await http.MultipartFile.fromPath(entry.key, entry.value);
-          request.files.add(mf);
+      if (!kIsWeb) {
+        for (final entry in files.entries) {
+          if (entry.value.isNotEmpty) {
+            final mf = await http.MultipartFile.fromPath(entry.key, entry.value);
+            request.files.add(mf);
+          }
         }
       }
 
