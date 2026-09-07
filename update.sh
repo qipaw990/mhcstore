@@ -24,20 +24,12 @@ chmod -R 777 public/uploads
 export DOCKER_BUILDKIT=0
 export COMPOSE_DOCKER_CLI_BUILD=0
 
-# Rebuild container Docker
-# Catatan: Secara default hanya me-rebuild backend (cicalengkago_app) agar update selesai dalam hitungan detik.
-# Jalankan './update.sh --web' HANYA jika Anda ingin meng-compile ulang Flutter Web.
-if [ "$1" == "--web" ] || [ "$1" == "--all" ]; then
-    echo "📦 Membangun ulang seluruh container termasuk Flutter Web (memakan waktu)..."
-    if ! docker compose up -d --build; then
-        echo "⚠️ Build reguler gagal. Menjalankan build bersih tanpa cache (--no-cache)..."
-        docker builder prune -f 2>/dev/null || true
-        DOCKER_BUILDKIT=0 docker compose build --no-cache
-        docker compose up -d
-    fi
-else
-    echo "⚡ Membangun ulang container backend (cepat, ~5 detik)..."
-    docker compose up -d --build cicalengkago_app
+# Rebuild dan jalankan ulang container Docker (App, DB, & WhatsApp Gateway)
+echo "📦 Membangun ulang container Docker..."
+if ! docker compose up -d --build; then
+    echo "⚠️ Build reguler gagal (cache/snapshot korup). Menjalankan build bersih tanpa cache (--no-cache)..."
+    docker builder prune -f 2>/dev/null || true
+    DOCKER_BUILDKIT=0 docker compose build --no-cache
     docker compose up -d
 fi
 
