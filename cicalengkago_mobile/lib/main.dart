@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
@@ -85,6 +86,18 @@ class _LocationGuardState extends State<LocationGuard> with WidgetsBindingObserv
   }
 
   Future<void> _checkLocationStatus() async {
+    if (kIsWeb) {
+      if (mounted) {
+        setState(() {
+          _serviceEnabled = true;
+          _permission = LocationPermission.whileInUse;
+          _isGranted = true;
+          _isChecking = false;
+        });
+      }
+      return;
+    }
+
     setState(() => _isChecking = true);
 
     bool serviceEnabled = false;

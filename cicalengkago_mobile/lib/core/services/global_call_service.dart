@@ -103,17 +103,18 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> _ensureUserId() async {
-    if (_hasResolvedPrefs && _userId != null && _userId! > 0) return;
+    final curUid = _userId;
+    if (_hasResolvedPrefs && curUid != null && curUid > 0) return;
     try {
       final prefs = await SharedPreferences.getInstance();
       _cachedCookie = prefs.getString('php_session_cookie');
 
-      if (_userId == null || _userId! <= 0) {
+      if (_userId == null || (_userId ?? 0) <= 0) {
         final directId = prefs.getString('user_id');
         if (directId != null && directId.isNotEmpty) {
           _userId = int.tryParse(directId);
         }
-        if (_userId == null || _userId! <= 0) {
+        if (_userId == null || (_userId ?? 0) <= 0) {
           final userStr = prefs.getString('user_data');
           if (userStr != null && userStr.isNotEmpty) {
             final u = jsonDecode(userStr);
@@ -123,12 +124,12 @@ class GlobalCallService extends ChangeNotifier with WidgetsBindingObserver {
             }
           }
         }
-        if (_userId != null && _userId! > 0) {
+        if ((_userId ?? 0) > 0) {
           debugPrint('🔑 [GlobalCallService] Resolved userId from SharedPreferences: $_userId');
         }
       }
 
-      if (_orderCode == null || _orderCode!.isEmpty) {
+      if (_orderCode == null || (_orderCode ?? '').isEmpty) {
         final lastOrder = prefs.getString('active_order_code') ?? prefs.getString('last_order_code');
         if (lastOrder != null && lastOrder.isNotEmpty) {
           _orderCode = lastOrder;
