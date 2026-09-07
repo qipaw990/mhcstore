@@ -24,13 +24,17 @@ chmod -R 777 public/uploads
 export DOCKER_BUILDKIT=0
 export COMPOSE_DOCKER_CLI_BUILD=0
 
+# Bersihkan container lama jika ada konflik nama container
+docker rm -f cicalengkago_web 2>/dev/null || true
+
 # Rebuild dan jalankan ulang container Docker (App, DB, & WhatsApp Gateway)
 echo "📦 Membangun ulang container Docker..."
-if ! docker compose up -d --build; then
+if ! docker compose up -d --build --remove-orphans; then
     echo "⚠️ Build reguler gagal (cache/snapshot korup). Menjalankan build bersih tanpa cache (--no-cache)..."
     docker builder prune -f 2>/dev/null || true
     DOCKER_BUILDKIT=0 docker compose build --no-cache
-    docker compose up -d
+    docker rm -f cicalengkago_web 2>/dev/null || true
+    docker compose up -d --remove-orphans
 fi
 
 # Pastikan permission di dalam container dan host aman
