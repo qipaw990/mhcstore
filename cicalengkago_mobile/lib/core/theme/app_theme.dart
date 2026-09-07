@@ -42,8 +42,25 @@ class AppTheme {
   static const double space2xl = 24.0;
   static const double space3xl = 32.0;
 
+  static TextStyle _font({
+    double? fontSize,
+    FontWeight? fontWeight,
+    Color? color,
+    double? height,
+  }) {
+    return GoogleFonts.plusJakartaSans(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+      height: height,
+      fontFamilyFallback: const ['Roboto', 'Segoe UI', 'Arial', 'sans-serif'],
+    );
+  }
+
   static ThemeData get lightTheme {
-    final baseTextTheme = GoogleFonts.plusJakartaSansTextTheme();
+    final baseTextTheme = GoogleFonts.plusJakartaSansTextTheme().apply(
+      fontFamilyFallback: const ['Roboto', 'Segoe UI', 'Arial', 'sans-serif'],
+    );
 
     return ThemeData(
       useMaterial3: true,
@@ -58,45 +75,45 @@ class AppTheme {
         error: Colors.redAccent,
       ),
       textTheme: baseTextTheme.copyWith(
-        displayLarge: GoogleFonts.plusJakartaSans(
+        displayLarge: _font(
           fontSize: 36,
           fontWeight: FontWeight.w700,
           color: textInk,
           height: 1.22,
         ),
-        displayMedium: GoogleFonts.plusJakartaSans(
+        displayMedium: _font(
           fontSize: 24,
           fontWeight: FontWeight.w700,
           color: textInk,
           height: 1.25,
         ),
-        displaySmall: GoogleFonts.plusJakartaSans(
+        displaySmall: _font(
           fontSize: 20,
           fontWeight: FontWeight.w700,
           color: textInk,
           height: 1.3,
         ),
-        headlineMedium: GoogleFonts.plusJakartaSans(
+        headlineMedium: _font(
           fontSize: 22,
           fontWeight: FontWeight.w700,
           color: textInk,
         ),
-        titleLarge: GoogleFonts.plusJakartaSans(
+        titleLarge: _font(
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: textInk,
         ),
-        bodyLarge: GoogleFonts.plusJakartaSans(
+        bodyLarge: _font(
           fontSize: 16,
           fontWeight: FontWeight.w400,
           color: textBody,
         ),
-        bodyMedium: GoogleFonts.plusJakartaSans(
+        bodyMedium: _font(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: textBody,
         ),
-        labelLarge: GoogleFonts.plusJakartaSans(
+        labelLarge: _font(
           fontSize: 16,
           fontWeight: FontWeight.w500,
           color: textInk,
@@ -108,7 +125,7 @@ class AppTheme {
         scrolledUnderElevation: 0.5,
         centerTitle: false,
         iconTheme: const IconThemeData(color: textInk),
-        titleTextStyle: GoogleFonts.plusJakartaSans(
+        titleTextStyle: _font(
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: textInk,
@@ -129,7 +146,7 @@ class AppTheme {
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
           shape: const StadiumBorder(),
-          textStyle: GoogleFonts.plusJakartaSans(
+          textStyle: _font(
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
@@ -141,7 +158,7 @@ class AppTheme {
           side: const BorderSide(color: surfacePressed, width: 1.5),
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
           shape: const StadiumBorder(),
-          textStyle: GoogleFonts.plusJakartaSans(
+          textStyle: _font(
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
