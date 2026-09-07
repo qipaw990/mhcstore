@@ -1210,7 +1210,7 @@ class _ProductRecipeScreenState extends State<ProductRecipeScreen> {
                           physics: const NeverScrollableScrollPhysics(),
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           itemCount: activeIngredients.length,
-                          separatorBuilder: (_, _) => const SizedBox(height: 8),
+                          separatorBuilder: (context, index) => const SizedBox(height: 8),
                           itemBuilder: (ctx, i) {
                             final item = activeIngredients[i];
                             final matId = item['raw_material_id'];
@@ -1730,7 +1730,7 @@ class _AddIngredientSheetState extends State<_AddIngredientSheet> {
                           : ListView.separated(
                               shrinkWrap: true,
                               itemCount: filtered.length,
-                              separatorBuilder: (_, _) => const SizedBox(height: 6),
+                              separatorBuilder: (context, index) => const SizedBox(height: 6),
                               itemBuilder: (ctx, i) {
                                 final m = filtered[i] as Map<String, dynamic>;
                                 final isSelected = _selected?['id']?.toString() == m['id']?.toString();

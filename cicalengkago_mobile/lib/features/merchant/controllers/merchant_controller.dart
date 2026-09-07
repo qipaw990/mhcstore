@@ -328,11 +328,14 @@ class MerchantController extends ChangeNotifier {
 
   Future<bool> updateOrderStatus(int orderId, String status, {String? deliveryType}) async {
     try {
-      final res = await ApiService.post(ApiConstants.updateStoreOrderStatus, {
+      final body = <String, dynamic>{
         'order_id': orderId.toString(),
         'status': status,
-        'delivery_type': ?deliveryType,
-      });
+      };
+      if (deliveryType != null) {
+        body['delivery_type'] = deliveryType;
+      }
+      final res = await ApiService.post(ApiConstants.updateStoreOrderStatus, body);
 
       if (res['success'] == true) {
         await fetchDashboardData();

@@ -165,7 +165,7 @@ class _RawMaterialsScreenState extends State<RawMaterialsScreen> {
                               child: ListView.separated(
                                 padding: const EdgeInsets.all(16),
                                 itemCount: filtered.length,
-                                separatorBuilder: (_, _) => const SizedBox(height: 10),
+                                separatorBuilder: (context, index) => const SizedBox(height: 10),
                                 itemBuilder: (ctx, i) {
                                   final m = filtered[i] as Map;
                                   final id = int.tryParse(m['id']?.toString() ?? '0') ?? 0;

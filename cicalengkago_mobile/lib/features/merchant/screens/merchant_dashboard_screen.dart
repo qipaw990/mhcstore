@@ -949,7 +949,7 @@ class _MerchantOverviewTab extends StatelessWidget {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: items.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                separatorBuilder: (context, index) => const SizedBox(width: 8),
                 itemBuilder: (ctx, i) {
                   final it = items[i] as Map<String, dynamic>;
                   final name = it['name']?.toString() ?? 'Menu';

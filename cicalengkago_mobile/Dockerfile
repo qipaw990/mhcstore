@@ -13,7 +13,7 @@ RUN flutter pub get
 COPY . .
 
 # Build aplikasi web release
-RUN flutter build web --release
+RUN flutter build web --release --no-wasm-dry-run
 
 # ==========================================
 # Stage 2: Nginx Alpine (Hasil akhir ~25MB)

@@ -418,6 +418,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
 
   Widget _buildUnpaidView(Map<String, dynamic> order, Map<String, dynamic> live, double totalAmount) {
+    final paymentMethod = live['payment_method']?.toString() ?? order['payment_method']?.toString() ?? 'midtrans';
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -3134,7 +3135,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     } else if (paymentMethod == 'doku') {
       methodLabel = 'DOKU Checkout (QRIS / VA / E-Wallet)';
       methodIcon = Icons.account_balance_wallet_rounded;
-      methodColor = const Color(0xFFE1251B);
     } else if (paymentMethod == 'midtrans' || paymentMethod == 'online' || paymentMethod == 'qris') {
       methodLabel = 'Midtrans QRIS / VA';
       methodIcon = Icons.qr_code_2_rounded;

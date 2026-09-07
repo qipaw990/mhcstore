@@ -1226,7 +1226,7 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: orders.length,
-        separatorBuilder: (_, _) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+        separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
         itemBuilder: (context, index) {
           final ord = orders[index] as Map<String, dynamic>;
           final code = ord['order_code']?.toString() ?? '#${ord['id']}';
