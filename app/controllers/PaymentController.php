@@ -180,6 +180,186 @@ class PaymentController extends Controller
     }
 
     /**
+     * Render HTML wrapper page untuk Midtrans Snap in-app payment.
+     * Halaman ini dimuat oleh Flutter WebView / iframe sehingga tidak perlu
+     * redirect ke domain Midtrans (menghindari X-Frame-Options).
+     * Query params: snap_token, client_key, order_id, amount, is_production
+     */
+    public function snapPage(): void
+    {
+        $snapToken   = trim($_GET['snap_token'] ?? '');
+        $clientKey   = trim($_GET['client_key'] ?? '');
+        $orderId     = trim($_GET['order_id'] ?? '');
+        $amount      = (float)($_GET['amount'] ?? 0);
+        $isProduction = filter_var($_GET['is_production'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        if (empty($snapToken) || empty($clientKey)) {
+            http_response_code(400);
+            echo '<h3>Parameter tidak valid</h3>';
+            return;
+        }
+
+        $snapJsUrl = $isProduction
+            ? 'https://app.midtrans.com/snap/snap.js'
+            : 'https://app.sandbox.midtrans.com/snap/snap.js';
+
+        // Remove X-Frame-Options to allow embedding in Flutter WebView / iframe
+        header_remove('X-Frame-Options');
+        header('Content-Security-Policy: frame-ancestors *');
+        header('Content-Type: text/html; charset=UTF-8');
+        // Cache busting
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+
+        $amountFormatted = 'Rp ' . number_format($amount, 0, ',', '.');
+        $snapTokenEsc  = htmlspecialchars($snapToken, ENT_QUOTES);
+        $clientKeyEsc  = htmlspecialchars($clientKey, ENT_QUOTES);
+        $orderIdEsc    = htmlspecialchars($orderId, ENT_QUOTES);
+
+        echo <<<HTML
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pembayaran CicalengkaPay</title>
+  <script src="{$snapJsUrl}" data-client-key="{$clientKeyEsc}"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 32px 28px;
+      max-width: 360px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .logo { font-size: 32px; margin-bottom: 12px; }
+    h2 { font-size: 18px; color: #1a1a2e; margin-bottom: 6px; }
+    .amount {
+      font-size: 28px;
+      font-weight: 800;
+      color: #c62828;
+      margin: 8px 0 4px;
+    }
+    .order-id { font-size: 11px; color: #94a3b8; margin-bottom: 20px; font-family: monospace; }
+    .btn {
+      display: inline-block;
+      width: 100%;
+      padding: 14px 24px;
+      background: #c62828;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #b71c1c; }
+    .btn:disabled { background: #94a3b8; cursor: default; }
+    #status {
+      margin-top: 16px;
+      font-size: 12px;
+      color: #64748b;
+      min-height: 18px;
+    }
+    .spinner {
+      display: none;
+      width: 40px;
+      height: 40px;
+      border: 4px solid #fee2e2;
+      border-top-color: #c62828;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 16px auto 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">💳</div>
+    <h2>Pembayaran CicalengkaPay</h2>
+    <div class="amount">{$amountFormatted}</div>
+    <div class="order-id">{$orderIdEsc}</div>
+    <button class="btn" id="pay-btn" onclick="startPayment()">Mulai Pembayaran</button>
+    <div class="spinner" id="spinner"></div>
+    <div id="status">Siap memproses pembayaran...</div>
+  </div>
+
+  <script>
+    function sendMessage(type, data) {
+      var msg = JSON.stringify({ source: 'cicalengkago_payment', type: type, data: data });
+      // postMessage ke parent (iframe) atau ke flutter (WebView JS channel)
+      try { window.parent.postMessage(msg, '*'); } catch(e) {}
+      try { window.top.postMessage(msg, '*'); } catch(e) {}
+      // Flutter WebView JS channel
+      if (window.PaymentChannel) {
+        try { window.PaymentChannel.postMessage(msg); } catch(e) {}
+      }
+    }
+
+    function setStatus(msg) {
+      document.getElementById('status').textContent = msg;
+    }
+
+    function startPayment() {
+      var btn = document.getElementById('pay-btn');
+      var spinner = document.getElementById('spinner');
+      btn.disabled = true;
+      spinner.style.display = 'block';
+      setStatus('Memuat form pembayaran...');
+
+      snap.pay('{$snapTokenEsc}', {
+        onSuccess: function(result) {
+          setStatus('✅ Pembayaran berhasil!');
+          btn.style.display = 'none';
+          spinner.style.display = 'none';
+          sendMessage('success', { order_id: '{$orderIdEsc}', result: result });
+          setTimeout(function() { sendMessage('close', { status: 'success' }); }, 1500);
+        },
+        onPending: function(result) {
+          setStatus('⏳ Pembayaran pending...');
+          btn.disabled = false;
+          spinner.style.display = 'none';
+          sendMessage('pending', { order_id: '{$orderIdEsc}', result: result });
+        },
+        onError: function(result) {
+          setStatus('❌ Pembayaran gagal. Coba lagi.');
+          btn.disabled = false;
+          spinner.style.display = 'none';
+          sendMessage('error', { order_id: '{$orderIdEsc}', result: result });
+        },
+        onClose: function() {
+          setStatus('Pembayaran dibatalkan.');
+          btn.disabled = false;
+          spinner.style.display = 'none';
+          sendMessage('cancel', { order_id: '{$orderIdEsc}' });
+        }
+      });
+    }
+
+    // Auto-start after 500ms (better UX)
+    window.addEventListener('load', function() {
+      setTimeout(startPayment, 500);
+    });
+  </script>
+</body>
+</html>
+HTML;
+        exit;
+    }
+
+    /**
      * Update status log for top up (e.g. failed/canceled when user closes window or fails)
      */
     public function updateTopupStatus(): void

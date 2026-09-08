@@ -53,6 +53,17 @@ class _NativePaymentWebViewState extends State<_NativePaymentWebView> {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.white)
+      ..addJavaScriptChannel(
+        'PaymentChannel',
+        onMessageReceived: (JavaScriptMessage message) {
+          debugPrint('PaymentChannel received: ${message.message}');
+          try {
+            if (message.message.contains('success') || message.message.contains('settlement')) {
+              _handlePaymentSuccess();
+            }
+          } catch (_) {}
+        },
+      )
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {

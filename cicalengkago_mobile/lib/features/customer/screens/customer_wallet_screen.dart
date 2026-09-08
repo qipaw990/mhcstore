@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_service.dart';
 import '../../../core/theme/app_theme.dart';
@@ -585,16 +584,24 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
       }
 
       if (res['success'] == true && res['data'] != null) {
-        final redirectUrl = res['data']['payment_url']?.toString() ??
-            res['data']['redirect_url']?.toString() ??
-            'https://app.sandbox.midtrans.com/snap/v2/vtweb/${res['data']['snap_token']}';
+        final snapToken = res['data']['snap_token']?.toString() ?? '';
+        final clientKey = res['data']['client_key']?.toString() ?? '';
         final orderId = res['data']['order_id']?.toString() ?? res['data']['invoice_number']?.toString() ?? '';
 
-        if (kIsWeb) {
-          // Buka pembayaran langsung di tab yang sama (_self)
-          final uri = Uri.parse(redirectUrl);
-          await launchUrl(uri, webOnlyWindowName: '_self');
-          return;
+        String finalPaymentUrl = res['data']['payment_url']?.toString() ??
+            res['data']['redirect_url']?.toString() ?? '';
+
+        // Jika Midtrans Snap, arahkan ke Snap In-App Wrapper Page
+        if (snapToken.isNotEmpty && clientKey.isNotEmpty) {
+          final snapUri = Uri.parse(ApiConstants.paymentSnapPage).replace(queryParameters: {
+            'snap_token': snapToken,
+            'client_key': clientKey,
+            'order_id': orderId,
+            'amount': amount.toString(),
+          });
+          finalPaymentUrl = snapUri.toString();
+        } else if (finalPaymentUrl.isEmpty && snapToken.isNotEmpty) {
+          finalPaymentUrl = 'https://app.sandbox.midtrans.com/snap/v2/vtweb/$snapToken';
         }
 
         if (context.mounted) {
@@ -602,7 +609,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
             context,
             MaterialPageRoute(
               builder: (_) => InAppPaymentScreen(
-                paymentUrl: redirectUrl,
+                paymentUrl: finalPaymentUrl,
                 orderId: orderId,
                 amount: amount.toDouble(),
                 title: gateway == 'doku' ? 'Top Up via DOKU' : 'Top Up via Midtrans',
@@ -637,178 +644,6 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
       }
     }
   }
-
-  void _showWebPaymentConfirmDialog(BuildContext context, String paymentUrl, String orderId, double amount) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogCtx) {
-        bool isVerifying = false;
-        return StatefulBuilder(
-          builder: (ctx, setDialogState) {
-            return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            contentPadding: const EdgeInsets.all(24),
-            content: SizedBox(
-              width: 380,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryRed.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.open_in_browser_rounded, size: 38, color: AppTheme.primaryRed),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Halaman Pembayaran Dibuka',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Selesaikan pembayaran di tab baru yang telah dibuka, lalu klik tombol di bawah untuk verifikasi saldo.',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Column(
-                      children: [
-                        const Text('Total Top Up', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                        const SizedBox(height: 2),
-                        Text(
-                          CurrencyFormatter.formatRupiah(amount),
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
-                        ),
-                        if (orderId.isNotEmpty)
-                          Text('ID: $orderId', style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 44),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    onPressed: () => launchUrl(Uri.parse(paymentUrl), mode: LaunchMode.externalApplication, webOnlyWindowName: '_blank'),
-                    icon: const Icon(Icons.open_in_new, size: 16),
-                    label: const Text('Buka Ulang Tab Pembayaran', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.shade600,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 46),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      elevation: 0,
-                    ),
-                    onPressed: isVerifying
-                        ? null
-                        : () async {
-                            setDialogState(() => isVerifying = true);
-                            try {
-                              await ApiService.post(ApiConstants.paymentVerify, {
-                                'order_id': orderId,
-                                'amount': amount,
-                                'gross_amount': amount,
-                              });
-                            } catch (_) {}
-                            if (context.mounted) {
-                              context.read<CustomerController>().fetchWallet();
-                              Navigator.pop(dialogCtx);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('Saldo berhasil diperbarui!'),
-                                  backgroundColor: Colors.green.shade700,
-                                ),
-                              );
-                            }
-                          },
-                    icon: isVerifying
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Icon(Icons.check_circle, size: 18),
-                    label: Text(
-                      isVerifying ? 'Memverifikasi...' : 'Saya Sudah Selesai Membayar',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFFBEB),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.amber.shade200),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.flash_on, color: Colors.amber, size: 18),
-                        const SizedBox(width: 6),
-                        const Expanded(
-                          child: Text('Uji Coba Sandbox', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF92400E))),
-                        ),
-                        TextButton(
-                          style: TextButton.styleFrom(
-                            backgroundColor: Colors.amber.shade700,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            minimumSize: Size.zero,
-                          ),
-                          onPressed: () async {
-                            setDialogState(() => isVerifying = true);
-                            try {
-                              final sim = await ApiService.post(ApiConstants.paymentSimulate, {
-                                'order_id': orderId,
-                                'amount': amount,
-                                'payment_type': 'midtrans_sandbox_inapp',
-                              });
-                              if (sim['success'] == true && context.mounted) {
-                                context.read<CustomerController>().fetchWallet();
-                                Navigator.pop(dialogCtx);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Saldo Top Up ${CurrencyFormatter.formatRupiah(amount)} Berhasil (Sandbox)!'),
-                                    backgroundColor: Colors.green.shade700,
-                                  ),
-                                );
-                                return;
-                              }
-                            } catch (_) {}
-                            setDialogState(() => isVerifying = false);
-                          },
-                          child: const Text('Bayar Instant', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: () => Navigator.pop(dialogCtx),
-                    child: const Text('Tutup', style: TextStyle(color: Colors.grey)),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-    },
-  );
-}
 
   void _showSendMoneySheet(BuildContext context) {
     String transferType = 'bank'; // 'bank', 'ewallet', 'cicalengkapay'
