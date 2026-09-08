@@ -41,25 +41,51 @@
 </head>
 <body>
   <script>
-    // Cache buster for Flutter Web to prevent stale Cloudflare / Service Worker cache
+    // Bypass Cloudflare cache & unregister persistent service workers
     (function() {
       var buildTime = new Date().getTime();
-      var originalFetch = window.fetch;
-      window.fetch = function(url, options) {
-        if (typeof url === 'string' && url.indexOf('main.dart.js') !== -1) {
-          url = url + (url.indexOf('?') === -1 ? '?' : '&') + 'v=' + buildTime;
-        }
-        return originalFetch.call(this, url, options);
-      };
 
+      // 1. Matikan dan hapus semua Service Worker & Cache Storage lama
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(regs) {
-          for (var i = 0; i < regs.length; i++) {
-            regs[i].update();
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for (var i = 0; i < registrations.length; i++) {
+            registrations[i].unregister();
+          }
+        });
+      }
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          for (var i = 0; i < names.length; i++) {
+            caches.delete(names[i]);
           }
         });
       }
 
+      // 2. Intercept pembentukan script tag main.dart.js agar bypass Cloudflare
+      var origAppendChild = document.head.appendChild;
+      document.head.appendChild = function(node) {
+        if (node && node.tagName === 'SCRIPT' && node.src && node.src.indexOf('main.dart.js') !== -1) {
+          if (node.src.indexOf('v=') === -1) {
+            node.src = node.src + (node.src.indexOf('?') === -1 ? '?' : '&') + 'v=' + buildTime;
+          }
+        }
+        return origAppendChild.call(document.head, node);
+      };
+
+      var origAppend = document.head.append;
+      document.head.append = function() {
+        for (var i = 0; i < arguments.length; i++) {
+          var node = arguments[i];
+          if (node && node.tagName === 'SCRIPT' && node.src && node.src.indexOf('main.dart.js') !== -1) {
+            if (node.src.indexOf('v=') === -1) {
+              node.src = node.src + (node.src.indexOf('?') === -1 ? '?' : '&') + 'v=' + buildTime;
+            }
+          }
+        }
+        return origAppend.apply(document.head, arguments);
+      };
+
+      // 3. Muat bootstrap script dengan cache buster
       var script = document.createElement('script');
       script.src = 'flutter_bootstrap.js?v=' + buildTime;
       script.async = true;
