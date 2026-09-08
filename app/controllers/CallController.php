@@ -153,10 +153,7 @@ class CallController extends Controller
     public function poll(): void
     {
         try {
-            $userId    = (int)($_GET['user_id'] ?? 0);
-            if ($userId === 0) {
-                $userId = auth_id() ?: (int)($_SESSION['user']['id'] ?? ($_SESSION['user_id'] ?? 0));
-            }
+            $userId = auth_id() ?: (int)($_SESSION['user']['id'] ?? 0);
             $orderCode = sanitize(trim($_GET['order_code'] ?? ''));
 
             if (empty($orderCode) && $userId === 0) {

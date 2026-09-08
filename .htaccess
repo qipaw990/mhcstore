@@ -1,5 +1,36 @@
+# CicalengkaGO - Root Security & Rewrite Protection
+
+# 1. Block access to hidden files and sensitive configuration
+<IfModule mod_authz_core.c>
+    <FilesMatch "^\.">
+        Require all denied
+    </FilesMatch>
+    <FilesMatch "(?i)(composer\.(json|lock)|package(-lock)?\.json|\.env|\.git|\.yml|\.yaml|\.sql|\.log|Dockerfile.*|docker-compose.*|README\.md)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+    <FilesMatch "^\.">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+    <FilesMatch "(?i)(composer\.(json|lock)|package(-lock)?\.json|\.env|\.git|\.yml|\.yaml|\.sql|\.log|Dockerfile.*|docker-compose.*|README\.md)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</IfModule>
+
+# 2. Block direct access to core internal directories
 <IfModule mod_rewrite.c>
     RewriteEngine On
+
+    # Prevent direct access to backend system directories
+    RewriteRule ^(app|database|storage|cicalengkago_mobile)/ - [F,L]
+
+    # Route all normal web traffic to public folder
     RewriteRule ^$ public/ [L]
     RewriteRule (.*) public/$1 [L]
 </IfModule>
+
+# Disable directory browsing
+Options -Indexes

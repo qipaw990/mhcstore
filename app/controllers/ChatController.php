@@ -22,8 +22,8 @@ class ChatController extends Controller
      */
     public function getMessages(): void
     {
-        $userId   = auth_id() ?: (int)($_GET['user_id'] ?? 0);
-        $userRole = auth_role() ?: sanitize($_GET['user_role'] ?? 'customer');
+        $userId   = auth_id() ?: 0;
+        $userRole = auth_role() ?: 'customer';
 
         $orderCode = sanitize($_GET['order_code'] ?? '');
         $sinceId = (int)($_GET['since_id'] ?? 0);
@@ -148,14 +148,9 @@ class ChatController extends Controller
 
         $orderCode = sanitize(trim($data['order_code'] ?? ''));
         $message   = trim($data['message'] ?? '');
-        $reqUserId = (int)($data['user_id'] ?? 0);
-        $reqRole   = sanitize($data['user_role'] ?? $userRole);
-
-        if ($userId === 0 && $reqUserId > 0) {
-            $userId = $reqUserId;
-        }
-        if ($userRole === 'customer' && !empty($reqRole)) {
-            $userRole = $reqRole;
+        if ($userId === 0) {
+            $this->errorResponse('Silakan login untuk mengirim pesan.', null, 401);
+            return;
         }
 
         if (empty($orderCode)) {
@@ -289,8 +284,8 @@ class ChatController extends Controller
      */
     public function getStoreMessages(): void
     {
-        $userId   = auth_id() ?: (int)($_GET['user_id'] ?? 0);
-        $userRole = auth_role() ?: sanitize($_GET['user_role'] ?? 'customer');
+        $userId   = auth_id() ?: 0;
+        $userRole = auth_role() ?: 'customer';
         $storeId  = (int)($_GET['store_id'] ?? 0);
         $sinceId  = (int)($_GET['since_id'] ?? 0);
         $markRead = (bool)($_GET['mark_read'] ?? false);
@@ -367,8 +362,13 @@ class ChatController extends Controller
 
         $storeId  = (int)($data['store_id'] ?? 0);
         $message  = trim($data['message'] ?? '');
-        $senderId = $userId ?: (int)($data['user_id'] ?? 0);
-        $role     = sanitize($data['user_role'] ?? $userRole);
+        $senderId = auth_id() ?: 0;
+        $role     = auth_role() ?: 'customer';
+
+        if ($senderId === 0) {
+            $this->errorResponse('Silakan login untuk mengirim pesan.', null, 401);
+            return;
+        }
 
         if ($storeId <= 0) {
             $this->errorResponse('ID Toko wajib diisi.');

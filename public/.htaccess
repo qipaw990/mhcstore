@@ -1,3 +1,26 @@
+# Prevent directory browsing
+Options -Indexes
+
+# Block access to hidden files and sensitive configuration
+<IfModule mod_authz_core.c>
+    <FilesMatch "^\.">
+        Require all denied
+    </FilesMatch>
+    <FilesMatch "(?i)(composer\.(json|lock)|package(-lock)?\.json|\.env|\.git|\.yml|\.yaml|\.sql|\.log|Dockerfile.*|docker-compose.*)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+    <FilesMatch "^\.">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+    <FilesMatch "(?i)(composer\.(json|lock)|package(-lock)?\.json|\.env|\.git|\.yml|\.yaml|\.sql|\.log|Dockerfile.*|docker-compose.*)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</IfModule>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 

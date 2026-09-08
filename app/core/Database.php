@@ -49,7 +49,21 @@ class Database
         }
 
         if (!$connected) {
-            die("Database Connection Error: " . ($lastException ? $lastException->getMessage() : "Unable to connect to database"));
+            $msg = $lastException ? $lastException->getMessage() : "Unable to connect to database";
+            error_log("Database Connection Error: " . $msg);
+
+            $debug = false;
+            try {
+                $appConfig = require APP_PATH . '/config/app.php';
+                $debug = !empty($appConfig['debug']);
+            } catch (\Throwable $t) {}
+
+            if ($debug) {
+                die("Database Connection Error: " . $msg);
+            } else {
+                http_response_code(500);
+                die("Layanan sedang dalam pemeliharaan. Silakan coba beberapa saat lagi.");
+            }
         }
 
         $this->autoMigrateIfNeeded();

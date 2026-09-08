@@ -48,41 +48,24 @@ function auth_id(): ?int
         } catch (\Throwable $e) {}
     }
 
-    // 3. Check X-User-ID header or request params
-    $headers = function_exists('getallheaders') ? getallheaders() : [];
-    $xUserId = 0;
-    foreach ($headers as $k => $v) {
-        if (strtolower($k) === 'x-user-id') {
-            $xUserId = (int)$v;
-            break;
-        }
-    }
-
-    $uid = (int)($_REQUEST['user_id'] ?? $_GET['user_id'] ?? $_POST['user_id'] ?? $_SERVER['HTTP_X_USER_ID'] ?? $xUserId);
-    if ($uid > 0) {
-        $u = \App\Core\Database::fetchOne("SELECT id, name, email, phone, role, avatar, api_token FROM users WHERE id = ? LIMIT 1", [$uid]);
-        if ($u) {
-            $_SESSION['user'] = $u;
-            return (int)$u['id'];
-        }
-        return $uid;
-    }
-
     return null;
 }
 
 function auth_role(): ?string
 {
-    if (isset($_SESSION['user']['role'])) {
+    if (isset($_SESSION['user']['role']) && !empty($_SESSION['user']['role'])) {
         return $_SESSION['user']['role'];
     }
-    $role = $_REQUEST['user_role'] ?? $_GET['user_role'] ?? $_POST['user_role'] ?? null;
-    if ($role) return $role;
 
     $uid = auth_id();
     if ($uid > 0) {
         $u = \App\Core\Database::fetchOne("SELECT role FROM users WHERE id = ? LIMIT 1", [$uid]);
-        if ($u) return $u['role'];
+        if ($u) {
+            if (isset($_SESSION['user']) && is_array($_SESSION['user'])) {
+                $_SESSION['user']['role'] = $u['role'];
+            }
+            return $u['role'];
+        }
     }
     return null;
 }

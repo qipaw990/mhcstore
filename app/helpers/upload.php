@@ -44,10 +44,10 @@ function upload_image(array $file, string $folder = 'general'): ?string
     }
 
     $origExt = strtolower(pathinfo($file['name'] ?? '', PATHINFO_EXTENSION));
-    $allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'];
-    $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml', 'image/x-png', 'image/pjpeg'];
+    $allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/x-png', 'image/pjpeg'];
 
-    $isValid = in_array(strtolower($mime), $allowedMimes) || in_array($origExt, $allowedExts);
+    $isValid = in_array(strtolower($mime), $allowedMimes, true) && in_array($origExt, $allowedExts, true);
     if (!$isValid) {
         return null;
     }
@@ -57,8 +57,7 @@ function upload_image(array $file, string $folder = 'general'): ?string
         'image/png', 'image/x-png'  => 'png',
         'image/webp'                => 'webp',
         'image/gif'                 => 'gif',
-        'image/svg+xml'             => 'svg',
-        default                     => in_array($origExt, $allowedExts) ? $origExt : 'jpg'
+        default                     => in_array($origExt, $allowedExts, true) ? $origExt : 'jpg'
     };
 
     // Convert standard raster images to ultra-compact WebP (85%+ smaller file size)

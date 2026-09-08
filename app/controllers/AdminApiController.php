@@ -11,11 +11,23 @@ class AdminApiController extends Controller
 {
     public function __construct()
     {
-        // Allow CORS for decoupled React admin container
-        if (isset($_SERVER['HTTP_ORIGIN'])) {
-            header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
-            header("Access-Control-Allow-Credentials: true");
-            header("Access-Control-Max-Age: 86400");
+        // Allow CORS for decoupled React admin container with origin validation
+        $httpOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
+        if (!empty($httpOrigin)) {
+            $parsed = parse_url($httpOrigin);
+            $originHost = $parsed['host'] ?? '';
+            $originScheme = $parsed['scheme'] ?? '';
+
+            $isAllowedOrigin = in_array($originHost, ['localhost', '127.0.0.1', '10.0.2.2'], true)
+                || in_array($originScheme, ['capacitor', 'ionic'], true)
+                || preg_match('/^(.*\.)?(cicago\.store|cicalengkago\.com|cicalengkago\.store)$/i', $originHost)
+                || (isset($_SERVER['HTTP_HOST']) && strcasecmp($originHost, parse_url('http://' . $_SERVER['HTTP_HOST'], PHP_URL_HOST) ?? '') === 0);
+
+            if ($isAllowedOrigin && !headers_sent()) {
+                header("Access-Control-Allow-Origin: $httpOrigin");
+                header("Access-Control-Allow-Credentials: true");
+                header("Access-Control-Max-Age: 86400");
+            }
         }
         if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
             if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD'])) {
