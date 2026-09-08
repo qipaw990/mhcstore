@@ -40,14 +40,31 @@
   <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
+  <script>
+    // Cache buster for Flutter Web to prevent stale Cloudflare / Service Worker cache
+    (function() {
+      var buildTime = new Date().getTime();
+      var originalFetch = window.fetch;
+      window.fetch = function(url, options) {
+        if (typeof url === 'string' && url.indexOf('main.dart.js') !== -1) {
+          url = url + (url.indexOf('?') === -1 ? '?' : '&') + 'v=' + buildTime;
+        }
+        return originalFetch.call(this, url, options);
+      };
 
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
-  <script src="flutter_bootstrap.js" async></script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          for (var i = 0; i < regs.length; i++) {
+            regs[i].update();
+          }
+        });
+      }
+
+      var script = document.createElement('script');
+      script.src = 'flutter_bootstrap.js?v=' + buildTime;
+      script.async = true;
+      document.body.appendChild(script);
+    })();
+  </script>
 </body>
 </html>
