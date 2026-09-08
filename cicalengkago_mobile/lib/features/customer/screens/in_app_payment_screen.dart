@@ -46,7 +46,7 @@ class _InAppPaymentScreenState extends State<InAppPaymentScreen> {
   Future<void> _openPaymentUrl() async {
     try {
       final uri = Uri.parse(widget.paymentUrl);
-      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(uri, webOnlyWindowName: '_self');
       if (mounted) {
         setState(() => _hasOpened = true);
       }

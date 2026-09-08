@@ -576,6 +576,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
       final endpoint = (gateway == 'doku') ? ApiConstants.walletTopupDoku : ApiConstants.paymentTopupSnap;
       final res = await ApiService.post(endpoint, {
         'amount': amount,
+        if (kIsWeb) 'callback_url': Uri.base.origin,
       });
 
       if (dialogShown && context.mounted) {
@@ -590,14 +591,9 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
         final orderId = res['data']['order_id']?.toString() ?? res['data']['invoice_number']?.toString() ?? '';
 
         if (kIsWeb) {
-          // Di Flutter Web: Buka tab baru langsung dan tampilkan modal konfirmasi di tempat
-          try {
-            final uri = Uri.parse(redirectUrl);
-            await launchUrl(uri, mode: LaunchMode.externalApplication, webOnlyWindowName: '_blank');
-          } catch (_) {}
-          if (context.mounted) {
-            _showWebPaymentConfirmDialog(context, redirectUrl, orderId, amount.toDouble());
-          }
+          // Buka pembayaran langsung di tab yang sama (_self)
+          final uri = Uri.parse(redirectUrl);
+          await launchUrl(uri, webOnlyWindowName: '_self');
           return;
         }
 

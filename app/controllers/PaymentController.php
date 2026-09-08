@@ -47,10 +47,18 @@ class PaymentController extends Controller
             $appConfig = require APP_PATH . '/config/app.php';
             $publicUrl = rtrim($appConfig['public_url'] ?? '', '/');
 
+            $origin = $_SERVER['HTTP_ORIGIN'] ?? $_SERVER['HTTP_REFERER'] ?? '';
+            $callbackUrl = $publicUrl . '/wallet';
+            if (!empty($data['callback_url'])) {
+                $callbackUrl = $data['callback_url'];
+            } elseif (str_contains($origin, 'market.cicago.store')) {
+                $callbackUrl = 'https://market.cicago.store';
+            }
+
             $params = [
                 'invoice_number' => $orderId,
                 'amount'         => (int)$amount,
-                'callback_url'   => $publicUrl . '/wallet',
+                'callback_url'   => $callbackUrl,
                 'customer'       => [
                     'id'    => (string)$userId,
                     'name'  => $user['name'] ?? 'Pengguna CicalengkaGO',
@@ -115,6 +123,14 @@ class PaymentController extends Controller
             $appConfig = require APP_PATH . '/config/app.php';
             $publicUrl = rtrim($appConfig['public_url'] ?? '', '/');
 
+            $origin = $_SERVER['HTTP_ORIGIN'] ?? $_SERVER['HTTP_REFERER'] ?? '';
+            $callbackUrl = $publicUrl . '/wallet';
+            if (!empty($data['callback_url'])) {
+                $callbackUrl = $data['callback_url'];
+            } elseif (str_contains($origin, 'market.cicago.store')) {
+                $callbackUrl = 'https://market.cicago.store';
+            }
+
             $params = [
                 'transaction_details' => [
                     'order_id'     => $orderId,
@@ -134,9 +150,9 @@ class PaymentController extends Controller
                     ]
                 ],
                 'callbacks' => [
-                    'finish'   => $publicUrl . '/wallet',
-                    'error'    => $publicUrl . '/wallet',
-                    'unfinish' => $publicUrl . '/wallet'
+                    'finish'   => $callbackUrl,
+                    'error'    => $callbackUrl,
+                    'unfinish' => $callbackUrl
                 ]
             ];
 
