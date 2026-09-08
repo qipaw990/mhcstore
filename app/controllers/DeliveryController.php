@@ -436,16 +436,38 @@ class DeliveryController extends Controller
 
         try {
             $this->deliveryService->updateOrderStatus($userId, $orderId, $status, $otp);
+
             $dm = $this->dmModel->findByUserId($userId);
             $wallet = null;
+            $ensureError = null;
+
             if ($dm) {
-                $wallet = $this->ensureDriverDeliveredOrdersCredited($dm);
+                try {
+                    $wallet = $this->ensureDriverDeliveredOrdersCredited($dm);
+                } catch (\Throwable $ensureEx) {
+                    // Log but don't fail the main response — status update already succeeded
+                    $ensureError = $ensureEx->getMessage();
+                    error_log("[DeliveryController::updateDeliveryStatus] ensureDriverDeliveredOrdersCredited Error: {$ensureError} | user_id={$userId} dm_id={$dm['id']}");
+                    // Fallback: just get current wallet without crediting
+                    try {
+                        $wallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
+                    } catch (\Throwable $walletEx) {
+                        error_log("[DeliveryController::updateDeliveryStatus] walletGetOrCreate Error: " . $walletEx->getMessage());
+                    }
+                }
             }
-            $this->successResponse('Status pengantaran berhasil diperbarui.', [
+
+            $responseData = [
                 'wallet'         => $wallet,
                 'wallet_balance' => (float)($wallet['balance'] ?? 0),
-            ]);
+            ];
+            if ($ensureError) {
+                $responseData['debug_ensure_error'] = $ensureError;
+            }
+
+            $this->successResponse('Status pengantaran berhasil diperbarui.', $responseData);
         } catch (\Throwable $e) {
+            error_log("[DeliveryController::updateDeliveryStatus] Error: " . $e->getMessage() . " | user_id={$userId} order_id={$orderId} status={$status}");
             $this->errorResponse($e->getMessage());
         }
     }

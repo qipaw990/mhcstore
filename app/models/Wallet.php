@@ -33,25 +33,44 @@ class Wallet extends Model
             $wallet = $this->find($id);
             if ($wallet) return $wallet;
         } catch (\Throwable $e) {
-            // In case of unique constraint on user_id alone:
-            $wallet = $this->firstWhere('user_id', $userId);
+            // In case of unique constraint on user_id alone — fetch the existing wallet
+            $wallet = Database::fetchOne("SELECT * FROM `wallets` WHERE `user_id` = ? AND `user_type` = ? LIMIT 1", [$userId, $userType]);
+            if (!$wallet) {
+                $wallet = $this->firstWhere('user_id', $userId);
+            }
             if ($wallet) {
                 if ($userType !== 'customer' && ($wallet['user_type'] ?? '') !== $userType) {
-                    Database::update('wallets', ['user_type' => $userType], 'id = ?', [$wallet['id']]);
-                    $wallet['user_type'] = $userType;
+                    // Update user_type to correct type so future queries match
+                    try {
+                        // Try to create a new wallet with correct type first
+                        $newId = Database::insert('wallets', [
+                            'user_id'         => $userId,
+                            'user_type'       => $userType,
+                            'balance'         => 0.00,
+                            'total_earned'    => 0.00,
+                            'total_withdrawn' => 0.00
+                        ]);
+                        if ($newId) {
+                            return $this->find($newId) ?: $wallet;
+                        }
+                    } catch (\Throwable $e2) {
+                        // Already exists — just update the type
+                        Database::update('wallets', ['user_type' => $userType], 'id = ?', [$wallet['id']]);
+                        $wallet['user_type'] = $userType;
+                    }
                 }
                 return $wallet;
             }
         }
 
-        return Database::fetchOne("SELECT * FROM `wallets` WHERE `user_id` = ? LIMIT 1", [$userId]) ?: [
-            'id'              => 0,
-            'user_id'         => $userId,
-            'user_type'       => $userType,
-            'balance'         => 0.00,
-            'total_earned'    => 0.00,
-            'total_withdrawn' => 0.00
-        ];
+        // Last resort: try to find any wallet for this user
+        $existing = Database::fetchOne("SELECT * FROM `wallets` WHERE `user_id` = ? LIMIT 1", [$userId]);
+        if ($existing) {
+            return $existing;
+        }
+
+        // Truly no wallet found; throw so the caller knows instead of returning id=0
+        throw new Exception("Gagal membuat atau menemukan dompet untuk user_id={$userId} (type={$userType}).");
     }
 
     public function credit(int $userId, float $amount, string $category, string $description, ?string $refId = null, ?string $userType = null): bool
@@ -71,6 +90,11 @@ class Wallet extends Model
         $targetType = $targetType ?: 'customer';
 
         $wallet = $this->getOrCreate($userId, $targetType);
+
+        // Guard: if wallet id is 0, we have no real wallet — throw to surface the bug
+        if (empty($wallet['id']) || (int)$wallet['id'] <= 0) {
+            throw new Exception("Dompet tidak valid (id=0) untuk user_id={$userId}. Tidak dapat mengkredit saldo.");
+        }
 
         // Atomic calculation in MySQL
         Database::execute(
