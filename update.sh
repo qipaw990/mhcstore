@@ -52,6 +52,10 @@ docker compose exec -T cicalengkago_app php database/fix_wallet_unique_key.php 2
 
 docker compose exec -T cicalengkago_app php database/repair_driver_commissions.php 2>/dev/null || php database/repair_driver_commissions.php 2>/dev/null || true
 
+# Perbaiki topup Rp 0 dan kembalikan saldo
+echo "💳 Memperbaiki log top-up bernilai Rp 0 & menambahkan saldo..."
+docker compose exec -T cicalengkago_app php database/fix_zero_topups.php 2>/dev/null || php database/fix_zero_topups.php 2>/dev/null || true
+
 # Seed variasi & topping produk
 echo "🍧 Memastikan variasi & topping produk tersedia..."
 docker compose exec -T cicalengkago_app php database/seed_product_variations_addons.php 2>/dev/null || php database/seed_product_variations_addons.php 2>/dev/null || true

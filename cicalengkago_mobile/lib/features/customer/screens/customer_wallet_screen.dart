@@ -725,7 +725,11 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                         : () async {
                             setDialogState(() => isVerifying = true);
                             try {
-                              await ApiService.post(ApiConstants.paymentVerify, {'order_id': orderId});
+                              await ApiService.post(ApiConstants.paymentVerify, {
+                                'order_id': orderId,
+                                'amount': amount,
+                                'gross_amount': amount,
+                              });
                             } catch (_) {}
                             if (context.mounted) {
                               context.read<CustomerController>().fetchWallet();

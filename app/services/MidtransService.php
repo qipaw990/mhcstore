@@ -175,7 +175,17 @@ class MidtransService
 
         // Handle CicalengkaPay Wallet Top-Up (Order ID format: TOPUP-{userId}-{random})
         if (str_starts_with($orderId, 'TOPUP-')) {
-            return $this->handleWalletTopup($orderId, (float)$grossAmount, $paymentType, $isSettled, $isPending, $isFailed);
+            $amount = (float)$grossAmount;
+            if ($amount <= 0 && !empty($payload['amount'])) {
+                $amount = (float)$payload['amount'];
+            }
+            if ($amount <= 0) {
+                $topupLog = Database::fetchOne("SELECT amount FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1", [$orderId]);
+                if ($topupLog && (float)$topupLog['amount'] > 0) {
+                    $amount = (float)$topupLog['amount'];
+                }
+            }
+            return $this->handleWalletTopup($orderId, $amount, $paymentType, $isSettled, $isPending, $isFailed);
         }
 
         // Handle Order Checkout (Order ID format: CCG-...)
@@ -195,21 +205,34 @@ class MidtransService
         $topupLogModel = new \App\Models\TopupLog();
 
         if ($isSettled) {
+            if ($amount <= 0) {
+                $topupLog = Database::fetchOne("SELECT amount FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1", [$orderId]);
+                if ($topupLog && (float)$topupLog['amount'] > 0) {
+                    $amount = (float)$topupLog['amount'];
+                }
+            }
+
             // Check idempotency: avoid duplicate credits
             $existing = Database::fetchOne(
-                "SELECT id FROM `wallet_transactions` WHERE `reference_id` = ? LIMIT 1",
+                "SELECT id, amount FROM `wallet_transactions` WHERE `reference_id` = ? LIMIT 1",
                 [$orderId]
             );
 
-            if (!$existing) {
-                $walletModel = new Wallet();
-                $walletModel->credit(
-                    $userId,
-                    $amount,
-                    'topup',
-                    "Top Up CicalengkaPay via Midtrans ({$paymentType})",
-                    $orderId
-                );
+            if (!$existing || (float)$existing['amount'] <= 0) {
+                if ($existing && (float)$existing['amount'] <= 0 && $amount > 0) {
+                    // Perbaiki transaksi yang sebelumnya bernilai 0 dan tambahkan saldo ke dompet
+                    Database::update('wallet_transactions', ['amount' => $amount], 'id = ?', [$existing['id']]);
+                    Database::execute("UPDATE `wallets` SET `balance` = `balance` + ? WHERE `user_id` = ?", [$amount, $userId]);
+                } else if (!$existing && $amount > 0) {
+                    $walletModel = new Wallet();
+                    $walletModel->credit(
+                        $userId,
+                        $amount,
+                        'topup',
+                        "Top Up CicalengkaPay via Midtrans ({$paymentType})",
+                        $orderId
+                    );
+                }
 
                 (new Notification())->createNotification(
                     $userId,

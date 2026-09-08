@@ -214,6 +214,17 @@ class PaymentController extends Controller
                 if ($this->midtransService->isSandbox()) {
                     $data['transaction_status'] = 'settlement';
                 }
+                // Pastikan gross_amount dan amount terisi
+                $amount = (float)($data['gross_amount'] ?? $data['amount'] ?? 0);
+                if ($amount <= 0) {
+                    $topupLog = Database::fetchOne("SELECT amount FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1", [$orderId]);
+                    if ($topupLog && (float)$topupLog['amount'] > 0) {
+                        $amount = (float)$topupLog['amount'];
+                    }
+                }
+                $data['gross_amount'] = $amount;
+                $data['amount'] = $amount;
+
                 $result = $this->midtransService->processNotification($data);
                 (new \App\Models\TopupLog())->markSuccess($orderId, $data['payment_type'] ?? 'midtrans', 'Pembayaran terkonfirmasi');
                 $this->successResponse('Top Up berhasil diverifikasi', $result);
