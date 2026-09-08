@@ -56,8 +56,8 @@ class DriverController extends ChangeNotifier {
 
   // Derived stats from earnings & dashboard
   double get walletBalance {
-    final b1 = double.tryParse(_earnings?['wallet_balance']?.toString() ?? '');
-    final b2 = double.tryParse(_earnings?['wallet']?['balance']?.toString() ?? '');
+    final b1 = double.tryParse(_earnings?['wallet']?['balance']?.toString() ?? '');
+    final b2 = double.tryParse(_earnings?['wallet_balance']?.toString() ?? '');
     return b1 ?? b2 ?? 0.0;
   }
 
@@ -284,29 +284,30 @@ class DriverController extends ChangeNotifier {
         }
 
         if (data['wallet'] != null) {
-          if (_earnings != null) {
-            final updated = Map<String, dynamic>.from(_earnings!);
-            updated['wallet'] = data['wallet'];
-            if (data['driver'] != null) {
-              updated['driver'] = data['driver'];
-            }
-            _earnings = updated;
-          } else {
-            fetchEarnings(silent: true);
+          _earnings ??= {};
+          final updated = Map<String, dynamic>.from(_earnings!);
+          updated['wallet'] = data['wallet'];
+          final bal = data['wallet_balance'] ?? (data['wallet'] is Map ? data['wallet']['balance'] : null);
+          if (bal != null) {
+            updated['wallet_balance'] = bal;
           }
+          if (data['driver'] != null) {
+            updated['driver'] = data['driver'];
+          }
+          _earnings = updated;
         } else if (data['wallet_balance'] != null) {
-          if (_earnings != null && _earnings!['wallet'] is Map) {
-            final updated = Map<String, dynamic>.from(_earnings!);
+          _earnings ??= {};
+          final updated = Map<String, dynamic>.from(_earnings!);
+          updated['wallet_balance'] = data['wallet_balance'];
+          if (updated['wallet'] is Map) {
             final wMap = Map<String, dynamic>.from(updated['wallet'] as Map);
             wMap['balance'] = data['wallet_balance'];
             if (data['total_orders'] != null) {
               wMap['total_orders'] = data['total_orders'];
             }
             updated['wallet'] = wMap;
-            _earnings = updated;
-          } else {
-            fetchEarnings(silent: true);
           }
+          _earnings = updated;
         }
 
         if (data['reviews'] != null && data['reviews'] is List) {
@@ -522,14 +523,20 @@ class DriverController extends ChangeNotifier {
       if (res['success'] == true) {
         if (res['data'] is Map<String, dynamic>) {
           final d = res['data'] as Map<String, dynamic>;
-          if (d['wallet'] != null) {
-            _earnings ??= {};
+          _earnings ??= {};
+          if (d['wallet'] != null && d['wallet'] is Map) {
             _earnings!['wallet'] = d['wallet'];
-            _earnings!['wallet_balance'] = d['wallet_balance'];
+          }
+          final bal = d['wallet_balance'] ?? (d['wallet'] is Map ? d['wallet']['balance'] : null);
+          if (bal != null) {
+            _earnings!['wallet_balance'] = bal;
+            if (_earnings!['wallet'] is Map) {
+              (_earnings!['wallet'] as Map)['balance'] = bal;
+            }
           }
         }
-        await fetchRadarData(silent: true);
         await fetchEarnings(silent: true);
+        await fetchRadarData(silent: true);
         notifyListeners();
         return true;
       } else {

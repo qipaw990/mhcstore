@@ -195,17 +195,18 @@ class DeliveryService
                 $updateData['payment_status']   = 'paid';
 
                 // Credit Vendor Earnings (90% of order amount) - ONLY for non-COD payment methods
-                $pMethod = strtolower($order['payment_method'] ?? 'cod');
-                if ($pMethod !== 'cod' && !empty($order['store_id'])) {
+                $pMethod = strtolower(trim($order['payment_method'] ?? ''));
+                if (!in_array($pMethod, ['cod', 'cash', 'tunai']) && !empty($order['store_id'])) {
                     $store = Database::fetchOne("SELECT vendor_id, name FROM stores WHERE id = ?", [$order['store_id']]);
                     if ($store) {
                         $vendorEarning = (float)$order['order_amount'] * 0.90;
                         $this->walletModel->credit(
-                            $store['vendor_id'],
+                            (int)$store['vendor_id'],
                             $vendorEarning,
                             'order_earning',
                             "Penjualan pesanan #{$order['order_code']}",
-                            (string)$order['id']
+                            (string)$order['id'],
+                            'vendor'
                         );
                     }
                 }
@@ -248,18 +249,19 @@ class DeliveryService
                         ];
                         Database::update('orders', $subUpdateData, 'id = ?', [$bOrdToDel['id']]);
 
-                        // Credit Vendor Earnings (90% of order amount) - ONLY for non-COD orders
-                        $bMethod = strtolower($bOrdToDel['payment_method'] ?? 'cod');
-                        if ($bMethod !== 'cod' && !empty($bOrdToDel['store_id'])) {
+                        // Credit Vendor Earnings (90% of order amount) - ONLY for non-COD orders (skip if already credited for target order)
+                        $bMethod = strtolower(trim($bOrdToDel['payment_method'] ?? ''));
+                        if (!in_array($bMethod, ['cod', 'cash', 'tunai']) && !empty($bOrdToDel['store_id']) && (int)$bOrdToDel['id'] !== (int)$order['id']) {
                             $store = Database::fetchOne("SELECT vendor_id, name FROM stores WHERE id = ?", [$bOrdToDel['store_id']]);
                             if ($store) {
                                 $vendorEarning = (float)$bOrdToDel['order_amount'] * 0.90;
                                 $this->walletModel->credit(
-                                    $store['vendor_id'],
+                                    (int)$store['vendor_id'],
                                     $vendorEarning,
                                     'order_earning',
                                     "Penjualan pesanan #{$bOrdToDel['order_code']}",
-                                    (string)$bOrdToDel['id']
+                                    (string)$bOrdToDel['id'],
+                                    'vendor'
                                 );
                             }
                         }
@@ -281,13 +283,15 @@ class DeliveryService
                     ], 'id = ?', [$dm['id']]);
                 } else {
                     // Single order delivery (no batch) - Credit digital driver commission ONLY if non-COD
-                    if ($pMethod !== 'cod') {
+                    $pMethod = strtolower(trim($order['payment_method'] ?? ''));
+                    if (!in_array($pMethod, ['cod', 'cash', 'tunai'])) {
                         $driverWallet = $this->walletModel->getOrCreate((int)$dm['user_id'], 'delivery_man');
                         $alreadyCredited = Database::fetchOne(
-                            "SELECT id FROM `wallet_transactions` 
-                             WHERE `wallet_id` = ? AND `category` = 'order_earning' 
-                               AND (`reference_id` = ? OR `reference_id` = ?) LIMIT 1",
-                            [$driverWallet['id'], (string)$order['id'], (string)$order['order_code']]
+                            "SELECT wt.id FROM `wallet_transactions` wt
+                             JOIN `wallets` w ON wt.wallet_id = w.id
+                             WHERE w.user_id = ? AND wt.category = 'order_earning' 
+                               AND (wt.reference_id = ? OR wt.reference_id = ?) LIMIT 1",
+                            [(int)$dm['user_id'], (string)$order['id'], (string)$order['order_code']]
                         );
 
                         if (!$alreadyCredited) {
@@ -296,7 +300,7 @@ class DeliveryService
                                 (int)$dm['user_id'],
                                 $dmEarning,
                                 'order_earning',
-                                "Komisi pengantaran #{$order['order_code']}",
+                                "Komisi pengantaran pesanan #{$order['order_code']}",
                                 (string)$order['id'],
                                 'delivery_man'
                             );
@@ -396,14 +400,15 @@ class DeliveryService
         $driverWallet = $this->walletModel->getOrCreate((int)$dm['user_id'], 'delivery_man');
 
         foreach ($batchOrders as $bOrd) {
-            $pMethod = strtolower($bOrd['payment_method'] ?? 'cod');
-            if ($pMethod === 'cod') continue; // COD is collected in physical cash directly
+            $pMethod = strtolower(trim($bOrd['payment_method'] ?? ''));
+            if (in_array($pMethod, ['cod', 'cash', 'tunai'])) continue; // COD is collected in physical cash directly
 
             $alreadyCredited = Database::fetchOne(
-                "SELECT id FROM `wallet_transactions` 
-                 WHERE `wallet_id` = ? AND `category` = 'order_earning' 
-                   AND (`reference_id` = ? OR `reference_id` = ?) LIMIT 1",
-                [$driverWallet['id'], (string)$bOrd['id'], (string)$bOrd['order_code']]
+                "SELECT wt.id FROM `wallet_transactions` wt
+                 JOIN `wallets` w ON wt.wallet_id = w.id
+                 WHERE w.user_id = ? AND wt.category = 'order_earning' 
+                   AND (wt.reference_id = ? OR wt.reference_id = ?) LIMIT 1",
+                [(int)$dm['user_id'], (string)$bOrd['id'], (string)$bOrd['order_code']]
             );
 
             if (!$alreadyCredited) {
@@ -412,7 +417,7 @@ class DeliveryService
                     (int)$dm['user_id'],
                     $charge,
                     'order_earning',
-                    "Komisi pengantaran #{$bOrd['order_code']} (Batch {$batchId})",
+                    "Komisi pengantaran pesanan #{$bOrd['order_code']}",
                     (string)$bOrd['id'],
                     'delivery_man'
                 );

@@ -45,6 +45,7 @@ echo "🗄️ Menjalankan migrasi database otomatis & indeks performa..."
 docker compose exec -T cicalengkago_app php database/run_casaos_migration.php 2>/dev/null || php database/run_casaos_migration.php 2>/dev/null || true
 docker compose exec -T cicalengkago_app php database/optimize_performance_indexes.php 2>/dev/null || php database/optimize_performance_indexes.php 2>/dev/null || true
 docker compose exec -T cicalengkago_app php database/add_doku_settings.php 2>/dev/null || php database/add_doku_settings.php 2>/dev/null || true
+docker compose exec -T cicalengkago_app php database/repair_driver_commissions.php 2>/dev/null || php database/repair_driver_commissions.php 2>/dev/null || true
 
 # Seed variasi & topping produk
 echo "🍧 Memastikan variasi & topping produk tersedia..."

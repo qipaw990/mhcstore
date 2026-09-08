@@ -777,23 +777,26 @@ class DeliveryController extends Controller
     public function ensureDriverDeliveredOrdersCredited(array $dm): array
     {
         $userId = (int)$dm['user_id'];
+        $dmId = (int)$dm['id'];
         $driverWallet = $this->walletModel->getOrCreate($userId, 'delivery_man');
+
+        // Query all delivered orders for this driver that are non-COD
         $deliveredDriverOrders = Database::query(
             "SELECT id, order_code, delivery_charge, distance_km, delivery_batch_id, zone_id, payment_method 
              FROM `orders` 
-             WHERE (`delivery_man_id` = ? OR `delivery_man_id` = ?) AND `order_status` = 'delivered' AND `payment_method` != 'cod'",
-            [(int)$dm['id'], (int)$dm['user_id']]
+             WHERE (`delivery_man_id` = ? OR `delivery_man_id` = ?) 
+               AND `order_status` = 'delivered' 
+               AND LOWER(TRIM(COALESCE(`payment_method`, ''))) NOT IN ('cod', 'cash', 'tunai')",
+            [$dmId, $userId]
         );
 
         foreach ($deliveredDriverOrders as $dOrder) {
-            $batchId = $dOrder['delivery_batch_id'] ?? '';
             $alreadyCredited = Database::fetchOne(
-                "SELECT id FROM `wallet_transactions` 
-                 WHERE `wallet_id` = ? AND `category` = 'order_earning' 
-                   AND (`reference_id` = ? OR `reference_id` = ?" . (!empty($batchId) ? " OR `reference_id` = ?" : "") . ") LIMIT 1",
-                !empty($batchId)
-                    ? [$driverWallet['id'], (string)$dOrder['id'], (string)$dOrder['order_code'], (string)$batchId]
-                    : [$driverWallet['id'], (string)$dOrder['id'], (string)$dOrder['order_code']]
+                "SELECT wt.id FROM `wallet_transactions` wt
+                 JOIN `wallets` w ON wt.wallet_id = w.id
+                 WHERE w.user_id = ? AND wt.category = 'order_earning' 
+                   AND (wt.reference_id = ? OR wt.reference_id = ?) LIMIT 1",
+                [$userId, (string)$dOrder['id'], (string)$dOrder['order_code']]
             );
 
             if (!$alreadyCredited) {
@@ -815,7 +818,7 @@ class DeliveryController extends Controller
             }
         }
 
-        return Database::fetchOne("SELECT * FROM `wallets` WHERE `id` = ?", [$driverWallet['id']]) ?: $driverWallet;
+        return $this->walletModel->getOrCreate($userId, 'delivery_man');
     }
 
     public function ordersHistory(): void

@@ -244,13 +244,15 @@ class VendorController extends Controller
 
             // Auto-credit pendapatan toko (90%) HANYA untuk pesanan non-COD (Wallet / Online / Midtrans)
             // Untuk COD, pembayaran diterima langsung tunai di tangan oleh merchant/driver (tidak masuk saldo digital).
-            $pMethod = strtolower($order['payment_method'] ?? 'cod');
-            if ($pMethod !== 'cod') {
+            $pMethod = strtolower(trim($order['payment_method'] ?? ''));
+            if (!in_array($pMethod, ['cod', 'cash', 'tunai'])) {
                 $userId = auth_id();
                 $vendorWallet = $this->walletModel->getOrCreate($userId, 'vendor');
                 $alreadyCredited = Database::fetchOne(
-                    "SELECT id FROM `wallet_transactions` WHERE `wallet_id` = ? AND `category` = 'order_earning' AND `reference_id` = ? LIMIT 1",
-                    [$vendorWallet['id'], (string)$order['id']]
+                    "SELECT wt.id FROM `wallet_transactions` wt
+                     JOIN `wallets` w ON wt.wallet_id = w.id
+                     WHERE w.user_id = ? AND wt.category = 'order_earning' AND wt.reference_id = ? LIMIT 1",
+                    [$userId, (string)$order['id']]
                 );
                 if (!$alreadyCredited) {
                     $vendorEarning = (float)$order['order_amount'] * 0.90;
@@ -259,8 +261,17 @@ class VendorController extends Controller
                         $vendorEarning,
                         'order_earning',
                         "Penjualan pesanan #{$order['order_code']}",
-                        (string)$order['id']
+                        (string)$order['id'],
+                        'vendor'
                     );
+                }
+
+                // If this order had a driver assigned, ensure the driver also receives their delivery commission
+                if (!empty($order['delivery_man_id'])) {
+                    $dm = Database::fetchOne("SELECT * FROM `delivery_men` WHERE `id` = ? OR `user_id` = ? LIMIT 1", [$order['delivery_man_id'], $order['delivery_man_id']]);
+                    if ($dm) {
+                        (new \App\Controllers\DeliveryController())->ensureDriverDeliveredOrdersCredited($dm);
+                    }
                 }
             }
         } elseif ($status === 'canceled') {

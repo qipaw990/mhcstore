@@ -12,28 +12,39 @@ class Wallet extends Model
 
     public function getOrCreate(int $userId, string $userType = 'customer'): array
     {
-        $wallet = $this->firstWhere('user_id', $userId);
-        if (!$wallet) {
-            try {
-                $id = $this->create([
-                    'user_id'         => $userId,
-                    'user_type'       => $userType,
-                    'balance'         => 0.00,
-                    'total_earned'    => 0.00,
-                    'total_withdrawn' => 0.00
-                ]);
-                $wallet = $this->find($id);
-            } catch (\Throwable $e) {
-                $wallet = $this->firstWhere('user_id', $userId);
+        // 1. Look for existing wallet matching BOTH user_id and user_type
+        $wallet = Database::fetchOne(
+            "SELECT * FROM `wallets` WHERE `user_id` = ? AND `user_type` = ? LIMIT 1",
+            [$userId, $userType]
+        );
+        if ($wallet) {
+            return $wallet;
+        }
+
+        // 2. Try creating wallet for this user and specific user_type
+        try {
+            $id = $this->create([
+                'user_id'         => $userId,
+                'user_type'       => $userType,
+                'balance'         => 0.00,
+                'total_earned'    => 0.00,
+                'total_withdrawn' => 0.00
+            ]);
+            $wallet = $this->find($id);
+            if ($wallet) return $wallet;
+        } catch (\Throwable $e) {
+            // In case of unique constraint on user_id alone:
+            $wallet = $this->firstWhere('user_id', $userId);
+            if ($wallet) {
+                if ($userType !== 'customer' && ($wallet['user_type'] ?? '') !== $userType) {
+                    Database::update('wallets', ['user_type' => $userType], 'id = ?', [$wallet['id']]);
+                    $wallet['user_type'] = $userType;
+                }
+                return $wallet;
             }
         }
 
-        if ($wallet && $userType !== 'customer' && ($wallet['user_type'] ?? '') !== $userType) {
-            Database::update('wallets', ['user_type' => $userType], 'id = ?', [$wallet['id']]);
-            $wallet['user_type'] = $userType;
-        }
-
-        return $wallet ?: [
+        return Database::fetchOne("SELECT * FROM `wallets` WHERE `user_id` = ? LIMIT 1", [$userId]) ?: [
             'id'              => 0,
             'user_id'         => $userId,
             'user_type'       => $userType,
