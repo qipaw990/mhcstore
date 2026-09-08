@@ -73,7 +73,8 @@ systemctl restart cloudflared 2>/dev/null || docker restart cloudflared 2>/dev/n
 
 echo "======================================================="
 echo " ✅ UPDATE SELESAI!"
-echo " 🌐 CicalengkaGO Backend & Admin : Port 8090 (https://cicago.store)"
+echo " 🌐 CicalengkaGO Backend API     : Port 8090 (https://cicago.store)"
+echo " ⚡ Super Admin React Panel      : Port 8096 (http://<ip-casaos>:8096)"
 echo " 💻 CicalengkaGO Flutter Web     : Port 8095 (http://<ip-casaos>:8095)"
 echo " 📱 WhatsApp Gateway            : Port 3005 (http://<ip-casaos>:3005/qr)"
 echo "======================================================="

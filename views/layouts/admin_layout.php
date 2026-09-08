@@ -57,6 +57,15 @@ $user = auth_user();
                 </a>
             </li>
             <li>
+                <a href="<?= $baseUrl ?>/admin_react/index.html" target="_blank" class="menu-link" style="border: 1px solid rgba(238, 39, 55, 0.3); background: rgba(238, 39, 55, 0.08); border-radius: 10px; margin: 4px 10px;">
+                    <div class="menu-link-inner">
+                        <i class="bi bi-stars text-danger"></i>
+                        <span class="fw-bold text-white">React Enterprise Panel</span>
+                    </div>
+                    <span class="menu-badge badge-live" style="background: #EE2737;">NEW</span>
+                </a>
+            </li>
+            <li>
                 <a href="<?= $baseUrl ?>/admin/orders" class="menu-link <?= ($active_tab ?? '') === 'orders' ? 'active' : '' ?>">
                     <div class="menu-link-inner">
                         <i class="bi bi-crosshair2"></i>
@@ -219,6 +228,13 @@ $user = auth_user();
 
             <!-- Header Actions -->
             <div class="d-flex align-items-center gap-2.5">
+                <!-- React Enterprise Analytics Admin Shortcut -->
+                <a href="<?= $baseUrl ?>/admin_react/index.html" target="_blank" class="btn btn-sm btn-dark text-white rounded-pill px-3 py-1.5 shadow-sm d-flex align-items-center gap-1.5 hover-lift" style="font-size: 11.5px; background: linear-gradient(135deg, #111827 0%, #1f2937 100%); border: 1px solid #EE2737;">
+                    <i class="bi bi-speedometer2 text-danger"></i>
+                    <span class="fw-bold">Buka React Dashboard</span>
+                    <span class="badge bg-danger rounded-pill" style="font-size: 9px; padding: 2px 6px;">NEW</span>
+                </a>
+
                 <!-- PWA Customer Shortcut -->
                 <a href="<?= $baseUrl ?>" target="_blank" class="btn btn-sm btn-light border fw-semibold text-dark rounded-pill px-3 py-1.5 shadow-2xs d-flex align-items-center gap-1.5 hover-lift" style="font-size: 11.5px;">
                     <i class="bi bi-phone text-danger fs-6"></i>

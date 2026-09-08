@@ -304,5 +304,18 @@ Router::post('/api/payment/transfer', [PaymentController::class, 'transfer']);
 Router::post('/payment/transfer', [PaymentController::class, 'transfer']);
 Router::post('/wallet/transfer', [PaymentController::class, 'transfer']);
 
-
-
+// ==========================================
+// 6. React Super Admin REST API Routes
+// ==========================================
+Router::get('/api/admin/metrics', [\App\Controllers\AdminApiController::class, 'metrics']);
+Router::get('/api/admin/orders', [\App\Controllers\AdminApiController::class, 'orders']);
+Router::post('/api/admin/orders/assign-driver', [\App\Controllers\AdminApiController::class, 'assignDriver']);
+Router::post('/api/admin/orders/update-status', [\App\Controllers\AdminApiController::class, 'updateOrderStatus']);
+Router::get('/api/admin/settings', [\App\Controllers\AdminApiController::class, 'getSettings']);
+Router::post('/api/admin/settings', [\App\Controllers\AdminApiController::class, 'saveSettings']);
+Router::get('/api/admin/stores', [\App\Controllers\AdminApiController::class, 'stores']);
+Router::post('/api/admin/stores/toggle', [\App\Controllers\AdminApiController::class, 'toggleStoreStatus']);
+Router::get('/api/admin/products', [\App\Controllers\AdminApiController::class, 'products']);
+Router::post('/api/admin/products/toggle', [\App\Controllers\AdminApiController::class, 'toggleProductStatus']);
+Router::get('/api/admin/drivers', [\App\Controllers\AdminApiController::class, 'drivers']);
+Router::post('/api/admin/drivers/toggle', [\App\Controllers\AdminApiController::class, 'toggleDriverStatus']);
