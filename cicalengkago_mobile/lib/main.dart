@@ -21,6 +21,44 @@ void main() {
   if (kIsWeb) {
     GoogleFonts.config.allowRuntimeFetching = false;
   }
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return Material(
+      color: Colors.white,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.error_outline, color: Colors.red, size: 28),
+                    SizedBox(width: 10),
+                    Text('Terjadi Kesalahan Tampilan', style: TextStyle(color: Colors.red, fontSize: 16, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(8)),
+                  child: Text(
+                    details.exceptionAsString(),
+                    style: const TextStyle(color: Color(0xFF991B1B), fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  details.stack?.toString() ?? '',
+                  style: const TextStyle(color: Color(0xFF475569), fontSize: 11, fontFamily: 'monospace'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  };
   GlobalCallService.instance.startPolling();
   runApp(
     MultiProvider(

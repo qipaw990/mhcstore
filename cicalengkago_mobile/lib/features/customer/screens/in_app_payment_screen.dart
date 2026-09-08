@@ -8,6 +8,7 @@ import '../../../core/utils/currency_formatter.dart';
 
 // Import conditional: native WebView di mobile, stub kosong di web
 import 'in_app_payment_screen_native.dart'
+    if (dart.library.js_interop) 'in_app_payment_screen_web.dart'
     if (dart.library.html) 'in_app_payment_screen_web.dart';
 
 class InAppPaymentScreen extends StatefulWidget {
