@@ -34,7 +34,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   bool _isLoading = true;
   Map<String, dynamic>? _orderData;
   Map<String, dynamic>? _liveData;
-  String? _snapUrl;
   String? _dokuUrl;
   Timer? _refreshTimer;
   Timer? _tickerTimer;
@@ -106,8 +105,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         if (mounted) {
           setState(() {
             _orderData = orderMap;
-            _snapUrl = data['snap_url']?.toString();
-            _dokuUrl = data['doku_url']?.toString();
+            _dokuUrl = data['doku_url']?.toString() ?? data['payment_url']?.toString() ?? data['redirect_url']?.toString();
           });
           final custId = int.tryParse(orderMap['customer_id']?.toString() ?? orderMap['user_id']?.toString() ?? '');
           if (custId != null && custId > 0) {
@@ -206,10 +204,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
 
   Future<void> _payNow() async {
-    final payMethod = _orderData?['payment_method']?.toString() ?? '';
-    final url = (payMethod == 'doku')
-        ? (_dokuUrl ?? '${ApiConstants.domainUrl}/orders/${widget.orderCode}/tracking')
-        : (_snapUrl ?? '${ApiConstants.domainUrl}/orders/${widget.orderCode}/tracking');
+    final url = _dokuUrl ?? _orderData?['payment_url']?.toString() ?? _orderData?['redirect_url']?.toString() ?? '${ApiConstants.domainUrl}/orders/${widget.orderCode}/tracking';
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -270,7 +265,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         (order['delivery_man_id'] != null && ['processing', 'handover', 'on_the_way'].contains(status)));
 
     final bool isCanceled = status == 'canceled' || (remainingSeconds <= 0 && status == 'pending' && !isDriverValid && !['processing', 'handover', 'on_the_way', 'delivered'].contains(status));
-    final bool isUnpaidOnline = (paymentMethod == 'midtrans' || paymentMethod == 'doku') && paymentStatus != 'paid' && !isCanceled;
+    final bool isUnpaidOnline = (paymentMethod == 'doku') && paymentStatus != 'paid' && !isCanceled;
 
     // Map Coordinates
     final storeMap = live['store'] is Map ? (live['store'] as Map) : {};
@@ -418,7 +413,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
 
   Widget _buildUnpaidView(Map<String, dynamic> order, Map<String, dynamic> live, double totalAmount) {
-    final paymentMethod = live['payment_method']?.toString() ?? order['payment_method']?.toString() ?? 'midtrans';
+    final paymentMethod = live['payment_method']?.toString() ?? order['payment_method']?.toString() ?? 'doku';
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -550,7 +545,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     String paymentStatus,
     double totalAmount,
   ) {
-    final bool isRefundable = ['wallet', 'midtrans', 'doku', 'online', 'qris', 'va', 'credit_card'].contains(paymentMethod) && paymentStatus == 'refunded';
+    final bool isRefundable = ['wallet', 'doku', 'online', 'qris', 'va', 'credit_card'].contains(paymentMethod) && paymentStatus == 'refunded';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -3135,7 +3130,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     } else if (paymentMethod == 'doku') {
       methodLabel = 'DOKU Checkout (QRIS / VA / E-Wallet)';
       methodIcon = Icons.account_balance_wallet_rounded;
-    } else if (paymentMethod == 'midtrans' || paymentMethod == 'online' || paymentMethod == 'qris') {
+    } else if (paymentMethod == 'online' || paymentMethod == 'qris') {
       methodLabel = 'DOKU QRIS / VA';
       methodIcon = Icons.qr_code_2_rounded;
     }

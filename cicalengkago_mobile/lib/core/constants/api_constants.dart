@@ -86,8 +86,6 @@ class ApiConstants {
   static const String wallet                 = '$domainUrl/wallet';
   static const String walletTopup            = '$domainUrl/wallet/topup-doku';
   static const String walletTopupDoku        = '$domainUrl/wallet/topup-doku';
-  static const String paymentTopupSnap       = '$domainUrl/payment/topup-snap';
-  static const String paymentSnapPage        = '$domainUrl/payment/snap-page';
   static const String paymentVerify          = '$domainUrl/payment/verify';
   static const String paymentSimulate        = '$domainUrl/payment/simulate-sandbox-success';
   static const String paymentNotification    = '$domainUrl/payment/doku/notification';

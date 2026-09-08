@@ -1,6 +1,6 @@
 <?php
 $isCanceled = ($order['order_status'] === 'canceled');
-$isUnpaidOnline = (in_array($order['payment_method'], ['doku', 'midtrans', 'online']) && $order['payment_status'] !== 'paid' && !$isCanceled);
+$isUnpaidOnline = (in_array($order['payment_method'], ['doku', 'online']) && $order['payment_status'] !== 'paid' && !$isCanceled);
 
 $statusLabels = [
     'pending'     => ['label' => 'Menunggu Pembayaran', 'class' => 'bg-warning text-dark'],
@@ -238,7 +238,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
 
             <!-- Order Canceled Alert Card (Premium) -->
             <?php
-                $isRefundable = in_array($order['payment_method'] ?? '', ['wallet', 'doku', 'midtrans', 'online', 'qris', 'va', 'credit_card']) && ($order['payment_status'] ?? '') === 'refunded';
+                $isRefundable = in_array($order['payment_method'] ?? '', ['wallet', 'doku', 'online', 'qris', 'va', 'credit_card']) && ($order['payment_status'] ?? '') === 'refunded';
             ?>
             <div id="order-canceled-card" class="mb-3 <?= ($order['order_status'] === 'canceled') ? '' : 'd-none' ?>" style="border-radius: 18px; overflow: hidden; box-shadow: 0 4px 20px rgba(238,39,55,0.12);">
                 <!-- Red Header Banner -->

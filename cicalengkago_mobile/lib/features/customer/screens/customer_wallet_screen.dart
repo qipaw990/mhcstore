@@ -454,40 +454,38 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('Pilih Saluran Pembayaran:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
+                  const Text('Metode Pembayaran Resmi:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
                   const SizedBox(height: 8),
-                  // Option 2: DOKU
-                  InkWell(
-                    onTap: () => setModalState(() => selectedGateway = 'doku'),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: selectedGateway == 'doku' ? const Color(0xFFE1251B) : Colors.grey.shade300, width: selectedGateway == 'doku' ? 2 : 1),
-                        borderRadius: BorderRadius.circular(12),
-                        color: selectedGateway == 'doku' ? const Color(0xFFE1251B).withValues(alpha: 0.05) : Colors.transparent,
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFFE1251B), size: 22),
-                          const SizedBox(width: 10),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('DOKU Payment Gateway', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                Text('QRIS, Semua Bank, OVO, DANA, Alfamart', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                              ],
-                            ),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFFE1251B), width: 1.5),
+                      borderRadius: BorderRadius.circular(14),
+                      color: const Color(0xFFE1251B).withValues(alpha: 0.05),
+                    ),
+                    child: const Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFE1251B),
+                            borderRadius: BorderRadius.all(Radius.circular(10)),
                           ),
-                          Radio<String>(
-                            value: 'doku',
-                            groupValue: selectedGateway,
-                            activeColor: const Color(0xFFE1251B),
-                            onChanged: (val) => setModalState(() => selectedGateway = val ?? 'doku'),
+                          child: Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 20),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('DOKU Payment Gateway', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+                              SizedBox(height: 2),
+                              Text('QRIS, Semua Bank (VA), OVO, DANA, Alfamart', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                        Icon(Icons.check_circle_rounded, color: Color(0xFFE1251B), size: 22),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -537,39 +535,22 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
     dialogShown = true;
 
     try {
-      final endpoint = (gateway == 'doku') ? ApiConstants.walletTopupDoku : ApiConstants.paymentTopupSnap;
-      final res = await ApiService.post(endpoint, {
+      final res = await ApiService.post(ApiConstants.walletTopupDoku, {
         'amount': amount,
         if (kIsWeb) 'callback_url': Uri.base.origin,
       });
 
       if (dialogShown && context.mounted) {
-        Navigator.of(context, rootNavigator: true).pop(); // Dismiss loading dialog from root navigator
+        Navigator.of(context, rootNavigator: true).pop();
         dialogShown = false;
       }
 
       if (res['success'] == true && res['data'] != null) {
-        final snapToken = res['data']['snap_token']?.toString() ?? '';
-        final clientKey = res['data']['client_key']?.toString() ?? '';
         final orderId = res['data']['order_id']?.toString() ?? res['data']['invoice_number']?.toString() ?? '';
-
-        String finalPaymentUrl = res['data']['payment_url']?.toString() ??
+        final finalPaymentUrl = res['data']['payment_url']?.toString() ??
             res['data']['redirect_url']?.toString() ?? '';
 
-        // Jika Midtrans Snap, arahkan ke Snap In-App Wrapper Page
-        if (snapToken.isNotEmpty && clientKey.isNotEmpty) {
-          final snapUri = Uri.parse(ApiConstants.paymentSnapPage).replace(queryParameters: {
-            'snap_token': snapToken,
-            'client_key': clientKey,
-            'order_id': orderId,
-            'amount': amount.toString(),
-          });
-          finalPaymentUrl = snapUri.toString();
-        } else if (finalPaymentUrl.isEmpty && snapToken.isNotEmpty) {
-          finalPaymentUrl = 'https://app.sandbox.midtrans.com/snap/v2/vtweb/$snapToken';
-        }
-
-        if (context.mounted) {
+        if (finalPaymentUrl.isNotEmpty && context.mounted) {
           final completed = await Navigator.push<bool>(
             context,
             MaterialPageRoute(
@@ -587,7 +568,6 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
 
           if (completed == true && context.mounted) {
             context.read<CustomerController>().fetchWallet();
-          }
         }
         return;
       }
@@ -596,7 +576,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
         AppAlert.showError(
           context,
           title: 'Gagal Membuat Tiket',
-          message: res['message'] ?? 'Gagal membuat tiket pembayaran Top-Up via ${gateway.toUpperCase()}.',
+          message: res['message'] ?? 'Gagal membuat tiket pembayaran Top-Up via DOKU.',
         );
       }
     } catch (e) {
@@ -1562,7 +1542,6 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
     final status = log['status']?.toString().toLowerCase() ?? 'pending';
     final paymentMethod = log['payment_method']?.toString().toUpperCase() ?? 'DOKU';
     final createdAt = log['created_at']?.toString() ?? '-';
-    final snapToken = log['snap_token']?.toString();
 
     Color statusColor = const Color(0xFFD97706);
     Color statusBadgeBg = const Color(0xFFFEF3C7);
@@ -1661,23 +1640,22 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
               ),
               const SizedBox(height: 20),
 
-              // Actions
-              if (status == 'pending' && snapToken != null && snapToken.isNotEmpty) ...[
+              final pendingPaymentUrl = log['payment_url']?.toString() ?? log['redirect_url']?.toString() ?? '';
+              if (status == 'pending' && pendingPaymentUrl.isNotEmpty) ...[
                 SizedBox(
                   width: double.infinity,
                   height: 46,
                   child: ElevatedButton(
                     onPressed: () {
                       Navigator.pop(ctx);
-                      final redirectUrl = 'https://app.sandbox.midtrans.com/snap/v2/vtweb/$snapToken';
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => InAppPaymentScreen(
-                            paymentUrl: redirectUrl,
+                            paymentUrl: pendingPaymentUrl,
                             orderId: code,
                             amount: amount,
-                            title: 'Lanjutkan Top Up CicalengkaPay',
+                            title: 'Lanjutkan Top Up via DOKU',
                             onPaymentComplete: () {
                               context.read<CustomerController>().fetchWallet();
                             },

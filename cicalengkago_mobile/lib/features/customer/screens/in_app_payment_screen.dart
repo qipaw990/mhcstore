@@ -87,7 +87,7 @@ class _InAppPaymentScreenState extends State<InAppPaymentScreen> {
       final res = await ApiService.post(ApiConstants.paymentSimulate, {
         'order_id': widget.orderId,
         'amount': widget.amount,
-        'payment_type': 'midtrans_sandbox_inapp',
+        'payment_type': 'doku_sandbox_inapp',
       });
       if (res['success'] == true && mounted) {
         final messenger = ScaffoldMessenger.of(context);
@@ -273,7 +273,7 @@ class _InAppPaymentScreenState extends State<InAppPaymentScreen> {
                             children: [
                               Text('Mode Pengujian (Sandbox)',
                                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF92400E))),
-                              Text('Simulasi bayar tanpa membuka Midtrans.',
+                              Text('Simulasi bayar tanpa membuka DOKU.',
                                   style: TextStyle(fontSize: 11, color: Color(0xFFB45309))),
                             ],
                           ),

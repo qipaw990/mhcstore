@@ -48,7 +48,7 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
     final payMethod = order['payment_method'] ?? '';
     final payStatus = order['payment_status'] ?? '';
     final isCanceled = status == 'canceled';
-    final isUnpaid = (payMethod == 'midtrans' || payMethod == 'doku') && payStatus != 'paid' && !isCanceled;
+    final isUnpaid = payMethod == 'doku' && payStatus != 'paid' && !isCanceled;
 
     if (isCanceled) return 'Dibatalkan';
     if (isUnpaid) return 'Menunggu Bayar';
@@ -65,7 +65,7 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
     final payMethod = order['payment_method'] ?? '';
     final payStatus = order['payment_status'] ?? '';
     final isCanceled = status == 'canceled';
-    final isUnpaid = (payMethod == 'midtrans' || payMethod == 'doku') && payStatus != 'paid' && !isCanceled;
+    final isUnpaid = payMethod == 'doku' && payStatus != 'paid' && !isCanceled;
 
     if (isCanceled) return const Color(0xFFEF4444);
     if (isUnpaid) return const Color(0xFFF59E0B);
@@ -224,7 +224,7 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
     final payMethod = order['payment_method']?.toString() ?? '';
     final payStatus = order['payment_status']?.toString() ?? '';
     final isCanceled = status == 'canceled';
-    final isUnpaid = (payMethod == 'midtrans' || payMethod == 'doku') && payStatus != 'paid' && !isCanceled;
+    final isUnpaid = payMethod == 'doku' && payStatus != 'paid' && !isCanceled;
     final isActive = ['pending', 'confirmed', 'processing', 'handover', 'picked_up', 'on_the_way'].contains(status);
     final statusLabel = _getStatusLabel(order);
     final statusColor = _getStatusColor(order);

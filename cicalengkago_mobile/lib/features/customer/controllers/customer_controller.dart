@@ -364,7 +364,7 @@ class CustomerController extends ChangeNotifier {
     required String deliveryAddress,
     required double lat,
     required double lng,
-    required String paymentMethod, // 'cod', 'wallet', 'midtrans'
+    required String paymentMethod, // 'cod', 'wallet', 'doku'
     String? note,
     String? couponCode,
     String deliveryType = 'driver', // 'driver' or 'merchant'

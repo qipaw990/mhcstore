@@ -136,7 +136,7 @@ class _NativePaymentWebViewState extends State<_NativePaymentWebView> {
       final res = await ApiService.post(ApiConstants.paymentSimulate, {
         'order_id': widget.orderId,
         'amount': widget.amount,
-        'payment_type': 'midtrans_sandbox_inapp',
+        'payment_type': 'doku_sandbox_inapp',
       });
 
       if (res['success'] == true && mounted) {
