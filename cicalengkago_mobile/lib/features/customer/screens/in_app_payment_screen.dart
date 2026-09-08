@@ -6,9 +6,8 @@ import '../../../core/network/api_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 
-// WebView hanya diimport di platform native — di web akan null/error sehingga
-// kita pisahkan di class terpisah yang hanya diinstansiasi ketika !kIsWeb
-export 'in_app_payment_screen_native.dart'
+// Import conditional: native WebView di mobile, stub kosong di web
+import 'in_app_payment_screen_native.dart'
     if (dart.library.html) 'in_app_payment_screen_web.dart';
 
 class InAppPaymentScreen extends StatefulWidget {
