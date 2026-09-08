@@ -419,6 +419,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
 
   void _showTopUpSheet(BuildContext context) {
     final amountCtrl = TextEditingController();
+    String selectedGateway = 'midtrans';
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -433,7 +434,6 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
           ),
           child: StatefulBuilder(
             builder: (ctx, setModalState) {
-              String selectedGateway = 'doku';
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -457,42 +457,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                   const SizedBox(height: 16),
                   const Text('Pilih Saluran Pembayaran:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
                   const SizedBox(height: 8),
-                  // Option 1: DOKU
-                  InkWell(
-                    onTap: () => setModalState(() => selectedGateway = 'doku'),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: selectedGateway == 'doku' ? const Color(0xFFE1251B) : Colors.grey.shade300, width: selectedGateway == 'doku' ? 2 : 1),
-                        borderRadius: BorderRadius.circular(12),
-                        color: selectedGateway == 'doku' ? const Color(0xFFE1251B).withValues(alpha: 0.05) : Colors.transparent,
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFFE1251B), size: 22),
-                          const SizedBox(width: 10),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('DOKU Payment Gateway', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                Text('QRIS, Semua Bank, OVO, DANA, Alfamart', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                              ],
-                            ),
-                          ),
-                          Radio<String>(
-                            value: 'doku',
-                            groupValue: selectedGateway,
-                            activeColor: const Color(0xFFE1251B),
-                            onChanged: (val) => setModalState(() => selectedGateway = val!),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Option 2: Midtrans
+                  // Option 1: Midtrans
                   InkWell(
                     onTap: () => setModalState(() => selectedGateway = 'midtrans'),
                     borderRadius: BorderRadius.circular(12),
@@ -520,7 +485,42 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                             value: 'midtrans',
                             groupValue: selectedGateway,
                             activeColor: const Color(0xFF2563EB),
-                            onChanged: (val) => setModalState(() => selectedGateway = val!),
+                            onChanged: (val) => setModalState(() => selectedGateway = val ?? 'midtrans'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Option 2: DOKU
+                  InkWell(
+                    onTap: () => setModalState(() => selectedGateway = 'doku'),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: selectedGateway == 'doku' ? const Color(0xFFE1251B) : Colors.grey.shade300, width: selectedGateway == 'doku' ? 2 : 1),
+                        borderRadius: BorderRadius.circular(12),
+                        color: selectedGateway == 'doku' ? const Color(0xFFE1251B).withValues(alpha: 0.05) : Colors.transparent,
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFFE1251B), size: 22),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('DOKU Payment Gateway', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                Text('QRIS, Semua Bank, OVO, DANA, Alfamart', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                              ],
+                            ),
+                          ),
+                          Radio<String>(
+                            value: 'doku',
+                            groupValue: selectedGateway,
+                            activeColor: const Color(0xFFE1251B),
+                            onChanged: (val) => setModalState(() => selectedGateway = val ?? 'doku'),
                           ),
                         ],
                       ),
@@ -560,14 +560,17 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
     );
   }
 
-  Future<void> _initiateTopUp(BuildContext context, int amount, {String gateway = 'doku'}) async {
+  Future<void> _initiateTopUp(BuildContext context, int amount, {String gateway = 'midtrans'}) async {
+    bool dialogShown = false;
     showDialog(
       context: context,
       barrierDismissible: false,
+      useRootNavigator: true,
       builder: (_) => const Center(
         child: CircularProgressIndicator(color: AppTheme.primaryRed),
       ),
     );
+    dialogShown = true;
 
     try {
       final endpoint = (gateway == 'doku') ? ApiConstants.walletTopupDoku : ApiConstants.paymentTopupSnap;
@@ -575,8 +578,9 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
         'amount': amount,
       });
 
-      if (context.mounted) {
-        Navigator.pop(context); // Dismiss loading dialog
+      if (dialogShown && context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop(); // Dismiss loading dialog from root navigator
+        dialogShown = false;
       }
 
       if (res['success'] == true && res['data'] != null) {
@@ -616,8 +620,11 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
         );
       }
     } catch (e) {
+      if (dialogShown && context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        dialogShown = false;
+      }
       if (context.mounted) {
-        Navigator.pop(context);
         AppAlert.showError(context, title: 'Error', message: e.toString());
       }
     }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -48,6 +49,16 @@ class AppTheme {
     Color? color,
     double? height,
   }) {
+    if (kIsWeb) {
+      return TextStyle(
+        fontFamily: 'Plus Jakarta Sans',
+        fontFamilyFallback: const ['Roboto', 'Segoe UI', 'Arial', 'sans-serif'],
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        color: color,
+        height: height,
+      );
+    }
     return GoogleFonts.plusJakartaSans(
       fontSize: fontSize,
       fontWeight: fontWeight,
@@ -60,7 +71,12 @@ class AppTheme {
   }
 
   static ThemeData get lightTheme {
-    final baseTextTheme = GoogleFonts.plusJakartaSansTextTheme();
+    final baseTextTheme = kIsWeb
+        ? ThemeData.light().textTheme.apply(
+            fontFamily: 'Plus Jakarta Sans',
+            fontFamilyFallback: const ['Roboto', 'Segoe UI', 'Arial', 'sans-serif'],
+          )
+        : GoogleFonts.plusJakartaSansTextTheme();
 
     return ThemeData(
       useMaterial3: true,

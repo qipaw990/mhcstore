@@ -38,19 +38,19 @@ class _InAppPaymentScreenState extends State<InAppPaymentScreen> {
   @override
   void initState() {
     super.initState();
-    if (kIsWeb) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _openPaymentUrl();
-      });
-    }
+    // Di Web, pengguna akan menekan tombol "Buka Halaman Pembayaran" secara langsung
+    // untuk mencegah pemblokiran popup (popup blocker) oleh browser modern.
   }
 
   Future<void> _openPaymentUrl() async {
     try {
       final uri = Uri.parse(widget.paymentUrl);
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (mounted) {
         setState(() => _hasOpened = true);
+      }
+      if (!launched) {
+        debugPrint('Browser menolak membuka popup URL');
       }
     } catch (e) {
       debugPrint('Gagal membuka URL pembayaran: $e');
@@ -68,11 +68,12 @@ class _InAppPaymentScreenState extends State<InAppPaymentScreen> {
     } catch (_) {}
 
     if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
     widget.onPaymentComplete();
     Navigator.pop(context, true);
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       SnackBar(
-        content: Text('🎉 Pembayaran ${CurrencyFormatter.formatRupiah(widget.amount)} Berhasil!'),
+        content: Text('Pembayaran ${CurrencyFormatter.formatRupiah(widget.amount)} Berhasil!'),
         backgroundColor: Colors.green.shade700,
         duration: const Duration(seconds: 4),
       ),
@@ -88,11 +89,12 @@ class _InAppPaymentScreenState extends State<InAppPaymentScreen> {
         'payment_type': 'midtrans_sandbox_inapp',
       });
       if (res['success'] == true && mounted) {
+        final messenger = ScaffoldMessenger.of(context);
         widget.onPaymentComplete();
         Navigator.pop(context, true);
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(
-            content: Text('🎉 Pembayaran ${CurrencyFormatter.formatRupiah(widget.amount)} Berhasil (Sandbox)!'),
+            content: Text('Pembayaran ${CurrencyFormatter.formatRupiah(widget.amount)} Berhasil (Sandbox Mode)!'),
             backgroundColor: Colors.green.shade700,
             duration: const Duration(seconds: 4),
           ),
@@ -244,7 +246,7 @@ class _InAppPaymentScreenState extends State<InAppPaymentScreen> {
                         onPressed: _handlePaymentSuccess,
                         icon: const Icon(Icons.check_circle),
                         label: const Text(
-                          'Saya Sudah Selesai Membayar ✓',
+                          'Saya Sudah Selesai Membayar',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),

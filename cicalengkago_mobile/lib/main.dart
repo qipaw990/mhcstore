@@ -13,10 +13,14 @@ import 'features/merchant/controllers/merchant_controller.dart';
 import 'features/merchant/screens/merchant_dashboard_screen.dart';
 import 'core/services/global_call_service.dart';
 
+import 'package:google_fonts/google_fonts.dart';
 import 'core/widgets/cicalengkago_logo.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) {
+    GoogleFonts.config.allowRuntimeFetching = false;
+  }
   GlobalCallService.instance.startPolling();
   runApp(
     MultiProvider(
