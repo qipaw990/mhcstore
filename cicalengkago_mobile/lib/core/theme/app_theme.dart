@@ -53,14 +53,14 @@ class AppTheme {
       fontWeight: fontWeight,
       color: color,
       height: height,
-      fontFamilyFallback: const ['Roboto', 'Segoe UI', 'Arial', 'sans-serif'],
+      textStyle: const TextStyle(
+        fontFamilyFallback: ['Roboto', 'Segoe UI', 'Arial', 'sans-serif'],
+      ),
     );
   }
 
   static ThemeData get lightTheme {
-    final baseTextTheme = GoogleFonts.plusJakartaSansTextTheme().apply(
-      fontFamilyFallback: const ['Roboto', 'Segoe UI', 'Arial', 'sans-serif'],
-    );
+    final baseTextTheme = GoogleFonts.plusJakartaSansTextTheme();
 
     return ThemeData(
       useMaterial3: true,
