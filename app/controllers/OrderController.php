@@ -9,7 +9,6 @@ use App\Models\Coupon;
 use App\Models\CustomerAddress;
 use App\Models\Zone;
 use App\Services\OrderService;
-use App\Services\MidtransService;
 use App\Services\DokuService;
 use App\Core\Database;
 use Exception;
@@ -20,7 +19,6 @@ class OrderController extends Controller
     private Cart $cartModel;
     private Wallet $walletModel;
     private OrderService $orderService;
-    private MidtransService $midtransService;
     private DokuService $dokuService;
 
     public function __construct()
@@ -29,7 +27,6 @@ class OrderController extends Controller
         $this->cartModel = new Cart();
         $this->walletModel = new Wallet();
         $this->orderService = new OrderService();
-        $this->midtransService = new MidtransService();
         $this->dokuService = new DokuService();
     }
 
@@ -181,43 +178,8 @@ class OrderController extends Controller
                 'redirect'       => 'orders/' . $firstCode . '/tracking',
             ];
 
-            // Online payment: 1 Snap token covering grand total of all stores
-            if ($paymentMethod === 'midtrans') {
-                $user        = auth_user();
-                $appConfig   = require APP_PATH . '/config/app.php';
-                $publicUrl   = rtrim($appConfig['public_url'] ?? '', '/');
-                $snapOrderId = 'MULTI-' . time() . '-' . rand(100, 999);
-                $snapParams  = [
-                    'transaction_details' => [
-                        'order_id'     => $snapOrderId,
-                        'gross_amount' => (int)round($grandTotal)
-                    ],
-                    'customer_details' => [
-                        'first_name' => $deliveryAddress['contact_name'] ?: ($user['name'] ?? 'Pelanggan'),
-                        'email'      => $user['email'] ?? 'customer@cicalengkago.id',
-                        'phone'      => $deliveryAddress['contact_phone'] ?: ($user['phone'] ?? '081234567890'),
-                    ],
-                    'item_details' => array_map(fn($code) => [
-                        'id'       => 'ORDER_' . $code,
-                        'price'    => (int)round($grandTotal / count($allOrderCodes)),
-                        'quantity' => 1,
-                        'name'     => 'Pesanan CicalengkaGO #' . $code,
-                    ], $allOrderCodes),
-                    'callbacks' => [
-                        'finish'   => $publicUrl . '/orders',
-                        'error'    => $publicUrl . '/orders',
-                        'unfinish' => $publicUrl . '/orders',
-                    ],
-                ];
-
-                $snapResult = $this->midtransService->createSnapToken($snapParams);
-                $responseData['snap_token']   = $snapResult['token'];
-                $responseData['client_key']   = $snapResult['client_key'];
-                $responseData['redirect_url'] = $snapResult['redirect_url'];
-            }
-
             // Online payment: DOKU Checkout URL covering grand total of all stores
-            if ($paymentMethod === 'doku') {
+            if (in_array($paymentMethod, ['doku', 'midtrans'])) {
                 $user        = auth_user();
                 $appConfig   = require APP_PATH . '/config/app.php';
                 $publicUrl   = rtrim($appConfig['public_url'] ?? '', '/');
@@ -276,43 +238,8 @@ class OrderController extends Controller
                 'redirect'       => 'orders/' . $result['order_code'] . '/tracking'
             ];
 
-            // If online payment via Midtrans Snap
-            if ($paymentMethod === 'midtrans') {
-                $user = auth_user();
-                $snapOrderId = $result['order_code'] . '-' . time() . '-' . rand(100, 999);
-                $snapParams = [
-                    'transaction_details' => [
-                        'order_id'     => $snapOrderId,
-                        'gross_amount' => (int)round($result['total'])
-                    ],
-                    'customer_details' => [
-                        'first_name' => sanitize($data['sender_name'] ?? ($user['name'] ?? 'Pengirim')),
-                        'email'      => $user['email'] ?? 'customer@cicalengkago.id',
-                        'phone'      => sanitize($data['sender_phone'] ?? ($user['phone'] ?? '081234567890'))
-                    ],
-                    'item_details' => [
-                        [
-                            'id'       => 'PARCEL_' . $result['order_code'],
-                            'price'    => (int)round($result['total']),
-                            'quantity' => 1,
-                            'name'     => 'Ongkir CicalengkaSend #' . $result['order_code']
-                        ]
-                    ],
-                    'callbacks' => [
-                        'finish'   => $publicUrl . '/orders/' . $result['order_code'] . '/tracking',
-                        'error'    => $publicUrl . '/orders/' . $result['order_code'] . '/tracking',
-                        'unfinish' => $publicUrl . '/orders/' . $result['order_code'] . '/tracking'
-                    ]
-                ];
-
-                $snapResult = $this->midtransService->createSnapToken($snapParams);
-                $responseData['snap_token']   = $snapResult['token'];
-                $responseData['client_key']   = $snapResult['client_key'];
-                $responseData['redirect_url'] = $snapResult['redirect_url'];
-            }
-
             // If online payment via DOKU
-            if ($paymentMethod === 'doku') {
+            if (in_array($paymentMethod, ['doku', 'midtrans'])) {
                 $user = auth_user();
                 $dokuInvoice = 'PCL-' . $result['order_code'] . '-' . time();
                 $dokuParams = [
@@ -401,66 +328,10 @@ class OrderController extends Controller
             return;
         }
 
-        // Auto-settle if redirected back from Midtrans payment finish
-        $txnStatus = $_GET['transaction_status'] ?? $_GET['status'] ?? '';
-        $statusCode = (string)($_GET['status_code'] ?? '');
-        if (($txnStatus === 'settlement' || $txnStatus === 'capture' || $statusCode === '200') && $order['payment_status'] !== 'paid') {
-            try {
-                $this->midtransService->processNotification([
-                    'order_id'           => $order['order_code'],
-                    'transaction_status' => 'settlement',
-                    'fraud_status'       => 'accept',
-                    'payment_type'       => $_GET['payment_type'] ?? 'midtrans_redirect'
-                ]);
-                $order = $this->orderModel->findByIdOrCode($code);
-            } catch (\Exception $e) {}
-        }
 
-        $snapToken = null;
-        $clientKey = $this->midtransService->getClientKey();
-        $snapUrl   = $this->midtransService->getSnapUrl();
-
-        if ($order['payment_method'] === 'midtrans' && $order['payment_status'] !== 'paid' && $order['order_status'] !== 'canceled') {
-            try {
-                $user = auth_user() ?: ['name' => 'Pelanggan', 'email' => 'customer@cicalengkago.id', 'phone' => '081234567890'];
-                $appConfig = require APP_PATH . '/config/app.php';
-                $publicUrl = rtrim($appConfig['public_url'] ?? '', '/');
-                $snapOrderId = $order['order_code'] . '-' . time() . '-' . rand(100, 999);
-                $snapParams = [
-                    'transaction_details' => [
-                        'order_id'     => $snapOrderId,
-                        'gross_amount' => (int)round((float)$order['total_amount'])
-                    ],
-                    'customer_details' => [
-                        'first_name' => $order['delivery_address']['contact_name'] ?? ($user['name'] ?? 'Pelanggan'),
-                        'email'      => $user['email'] ?? 'customer@cicalengkago.id',
-                        'phone'      => $order['delivery_address']['contact_phone'] ?? ($user['phone'] ?? '081234567890')
-                    ],
-                    'item_details' => [
-                        [
-                            'id'       => 'ORDER_' . $order['order_code'],
-                            'price'    => (int)round((float)$order['total_amount']),
-                            'quantity' => 1,
-                            'name'     => 'Pesanan CicalengkaGO #' . $order['order_code']
-                        ]
-                    ],
-                    'callbacks' => [
-                        'finish'   => $publicUrl . '/orders/' . $order['order_code'] . '/tracking',
-                        'error'    => $publicUrl . '/orders/' . $order['order_code'] . '/tracking',
-                        'unfinish' => $publicUrl . '/orders/' . $order['order_code'] . '/tracking'
-                    ]
-                ];
-                $snapRes = $this->midtransService->createSnapToken($snapParams);
-                $snapToken = $snapRes['token'];
-                $clientKey = $snapRes['client_key'] ?? $clientKey;
-                $snapUrl   = $this->midtransService->getSnapUrl();
-            } catch (\Exception $e) {
-                // Keep snapToken null, client can request later
-            }
-        }
 
         $dokuUrl = null;
-        if ($order['payment_method'] === 'doku' && $order['payment_status'] !== 'paid' && $order['order_status'] !== 'canceled') {
+        if (in_array($order['payment_method'], ['doku', 'midtrans', 'online']) && $order['payment_status'] !== 'paid' && $order['order_status'] !== 'canceled') {
             try {
                 $user = auth_user() ?: ['name' => 'Pelanggan', 'email' => 'customer@cicalengkago.id', 'phone' => '081234567890'];
                 $appConfig = require APP_PATH . '/config/app.php';
@@ -470,7 +341,7 @@ class OrderController extends Controller
                     'amount'         => (int)round((float)$order['total_amount']),
                     'callback_url'   => $publicUrl . '/orders/' . $order['order_code'] . '/tracking',
                     'customer'       => [
-                        'id'    => (string)($order['user_id'] ?? 'GUEST'),
+                        'id'    => (string)($order['user_id'] ?? $order['customer_id'] ?? 'GUEST'),
                         'name'  => $order['delivery_address']['contact_name'] ?? ($user['name'] ?? 'Pelanggan'),
                         'email' => $user['email'] ?? 'customer@cicalengkago.id',
                         'phone' => $order['delivery_address']['contact_phone'] ?? ($user['phone'] ?? '081234567890'),
@@ -490,11 +361,8 @@ class OrderController extends Controller
         if ($this->isJsonRequest()) {
             $this->successResponse('Tracking pesanan berhasil diambil', [
                 'order'      => $order,
-                'snap_token' => $snapToken,
-                'client_key' => $clientKey,
-                'snap_url'   => $snapUrl,
-                'is_sandbox' => $this->midtransService->isSandbox(),
                 'doku_url'   => $dokuUrl,
+                'payment_url'=> $dokuUrl,
             ]);
             return;
         }
@@ -502,10 +370,7 @@ class OrderController extends Controller
         $this->view('customer.order_tracking', [
             'title'      => "Lacak Pesanan #{$order['order_code']}",
             'order'      => $order,
-            'snap_token' => $snapToken,
-            'client_key' => $clientKey,
-            'snap_url'   => $snapUrl,
-            'is_sandbox' => $this->midtransService->isSandbox(),
+            'doku_url'   => $dokuUrl,
             'active_tab' => 'orders'
         ], 'customer_layout');
     }
@@ -541,38 +406,30 @@ class OrderController extends Controller
             $user = auth_user();
             $appConfig = require APP_PATH . '/config/app.php';
             $publicUrl = rtrim($appConfig['public_url'] ?? '', '/');
-            $snapOrderId = $order['order_code'] . '-' . time() . '-' . rand(100, 999);
-            $snapParams = [
-                'transaction_details' => [
-                    'order_id'     => $snapOrderId,
-                    'gross_amount' => (int)round((float)$order['total_amount'])
+
+            $dokuRes = $this->dokuService->createPaymentUrl([
+                'invoice_number' => 'REPAY-' . $order['order_code'] . '-' . time(),
+                'amount'         => (int)round((float)$order['total_amount']),
+                'callback_url'   => $publicUrl . '/orders/' . $order['order_code'] . '/tracking',
+                'customer'       => [
+                    'id'    => (string)$userId,
+                    'name'  => $order['delivery_address']['contact_name'] ?? ($user['name'] ?? 'Pelanggan'),
+                    'email' => $user['email'] ?? 'customer@cicalengkago.id',
+                    'phone' => $order['delivery_address']['contact_phone'] ?? ($user['phone'] ?? '081234567890'),
                 ],
-                'customer_details' => [
-                    'first_name' => $order['delivery_address']['contact_name'] ?? ($user['name'] ?? 'Pelanggan'),
-                    'email'      => $user['email'] ?? 'customer@cicalengkago.id',
-                    'phone'      => $order['delivery_address']['contact_phone'] ?? ($user['phone'] ?? '081234567890')
-                ],
-                'item_details' => [
+                'line_items'     => [
                     [
-                        'id'       => 'ORDER_' . $order['order_code'],
+                        'name'     => 'Pesanan CicalengkaGO #' . $order['order_code'],
                         'price'    => (int)round((float)$order['total_amount']),
                         'quantity' => 1,
-                        'name'     => 'Pesanan CicalengkaGO #' . $order['order_code']
                     ]
-                ],
-                'callbacks' => [
-                    'finish'   => $publicUrl . '/orders/' . $order['order_code'] . '/tracking',
-                    'error'    => $publicUrl . '/orders/' . $order['order_code'] . '/tracking',
-                    'unfinish' => $publicUrl . '/orders/' . $order['order_code'] . '/tracking'
                 ]
-            ];
+            ]);
 
-            $snapResult = $this->midtransService->createSnapToken($snapParams);
-            $this->successResponse('Snap token siap', [
-                'snap_token'   => $snapResult['token'],
-                'client_key'   => $snapResult['client_key'],
-                'redirect_url' => $snapResult['redirect_url'],
-                'snap_url'     => $this->midtransService->getSnapUrl()
+            $this->successResponse('URL pembayaran DOKU siap', [
+                'payment_url'  => $dokuRes['payment_url'] ?? '',
+                'redirect_url' => $dokuRes['redirect_url'] ?? '',
+                'order_id'     => $order['order_code'],
             ]);
         } catch (\Exception $e) {
             $this->errorResponse($e->getMessage());

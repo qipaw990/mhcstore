@@ -3,7 +3,6 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Core\Database;
-use App\Services\MidtransService;
 use App\Models\Wallet;
 use App\Models\TopupLog;
 use App\Models\Notification;
@@ -12,12 +11,10 @@ use Exception;
 
 class PaymentController extends Controller
 {
-    private MidtransService $midtransService;
     private DokuService $dokuService;
 
     public function __construct()
     {
-        $this->midtransService = new MidtransService();
         $this->dokuService = new DokuService();
     }
 
@@ -98,264 +95,23 @@ class PaymentController extends Controller
     }
 
     /**
-     * Generate Snap Token for CicalengkaPay Wallet Top-Up
+     * topupSnap dihapus — gunakan topupDoku() untuk semua top up
+     * Method ini dipertahankan agar route lama tidak error 404,
+     * tapi langsung mengarahkan ke DOKU.
      */
     public function topupSnap(): void
     {
-        $userId = auth_id();
-        if (!$userId) {
-            $this->errorResponse('Silakan login terlebih dahulu.', null, 401);
-            return;
-        }
-
-        $user = auth_user();
-        $data = $this->getPost();
-        $amount = (float)($data['amount'] ?? 0);
-
-        if ($amount < 10000) {
-            $this->errorResponse('Nominal top up minimal Rp 10.000.');
-            return;
-        }
-
-        $orderId = 'TOPUP-' . $userId . '-' . time() . '-' . rand(100, 999);
-
-        try {
-            $appConfig = require APP_PATH . '/config/app.php';
-            $publicUrl = rtrim($appConfig['public_url'] ?? '', '/');
-
-            $origin = $_SERVER['HTTP_ORIGIN'] ?? $_SERVER['HTTP_REFERER'] ?? '';
-            $callbackUrl = $publicUrl . '/wallet';
-            if (!empty($data['callback_url'])) {
-                $callbackUrl = $data['callback_url'];
-            } elseif (str_contains($origin, 'market.cicago.store')) {
-                $callbackUrl = 'https://market.cicago.store';
-            }
-
-            $params = [
-                'transaction_details' => [
-                    'order_id'     => $orderId,
-                    'gross_amount' => (int)$amount
-                ],
-                'customer_details' => [
-                    'first_name' => $user['name'] ?? 'Pengguna CicalengkaGO',
-                    'email'      => $user['email'] ?? 'customer@cicalengkago.id',
-                    'phone'      => $user['phone'] ?? '081234567890'
-                ],
-                'item_details' => [
-                    [
-                        'id'       => 'TOPUP_CICALENGKAPAY',
-                        'price'    => (int)$amount,
-                        'quantity' => 1,
-                        'name'     => 'Top Up Saldo CicalengkaPay'
-                    ]
-                ],
-                'callbacks' => [
-                    'finish'   => $callbackUrl,
-                    'error'    => $callbackUrl,
-                    'unfinish' => $callbackUrl
-                ]
-            ];
-
-            $snapResult = $this->midtransService->createSnapToken($params);
-
-            // Record pending log in topup_logs
-            (new \App\Models\TopupLog())->recordPending(
-                $userId,
-                $orderId,
-                $amount,
-                $snapResult['token'],
-                'midtrans_snap',
-                'Menunggu pembayaran via Midtrans Snap'
-            );
-
-            $this->successResponse('Snap token berhasil dibuat', [
-                'snap_token'   => $snapResult['token'],
-                'order_id'     => $orderId,
-                'client_key'   => $snapResult['client_key'],
-                'redirect_url' => $snapResult['redirect_url']
-            ]);
-        } catch (\Throwable $e) {
-            $this->errorResponse($e->getMessage());
-        }
+        $this->topupDoku();
     }
 
     /**
-     * Render HTML wrapper page untuk Midtrans Snap in-app payment.
-     * Halaman ini dimuat oleh Flutter WebView / iframe sehingga tidak perlu
-     * redirect ke domain Midtrans (menghindari X-Frame-Options).
-     * Query params: snap_token, client_key, order_id, amount, is_production
+     * snapPage dihapus — tidak digunakan lagi karena sudah migrasi ke DOKU
      */
     public function snapPage(): void
     {
-        $snapToken   = trim($_GET['snap_token'] ?? '');
-        $clientKey   = trim($_GET['client_key'] ?? '');
-        $orderId     = trim($_GET['order_id'] ?? '');
-        $amount      = (float)($_GET['amount'] ?? 0);
-        $isProduction = filter_var($_GET['is_production'] ?? false, FILTER_VALIDATE_BOOLEAN);
-
-        if (empty($snapToken) || empty($clientKey)) {
-            http_response_code(400);
-            echo '<h3>Parameter tidak valid</h3>';
-            return;
-        }
-
-        $snapJsUrl = $isProduction
-            ? 'https://app.midtrans.com/snap/snap.js'
-            : 'https://app.sandbox.midtrans.com/snap/snap.js';
-
-        // Remove X-Frame-Options to allow embedding in Flutter WebView / iframe
-        header_remove('X-Frame-Options');
-        header('Content-Security-Policy: frame-ancestors *');
+        http_response_code(410);
         header('Content-Type: text/html; charset=UTF-8');
-        // Cache busting
-        header('Cache-Control: no-cache, no-store, must-revalidate');
-
-        $amountFormatted = 'Rp ' . number_format($amount, 0, ',', '.');
-        $snapTokenEsc  = htmlspecialchars($snapToken, ENT_QUOTES);
-        $clientKeyEsc  = htmlspecialchars($clientKey, ENT_QUOTES);
-        $orderIdEsc    = htmlspecialchars($orderId, ENT_QUOTES);
-
-        echo <<<HTML
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Pembayaran CicalengkaPay</title>
-  <script src="{$snapJsUrl}" data-client-key="{$clientKeyEsc}"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .card {
-      background: white;
-      border-radius: 20px;
-      padding: 32px 28px;
-      max-width: 360px;
-      width: 90%;
-      text-align: center;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    }
-    .logo { font-size: 32px; margin-bottom: 12px; }
-    h2 { font-size: 18px; color: #1a1a2e; margin-bottom: 6px; }
-    .amount {
-      font-size: 28px;
-      font-weight: 800;
-      color: #c62828;
-      margin: 8px 0 4px;
-    }
-    .order-id { font-size: 11px; color: #94a3b8; margin-bottom: 20px; font-family: monospace; }
-    .btn {
-      display: inline-block;
-      width: 100%;
-      padding: 14px 24px;
-      background: #c62828;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .btn:hover { background: #b71c1c; }
-    .btn:disabled { background: #94a3b8; cursor: default; }
-    #status {
-      margin-top: 16px;
-      font-size: 12px;
-      color: #64748b;
-      min-height: 18px;
-    }
-    .spinner {
-      display: none;
-      width: 40px;
-      height: 40px;
-      border: 4px solid #fee2e2;
-      border-top-color: #c62828;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 16px auto 0;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="logo">💳</div>
-    <h2>Pembayaran CicalengkaPay</h2>
-    <div class="amount">{$amountFormatted}</div>
-    <div class="order-id">{$orderIdEsc}</div>
-    <button class="btn" id="pay-btn" onclick="startPayment()">Mulai Pembayaran</button>
-    <div class="spinner" id="spinner"></div>
-    <div id="status">Siap memproses pembayaran...</div>
-  </div>
-
-  <script>
-    function sendMessage(type, data) {
-      var msg = JSON.stringify({ source: 'cicalengkago_payment', type: type, data: data });
-      // postMessage ke parent (iframe) atau ke flutter (WebView JS channel)
-      try { window.parent.postMessage(msg, '*'); } catch(e) {}
-      try { window.top.postMessage(msg, '*'); } catch(e) {}
-      // Flutter WebView JS channel
-      if (window.PaymentChannel) {
-        try { window.PaymentChannel.postMessage(msg); } catch(e) {}
-      }
-    }
-
-    function setStatus(msg) {
-      document.getElementById('status').textContent = msg;
-    }
-
-    function startPayment() {
-      var btn = document.getElementById('pay-btn');
-      var spinner = document.getElementById('spinner');
-      btn.disabled = true;
-      spinner.style.display = 'block';
-      setStatus('Memuat form pembayaran...');
-
-      snap.pay('{$snapTokenEsc}', {
-        onSuccess: function(result) {
-          setStatus('✅ Pembayaran berhasil!');
-          btn.style.display = 'none';
-          spinner.style.display = 'none';
-          sendMessage('success', { order_id: '{$orderIdEsc}', result: result });
-          setTimeout(function() { sendMessage('close', { status: 'success' }); }, 1500);
-        },
-        onPending: function(result) {
-          setStatus('⏳ Pembayaran pending...');
-          btn.disabled = false;
-          spinner.style.display = 'none';
-          sendMessage('pending', { order_id: '{$orderIdEsc}', result: result });
-        },
-        onError: function(result) {
-          setStatus('❌ Pembayaran gagal. Coba lagi.');
-          btn.disabled = false;
-          spinner.style.display = 'none';
-          sendMessage('error', { order_id: '{$orderIdEsc}', result: result });
-        },
-        onClose: function() {
-          setStatus('Pembayaran dibatalkan.');
-          btn.disabled = false;
-          spinner.style.display = 'none';
-          sendMessage('cancel', { order_id: '{$orderIdEsc}' });
-        }
-      });
-    }
-
-    // Auto-start after 500ms (better UX)
-    window.addEventListener('load', function() {
-      setTimeout(startPayment, 500);
-    });
-  </script>
-</body>
-</html>
-HTML;
+        echo '<h3>Halaman ini sudah tidak tersedia. Gunakan DOKU Checkout.</h3>';
         exit;
     }
 
@@ -386,7 +142,7 @@ HTML;
         if ($status === 'failed' || $status === 'canceled') {
             $topupLogModel->markFailed($orderId, $notes);
         } elseif ($status === 'success') {
-            $topupLogModel->markSuccess($orderId, $data['payment_type'] ?? 'midtrans', $notes);
+            $topupLogModel->markSuccess($orderId, $data['payment_type'] ?? 'doku', $notes);
         }
 
         $this->successResponse('Status log top up berhasil diperbarui');
@@ -404,13 +160,9 @@ HTML;
 
         $orderId = $data['order_id'];
 
-        // Handle Top Up Callback
+        // Handle Top Up Callback (DOKU/manual)
         if (str_starts_with($orderId, 'TOPUP-')) {
             try {
-                if ($this->midtransService->isSandbox()) {
-                    $data['transaction_status'] = 'settlement';
-                }
-                // Pastikan gross_amount dan amount terisi
                 $amount = (float)($data['gross_amount'] ?? $data['amount'] ?? 0);
                 if ($amount <= 0) {
                     $topupLog = Database::fetchOne("SELECT amount FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1", [$orderId]);
@@ -418,12 +170,9 @@ HTML;
                         $amount = (float)$topupLog['amount'];
                     }
                 }
-                $data['gross_amount'] = $amount;
-                $data['amount'] = $amount;
 
-                $result = $this->midtransService->processNotification($data);
-                (new \App\Models\TopupLog())->markSuccess($orderId, $data['payment_type'] ?? 'midtrans', 'Pembayaran terkonfirmasi');
-                $this->successResponse('Top Up berhasil diverifikasi', $result);
+                (new \App\Models\TopupLog())->markSuccess($orderId, $data['payment_type'] ?? 'doku', 'Pembayaran terkonfirmasi');
+                $this->successResponse('Top Up berhasil diverifikasi', ['order_id' => $orderId, 'amount' => $amount]);
                 return;
             } catch (\Throwable $e) {
                 (new \App\Models\TopupLog())->markFailed($orderId, $e->getMessage());
@@ -451,36 +200,21 @@ HTML;
             }
 
             if (!empty($data['transaction_status'])) {
-                // If in sandbox and client completed payment or requested settlement
                 $txStatus = $data['transaction_status'];
-                if ($this->midtransService->isSandbox() && in_array($txStatus, ['settlement', 'capture', 'success', 'accept', 'pending'])) {
-                    if ($txStatus === 'pending' && !empty($data['force_sandbox_settle'])) {
-                        $data['transaction_status'] = 'settlement';
-                    }
+                if (in_array($txStatus, ['settlement', 'capture', 'success', 'accept'])) {
+                    \App\Core\Database::update('orders', [
+                        'payment_status' => 'paid',
+                        'payment_method' => $data['payment_type'] ?? 'doku',
+                        'order_status'   => ($dbOrder['order_status'] ?? 'pending') === 'pending' ? 'confirmed' : ($dbOrder['order_status'] ?? 'confirmed'),
+                        'confirmed_at'   => date('Y-m-d H:i:s')
+                    ], 'order_code = ?', [$cleanCode]);
+
+                    $this->successResponse('Status pembayaran berhasil diproses', ['order_code' => $cleanCode, 'status' => 'paid']);
+                    return;
                 }
-
-                $result = $this->midtransService->processNotification($data);
-                $this->successResponse('Status pembayaran berhasil diproses', $result);
-                return;
             }
 
-            // Fallback: check live Midtrans status API
-            $liveStatus = $this->midtransService->getTransactionStatus($orderId);
-            if (!empty($liveStatus['success']) && !empty($liveStatus['data'])) {
-                $result = $this->midtransService->processNotification($liveStatus['data']);
-                $this->successResponse('Status pembayaran berhasil diproses', $result);
-                return;
-            }
-
-            // In Sandbox mode fallback: if user calls verify, mark as settled
-            if ($this->midtransService->isSandbox()) {
-                $data['transaction_status'] = 'settlement';
-                $result = $this->midtransService->processNotification($data);
-                $this->successResponse('Pembayaran diselesaikan (Mode Sandbox)', $result);
-                return;
-            }
-
-            $this->errorResponse($liveStatus['message'] ?? 'Belum ada data pembayaran terkonfirmasi.');
+            $this->errorResponse('Belum ada data pembayaran terkonfirmasi.');
         } catch (\Throwable $e) {
             $this->errorResponse($e->getMessage());
         }
@@ -495,7 +229,7 @@ HTML;
         $data = json_decode($rawInput, true) ?: $this->getPost();
 
         $orderId = trim($data['order_id'] ?? '');
-        $paymentType = sanitize($data['payment_type'] ?? 'midtrans_sandbox');
+        $paymentType = sanitize($data['payment_type'] ?? 'doku_sandbox');
 
         if (empty($orderId)) {
             $this->errorResponse('Order ID atau kode transaksi tidak valid.');
@@ -525,18 +259,18 @@ HTML;
                     $userId,
                     $amount,
                     'topup',
-                    "Top Up CicalengkaPay via Midtrans Sandbox ({$paymentType})",
+                    "Top Up CicalengkaPay via DOKU Sandbox ({$paymentType})",
                     $orderId
                 );
 
                 // Update or record TopupLog as success
                 $topupLogModel = new \App\Models\TopupLog();
                 $topupLogModel->recordPending($userId, $orderId, $amount, null, $paymentType);
-                $topupLogModel->markSuccess($orderId, $paymentType, 'Top Up Midtrans Sandbox Berhasil');
+                $topupLogModel->markSuccess($orderId, $paymentType, 'Top Up DOKU Sandbox Berhasil');
 
                 (new \App\Models\Notification())->createNotification(
                     $userId,
-                    'Top Up Midtrans Berhasil! 🎉',
+                    'Top Up DOKU Berhasil! 🎉',
                     "Saldo CicalengkaPay sebesar " . format_rupiah($amount) . " berhasil ditambahkan (Mode Sandbox).",
                     'wallet'
                 );
@@ -565,7 +299,7 @@ HTML;
             // Update order status to paid and confirmed
             \App\Core\Database::update('orders', [
                 'payment_status' => 'paid',
-                'payment_method' => 'midtrans',
+                'payment_method' => 'doku',
                 'order_status'   => ($order['order_status'] === 'pending' || $order['order_status'] === 'unpaid') ? 'confirmed' : $order['order_status'],
                 'confirmed_at'   => date('Y-m-d H:i:s')
             ], 'id = ?', [$order['id']]);
@@ -574,11 +308,11 @@ HTML;
             (new \App\Models\Notification())->createNotification(
                 (int)$order['customer_id'],
                 'Pembayaran Berhasil! 💳',
-                "Pembayaran pesanan #{$order['order_code']} via Midtrans Sandbox berhasil dikonfirmasi.",
+                "Pembayaran pesanan #{$order['order_code']} via DOKU berhasil dikonfirmasi.",
                 'order'
             );
 
-            $this->successResponse('Pembayaran pesanan berhasil diselesaikan (Sandbox Mode)', [
+            $this->successResponse('Pembayaran pesanan berhasil diselesaikan', [
                 'status'         => 'settled',
                 'order_code'     => $order['order_code'],
                 'order_id'       => $orderId,
@@ -591,29 +325,11 @@ HTML;
     }
 
     /**
-     * Webhook Notification Handler from Midtrans Server
+     * Webhook Notification Handler (Legacy alias to DOKU)
      */
     public function notification(): void
     {
-        $rawInput = file_get_contents('php://input');
-        $payload = json_decode($rawInput, true);
-
-        if (!$payload) {
-            http_response_code(400);
-            echo json_encode(['status' => 'error', 'message' => 'Invalid payload']);
-            return;
-        }
-
-        try {
-            $result = $this->midtransService->processNotification($payload);
-            http_response_code(200);
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'success', 'result' => $result]);
-        } catch (\Throwable $e) {
-            http_response_code(500);
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
-        }
+        $this->dokuNotification();
     }
 
     /**

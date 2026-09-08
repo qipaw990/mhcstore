@@ -56,14 +56,12 @@ Router::get('/parcel', [CustomerController::class, 'parcel']);
 Router::get('/profile', [CustomerController::class, 'profile']);
 Router::post('/profile/update', [CustomerController::class, 'updateProfile'], ['AuthMiddleware']);
 Router::get('/wallet', [CustomerController::class, 'wallet'], ['AuthMiddleware']);
-Router::post('/wallet/topup-midtrans', [PaymentController::class, 'topupSnap'], ['AuthMiddleware']);
+Router::post('/wallet/topup-midtrans', [PaymentController::class, 'topupDoku'], ['AuthMiddleware']); // legacy alias -> DOKU
 Router::post('/wallet/topup-doku', [PaymentController::class, 'topupDoku'], ['AuthMiddleware']);
-Router::post('/payment/topup-snap', [PaymentController::class, 'topupSnap'], ['AuthMiddleware']);
-Router::get('/payment/snap-page', [PaymentController::class, 'snapPage']);
+Router::post('/payment/topup-snap', [PaymentController::class, 'topupDoku'], ['AuthMiddleware']); // legacy alias -> DOKU
 Router::post('/payment/topup-update-status', [PaymentController::class, 'updateTopupStatus'], ['AuthMiddleware']);
 Router::post('/payment/verify', [PaymentController::class, 'verifyClientCallback']);
 Router::post('/payment/simulate-sandbox-success', [PaymentController::class, 'simulateSandboxSuccess']);
-Router::post('/payment/midtrans/notification', [PaymentController::class, 'notification']);
 Router::post('/payment/doku/notification', [PaymentController::class, 'dokuNotification']);
 Router::get('/notifications', [CustomerController::class, 'notifications'], ['AuthMiddleware']);
 
@@ -223,9 +221,7 @@ Router::group(['prefix' => '/admin', 'middleware' => ['AdminMiddleware']], funct
     Router::get('/settings', [AdminController::class, 'settings']);
     Router::post('/settings/save', [AdminController::class, 'saveSettings']);
 
-    // Midtrans, DOKU & Email Gateway Diagnostics
-    Router::get('/midtrans/status/{code}', [AdminController::class, 'getMidtransStatus']);
-    Router::post('/midtrans/test-connection', [AdminController::class, 'testMidtransApi']);
+    // DOKU & Email Gateway Diagnostics
     Router::post('/doku/test-connection', [AdminController::class, 'testDokuApi']);
     Router::post('/email/test-send', [AdminController::class, 'testEmailGateway']);
 

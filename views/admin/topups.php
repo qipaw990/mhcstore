@@ -1,7 +1,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
-        <h4 class="fw-bold mb-1"><i class="bi bi-wallet2 text-primary me-2"></i>Manajemen Top-Up Saldo Midtrans</h4>
-        <p class="text-muted small mb-0">Pantau hasil transaksi top-up CicalengkaPay, sinkronkan status real-time via API Midtrans, dan kelola saldo pengguna.</p>
+        <h4 class="fw-bold mb-1"><i class="bi bi-wallet2 text-primary me-2"></i>Manajemen Top-Up Saldo DOKU</h4>
+        <p class="text-muted small mb-0">Pantau hasil transaksi top-up CicalengkaPay, sinkronkan status real-time via payment gateway DOKU, dan kelola saldo pengguna.</p>
     </div>
     <div class="d-flex gap-2">
         <button type="button" class="btn btn-primary btn-sm rounded-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#manualTopupModal">
@@ -158,7 +158,7 @@
                     <th>Saluran Pembayaran</th>
                     <th>Status</th>
                     <th>Waktu Dibuat</th>
-                    <th class="text-end pe-3">Aksi Midtrans</th>
+                    <th class="text-end pe-3">Aksi Transaksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -198,8 +198,8 @@
                         }
 
                         // Parse payment channel presentation
-                        $payType = strtolower($t['payment_type'] ?? 'midtrans_snap');
-                        $channelName = 'Midtrans Snap';
+                        $payType = strtolower($t['payment_type'] ?? 'doku_checkout');
+                        $channelName = 'DOKU Checkout';
                         $channelIcon = 'bi-credit-card-2-front';
                         $channelBadge = 'bg-primary-subtle text-primary';
 
@@ -343,11 +343,11 @@
                             <!-- Actions -->
                             <td class="text-end pe-3">
                                 <div class="btn-group btn-group-sm">
-                                    <!-- Cek Status Real-Time ke Midtrans -->
+                                    <!-- Cek Status Real-Time -->
                                     <button class="btn btn-outline-primary btn-sm rounded-start-3" 
-                                            onclick="syncMidtransStatus('<?= htmlspecialchars($t['topup_code']) ?>', <?= $t['id'] ?>)" 
-                                            title="Cek Status Real-Time Langsung ke API Midtrans">
-                                        <i class="bi bi-arrow-repeat me-1"></i> Sync API
+                                            onclick="syncTopupStatus('<?= htmlspecialchars($t['topup_code']) ?>', <?= $t['id'] ?>)" 
+                                            title="Cek Status Transaksi">
+                                        <i class="bi bi-arrow-repeat me-1"></i> Sync Status
                                     </button>
 
                                     <!-- Detail Modal -->
@@ -429,7 +429,7 @@
                         <i class="bi bi-wallet2 fs-5"></i>
                     </div>
                     <div>
-                        <h6 class="modal-title fw-bold mb-0">Rincian Transaksi Top-Up Midtrans</h6>
+                        <h6 class="modal-title fw-bold mb-0">Rincian Transaksi Top-Up Saldo</h6>
                         <span class="small text-muted" id="modal-topup-code">TOPUP-...</span>
                     </div>
                 </div>
@@ -556,11 +556,11 @@ function formatRupiahJs(number) {
     return 'Rp ' + new Intl.NumberFormat('id-ID').format(number);
 }
 
-// 1. Sinkronisasi Real-Time dengan Midtrans Status API
-async function syncMidtransStatus(topupCode, rowId) {
+// 1. Sinkronisasi Status Transaksi
+async function syncTopupStatus(topupCode, rowId) {
     Swal.fire({
-        title: 'Menghubungi Midtrans API...',
-        html: `Memeriksa status transaksi <code>${topupCode}</code> ke server Midtrans...`,
+        title: 'Menghubungi Server...',
+        html: `Memeriksa status transaksi <code>${topupCode}</code>...`,
         allowOutsideClick: false,
         didOpen: () => { Swal.showLoading(); }
     });
@@ -577,25 +577,9 @@ async function syncMidtransStatus(topupCode, rowId) {
         const data = await res.json();
 
         if (data.success) {
-            const midData = data.data.midtrans_data || {};
-            const processRes = data.data.process_result || {};
-            const txStatus = midData.transaction_status || 'unknown';
-            const payType = midData.payment_type || '-';
-            const grossAmount = midData.gross_amount ? formatRupiahJs(midData.gross_amount) : '-';
-
             await Swal.fire({
-                title: 'Sinkronisasi Berhasil!',
-                html: `
-                    <div class="text-start small p-3 bg-light rounded-3 border">
-                        <div class="mb-1"><strong>Kode Transaksi:</strong> <code>${topupCode}</code></div>
-                        <div class="mb-1"><strong>Status Midtrans:</strong> <span class="badge ${txStatus === 'settlement' || txStatus === 'capture' ? 'bg-success' : 'bg-warning text-dark'} text-uppercase">${txStatus}</span></div>
-                        <div class="mb-1"><strong>Metode Pembayaran:</strong> ${payType}</div>
-                        <div class="mb-1"><strong>Nominal:</strong> ${grossAmount}</div>
-                        <div class="mt-2 text-muted" style="font-size: 11px;">
-                            ${processRes.message || 'Status database berhasil diperbarui.'}
-                        </div>
-                    </div>
-                `,
+                title: 'Status Diperbarui',
+                text: data.message || 'Status transaksi berhasil diperiksa.',
                 icon: 'success',
                 confirmButtonColor: '#2563eb'
             });
@@ -603,15 +587,15 @@ async function syncMidtransStatus(topupCode, rowId) {
             location.reload();
         } else {
             Swal.fire({
-                title: 'Respon Midtrans',
-                text: data.message || 'Transaksi belum terdata atau belum dibayar di Midtrans.',
+                title: 'Status Transaksi',
+                text: data.message || 'Transaksi belum terdata atau belum dibayar.',
                 icon: 'info',
                 confirmButtonColor: '#2563eb'
             });
         }
     } catch (err) {
         console.error(err);
-        Swal.fire('Kesalahan Sistem', 'Gagal menghubungkan ke endpoint sinkronisasi Midtrans.', 'error');
+        Swal.fire('Kesalahan Sistem', 'Gagal memeriksa status transaksi.', 'error');
     }
 }
 
@@ -643,42 +627,12 @@ async function showTopupDetail(id) {
 
         const t = result.data;
         const wTx = result.wallet_tx;
-        const midStatus = result.midtrans_status;
-
-        codeEl.textContent = t.topup_code;
-
-        let statusBadge = '<span class="badge bg-secondary">Pending</span>';
-        if (t.status === 'success') {
-            statusBadge = '<span class="badge bg-success">Berhasil (Settled)</span>';
-        } else if (t.status === 'failed') {
-            statusBadge = '<span class="badge bg-danger">Gagal</span>';
-        } else if (t.status === 'canceled') {
-            statusBadge = '<span class="badge bg-secondary">Dibatalkan</span>';
-        }
-
-        let midtransInfoHtml = '';
-        if (midStatus && midStatus.success && midStatus.data) {
-            const m = midStatus.data;
-            midtransInfoHtml = `
-                <div class="p-3 bg-light rounded-3 border mb-3">
-                    <h6 class="fw-bold small mb-2 text-primary"><i class="bi bi-cloud-check-fill me-1"></i> Respon Live Midtrans Gateway:</h6>
-                    <div class="row g-2 small">
-                        <div class="col-sm-6"><strong>Transaction Status:</strong> <span class="badge bg-dark">${m.transaction_status || '-'}</span></div>
-                        <div class="col-sm-6"><strong>Payment Type:</strong> ${m.payment_type || '-'}</div>
-                        <div class="col-sm-6"><strong>Transaction ID:</strong> <code class="small">${m.transaction_id || '-'}</code></div>
-                        <div class="col-sm-6"><strong>Transaction Time:</strong> ${m.transaction_time || '-'}</div>
-                        <div class="col-sm-6"><strong>Settlement Time:</strong> ${m.settlement_time || '-'}</div>
-                        <div class="col-sm-6"><strong>Issuer / Bank:</strong> ${m.issuer || m.bank || '-'}</div>
-                    </div>
-                </div>
-            `;
-        } else {
-            midtransInfoHtml = `
-                <div class="p-2.5 bg-light rounded-3 border mb-3 small text-muted">
-                    <i class="bi bi-info-circle me-1"></i> <strong>Midtrans Status:</strong> ${midStatus && midStatus.message ? midStatus.message : 'Belum ada transaksi di gateway'}
-                </div>
-            `;
-        }
+        const gatewayStatus = result.gateway_status || {};
+        let gatewayInfoHtml = `
+            <div class="p-2.5 bg-light rounded-3 border mb-3 small text-muted">
+                <i class="bi bi-shield-check me-1 text-success"></i> <strong>Payment Gateway:</strong> DOKU Checkout
+            </div>
+        `;
 
         contentEl.innerHTML = `
             <div class="row g-3 mb-3">
@@ -707,7 +661,7 @@ async function showTopupDetail(id) {
                         </div>
                         <div class="d-flex justify-content-between mb-1">
                             <span class="small text-muted">Metode:</span>
-                            <span class="small fw-semibold text-dark">${t.payment_type || 'Midtrans Snap'}</span>
+                            <span class="small fw-semibold text-dark">${t.payment_type || 'DOKU Checkout'}</span>
                         </div>
                         <div class="d-flex justify-content-between">
                             <span class="small text-muted">Waktu Dibuat:</span>
@@ -717,11 +671,11 @@ async function showTopupDetail(id) {
                 </div>
             </div>
 
-            ${midtransInfoHtml}
+            ${gatewayInfoHtml}
 
             ${t.snap_token ? `
                 <div class="mb-3">
-                    <label class="form-label fw-bold small text-muted">Snap Token:</label>
+                    <label class="form-label fw-bold small text-muted">Payment Token:</label>
                     <div class="input-group input-group-sm">
                         <input type="text" class="form-control font-monospace" value="${t.snap_token}" readonly>
                         <button class="btn btn-outline-secondary" onclick="copyToClipboard('${t.snap_token}')"><i class="bi bi-clipboard"></i></button>
@@ -738,7 +692,7 @@ async function showTopupDetail(id) {
 
         if (t.status === 'pending') {
             actionBtnsEl.innerHTML = `
-                <button type="button" class="btn btn-outline-primary btn-sm rounded-3 me-1" onclick="syncMidtransStatus('${t.topup_code}', ${t.id})">
+                <button type="button" class="btn btn-outline-primary btn-sm rounded-3 me-1" onclick="syncTopupStatus('${t.topup_code}', ${t.id})">
                     <i class="bi bi-arrow-repeat me-1"></i> Sync Status Sekarang
                 </button>
                 <button type="button" class="btn btn-success btn-sm rounded-3" onclick="manualApproveTopup(${t.id}, '${t.topup_code}', '${formatRupiahJs(t.amount)}', '${t.user_name}')">

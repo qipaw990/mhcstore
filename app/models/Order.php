@@ -491,7 +491,7 @@ class Order extends Model
             [(string)$orderId]
         );
 
-        $validPaidMethods = ['wallet', 'cicalengkapay', 'cicago_pay', 'saldo', 'balance', 'midtrans', 'online', 'qris', 'va', 'credit_card'];
+        $validPaidMethods = ['wallet', 'cicalengkapay', 'cicago_pay', 'saldo', 'balance', 'doku', 'midtrans', 'online', 'qris', 'va', 'credit_card'];
         $isEligible = ($paymentStatus === 'paid' || in_array($paymentMethod, $validPaidMethods));
 
         if (!$existing && $amount > 0 && $isEligible) {
@@ -561,7 +561,7 @@ class Order extends Model
             return false;
         }
 
-        $validPaidMethods = ['wallet', 'cicalengkapay', 'cicago_pay', 'saldo', 'balance', 'midtrans', 'online', 'qris', 'va', 'credit_card'];
+        $validPaidMethods = ['wallet', 'cicalengkapay', 'cicago_pay', 'saldo', 'balance', 'doku', 'midtrans', 'online', 'qris', 'va', 'credit_card'];
         $totalRefundAmount = 0.0;
         $isAnyPaid = false;
 
@@ -630,7 +630,7 @@ class Order extends Model
              WHERE `customer_id` = ? 
                AND `order_status` = 'canceled' 
                AND `payment_status` != 'refunded'
-               AND (`payment_status` = 'paid' OR `payment_method` IN ('wallet', 'cicalengkapay', 'cicago_pay', 'saldo', 'balance', 'midtrans', 'qris', 'va', 'online', 'credit_card'))",
+               AND (`payment_status` = 'paid' OR `payment_method` IN ('wallet', 'cicalengkapay', 'cicago_pay', 'saldo', 'balance', 'doku', 'midtrans', 'qris', 'va', 'online', 'credit_card'))",
             [$customerId]
         );
 

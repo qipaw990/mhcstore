@@ -1202,36 +1202,20 @@ class AdminController extends Controller
     }
 
     // =========================================================================
-    // 11. Midtrans Status & Diagnostics
+    // 11. Payment Gateway Diagnostics (DOKU)
     // =========================================================================
     public function getMidtransStatus(string $orderCode): void
     {
-        try {
-            $midtransService = new \App\Services\MidtransService();
-            $result = $midtransService->getTransactionStatus($orderCode);
-
-            // Also check database order record
-            $order = Database::fetchOne("SELECT * FROM `orders` WHERE `order_code` = ? OR `id` = ? LIMIT 1", [$orderCode, (int)$orderCode]);
-
-            $this->json([
-                'success'  => true,
-                'midtrans' => $result,
-                'db_order' => $order
-            ]);
-        } catch (Exception $e) {
-            $this->errorResponse($e->getMessage());
-        }
+        $order = Database::fetchOne("SELECT * FROM `orders` WHERE `order_code` = ? OR `id` = ? LIMIT 1", [$orderCode, (int)$orderCode]);
+        $this->json([
+            'success'  => true,
+            'db_order' => $order
+        ]);
     }
 
     public function testMidtransApi(): void
     {
-        try {
-            $midtransService = new \App\Services\MidtransService();
-            $result = $midtransService->testApiConnection();
-            $this->json($result);
-        } catch (Exception $e) {
-            $this->errorResponse($e->getMessage());
-        }
+        $this->testDokuApi();
     }
 
     public function testDokuApi(): void
@@ -1510,7 +1494,7 @@ class AdminController extends Controller
         $usersList = Database::query("SELECT id, name, email, phone, role FROM `users` WHERE is_active = 1 ORDER BY name ASC");
 
         $this->view('admin.topups', [
-            'title'                 => 'Manajemen Top-Up Saldo Midtrans - CicalengkaGO Admin',
+            'title'                 => 'Manajemen Top-Up Saldo DOKU - CicalengkaGO Admin',
             'topups'                => $topups,
             'total_success_amount'  => (float)($statsSuccess['total_amount'] ?? 0),
             'total_success_count'   => (int)($statsSuccess['count'] ?? 0),
@@ -1555,20 +1539,12 @@ class AdminController extends Controller
             WHERE `reference_id` = ? LIMIT 1
         ", [$log['topup_code']]);
 
-        // Attempt to get live Midtrans status if connected
-        $midtransStatus = null;
-        try {
-            $midtransService = new \App\Services\MidtransService();
-            $midtransStatus = $midtransService->getTransactionStatus($log['topup_code']);
-        } catch (\Throwable $e) {
-            $midtransStatus = ['success' => false, 'message' => $e->getMessage()];
-        }
-
+        // Check status log
         $this->json([
             'success'         => true,
             'data'            => $log,
             'wallet_tx'       => $walletTx,
-            'midtrans_status' => $midtransStatus
+            'gateway_status'  => ['status' => $log['status']]
         ]);
     }
 
@@ -1582,28 +1558,15 @@ class AdminController extends Controller
             return;
         }
 
-        try {
-            $midtransService = new \App\Services\MidtransService();
-            $liveStatus = $midtransService->getTransactionStatus($topupCode);
-
-            if (empty($liveStatus['success']) || empty($liveStatus['data'])) {
-                $this->errorResponse($liveStatus['message'] ?? 'Data transaksi tidak ditemukan di server Midtrans.');
-                return;
-            }
-
-            $midtransData = $liveStatus['data'];
-            $result = $midtransService->processNotification($midtransData);
-
-            $updatedLog = Database::fetchOne("SELECT * FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1", [$topupCode]);
-
-            $this->successResponse('Sinkronisasi status Midtrans berhasil!', [
-                'process_result' => $result,
-                'updated_log'    => $updatedLog,
-                'midtrans_data'  => $midtransData
-            ]);
-        } catch (\Throwable $e) {
-            $this->errorResponse('Gagal menyinkronkan status Midtrans: ' . $e->getMessage());
+        $log = Database::fetchOne("SELECT * FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1", [$topupCode]);
+        if (!$log) {
+            $this->errorResponse('Data transaksi tidak ditemukan.');
+            return;
         }
+
+        $this->successResponse('Status top-up saat ini: ' . strtoupper($log['status']), [
+            'updated_log' => $log
+        ]);
     }
 
     public function manualApproveTopup(): void
@@ -1631,7 +1594,7 @@ class AdminController extends Controller
         $userId = (int)$log['user_id'];
         $amount = (float)$log['amount'];
         $topupCode = $log['topup_code'];
-        $paymentType = $log['payment_type'] ?: 'midtrans_manual_admin';
+        $paymentType = $log['payment_type'] ?: 'doku_manual_admin';
 
         try {
             Database::transaction(function () use ($userId, $amount, $topupCode, $paymentType, $adminNotes, $id) {

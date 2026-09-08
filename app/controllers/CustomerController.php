@@ -329,29 +329,6 @@ class CustomerController extends Controller
         \App\Models\Order::autoCancelUnclaimedOrders();
         \App\Models\Order::processPendingRefundsForCustomer($userId);
 
-        $midtransService = new \App\Services\MidtransService();
-
-        // Auto-settle or update log if redirected back from Midtrans payment finish
-        $orderId = $_GET['order_id'] ?? '';
-        $txnStatus = $_GET['transaction_status'] ?? $_GET['status'] ?? '';
-        $statusCode = (string)($_GET['status_code'] ?? '');
-        if (!empty($orderId) && str_starts_with($orderId, 'TOPUP-')) {
-            if ($txnStatus === 'settlement' || $txnStatus === 'capture' || $statusCode === '200') {
-                try {
-                    $midtransService->processNotification([
-                        'order_id'           => $orderId,
-                        'transaction_status' => 'settlement',
-                        'fraud_status'       => 'accept',
-                        'payment_type'       => $_GET['payment_type'] ?? 'midtrans_redirect'
-                    ]);
-                } catch (\Exception $e) {}
-            } elseif ($txnStatus === 'pending' || $statusCode === '201') {
-                try {
-                    (new \App\Models\TopupLog())->updateStatusByCode($orderId, 'pending');
-                } catch (\Exception $e) {}
-            }
-        }
-
         $wallet = $this->walletModel->getOrCreate($userId, 'customer');
         $transactions = $this->walletModel->getTransactions($userId, 50);
 
@@ -378,9 +355,6 @@ class CustomerController extends Controller
             'transactions' => $transactions,
             'topup_logs'   => $topupLogs,
             'topup_stats'  => $topupStats,
-            'client_key'   => $midtransService->getClientKey(),
-            'snap_url'     => $midtransService->getSnapUrl(),
-            'is_sandbox'   => $midtransService->isSandbox(),
             'active_tab'   => 'profile'
         ], 'customer_layout');
     }

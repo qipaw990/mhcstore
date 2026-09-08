@@ -1,6 +1,6 @@
 <?php
 $isCanceled = ($order['order_status'] === 'canceled');
-$isUnpaidOnline = ($order['payment_method'] === 'midtrans' && $order['payment_status'] !== 'paid' && !$isCanceled);
+$isUnpaidOnline = (in_array($order['payment_method'], ['doku', 'midtrans', 'online']) && $order['payment_status'] !== 'paid' && !$isCanceled);
 
 $statusLabels = [
     'pending'     => ['label' => 'Menunggu Pembayaran', 'class' => 'bg-warning text-dark'],
@@ -14,10 +14,6 @@ $statusLabels = [
 ];
 $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper($order['order_status']), 'class' => 'bg-secondary text-white'];
 ?>
-
-<?php if ($isUnpaidOnline && !empty($snap_url)): ?>
-<script src="<?= $snap_url ?>" data-client-key="<?= $client_key ?? '' ?>"></script>
-<?php endif; ?>
 
 <!-- Tracking Top Header -->
 <div class="p-2 border-bottom bg-white d-flex align-items-center justify-content-between sticky-top shadow-xs" style="padding: 8px 12px !important;">
@@ -74,7 +70,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
                 <div class="text-muted" style="font-size: 9.5px;">TOTAL NOMINAL</div>
                 <div class="fw-bold text-danger my-1" style="font-size: 20px;"><?= format_rupiah(!empty($order['is_multi_store_batch']) ? $order['batch_total_amount'] : $order['total_amount']) ?></div>
                 <div class="badge bg-white text-dark border px-2 py-1" style="font-size: 9.5px;">
-                    <i class="bi bi-shield-check text-success me-0.5"></i> Midtrans QRIS / VA / E-Wallet
+                    <i class="bi bi-shield-check text-success me-0.5"></i> DOKU QRIS / VA / E-Wallet
                 </div>
             </div>
 
@@ -88,7 +84,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
             <!-- Action Buttons -->
             <button type="button" id="btnPayNow" onclick="payNow()" class="btn w-100 py-2.5 rounded-pill fw-bold text-white shadow-xs mb-2 d-flex align-items-center justify-content-center gap-2" style="background:#EE2737; font-size: 12.5px;">
                 <i class="bi bi-wallet2"></i>
-                <span>Bayar Sekarang (Midtrans)</span>
+                <span>Bayar Sekarang (DOKU)</span>
             </button>
 
             <div class="d-flex gap-2">
@@ -242,7 +238,7 @@ $currentBadge = $statusLabels[$order['order_status']] ?? ['label' => strtoupper(
 
             <!-- Order Canceled Alert Card (Premium) -->
             <?php
-                $isRefundable = in_array($order['payment_method'] ?? '', ['wallet', 'midtrans', 'online', 'qris', 'va', 'credit_card']) && ($order['payment_status'] ?? '') === 'refunded';
+                $isRefundable = in_array($order['payment_method'] ?? '', ['wallet', 'doku', 'midtrans', 'online', 'qris', 'va', 'credit_card']) && ($order['payment_status'] ?? '') === 'refunded';
             ?>
             <div id="order-canceled-card" class="mb-3 <?= ($order['order_status'] === 'canceled') ? '' : 'd-none' ?>" style="border-radius: 18px; overflow: hidden; box-shadow: 0 4px 20px rgba(238,39,55,0.12);">
                 <!-- Red Header Banner -->
@@ -633,78 +629,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <?php if ($isUnpaidOnline): ?>
 <script>
-let currentSnapToken = "<?= $snap_token ?? '' ?>";
+let dokuPaymentUrl = <?= json_encode($doku_url ?? null) ?>;
 const orderCode = "<?= $order['order_code'] ?>";
 
 async function payNow() {
     const btn = document.getElementById('btnPayNow');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Membuka Pembayaran...';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Mengarahkan ke DOKU...';
+    }
 
     try {
-        const res = await fetch(window.BASE_URL + '/orders/get-snap-token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({ order_code: orderCode })
-        });
-        const data = await res.json();
-        if (!data.success || !data.data.snap_token) {
-            throw new Error(data.message || 'Gagal memuat token pembayaran');
-        }
-
-        const token = data.data.snap_token;
-
-        if (typeof window.snap === 'undefined') {
-            throw new Error('Midtrans Snap script belum termuat. Silakan refresh halaman.');
-        }
-
-        window.snap.pay(token, {
-            onSuccess: function(result) {
-                fetch(window.BASE_URL + '/payment/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        order_id: result.order_id || orderCode,
-                        transaction_status: result.transaction_status || 'settlement',
-                        payment_type: result.payment_type || 'midtrans',
-                        gross_amount: result.gross_amount
-                    })
-                }).finally(() => {
-                    Swal.fire({
-                        title: 'Pembayaran Berhasil! 🎉',
-                        text: 'Pesanan Anda telah lunas dan siap diantar kurir CicalengkaGO.',
-                        icon: 'success',
-                        timer: 2000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        window.location.reload();
-                    });
-                });
-            },
-            onPending: function(result) {
-                Swal.fire({
-                    title: 'Menunggu Pembayaran ⏳',
-                    text: 'Silakan selesaikan pembayaran Anda via QRIS / Virtual Account.',
-                    icon: 'info'
-                });
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-wallet2 fs-5"></i> <span>Bayar Sekarang (Buka Midtrans)</span>';
-            },
-            onError: function(result) {
-                Swal.fire('Pembayaran Gagal', 'Terjadi kendala pada transaksi online.', 'error');
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-wallet2 fs-5"></i> <span>Bayar Sekarang (Buka Midtrans)</span>';
-            },
-            onClose: function() {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-wallet2 fs-5"></i> <span>Bayar Sekarang (Buka Midtrans)</span>';
+        if (!dokuPaymentUrl) {
+            const res = await fetch(window.BASE_URL + '/orders/get-snap-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ order_code: orderCode })
+            });
+            const data = await res.json();
+            if (data.success && data.data && data.data.payment_url) {
+                dokuPaymentUrl = data.data.payment_url;
+            } else {
+                throw new Error(data.message || 'Gagal memuat tiket pembayaran DOKU.');
             }
+        }
+
+        Swal.fire({
+            title: 'Mengarahkan ke DOKU...',
+            text: 'Membuka portal pembayaran resmi DOKU...',
+            icon: 'info',
+            timer: 1500,
+            showConfirmButton: false
         });
+
+        setTimeout(() => {
+            window.location.href = dokuPaymentUrl;
+        }, 800);
     } catch(err) {
         console.error(err);
         Swal.fire('Error', err.message || 'Gagal memproses pembayaran.', 'error');
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-wallet2 fs-5"></i> <span>Bayar Sekarang (Buka Midtrans)</span>';
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-wallet2 fs-5"></i> <span>Bayar Sekarang (DOKU)</span>';
+        }
     }
 }
 
@@ -1081,209 +1048,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <?php endif; ?>
 });
 
-// ========================================================
-// Midtrans Payment & Sandbox Simulation Handlers
-// ========================================================
-let snapToken = <?= json_encode($snap_token ?? null) ?>;
-const IS_SANDBOX = <?= !empty($is_sandbox) ? 'true' : 'false' ?>;
 
-async function payNow() {
-    const btn = document.getElementById('btnPayNow');
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Menghubungkan Midtrans...';
-    }
-
-    try {
-        if (!snapToken) {
-            const res = await fetch(window.BASE_URL + '/orders/get-snap-token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'order_code=' + encodeURIComponent(TRACKING_ORDER_CODE)
-            });
-            const data = await res.json();
-            if (data.success && data.data && data.data.snap_token) {
-                snapToken = data.data.snap_token;
-            } else {
-                throw new Error(data.message || 'Gagal memuat tiket pembayaran.');
-            }
-        }
-
-        if (typeof window.snap === 'undefined') {
-            throw new Error('Script Midtrans Snap belum termuat. Silakan refresh halaman.');
-        }
-
-        window.snap.pay(snapToken, {
-            onSuccess: function(result) {
-                handlePaymentSuccessCallback(result);
-            },
-            onPending: function(result) {
-                handlePaymentPendingCallback(result);
-            },
-            onError: function(result) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Pembayaran Gagal',
-                    text: 'Terjadi kendala dalam proses pembayaran online.',
-                    confirmButtonColor: '#EE2737'
-                });
-                resetPayButton();
-            },
-            onClose: function() {
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Pembayaran Belum Selesai',
-                    text: 'Silakan klik Bayar Sekarang kapan saja untuk menyelesaikan pembayaran pesanan.',
-                    confirmButtonColor: '#EE2737'
-                });
-                resetPayButton();
-            }
-        });
-    } catch(err) {
-        console.error(err);
-        Swal.fire({
-            icon: 'error',
-            title: 'Gagal Membuka Pembayaran',
-            text: err.message || 'Terjadi kesalahan sistem.',
-            confirmButtonColor: '#EE2737'
-        });
-        resetPayButton();
-    }
-}
-
-function resetPayButton() {
-    const btn = document.getElementById('btnPayNow');
-    if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-wallet2 fs-5"></i> <span>Bayar Sekarang (Buka Midtrans)</span>';
-    }
-}
-
-async function handlePaymentSuccessCallback(result) {
-    Swal.fire({
-        title: 'Memverifikasi Pembayaran...',
-        text: 'Mengonfirmasi transaksi ke server...',
-        allowOutsideClick: false,
-        didOpen: () => { Swal.showLoading(); }
-    });
-
-    try {
-        await fetch(window.BASE_URL + '/payment/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                order_id: TRACKING_ORDER_CODE,
-                transaction_status: result?.transaction_status || 'settlement',
-                payment_type: result?.payment_type || 'midtrans',
-                gross_amount: result?.gross_amount
-            })
-        });
-    } catch(e) {
-        console.warn('Verify callback err:', e);
-    }
-
-    Swal.fire({
-        icon: 'success',
-        title: 'Pembayaran Berhasil! 🎉',
-        text: 'Pesanan Anda telah lunas dan siap diantar.',
-        timer: 2000,
-        showConfirmButton: false
-    }).then(() => {
-        location.reload();
-    });
-}
-
-function handlePaymentPendingCallback(result) {
-    Swal.fire({
-        icon: 'info',
-        title: 'Menunggu Pembayaran ⏳',
-        text: 'Silakan selesaikan pembayaran sesuai instruksi Virtual Account / QRIS yang dipilih.',
-        confirmButtonColor: '#EE2737'
-    });
-    resetPayButton();
-}
-
-async function checkPaymentStatus() {
-    const btn = document.getElementById('btnCheckStatus');
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengecek...';
-    }
-
-    try {
-        const res = await fetch(window.BASE_URL + '/payment/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ order_id: TRACKING_ORDER_CODE })
-        });
-        const data = await res.json();
-
-        if (data.success && (data.data?.status === 'settled' || data.data?.payment_status === 'paid')) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Pembayaran Terkonfirmasi! 🎉',
-                text: 'Pesanan telah lunas. Memperbarui status pesanan...',
-                timer: 1800,
-                showConfirmButton: false
-            }).then(() => {
-                location.reload();
-            });
-        } else {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Belum Terbayar',
-                text: data.message || 'Pembayaran belum terdeteksi. Silakan selesaikan transaksi Anda.',
-                confirmButtonColor: '#EE2737'
-            });
-        }
-    } catch(err) {
-        console.error(err);
-        Swal.fire('Error', 'Gagal memeriksa status pembayaran.', 'error');
-    } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Cek Status Bayar';
-        }
-    }
-}
-
-async function cancelUnpaidOrder() {
-    const confirm = await Swal.fire({
-        title: 'Batalkan Pesanan?',
-        text: 'Pesanan yang belum dibayar ini akan dibatalkan permanen.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Ya, Batalkan',
-        confirmButtonColor: '#dc3545',
-        cancelButtonText: 'Kembali'
-    });
-
-    if (!confirm.isConfirmed) return;
-
-    try {
-        const res = await fetch(window.BASE_URL + '/orders/cancel-unpaid', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'order_code=' + encodeURIComponent(TRACKING_ORDER_CODE)
-        });
-        const data = await res.json();
-        if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Pesanan Dibatalkan',
-                text: 'Pesanan berhasil dibatalkan.',
-                timer: 1500,
-                showConfirmButton: false
-            }).then(() => {
-                location.reload();
-            });
-        } else {
-            Swal.fire('Gagal', data.message || 'Gagal membatalkan pesanan.', 'error');
-        }
-    } catch(err) {
-        Swal.fire('Error', 'Terjadi kesalahan sistem.', 'error');
-    }
-}
 
 // Live Rating Functions for Tracking Page
 let currentTrackingStoreRating = 5;

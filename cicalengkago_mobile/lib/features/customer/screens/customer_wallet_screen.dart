@@ -418,7 +418,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
 
   void _showTopUpSheet(BuildContext context) {
     final amountCtrl = TextEditingController();
-    String selectedGateway = 'midtrans';
+    String selectedGateway = 'doku';
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -455,41 +455,6 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                   ),
                   const SizedBox(height: 16),
                   const Text('Pilih Saluran Pembayaran:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF334155))),
-                  const SizedBox(height: 8),
-                  // Option 1: Midtrans
-                  InkWell(
-                    onTap: () => setModalState(() => selectedGateway = 'midtrans'),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: selectedGateway == 'midtrans' ? const Color(0xFF2563EB) : Colors.grey.shade300, width: selectedGateway == 'midtrans' ? 2 : 1),
-                        borderRadius: BorderRadius.circular(12),
-                        color: selectedGateway == 'midtrans' ? const Color(0xFF2563EB).withValues(alpha: 0.05) : Colors.transparent,
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.qr_code_2_rounded, color: Color(0xFF2563EB), size: 22),
-                          const SizedBox(width: 10),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Midtrans Snap', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                Text('QRIS, Virtual Account, ShopeePay, Indomaret', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                              ],
-                            ),
-                          ),
-                          Radio<String>(
-                            value: 'midtrans',
-                            groupValue: selectedGateway,
-                            activeColor: const Color(0xFF2563EB),
-                            onChanged: (val) => setModalState(() => selectedGateway = val ?? 'midtrans'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                   const SizedBox(height: 8),
                   // Option 2: DOKU
                   InkWell(
@@ -559,7 +524,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
     );
   }
 
-  Future<void> _initiateTopUp(BuildContext context, int amount, {String gateway = 'midtrans'}) async {
+  Future<void> _initiateTopUp(BuildContext context, int amount, {String gateway = 'doku'}) async {
     bool dialogShown = false;
     showDialog(
       context: context,
@@ -612,7 +577,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                 paymentUrl: finalPaymentUrl,
                 orderId: orderId,
                 amount: amount.toDouble(),
-                title: gateway == 'doku' ? 'Top Up via DOKU' : 'Top Up via Midtrans',
+                title: 'Top Up via DOKU',
                 onPaymentComplete: () {
                   context.read<CustomerController>().fetchWallet();
                 },
@@ -1595,7 +1560,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
     final code = log['topup_code']?.toString() ?? '-';
     final amount = double.tryParse(log['amount']?.toString() ?? '0') ?? 0;
     final status = log['status']?.toString().toLowerCase() ?? 'pending';
-    final paymentMethod = log['payment_method']?.toString().toUpperCase() ?? 'MIDTRANS';
+    final paymentMethod = log['payment_method']?.toString().toUpperCase() ?? 'DOKU';
     final createdAt = log['created_at']?.toString() ?? '-';
     final snapToken = log['snap_token']?.toString();
 

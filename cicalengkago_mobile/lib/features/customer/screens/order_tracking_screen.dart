@@ -465,7 +465,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppTheme.primaryRed),
                       ),
                       const SizedBox(height: 4),
-                      Text(paymentMethod == 'doku' ? 'DOKU QRIS / VA / E-Wallet' : 'Midtrans QRIS / VA / E-Wallet', style: const TextStyle(fontSize: 10, color: Color(0xFF16A34A), fontWeight: FontWeight.w700)),
+                      const Text('DOKU QRIS / VA / E-Wallet', style: TextStyle(fontSize: 10, color: Color(0xFF16A34A), fontWeight: FontWeight.w700)),
                     ],
                   ),
                 ),
@@ -502,7 +502,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ),
                   onPressed: _payNow,
                   icon: const Icon(Icons.wallet_rounded, size: 18),
-                  label: Text(paymentMethod == 'doku' ? 'Bayar Sekarang (DOKU)' : 'Bayar Sekarang (Midtrans)', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  label: const Text('Bayar Sekarang (DOKU)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                 ),
                 const SizedBox(height: 10),
                 Row(
@@ -3136,7 +3136,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       methodLabel = 'DOKU Checkout (QRIS / VA / E-Wallet)';
       methodIcon = Icons.account_balance_wallet_rounded;
     } else if (paymentMethod == 'midtrans' || paymentMethod == 'online' || paymentMethod == 'qris') {
-      methodLabel = 'Midtrans QRIS / VA';
+      methodLabel = 'DOKU QRIS / VA';
       methodIcon = Icons.qr_code_2_rounded;
     }
 

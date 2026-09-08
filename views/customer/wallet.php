@@ -1,6 +1,4 @@
-<?php if (!empty($snap_url)): ?>
-<script src="<?= $snap_url ?>" data-client-key="<?= $client_key ?? '' ?>"></script>
-<?php endif; ?>
+
 
 <div class="border-bottom bg-white d-flex align-items-center gap-2 sticky-top app-subpage-header px-3 py-2">
     <a href="<?= $baseUrl ?>" class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px; border: 1px solid #E2E8F0; background: #F8FAFC;"><i class="bi bi-arrow-left text-dark" style="font-size: 12px;"></i></a>
@@ -133,7 +131,7 @@
             <button class="nav-link fw-bold py-2 px-2 d-flex align-items-center justify-content-center gap-1.5 text-secondary" 
                     id="topup-tab" data-bs-toggle="tab" data-bs-target="#topup-pane" type="button" role="tab" aria-controls="topup-pane" aria-selected="false" style="font-size: 11px; border-radius: 10px !important;">
                 <i class="bi bi-journal-check"></i>
-                <span>Tiket Top Up Midtrans</span>
+                <span>Riwayat Top Up DOKU</span>
                 <span class="badge bg-secondary-subtle text-secondary rounded-pill px-1.5" style="font-size: 9px;"><?= count($topup_logs ?? []) ?></span>
             </button>
         </li>
@@ -283,7 +281,7 @@
             <?php endif; ?>
         </div>
 
-        <!-- PANE 2: Tiket Top Up Midtrans -->
+        <!-- PANE 2: Riwayat Top Up DOKU -->
         <div class="tab-pane fade" id="topup-pane" role="tabpanel">
             <!-- Filter Pills (Compact) -->
             <div class="d-flex gap-1 mb-2 overflow-auto pb-0.5" style="scrollbar-width: none;">
@@ -306,7 +304,7 @@
                     <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center mx-auto mb-1.5" style="width: 36px; height: 36px; font-size: 16px;">
                         <i class="bi bi-journal-x"></i>
                     </div>
-                    <div class="fw-bold text-dark mb-0.5">Belum Ada Tiket Top Up Midtrans</div>
+                    <div class="fw-bold text-dark mb-0.5">Belum Ada Riwayat Top Up DOKU</div>
                     <div class="text-muted" style="font-size: 9px;">
                         Pilih nominal di atas untuk mengisi saldo CicalengkaPay.
                     </div>
@@ -369,16 +367,14 @@
                             <div class="pt-2 border-top d-flex justify-content-between align-items-center text-muted" style="font-size: 9px;">
                                 <div class="d-flex align-items-center gap-1.5">
                                     <span><i class="bi bi-clock me-0.5"></i><?= date('d M Y, H:i', strtotime($log['created_at'])) ?></span>
-                                    <span class="text-secondary">• <?= htmlspecialchars($log['payment_type'] ?? 'Midtrans') ?></span>
+                                    <span class="text-secondary">• <?= htmlspecialchars($log['payment_type'] ?? 'DOKU') ?></span>
                                 </div>
 
                                 <?php if ($status === 'pending'): ?>
                                     <div class="d-flex gap-1">
-                                        <?php if (!empty($log['snap_token'])): ?>
-                                        <button type="button" onclick="resumePendingSnap('<?= htmlspecialchars($log['snap_token']) ?>', '<?= htmlspecialchars($log['topup_code']) ?>', <?= (int)$log['amount'] ?>)" class="btn btn-danger btn-sm rounded-pill py-1 px-2.5 fw-bold" style="font-size: 9px;">
+                                        <button type="button" onclick="quickTopUp(<?= (int)$log['amount'] ?>)" class="btn btn-danger btn-sm rounded-pill py-1 px-2.5 fw-bold" style="font-size: 9px;">
                                             <i class="bi bi-credit-card-fill me-0.5"></i> Bayar
                                         </button>
-                                        <?php endif; ?>
                                     </div>
                                 <?php elseif ($status === 'failed' || $status === 'canceled'): ?>
                                     <button type="button" onclick="quickTopUp(<?= (int)$log['amount'] ?>)" class="btn btn-outline-danger btn-sm rounded-pill py-1 px-2 fw-semibold" style="font-size: 9px;">
@@ -409,7 +405,7 @@
                     </div>
                     <div>
                         <h5 class="modal-title fw-bold text-dark fs-6 m-0">Isi Saldo CicalengkaPay</h5>
-                        <div class="text-muted" style="font-size: 9.5px;">Midtrans Payment Gateway</div>
+                        <div class="text-muted" style="font-size: 9.5px;">DOKU Payment Gateway</div>
                     </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -433,7 +429,7 @@
 
                 <div class="p-2.5 rounded-3 bg-light text-muted mb-3 d-flex align-items-center gap-2" style="font-size: 10px;">
                     <i class="bi bi-shield-check text-success fs-6 flex-shrink-0"></i>
-                    <span>Pembayaran instan & otomatis via QRIS, Virtual Account, & E-Wallet Midtrans.</span>
+                    <span>Pembayaran instan & otomatis via QRIS, Virtual Account, & E-Wallet DOKU.</span>
                 </div>
 
                 <button type="button" onclick="submitCustomTopUp()" class="btn btn-danger w-100 py-3 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm" style="font-size: 13px; background: linear-gradient(135deg, #EE2737 0%, #B91C1C 100%);">
@@ -492,7 +488,7 @@ function filterTopupList(status) {
 }
 
 function quickTopUp(nominal) {
-    executeMidtransTopUp(nominal);
+    executeDokuTopUp(nominal);
 }
 
 function customTopUpDialog() {
@@ -525,21 +521,13 @@ function submitCustomTopUp() {
         bsModal.hide();
     }
 
-    executeMidtransTopUp(amount);
+    executeDokuTopUp(amount);
 }
 
-function resumePendingSnap(snapToken, orderId, nominal) {
-    if (typeof window.snap === 'undefined') {
-        Swal.fire('Error', 'Script Midtrans Snap belum termuat. Silakan muat ulang halaman.', 'error');
-        return;
-    }
-    openSnapPayment(snapToken, orderId, nominal);
-}
-
-async function executeMidtransTopUp(nominal) {
+async function executeDokuTopUp(nominal) {
     Swal.fire({
         title: 'Menyiapkan Pembayaran...',
-        text: 'Menghubungkan ke gateway Midtrans untuk nominal Rp ' + Number(nominal).toLocaleString('id-ID') + '...',
+        text: 'Menghubungkan ke gateway DOKU untuk nominal Rp ' + Number(nominal).toLocaleString('id-ID') + '...',
         allowOutsideClick: false,
         didOpen: () => {
             Swal.showLoading();
@@ -550,102 +538,33 @@ async function executeMidtransTopUp(nominal) {
         const formData = new FormData();
         formData.append('amount', nominal);
 
-        const response = await fetch(window.BASE_URL + '/wallet/topup-midtrans', {
+        const response = await fetch(window.BASE_URL + '/wallet/topup-doku', {
             method: 'POST',
             body: formData
         });
 
         const data = await response.json();
 
-        if (!data.success || !data.data.snap_token) {
-            Swal.fire('Gagal', data.message || 'Gagal membuat tiket pembayaran Midtrans.', 'error');
+        if (!data.success || !data.data || !data.data.payment_url) {
+            Swal.fire('Gagal', data.message || 'Gagal membuat sesi pembayaran DOKU.', 'error');
             return;
         }
 
-        Swal.close();
+        Swal.fire({
+            title: 'Mengarahkan ke DOKU...',
+            text: 'Membuka portal pembayaran resmi DOKU...',
+            icon: 'info',
+            timer: 1500,
+            showConfirmButton: false
+        });
 
-        if (typeof window.snap === 'undefined') {
-            throw new Error('Script Midtrans Snap belum termuat. Silakan muat ulang halaman.');
-        }
-
-        openSnapPayment(data.data.snap_token, data.data.order_id, nominal);
+        setTimeout(() => {
+            window.location.href = data.data.payment_url;
+        }, 800);
     } catch (err) {
         console.error(err);
         Swal.fire('Error', err.message || 'Terjadi kesalahan sistem saat menghubungi gateway pembayaran.', 'error');
     }
-}
-
-function openSnapPayment(snapToken, orderId, nominal) {
-    window.snap.pay(snapToken, {
-        onSuccess: function(result) {
-            fetch(window.BASE_URL + '/payment/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    order_id: orderId,
-                    transaction_status: result.transaction_status || 'settlement',
-                    payment_type: result.payment_type || 'midtrans',
-                    gross_amount: nominal
-                })
-            }).finally(() => {
-                Swal.fire({
-                    title: 'Top Up Berhasil! 🎉',
-                    text: 'Saldo CicalengkaPay sebesar Rp ' + Number(nominal).toLocaleString('id-ID') + ' telah masuk ke dompet Anda.',
-                    icon: 'success',
-                    confirmButtonColor: '#EE2737',
-                    confirmButtonText: 'Selesai'
-                }).then(() => {
-                    location.reload();
-                });
-            });
-        },
-        onPending: function(result) {
-            fetch(window.BASE_URL + '/payment/topup-update-status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    order_id: orderId,
-                    status: 'pending',
-                    payment_type: result.payment_type || 'midtrans_va',
-                    notes: 'Menunggu pembayaran di channel yang dipilih'
-                })
-            }).finally(() => {
-                Swal.fire({
-                    title: 'Menunggu Pembayaran ⏳',
-                    text: 'Silakan selesaikan pembayaran sesuai instruksi Virtual Account / QRIS yang dipilih.',
-                    icon: 'info',
-                    confirmButtonColor: '#EE2737'
-                }).then(() => {
-                    location.reload();
-                });
-            });
-        },
-        onError: function(result) {
-            fetch(window.BASE_URL + '/payment/topup-update-status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    order_id: orderId,
-                    status: 'failed',
-                    notes: 'Pembayaran gagal diproses di gateway Midtrans'
-                })
-            }).finally(() => {
-                Swal.fire('Pembayaran Gagal', 'Proses top up dibatalkan atau gagal diproses.', 'error').then(() => {
-                    location.reload();
-                });
-            });
-        },
-        onClose: function() {
-            Swal.fire({
-                title: 'Jendela Pembayaran Ditutup',
-                text: 'Transaksi belum diselesaikan. Anda dapat melanjutkan pembayaran kapan saja dari riwayat transaksi.',
-                icon: 'info',
-                confirmButtonColor: '#EE2737'
-            }).then(() => {
-                location.reload();
-            });
-        }
-    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {

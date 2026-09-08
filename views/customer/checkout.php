@@ -114,20 +114,20 @@
                 <?php endif; ?>
             </label>
 
-            <!-- Midtrans Online Payment (QRIS / VA / E-Wallet) -->
-            <label class="payment-option" id="label_pay_midtrans">
+            <!-- DOKU Online Payment (QRIS / VA / E-Wallet) -->
+            <label class="payment-option" id="label_pay_doku">
                 <div class="d-flex align-items-center min-w-0 flex-grow-1">
-                    <input type="radio" name="payment_method" id="pay_midtrans" value="midtrans" onchange="updatePaymentCardStyles()">
+                    <input type="radio" name="payment_method" id="pay_doku" value="doku" onchange="updatePaymentCardStyles()">
                     <div class="min-w-0 flex-grow-1">
                         <div class="fw-bold text-dark text-truncate d-flex align-items-center gap-1.5" style="font-size: 12px;">
-                            <span>Bayar Online (Midtrans)</span>
+                            <span>Bayar Online (DOKU)</span>
                             <span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 9px; padding: 2px 6px;">Otomatis</span>
                         </div>
-                        <div class="text-muted mt-0.5 text-truncate" style="font-size: 10.5px;">QRIS, GoPay, ShopeePay, VA Bank</div>
+                        <div class="text-muted mt-0.5 text-truncate" style="font-size: 10.5px;">QRIS, OVO, GoPay, ShopeePay, VA Bank</div>
                     </div>
                 </div>
                 <div class="d-flex align-items-center flex-shrink-0 ms-2">
-                    <span class="badge text-white px-2.5 py-1" style="background: #002B49; font-size: 9.5px; font-weight: 700; border-radius: 6px;">MIDTRANS</span>
+                    <span class="badge text-white px-2.5 py-1" style="background: #E1251B; font-size: 9.5px; font-weight: 700; border-radius: 6px;">DOKU</span>
                 </div>
             </label>
 
@@ -556,57 +556,12 @@ async function handlePlaceOrder(e) {
         const data = await res.json();
 
         if (data.success) {
-            // Check if Midtrans Snap Online Payment is chosen
-            if (data.data.payment_method === 'midtrans' && data.data.snap_token) {
-                btn.innerHTML = '<i class="bi bi-credit-card me-1"></i> Menunggu Pembayaran Midtrans...';
-                
-                window.snap.pay(data.data.snap_token, {
-                    onSuccess: function(result) {
-                        // Notify backend to confirm payment immediately
-                        fetch(window.BASE_URL + '/payment/verify', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                order_id: data.data.order_code,
-                                transaction_status: result.transaction_status || 'settlement',
-                                payment_type: result.payment_type || 'midtrans',
-                                gross_amount: result.gross_amount
-                            })
-                        }).finally(() => {
-                            Swal.fire({
-                                title: 'Pembayaran Berhasil! 🎉',
-                                text: 'Pesanan Anda telah lunas dan siap diantar kurir CicalengkaGO.',
-                                icon: 'success',
-                                timer: 2500,
-                                showConfirmButton: false
-                            }).then(() => {
-                                window.location.href = window.BASE_URL + '/' + data.data.redirect;
-                            });
-                        });
-                    },
-                    onPending: function(result) {
-                        Swal.fire({
-                            title: 'Menunggu Pembayaran ⏳',
-                            text: 'Instruksi pembayaran virtual account / QRIS telah dibuat. Silakan selesaikan pembayaran Anda.',
-                            icon: 'info',
-                            confirmButtonText: 'Lihat Pesanan',
-                            confirmButtonColor: '#EE2737'
-                        }).then(() => {
-                            window.location.href = window.BASE_URL + '/' + data.data.redirect;
-                        });
-                    },
-                    onError: function(result) {
-                        Swal.fire('Pembayaran Gagal', 'Terjadi kendala saat memproses pembayaran online.', 'error');
-                        window.isOrderSubmitting = false;
-                        btn.disabled = false;
-                        btn.style.opacity = '';
-                        if (form) form.style.pointerEvents = '';
-                        btn.innerHTML = '<i class="bi bi-shield-check"></i> <span>Coba Bayar Lagi</span>';
-                    },
-                    onClose: function() {
-                        window.location.href = window.BASE_URL + '/' + data.data.redirect;
-                    }
-                });
+            // Check if DOKU Online Payment is chosen
+            if (data.data.payment_method === 'doku' && data.data.payment_url) {
+                btn.innerHTML = '<i class="bi bi-credit-card me-1"></i> Mengarahkan ke DOKU...';
+                setTimeout(() => {
+                    window.location.href = data.data.payment_url;
+                }, 600);
                 return;
             }
 

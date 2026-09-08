@@ -225,7 +225,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 paymentUrl: redirectUrl!,
                 orderId: orderCode,
                 amount: grandTotal,
-                title: _paymentMethod == 'doku' ? 'Pembayaran DOKU Checkout' : 'Pembayaran Pesanan Midtrans',
+                title: 'Pembayaran DOKU Checkout',
                 onPaymentComplete: () {
                   context.read<CustomerController>().fetchOrders();
                 },
@@ -524,13 +524,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   const Divider(height: 1),
 
-                  // 2. Midtrans Payment Gateway (QRIS, VA Bank, E-Wallet)
+                  // 2. DOKU Payment Gateway (QRIS, VA Bank, E-Wallet)
                   RadioListTile<String>(
-                    value: 'midtrans',
+                    value: 'doku',
                     groupValue: _paymentMethod,
-                    title: const Text('Transfer Bank / QRIS (Midtrans)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    title: const Text('Transfer Bank / QRIS (DOKU)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     subtitle: const Text(
-                      'QRIS, BCA, BRI, Mandiri, BNI, ShopeePay, Indomaret',
+                      'QRIS, BCA, BRI, Mandiri, BNI, OVO, ShopeePay, Indomaret',
                       style: TextStyle(fontSize: 11, color: Color(0xFF2563EB), fontWeight: FontWeight.w600),
                     ),
                     secondary: Container(

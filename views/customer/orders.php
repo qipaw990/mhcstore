@@ -22,7 +22,7 @@
             <?php foreach ($orders as $order): ?>
                 <?php
                 $isCanceled = ($order['order_status'] === 'canceled');
-                $isUnpaid = ($order['payment_method'] === 'midtrans' && $order['payment_status'] !== 'paid' && !$isCanceled);
+                $isUnpaid = (in_array($order['payment_method'], ['doku', 'midtrans', 'online']) && $order['payment_status'] !== 'paid' && !$isCanceled);
                 
                 $status = $order['order_status'];
                 $badgeClass = 'bg-secondary text-white';
@@ -266,7 +266,7 @@ function openOrderReviewModal(orderId, orderCode, storeName, hasDriver) {
 (function() {
     function getStatusMeta(status, paymentMethod, paymentStatus) {
         const isCanceled = (status === 'canceled');
-        const isUnpaid = (paymentMethod === 'midtrans' && paymentStatus !== 'paid' && !isCanceled);
+        const isUnpaid = (['doku', 'midtrans', 'online'].includes(paymentMethod) && paymentStatus !== 'paid' && !isCanceled);
 
         if (isCanceled) return { label: 'Dibatalkan', class: 'bg-danger-subtle text-danger border border-danger-subtle' };
         if (isUnpaid) return { label: 'Menunggu Pembayaran', class: 'bg-warning-subtle text-warning-emphasis border border-warning' };

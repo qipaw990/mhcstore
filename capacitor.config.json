@@ -8,7 +8,7 @@
     "allowNavigation": [
       "cicago.store",
       "*.cicago.store",
-      "*.midtrans.com",
+      "*.doku.com",
       "*.gopay.co.id",
       "192.168.*.*",
       "10.0.2.2",

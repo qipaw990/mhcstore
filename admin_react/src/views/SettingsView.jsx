@@ -41,9 +41,6 @@ export default function SettingsView() {
     otp_delivery_verification: '1',
     otp_mode: 'real',
     // Payments
-    midtrans_environment: 'sandbox',
-    midtrans_server_key: '',
-    midtrans_client_key: '',
     doku_enabled: '1',
     doku_environment: 'sandbox',
     doku_client_id: '',
@@ -188,42 +185,6 @@ export default function SettingsView() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Midtrans Snap */}
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'space-between', 
-              padding: '14px 18px', 
-              background: 'rgba(255,255,255,0.03)', 
-              borderRadius: '12px',
-              border: '1px solid rgba(255,255,255,0.06)'
-            }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontWeight: 700, fontSize: '14px', color: '#F8FAFC' }}>Midtrans Gateway (Snap Popup)</span>
-                  <span className="badge-pill badge-info">
-                    {settings.midtrans_environment === 'production' ? 'PROD' : 'SANDBOX'}
-                  </span>
-                </div>
-                <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '3px' }}>Virtual Account BCA, Mandiri, BNI, Permata, GoPay & ShopeePay</div>
-              </div>
-              <label className="switch-container">
-                <input 
-                  type="checkbox" 
-                  checked={Boolean(settings.midtrans_server_key)} 
-                  onChange={() => {
-                    if (settings.midtrans_server_key) {
-                      handleChange('midtrans_server_key_backup', settings.midtrans_server_key);
-                      handleChange('midtrans_server_key', '');
-                    } else {
-                      handleChange('midtrans_server_key', settings.midtrans_server_key_backup || 'SB-Mid-server-demo');
-                    }
-                  }} 
-                />
-                <span className="switch-slider"></span>
-              </label>
-            </div>
-
             {/* DOKU Checkout */}
             <div style={{ 
               display: 'flex', 

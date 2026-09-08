@@ -320,13 +320,7 @@ window.Swal = {
 };
 </script>
 
-<!-- Midtrans Snap JS -->
-<?php
-$midtransServiceInst = new \App\Services\MidtransService();
-$resolvedSnapKey = $client_key ?? $midtransServiceInst->getClientKey() ?? 'Mid-client-fa_UX3R3BzD4wXXl';
-$resolvedSnapUrl = $snap_url ?? $midtransServiceInst->getSnapUrl() ?? 'https://app.sandbox.midtrans.com/snap/snap.js';
-?>
-<script type="text/javascript" src="<?= $resolvedSnapUrl ?>" data-client-key="<?= htmlspecialchars($resolvedSnapKey) ?>"></script>
+
 <script src="<?= $baseUrl ?>/assets/js/pwa-install.js"></script>
 <script src="<?= $baseUrl ?>/assets/js/customer-pwa.js?v=<?= time() ?>"></script>
 <script src="<?= $baseUrl ?>/assets/js/mobile-call.js?v=<?= time() ?>"></script>

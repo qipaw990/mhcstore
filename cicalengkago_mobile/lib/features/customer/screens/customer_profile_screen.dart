@@ -862,7 +862,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
               child: ListView(
                 children: [
                   _faqExpansionTile('Cara Memesan Makanan & Produk', 'Pilih menu makanan atau produk mitra CicalengkaGO favoritmu, atur kuantitas, dan klik "Tambah ke Keranjang". Buka keranjang lalu tekan "Lanjut Checkout".'),
-                  _faqExpansionTile('Metode Pembayaran yang Tersedia', 'CicalengkaGO mendukung pembayaran Cash on Delivery (COD/Bayar di Tempat), Saldo Wallet CicalengkaPay, serta QRIS, Transfer Bank Virtual Account, dan E-Wallet via DOKU atau Midtrans.'),
+                  _faqExpansionTile('Metode Pembayaran yang Tersedia', 'CicalengkaGO mendukung pembayaran Cash on Delivery (COD/Bayar di Tempat), Saldo Wallet CicalengkaPay, serta QRIS, Transfer Bank Virtual Account, dan E-Wallet via DOKU.'),
                   _faqExpansionTile('Berapa Biaya Pengantaran Ongkir?', 'Biaya ongkir dihitung secara otomatis berdasarkan jarak lokasi mitra toko ke lokasi pengantaran Anda di wilayah Cicalengka.'),
                   _faqExpansionTile('Bagaimana Cara Melakukan Top Up Saldo?', 'Buka menu Saldo CicalengkaPay > klik tombol "Isi Saldo" > masukkan nominal lalu pilih metode pembayaran Transfer Bank / QRIS.'),
                   _faqExpansionTile('Bagaimana Jika Pesanan Bermasalah?', 'Anda dapat menghubungi driver yang bertugas melalui nomor telepon yang tertera di halaman pelacakan atau hubungi CS kami.'),

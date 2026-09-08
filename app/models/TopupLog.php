@@ -14,7 +14,7 @@ class TopupLog extends Model
         'created_at', 'updated_at'
     ];
 
-    public function recordPending(int $userId, string $topupCode, float $amount, ?string $snapToken = null, ?string $paymentType = 'midtrans', ?string $notes = null): array
+    public function recordPending(int $userId, string $topupCode, float $amount, ?string $snapToken = null, ?string $paymentType = 'doku', ?string $notes = null): array
     {
         // Check if exists
         $existing = Database::fetchOne("SELECT * FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1", [$topupCode]);
@@ -26,11 +26,11 @@ class TopupLog extends Model
             'topup_code'     => $topupCode,
             'user_id'        => $userId,
             'amount'         => $amount,
-            'payment_method' => 'midtrans',
-            'payment_type'   => $paymentType ?: 'midtrans_snap',
+            'payment_method' => 'doku',
+            'payment_type'   => $paymentType ?: 'doku_checkout',
             'status'         => 'pending',
             'snap_token'     => $snapToken,
-            'notes'          => $notes ?: 'Menunggu pembayaran via Midtrans Snap',
+            'notes'          => $notes ?: 'Menunggu pembayaran via DOKU Checkout',
             'created_at'     => date('Y-m-d H:i:s'),
             'updated_at'     => date('Y-m-d H:i:s')
         ]);
@@ -52,8 +52,8 @@ class TopupLog extends Model
                     'topup_code'     => $topupCode,
                     'user_id'        => $userId,
                     'amount'         => 0,
-                    'payment_method' => 'midtrans',
-                    'payment_type'   => $paymentType ?: 'midtrans',
+                    'payment_method' => 'doku',
+                    'payment_type'   => $paymentType ?: 'doku',
                     'status'         => 'success',
                     'notes'          => $notes ?: 'Top up berhasil diselesaikan',
                     'created_at'     => date('Y-m-d H:i:s'),

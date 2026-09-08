@@ -5,7 +5,7 @@
             <div class="card-body p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <div>
                     <h5 class="fw-bold m-0 text-white"><i class="bi bi-sliders text-danger me-2"></i>Pusat Konfigurasi System & API Setup</h5>
-                    <small class="text-white-50">Kelola API Keys (Midtrans & WhatsApp Gateway), identitas aplikasi, tarif komisi, dan parameter operasional CicalengkaGO.</small>
+                    <small class="text-white-50">Kelola API Keys (DOKU & WhatsApp Gateway), identitas aplikasi, tarif komisi, dan parameter operasional CicalengkaGO.</small>
                 </div>
                 <span class="badge bg-danger-subtle text-danger px-3 py-2 rounded-pill fw-bold" style="font-size: 11px;">
                     <i class="bi bi-shield-lock-fill me-1"></i> System Admin Privilege
@@ -19,46 +19,8 @@
         <form action="<?= $baseUrl ?>/admin/settings/save" method="POST">
             <div class="row g-4">
 
-                <!-- 1. SETUP INTEGRASI API PAYMENT GATEWAY (MIDTRANS SNAP) -->
-                <div class="col-lg-6">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 p-4">
-                        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
-                            <h6 class="fw-bold text-dark m-0"><i class="bi bi-credit-card-2-front-fill me-2 text-danger"></i>Setup Midtrans Payment Gateway API</h6>
-                            <span class="badge bg-primary-subtle text-primary rounded-pill px-2.5 py-1" style="font-size: 10px;">Payment API</span>
-                        </div>
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <label class="form-label small fw-bold">Mode Lingkungan (Environment)</label>
-                                <select name="midtrans_environment" class="form-select rounded-3">
-                                    <option value="sandbox" <?= ($settings['midtrans_environment'] ?? 'sandbox') === 'sandbox' ? 'selected' : '' ?>>🔴 Sandbox / Testing Mode (Development)</option>
-                                    <option value="production" <?= ($settings['midtrans_environment'] ?? '') === 'production' ? 'selected' : '' ?>>🟢 Production / Live Mode (Real Money)</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label small fw-bold">Midtrans Server Key</label>
-                                <input type="password" name="midtrans_server_key" class="form-control rounded-3" value="<?= htmlspecialchars($settings['midtrans_server_key'] ?? 'SB-Mid-server-YOUR_SERVER_KEY') ?>" placeholder="SB-Mid-server-xxxx">
-                                <small class="text-muted" style="font-size: 10px;">Gunakan Server Key dari Dashboard Midtrans (MAP).</small>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label small fw-bold">Midtrans Client Key</label>
-                                <input type="text" name="midtrans_client_key" class="form-control rounded-3" value="<?= htmlspecialchars($settings['midtrans_client_key'] ?? 'SB-Mid-client-YOUR_CLIENT_KEY') ?>" placeholder="SB-Mid-client-xxxx">
-                                <small class="text-muted" style="font-size: 10px;">Client Key publik untuk frontend Snap JS Popup.</small>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label small fw-bold">Merchant ID (Opsional)</label>
-                                <input type="text" name="midtrans_merchant_id" class="form-control rounded-3" value="<?= htmlspecialchars($settings['midtrans_merchant_id'] ?? 'G123456789') ?>" placeholder="G123456789">
-                            </div>
-                            <div class="col-12 mt-2">
-                                <button type="button" onclick="testMidtransConnection()" class="btn btn-outline-danger btn-sm rounded-pill w-100 fw-bold py-2" id="btn-test-midtrans">
-                                    <i class="bi bi-lightning-charge-fill me-1"></i> Tes Koneksi & Status Midtrans API
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 2. SETUP INTEGRASI API PAYMENT GATEWAY (DOKU CHECKOUT) -->
-                <div class="col-lg-6">
+                <!-- 1. SETUP INTEGRASI API PAYMENT GATEWAY (DOKU CHECKOUT) -->
+                <div class="col-lg-12">
                     <div class="card border-0 shadow-sm rounded-4 h-100 p-4" style="border-top: 4px solid #E1251B !important;">
                         <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
                             <div class="d-flex align-items-center gap-2">
@@ -337,42 +299,6 @@
 </div>
 
 <script>
-async function testMidtransConnection() {
-    const btn = document.getElementById('btn-test-midtrans');
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Menghubungi Server Midtrans...';
-
-    try {
-        const res = await fetch(window.BASE_URL + '/admin/midtrans/test-connection', {
-            method: 'POST'
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Midtrans API Terhubung! 🎉',
-                html: `<div class="text-start small">
-                    <p class="mb-1"><b>Status:</b> ${data.message}</p>
-                    <p class="mb-1"><b>Environment Mode:</b> <span class="badge bg-success">${data.environment}</span></p>
-                    <p class="mb-0"><b>Merchant ID:</b> <code>${data.merchant_id}</code></p>
-                </div>`
-            });
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Koneksi Midtrans Gagal',
-                text: data.message || 'Gagal terhubung ke Midtrans. Periksa kembali Server Key Anda.'
-            });
-        }
-    } catch (err) {
-        Swal.fire('Error', 'Terjadi kesalahan saat menguji koneksi API.', 'error');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-    }
-}
 
 async function testDokuConnection() {
     const btn = document.getElementById('btn-test-doku');

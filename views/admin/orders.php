@@ -196,11 +196,6 @@
                                                 </button>
                                             </li>
                                             <li>
-                                                <button class="dropdown-item py-2 text-danger fw-semibold" onclick="viewMidtransDetail('<?= htmlspecialchars($o['order_code']) ?>')">
-                                                    <i class="bi bi-credit-card-2-front-fill me-2"></i> Detail Midtrans API
-                                                </button>
-                                            </li>
-                                            <li>
                                                 <a class="dropdown-item py-2" href="<?= $baseUrl ?>/admin/orders/invoice/<?= $o['id'] ?>" target="_blank">
                                                     <i class="bi bi-printer text-success me-2"></i> Cetak Faktur / Nota
                                                 </a>
@@ -325,31 +320,7 @@
     </div>
 </div>
 
-<!-- Midtrans Transaction Detail Modal -->
-<div class="modal fade" id="midtransDetailModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="d-flex align-items-center gap-2.5">
-                    <div class="rounded-3 bg-danger-subtle text-danger d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
-                        <i class="bi bi-credit-card-2-front-fill fs-5"></i>
-                    </div>
-                    <div>
-                        <h5 class="modal-title fw-bold text-dark m-0">Detail Transaksi Midtrans API</h5>
-                        <div class="text-muted small">Status pembayaran langsung dari Server Midtrans API</div>
-                    </div>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4" id="midtrans-modal-body">
-                <div class="text-center py-5">
-                    <div class="spinner-border text-danger" role="status"></div>
-                    <div class="text-muted small mt-2">Menghubungi Server Midtrans API...</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <script>
 let dispatchMap;
@@ -745,105 +716,5 @@ async function promptCancelOrder(orderId, orderCode) {
     }
 }
 
-async function viewMidtransDetail(orderCode) {
-    const modal = new bootstrap.Modal(document.getElementById('midtransDetailModal'));
-    modal.show();
 
-    const bodyEl = document.getElementById('midtrans-modal-body');
-    bodyEl.innerHTML = `
-        <div class="text-center py-5">
-            <div class="spinner-border text-danger" role="status"></div>
-            <div class="text-muted small mt-2">Menghubungi Server Midtrans API untuk Order #${orderCode}...</div>
-        </div>
-    `;
-
-    try {
-        const res = await fetch(window.BASE_URL + '/admin/midtrans/status/' + orderCode);
-        const resData = await res.json();
-
-        if (!resData.success) {
-            bodyEl.innerHTML = `<div class="alert alert-danger mb-0">${resData.message || 'Terjadi kesalahan sistem.'}</div>`;
-            return;
-        }
-
-        const mt = resData.midtrans;
-        const dbOrder = resData.db_order || {};
-
-        if (!mt.success && !mt.data) {
-            bodyEl.innerHTML = `
-                <div class="text-center py-4">
-                    <i class="bi bi-exclamation-triangle-fill text-warning fs-1 d-block mb-2"></i>
-                    <h6 class="fw-bold text-dark mb-1">Transaksi Belum Terdaftar di Midtrans</h6>
-                    <p class="text-muted small mb-3">Order #${orderCode} mungkin menggunakan metode pembayaran Cash / COD, atau belum membuka popup Snap.</p>
-                    <div class="p-3 bg-light rounded-3 text-start small border">
-                        <div><b>Metode Bayar di DB:</b> ${dbOrder.payment_method ? dbOrder.payment_method.toUpperCase() : '-'}</div>
-                        <div><b>Status Bayar di DB:</b> ${dbOrder.payment_status ? dbOrder.payment_status.toUpperCase() : '-'}</div>
-                        <div><b>Pesan API:</b> ${mt.message || '-'}</div>
-                    </div>
-                </div>
-            `;
-            return;
-        }
-
-        const d = mt.data || {};
-        const statusBadge = (d.transaction_status === 'settlement' || d.transaction_status === 'capture')
-            ? '<span class="badge bg-success fs-6 px-3 py-1.5"><i class="bi bi-check-circle-fill me-1"></i> SETTLEMENT (LUNAS)</span>'
-            : (d.transaction_status === 'pending')
-            ? '<span class="badge bg-warning text-dark fs-6 px-3 py-1.5"><i class="bi bi-clock-history me-1"></i> PENDING (MENUNGGU BAYAR)</span>'
-            : `<span class="badge bg-danger fs-6 px-3 py-1.5"><i class="bi bi-x-circle-fill me-1"></i> ${String(d.transaction_status || 'FAILED').toUpperCase()}</span>`;
-
-        let vaInfo = '';
-        if (d.va_numbers && d.va_numbers.length > 0) {
-            vaInfo = d.va_numbers.map(v => `
-                <div class="d-flex align-items-center justify-content-between p-2 bg-white rounded border mb-1">
-                    <span class="fw-bold text-uppercase">${v.bank} Virtual Account:</span>
-                    <code class="fs-6 fw-bold text-primary">${v.va_number}</code>
-                </div>
-            `).join('');
-        }
-
-        bodyEl.innerHTML = `
-            <div class="row g-3">
-                <div class="col-12 text-center pb-2 border-bottom">
-                    <div class="text-muted small mb-1">STATUS TRANSAKSI MIDTRANS</div>
-                    ${statusBadge}
-                </div>
-
-                <div class="col-md-6">
-                    <div class="p-3 bg-light rounded-3 h-100 border">
-                        <div class="fw-bold text-dark small mb-2"><i class="bi bi-receipt me-1 text-danger"></i> Rincian Midtrans</div>
-                        <div class="small mb-1"><b>Order ID:</b> <code>${d.order_id || orderCode}</code></div>
-                        <div class="small mb-1"><b>Transaction ID:</b> <code style="font-size: 10px;">${d.transaction_id || '-'}</code></div>
-                        <div class="small mb-1"><b>Metode Bayar:</b> <span class="badge bg-dark text-uppercase">${d.payment_type || '-'}</span></div>
-                        <div class="small mb-1"><b>Bank / Channel:</b> ${d.bank || (d.va_numbers ? d.va_numbers[0]?.bank : '-')}</div>
-                        <div class="small mb-1"><b>Status Code:</b> <code>${d.status_code || '-'}</code></div>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="p-3 bg-light rounded-3 h-100 border">
-                        <div class="fw-bold text-dark small mb-2"><i class="bi bi-currency-dollar me-1 text-danger"></i> Nominal & Waktu</div>
-                        <div class="small mb-1"><b>Gross Amount:</b> <span class="fw-bold text-danger fs-6">Rp ${Number(d.gross_amount || 0).toLocaleString('id-ID')}</span></div>
-                        <div class="small mb-1"><b>Waktu Transaksi:</b> ${d.transaction_time || '-'}</div>
-                        <div class="small mb-1"><b>Waktu Settlement:</b> ${d.settlement_time || '-'}</div>
-                        <div class="small mb-1"><b>Fraud Status:</b> ${d.fraud_status || 'accept'}</div>
-                    </div>
-                </div>
-
-                ${vaInfo ? `<div class="col-12"><div class="p-3 bg-light rounded-3 border"><div class="fw-bold small mb-2">Instruksi Pembayaran VA:</div>${vaInfo}</div></div>` : ''}
-
-                <div class="col-12 pt-2">
-                    <button class="btn btn-sm btn-outline-secondary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#rawMidtransJson">
-                        <i class="bi bi-code-slash me-1"></i> Lihat Data Mentah JSON API Midtrans
-                    </button>
-                    <div class="collapse mt-2" id="rawMidtransJson">
-                        <pre class="bg-dark text-success p-3 rounded-3 small mb-0" style="max-height: 200px; overflow-y: auto;">${JSON.stringify(d, null, 2)}</pre>
-                    </div>
-                </div>
-            </div>
-        `;
-    } catch (err) {
-        bodyEl.innerHTML = `<div class="alert alert-danger mb-0">Terjadi kesalahan saat memuat detail dari Midtrans.</div>`;
-    }
-}
 </script>
