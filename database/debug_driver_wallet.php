@@ -3,7 +3,16 @@
  * DEBUG: Driver Wallet Commission Inspector
  * Run: php database/debug_driver_wallet.php
  */
-require_once __DIR__ . '/../app/autoload.php';
+
+require_once __DIR__ . '/../app/core/Database.php';
+require_once __DIR__ . '/../app/core/Model.php';
+require_once __DIR__ . '/../app/models/Wallet.php';
+require_once __DIR__ . '/../app/models/Zone.php';
+require_once __DIR__ . '/../app/helpers/distance.php';
+
+if (!defined('APP_PATH')) {
+    define('APP_PATH', __DIR__ . '/../app');
+}
 
 use App\Core\Database;
 
