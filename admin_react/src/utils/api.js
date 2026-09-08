@@ -2,16 +2,16 @@
  * API client helper with dynamic backend target
  */
 const getApiBase = () => {
-  // Jika dibuka di dev port 5173
+  // Jika dibuka di dev Vite port 5173
   if (window.location.port === '5173') {
     return 'http://localhost/CicalengkaGO/public';
   }
-  // Jika dibuka di container port terpisah (misal port 8096) di CasaOS
-  if (window.location.port === '8096') {
-    return `${window.location.protocol}//${window.location.hostname}:8090`;
+  // Jika dibuka di Apache XAMPP subfolder /CicalengkaGO
+  if (window.location.pathname.startsWith('/CicalengkaGO')) {
+    return window.location.origin + '/CicalengkaGO/public';
   }
-  // Default same-origin atau subpath
-  return window.location.origin + (window.location.pathname.startsWith('/CicalengkaGO') ? '/CicalengkaGO/public' : '');
+  // Di container Docker terpisah (port 8096), Nginx langsung mem-proxy /api/ ke container backend
+  return '';
 };
 
 const API_BASE = getApiBase();
