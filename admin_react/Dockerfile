@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Copy dependency definition
 COPY package.json package-lock.json* ./
-RUN npm install
+RUN npm install --no-audit --no-fund --loglevel=error
 
 # Copy source code dan build bundle
 COPY . .
