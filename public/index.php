@@ -12,12 +12,16 @@ define('APP_PATH', BASE_PATH . '/app');
 define('PUBLIC_PATH', __DIR__);
 
 // Global CORS & Security Headers for Chrome, WebRTC & Mobile Apps
-$httpOrigin = $_SERVER['HTTP_ORIGIN'] ?? '*';
+$httpOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
 if (!headers_sent()) {
-    header("Access-Control-Allow-Origin: " . ($httpOrigin !== '*' ? $httpOrigin : '*'));
-    header("Access-Control-Allow-Credentials: true");
+    if (!empty($httpOrigin)) {
+        header("Access-Control-Allow-Origin: $httpOrigin");
+        header("Access-Control-Allow-Credentials: true");
+    } else {
+        header("Access-Control-Allow-Origin: *");
+    }
     header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE, PATCH");
-    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept, Origin, Cookie, Set-Cookie, X-CSRF-Token");
+    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept, Origin, Cookie, Set-Cookie, X-CSRF-Token, X-User-ID, X-Session-ID, X-Role, Cache-Control, Pragma");
     header("Access-Control-Max-Age: 86400");
     header("Content-Security-Policy: default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' blob: data: https: http:; script-src-elem * 'unsafe-inline' 'unsafe-eval' blob: data: https: http:; style-src * 'unsafe-inline' https: http:; style-src-elem * 'unsafe-inline' https: http:; img-src * data: blob: https: http:; media-src * data: blob: mediastream: https: http:; connect-src * https: http: ws: wss:; font-src * data: https: http:; frame-src *; child-src * blob:; worker-src * blob:;");
     header("Cache-Control: no-cache, no-store, must-revalidate");

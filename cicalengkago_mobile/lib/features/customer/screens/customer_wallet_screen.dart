@@ -591,8 +591,10 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
 
         if (kIsWeb) {
           // Di Flutter Web: Buka tab baru langsung dan tampilkan modal konfirmasi di tempat
-          final uri = Uri.parse(redirectUrl);
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          try {
+            final uri = Uri.parse(redirectUrl);
+            await launchUrl(uri, mode: LaunchMode.externalApplication, webOnlyWindowName: '_blank');
+          } catch (_) {}
           if (context.mounted) {
             _showWebPaymentConfirmDialog(context, redirectUrl, orderId, amount.toDouble());
           }
@@ -705,7 +707,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                       minimumSize: const Size(double.infinity, 44),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    onPressed: () => launchUrl(Uri.parse(paymentUrl), mode: LaunchMode.externalApplication),
+                    onPressed: () => launchUrl(Uri.parse(paymentUrl), mode: LaunchMode.externalApplication, webOnlyWindowName: '_blank'),
                     icon: const Icon(Icons.open_in_new, size: 16),
                     label: const Text('Buka Ulang Tab Pembayaran', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   ),

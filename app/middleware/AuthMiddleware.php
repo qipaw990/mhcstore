@@ -15,14 +15,11 @@ class AuthMiddleware
             session_start();
         }
 
-        // 1. Dual Authentication: Fallback ke Bearer Token jika SESSION kosong
+        // 1. Dual Authentication: Gunakan auth_user() yang otomatis memeriksa SESSION, Bearer Token, PAT, dan X-User-ID
         if (empty($_SESSION['user']) || empty($_SESSION['user']['id'])) {
-            $token = get_bearer_token();
-            if (!empty($token)) {
-                $user = Database::fetchOne("SELECT * FROM `users` WHERE `api_token` = ? AND `is_active` = 1 LIMIT 1", [$token]);
-                if (!empty($user)) {
-                    $_SESSION['user'] = $user;
-                }
+            $user = auth_user();
+            if ($user && !empty($user['id'])) {
+                $_SESSION['user'] = $user;
             }
         }
 

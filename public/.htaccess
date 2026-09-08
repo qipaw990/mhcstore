@@ -11,9 +11,11 @@
 </IfModule>
 
 <IfModule mod_headers.c>
-    Header set Access-Control-Allow-Origin "*"
-    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE, PATCH"
-    Header set Access-Control-Allow-Headers "*"
+    # Dynamic CORS is handled in public/index.php with Origin & Credentials support.
+    # Allow static assets to be loaded from any origin:
+    <FilesMatch "\.(png|jpg|jpeg|gif|ico|webp|svg|woff2?|ttf|eot|js|css)$">
+        Header set Access-Control-Allow-Origin "*"
+    </FilesMatch>
 
     Header set Content-Security-Policy "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' blob: https: http:; style-src * 'unsafe-inline' https: http:; img-src * data: blob: https: http:; connect-src * https: http: ws: wss:; font-src * data: https: http:; frame-src *;"
 
