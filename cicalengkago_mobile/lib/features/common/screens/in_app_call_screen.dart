@@ -12,6 +12,8 @@ import '../../../core/services/global_call_service.dart';
 import '../../../core/theme/app_theme.dart';
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:js' as js;
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:js_util' as js_util;
 
 class InAppCallScreen extends StatefulWidget {
   final String orderCode;
@@ -482,50 +484,59 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   }
 
   /// Attaches the remote MediaStream to the appropriate audio output.
-  /// On Web: uses an HTML <audio> element injected into the DOM via JS interop.
+  /// On Web: creates a real <audio> DOM element and sets srcObject directly
+  /// via dart:js_util — avoids browser autoplay/mute policies.
   /// On Native: uses RTCVideoRenderer which feeds the OS audio routing.
   void _attachRemoteStream(MediaStream stream) {
     if (kIsWeb) {
       try {
         // Remove old audio element if exists
         if (_webAudioElementId != null) {
-          js.context.callMethod('eval', [
-            "(function(){ var el = document.getElementById('${_webAudioElementId!}'); if(el){ el.pause(); el.srcObject=null; el.remove(); } })()"
-          ]);
+          final oldEl = js.context['document'].callMethod('getElementById', [_webAudioElementId!]);
+          if (oldEl != null) {
+            try { oldEl.callMethod('pause', []); } catch (_) {}
+            try { js_util.setProperty(oldEl, 'srcObject', null); } catch (_) {}
+            try { oldEl.callMethod('remove', []); } catch (_) {}
+          }
           _webAudioElementId = null;
         }
 
         final elId = 'cgo_remote_audio_${DateTime.now().millisecondsSinceEpoch}';
         _webAudioElementId = elId;
 
-        // Create <audio> element, attach the MediaStream, and play
-        final jsStream = stream.jsStream;
-        js.context['__cgo_attach_audio'] = js.allowInterop((dynamic s) {
-          final script = """
-            (function() {
-              var existing = document.getElementById('$elId');
-              if(existing){ existing.pause(); existing.remove(); }
-              var audio = document.createElement('audio');
-              audio.id = '$elId';
-              audio.autoplay = true;
-              audio.muted = false;
-              audio.style.position = 'fixed';
-              audio.style.opacity = '0';
-              audio.style.width = '1px';
-              audio.style.height = '1px';
-              audio.style.bottom = '0px';
-              audio.style.right = '0px';
-              audio.srcObject = s;
-              document.body.appendChild(audio);
-              audio.play().catch(function(e){ console.warn('[CGO-Call] audio.play() failed:', e); });
-              console.log('[CGO-Call] Remote audio attached, elementId=$elId');
-            })()
-          """;
-          js.context.callMethod('eval', [script]);
-        });
-        // Call it with the JS MediaStream object
-        (js.context['__cgo_attach_audio'] as js.JsFunction).apply([jsStream]);
-        debugPrint('[WebRTC-Web] Attached remote stream via JS interop (id: $elId)');
+        // Create <audio> element via JS
+        final doc = js.context['document'];
+        final audioEl = doc.callMethod('createElement', ['audio']) as js.JsObject;
+
+        // Set attributes directly on the JS object
+        js_util.setProperty(audioEl, 'id', elId);
+        js_util.setProperty(audioEl, 'autoplay', true);
+        js_util.setProperty(audioEl, 'muted', false);
+
+        // Style: invisible but in DOM (browser will NOT block visible audio)
+        final style = js_util.getProperty(audioEl, 'style') as js.JsObject;
+        js_util.setProperty(style, 'position', 'fixed');
+        js_util.setProperty(style, 'opacity', '0.001'); // tiny opacity, not 0 — avoids mute
+        js_util.setProperty(style, 'width', '1px');
+        js_util.setProperty(style, 'height', '1px');
+        js_util.setProperty(style, 'bottom', '0px');
+        js_util.setProperty(style, 'right', '0px');
+        js_util.setProperty(style, 'pointerEvents', 'none');
+
+        // KEY: set srcObject to the native JS MediaStream
+        js_util.setProperty(audioEl, 'srcObject', stream.jsStream);
+
+        // Append to body and play
+        js.context['document']['body'].callMethod('appendChild', [audioEl]);
+        final playPromise = audioEl.callMethod('play', []);
+        // Handle promise rejection gracefully
+        if (playPromise != null) {
+          js_util.promiseToFuture<void>(playPromise as Object).catchError((e) {
+            debugPrint('[WebRTC-Web] audio.play() rejected: $e');
+          });
+        }
+
+        debugPrint('[WebRTC-Web] ✅ Remote audio element created and playing (id: $elId)');
       } catch (e) {
         debugPrint('[WebRTC-Web] _attachRemoteStream error: $e — falling back to renderer');
         _remoteRenderer.srcObject = stream;
