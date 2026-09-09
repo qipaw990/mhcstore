@@ -44,6 +44,66 @@ Router::get('/reset-password', [AuthController::class, 'showResetPassword']);
 Router::post('/reset-password', [AuthController::class, 'handleResetPassword']);
 Router::get('/logout', [AuthController::class, 'logout']);
 
+// Temporary Diagnostic Route for DOKU
+Router::get('/doku-check', function () {
+    $pass = $_GET['key'] ?? '';
+    if ($pass !== 'cek2024doku') {
+        die('Access denied. Tambahkan ?key=cek2024doku di URL');
+    }
+
+    try {
+        $pdo = \App\Core\Database::getInstance()->getConnection();
+        echo "<h2>✅ Koneksi Database Berhasil</h2>";
+        echo "<h3>Pengaturan DOKU di Database:</h3>";
+        echo "<table border='1' cellpadding='8' style='border-collapse:collapse;font-family:sans-serif;margin-bottom:20px;'>";
+        echo "<tr style='background:#f4f4f4;'><th>Key Setting</th><th>Nilai</th><th>Status</th></tr>";
+
+        $rows = $pdo->query("SELECT key_name, value_text FROM business_settings WHERE key_name LIKE 'doku%' ORDER BY key_name")->fetchAll(\PDO::FETCH_ASSOC);
+        if (empty($rows)) {
+            echo "<tr><td colspan='3' style='color:red;'>⚠️ Tidak ada baris setting DOKU ditemukan di tabel business_settings!</td></tr>";
+        }
+        foreach ($rows as $r) {
+            $val = $r['value_text'] ?? '';
+            $status = empty($val) ? '<span style="color:red;font-weight:bold;">⚠️ KOSONG</span>' : '<span style="color:green;font-weight:bold;">✅ Terisi</span>';
+            if (strpos($r['key_name'], 'secret') !== false && strlen($val) > 8) {
+                $val = substr($val, 0, 6) . str_repeat('*', strlen($val) - 6);
+            }
+            echo "<tr><td><code>" . htmlspecialchars($r['key_name']) . "</code></td><td>" . htmlspecialchars($val) . "</td><td>{$status}</td></tr>";
+        }
+        echo "</table>";
+
+        $clientId  = $pdo->query("SELECT value_text FROM business_settings WHERE key_name = 'doku_client_id' LIMIT 1")->fetchColumn();
+        $secretKey = $pdo->query("SELECT value_text FROM business_settings WHERE key_name = 'doku_secret_key' LIMIT 1")->fetchColumn();
+        $env       = $pdo->query("SELECT value_text FROM business_settings WHERE key_name = 'doku_environment' LIMIT 1")->fetchColumn();
+
+        echo "<h3>Analisis & Saran:</h3>";
+        if (empty($clientId) || empty($secretKey)) {
+            echo "<p style='color:red;font-size:16px;'>❌ <strong>Client ID atau Secret Key DOKU belum diisi di database!</strong></p>";
+            echo "<p>Error 404 pada DOKU checkout terjadi karena kredensial kosong sehingga sesi pembayaran tidak valid.</p>";
+            echo "<p>👉 Silakan buka Admin Panel → Settings → Pengaturan Pembayaran, lalu masukkan Client ID dan Secret Key dari DOKU Merchant.</p>";
+        } else {
+            $baseUrl = ($env === 'production') ? 'https://api.doku.com' : 'https://api-sandbox.doku.com';
+            echo "<p>✅ <strong>Kredensial DOKU Terisi:</strong></p>";
+            echo "<ul>";
+            echo "<li>Environment: <strong>" . htmlspecialchars($env ?: 'sandbox') . "</strong></li>";
+            echo "<li>API Endpoint: <code>{$baseUrl}</code></li>";
+            echo "</ul>";
+
+            $ch = curl_init($baseUrl . '/checkout/v1/payment');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_NOBODY, true);
+            curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            echo "<p>Koneksi ke Server DOKU: " . ($httpCode > 0 ? "<span style='color:green;'>✅ OK (HTTP {$httpCode})</span>" : "<span style='color:red;'>❌ Gagal terhubung</span>") . "</p>";
+        }
+    } catch (\Throwable $e) {
+        echo "<h2 style='color:red;'>❌ Terjadi Kesalahan: " . htmlspecialchars($e->getMessage()) . "</h2>";
+    }
+});
+
 // ==========================================
 // 2. Customer PWA Routes (Public / Auth)
 // ==========================================
