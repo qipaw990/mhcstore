@@ -550,16 +550,18 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                 try { cands = jsonDecode(cands); } catch (_) { cands = []; }
               }
               if (cands is List) {
-                final myRole = widget.isIncoming ? 'callee' : 'caller';
+                // Build the set of roles that belong to THIS side — skip them, accept the rest.
+                // Caller (outgoing): own role is 'caller'
+                // Callee (incoming): own roles are 'callee' and 'receiver'
+                final Set<String> ownRoles = widget.isIncoming
+                    ? {'callee', 'receiver'}
+                    : {'caller'};
+
                 for (var item in cands) {
                   if (item is Map) {
-                    final senderRole = item['role']?.toString();
-                    // Ignore own candidates
-                    if (senderRole == myRole ||
-                        (widget.isIncoming && (senderRole == 'callee' || senderRole == 'receiver')) ||
-                        (!widget.isIncoming && (senderRole == 'caller' || senderRole == 'delivery_man' || senderRole == 'driver' || senderRole == 'vendor' || senderRole == 'customer'))) {
-                      continue;
-                    }
+                    final senderRole = item['role']?.toString() ?? '';
+                    // Skip candidates sent by ourselves
+                    if (ownRoles.contains(senderRole)) continue;
 
                     Map<String, dynamic>? candObj;
                     if (item['candidate'] is Map) {
@@ -576,11 +578,10 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
                     if (candObj != null && candObj['candidate'] != null) {
                       final key = '${candObj['candidate']}_${candObj['sdpMid']}_${candObj['sdpMLineIndex']}';
-                      if (_sentCandidateKeys.contains(key)) continue;
                       if (!_addedCandidateKeys.contains(key)) {
                         _addedCandidateKeys.add(key);
                         try {
-                          debugPrint('📥 [WebRTC] Adding remote ICE candidate: ${candObj['candidate']}');
+                          debugPrint('📥 [WebRTC] Adding remote ICE candidate (role: $senderRole): ${candObj['candidate']}');
                           await _peerConnection!.addCandidate(
                             RTCIceCandidate(
                               candObj['candidate']?.toString(),
