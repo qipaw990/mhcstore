@@ -10,6 +10,8 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/services/global_call_service.dart';
 import '../../../core/theme/app_theme.dart';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:js' as js;
 
 class InAppCallScreen extends StatefulWidget {
   final String orderCode;
@@ -67,6 +69,9 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   final List<RTCIceCandidate> _pendingLocalCandidates = [];
   dynamic _pendingOffer;
   int _consecutiveNullPolls = 0;
+
+  // Web-only: HTML audio element ID for remote audio playback (managed via JS interop)
+  String? _webAudioElementId;
 
   @override
   void initState() {
@@ -379,12 +384,12 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         if (event.track.kind == 'audio') {
           event.track.enabled = true;
           if (event.streams.isNotEmpty) {
-            _remoteRenderer.srcObject = event.streams[0];
+            _attachRemoteStream(event.streams[0]);
           } else {
             try {
               final newStream = await createLocalMediaStream('remote_audio_stream');
               await newStream.addTrack(event.track);
-              _remoteRenderer.srcObject = newStream;
+              _attachRemoteStream(newStream);
             } catch (_) {}
           }
           _stopRingtone();
@@ -397,7 +402,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         for (var track in stream.getAudioTracks()) {
           track.enabled = true;
         }
-        _remoteRenderer.srcObject = stream;
+        _attachRemoteStream(stream);
         _stopRingtone();
         _setSpeakerphone(_isSpeakerOn);
       };
@@ -473,6 +478,60 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       }
     } catch (e) {
       debugPrint('[WebRTC] Set speaker error: $e');
+    }
+  }
+
+  /// Attaches the remote MediaStream to the appropriate audio output.
+  /// On Web: uses an HTML <audio> element injected into the DOM via JS interop.
+  /// On Native: uses RTCVideoRenderer which feeds the OS audio routing.
+  void _attachRemoteStream(MediaStream stream) {
+    if (kIsWeb) {
+      try {
+        // Remove old audio element if exists
+        if (_webAudioElementId != null) {
+          js.context.callMethod('eval', [
+            "(function(){ var el = document.getElementById('${_webAudioElementId!}'); if(el){ el.pause(); el.srcObject=null; el.remove(); } })()"
+          ]);
+          _webAudioElementId = null;
+        }
+
+        final elId = 'cgo_remote_audio_${DateTime.now().millisecondsSinceEpoch}';
+        _webAudioElementId = elId;
+
+        // Create <audio> element, attach the MediaStream, and play
+        final jsStream = stream.jsStream;
+        js.context['__cgo_attach_audio'] = js.allowInterop((dynamic s) {
+          final script = """
+            (function() {
+              var existing = document.getElementById('$elId');
+              if(existing){ existing.pause(); existing.remove(); }
+              var audio = document.createElement('audio');
+              audio.id = '$elId';
+              audio.autoplay = true;
+              audio.muted = false;
+              audio.style.position = 'fixed';
+              audio.style.opacity = '0';
+              audio.style.width = '1px';
+              audio.style.height = '1px';
+              audio.style.bottom = '0px';
+              audio.style.right = '0px';
+              audio.srcObject = s;
+              document.body.appendChild(audio);
+              audio.play().catch(function(e){ console.warn('[CGO-Call] audio.play() failed:', e); });
+              console.log('[CGO-Call] Remote audio attached, elementId=$elId');
+            })()
+          """;
+          js.context.callMethod('eval', [script]);
+        });
+        // Call it with the JS MediaStream object
+        (js.context['__cgo_attach_audio'] as js.JsFunction).apply([jsStream]);
+        debugPrint('[WebRTC-Web] Attached remote stream via JS interop (id: $elId)');
+      } catch (e) {
+        debugPrint('[WebRTC-Web] _attachRemoteStream error: $e — falling back to renderer');
+        _remoteRenderer.srcObject = stream;
+      }
+    } else {
+      _remoteRenderer.srcObject = stream;
     }
   }
 
@@ -815,6 +874,16 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
   Future<void> _cleanupWebRtc() async {
     try {
+      // Cleanup web audio element via JS
+      if (kIsWeb && _webAudioElementId != null) {
+        try {
+          js.context.callMethod('eval', [
+            "(function(){ var el = document.getElementById('${_webAudioElementId!}'); if(el){ el.pause(); el.srcObject=null; el.remove(); } })()"
+          ]);
+          _webAudioElementId = null;
+        } catch (_) {}
+      }
+
       _localStream?.getTracks().forEach((track) {
         try {
           track.stop();
@@ -870,20 +939,25 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       backgroundColor: const Color(0xFF0F172A),
       body: Stack(
         children: [
-          // Embedded WebRTC Renderer View (Required for Chrome & Native Audio Playback)
-          // Di Web, posisikan off-screen dengan ukuran valid agar browser tidak mendeteksi sebagai hidden-media muted
-          Positioned(
-            left: -500,
-            top: -500,
-            child: SizedBox(
-              width: 50,
-              height: 50,
-              child: RTCVideoView(
-                _remoteRenderer,
-                objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+          // Embedded WebRTC Renderer View (Required for Native Audio Routing)
+          // On web, audio is handled via HTML <audio> element instead.
+          // Use Offstage to keep it in tree (for native) without painting on web.
+          if (!kIsWeb)
+            Positioned(
+              left: 0,
+              top: 0,
+              child: Opacity(
+                opacity: 0,
+                child: SizedBox(
+                  width: 1,
+                  height: 1,
+                  child: RTCVideoView(
+                    _remoteRenderer,
+                    objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                  ),
+                ),
               ),
             ),
-          ),
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
