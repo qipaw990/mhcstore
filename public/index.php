@@ -60,7 +60,12 @@ if (!headers_sent()) {
     }
 
     header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE, PATCH");
-    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept, Origin, Cookie, Set-Cookie, X-CSRF-Token, X-User-ID, X-Session-ID, X-Role, Cache-Control, Pragma");
+    $reqHeaders = $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'] ?? '';
+    $allowedHeaders = "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cookie, Set-Cookie, X-CSRF-Token, X-User-ID, X-Session-ID, X-Role, X-Api-Token, X-App-Client, Cache-Control, Pragma";
+    if (!empty($reqHeaders)) {
+        $allowedHeaders .= ", " . $reqHeaders;
+    }
+    header("Access-Control-Allow-Headers: " . $allowedHeaders);
     header("Access-Control-Max-Age: 86400");
 
     // Standard Defensive Security Headers

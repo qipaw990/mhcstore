@@ -475,8 +475,12 @@ class ApiController extends Controller
         }
 
         header("Access-Control-Allow-Origin: *");
-        header("Access-Control-Allow-Methods: POST, OPTIONS");
-        header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept");
+        $reqHeaders = $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'] ?? '';
+        $allowedHeaders = "Content-Type, Authorization, X-Requested-With, Accept, X-Api-Token, X-App-Client, X-User-ID, X-Session-ID";
+        if (!empty($reqHeaders)) {
+            $allowedHeaders .= ", " . $reqHeaders;
+        }
+        header("Access-Control-Allow-Headers: " . $allowedHeaders);
         header("Content-Type: application/json; charset=utf-8");
 
         if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
