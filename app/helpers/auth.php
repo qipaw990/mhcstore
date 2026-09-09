@@ -48,6 +48,21 @@ function auth_id(): ?int
         } catch (\Throwable $e) {}
     }
 
+    // 3. Fallback to X-User-ID header if sent by mobile app
+    $headers = function_exists('getallheaders') ? getallheaders() : [];
+    $normalizedHeaders = [];
+    foreach ($headers as $k => $v) {
+        $normalizedHeaders[strtolower($k)] = $v;
+    }
+    $userIdHeader = $normalizedHeaders['x-user-id'] ?? $_SERVER['HTTP_X_USER_ID'] ?? $_SERVER['REDIRECT_HTTP_X_USER_ID'] ?? null;
+    if (!empty($userIdHeader) && is_numeric($userIdHeader)) {
+        $u3 = \App\Core\Database::fetchOne("SELECT id, name, email, phone, role, avatar, api_token FROM users WHERE id = ? LIMIT 1", [(int)$userIdHeader]);
+        if ($u3) {
+            $_SESSION['user'] = $u3;
+            return (int)$u3['id'];
+        }
+    }
+
     return null;
 }
 
@@ -113,5 +128,13 @@ function get_bearer_token(): ?string
         return trim($matches[1]);
     }
 
-    return $_REQUEST['api_token'] ?? $_REQUEST['token'] ?? $_GET['token'] ?? $_POST['token'] ?? null;
+    // Direct X-Api-Token header or parameter
+    return $normalizedHeaders['x-api-token']
+        ?? $_SERVER['HTTP_X_API_TOKEN']
+        ?? $_SERVER['REDIRECT_HTTP_X_API_TOKEN']
+        ?? $_REQUEST['api_token']
+        ?? $_REQUEST['token']
+        ?? $_GET['token']
+        ?? $_POST['token']
+        ?? null;
 }

@@ -78,8 +78,12 @@ class ApiService {
       if (isJson) 'Content-Type': 'application/json',
       'Accept': 'application/json',
       'X-Requested-With': 'XMLHttpRequest', // Agar backend tahu ini AJAX
+      'X-App-Client': 'Flutter-Mobile',
       if (cookie != null && cookie.isNotEmpty) 'Cookie': cookie,
-      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+      if (token != null && token.isNotEmpty) ...{
+        'Authorization': 'Bearer $token',
+        'X-Api-Token': token,
+      },
       if (userId != null && userId.isNotEmpty) 'X-User-ID': userId,
       'X-Session-ID': guestSessionId,
     };
@@ -187,8 +191,12 @@ class ApiService {
       request.headers.addAll({
         'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
+        'X-App-Client': 'Flutter-Mobile',
         if (cookie != null && cookie.isNotEmpty) 'Cookie': cookie,
-        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        if (token != null && token.isNotEmpty) ...{
+          'Authorization': 'Bearer $token',
+          'X-Api-Token': token,
+        },
         if (userId != null && userId.isNotEmpty) 'X-User-ID': userId,
         'X-Session-ID': guestSessionId,
       });
@@ -234,8 +242,12 @@ class ApiService {
       request.headers.addAll({
         'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
+        'X-App-Client': 'Flutter-Mobile',
         if (cookie != null && cookie.isNotEmpty) 'Cookie': cookie,
-        if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        if (token != null && token.isNotEmpty) ...{
+          'Authorization': 'Bearer $token',
+          'X-Api-Token': token,
+        },
         if (userId != null && userId.isNotEmpty) 'X-User-ID': userId,
         'X-Session-ID': guestSessionId,
       });
@@ -267,16 +279,31 @@ class ApiService {
   // ── Parse response body ────────────────────────────────────────────
   static Map<String, dynamic> _parseResponse(http.Response response) {
     try {
+      final body = response.body.trim();
+
       if (response.statusCode == 401 || response.statusCode == 403) {
+        // Jika server mengembalikan JSON dengan pesan error spesifik (e.g. password salah saat login)
+        if (body.startsWith('{')) {
+          try {
+            final decoded = jsonDecode(body);
+            if (decoded is Map<String, dynamic>) {
+              return {
+                ...decoded,
+                'success': false,
+                'unauthenticated': decoded['unauthenticated'] ?? (response.statusCode == 401),
+                'statusCode': response.statusCode,
+              };
+            }
+          } catch (_) {}
+        }
         return {
           'success': false,
-          'message': response.statusCode == 403 ? 'Akses Ditolak (Perlu login akun driver)' : 'Sesi telah berakhir',
+          'message': response.statusCode == 403 ? 'Akses Ditolak (Perlu login akun driver)' : 'Sesi telah berakhir, silakan masuk kembali.',
           'unauthenticated': true,
           'statusCode': response.statusCode,
         };
       }
 
-      final body = response.body.trim();
       if (body.isEmpty) {
         return {
           'success': response.statusCode >= 200 && response.statusCode < 300,
@@ -288,7 +315,7 @@ class ApiService {
       if (!body.startsWith('{') && !body.startsWith('[')) {
         // Redirect ke login = session expired
         if (response.statusCode == 302 || body.contains('<html')) {
-          return {'success': false, 'message': 'Sesi berakhir, silakan login ulang.', 'unauthenticated': true};
+          return {'success': false, 'message': 'Gagal memproses respon server. Silakan coba kembali.', 'unauthenticated': true};
         }
         return {'success': false, 'message': 'Respon server tidak valid (HTML: ${body.length > 80 ? body.substring(0, 80) : body})'};
       }

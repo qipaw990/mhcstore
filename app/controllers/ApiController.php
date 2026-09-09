@@ -70,6 +70,71 @@ class ApiController extends Controller
         }
     }
 
+    public function verifyOtp(): void
+    {
+        $data = $this->getPost();
+        $otp = trim($data['otp'] ?? '');
+
+        if (empty($otp)) {
+            $this->errorResponse('Kode OTP wajib diisi.', null, 422);
+            return;
+        }
+
+        try {
+            $user = (new AuthService())->verifyOtp($otp);
+            $_SESSION['user'] = $user;
+
+            $token = $user['api_token'] ?? null;
+            if (empty($token)) {
+                $token = bin2hex(random_bytes(32));
+                (new \App\Models\User())->update($user['id'], ['api_token' => $token]);
+                $user['api_token'] = $token;
+            }
+
+            $this->successResponse('Verifikasi OTP berhasil', [
+                'token' => $token,
+                'user'  => [
+                    'id'    => $user['id'],
+                    'name'  => $user['name'],
+                    'email' => $user['email'],
+                    'phone' => $user['phone'],
+                    'role'  => $user['role']
+                ]
+            ]);
+        } catch (Exception $e) {
+            $this->errorResponse($e->getMessage(), null, 400);
+        }
+    }
+
+    public function resendOtp(): void
+    {
+        try {
+            $authService = new AuthService();
+            $authService->resendOtp();
+            $this->successResponse('Kode OTP baru telah berhasil dikirimkan via WhatsApp.');
+        } catch (Exception $e) {
+            $this->errorResponse($e->getMessage(), null, 400);
+        }
+    }
+
+    public function logout(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $_SESSION = [];
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params["path"], $params["domain"],
+                $params["secure"], $params["httponly"]
+            );
+        }
+        session_destroy();
+
+        $this->successResponse('Logout berhasil.');
+    }
+
     public function register(): void
     {
         $data = $this->getPost();

@@ -1,6 +1,6 @@
 class ApiConstants {
-  // Base domain — sesuai market.cicago.store production
-  static const String domainUrl    = 'https://market.cicago.store';
+  // Base domain — sesuai input user: https://cicago.store
+  static const String domainUrl    = 'https://cicago.store';
   static const String baseUrl      = domainUrl;
   static const String imageBaseUrl = domainUrl;
 
@@ -49,13 +49,13 @@ class ApiConstants {
   static const String productDetail = '$domainUrl/api/products';
 
   // ==========================================
-  // Auth Routes  (POST /login, /register, /verify-otp, /resend-otp)
+  // Auth Routes (Gunakan endpoint dedicated /api/ agar SELALU murni JSON tanpa form redirect)
   // ==========================================
-  static const String login     = '$domainUrl/login';
-  static const String register  = '$domainUrl/register';
-  static const String verifyOtp = '$domainUrl/verify-otp';
-  static const String resendOtp = '$domainUrl/resend-otp';
-  static const String logout    = '$domainUrl/logout';
+  static const String login     = '$domainUrl/api/login';
+  static const String register  = '$domainUrl/api/register';
+  static const String verifyOtp = '$domainUrl/api/verify-otp';
+  static const String resendOtp = '$domainUrl/api/resend-otp';
+  static const String logout    = '$domainUrl/api/logout';
 
   // ==========================================
   // Customer Routes  (prefix: /)

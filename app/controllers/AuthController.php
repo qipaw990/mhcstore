@@ -54,7 +54,12 @@ class AuthController extends Controller
 
         $isJsonRequest = (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
             || (isset($_SERVER['CONTENT_TYPE']) && str_contains($_SERVER['CONTENT_TYPE'], 'application/json'))
-            || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
+            || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+            || isset($_SERVER['HTTP_X_APP_CLIENT'])
+            || isset($_SERVER['HTTP_X_API_TOKEN'])
+            || isset($_SERVER['HTTP_AUTHORIZATION'])
+            || !empty($data['is_api'])
+            || !empty($_REQUEST['is_api']);
 
         if (empty($emailOrPhone) || empty($password)) {
             if ($isJsonRequest) {

@@ -64,6 +64,10 @@ Router::group(['prefix' => '/api/v1'], function () {
 Router::group(['prefix' => '/api'], function () {
     Router::post('/login', [ApiController::class, 'login']);
     Router::post('/auth/login', [ApiController::class, 'login']);
+    Router::post('/verify-otp', [ApiController::class, 'verifyOtp']);
+    Router::post('/resend-otp', [ApiController::class, 'resendOtp']);
+    Router::get('/logout', [ApiController::class, 'logout']);
+    Router::post('/logout', [ApiController::class, 'logout']);
     Router::post('/register', [ApiController::class, 'register']);
     Router::post('/auth/register', [ApiController::class, 'register']);
     Router::get('/modules', [ApiController::class, 'modules']);

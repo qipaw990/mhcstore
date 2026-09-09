@@ -27,6 +27,10 @@ class AuthMiddleware
         if (empty($_SESSION['user']) || empty($_SESSION['user']['id'])) {
             $isJson = (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
                 || isset($_SERVER['HTTP_X_REQUESTED_WITH'])
+                || isset($_SERVER['HTTP_X_APP_CLIENT'])
+                || isset($_SERVER['HTTP_X_API_TOKEN'])
+                || isset($_SERVER['HTTP_AUTHORIZATION'])
+                || !empty($_REQUEST['is_api'])
                 || (isset($_SERVER['REQUEST_URI']) && str_contains($_SERVER['REQUEST_URI'], '/api/'));
 
             if ($isJson) {

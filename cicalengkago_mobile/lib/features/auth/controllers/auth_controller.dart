@@ -60,6 +60,7 @@ class AuthController extends ChangeNotifier {
     final response = await ApiService.postForm(ApiConstants.login, {
       'username': username,
       'password': password,
+      'is_api': '1',
     });
 
     _isLoading = false;
@@ -103,7 +104,11 @@ class AuthController extends ChangeNotifier {
       return true;
     }
 
-    _errorMessage = response['message'] ?? 'Login gagal. Periksa username dan password Anda.';
+    String errorMsg = response['message']?.toString() ?? 'Login gagal. Periksa email/nomor HP dan kata sandi Anda.';
+    if (errorMsg.toLowerCase().contains('sesi') || errorMsg.toLowerCase().contains('tidak valid')) {
+      errorMsg = 'Email/Nomor HP atau kata sandi salah. Silakan periksa kembali.';
+    }
+    _errorMessage = errorMsg;
     notifyListeners();
     return false;
   }
