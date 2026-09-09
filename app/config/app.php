@@ -23,9 +23,11 @@ $host = !empty($rawHost) ? $rawHost : 'market.cicago.store';
 $envAppUrl = getenv('APP_URL') ?: ($_ENV['APP_URL'] ?? null);
 $envPublicUrl = getenv('PUBLIC_URL') ?: ($_ENV['PUBLIC_URL'] ?? null);
 
-if (str_contains($host, 'market.cicago.store') || str_contains($host, 'cicago.store')) {
-    // Prioritaskan domain resmi market.cicago.store sesuai konfigurasi toko
+if (str_contains($host, 'market.cicago.store')) {
     $publicUrl = 'https://market.cicago.store';
+    $appUrl    = $publicUrl;
+} elseif (str_contains($host, 'cicago.store')) {
+    $publicUrl = 'https://cicago.store';
     $appUrl    = $publicUrl;
 } elseif ($envPublicUrl || $envAppUrl) {
     // Explicitly configured via environment variable

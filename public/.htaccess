@@ -40,8 +40,8 @@ Options -Indexes
 
 <IfModule mod_headers.c>
     # Dynamic CORS is handled in public/index.php with Origin & Credentials support.
-    # Allow static assets to be loaded from any origin:
-    <FilesMatch "\.(png|jpg|jpeg|gif|ico|webp|svg|woff2?|ttf|eot|js|css)$">
+    # Allow static assets and webmanifest to be loaded from any origin:
+    <FilesMatch "\.(png|jpg|jpeg|gif|ico|webp|svg|woff2?|ttf|eot|js|css|json|webmanifest)$">
         Header set Access-Control-Allow-Origin "*"
     </FilesMatch>
 

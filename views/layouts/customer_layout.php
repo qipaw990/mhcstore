@@ -13,24 +13,25 @@ $unreadNotifs = $user ? (new \App\Models\Notification())->getUnreadCount($user['
     <title><?= $title ?? 'CicalengkaGO - Delivery Platform' ?></title>
     
     <!-- PWA Manifest & Theme -->
-    <link rel="manifest" href="<?= $baseUrl ?>/manifest.json">
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#EE2737">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="CicalengkaGO">
-    <link rel="apple-touch-icon" href="<?= $baseUrl ?>/assets/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
 
     <!-- CSS Dependencies -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="<?= $baseUrl ?>/assets/css/mobile.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/assets/css/mobile.css?v=<?= time() ?>">
 
     <script>
         window.BASE_URL = "<?= $baseUrl ?>";
         window.CURRENT_USER_ID = <?= (int)(auth_id() ?? ($_SESSION['user']['id'] ?? ($_SESSION['user_id'] ?? 0))) ?>;
     </script>
+    <script src="/assets/js/customer-pwa.js?v=<?= time() ?>"></script>
 </head>
 <body>
 <?php require_once dirname(__DIR__) . '/partials/preloader.php'; ?>
@@ -321,9 +322,8 @@ window.Swal = {
 </script>
 
 
-<script src="<?= $baseUrl ?>/assets/js/pwa-install.js"></script>
-<script src="<?= $baseUrl ?>/assets/js/customer-pwa.js?v=<?= time() ?>"></script>
-<script src="<?= $baseUrl ?>/assets/js/mobile-call.js?v=<?= time() ?>"></script>
+<script src="/assets/js/pwa-install.js"></script>
+<script src="/assets/js/mobile-call.js?v=<?= time() ?>"></script>
 
 <?php if (!empty($_SESSION['success'])): ?>
     <script>
