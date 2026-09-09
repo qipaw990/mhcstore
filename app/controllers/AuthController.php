@@ -52,14 +52,24 @@ class AuthController extends Controller
         $password     = trim($data['password'] ?? '');
         $captcha      = trim($data['captcha'] ?? '');
 
-        $isJsonRequest = (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
-            || (isset($_SERVER['CONTENT_TYPE']) && str_contains($_SERVER['CONTENT_TYPE'], 'application/json'))
-            || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
-            || isset($_SERVER['HTTP_X_APP_CLIENT'])
-            || isset($_SERVER['HTTP_X_API_TOKEN'])
-            || isset($_SERVER['HTTP_AUTHORIZATION'])
-            || !empty($data['is_api'])
-            || !empty($_REQUEST['is_api']);
+        // Deteksi apakah request dari API/mobile atau dari HTML form browser
+        $contentType = strtolower($_SERVER['CONTENT_TYPE'] ?? '');
+        $isHtmlFormPost = str_contains($contentType, 'application/x-www-form-urlencoded')
+            || str_contains($contentType, 'multipart/form-data')
+            || (empty($contentType) && !empty($_POST)); // form tanpa Content-Type header
+
+        $isJsonRequest = false;
+        if (!$isHtmlFormPost) {
+            // Hanya deteksi sebagai API request jika bukan form HTML biasa
+            $isJsonRequest = (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
+                || str_contains($contentType, 'application/json')
+                || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+                || isset($_SERVER['HTTP_X_APP_CLIENT'])
+                || isset($_SERVER['HTTP_X_API_TOKEN'])
+                || isset($_SERVER['HTTP_AUTHORIZATION'])
+                || !empty($data['is_api'])
+                || !empty($_REQUEST['is_api']);
+        }
 
         if (empty($emailOrPhone) || empty($password)) {
             if ($isJsonRequest) {

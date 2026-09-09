@@ -98,13 +98,38 @@ abstract class Controller
 
     protected function isJsonRequest(): bool
     {
-        return (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
-            || (isset($_SERVER['CONTENT_TYPE']) && str_contains($_SERVER['CONTENT_TYPE'], 'application/json'))
-            || isset($_SERVER['HTTP_X_REQUESTED_WITH'])
-            || (isset($_SERVER['REQUEST_URI']) && str_contains($_SERVER['REQUEST_URI'], '/api/'))
-            || isset($_SERVER['HTTP_AUTHORIZATION'])
-            || isset($_SERVER['HTTP_X_USER_ID'])
-            || (isset($_POST['user_id']) || isset($_GET['user_id']));
+        $accept      = $_SERVER['HTTP_ACCEPT'] ?? '';
+        $contentType = strtolower($_SERVER['CONTENT_TYPE'] ?? '');
+        $uri         = $_SERVER['REQUEST_URI'] ?? '';
+
+        // 1. Request ke path /api/ selalu API
+        if (str_contains($uri, '/api/')) {
+            return true;
+        }
+
+        // 2. Content-Type JSON (fetch/XHR dengan JSON body)
+        if (str_contains($contentType, 'application/json')) {
+            return true;
+        }
+
+        // 3. Header khusus mobile Flutter app
+        if (isset($_SERVER['HTTP_X_APP_CLIENT']) || isset($_SERVER['HTTP_X_API_TOKEN'])) {
+            return true;
+        }
+
+        // 4. XHR biasa (jQuery AJAX, dll)
+        if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+            return true;
+        }
+
+        // 5. Accept: application/json SAJA tanpa text/html
+        // Browser normal selalu menyertakan text/html di Accept header
+        // Mobile/API client biasanya hanya mengirim application/json
+        if (str_contains($accept, 'application/json') && !str_contains($accept, 'text/html')) {
+            return true;
+        }
+
+        return false;
     }
 
     protected function getQuery(?string $key = null, $default = null)
