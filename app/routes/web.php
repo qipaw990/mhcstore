@@ -52,7 +52,7 @@ Router::get('/doku-check', function () {
     }
 
     try {
-        $pdo = \App\Core\Database::getInstance()->getConnection();
+        $pdo = \App\Core\Database::getPdo();
         echo "<h2>✅ Koneksi Database Berhasil</h2>";
         echo "<h3>Pengaturan DOKU di Database:</h3>";
         echo "<table border='1' cellpadding='8' style='border-collapse:collapse;font-family:sans-serif;margin-bottom:20px;'>";

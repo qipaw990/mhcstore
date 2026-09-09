@@ -314,6 +314,11 @@ class Database
         return self::getInstance()->pdo;
     }
 
+    public function getConnection(): PDO
+    {
+        return $this->pdo;
+    }
+
     public static function query(string $sql, array $params = []): array
     {
         $stmt = self::getPdo()->prepare($sql);
