@@ -60,6 +60,7 @@ Router::post('/wallet/topup-midtrans', [PaymentController::class, 'topupDoku'], 
 Router::post('/wallet/topup-doku', [PaymentController::class, 'topupDoku'], ['AuthMiddleware']);
 Router::post('/payment/topup-snap', [PaymentController::class, 'topupDoku'], ['AuthMiddleware']); // legacy alias -> DOKU
 Router::post('/payment/topup-update-status', [PaymentController::class, 'updateTopupStatus'], ['AuthMiddleware']);
+Router::post('/payment/topup-cancel-all', [PaymentController::class, 'cancelAllPendingTopup'], ['AuthMiddleware']);
 Router::post('/payment/verify', [PaymentController::class, 'verifyClientCallback']);
 // Callback redirect dari DOKU setelah user selesai di halaman bayar (GET, bukan webhook)
 Router::get('/payment/doku/callback', [PaymentController::class, 'dokuCallback']);

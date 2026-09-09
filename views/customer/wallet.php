@@ -284,7 +284,7 @@
         <!-- PANE 2: Riwayat Top Up DOKU -->
         <div class="tab-pane fade" id="topup-pane" role="tabpanel">
             <!-- Filter Pills (Compact) -->
-            <div class="d-flex gap-1 mb-2 overflow-auto pb-0.5" style="scrollbar-width: none;">
+            <div class="d-flex gap-1 mb-2 overflow-auto pb-0.5 align-items-center" style="scrollbar-width: none;">
                 <button type="button" onclick="filterTopupList('all')" class="btn btn-sm btn-dark rounded-pill px-2.5 py-1 fw-bold topup-filter-btn active" data-filter="all" style="font-size: 9.5px;">
                     Semua (<?= count($topup_logs ?? []) ?>)
                 </button>
@@ -297,6 +297,11 @@
                 <button type="button" onclick="filterTopupList('failed')" class="btn btn-sm btn-light border rounded-pill px-2.5 py-1 fw-semibold topup-filter-btn text-danger" data-filter="failed" style="font-size: 9.5px;">
                     <i class="bi bi-x-circle-fill me-0.5 text-danger"></i> Batal (<?= $topup_stats['failed_count'] ?? 0 ?>)
                 </button>
+                <?php if (($topup_stats['pending_count'] ?? 0) > 0): ?>
+                    <button type="button" onclick="cancelAllPendingTopups()" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1 fw-semibold flex-shrink-0 ms-auto" style="font-size: 9px;" title="Batalkan semua tiket yang masih menunggu">
+                        <i class="bi bi-x-circle me-1"></i> Batalkan Semua Menunggu
+                    </button>
+                <?php endif; ?>
             </div>
 
             <?php if (empty($topup_logs)): ?>
@@ -371,9 +376,18 @@
                                 </div>
 
                                 <?php if ($status === 'pending'): ?>
-                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1 rounded-pill" style="font-size: 8.5px; font-weight: 600;">
-                                        <i class="bi bi-hourglass-split me-0.5"></i> Menunggu Konfirmasi
-                                    </span>
+                                    <div class="d-flex align-items-center gap-1.5 topup-action-cell">
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 rounded-pill" style="font-size: 8.5px; font-weight: 600;">
+                                            <i class="bi bi-hourglass-split me-0.5"></i> Menunggu
+                                        </span>
+                                        <button type="button" 
+                                                onclick="cancelTopup('<?= htmlspecialchars($log['topup_code']) ?>', this)"
+                                                class="btn btn-outline-danger btn-sm rounded-pill py-0.5 px-2 fw-semibold d-inline-flex align-items-center" 
+                                                style="font-size: 8.5px;"
+                                                title="Batalkan tiket top up ini">
+                                            <i class="bi bi-x-circle me-1"></i> Batalkan
+                                        </button>
+                                    </div>
                                 <?php elseif ($status === 'failed' || $status === 'canceled'): ?>
                                     <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1 rounded-pill" style="font-size: 8.5px; font-weight: 600;">
                                         <i class="bi bi-x-circle me-0.5"></i> <?= ($status === 'canceled') ? 'Dibatalkan' : 'Kedaluwarsa' ?>
@@ -589,17 +603,17 @@ async function retryTopUp(topupCode, amount) {
 }
 
 /**
- * Tandai topup pending sebagai dibatalkan (tanpa bayar ulang)
+ * Tandai topup pending sebagai dibatalkan
  */
 async function cancelTopup(topupCode, btn) {
     const result = await Swal.fire({
         icon: 'warning',
-        title: 'Batalkan Transaksi?',
-        text: 'Transaksi top up ini akan ditandai sebagai dibatalkan.',
+        title: 'Batalkan Top Up?',
+        text: 'Tiket top up #' + topupCode + ' ini akan dibatalkan.',
         showCancelButton: true,
         confirmButtonText: 'Ya, Batalkan',
-        cancelButtonText: 'Tidak',
-        confirmButtonColor: '#6c757d',
+        cancelButtonText: 'Kembali',
+        confirmButtonColor: '#EF4444',
     });
 
     if (!result.isConfirmed) return;
@@ -620,26 +634,73 @@ async function cancelTopup(topupCode, btn) {
             const card = btn.closest('.topup-item-card');
             if (card) {
                 card.dataset.status = 'failed';
-                const actionArea = btn.closest('div.d-flex.gap-1');
+                const actionArea = btn.closest('.topup-action-cell') || btn.parentElement;
                 if (actionArea) {
-                    actionArea.outerHTML = `<button type="button" 
-                        onclick="retryTopUp('${topupCode}', ${btn.closest('.topup-item-card')?.querySelector('[data-amount]')?.dataset?.amount || 0})"
-                        class="btn btn-outline-danger btn-sm rounded-pill py-1 px-2 fw-semibold" style="font-size: 9px;">
-                        <i class="bi bi-arrow-repeat"></i> Bayar Ulang
-                    </button>`;
+                    actionArea.innerHTML = `<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1 rounded-pill" style="font-size: 8.5px; font-weight: 600;">
+                        <i class="bi bi-x-circle me-0.5"></i> Dibatalkan
+                    </span>`;
                 }
-                // Update badge
-                const badge = card.querySelector('.badge');
-                if (badge) {
-                    badge.className = 'badge bg-danger-subtle text-danger border-danger-subtle border px-2 py-0 rounded-pill mt-0';
-                    badge.innerHTML = '<i class="bi bi-x-circle-fill me-0.5"></i> Dibatalkan';
-                    badge.style.fontSize = '8px';
-                    badge.style.fontWeight = '700';
+                // Update badge atas
+                const topBadge = card.querySelector('.badge');
+                if (topBadge && topBadge !== actionArea.querySelector('.badge')) {
+                    topBadge.className = 'badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-0.5 rounded-pill mt-0.5';
+                    topBadge.innerHTML = '<i class="bi bi-x-circle-fill me-0.5"></i> Dibatalkan';
+                }
+                // Ubah amount jadi coret
+                const amt = card.querySelector('.fw-extrabold');
+                if (amt) {
+                    amt.className = 'fw-extrabold text-danger text-decoration-line-through';
                 }
             }
-            Swal.fire({ icon: 'success', title: 'Dibatalkan', text: 'Transaksi telah ditandai dibatalkan.', timer: 1500, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: 'Berhasil Dibatalkan', text: 'Tiket top up telah dibatalkan.', timer: 1500, showConfirmButton: false });
         } else {
             Swal.fire('Gagal', res.message || 'Tidak bisa membatalkan transaksi ini.', 'error');
+        }
+    } catch (e) {
+        Swal.fire('Error', e.message, 'error');
+    }
+}
+
+/**
+ * Batalkan semua tiket top up pending milik pengguna
+ */
+async function cancelAllPendingTopups() {
+    const result = await Swal.fire({
+        icon: 'warning',
+        title: 'Batalkan Semua Menunggu?',
+        text: 'Semua tiket top up yang belum selesai dibayar akan dibatalkan sekaligus.',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Batalkan Semua',
+        cancelButtonText: 'Kembali',
+        confirmButtonColor: '#EF4444',
+    });
+
+    if (!result.isConfirmed) return;
+
+    Swal.fire({
+        title: 'Membatalkan...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    try {
+        const resp = await fetch(window.BASE_URL + '/payment/topup-cancel-all', {
+            method: 'POST'
+        });
+        const res = await resp.json();
+
+        if (res.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil Dibatalkan',
+                text: res.message || 'Semua tiket pending telah dibatalkan.',
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                window.location.reload();
+            });
+        } else {
+            Swal.fire('Gagal', res.message || 'Gagal membatalkan transaksi pending.', 'error');
         }
     } catch (e) {
         Swal.fire('Error', e.message, 'error');

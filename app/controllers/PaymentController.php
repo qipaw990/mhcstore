@@ -500,6 +500,26 @@ class PaymentController extends Controller
         $this->successResponse('Status log top up berhasil diperbarui');
     }
 
+    /**
+     * Batalkan semua top up pending milik user yang sedang login
+     * POST /payment/topup-cancel-all
+     */
+    public function cancelAllPendingTopup(): void
+    {
+        $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Silakan login terlebih dahulu.', null, 401);
+            return;
+        }
+
+        $count = Database::execute(
+            "UPDATE `topup_logs` SET `status` = 'canceled', `notes` = 'Dibatalkan sekaligus oleh pengguna', `updated_at` = ? WHERE `user_id` = ? AND `status` = 'pending'",
+            [date('Y-m-d H:i:s'), $userId]
+        );
+
+        $this->successResponse("Semua transaksi pending berhasil dibatalkan ($count transaksi)", ['canceled_count' => $count]);
+    }
+
     // =========================================================================
     // VERIFIKASI STATUS (CLIENT POLLING)
     // =========================================================================

@@ -1656,11 +1656,61 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                       SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Sesi pembayaran ini telah ditutup. Untuk isi ulang saldo, silakan buat permintaan Top Up baru di menu CicalengkaPay.',
+                          'Sesi pembayaran ini belum selesai. Anda dapat membatalkan tiket ini agar riwayat Anda tetap rapi.',
                           style: TextStyle(fontSize: 11, color: Color(0xFF92400E), height: 1.3, fontWeight: FontWeight.w500),
                         ),
                       ),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (dCtx) => AlertDialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          title: const Text('Batalkan Top Up?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          content: const Text('Tiket top up ini akan dibatalkan secara permanen.', style: TextStyle(fontSize: 13)),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(dCtx, false), child: const Text('Kembali')),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryRed, foregroundColor: Colors.white),
+                              onPressed: () => Navigator.pop(dCtx, true),
+                              child: const Text('Ya, Batalkan'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirmed == true && context.mounted) {
+                        Navigator.pop(ctx);
+                        try {
+                          await ApiService.post('/payment/topup-update-status', {
+                            'order_id': code,
+                            'status': 'canceled',
+                            'notes': 'Dibatalkan oleh pengguna dari rincian riwayat',
+                          });
+                          if (context.mounted) {
+                            context.read<CustomerController>().fetchWallet();
+                            AppAlert.showSuccess(context, title: 'Dibatalkan', message: 'Tiket top up berhasil dibatalkan.');
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            AppAlert.showError(context, title: 'Gagal', message: e.toString());
+                          }
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.cancel_outlined, size: 18, color: Color(0xFFDC2626)),
+                    label: const Text('Batalkan Tiket Top Up', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFFCA5A5)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      backgroundColor: const Color(0xFFFEF2F2),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 14),
