@@ -100,7 +100,10 @@ class _InAppChatModalState extends State<InAppChatModal> {
         url = '${ApiConstants.baseUrl}/chats/messages?order_code=${widget.orderCode ?? ''}&mark_read=1&user_id=${widget.currentUserId}&user_role=${widget.currentUserRole}';
       }
 
-      final res = await http.get(Uri.parse(url));
+      final res = await http.get(
+        Uri.parse(url),
+        headers: {'Accept': 'application/json'},
+      );
 
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
@@ -156,7 +159,7 @@ class _InAppChatModalState extends State<InAppChatModal> {
 
       final res = await http.post(
         Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
         body: jsonEncode(bodyPayload),
       );
 
@@ -299,7 +302,18 @@ class _InAppChatModalState extends State<InAppChatModal> {
                         itemBuilder: (context, index) {
                           final msg = _messages[index];
                           final senderId = int.tryParse(msg['sender_id']?.toString() ?? '0') ?? 0;
-                          final isMe = (senderId == widget.currentUserId);
+                          final senderRole = (msg['sender_role'] ?? '').toString().toLowerCase();
+                          final myRole = widget.currentUserRole.toLowerCase();
+                          final bool isMe;
+                          if (widget.currentUserId > 0 && senderId > 0) {
+                            isMe = (senderId == widget.currentUserId);
+                          } else if (myRole.isNotEmpty && senderRole.isNotEmpty) {
+                            isMe = (myRole == senderRole) ||
+                                (myRole == 'driver' && senderRole == 'delivery_man') ||
+                                (myRole == 'delivery_man' && senderRole == 'driver');
+                          } else {
+                            isMe = false;
+                          }
                           final msgText = msg['message'] ?? '';
                           final timeStr = msg['created_at'] != null ? msg['created_at'].toString().split(' ').last.substring(0, 5) : '';
 

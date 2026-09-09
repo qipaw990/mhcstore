@@ -122,6 +122,30 @@ class DeliveryController extends Controller
             if (empty($activeOrder['items'])) {
                 $activeOrder['items'] = $this->orderModel->getItems((int)$activeOrder['id']);
             }
+
+            // Unread chats count for driver
+            $unreadChats = 0;
+            $batchId = $activeOrder['delivery_batch_id'] ?? null;
+            if (!empty($batchId)) {
+                $batchRows = Database::query("SELECT id FROM `orders` WHERE `delivery_batch_id` = ?", [$batchId]);
+                $batchIds = array_map('intval', array_column($batchRows, 'id'));
+                if (!empty($batchIds)) {
+                    $inSql = implode(',', array_fill(0, count($batchIds), '?'));
+                    $params = array_merge($batchIds, [$userId]);
+                    $chatCount = Database::fetchOne(
+                        "SELECT COUNT(*) as unread FROM `chats` WHERE `order_id` IN ($inSql) AND `sender_id` != ? AND `is_read` = 0",
+                        $params
+                    );
+                    $unreadChats = (int)($chatCount['unread'] ?? 0);
+                }
+            } else {
+                $chatCount = Database::fetchOne(
+                    "SELECT COUNT(*) as unread FROM `chats` WHERE `order_id` = ? AND `sender_id` != ? AND `is_read` = 0",
+                    [$activeOrder['id'], $userId]
+                );
+                $unreadChats = (int)($chatCount['unread'] ?? 0);
+            }
+            $activeOrder['unread_chats'] = $unreadChats;
         }
 
         // Available nearby orders in driver zone
@@ -171,6 +195,7 @@ class DeliveryController extends Controller
                 'wallet_balance'    => (float)($wallet['balance'] ?? 0),
                 'total_orders'      => $realDeliveredCount,
                 'reviews'           => $reviews,
+                'unread_chats'      => $unreadChats ?? 0,
             ]);
             return;
         }
@@ -183,6 +208,7 @@ class DeliveryController extends Controller
             'availableOrders'   => $availableOrders,
             'wallet'            => $wallet,
             'reviews'           => $reviews,
+            'unreadChats'       => $unreadChats ?? 0,
             'active_tab'        => 'home'
         ], 'delivery_layout');
     }
@@ -287,11 +313,27 @@ class DeliveryController extends Controller
         // Unread chats
         $unreadChats = 0;
         if ($activeOrder) {
-            $chatCount = Database::query(
-                "SELECT COUNT(*) as unread FROM order_chats WHERE order_id = ? AND sender_id != ? AND is_read = 0",
-                [$activeOrder['id'], $userId]
-            );
-            $unreadChats = (int)($chatCount[0]['unread'] ?? 0);
+            $batchId = $activeOrder['delivery_batch_id'] ?? null;
+            if (!empty($batchId)) {
+                $batchRows = Database::query("SELECT id FROM `orders` WHERE `delivery_batch_id` = ?", [$batchId]);
+                $batchIds = array_map('intval', array_column($batchRows, 'id'));
+                if (!empty($batchIds)) {
+                    $inSql = implode(',', array_fill(0, count($batchIds), '?'));
+                    $params = array_merge($batchIds, [$userId]);
+                    $chatCount = Database::fetchOne(
+                        "SELECT COUNT(*) as unread FROM `chats` WHERE `order_id` IN ($inSql) AND `sender_id` != ? AND `is_read` = 0",
+                        $params
+                    );
+                    $unreadChats = (int)($chatCount['unread'] ?? 0);
+                }
+            } else {
+                $chatCount = Database::fetchOne(
+                    "SELECT COUNT(*) as unread FROM `chats` WHERE `order_id` = ? AND `sender_id` != ? AND `is_read` = 0",
+                    [$activeOrder['id'], $userId]
+                );
+                $unreadChats = (int)($chatCount['unread'] ?? 0);
+            }
+            $activeOrder['unread_chats'] = $unreadChats;
         }
 
         $user = auth_user();

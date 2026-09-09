@@ -891,9 +891,9 @@ async function fetchChatMessages(isFirstLoad = false) {
         messages.forEach(msg => {
             const msgSenderId = parseInt(msg.sender_id) || 0;
             // On customer tracking page: message is INCOMING only if sent by the assigned driver
-            // All other messages (sent by logged-in user or guest customer) are OUTGOING (red bubble on right)
             let isOutgoing = true;
-            if (dmUserId > 0 && msgSenderId === dmUserId) {
+            const senderRole = (msg.sender_role || '').toLowerCase();
+            if ((dmUserId > 0 && msgSenderId === dmUserId) || senderRole === 'delivery_man' || senderRole === 'driver') {
                 isOutgoing = false;
             }
 

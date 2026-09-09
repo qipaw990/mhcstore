@@ -1433,24 +1433,39 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
         Row(
           children: [
             Expanded(
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.chat_bubble_rounded, size: 15),
-                label: const Text('Chat Pelanggan', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryRed,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 11),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
-                ),
-                onPressed: () {
-                  final authCtrl = context.read<AuthController>();
-                  final uid = int.tryParse(authCtrl.user?['id']?.toString() ?? '0') ?? 0;
-                  InAppChatModal.show(
-                    context,
-                    orderCode: orderCode,
-                    currentUserId: uid,
-                    currentUserRole: 'delivery_man',
+              child: Builder(
+                builder: (context) {
+                  final unreadCount = int.tryParse(trip['unread_chats']?.toString() ?? '0') ?? 0;
+                  return ElevatedButton.icon(
+                    icon: Badge(
+                      isLabelVisible: unreadCount > 0,
+                      label: Text('$unreadCount', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                      child: const Icon(Icons.chat_bubble_rounded, size: 15),
+                    ),
+                    label: Text(
+                      unreadCount > 0 ? 'Chat ($unreadCount Baru)' : 'Chat Pelanggan',
+                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryRed,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 11),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    onPressed: () {
+                      final authCtrl = context.read<AuthController>();
+                      final uid = int.tryParse(authCtrl.user?['id']?.toString() ??
+                          driverCtrl.driverProfile?['user']?['id']?.toString() ??
+                          driverCtrl.driverProfile?['driver']?['user_id']?.toString() ??
+                          '0') ?? 0;
+                      InAppChatModal.show(
+                        context,
+                        orderCode: orderCode,
+                        currentUserId: uid,
+                        currentUserRole: 'delivery_man',
+                      );
+                    },
                   );
                 },
               ),

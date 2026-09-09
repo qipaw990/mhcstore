@@ -1135,13 +1135,15 @@ async function fetchDriverChatMessages(isFirstLoad = false) {
 
         let html = '';
         const currentUserId = parseInt(data.user_id) || 0;
-        const custUserId = parseInt(data.cust_user_id) || 0;
+        const dmUserId = parseInt(data.dm_user_id) || 0;
 
         messages.forEach(msg => {
             const msgSenderId = parseInt(msg.sender_id) || 0;
-            // Driver: message is outgoing if sent by driver (msgSenderId !== custUserId)
-            const isOutgoing = (currentUserId > 0 && msgSenderId === currentUserId) ||
-                               (custUserId > 0 && msgSenderId !== custUserId);
+            const senderRole = (msg.sender_role || '').toLowerCase();
+            // Driver: message is outgoing if sent by driver
+            const isOutgoing = (senderRole === 'delivery_man' || senderRole === 'driver') ||
+                               (currentUserId > 0 && msgSenderId === currentUserId) ||
+                               (dmUserId > 0 && msgSenderId === dmUserId);
 
             const rowClass = isOutgoing ? 'outgoing' : 'incoming';
             const checkIcon = isOutgoing ? `<i class="bi bi-check2-all ${msg.is_read ? 'text-primary' : ''}"></i>` : '';

@@ -10,11 +10,32 @@ class Chat extends Model
     protected array $fillable = ['order_id', 'store_id', 'sender_id', 'receiver_id', 'message', 'file', 'is_read'];
 
     /**
-     * Get chat messages for an order, optionally filtering newer than $sinceId
+     * Get all related order IDs (expands to all batch orders if part of a delivery batch)
      */
-    public function getOrderMessages(int $orderId, int $sinceId = 0): array
+    public function getRelatedOrderIds(int $orderId, ?string $batchId = null): array
     {
-        $params = [$orderId];
+        if (!empty($batchId)) {
+            $rows = Database::query("SELECT id FROM `orders` WHERE `delivery_batch_id` = ?", [$batchId]);
+            $ids = array_map('intval', array_column($rows, 'id'));
+            if (!empty($ids)) {
+                if (!in_array($orderId, $ids)) {
+                    $ids[] = $orderId;
+                }
+                return array_unique($ids);
+            }
+        }
+        return [$orderId];
+    }
+
+    /**
+     * Get chat messages for an order (or full batch trip), optionally filtering newer than $sinceId
+     */
+    public function getOrderMessages(int $orderId, int $sinceId = 0, ?string $batchId = null): array
+    {
+        $orderIds = $this->getRelatedOrderIds($orderId, $batchId);
+        $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
+        $params = $orderIds;
+
         $sinceClause = '';
         if ($sinceId > 0) {
             $sinceClause = ' AND c.id > ? ';
@@ -28,7 +49,7 @@ class Chat extends Model
                        DATE_FORMAT(c.created_at, '%H:%i') as time_formatted
                 FROM `chats` c
                 LEFT JOIN `users` u ON c.sender_id = u.id
-                WHERE c.order_id = ? {$sinceClause}
+                WHERE c.order_id IN ({$placeholders}) {$sinceClause}
                 ORDER BY c.id ASC";
 
         return Database::query($sql, $params);
@@ -51,26 +72,38 @@ class Chat extends Model
     }
 
     /**
-     * Mark messages in an order as read for the receiver
+     * Mark messages in an order (or full batch trip) as read for the receiver
      */
-    public function markAsRead(int $orderId, int $receiverId): bool
+    public function markAsRead(int $orderId, int $receiverId, ?string $batchId = null): bool
     {
-        return Database::update(
-            $this->table,
-            ['is_read' => 1],
-            'order_id = ? AND receiver_id = ? AND is_read = 0',
-            [$orderId, $receiverId]
+        $orderIds = $this->getRelatedOrderIds($orderId, $batchId);
+        $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
+        $params = array_merge([$receiverId, $receiverId], $orderIds);
+
+        return Database::execute(
+            "UPDATE `{$this->table}` SET `is_read` = 1 
+             WHERE (`receiver_id` = ? OR `receiver_id` = 0 OR `sender_id` != ?) 
+               AND `order_id` IN ({$placeholders}) 
+               AND `is_read` = 0",
+            $params
         );
     }
 
     /**
-     * Get unread message count for a specific order and receiver
+     * Get unread message count for a specific order and receiver (expands to batch if available)
      */
-    public function getUnreadCountForOrder(int $orderId, int $receiverId): int
+    public function getUnreadCountForOrder(int $orderId, int $receiverId, ?string $batchId = null): int
     {
+        $orderIds = $this->getRelatedOrderIds($orderId, $batchId);
+        $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
+        $params = array_merge($orderIds, [$receiverId]);
+
         $res = Database::fetchOne(
-            "SELECT COUNT(*) as unread FROM `chats` WHERE `order_id` = ? AND `receiver_id` = ? AND `is_read` = 0",
-            [$orderId, $receiverId]
+            "SELECT COUNT(*) as unread FROM `chats` 
+             WHERE `order_id` IN ({$placeholders}) 
+               AND `sender_id` != ? 
+               AND `is_read` = 0",
+            $params
         );
         return (int)($res['unread'] ?? 0);
     }
@@ -90,6 +123,8 @@ class Chat extends Model
                        o.order_type,
                        o.delivery_type,
                        o.store_id,
+                       o.delivery_batch_id,
+                       o.delivery_man_id,
                        s.name as store_name,
                        s.logo as store_logo,
                        s.phone as store_phone,
@@ -98,18 +133,18 @@ class Chat extends Model
                        COALESCE(c.name, 'Pelanggan') as customer_name,
                        COALESCE(c.phone, '') as customer_phone,
                        COALESCE(c.avatar, 'assets/images/users/customer.png') as customer_avatar,
-                       dm.id as dm_id,
-                       dm.user_id as dm_user_id,
-                       COALESCE(dmu.name, 'Mitra Driver Cicalengka') as dm_name,
-                       COALESCE(dmu.phone, '') as dm_phone,
-                       COALESCE(dmu.avatar, 'assets/images/users/driver.png') as dm_avatar,
+                       COALESCE(dm.id, (SELECT id FROM delivery_men WHERE id = o.delivery_man_id OR user_id = o.delivery_man_id LIMIT 1)) as dm_id,
+                       COALESCE(dm.user_id, (SELECT user_id FROM delivery_men WHERE id = o.delivery_man_id OR user_id = o.delivery_man_id LIMIT 1)) as dm_user_id,
+                       COALESCE(dmu.name, (SELECT name FROM users WHERE id = (SELECT user_id FROM delivery_men WHERE id = o.delivery_man_id OR user_id = o.delivery_man_id LIMIT 1) LIMIT 1), 'Mitra Driver Cicalengka') as dm_name,
+                       COALESCE(dmu.phone, (SELECT phone FROM users WHERE id = (SELECT user_id FROM delivery_men WHERE id = o.delivery_man_id OR user_id = o.delivery_man_id LIMIT 1) LIMIT 1), '') as dm_phone,
+                       COALESCE(dmu.avatar, (SELECT avatar FROM users WHERE id = (SELECT user_id FROM delivery_men WHERE id = o.delivery_man_id OR user_id = o.delivery_man_id LIMIT 1) LIMIT 1), 'assets/images/users/driver.png') as dm_avatar,
                        COALESCE(dm.vehicle_type, 'Motor') as vehicle_type,
                        COALESCE(dm.vehicle_number, 'CCG') as vehicle_number
                 FROM `orders` o
                 LEFT JOIN `stores` s ON o.store_id = s.id
                 LEFT JOIN `users` c ON o.customer_id = c.id
-                LEFT JOIN `delivery_men` dm ON o.delivery_man_id = dm.id
-                LEFT JOIN `users` dmu ON dm.user_id = dmu.id
+                LEFT JOIN `delivery_men` dm ON (o.delivery_man_id = dm.id OR o.delivery_man_id = dm.user_id)
+                LEFT JOIN `users` dmu ON (dm.user_id = dmu.id)
                 WHERE o.order_code = ? OR o.id = ?
                 LIMIT 1";
 

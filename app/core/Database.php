@@ -148,6 +148,9 @@ class Database
                 if (empty($cols)) {
                     $this->pdo->exec("ALTER TABLE `chats` ADD COLUMN `store_id` bigint(20) unsigned NOT NULL DEFAULT 0 AFTER `order_id`");
                 }
+                try {
+                    $this->pdo->exec("ALTER TABLE `chats` DROP FOREIGN KEY `fk_chat_order`");
+                } catch (Exception $e) {}
                 $this->pdo->exec("ALTER TABLE `chats` MODIFY COLUMN `order_id` bigint(20) unsigned NOT NULL DEFAULT 0");
                 $this->pdo->exec("ALTER TABLE `chats` MODIFY COLUMN `store_id` bigint(20) unsigned NOT NULL DEFAULT 0");
             } catch (Exception $e) {}

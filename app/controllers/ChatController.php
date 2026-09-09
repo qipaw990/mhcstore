@@ -69,14 +69,14 @@ class ChatController extends Controller
             return;
         }
 
-        $isCustomer = ($userId > 0 && (int)$order['cust_user_id'] === $userId);
-        $isDriver   = ($userRole === 'delivery_man' || ($userId > 0 && (int)($order['dm_user_id'] ?? 0) === $userId));
+        $batchId = $order['delivery_batch_id'] ?? null;
+
+        $isDriver   = ($userRole === 'delivery_man' || $userRole === 'driver' || ($userId > 0 && ((int)($order['dm_user_id'] ?? 0) === $userId || (int)($order['dm_id'] ?? 0) === $userId)));
         $isAdmin    = ($userRole === 'admin');
         $isMerchant = ($userRole === 'vendor' || $userRole === 'merchant' || ($userId > 0 && (int)($order['store_vendor_user_id'] ?? 0) === $userId));
-        // Guests with the order_code can read (public tracking page)
-        $isGuest    = ($userId === 0);
+        $isCustomer = ($userRole === 'customer' || empty($userRole) || ($userId > 0 && (int)$order['cust_user_id'] === $userId) || $userId === 0);
 
-        if (!$isCustomer && !$isDriver && !$isAdmin && !$isGuest && !$isMerchant) {
+        if (!$isCustomer && !$isDriver && !$isAdmin && !$isMerchant) {
             $this->errorResponse('Akses percakapan ditolak.', null, 403);
             return;
         }
@@ -85,11 +85,11 @@ class ChatController extends Controller
         if ($markRead) {
             $readTargetId = ($userId > 0) ? $userId : (int)$order['cust_user_id'];
             if ($readTargetId > 0) {
-                $this->chatModel->markAsRead((int)$order['order_id'], $readTargetId);
+                $this->chatModel->markAsRead((int)$order['order_id'], $readTargetId, $batchId);
             }
         }
 
-        $messages = $this->chatModel->getOrderMessages((int)$order['order_id'], $sinceId);
+        $messages = $this->chatModel->getOrderMessages((int)$order['order_id'], $sinceId, $batchId);
 
         // Define partner information based on viewer role
         $partner = null;
@@ -146,7 +146,7 @@ class ChatController extends Controller
 
         $effectiveUserId = ($userId > 0) ? $userId : (int)$order['cust_user_id'];
         $unread = ($effectiveUserId > 0)
-            ? $this->chatModel->getUnreadCountForOrder((int)$order['order_id'], $effectiveUserId)
+            ? $this->chatModel->getUnreadCountForOrder((int)$order['order_id'], $effectiveUserId, $batchId)
             : 0;
 
         $this->successResponse('Pesan berhasil diambil', [
@@ -197,14 +197,14 @@ class ChatController extends Controller
             return;
         }
 
-        $isDriver   = ($userRole === 'delivery_man' || ($userId > 0 && (int)($order['dm_user_id'] ?? 0) === $userId));
+        $batchId = $order['delivery_batch_id'] ?? null;
+
+        $isDriver   = ($userRole === 'delivery_man' || $userRole === 'driver' || ($userId > 0 && ((int)($order['dm_user_id'] ?? 0) === $userId || (int)($order['dm_id'] ?? 0) === $userId)));
         $isAdmin    = ($userRole === 'admin');
         $isMerchant = ($userRole === 'vendor' || $userRole === 'merchant' || ($userId > 0 && (int)($order['store_vendor_user_id'] ?? 0) === $userId));
-        $isLoggedInCustomer = ($userId > 0 && (int)$order['cust_user_id'] === $userId);
-        // Guest customer accessing by valid order_code (tracking their own order page)
-        $isGuestCustomer    = ($userId === 0 && !$isDriver && !$isAdmin && !$isMerchant);
+        $isCustomer = ($userRole === 'customer' || empty($userRole) || ($userId > 0 && (int)$order['cust_user_id'] === $userId) || $userId === 0);
 
-        if (!$isLoggedInCustomer && !$isGuestCustomer && !$isDriver && !$isAdmin && !$isMerchant) {
+        if (!$isCustomer && !$isDriver && !$isAdmin && !$isMerchant) {
             $this->errorResponse('Akses pengiriman pesan ditolak.', null, 403);
             return;
         }
@@ -228,8 +228,16 @@ class ChatController extends Controller
             $receiverId = !empty($order['dm_user_id']) ? (int)$order['dm_user_id'] : (int)$order['cust_user_id'];
         } else {
             // Customer (logged-in or guest) sends to driver or merchant
-            if (!empty($order['dm_user_id']) && ($order['delivery_type'] ?? '') !== 'merchant') {
-                $receiverId = (int)$order['dm_user_id'];
+            $dmUserId = (int)($order['dm_user_id'] ?? 0);
+            if ($dmUserId === 0 && !empty($order['delivery_man_id'])) {
+                $dmRow = \App\Core\Database::fetchOne("SELECT user_id FROM delivery_men WHERE id = ? OR user_id = ? LIMIT 1", [(int)$order['delivery_man_id'], (int)$order['delivery_man_id']]);
+                if ($dmRow && !empty($dmRow['user_id'])) {
+                    $dmUserId = (int)$dmRow['user_id'];
+                }
+            }
+
+            if ($dmUserId > 0 && ($order['delivery_type'] ?? '') !== 'merchant') {
+                $receiverId = $dmUserId;
             } else {
                 $receiverId = (int)($order['store_vendor_user_id'] ?? 0);
             }
@@ -248,15 +256,16 @@ class ChatController extends Controller
             'sender_id'      => $senderId,
             'receiver_id'    => $receiverId,
             'message'        => $message,
-            'time_formatted' => date('H:i'),
-            'created_at'     => date('Y-m-d H:i:s')
+            'user_role'      => $userRole,
+            'created_at'     => date('Y-m-d H:i:s'),
+            'time_formatted' => date('H:i')
         ]);
     }
 
     /**
-     * Mark all messages as read for this order
+     * Mark chat messages as read
      */
-    public function markAsRead(): void
+    public function markRead(): void
     {
         $data = $this->getPost();
         if (empty($data)) {
@@ -272,7 +281,8 @@ class ChatController extends Controller
             if ($order) {
                 $targetId = ($userId > 0) ? $userId : (int)$order['cust_user_id'];
                 if ($targetId > 0) {
-                    $this->chatModel->markAsRead((int)$order['order_id'], $targetId);
+                    $batchId = $order['delivery_batch_id'] ?? null;
+                    $this->chatModel->markAsRead((int)$order['order_id'], $targetId, $batchId);
                 }
             }
         }
@@ -314,7 +324,8 @@ class ChatController extends Controller
             return;
         }
 
-        $unread = $this->chatModel->getUnreadCountForOrder((int)$order['order_id'], $userId);
+        $batchId = $order['delivery_batch_id'] ?? null;
+        $unread = $this->chatModel->getUnreadCountForOrder((int)$order['order_id'], $userId, $batchId);
         $this->successResponse('OK', ['unread_count' => $unread]);
     }
 
