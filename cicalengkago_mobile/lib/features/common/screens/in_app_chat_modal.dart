@@ -68,12 +68,15 @@ class _InAppChatModalState extends State<InAppChatModal> {
   bool _isLoading = true;
   bool _isSending = false;
 
-  bool get _isStoreChat => widget.storeId != null && widget.storeId! > 0;
+  bool get _isStoreChat =>
+      (widget.orderCode == null || widget.orderCode!.isEmpty) &&
+      widget.storeId != null &&
+      widget.storeId! > 0;
 
   @override
   void initState() {
     super.initState();
-    if (_isStoreChat && widget.initialStoreName != null) {
+    if (widget.initialStoreName != null && widget.initialStoreName!.isNotEmpty) {
       _partnerInfo = {
         'name': widget.initialStoreName,
         'role_label': 'Mitra Toko / Resto',
@@ -97,7 +100,8 @@ class _InAppChatModalState extends State<InAppChatModal> {
       if (_isStoreChat) {
         url = '${ApiConstants.baseUrl}/chats/store-messages?store_id=${widget.storeId}&mark_read=1&user_id=${widget.currentUserId}&user_role=${widget.currentUserRole}';
       } else {
-        url = '${ApiConstants.baseUrl}/chats/messages?order_code=${widget.orderCode ?? ''}&mark_read=1&user_id=${widget.currentUserId}&user_role=${widget.currentUserRole}';
+        final storeParam = (widget.storeId != null && widget.storeId! > 0) ? '&store_id=${widget.storeId}' : '';
+        url = '${ApiConstants.baseUrl}/chats/messages?order_code=${widget.orderCode ?? ''}&mark_read=1&user_id=${widget.currentUserId}&user_role=${widget.currentUserRole}$storeParam';
       }
 
       final res = await http.get(
@@ -154,6 +158,8 @@ class _InAppChatModalState extends State<InAppChatModal> {
           'message': text,
           'user_id': widget.currentUserId,
           'user_role': widget.currentUserRole,
+          if (widget.storeId != null && widget.storeId! > 0) 'store_id': widget.storeId,
+          if (widget.storeId != null && widget.storeId! > 0 && widget.currentUserRole == 'customer') 'target_role': 'vendor',
         };
       }
 
@@ -308,9 +314,12 @@ class _InAppChatModalState extends State<InAppChatModal> {
                           if (widget.currentUserId > 0 && senderId > 0) {
                             isMe = (senderId == widget.currentUserId);
                           } else if (myRole.isNotEmpty && senderRole.isNotEmpty) {
-                            isMe = (myRole == senderRole) ||
-                                (myRole == 'driver' && senderRole == 'delivery_man') ||
-                                (myRole == 'delivery_man' && senderRole == 'driver');
+                            final isDriverRole = (myRole == 'driver' || myRole == 'delivery_man') &&
+                                (senderRole == 'driver' || senderRole == 'delivery_man');
+                            final isMerchantRole = (myRole == 'vendor' || myRole == 'merchant' || myRole == 'store') &&
+                                (senderRole == 'vendor' || senderRole == 'merchant' || senderRole == 'store');
+                            final isCustomerRole = (myRole == 'customer' && senderRole == 'customer');
+                            isMe = (myRole == senderRole) || isDriverRole || isMerchantRole || isCustomerRole;
                           } else {
                             isMe = false;
                           }

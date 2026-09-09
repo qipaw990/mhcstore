@@ -29,12 +29,24 @@ class Chat extends Model
 
     /**
      * Get chat messages for an order (or full batch trip), optionally filtering newer than $sinceId
+     * Also merges any store messages linked to this order's store and customer
      */
-    public function getOrderMessages(int $orderId, int $sinceId = 0, ?string $batchId = null): array
+    public function getOrderMessages(int $orderId, int $sinceId = 0, ?string $batchId = null, int $storeId = 0, int $custId = 0): array
     {
         $orderIds = $this->getRelatedOrderIds($orderId, $batchId);
         $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
         $params = $orderIds;
+
+        $storeClause = '';
+        if ($storeId > 0 && $custId > 0) {
+            $storeClause = " OR (c.order_id = 0 AND c.store_id = ? AND (c.sender_id = ? OR c.receiver_id = ?)) ";
+            $params[] = $storeId;
+            $params[] = $custId;
+            $params[] = $custId;
+        } elseif ($storeId > 0) {
+            $storeClause = " OR (c.order_id = 0 AND c.store_id = ?) ";
+            $params[] = $storeId;
+        }
 
         $sinceClause = '';
         if ($sinceId > 0) {
@@ -49,7 +61,7 @@ class Chat extends Model
                        DATE_FORMAT(c.created_at, '%H:%i') as time_formatted
                 FROM `chats` c
                 LEFT JOIN `users` u ON c.sender_id = u.id
-                WHERE c.order_id IN ({$placeholders}) {$sinceClause}
+                WHERE (c.order_id IN ({$placeholders}) {$storeClause}) {$sinceClause}
                 ORDER BY c.id ASC";
 
         return Database::query($sql, $params);
@@ -74,16 +86,23 @@ class Chat extends Model
     /**
      * Mark messages in an order (or full batch trip) as read for the receiver
      */
-    public function markAsRead(int $orderId, int $receiverId, ?string $batchId = null): bool
+    public function markAsRead(int $orderId, int $receiverId, ?string $batchId = null, int $storeId = 0): bool
     {
         $orderIds = $this->getRelatedOrderIds($orderId, $batchId);
         $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
         $params = array_merge([$receiverId, $receiverId], $orderIds);
 
+        $storeClause = '';
+        if ($storeId > 0) {
+            $storeClause = " OR (`order_id` = 0 AND `store_id` = ? AND (`receiver_id` = ? OR `receiver_id` = 0)) ";
+            $params[] = $storeId;
+            $params[] = $receiverId;
+        }
+
         return Database::execute(
             "UPDATE `{$this->table}` SET `is_read` = 1 
              WHERE (`receiver_id` = ? OR `receiver_id` = 0 OR `sender_id` != ?) 
-               AND `order_id` IN ({$placeholders}) 
+               AND (`order_id` IN ({$placeholders}) {$storeClause}) 
                AND `is_read` = 0",
             $params
         );
@@ -92,15 +111,24 @@ class Chat extends Model
     /**
      * Get unread message count for a specific order and receiver (expands to batch if available)
      */
-    public function getUnreadCountForOrder(int $orderId, int $receiverId, ?string $batchId = null): int
+    public function getUnreadCountForOrder(int $orderId, int $receiverId, ?string $batchId = null, int $storeId = 0): int
     {
         $orderIds = $this->getRelatedOrderIds($orderId, $batchId);
         $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
-        $params = array_merge($orderIds, [$receiverId]);
+        $params = $orderIds;
+
+        $storeClause = '';
+        if ($storeId > 0) {
+            $storeClause = " OR (`order_id` = 0 AND `store_id` = ? AND (`receiver_id` = ? OR `receiver_id` = 0)) ";
+            $params[] = $storeId;
+            $params[] = $receiverId;
+        }
+
+        $params[] = $receiverId;
 
         $res = Database::fetchOne(
             "SELECT COUNT(*) as unread FROM `chats` 
-             WHERE `order_id` IN ({$placeholders}) 
+             WHERE (`order_id` IN ({$placeholders}) {$storeClause}) 
                AND `sender_id` != ? 
                AND `is_read` = 0",
             $params

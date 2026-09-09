@@ -2855,7 +2855,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                               InAppChatModal.show(
                                 context,
                                 storeId: sId > 0 ? sId : null,
-                                orderCode: sId > 0 ? null : widget.orderCode,
+                                orderCode: widget.orderCode,
                                 initialStoreName: sName,
                                 currentUserId: uid,
                                 currentUserRole: 'customer',
@@ -2935,7 +2935,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       InAppChatModal.show(
                         context,
                         storeId: sId > 0 ? sId : null,
-                        orderCode: sId > 0 ? null : widget.orderCode,
+                        orderCode: widget.orderCode,
                         initialStoreName: storeName,
                         initialStoreLogo: rawStoreLogo,
                         currentUserId: uid,

@@ -439,9 +439,11 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
         onPressed: () {
           final authCtrl = context.read<AuthController>();
           final uid = int.tryParse(authCtrl.user?['id']?.toString() ?? '0') ?? 0;
+          final sId = int.tryParse(order['store_id']?.toString() ?? '0') ?? 0;
           InAppChatModal.show(
             context,
             orderCode: orderCode,
+            storeId: sId > 0 ? sId : null,
             currentUserId: uid,
             currentUserRole: 'vendor',
           );

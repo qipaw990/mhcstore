@@ -81,15 +81,18 @@ class ChatController extends Controller
             return;
         }
 
+        $storeId = (int)($order['store_id'] ?? 0);
+        $custId  = (int)($order['cust_user_id'] ?? 0);
+
         // Only mark as read if user identity is known
         if ($markRead) {
-            $readTargetId = ($userId > 0) ? $userId : (int)$order['cust_user_id'];
+            $readTargetId = ($userId > 0) ? $userId : $custId;
             if ($readTargetId > 0) {
-                $this->chatModel->markAsRead((int)$order['order_id'], $readTargetId, $batchId);
+                $this->chatModel->markAsRead((int)$order['order_id'], $readTargetId, $batchId, $storeId);
             }
         }
 
-        $messages = $this->chatModel->getOrderMessages((int)$order['order_id'], $sinceId, $batchId);
+        $messages = $this->chatModel->getOrderMessages((int)$order['order_id'], $sinceId, $batchId, $storeId, $custId);
 
         // Define partner information based on viewer role
         $partner = null;
@@ -122,8 +125,12 @@ class ChatController extends Controller
             ];
         } else {
             // Customer or guest:
+            $target = sanitize($_GET['target'] ?? $_GET['target_role'] ?? '');
+            $reqStoreId = (int)($_GET['store_id'] ?? 0);
+            $isStoreTarget = ($target === 'store' || $target === 'vendor' || $reqStoreId > 0);
+
             $isMerchantDelivery = ($order['delivery_type'] ?? '') === 'merchant' || empty($order['dm_id']);
-            if (!empty($order['dm_id']) && !$isMerchantDelivery) {
+            if (!empty($order['dm_id']) && !$isMerchantDelivery && !$isStoreTarget) {
                 $partner = [
                     'name'           => $order['dm_name'] ?? 'Mitra Driver Cicalengka',
                     'role'           => 'driver',
@@ -139,14 +146,14 @@ class ChatController extends Controller
                     'role_label'     => 'Mitra Toko CicalengkaGO',
                     'avatar'         => $order['store_logo'] ?? 'assets/images/store-default.png',
                     'phone'          => $order['store_phone'] ?? '',
-                    'vehicle_info'   => 'Diantar Toko Langsung'
+                    'vehicle_info'   => $isMerchantDelivery ? 'Diantar Toko Langsung' : ('Pesanan #' . $order['order_code'])
                 ];
             }
         }
 
-        $effectiveUserId = ($userId > 0) ? $userId : (int)$order['cust_user_id'];
+        $effectiveUserId = ($userId > 0) ? $userId : $custId;
         $unread = ($effectiveUserId > 0)
-            ? $this->chatModel->getUnreadCountForOrder((int)$order['order_id'], $effectiveUserId, $batchId)
+            ? $this->chatModel->getUnreadCountForOrder((int)$order['order_id'], $effectiveUserId, $batchId, $storeId)
             : 0;
 
         $this->successResponse('Pesan berhasil diambil', [
@@ -228,6 +235,9 @@ class ChatController extends Controller
             $receiverId = !empty($order['dm_user_id']) ? (int)$order['dm_user_id'] : (int)$order['cust_user_id'];
         } else {
             // Customer (logged-in or guest) sends to driver or merchant
+            $targetRole = sanitize($data['target_role'] ?? $_POST['target_role'] ?? $_GET['target_role'] ?? '');
+            $reqStoreId = (int)($data['store_id'] ?? $_POST['store_id'] ?? $_GET['store_id'] ?? 0);
+
             $dmUserId = (int)($order['dm_user_id'] ?? 0);
             if ($dmUserId === 0 && !empty($order['delivery_man_id'])) {
                 $dmRow = \App\Core\Database::fetchOne("SELECT user_id FROM delivery_men WHERE id = ? OR user_id = ? LIMIT 1", [(int)$order['delivery_man_id'], (int)$order['delivery_man_id']]);
@@ -236,7 +246,9 @@ class ChatController extends Controller
                 }
             }
 
-            if ($dmUserId > 0 && ($order['delivery_type'] ?? '') !== 'merchant') {
+            if (($targetRole === 'vendor' || $targetRole === 'store' || $reqStoreId > 0) && !empty($order['store_vendor_user_id'])) {
+                $receiverId = (int)$order['store_vendor_user_id'];
+            } elseif ($dmUserId > 0 && ($order['delivery_type'] ?? '') !== 'merchant') {
                 $receiverId = $dmUserId;
             } else {
                 $receiverId = (int)($order['store_vendor_user_id'] ?? 0);
@@ -265,7 +277,7 @@ class ChatController extends Controller
     /**
      * Mark chat messages as read
      */
-    public function markRead(): void
+    public function markAsRead(): void
     {
         $data = $this->getPost();
         if (empty($data)) {
@@ -282,7 +294,8 @@ class ChatController extends Controller
                 $targetId = ($userId > 0) ? $userId : (int)$order['cust_user_id'];
                 if ($targetId > 0) {
                     $batchId = $order['delivery_batch_id'] ?? null;
-                    $this->chatModel->markAsRead((int)$order['order_id'], $targetId, $batchId);
+                    $storeId = (int)($order['store_id'] ?? 0);
+                    $this->chatModel->markAsRead((int)$order['order_id'], $targetId, $batchId, $storeId);
                 }
             }
         }
@@ -293,6 +306,14 @@ class ChatController extends Controller
         }
 
         $this->successResponse('Pesan ditandai sudah dibaca');
+    }
+
+    /**
+     * Alias for markAsRead
+     */
+    public function markRead(): void
+    {
+        $this->markAsRead();
     }
 
     /**
@@ -325,7 +346,8 @@ class ChatController extends Controller
         }
 
         $batchId = $order['delivery_batch_id'] ?? null;
-        $unread = $this->chatModel->getUnreadCountForOrder((int)$order['order_id'], $userId, $batchId);
+        $storeId = (int)($order['store_id'] ?? 0);
+        $unread = $this->chatModel->getUnreadCountForOrder((int)$order['order_id'], $userId, $batchId, $storeId);
         $this->successResponse('OK', ['unread_count' => $unread]);
     }
 
@@ -431,6 +453,18 @@ class ChatController extends Controller
         $vendorUserId = (int)($store['vendor_id'] ?? 0);
         $isMerchant   = ($role === 'vendor' || $role === 'merchant' || $senderId === $vendorUserId);
 
+        $orderCode = sanitize(trim($data['order_code'] ?? ''));
+        $orderId = 0;
+        if (!empty($orderCode)) {
+            $order = $this->chatModel->getOrderChatDetails($orderCode);
+            if ($order) {
+                $orderId = (int)$order['order_id'];
+                if ($senderId === 0 && !$isMerchant) {
+                    $senderId = (int)$order['cust_user_id'];
+                }
+            }
+        }
+
         $receiverId = 0;
         if ($isMerchant) {
             $receiverId = (int)($data['target_user_id'] ?? $data['receiver_id'] ?? 0);
@@ -443,10 +477,11 @@ class ChatController extends Controller
             }
         }
 
-        $msgId = $this->chatModel->saveStoreMessage($storeId, $senderId, $receiverId, $message);
+        $msgId = $this->chatModel->saveMessage($orderId, $senderId, $receiverId, $message, null, $storeId);
 
         $this->successResponse('Pesan berhasil dikirim', [
             'id'             => $msgId,
+            'order_id'       => $orderId,
             'store_id'       => $storeId,
             'sender_id'      => $senderId,
             'receiver_id'    => $receiverId,
