@@ -196,7 +196,7 @@ class DokuService
                     'invoice_number' => $testInvoice,
                     'amount'         => 10000,
                     'currency'       => 'IDR',
-                    'callback_url'   => 'https://cicago.store',
+                    'callback_url'   => 'https://market.cicago.store',
                 ],
                 'payment' => [
                     'payment_due_date' => 15,

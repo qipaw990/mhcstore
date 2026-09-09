@@ -1129,7 +1129,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                   Icon(Icons.language_rounded, size: 14, color: AppTheme.primaryRed),
                   SizedBox(width: 6),
                   Text(
-                    'https://cicago.store',
+                    'https://market.cicago.store',
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                 ],

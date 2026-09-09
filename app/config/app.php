@@ -12,23 +12,31 @@ $protocol = $isHttps ? 'https://' : 'http://';
 
 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 
-// ENV override takes priority (set via docker-compose.yml)
+// Support reverse proxy host header (Cloudflare / Nginx reverse proxy)
+$rawHost = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? ($_SERVER['HTTP_HOST'] ?? '');
+if (str_contains($rawHost, ',')) {
+    $rawHost = trim(explode(',', $rawHost)[0]);
+}
+$host = !empty($rawHost) ? $rawHost : 'market.cicago.store';
+
+// ENV override
 $envAppUrl = getenv('APP_URL') ?: ($_ENV['APP_URL'] ?? null);
 $envPublicUrl = getenv('PUBLIC_URL') ?: ($_ENV['PUBLIC_URL'] ?? null);
 
-if ($envAppUrl) {
+if (str_contains($host, 'market.cicago.store') || str_contains($host, 'cicago.store')) {
+    // Prioritaskan domain resmi market.cicago.store sesuai konfigurasi toko
+    $publicUrl = 'https://market.cicago.store';
+    $appUrl    = $publicUrl;
+} elseif ($envPublicUrl || $envAppUrl) {
     // Explicitly configured via environment variable
-    $appUrl = rtrim($envAppUrl, '/');
+    $appUrl = rtrim($envPublicUrl ?: $envAppUrl, '/');
     $publicUrl = $appUrl;
 } else {
-    // Auto-detect: Check if Apache DocumentRoot already points to /public
-    // When DocumentRoot = /var/www/html/public, SCRIPT_NAME = /index.php (no /public prefix)
+    // Auto-detect for local development
     $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
     $scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '/index.php');
     $scriptDir = rtrim(dirname($scriptName), '/');
 
-    // If DOCUMENT_ROOT ends with /public, we're already inside public/ dir
-    // so baseUrl should NOT include /public
     if (str_ends_with(rtrim($docRoot, '/'), '/public') || $scriptDir === '' || $scriptDir === '.') {
         $publicUrl = rtrim($protocol . $host, '/');
     } else {

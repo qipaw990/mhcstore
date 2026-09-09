@@ -1,6 +1,6 @@
 class ApiConstants {
-  // Base domain — sesuai cicago.store production
-  static const String domainUrl    = 'https://cicago.store';
+  // Base domain — sesuai market.cicago.store production
+  static const String domainUrl    = 'https://market.cicago.store';
   static const String baseUrl      = domainUrl;
   static const String imageBaseUrl = domainUrl;
 
