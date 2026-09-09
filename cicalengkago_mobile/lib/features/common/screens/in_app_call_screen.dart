@@ -56,6 +56,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
 
   // Audio Player for Ringing Sound
   AudioPlayer? _audioPlayer;
+  bool _isRingtoneActive = false;
 
   // Native WebRTC Engine (In-House, 0 Third Party)
   final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
@@ -132,13 +133,15 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   }
 
   Future<void> _startRingtone() async {
+    _isRingtoneActive = true;
     try {
-      _audioPlayer = AudioPlayer(playerId: 'cicalengkago_call_ringtone');
+      final player = AudioPlayer(playerId: 'cicalengkago_call_ringtone');
+      _audioPlayer = player;
       
       // Set audio context to force loud speaker output on Android/iOS (Native only)
       if (!kIsWeb) {
         try {
-          await _audioPlayer!.setAudioContext(
+          await player.setAudioContext(
             AudioContext(
               android: const AudioContextAndroid(
                 isSpeakerphoneOn: true,
@@ -161,24 +164,47 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         }
       }
 
-      await _audioPlayer!.setReleaseMode(ReleaseMode.loop);
-      await _audioPlayer!.setVolume(1.0);
+      if (!_isRingtoneActive || _audioPlayer != player) {
+        try { await player.stop(); await player.dispose(); } catch (_) {}
+        return;
+      }
+
+      await player.setReleaseMode(ReleaseMode.loop);
+      await player.setVolume(1.0);
+
+      if (!_isRingtoneActive || _audioPlayer != player) {
+        try { await player.stop(); await player.dispose(); } catch (_) {}
+        return;
+      }
 
       final assetPath = widget.isIncoming ? 'audio/ringtone.mp3' : 'audio/outgoing.wav';
       try {
         debugPrint('[InAppCall] Playing local asset: $assetPath');
-        await _audioPlayer!.play(AssetSource(assetPath));
+        await player.play(AssetSource(assetPath));
       } catch (assetErr) {
+        if (!_isRingtoneActive || _audioPlayer != player) {
+          try { await player.stop(); await player.dispose(); } catch (_) {}
+          return;
+        }
         debugPrint('[InAppCall] Retrying with assets/ prefix ($assetErr)');
         try {
-          await _audioPlayer!.play(AssetSource('assets/$assetPath'));
+          await player.play(AssetSource('assets/$assetPath'));
         } catch (e2) {
+          if (!_isRingtoneActive || _audioPlayer != player) {
+            try { await player.stop(); await player.dispose(); } catch (_) {}
+            return;
+          }
           final remoteUrl = widget.isIncoming
               ? '${ApiConstants.baseUrl}/assets/audio/ringtone.mp3'
               : '${ApiConstants.baseUrl}/assets/audio/outgoing.wav';
           debugPrint('[InAppCall] Fallback to URL ($e2): $remoteUrl');
-          await _audioPlayer!.play(UrlSource(remoteUrl));
+          await player.play(UrlSource(remoteUrl));
         }
+      }
+
+      if (!_isRingtoneActive || _audioPlayer != player) {
+        try { await player.stop(); await player.dispose(); } catch (_) {}
+        _audioPlayer = null;
       }
     } catch (e) {
       debugPrint('[InAppCall] Error playing ringtone: $e');
@@ -186,6 +212,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   }
 
   Future<void> _stopRingtone() async {
+    _isRingtoneActive = false;
     try {
       final ap = _audioPlayer;
       _audioPlayer = null;

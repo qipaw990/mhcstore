@@ -389,6 +389,9 @@
             }
         } catch (e) {}
 
+        // Stop ringtone immediately when remote stream is ready
+        stopRingtone();
+
         if (remoteAudio.srcObject !== streamToPlay) {
             remoteAudio.srcObject = streamToPlay;
         }
@@ -438,6 +441,8 @@
     let ringtoneAudio = null;
     let outgoingAudio = null;
     let isRingtoneActive = false;
+    let speechTimer = null;
+    let activeOscillators = [];
 
     // Outgoing Dialing Tone for CALLER
     function playOutgoingTone() {
@@ -492,28 +497,36 @@
                     try { audioContext.resume(); } catch(e) {}
                 }
 
-                const osc = audioContext.createOscillator();
-                const filter = audioContext.createBiquadFilter();
-                const gain = audioContext.createGain();
+                try {
+                    const osc = audioContext.createOscillator();
+                    const filter = audioContext.createBiquadFilter();
+                    const gain = audioContext.createGain();
 
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(425, audioContext.currentTime);
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(425, audioContext.currentTime);
 
-                filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(550, audioContext.currentTime);
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(550, audioContext.currentTime);
 
-                const now = audioContext.currentTime;
-                gain.gain.setValueAtTime(0.0001, now);
-                gain.gain.linearRampToValueAtTime(0.20, now + 0.05);
-                gain.gain.setValueAtTime(0.20, now + 0.95);
-                gain.gain.linearRampToValueAtTime(0.0001, now + 1.0);
+                    const now = audioContext.currentTime;
+                    gain.gain.setValueAtTime(0.0001, now);
+                    gain.gain.linearRampToValueAtTime(0.20, now + 0.05);
+                    gain.gain.setValueAtTime(0.20, now + 0.95);
+                    gain.gain.linearRampToValueAtTime(0.0001, now + 1.0);
 
-                osc.connect(filter);
-                filter.connect(gain);
-                gain.connect(audioContext.destination);
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(audioContext.destination);
 
-                osc.start(now);
-                osc.stop(now + 1.0);
+                    activeOscillators.push(osc);
+                    osc.onended = () => {
+                        const idx = activeOscillators.indexOf(osc);
+                        if (idx !== -1) activeOscillators.splice(idx, 1);
+                    };
+
+                    osc.start(now);
+                    osc.stop(now + 1.0);
+                } catch (e) {}
             }
             ringPulse();
             ringtoneTimer = setInterval(ringPulse, 3500);
@@ -532,11 +545,11 @@
             const p = ringtoneAudio.play();
             if (p !== undefined) {
                 p.catch(() => {
-                    playVoiceSpeechRingtone();
+                    if (isRingtoneActive) playVoiceSpeechRingtone();
                 });
             }
         } catch (e) {
-            playVoiceSpeechRingtone();
+            if (isRingtoneActive) playVoiceSpeechRingtone();
         }
     }
 
@@ -545,6 +558,10 @@
         if ('speechSynthesis' in window) {
             try {
                 window.speechSynthesis.cancel();
+                if (speechTimer) {
+                    clearTimeout(speechTimer);
+                    speechTimer = null;
+                }
                 const utter = new SpeechSynthesisUtterance('Ada panggilan telepon masuk dari Cicalengka GO');
                 utter.lang = 'id-ID';
                 utter.rate = 0.95;
@@ -557,7 +574,7 @@
 
                 utter.onend = function() {
                     if (isRingtoneActive) {
-                        setTimeout(() => {
+                        speechTimer = setTimeout(() => {
                             if (isRingtoneActive) {
                                 try { window.speechSynthesis.speak(utter); } catch(e) {}
                             }
@@ -572,21 +589,60 @@
 
     function stopRingtone() {
         isRingtoneActive = false;
+
+        if (speechTimer) {
+            clearTimeout(speechTimer);
+            speechTimer = null;
+        }
+
         if ('speechSynthesis' in window) {
-            try { window.speechSynthesis.cancel(); } catch (e) {}
+            try {
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.pause();
+                window.speechSynthesis.cancel();
+            } catch (e) {}
         }
+
         if (ringtoneAudio) {
-            try { ringtoneAudio.pause(); ringtoneAudio.currentTime = 0; } catch (e) {}
+            const curAudio = ringtoneAudio;
             ringtoneAudio = null;
+            try {
+                curAudio.loop = false;
+                curAudio.muted = true;
+                curAudio.volume = 0;
+                curAudio.pause();
+                curAudio.currentTime = 0;
+                curAudio.src = '';
+                curAudio.remove();
+            } catch (e) {}
         }
+
         if (outgoingAudio) {
-            try { outgoingAudio.pause(); outgoingAudio.currentTime = 0; } catch (e) {}
+            const curOutgoing = outgoingAudio;
             outgoingAudio = null;
+            try {
+                curOutgoing.loop = false;
+                curOutgoing.muted = true;
+                curOutgoing.volume = 0;
+                curOutgoing.pause();
+                curOutgoing.currentTime = 0;
+                curOutgoing.src = '';
+                curOutgoing.remove();
+            } catch (e) {}
         }
+
         if (ringtoneTimer) {
             clearInterval(ringtoneTimer);
             ringtoneTimer = null;
         }
+
+        if (activeOscillators.length > 0) {
+            activeOscillators.forEach(osc => {
+                try { osc.stop(); osc.disconnect(); } catch (e) {}
+            });
+            activeOscillators = [];
+        }
+
         if (audioContext) {
             try {
                 if (audioContext.state === 'suspended') {
