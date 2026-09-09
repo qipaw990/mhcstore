@@ -7,7 +7,7 @@ use App\Core\Database;
 class Chat extends Model
 {
     protected string $table = 'chats';
-    protected array $fillable = ['order_id', 'sender_id', 'receiver_id', 'message', 'file', 'is_read'];
+    protected array $fillable = ['order_id', 'store_id', 'sender_id', 'receiver_id', 'message', 'file', 'is_read'];
 
     /**
      * Get chat messages for an order, optionally filtering newer than $sinceId
@@ -37,10 +37,11 @@ class Chat extends Model
     /**
      * Save a new message
      */
-    public function saveMessage(int $orderId, int $senderId, int $receiverId, string $message, ?string $file = null): int
+    public function saveMessage(int $orderId, int $senderId, int $receiverId, string $message, ?string $file = null, int $storeId = 0): int
     {
         return (int)Database::insert($this->table, [
             'order_id'    => $orderId,
+            'store_id'    => $storeId,
             'sender_id'   => $senderId,
             'receiver_id' => $receiverId,
             'message'     => trim($message),
@@ -154,7 +155,7 @@ class Chat extends Model
     public function saveStoreMessage(int $storeId, int $senderId, int $receiverId, string $message, ?string $file = null): int
     {
         return (int)Database::insert($this->table, [
-            'order_id'    => null,
+            'order_id'    => 0,
             'store_id'    => $storeId,
             'sender_id'   => $senderId,
             'receiver_id' => $receiverId,

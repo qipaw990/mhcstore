@@ -63,6 +63,16 @@ function auth_id(): ?int
         }
     }
 
+    // 4. Fallback to user_id parameter in request (mobile app fallback)
+    $reqUid = $_REQUEST['user_id'] ?? null;
+    if (!empty($reqUid) && is_numeric($reqUid)) {
+        $u4 = \App\Core\Database::fetchOne("SELECT id, name, email, phone, role, avatar, api_token FROM users WHERE id = ? LIMIT 1", [(int)$reqUid]);
+        if ($u4) {
+            $_SESSION['user'] = $u4;
+            return (int)$u4['id'];
+        }
+    }
+
     return null;
 }
 

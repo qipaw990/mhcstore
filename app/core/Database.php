@@ -148,6 +148,8 @@ class Database
                 if (empty($cols)) {
                     $this->pdo->exec("ALTER TABLE `chats` ADD COLUMN `store_id` bigint(20) unsigned NOT NULL DEFAULT 0 AFTER `order_id`");
                 }
+                $this->pdo->exec("ALTER TABLE `chats` MODIFY COLUMN `order_id` bigint(20) unsigned NOT NULL DEFAULT 0");
+                $this->pdo->exec("ALTER TABLE `chats` MODIFY COLUMN `store_id` bigint(20) unsigned NOT NULL DEFAULT 0");
             } catch (Exception $e) {}
 
             // Guarantee withdraw_requests table existence

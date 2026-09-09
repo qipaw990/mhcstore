@@ -4,6 +4,8 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Models\Chat;
 use App\Models\Order;
+use App\Models\Store;
+use App\Models\User;
 use Exception;
 
 class ChatController extends Controller
@@ -18,16 +20,43 @@ class ChatController extends Controller
     }
 
     /**
+     * Helper to resolve current authenticated user ID & role
+     * Supports PHP session, Bearer token, X-User-ID header, and POST/GET payload (mobile/API)
+     */
+    private function resolveAuthUser(?array $inputData = null): array
+    {
+        $userId = auth_id() ?: 0;
+        $userRole = auth_role() ?: '';
+
+        if ($userId <= 0) {
+            $reqUserId = (int)($inputData['user_id'] ?? $_POST['user_id'] ?? $_GET['user_id'] ?? 0);
+            if ($reqUserId > 0) {
+                $userId = $reqUserId;
+            }
+        }
+
+        if (empty($userRole)) {
+            $reqRole = sanitize($inputData['user_role'] ?? $_POST['user_role'] ?? $_GET['user_role'] ?? '');
+            if (!empty($reqRole)) {
+                $userRole = $reqRole;
+            } else {
+                $userRole = 'customer';
+            }
+        }
+
+        return [$userId, $userRole];
+    }
+
+    /**
      * Get chat messages and partner info for an order
      */
     public function getMessages(): void
     {
-        $userId   = auth_id() ?: 0;
-        $userRole = auth_role() ?: 'customer';
+        [$userId, $userRole] = $this->resolveAuthUser();
 
         $orderCode = sanitize($_GET['order_code'] ?? '');
-        $sinceId = (int)($_GET['since_id'] ?? 0);
-        $markRead = (bool)($_GET['mark_read'] ?? false);
+        $sinceId   = (int)($_GET['since_id'] ?? 0);
+        $markRead  = (bool)($_GET['mark_read'] ?? false);
 
         if (empty($orderCode)) {
             $this->errorResponse('Kode pesanan wajib diisi.');
@@ -52,9 +81,12 @@ class ChatController extends Controller
             return;
         }
 
-        // Only mark as read if authenticated
-        if ($markRead && $userId > 0) {
-            $this->chatModel->markAsRead((int)$order['order_id'], $userId);
+        // Only mark as read if user identity is known
+        if ($markRead) {
+            $readTargetId = ($userId > 0) ? $userId : (int)$order['cust_user_id'];
+            if ($readTargetId > 0) {
+                $this->chatModel->markAsRead((int)$order['order_id'], $readTargetId);
+            }
         }
 
         $messages = $this->chatModel->getOrderMessages((int)$order['order_id'], $sinceId);
@@ -112,21 +144,22 @@ class ChatController extends Controller
             }
         }
 
-        $unread = ($userId > 0)
-            ? $this->chatModel->getUnreadCountForOrder((int)$order['order_id'], $userId)
+        $effectiveUserId = ($userId > 0) ? $userId : (int)$order['cust_user_id'];
+        $unread = ($effectiveUserId > 0)
+            ? $this->chatModel->getUnreadCountForOrder((int)$order['order_id'], $effectiveUserId)
             : 0;
 
         $this->successResponse('Pesan berhasil diambil', [
-            'order_id'     => (int)$order['order_id'],
-            'order_code'   => $order['order_code'],
-            'order_status' => $order['order_status'],
-            'user_id'      => $userId,
-            'cust_user_id' => (int)$order['cust_user_id'],
-            'dm_user_id'   => (int)($order['dm_user_id'] ?? 0),
+            'order_id'       => (int)$order['order_id'],
+            'order_code'     => $order['order_code'],
+            'order_status'   => $order['order_status'],
+            'user_id'        => $effectiveUserId,
+            'cust_user_id'   => (int)$order['cust_user_id'],
+            'dm_user_id'     => (int)($order['dm_user_id'] ?? 0),
             'vendor_user_id' => (int)($order['store_vendor_user_id'] ?? 0),
-            'partner'      => $partner,
-            'messages'     => $messages,
-            'unread_count' => $unread
+            'partner'        => $partner,
+            'messages'       => $messages,
+            'unread_count'   => $unread
         ]);
     }
 
@@ -135,23 +168,18 @@ class ChatController extends Controller
      */
     public function sendMessage(): void
     {
-        $userId   = auth_id() ?: 0;
-        $userRole = auth_role() ?: 'customer';
-
         // Accept both application/json and multipart/form-data
         $data = $this->getPost();
         if (empty($data['order_code']) && empty($data['message'])) {
-            $raw     = file_get_contents('php://input');
+            $raw = file_get_contents('php://input');
             $decoded = json_decode($raw, true);
             if (!empty($decoded)) $data = $decoded;
         }
 
+        [$userId, $userRole] = $this->resolveAuthUser($data);
+
         $orderCode = sanitize(trim($data['order_code'] ?? ''));
         $message   = trim($data['message'] ?? '');
-        if ($userId === 0) {
-            $this->errorResponse('Silakan login untuk mengirim pesan.', null, 401);
-            return;
-        }
 
         if (empty($orderCode)) {
             $this->errorResponse('Kode pesanan wajib diisi.');
@@ -172,9 +200,8 @@ class ChatController extends Controller
         $isDriver   = ($userRole === 'delivery_man' || ($userId > 0 && (int)($order['dm_user_id'] ?? 0) === $userId));
         $isAdmin    = ($userRole === 'admin');
         $isMerchant = ($userRole === 'vendor' || $userRole === 'merchant' || ($userId > 0 && (int)($order['store_vendor_user_id'] ?? 0) === $userId));
-        // Customer: either logged-in owner OR guest accessing by order_code (order is their own page)
         $isLoggedInCustomer = ($userId > 0 && (int)$order['cust_user_id'] === $userId);
-        // Guest customer identified by order_code (no session) — allow send on their own order
+        // Guest customer accessing by valid order_code (tracking their own order page)
         $isGuestCustomer    = ($userId === 0 && !$isDriver && !$isAdmin && !$isMerchant);
 
         if (!$isLoggedInCustomer && !$isGuestCustomer && !$isDriver && !$isAdmin && !$isMerchant) {
@@ -189,8 +216,7 @@ class ChatController extends Controller
             // Driver sends to customer
             $receiverId = (int)$order['cust_user_id'];
             if ($senderId === 0) {
-                $this->errorResponse('Driver harus login untuk mengirim pesan.', null, 401);
-                return;
+                $senderId = (int)($order['dm_user_id'] ?? 0);
             }
         } elseif ($isMerchant) {
             // Merchant sends to customer
@@ -213,7 +239,8 @@ class ChatController extends Controller
             }
         }
 
-        $msgId = $this->chatModel->saveMessage((int)$order['order_id'], $senderId, $receiverId, $message);
+        $storeId = (int)($order['store_id'] ?? 0);
+        $msgId = $this->chatModel->saveMessage((int)$order['order_id'], $senderId, $receiverId, $message, null, $storeId);
 
         $this->successResponse('Pesan berhasil dikirim', [
             'id'             => $msgId,
@@ -231,22 +258,28 @@ class ChatController extends Controller
      */
     public function markAsRead(): void
     {
-        $userId = auth_id();
-        if (!$userId) {
-            $this->errorResponse('Unauthorized', null, 401);
-            return;
-        }
-
         $data = $this->getPost();
         if (empty($data)) {
             $raw = file_get_contents('php://input');
             $data = json_decode($raw, true) ?: [];
         }
 
+        [$userId] = $this->resolveAuthUser($data);
+
         $orderCode = sanitize($data['order_code'] ?? '');
-        $order = $this->chatModel->getOrderChatDetails($orderCode);
-        if ($order) {
-            $this->chatModel->markAsRead((int)$order['order_id'], $userId);
+        if (!empty($orderCode)) {
+            $order = $this->chatModel->getOrderChatDetails($orderCode);
+            if ($order) {
+                $targetId = ($userId > 0) ? $userId : (int)$order['cust_user_id'];
+                if ($targetId > 0) {
+                    $this->chatModel->markAsRead((int)$order['order_id'], $targetId);
+                }
+            }
+        }
+
+        $storeId = (int)($data['store_id'] ?? 0);
+        if ($storeId > 0 && $userId > 0) {
+            $this->chatModel->markStoreMessagesRead($storeId, $userId);
         }
 
         $this->successResponse('Pesan ditandai sudah dibaca');
@@ -257,11 +290,7 @@ class ChatController extends Controller
      */
     public function unreadCount(): void
     {
-        $userId = auth_id();
-        if (!$userId) {
-            $this->successResponse('OK', ['unread_count' => 0]);
-            return;
-        }
+        [$userId] = $this->resolveAuthUser();
 
         $orderCode = sanitize($_GET['order_code'] ?? '');
         if (empty($orderCode)) {
@@ -275,6 +304,16 @@ class ChatController extends Controller
             return;
         }
 
+        // If guest customer, fallback to customer_id from order
+        if ($userId <= 0) {
+            $userId = (int)($order['cust_user_id'] ?? 0);
+        }
+
+        if ($userId <= 0) {
+            $this->successResponse('OK', ['unread_count' => 0]);
+            return;
+        }
+
         $unread = $this->chatModel->getUnreadCountForOrder((int)$order['order_id'], $userId);
         $this->successResponse('OK', ['unread_count' => $unread]);
     }
@@ -284,8 +323,7 @@ class ChatController extends Controller
      */
     public function getStoreMessages(): void
     {
-        $userId   = auth_id() ?: 0;
-        $userRole = auth_role() ?: 'customer';
+        [$userId, $userRole] = $this->resolveAuthUser();
         $storeId  = (int)($_GET['store_id'] ?? 0);
         $sinceId  = (int)($_GET['since_id'] ?? 0);
         $markRead = (bool)($_GET['mark_read'] ?? false);
@@ -295,7 +333,7 @@ class ChatController extends Controller
             return;
         }
 
-        $storeModel = new \App\Models\Store();
+        $storeModel = new Store();
         $store = $storeModel->findWithDetails($storeId);
         if (!$store) {
             $this->errorResponse('Toko tidak ditemukan.');
@@ -316,7 +354,7 @@ class ChatController extends Controller
 
         $partner = null;
         if ($isMerchant) {
-            $targetUser = $chatUserId > 0 ? (new \App\Models\User())->find($chatUserId) : null;
+            $targetUser = $chatUserId > 0 ? (new User())->find($chatUserId) : null;
             $partner = [
                 'name'         => $targetUser['name'] ?? 'Pelanggan CicalengkaGO',
                 'role'         => 'customer',
@@ -350,9 +388,6 @@ class ChatController extends Controller
      */
     public function sendStoreMessage(): void
     {
-        $userId   = auth_id() ?: 0;
-        $userRole = auth_role() ?: 'customer';
-
         $data = $this->getPost();
         if (empty($data['store_id']) && empty($data['message'])) {
             $raw     = file_get_contents('php://input');
@@ -360,15 +395,10 @@ class ChatController extends Controller
             if (!empty($decoded)) $data = $decoded;
         }
 
+        [$senderId, $role] = $this->resolveAuthUser($data);
+
         $storeId  = (int)($data['store_id'] ?? 0);
         $message  = trim($data['message'] ?? '');
-        $senderId = auth_id() ?: 0;
-        $role     = auth_role() ?: 'customer';
-
-        if ($senderId === 0) {
-            $this->errorResponse('Silakan login untuk mengirim pesan.', null, 401);
-            return;
-        }
 
         if ($storeId <= 0) {
             $this->errorResponse('ID Toko wajib diisi.');
@@ -380,7 +410,7 @@ class ChatController extends Controller
             return;
         }
 
-        $storeModel = new \App\Models\Store();
+        $storeModel = new Store();
         $store = $storeModel->findWithDetails($storeId);
         if (!$store) {
             $this->errorResponse('Toko tidak ditemukan.');
@@ -396,7 +426,10 @@ class ChatController extends Controller
             if ($senderId === 0) $senderId = $vendorUserId;
         } else {
             $receiverId = $vendorUserId;
-            if ($senderId === 0) $senderId = (int)($data['user_id'] ?? 0);
+            if ($senderId === 0) {
+                $this->errorResponse('Silakan login untuk mengirim pesan ke toko.', null, 401);
+                return;
+            }
         }
 
         $msgId = $this->chatModel->saveStoreMessage($storeId, $senderId, $receiverId, $message);
