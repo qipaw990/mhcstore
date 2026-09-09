@@ -371,15 +371,13 @@
                                 </div>
 
                                 <?php if ($status === 'pending'): ?>
-                                    <div class="d-flex gap-1">
-                                        <button type="button" onclick="quickTopUp(<?= (int)$log['amount'] ?>)" class="btn btn-danger btn-sm rounded-pill py-1 px-2.5 fw-bold" style="font-size: 9px;">
-                                            <i class="bi bi-credit-card-fill me-0.5"></i> Bayar
-                                        </button>
-                                    </div>
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1 rounded-pill" style="font-size: 8.5px; font-weight: 600;">
+                                        <i class="bi bi-hourglass-split me-0.5"></i> Menunggu Konfirmasi
+                                    </span>
                                 <?php elseif ($status === 'failed' || $status === 'canceled'): ?>
-                                    <button type="button" onclick="quickTopUp(<?= (int)$log['amount'] ?>)" class="btn btn-outline-danger btn-sm rounded-pill py-1 px-2 fw-semibold" style="font-size: 9px;">
-                                        <i class="bi bi-arrow-repeat"></i> Ulang
-                                    </button>
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1 rounded-pill" style="font-size: 8.5px; font-weight: 600;">
+                                        <i class="bi bi-x-circle me-0.5"></i> <?= ($status === 'canceled') ? 'Dibatalkan' : 'Kedaluwarsa' ?>
+                                    </span>
                                 <?php else: ?>
                                     <span class="text-success fw-semibold" style="font-size: 9px;">
                                         <i class="bi bi-check2-all me-0.5"></i> Masuk
@@ -524,7 +522,7 @@ function submitCustomTopUp() {
     executeDokuTopUp(amount);
 }
 
-async function executeDokuTopUp(nominal) {
+async function executeDokuTopUp(nominal, oldTopupCode = null) {
     Swal.fire({
         title: 'Menyiapkan Pembayaran...',
         text: 'Menghubungkan ke gateway DOKU untuk nominal Rp ' + Number(nominal).toLocaleString('id-ID') + '...',
@@ -537,6 +535,9 @@ async function executeDokuTopUp(nominal) {
     try {
         const formData = new FormData();
         formData.append('amount', nominal);
+        if (oldTopupCode) {
+            formData.append('old_topup_code', oldTopupCode);
+        }
 
         const response = await fetch(window.BASE_URL + '/wallet/topup-doku', {
             method: 'POST',
@@ -564,6 +565,84 @@ async function executeDokuTopUp(nominal) {
     } catch (err) {
         console.error(err);
         Swal.fire('Error', err.message || 'Terjadi kesalahan sistem saat menghubungi gateway pembayaran.', 'error');
+    }
+}
+
+/**
+ * Bayar ulang dari riwayat topup (pending/failed/canceled)
+ * Kirim topup_code lama → server akan cancel lama & buat session DOKU baru
+ */
+async function retryTopUp(topupCode, amount) {
+    const result = await Swal.fire({
+        icon: 'question',
+        title: 'Bayar Ulang?',
+        html: `Buat sesi pembayaran DOKU baru untuk<br><strong>Rp ${Number(amount).toLocaleString('id-ID')}</strong>?<br><small class="text-muted">Sesi sebelumnya akan dibatalkan otomatis.</small>`,
+        showCancelButton: true,
+        confirmButtonText: '<i class="bi bi-credit-card-fill me-1"></i> Ya, Bayar Sekarang',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#EE2737',
+        cancelButtonColor: '#6c757d',
+    });
+
+    if (!result.isConfirmed) return;
+    executeDokuTopUp(amount, topupCode);
+}
+
+/**
+ * Tandai topup pending sebagai dibatalkan (tanpa bayar ulang)
+ */
+async function cancelTopup(topupCode, btn) {
+    const result = await Swal.fire({
+        icon: 'warning',
+        title: 'Batalkan Transaksi?',
+        text: 'Transaksi top up ini akan ditandai sebagai dibatalkan.',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Batalkan',
+        cancelButtonText: 'Tidak',
+        confirmButtonColor: '#6c757d',
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+        const fd = new FormData();
+        fd.append('order_id', topupCode);
+        fd.append('status', 'canceled');
+        fd.append('notes', 'Dibatalkan manual oleh pengguna dari riwayat');
+
+        const resp = await fetch(window.BASE_URL + '/payment/topup-update-status', {
+            method: 'POST', body: fd
+        });
+        const res = await resp.json();
+
+        if (res.success) {
+            // Update UI tanpa reload halaman
+            const card = btn.closest('.topup-item-card');
+            if (card) {
+                card.dataset.status = 'failed';
+                const actionArea = btn.closest('div.d-flex.gap-1');
+                if (actionArea) {
+                    actionArea.outerHTML = `<button type="button" 
+                        onclick="retryTopUp('${topupCode}', ${btn.closest('.topup-item-card')?.querySelector('[data-amount]')?.dataset?.amount || 0})"
+                        class="btn btn-outline-danger btn-sm rounded-pill py-1 px-2 fw-semibold" style="font-size: 9px;">
+                        <i class="bi bi-arrow-repeat"></i> Bayar Ulang
+                    </button>`;
+                }
+                // Update badge
+                const badge = card.querySelector('.badge');
+                if (badge) {
+                    badge.className = 'badge bg-danger-subtle text-danger border-danger-subtle border px-2 py-0 rounded-pill mt-0';
+                    badge.innerHTML = '<i class="bi bi-x-circle-fill me-0.5"></i> Dibatalkan';
+                    badge.style.fontSize = '8px';
+                    badge.style.fontWeight = '700';
+                }
+            }
+            Swal.fire({ icon: 'success', title: 'Dibatalkan', text: 'Transaksi telah ditandai dibatalkan.', timer: 1500, showConfirmButton: false });
+        } else {
+            Swal.fire('Gagal', res.message || 'Tidak bisa membatalkan transaksi ini.', 'error');
+        }
+    } catch (e) {
+        Swal.fire('Error', e.message, 'error');
     }
 }
 

@@ -9,6 +9,22 @@ use App\Models\Notification;
 use App\Services\DokuService;
 use Exception;
 
+/**
+ * PaymentController
+ *
+ * Menangani seluruh alur pembayaran produksi (PRODUCTION):
+ *  - Top Up CicalengkaPay via DOKU Checkout
+ *  - Checkout Pesanan via DOKU Checkout
+ *  - Callback redirect dari DOKU (GET) setelah user selesai di halaman bayar
+ *  - Webhook / Server Notification dari DOKU (POST) sebagai konfirmasi resmi
+ *  - Transfer saldo antar pengguna / ke rekening bank / e-wallet
+ *  - In-house payment invoice (QRIS / Bank Transfer)
+ *
+ * CATATAN KEAMANAN:
+ *  - Endpoint simulateSandboxSuccess TIDAK ADA di production.
+ *  - Status pembayaran hanya diubah melalui webhook DOKU yang terverifikasi HMAC.
+ *  - Callback redirect DOKU hanya menampilkan halaman informasi, TIDAK mengubah DB.
+ */
 class PaymentController extends Controller
 {
     private DokuService $dokuService;
@@ -18,8 +34,20 @@ class PaymentController extends Controller
         $this->dokuService = new DokuService();
     }
 
+    // =========================================================================
+    // DOKU CHECKOUT - TOP UP CICALENGKAPAY
+    // =========================================================================
+
     /**
-     * Generate DOKU Checkout URL for CicalengkaPay Wallet Top-Up
+     * Inisiasi sesi pembayaran DOKU untuk Top Up Wallet
+     * POST /wallet/topup-doku
+     *
+     * Flow:
+     * 1. Validasi user login & nominal
+     * 2. Generate invoice_number unik (TOPUP-{userId}-{timestamp}-{rand})
+     * 3. Kirim request ke DOKU API → dapat payment_url
+     * 4. Simpan log pending di topup_logs
+     * 5. Return payment_url ke client (mobile/web buka WebView)
      */
     public function topupDoku(): void
     {
@@ -38,18 +66,56 @@ class PaymentController extends Controller
             return;
         }
 
+        if ($amount > 10000000) {
+            $this->errorResponse('Nominal top up maksimal Rp 10.000.000 per transaksi.');
+            return;
+        }
+
         $orderId = 'TOPUP-' . $userId . '-' . time() . '-' . rand(100, 999);
 
         try {
             $appConfig = require APP_PATH . '/config/app.php';
             $publicUrl = rtrim($appConfig['public_url'] ?? '', '/');
 
-            $origin = $_SERVER['HTTP_ORIGIN'] ?? $_SERVER['HTTP_REFERER'] ?? '';
-            $callbackUrl = $publicUrl . '/wallet';
+            // Jika ada old_topup_code (retry dari riwayat), cancel yang lama
+            $oldTopupCode = trim($data['old_topup_code'] ?? '');
+            if (!empty($oldTopupCode) && str_starts_with($oldTopupCode, 'TOPUP-')) {
+                // Pastikan log lama milik user yang sama (keamanan)
+                $oldLog = Database::fetchOne(
+                    "SELECT id, user_id, status, amount FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1",
+                    [$oldTopupCode]
+                );
+                if ($oldLog && (int)$oldLog['user_id'] === (int)$userId && $oldLog['status'] !== 'success') {
+                    // Cancel log lama — session DOKU-nya memang sudah expired
+                    Database::update('topup_logs', [
+                        'status'     => 'canceled',
+                        'notes'      => 'Dibuat ulang oleh pengguna — sesi baru: ' . $orderId,
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ], 'id = ?', [$oldLog['id']]);
+                }
+            }
+
+            // Callback: halaman yang akan dibuka browser setelah user selesai bayar
+            // DOKU redirect ke sini dengan query param ?status=SUCCESS&order=...
+            $callbackUrl = $publicUrl . '/payment/doku/callback';
+
+            // Izinkan override dari mobile (untuk deep link)
             if (!empty($data['callback_url'])) {
-                $callbackUrl = $data['callback_url'];
-            } elseif (str_contains($origin, 'market.cicago.store')) {
-                $callbackUrl = 'https://market.cicago.store';
+                $allowedCallbackPrefixes = [
+                    $publicUrl,
+                    'https://market.cicago.store',
+                    'cicalengkago://',   // Flutter deep link
+                ];
+                $isAllowed = false;
+                foreach ($allowedCallbackPrefixes as $prefix) {
+                    if (str_starts_with($data['callback_url'], $prefix)) {
+                        $isAllowed = true;
+                        break;
+                    }
+                }
+                if ($isAllowed) {
+                    $callbackUrl = $data['callback_url'];
+                }
             }
 
             $params = [
@@ -60,20 +126,20 @@ class PaymentController extends Controller
                     'id'    => (string)$userId,
                     'name'  => $user['name'] ?? 'Pengguna CicalengkaGO',
                     'email' => $user['email'] ?? 'customer@cicalengkago.id',
-                    'phone' => $user['phone'] ?? '081234567890'
+                    'phone' => $user['phone'] ?? '081234567890',
                 ],
                 'line_items' => [
                     [
                         'name'     => 'Top Up Saldo CicalengkaPay',
                         'price'    => (int)$amount,
-                        'quantity' => 1
+                        'quantity' => 1,
                     ]
-                ]
+                ],
             ];
 
             $dokuResult = $this->dokuService->createPaymentUrl($params);
 
-            // Record pending log in topup_logs
+            // Simpan log pending baru sebelum user diarahkan ke DOKU
             (new \App\Models\TopupLog())->recordPending(
                 $userId,
                 $orderId,
@@ -90,14 +156,13 @@ class PaymentController extends Controller
                 'invoice_number' => $orderId,
             ]);
         } catch (\Throwable $e) {
+            error_log('[DOKU TopUp Error] ' . $e->getMessage());
             $this->errorResponse($e->getMessage());
         }
     }
 
     /**
-     * topupSnap dihapus — gunakan topupDoku() untuk semua top up
-     * Method ini dipertahankan agar route lama tidak error 404,
-     * tapi langsung mengarahkan ke DOKU.
+     * Legacy alias → topupDoku()
      */
     public function topupSnap(): void
     {
@@ -105,7 +170,7 @@ class PaymentController extends Controller
     }
 
     /**
-     * snapPage dihapus — tidak digunakan lagi karena sudah migrasi ke DOKU
+     * Halaman Snap lama sudah dihapus
      */
     public function snapPage(): void
     {
@@ -115,8 +180,283 @@ class PaymentController extends Controller
         exit;
     }
 
+    // =========================================================================
+    // DOKU CALLBACK (REDIRECT SETELAH HALAMAN BAYAR DOKU)
+    // =========================================================================
+
     /**
-     * Update status log for top up (e.g. failed/canceled when user closes window or fails)
+     * Halaman redirect setelah user selesai di halaman DOKU Checkout
+     * GET /payment/doku/callback?status=SUCCESS&order=TOPUP-xxx&...
+     *
+     * PENTING: Ini BUKAN konfirmasi pembayaran resmi!
+     * Status resmi datang dari server-to-server DOKU Webhook → dokuNotification().
+     *
+     * Halaman ini hanya memberi tahu user bahwa proses sedang berjalan,
+     * kemudian mengarahkan kembali ke aplikasi.
+     */
+    public function dokuCallback(): void
+    {
+        $status    = strtoupper(trim($_GET['status'] ?? $_GET['transaction_status'] ?? ''));
+        $orderId   = trim($_GET['order'] ?? $_GET['invoice_number'] ?? $_GET['order_id'] ?? '');
+        $resultCode = trim($_GET['result_code'] ?? '');
+
+        // Tentukan jenis transaksi
+        $isTopup = str_starts_with($orderId, 'TOPUP-');
+
+        // Redirect target setelah informasi ditampilkan
+        $appConfig   = require APP_PATH . '/config/app.php';
+        $publicUrl   = rtrim($appConfig['public_url'] ?? '', '/');
+        $redirectUrl = $isTopup ? $publicUrl . '/wallet' : $publicUrl . '/orders';
+
+        // Ambil info dari DB jika tersedia
+        $dbStatus = null;
+        if (!empty($orderId)) {
+            if ($isTopup) {
+                $log = Database::fetchOne(
+                    "SELECT status FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1",
+                    [$orderId]
+                );
+                $dbStatus = $log['status'] ?? null;
+            } else {
+                $cleanCode = $orderId;
+                if (preg_match('/^((?:CCG|PCL)-[A-Za-z0-9]+)/i', $orderId, $m)) {
+                    $cleanCode = $m[1];
+                }
+                $order = Database::fetchOne(
+                    "SELECT payment_status FROM `orders` WHERE `order_code` = ? LIMIT 1",
+                    [$cleanCode]
+                );
+                $dbStatus = $order['payment_status'] ?? null;
+            }
+        }
+
+        $isSuccess = in_array($status, ['SUCCESS', 'COMPLETED', 'PAID', '00']) || $dbStatus === 'paid' || $dbStatus === 'success';
+        $isPending = in_array($status, ['PENDING', 'WAITING', 'PROCESS']) && !$isSuccess;
+
+        http_response_code(200);
+        header('Content-Type: text/html; charset=UTF-8');
+        ?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Status Pembayaran - CicalengkaGO</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 40px 32px;
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,.10);
+        }
+        .icon { font-size: 72px; margin-bottom: 16px; }
+        h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+        p  { font-size: 15px; color: #555; line-height: 1.6; margin-bottom: 20px; }
+        .note {
+            background: #fff8e1;
+            border-left: 4px solid #f5a623;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 13px;
+            color: #7a5500;
+            text-align: left;
+            margin-bottom: 24px;
+        }
+        .btn {
+            display: inline-block;
+            background: #e8232a;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 12px;
+            padding: 14px 32px;
+            font-size: 15px;
+            font-weight: 600;
+            transition: background .2s;
+        }
+        .btn:hover { background: #c0181e; }
+        .btn-secondary {
+            display: inline-block;
+            background: #f0f4f8;
+            color: #333;
+            text-decoration: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+        .progress {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #888;
+            font-size: 13px;
+            margin-top: 16px;
+        }
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #ddd;
+            border-top-color: #e8232a;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+<div class="card">
+    <?php if ($isSuccess): ?>
+        <div class="icon">✅</div>
+        <h1>Pembayaran Sedang Diproses</h1>
+        <p>Terima kasih! Pembayaran Anda telah diterima DOKU.<br>
+           Konfirmasi otomatis akan segera masuk ke akun Anda.</p>
+        <div class="note">
+            🔔 <strong>Info:</strong> Saldo atau status pesanan akan diperbarui otomatis dalam beberapa detik setelah notifikasi server dari DOKU diterima. Mohon jangan tutup aplikasi.
+        </div>
+        <a href="<?= htmlspecialchars($redirectUrl) ?>" class="btn">Kembali ke Aplikasi</a>
+    <?php elseif ($isPending): ?>
+        <div class="icon">⏳</div>
+        <h1>Menunggu Pembayaran</h1>
+        <p>Pembayaran Anda masih dalam proses. Selesaikan pembayaran sesuai instruksi dari DOKU.</p>
+        <div class="note">
+            🔔 <strong>Info:</strong> Jika sudah membayar, sistem akan memperbarui status Anda secara otomatis.
+        </div>
+        <a href="<?= htmlspecialchars($redirectUrl) ?>" class="btn">Kembali ke Aplikasi</a>
+    <?php else: ?>
+        <div class="icon">❌</div>
+        <h1>Pembayaran Dibatalkan</h1>
+        <p>Transaksi tidak berhasil diselesaikan atau telah dibatalkan. Tidak ada saldo yang terpotong.</p>
+        <a href="<?= htmlspecialchars($redirectUrl) ?>" class="btn">Coba Lagi</a>
+    <?php endif; ?>
+
+    <div class="progress" id="progressMsg">
+        <div class="spinner"></div>
+        <span>Mengarahkan kembali dalam <span id="countdown">5</span> detik...</span>
+    </div>
+</div>
+<script>
+    // Auto-redirect countdown
+    let sec = 5;
+    const cd  = document.getElementById('countdown');
+    const msg = document.getElementById('progressMsg');
+    const timer = setInterval(() => {
+        sec--;
+        if (cd) cd.textContent = sec;
+        if (sec <= 0) {
+            clearInterval(timer);
+            window.location.href = <?= json_encode($redirectUrl) ?>;
+        }
+    }, 1000);
+</script>
+</body>
+</html>
+        <?php
+        exit;
+    }
+
+    // =========================================================================
+    // DOKU SERVER WEBHOOK (NOTIFIKASI SERVER-TO-SERVER)
+    // =========================================================================
+
+    /**
+     * Menerima Webhook Server-to-Server dari DOKU
+     * POST /payment/doku/notification
+     *
+     * Flow:
+     * 1. Baca raw body
+     * 2. Verifikasi HMAC-SHA256 signature dari DOKU
+     * 3. Proses payload (update wallet / order status)
+     * 4. Return HTTP 200 → JSON {status: "success"}
+     *
+     * PENTING: Hanya perubahan status melalui webhook ini yang dianggap sah.
+     * Daftarkan URL ini di DOKU Merchant Portal:
+     *   https://app.doku.com → Settings → Notification URL
+     *   URL: https://yourdomain.com/payment/doku/notification
+     */
+    public function dokuNotification(): void
+    {
+        $rawInput = file_get_contents('php://input');
+
+        if (empty($rawInput)) {
+            http_response_code(400);
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Empty payload']);
+            return;
+        }
+
+        // Kumpulkan headers DOKU untuk verifikasi signature
+        $dokuHeaders = [
+            'Client-Id'         => $_SERVER['HTTP_CLIENT_ID'] ?? $_SERVER['HTTP_X_CLIENT_ID'] ?? '',
+            'Request-Id'        => $_SERVER['HTTP_REQUEST_ID'] ?? $_SERVER['HTTP_X_REQUEST_ID'] ?? '',
+            'Request-Timestamp' => $_SERVER['HTTP_REQUEST_TIMESTAMP'] ?? $_SERVER['HTTP_X_REQUEST_TIMESTAMP'] ?? '',
+            'Signature'         => $_SERVER['HTTP_SIGNATURE'] ?? $_SERVER['HTTP_X_SIGNATURE'] ?? '',
+        ];
+
+        // Verifikasi HMAC Signature — tolak jika tidak valid
+        if (!$this->dokuService->verifyNotification($dokuHeaders, $rawInput)) {
+            error_log('[DOKU Webhook] Signature tidak valid. Headers: ' . json_encode($dokuHeaders));
+            http_response_code(401);
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Invalid signature']);
+            return;
+        }
+
+        $payload = json_decode($rawInput, true);
+
+        if (!is_array($payload)) {
+            http_response_code(400);
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Invalid JSON payload']);
+            return;
+        }
+
+        try {
+            $result = $this->dokuService->processNotification($payload);
+            http_response_code(200);
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'success', 'result' => $result]);
+        } catch (\Throwable $e) {
+            error_log('[DOKU Webhook Error] ' . $e->getMessage());
+            http_response_code(500);
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Legacy alias → dokuNotification()
+     */
+    public function notification(): void
+    {
+        $this->dokuNotification();
+    }
+
+    // =========================================================================
+    // UPDATE STATUS LOG TOP UP (CLIENT-SIDE: user close/cancel)
+    // =========================================================================
+
+    /**
+     * Update log status top up dari sisi client (misal user menutup WebView)
+     * POST /payment/topup-update-status
+     * Body: { order_id, status: "failed"|"canceled"|"success", notes }
+     *
+     * Catatan: "success" di sini hanya update log sementara.
+     * Konfirmasi saldo resmi tetap menunggu webhook DOKU.
      */
     public function updateTopupStatus(): void
     {
@@ -130,11 +470,22 @@ class PaymentController extends Controller
         $data = json_decode($rawInput, true) ?: $this->getPost();
 
         $orderId = trim($data['order_id'] ?? '');
-        $status = trim($data['status'] ?? 'failed');
-        $notes = trim($data['notes'] ?? 'Dibatalkan oleh pengguna');
+        $status  = trim($data['status'] ?? 'failed');
+        $notes   = trim($data['notes'] ?? 'Dibatalkan oleh pengguna');
 
         if (empty($orderId)) {
             $this->errorResponse('Order ID tidak valid.');
+            return;
+        }
+
+        // Pastikan log milik user yang login (keamanan)
+        $log = Database::fetchOne(
+            "SELECT user_id FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1",
+            [$orderId]
+        );
+
+        if (!$log || (int)$log['user_id'] !== (int)$userId) {
+            $this->errorResponse('Transaksi tidak ditemukan atau bukan milik Anda.');
             return;
         }
 
@@ -142,12 +493,25 @@ class PaymentController extends Controller
         if ($status === 'failed' || $status === 'canceled') {
             $topupLogModel->markFailed($orderId, $notes);
         } elseif ($status === 'success') {
+            // Hanya update log — saldo resmi lewat webhook
             $topupLogModel->markSuccess($orderId, $data['payment_type'] ?? 'doku', $notes);
         }
 
         $this->successResponse('Status log top up berhasil diperbarui');
     }
 
+    // =========================================================================
+    // VERIFIKASI STATUS (CLIENT POLLING)
+    // =========================================================================
+
+    /**
+     * Client polling untuk cek status pembayaran setelah callback
+     * POST /payment/verify
+     * Body: { order_id }
+     *
+     * Hanya membaca DB — tidak mengubah status apapun.
+     * Digunakan mobile/web untuk menampilkan status terkini.
+     */
     public function verifyClientCallback(): void
     {
         $rawInput = file_get_contents('php://input');
@@ -158,212 +522,66 @@ class PaymentController extends Controller
             return;
         }
 
-        $orderId = $data['order_id'];
+        $orderId = trim($data['order_id']);
 
-        // Handle Top Up Callback (DOKU/manual)
+        // Cek Top Up
         if (str_starts_with($orderId, 'TOPUP-')) {
-            try {
-                $amount = (float)($data['gross_amount'] ?? $data['amount'] ?? 0);
-                if ($amount <= 0) {
-                    $topupLog = Database::fetchOne("SELECT amount FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1", [$orderId]);
-                    if ($topupLog && (float)$topupLog['amount'] > 0) {
-                        $amount = (float)$topupLog['amount'];
-                    }
-                }
+            $log = Database::fetchOne(
+                "SELECT status, amount FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1",
+                [$orderId]
+            );
 
-                (new \App\Models\TopupLog())->markSuccess($orderId, $data['payment_type'] ?? 'doku', 'Pembayaran terkonfirmasi');
-                $this->successResponse('Top Up berhasil diverifikasi', ['order_id' => $orderId, 'amount' => $amount]);
-                return;
-            } catch (\Throwable $e) {
-                (new \App\Models\TopupLog())->markFailed($orderId, $e->getMessage());
-                $this->errorResponse($e->getMessage());
+            if (!$log) {
+                $this->errorResponse('Transaksi top up tidak ditemukan.');
                 return;
             }
+
+            $dbStatus = strtolower($log['status'] ?? 'pending');
+            $isPaid = in_array($dbStatus, ['success', 'paid', 'settled']);
+
+            $this->successResponse('Status top up berhasil dicek', [
+                'order_id'  => $orderId,
+                'status'    => $isPaid ? 'settled' : $dbStatus,
+                'amount'    => (float)($log['amount'] ?? 0),
+                'is_paid'   => $isPaid,
+            ]);
+            return;
         }
 
-        // Extract base order code
+        // Cek Order Checkout
         $cleanCode = $orderId;
         if (preg_match('/^((?:CCG|PCL)-[A-Za-z0-9]+)/i', $orderId, $matches)) {
             $cleanCode = $matches[1];
         }
 
-        try {
-            // Check if already paid in DB
-            $dbOrder = \App\Core\Database::fetchOne("SELECT * FROM `orders` WHERE `order_code` = ? LIMIT 1", [$cleanCode]);
-            if ($dbOrder && $dbOrder['payment_status'] === 'paid') {
-                $this->successResponse('Pesanan sudah lunas', [
-                    'status'         => 'settled',
-                    'payment_status' => 'paid',
-                    'order_code'     => $cleanCode
-                ]);
-                return;
-            }
+        $order = Database::fetchOne(
+            "SELECT order_code, payment_status, order_status FROM `orders` WHERE `order_code` = ? LIMIT 1",
+            [$cleanCode]
+        );
 
-            if (!empty($data['transaction_status'])) {
-                $txStatus = $data['transaction_status'];
-                if (in_array($txStatus, ['settlement', 'capture', 'success', 'accept'])) {
-                    \App\Core\Database::update('orders', [
-                        'payment_status' => 'paid',
-                        'payment_method' => $data['payment_type'] ?? 'doku',
-                        'order_status'   => ($dbOrder['order_status'] ?? 'pending') === 'pending' ? 'confirmed' : ($dbOrder['order_status'] ?? 'confirmed'),
-                        'confirmed_at'   => date('Y-m-d H:i:s')
-                    ], 'order_code = ?', [$cleanCode]);
-
-                    $this->successResponse('Status pembayaran berhasil diproses', ['order_code' => $cleanCode, 'status' => 'paid']);
-                    return;
-                }
-            }
-
-            $this->errorResponse('Belum ada data pembayaran terkonfirmasi.');
-        } catch (\Throwable $e) {
-            $this->errorResponse($e->getMessage());
-        }
-    }
-
-    /**
-     * Instantly mark payment as success in Sandbox Mode (for Orders or Wallet Top-Up)
-     */
-    public function simulateSandboxSuccess(): void
-    {
-        $rawInput = file_get_contents('php://input');
-        $data = json_decode($rawInput, true) ?: $this->getPost();
-
-        $orderId = trim($data['order_id'] ?? '');
-        $paymentType = sanitize($data['payment_type'] ?? 'doku_sandbox');
-
-        if (empty($orderId)) {
-            $this->errorResponse('Order ID atau kode transaksi tidak valid.');
+        if (!$order) {
+            $this->errorResponse('Pesanan tidak ditemukan.', null, 404);
             return;
         }
 
-        try {
-            // Handle Top-Up (TOPUP-{userId}-{timestamp}-{rand})
-            if (str_starts_with($orderId, 'TOPUP-')) {
-                $parts = explode('-', $orderId);
-                $userId = (int)($parts[1] ?? auth_id());
-                $amount = (float)($data['amount'] ?? 0);
+        $isPaid = $order['payment_status'] === 'paid';
 
-                if ($amount <= 0 && !empty($data['gross_amount'])) {
-                    $amount = (float)$data['gross_amount'];
-                }
-
-                $topupLog = Database::fetchOne("SELECT amount FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1", [$orderId]);
-                if ($topupLog && (float)$topupLog['amount'] > 0) {
-                    $amount = (float)$topupLog['amount'];
-                } elseif ($amount < 10000) {
-                    $amount = 50000;
-                }
-
-                $walletModel = new Wallet();
-                $walletModel->credit(
-                    $userId,
-                    $amount,
-                    'topup',
-                    "Top Up CicalengkaPay via DOKU Sandbox ({$paymentType})",
-                    $orderId
-                );
-
-                // Update or record TopupLog as success
-                $topupLogModel = new \App\Models\TopupLog();
-                $topupLogModel->recordPending($userId, $orderId, $amount, null, $paymentType);
-                $topupLogModel->markSuccess($orderId, $paymentType, 'Top Up DOKU Sandbox Berhasil');
-
-                (new \App\Models\Notification())->createNotification(
-                    $userId,
-                    'Top Up DOKU Berhasil! 🎉',
-                    "Saldo CicalengkaPay sebesar " . format_rupiah($amount) . " berhasil ditambahkan (Mode Sandbox).",
-                    'wallet'
-                );
-
-                $this->successResponse('Top Up berhasil diselesaikan (Sandbox Mode)', [
-                    'status'         => 'settled',
-                    'order_id'       => $orderId,
-                    'amount'         => $amount,
-                    'payment_status' => 'paid'
-                ]);
-                return;
-            }
-
-            // Handle Order Checkout (CCG-xxx or PCL-xxx)
-            $cleanCode = $orderId;
-            if (preg_match('/^((?:CCG|PCL)-[A-Za-z0-9]+)/i', $orderId, $matches)) {
-                $cleanCode = $matches[1];
-            }
-
-            $order = \App\Core\Database::fetchOne("SELECT * FROM `orders` WHERE `order_code` = ? LIMIT 1", [$cleanCode]);
-            if (!$order) {
-                $this->errorResponse("Pesanan #{$cleanCode} tidak ditemukan.");
-                return;
-            }
-
-            // Update order status to paid and confirmed
-            \App\Core\Database::update('orders', [
-                'payment_status' => 'paid',
-                'payment_method' => 'doku',
-                'order_status'   => ($order['order_status'] === 'pending' || $order['order_status'] === 'unpaid') ? 'confirmed' : $order['order_status'],
-                'confirmed_at'   => date('Y-m-d H:i:s')
-            ], 'id = ?', [$order['id']]);
-
-            // Notify customer
-            (new \App\Models\Notification())->createNotification(
-                (int)$order['customer_id'],
-                'Pembayaran Berhasil! 💳',
-                "Pembayaran pesanan #{$order['order_code']} via DOKU berhasil dikonfirmasi.",
-                'order'
-            );
-
-            $this->successResponse('Pembayaran pesanan berhasil diselesaikan', [
-                'status'         => 'settled',
-                'order_code'     => $order['order_code'],
-                'order_id'       => $orderId,
-                'payment_status' => 'paid',
-                'order_status'   => ($order['order_status'] === 'pending') ? 'confirmed' : $order['order_status']
-            ]);
-        } catch (\Throwable $e) {
-            $this->errorResponse($e->getMessage());
-        }
-    }
-
-    /**
-     * Webhook Notification Handler (Legacy alias to DOKU)
-     */
-    public function notification(): void
-    {
-        $this->dokuNotification();
-    }
-
-    /**
-     * Webhook Notification Handler from DOKU Payment Gateway
-     */
-    public function dokuNotification(): void
-    {
-        $rawInput = file_get_contents('php://input');
-        $payload = json_decode($rawInput, true);
-
-        if (!$payload) {
-            http_response_code(400);
-            echo json_encode(['status' => 'error', 'message' => 'Invalid payload']);
-            return;
-        }
-
-        try {
-            $result = $this->dokuService->processNotification($payload);
-            http_response_code(200);
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'success', 'result' => $result]);
-        } catch (\Throwable $e) {
-            http_response_code(500);
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
-        }
+        $this->successResponse('Status pesanan berhasil dicek', [
+            'order_code'     => $order['order_code'],
+            'payment_status' => $order['payment_status'],
+            'order_status'   => $order['order_status'],
+            'is_paid'        => $isPaid,
+        ]);
     }
 
     // =========================================================================
-    // IN-HOUSE AUTOMATED PAYMENT SYSTEM (TRANSFER BANK + QRIS + KODE UNIK + WEBHOOK)
+    // IN-HOUSE AUTOMATED PAYMENT SYSTEM
+    // (Transfer Bank + QRIS + Kode Unik + Webhook Mutasi)
     // =========================================================================
 
     /**
-     * Get list of supported destination bank accounts & QRIS
+     * Daftar metode pembayaran tersedia (Bank + QRIS)
+     * GET /payment/banks
      */
     public function getBanks(): void
     {
@@ -372,7 +590,9 @@ class PaymentController extends Controller
     }
 
     /**
-     * Create In-House Payment Invoice with 3-digit unique code
+     * Buat invoice pembayaran in-house (kode unik 3 digit)
+     * POST /payment/create-invoice
+     * Body: { amount, bank, type: "topup"|"order", order_id? }
      */
     public function createInvoice(): void
     {
@@ -384,14 +604,14 @@ class PaymentController extends Controller
 
         $data = $this->getPost();
         if (empty($data)) {
-            $raw = file_get_contents('php://input');
+            $raw  = file_get_contents('php://input');
             $data = json_decode($raw, true) ?: [];
         }
 
-        $amount    = (float)($data['amount'] ?? 0);
-        $bankCode  = trim((string)($data['bank'] ?? $data['bank_code'] ?? 'QRIS'));
-        $type      = trim((string)($data['type'] ?? 'topup'));
-        $orderId   = !empty($data['order_id']) ? (int)$data['order_id'] : null;
+        $amount   = (float)($data['amount'] ?? 0);
+        $bankCode = trim((string)($data['bank'] ?? $data['bank_code'] ?? 'QRIS'));
+        $type     = trim((string)($data['type'] ?? 'topup'));
+        $orderId  = !empty($data['order_id']) ? (int)$data['order_id'] : null;
 
         if ($amount < 1000) {
             $this->errorResponse('Nominal pembayaran minimal Rp 1.000');
@@ -399,15 +619,13 @@ class PaymentController extends Controller
         }
 
         try {
-            $model = new \App\Models\PaymentInvoice();
+            $model   = new \App\Models\PaymentInvoice();
             $invoice = $model->createInvoice($userId, $type, $bankCode, $amount, $orderId);
 
-            // Generate Google Charts / QR Server URL for QRIS QR display
             $qrisQrUrl = null;
             if (!empty($invoice['qris_payload'])) {
                 $qrisQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . urlencode($invoice['qris_payload']);
             }
-
             $invoice['qris_qr_url'] = $qrisQrUrl;
 
             $this->successResponse('Tiket pembayaran berhasil dibuat', $invoice);
@@ -417,7 +635,8 @@ class PaymentController extends Controller
     }
 
     /**
-     * Check real-time payment status of an invoice
+     * Cek status real-time invoice in-house
+     * GET /payment/check-invoice?code=INV-xxx
      */
     public function checkInvoice(): void
     {
@@ -427,7 +646,11 @@ class PaymentController extends Controller
             return;
         }
 
-        $invoice = \App\Core\Database::fetchOne("SELECT * FROM `payment_invoices` WHERE `invoice_code` = ? LIMIT 1", [$code]);
+        $invoice = Database::fetchOne(
+            "SELECT * FROM `payment_invoices` WHERE `invoice_code` = ? LIMIT 1",
+            [$code]
+        );
+
         if (!$invoice) {
             $this->errorResponse('Invoice tidak ditemukan', null, 404);
             return;
@@ -435,7 +658,7 @@ class PaymentController extends Controller
 
         $isExpired = ($invoice['status'] === 'pending' && strtotime($invoice['expires_at']) < time());
         if ($isExpired) {
-            \App\Core\Database::update('payment_invoices', ['status' => 'expired'], 'id = ?', [$invoice['id']]);
+            Database::update('payment_invoices', ['status' => 'expired'], 'id = ?', [$invoice['id']]);
             $invoice['status'] = 'expired';
         }
 
@@ -446,27 +669,25 @@ class PaymentController extends Controller
             'base_amount'  => (float)$invoice['base_amount'],
             'unique_code'  => (int)$invoice['unique_code'],
             'paid_at'      => $invoice['paid_at'],
-            'expires_at'   => $invoice['expires_at']
+            'expires_at'   => $invoice['expires_at'],
         ]);
     }
 
     /**
-     * In-House Auto-Approve Webhook API
-     * Can receive data from:
-     * - Bank Mutasi Scraper
-     * - Android Notification Listener / MacroDroid (SMS Banking, BCA Mobile, Livin, GoPay, DANA)
+     * Webhook otomatis dari sistem mutasi bank / MacroDroid / SMS Banking
+     * POST /payment/auto-webhook
      */
     public function autoWebhook(): void
     {
         $rawInput = file_get_contents('php://input');
-        $payload = json_decode($rawInput, true) ?: $_POST;
+        $payload  = json_decode($rawInput, true) ?: $_POST;
 
         $amount  = (float)($payload['amount'] ?? 0);
         $bank    = $payload['bank'] ?? $payload['bank_name'] ?? null;
         $sender  = $payload['sender'] ?? $payload['from'] ?? null;
         $rawText = $payload['text'] ?? $payload['message'] ?? $payload['notification'] ?? null;
 
-        $model = new \App\Models\PaymentInvoice();
+        $model  = new \App\Models\PaymentInvoice();
         $result = $model->processWebhookData($amount, $bank, $sender, $rawText);
 
         header('Content-Type: application/json');
@@ -480,13 +701,27 @@ class PaymentController extends Controller
     }
 
     /**
-     * Testing Simulator: Auto-approve an invoice without actual bank transfer (Development/Admin testing)
+     * Admin approve manual invoice
+     * POST /payment/simulate-pay  (only via admin panel, tidak expose ke public)
      */
     public function simulatePay(): void
     {
+        // Pastikan hanya admin yang bisa memanggil ini
+        $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Unauthorized.', null, 401);
+            return;
+        }
+
+        $user = auth_user();
+        if (($user['role'] ?? '') !== 'admin') {
+            $this->errorResponse('Akses ditolak. Hanya admin yang dapat melakukan ini.', null, 403);
+            return;
+        }
+
         $data = $this->getPost();
         if (empty($data)) {
-            $raw = file_get_contents('php://input');
+            $raw  = file_get_contents('php://input');
             $data = json_decode($raw, true) ?: [];
         }
 
@@ -496,21 +731,27 @@ class PaymentController extends Controller
             return;
         }
 
-        $model = new \App\Models\PaymentInvoice();
-        $success = $model->approveInvoice($code, 'Simulator Admin CicalengkaGO');
+        $model   = new \App\Models\PaymentInvoice();
+        $success = $model->approveInvoice($code, 'Admin CicalengkaGO');
 
         if ($success) {
-            $this->successResponse('Pembayaran invoice berhasil disimulasikan & lunas!', [
+            $this->successResponse('Pembayaran invoice berhasil diapprove oleh admin!', [
                 'invoice_code' => $code,
-                'status'       => 'paid'
+                'status'       => 'paid',
             ]);
         } else {
             $this->errorResponse('Invoice tidak ditemukan atau sudah dibayar.');
         }
     }
 
+    // =========================================================================
+    // TRANSFER SALDO CICALENGKAPAY
+    // =========================================================================
+
     /**
-     * Kirim Uang / Transfer Saldo CicalengkaPay ke Rekening Bank, E-Wallet (Fee Rp 1.500), atau Sesama CicalengkaPay
+     * Transfer saldo ke: Rekening Bank | E-Wallet | Sesama CicalengkaPay
+     * POST /payment/transfer
+     * Body: { transfer_type: "bank"|"ewallet"|"internal", amount, ... }
      */
     public function transfer(): void
     {
@@ -520,38 +761,34 @@ class PaymentController extends Controller
             return;
         }
 
-        $data = $this->getPost();
+        $data         = $this->getPost();
         $transferType = trim((string)($data['transfer_type'] ?? $data['type'] ?? 'bank'));
-        $amount = (float)($data['amount'] ?? 0);
-        $notes = trim((string)($data['notes'] ?? $data['note'] ?? ''));
+        $amount       = (float)($data['amount'] ?? 0);
+        $notes        = trim((string)($data['notes'] ?? $data['note'] ?? ''));
 
         if ($amount < 1000) {
             $this->errorResponse('Nominal kirim uang minimal Rp 1.000.');
             return;
         }
 
-        $walletModel = new \App\Models\Wallet();
-        $sender = auth_user();
+        $walletModel  = new \App\Models\Wallet();
+        $sender       = auth_user();
         $senderWallet = $walletModel->getOrCreate($senderId, 'customer');
         $currentBalance = (float)($senderWallet['balance'] ?? 0);
 
-        // Auto-heal table columns for customer transfers
-        try {
-            Database::execute("ALTER TABLE `withdraw_requests` MODIFY COLUMN `user_type` VARCHAR(32) NOT NULL DEFAULT 'customer'");
-        } catch (\Throwable $e) {}
-        try {
-            Database::execute("ALTER TABLE `wallet_transactions` MODIFY COLUMN `category` VARCHAR(50) NOT NULL DEFAULT 'transfer'");
-        } catch (\Throwable $e) {}
+        // Auto-heal kolom (migrasi aman)
+        try { Database::execute("ALTER TABLE `withdraw_requests` MODIFY COLUMN `user_type` VARCHAR(32) NOT NULL DEFAULT 'customer'"); } catch (\Throwable $e) {}
+        try { Database::execute("ALTER TABLE `wallet_transactions` MODIFY COLUMN `category` VARCHAR(50) NOT NULL DEFAULT 'transfer'"); } catch (\Throwable $e) {}
 
-        // =====================================================================
-        // 1. TRANSFER KE REKENING BANK (Fee Rp 1.500)
-        // =====================================================================
+        // ------------------------------------------------------------------
+        // 1. Transfer ke Rekening Bank (Fee Rp 1.500)
+        // ------------------------------------------------------------------
         if ($transferType === 'bank') {
-            $bankName = trim((string)($data['bank_name'] ?? 'BCA'));
+            $bankName      = trim((string)($data['bank_name'] ?? 'BCA'));
             $accountNumber = trim((string)($data['account_number'] ?? ''));
             $accountHolder = trim((string)($data['account_holder'] ?? ''));
-            $fee = 1500.0;
-            $totalDeduct = $amount + $fee;
+            $fee           = 1500.0;
+            $totalDeduct   = $amount + $fee;
 
             if (empty($bankName) || empty($accountNumber) || empty($accountHolder)) {
                 $this->errorResponse('Nama Bank, Nomor Rekening, dan Nama Pemilik Rekening wajib diisi lengkap.');
@@ -564,32 +801,25 @@ class PaymentController extends Controller
             }
 
             if ($currentBalance < $totalDeduct) {
-                $this->errorResponse("Saldo tidak mencukupi. Dibutuhkan Rp " . number_format($totalDeduct, 0, ',', '.') . " (Transfer Rp " . number_format($amount, 0, ',', '.') . " + Biaya Admin Rp 1.500), sedangkan saldo Anda Rp " . number_format($currentBalance, 0, ',', '.') . ".");
+                $this->errorResponse(
+                    'Saldo tidak mencukupi. Dibutuhkan Rp ' . number_format($totalDeduct, 0, ',', '.') .
+                    ' (Transfer Rp ' . number_format($amount, 0, ',', '.') . ' + Biaya Admin Rp 1.500)' .
+                    ', sedangkan saldo Anda Rp ' . number_format($currentBalance, 0, ',', '.') . '.'
+                );
                 return;
             }
 
             try {
                 $withdrawCode = 'TRF-BANK-' . strtoupper(substr(uniqid(), -6)) . rand(10, 99);
                 Database::transaction(function () use ($walletModel, $senderId, $amount, $fee, $bankName, $accountNumber, $accountHolder, $notes, $withdrawCode) {
-                    // 1. Debit pokok transfer
-                    $walletModel->debit(
-                        $senderId,
-                        $amount,
-                        'withdraw',
-                        "Kirim uang ke Bank {$bankName} ({$accountNumber} a.n {$accountHolder})" . ($notes ? " - {$notes}" : ""),
+                    $walletModel->debit($senderId, $amount, 'withdraw',
+                        "Kirim uang ke Bank {$bankName} ({$accountNumber} a.n {$accountHolder})" . ($notes ? " - {$notes}" : ''),
                         $withdrawCode
                     );
-
-                    // 2. Debit biaya admin Rp 1.500
-                    $walletModel->debit(
-                        $senderId,
-                        $fee,
-                        'fee',
+                    $walletModel->debit($senderId, $fee, 'fee',
                         "Biaya admin transfer ke Bank {$bankName} (Rp 1.500)",
                         $withdrawCode . '-FEE'
                     );
-
-                    // 3. Catat ke tabel withdraw_requests / pengajuan transfer bank
                     Database::insert('withdraw_requests', [
                         'withdraw_code'  => $withdrawCode,
                         'user_id'        => $senderId,
@@ -599,20 +829,23 @@ class PaymentController extends Controller
                         'account_number' => $accountNumber,
                         'account_holder' => $accountHolder,
                         'status'         => 'pending',
-                        'admin_notes'    => 'Kirim Uang ke Bank via CicalengkaPay (Biaya Admin Rp 1.500)' . ($notes ? " | Pesan: {$notes}" : '')
+                        'admin_notes'    => 'Kirim Uang ke Bank via CicalengkaPay (Biaya Admin Rp 1.500)' . ($notes ? " | Pesan: {$notes}" : ''),
                     ]);
                 });
 
-                $this->successResponse("Permintaan transfer ke {$bankName} sebesar Rp " . number_format($amount, 0, ',', '.') . " berhasil diajukan! (Biaya admin Rp 1.500).", [
-                    'transfer_type'   => 'bank',
-                    'bank_name'       => $bankName,
-                    'account_number'  => $accountNumber,
-                    'account_holder'  => $accountHolder,
-                    'amount'          => $amount,
-                    'fee'             => $fee,
-                    'total_deducted'  => $totalDeduct,
-                    'reference_id'    => $withdrawCode
-                ]);
+                $this->successResponse(
+                    "Permintaan transfer ke {$bankName} sebesar Rp " . number_format($amount, 0, ',', '.') . " berhasil diajukan! (Biaya admin Rp 1.500).",
+                    [
+                        'transfer_type'  => 'bank',
+                        'bank_name'      => $bankName,
+                        'account_number' => $accountNumber,
+                        'account_holder' => $accountHolder,
+                        'amount'         => $amount,
+                        'fee'            => $fee,
+                        'total_deducted' => $totalDeduct,
+                        'reference_id'   => $withdrawCode,
+                    ]
+                );
                 return;
             } catch (\Throwable $e) {
                 $this->errorResponse('Gagal memproses transfer ke bank: ' . $e->getMessage());
@@ -620,15 +853,15 @@ class PaymentController extends Controller
             }
         }
 
-        // =====================================================================
-        // 2. TRANSFER KE E-WALLET (Fee Rp 1.500)
-        // =====================================================================
+        // ------------------------------------------------------------------
+        // 2. Transfer ke E-Wallet (Fee Rp 1.500)
+        // ------------------------------------------------------------------
         if ($transferType === 'ewallet') {
-            $ewalletName = trim((string)($data['ewallet_name'] ?? 'DANA'));
+            $ewalletName   = trim((string)($data['ewallet_name'] ?? 'DANA'));
             $accountNumber = trim((string)($data['account_number'] ?? $data['phone'] ?? ''));
             $accountHolder = trim((string)($data['account_holder'] ?? ''));
-            $fee = 1500.0;
-            $totalDeduct = $amount + $fee;
+            $fee           = 1500.0;
+            $totalDeduct   = $amount + $fee;
 
             if (empty($ewalletName) || empty($accountNumber) || empty($accountHolder)) {
                 $this->errorResponse('Nama E-Wallet, Nomor HP Akun, dan Nama Akun Penerima wajib diisi.');
@@ -641,32 +874,25 @@ class PaymentController extends Controller
             }
 
             if ($currentBalance < $totalDeduct) {
-                $this->errorResponse("Saldo tidak mencukupi. Dibutuhkan Rp " . number_format($totalDeduct, 0, ',', '.') . " (Transfer Rp " . number_format($amount, 0, ',', '.') . " + Biaya Admin Rp 1.500), sedangkan saldo Anda Rp " . number_format($currentBalance, 0, ',', '.') . ".");
+                $this->errorResponse(
+                    'Saldo tidak mencukupi. Dibutuhkan Rp ' . number_format($totalDeduct, 0, ',', '.') .
+                    ' (Transfer Rp ' . number_format($amount, 0, ',', '.') . ' + Biaya Admin Rp 1.500)' .
+                    ', sedangkan saldo Anda Rp ' . number_format($currentBalance, 0, ',', '.') . '.'
+                );
                 return;
             }
 
             try {
                 $withdrawCode = 'TRF-EWAL-' . strtoupper(substr(uniqid(), -6)) . rand(10, 99);
                 Database::transaction(function () use ($walletModel, $senderId, $amount, $fee, $ewalletName, $accountNumber, $accountHolder, $notes, $withdrawCode) {
-                    // 1. Debit pokok transfer
-                    $walletModel->debit(
-                        $senderId,
-                        $amount,
-                        'withdraw',
-                        "Kirim uang ke E-Wallet {$ewalletName} ({$accountNumber} a.n {$accountHolder})" . ($notes ? " - {$notes}" : ""),
+                    $walletModel->debit($senderId, $amount, 'withdraw',
+                        "Kirim uang ke E-Wallet {$ewalletName} ({$accountNumber} a.n {$accountHolder})" . ($notes ? " - {$notes}" : ''),
                         $withdrawCode
                     );
-
-                    // 2. Debit biaya admin Rp 1.500
-                    $walletModel->debit(
-                        $senderId,
-                        $fee,
-                        'fee',
+                    $walletModel->debit($senderId, $fee, 'fee',
                         "Biaya admin transfer ke E-Wallet {$ewalletName} (Rp 1.500)",
                         $withdrawCode . '-FEE'
                     );
-
-                    // 3. Catat ke tabel withdraw_requests / pengajuan transfer e-wallet
                     Database::insert('withdraw_requests', [
                         'withdraw_code'  => $withdrawCode,
                         'user_id'        => $senderId,
@@ -676,20 +902,23 @@ class PaymentController extends Controller
                         'account_number' => $accountNumber,
                         'account_holder' => $accountHolder,
                         'status'         => 'pending',
-                        'admin_notes'    => 'Kirim Uang ke E-Wallet via CicalengkaPay (Biaya Admin Rp 1.500)' . ($notes ? " | Pesan: {$notes}" : '')
+                        'admin_notes'    => 'Kirim Uang ke E-Wallet via CicalengkaPay (Biaya Admin Rp 1.500)' . ($notes ? " | Pesan: {$notes}" : ''),
                     ]);
                 });
 
-                $this->successResponse("Permintaan transfer ke E-Wallet {$ewalletName} sebesar Rp " . number_format($amount, 0, ',', '.') . " berhasil diajukan! (Biaya admin Rp 1.500).", [
-                    'transfer_type'   => 'ewallet',
-                    'ewallet_name'    => $ewalletName,
-                    'account_number'  => $accountNumber,
-                    'account_holder'  => $accountHolder,
-                    'amount'          => $amount,
-                    'fee'             => $fee,
-                    'total_deducted'  => $totalDeduct,
-                    'reference_id'    => $withdrawCode
-                ]);
+                $this->successResponse(
+                    "Permintaan transfer ke E-Wallet {$ewalletName} sebesar Rp " . number_format($amount, 0, ',', '.') . " berhasil diajukan! (Biaya admin Rp 1.500).",
+                    [
+                        'transfer_type'  => 'ewallet',
+                        'ewallet_name'   => $ewalletName,
+                        'account_number' => $accountNumber,
+                        'account_holder' => $accountHolder,
+                        'amount'         => $amount,
+                        'fee'            => $fee,
+                        'total_deducted' => $totalDeduct,
+                        'reference_id'   => $withdrawCode,
+                    ]
+                );
                 return;
             } catch (\Throwable $e) {
                 $this->errorResponse('Gagal memproses transfer ke e-wallet: ' . $e->getMessage());
@@ -697,16 +926,16 @@ class PaymentController extends Controller
             }
         }
 
-        // =====================================================================
-        // 3. TRANSFER SESAMA CICALENGKAPAY (Bebas Biaya Admin)
-        // =====================================================================
+        // ------------------------------------------------------------------
+        // 3. Transfer Sesama CicalengkaPay (Bebas Biaya Admin)
+        // ------------------------------------------------------------------
         $recipientPhone = trim((string)($data['recipient_phone'] ?? $data['phone'] ?? $data['recipient'] ?? ''));
         if (empty($recipientPhone)) {
             $this->errorResponse('Nomor WhatsApp / HP penerima wajib diisi.');
             return;
         }
 
-        $cleanPhone = preg_replace('/[^0-9]/', '', $recipientPhone);
+        $cleanPhone    = preg_replace('/[^0-9]/', '', $recipientPhone);
         $cleanPhoneAlt = $cleanPhone;
         if (str_starts_with($cleanPhone, '62')) {
             $cleanPhoneAlt = '0' . substr($cleanPhone, 2);
@@ -733,31 +962,29 @@ class PaymentController extends Controller
             $refId = 'TRF-' . time() . '-' . rand(100, 999);
             Database::transaction(function () use ($walletModel, $senderId, $recipient, $sender, $amount, $notes, $refId) {
                 $walletModel->debit(
-                    $senderId,
-                    $amount,
-                    'transfer',
-                    "Kirim saldo ke {$recipient['name']} ({$recipient['phone']})" . ($notes ? " - {$notes}" : ""),
+                    $senderId, $amount, 'transfer',
+                    "Kirim saldo ke {$recipient['name']} ({$recipient['phone']})" . ($notes ? " - {$notes}" : ''),
                     $refId
                 );
-
                 $walletModel->credit(
-                    (int)$recipient['id'],
-                    $amount,
-                    'transfer',
-                    "Terima saldo dari {$sender['name']} ({$sender['phone']})" . ($notes ? " - {$notes}" : ""),
+                    (int)$recipient['id'], $amount, 'transfer',
+                    "Terima saldo dari {$sender['name']} ({$sender['phone']})" . ($notes ? " - {$notes}" : ''),
                     $refId
                 );
             });
 
-            $this->successResponse("Berhasil mengirim uang sebesar Rp " . number_format($amount, 0, ',', '.') . " ke {$recipient['name']}! (Bebas Biaya Admin)", [
-                'recipient_name'  => $recipient['name'],
-                'recipient_phone' => $recipient['phone'],
-                'amount'          => $amount,
-                'fee'             => 0,
-                'total_deducted'  => $amount,
-                'reference_id'    => $refId,
-                'notes'           => $notes
-            ]);
+            $this->successResponse(
+                "Berhasil mengirim uang sebesar Rp " . number_format($amount, 0, ',', '.') . " ke {$recipient['name']}! (Bebas Biaya Admin)",
+                [
+                    'recipient_name'  => $recipient['name'],
+                    'recipient_phone' => $recipient['phone'],
+                    'amount'          => $amount,
+                    'fee'             => 0,
+                    'total_deducted'  => $amount,
+                    'reference_id'    => $refId,
+                    'notes'           => $notes,
+                ]
+            );
         } catch (\Throwable $e) {
             $this->errorResponse('Gagal mengirim saldo: ' . $e->getMessage());
         }

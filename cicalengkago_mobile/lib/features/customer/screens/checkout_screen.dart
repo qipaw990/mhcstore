@@ -208,37 +208,76 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     if (mounted) {
       if (res['success'] == true) {
-        final orderCode = res['data']?['order_code'] ?? res['data']?['order_id']?.toString() ?? res['order_code'] ?? '';
-        
-        String? redirectUrl = res['data']?['redirect_url'] ?? res['data']?['payment_url'] ?? res['redirect_url'];
+        final orderCode = res['data']?['order_code'] ??
+            res['data']?['order_id']?.toString() ??
+            res['order_code'] ??
+            '';
 
-        // If online payment (DOKU) is chosen and URL is available, open InAppPaymentScreen
-        if (_paymentMethod == 'doku' && redirectUrl != null && redirectUrl.isNotEmpty) {
-          await Navigator.push<bool>(
+        final String? redirectUrl =
+            res['data']?['redirect_url'] ?? res['data']?['payment_url'] ?? res['redirect_url'];
+
+        // ── Pembayaran via DOKU: buka WebView InAppPaymentScreen ──────────────
+        if (_paymentMethod == 'doku' &&
+            redirectUrl != null &&
+            redirectUrl.isNotEmpty) {
+          // Buka halaman DOKU dan tunggu hasilnya
+          final bool? paymentConfirmed = await Navigator.push<bool>(
             context,
             MaterialPageRoute(
               builder: (_) => InAppPaymentScreen(
-                paymentUrl: redirectUrl!,
+                paymentUrl: redirectUrl,
                 orderId: orderCode,
                 amount: grandTotal,
-                title: 'Pembayaran DOKU Checkout',
+                title: 'Pembayaran Pesanan DOKU',
                 onPaymentComplete: () {
                   context.read<CustomerController>().fetchOrders();
                 },
               ),
             ),
           );
-        } else {
-          AppAlert.showSuccess(
-            context,
-            title: 'Pesanan Berhasil Dibuat! 🎉',
-            message: chosenDeliveryType == 'merchant'
-                ? 'Pesanan diteruskan ke Mitra Toko untuk dimasak & diantar langsung.'
-                : 'Pesanan diteruskan ke Mitra Toko. Driver akan segera ditugaskan setelah pesanan siap.',
-          );
+
+          if (!mounted) return;
+
+          // Setelah WebView ditutup, navigasi ke halaman tracking
+          if (paymentConfirmed == true) {
+            // Pembayaran terkonfirmasi via polling
+            AppAlert.showSuccess(
+              context,
+              title: 'Pembayaran Berhasil! 🎉',
+              message: 'Pesanan Anda telah dikonfirmasi. Driver akan segera ditugaskan.',
+            );
+          } else {
+            // Belum terkonfirmasi atau masih pending — webhook server akan update otomatis
+            AppAlert.showSuccess(
+              context,
+              title: 'Pesanan Dibuat! ⏳',
+              message:
+                  'Pesanan Anda telah dibuat. Status pembayaran akan diperbarui otomatis setelah konfirmasi dari DOKU diterima.',
+            );
+          }
+
+          if (mounted && orderCode.isNotEmpty) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (_) => OrderTrackingScreen(orderCode: orderCode),
+              ),
+              (route) => route.isFirst,
+            );
+          }
+          return;
         }
 
-        if (mounted) {
+        // ── Pembayaran non-DOKU (wallet, COD) ─────────────────────────────────
+        AppAlert.showSuccess(
+          context,
+          title: 'Pesanan Berhasil Dibuat! 🎉',
+          message: chosenDeliveryType == 'merchant'
+              ? 'Pesanan diteruskan ke Mitra Toko untuk dimasak & diantar langsung.'
+              : 'Pesanan diteruskan ke Mitra Toko. Driver akan segera ditugaskan setelah pesanan siap.',
+        );
+
+        if (mounted && orderCode.isNotEmpty) {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(

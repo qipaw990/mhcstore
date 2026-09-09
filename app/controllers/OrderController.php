@@ -179,7 +179,7 @@ class OrderController extends Controller
             ];
 
             // Online payment: DOKU Checkout URL covering grand total of all stores
-            if (in_array($paymentMethod, ['doku', 'midtrans'])) {
+            if (in_array($paymentMethod, ['doku', 'online'])) {
                 $user        = auth_user();
                 $appConfig   = require APP_PATH . '/config/app.php';
                 $publicUrl   = rtrim($appConfig['public_url'] ?? '', '/');
@@ -187,7 +187,7 @@ class OrderController extends Controller
                 $dokuParams  = [
                     'invoice_number' => $dokuInvoice,
                     'amount'         => (int)round($grandTotal),
-                    'callback_url'   => $publicUrl . '/orders/' . $firstCode . '/tracking',
+                    'callback_url'   => $publicUrl . '/payment/doku/callback?order=' . $firstCode,
                     'customer'       => [
                         'id'    => (string)($user['id'] ?? $userId),
                         'name'  => $deliveryAddress['contact_name'] ?: ($user['name'] ?? 'Pelanggan'),
@@ -239,13 +239,15 @@ class OrderController extends Controller
             ];
 
             // If online payment via DOKU
-            if (in_array($paymentMethod, ['doku', 'midtrans'])) {
-                $user = auth_user();
+            if (in_array($paymentMethod, ['doku', 'online'])) {
+                $user        = auth_user();
+                $appConfig   = require APP_PATH . '/config/app.php';
+                $publicUrl   = rtrim($appConfig['public_url'] ?? '', '/');
                 $dokuInvoice = 'PCL-' . $result['order_code'] . '-' . time();
                 $dokuParams = [
                     'invoice_number' => $dokuInvoice,
                     'amount'         => (int)round($result['total']),
-                    'callback_url'   => $publicUrl . '/orders/' . $result['order_code'] . '/tracking',
+                    'callback_url'   => $publicUrl . '/payment/doku/callback?order=' . $result['order_code'],
                     'customer'       => [
                         'id'    => (string)($user['id'] ?? $userId),
                         'name'  => sanitize($data['sender_name'] ?? ($user['name'] ?? 'Pengirim')),

@@ -21,7 +21,7 @@ class DokuService
     {
         $dbClientId     = $this->getSetting('doku_client_id');
         $dbSecretKey    = $this->getSetting('doku_secret_key');
-        $dbEnvironment  = $this->getSetting('doku_environment', 'sandbox');
+        $dbEnvironment  = $this->getSetting('doku_environment', 'production'); // default production
         $dbEnabled      = $this->getSetting('doku_enabled', '1');
 
         $this->clientId     = $dbClientId ?: (getenv('DOKU_CLIENT_ID') ?: '');
@@ -268,24 +268,51 @@ class DokuService
 
     /**
      * Verify Webhook Signature from DOKU
+     *
+     * DOKU mengirim signature menggunakan path notifikasi yang didaftarkan
+     * di Merchant Portal DOKU. Pastikan $targetPath sesuai dengan
+     * Notification URL yang Anda daftarkan, contoh: /payment/doku/notification
+     *
+     * @param array  $headers  HTTP headers dari DOKU
+     * @param string $rawBody  Raw request body (JSON string)
+     * @return bool  true jika valid, false jika tidak
      */
     public function verifyNotification(array $headers, string $rawBody): bool
     {
-        if (empty($this->secretKey)) return false;
-
-        $clientId = $headers['Client-Id'] ?? $headers['client-id'] ?? '';
-        $requestId = $headers['Request-Id'] ?? $headers['request-id'] ?? '';
-        $requestTimestamp = $headers['Request-Timestamp'] ?? $headers['request-timestamp'] ?? '';
-        $signature = $headers['Signature'] ?? $headers['signature'] ?? '';
-
-        if (empty($signature) || empty($requestId) || empty($requestTimestamp)) {
+        if (empty($this->secretKey)) {
+            error_log('[DOKU] verifyNotification: secretKey kosong, tolak semua webhook');
             return false;
         }
 
-        $targetPath = '/payment/doku/notification';
-        $expectedSignature = $this->generateSignature($this->clientId ?: $clientId, $requestId, $requestTimestamp, $targetPath, $rawBody);
+        // Header bisa dalam berbagai format (case-sensitive PHP server)
+        $clientId         = $headers['Client-Id']         ?? $headers['client-id']         ?? $headers['CLIENT_ID']         ?? '';
+        $requestId        = $headers['Request-Id']        ?? $headers['request-id']        ?? $headers['REQUEST_ID']        ?? '';
+        $requestTimestamp = $headers['Request-Timestamp'] ?? $headers['request-timestamp'] ?? $headers['REQUEST_TIMESTAMP'] ?? '';
+        $receivedSignature = $headers['Signature']        ?? $headers['signature']         ?? $headers['SIGNATURE']         ?? '';
 
-        return hash_equals($expectedSignature, $signature);
+        if (empty($receivedSignature) || empty($requestId) || empty($requestTimestamp)) {
+            error_log('[DOKU] verifyNotification: header tidak lengkap. RequestId=' . $requestId . ' Timestamp=' . $requestTimestamp);
+            return false;
+        }
+
+        // Path harus sesuai dengan yang terdaftar di DOKU Merchant Portal
+        $targetPath = '/payment/doku/notification';
+
+        $expectedSignature = $this->generateSignature(
+            $this->clientId ?: $clientId,
+            $requestId,
+            $requestTimestamp,
+            $targetPath,
+            $rawBody
+        );
+
+        $valid = hash_equals($expectedSignature, $receivedSignature);
+
+        if (!$valid) {
+            error_log('[DOKU] Signature mismatch. Expected=' . $expectedSignature . ' Got=' . $receivedSignature);
+        }
+
+        return $valid;
     }
 
     /**

@@ -61,7 +61,9 @@ Router::post('/wallet/topup-doku', [PaymentController::class, 'topupDoku'], ['Au
 Router::post('/payment/topup-snap', [PaymentController::class, 'topupDoku'], ['AuthMiddleware']); // legacy alias -> DOKU
 Router::post('/payment/topup-update-status', [PaymentController::class, 'updateTopupStatus'], ['AuthMiddleware']);
 Router::post('/payment/verify', [PaymentController::class, 'verifyClientCallback']);
-Router::post('/payment/simulate-sandbox-success', [PaymentController::class, 'simulateSandboxSuccess']);
+// Callback redirect dari DOKU setelah user selesai di halaman bayar (GET, bukan webhook)
+Router::get('/payment/doku/callback', [PaymentController::class, 'dokuCallback']);
+// Webhook server-to-server dari DOKU (POST, verifikasi HMAC)
 Router::post('/payment/doku/notification', [PaymentController::class, 'dokuNotification']);
 Router::get('/notifications', [CustomerController::class, 'notifications'], ['AuthMiddleware']);
 

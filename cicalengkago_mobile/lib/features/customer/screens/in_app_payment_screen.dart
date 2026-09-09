@@ -23,7 +23,7 @@ class InAppPaymentScreen extends StatefulWidget {
     required this.paymentUrl,
     required this.orderId,
     required this.amount,
-    this.title = 'Pembayaran',
+    this.title = 'Pembayaran DOKU',
     required this.onPaymentComplete,
   });
 
@@ -32,15 +32,13 @@ class InAppPaymentScreen extends StatefulWidget {
 }
 
 class _InAppPaymentScreenState extends State<InAppPaymentScreen> {
-  bool _isLoading = false;
-  bool _isProcessingFinish = false;
+  bool _isPolling = false;
   bool _hasOpened = false;
+  bool _isProcessingFinish = false;
 
   @override
   void initState() {
     super.initState();
-    // Di Web, pengguna akan menekan tombol "Buka Halaman Pembayaran" secara langsung
-    // untuk mencegah pemblokiran popup (popup blocker) oleh browser modern.
   }
 
   Future<void> _openPaymentUrl() async {
@@ -58,54 +56,71 @@ class _InAppPaymentScreenState extends State<InAppPaymentScreen> {
     }
   }
 
-  Future<void> _handlePaymentSuccess() async {
+  /// Polling status dari server setelah user klik "Sudah Bayar"
+  Future<void> _handlePaymentDoneClick() async {
     if (_isProcessingFinish) return;
-    setState(() => _isProcessingFinish = true);
+    setState(() {
+      _isProcessingFinish = true;
+      _isPolling = true;
+    });
 
-    try {
-      await ApiService.post(ApiConstants.paymentVerify, {
-        'order_id': widget.orderId,
-      });
-    } catch (_) {}
+    bool isPaid = false;
+    String finalStatus = 'pending';
+
+    // Poll sampai 5x (tiap 2 detik) menunggu webhook DOKU
+    for (int attempt = 0; attempt < 5; attempt++) {
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
+
+      try {
+        final res = await ApiService.post(ApiConstants.paymentVerify, {
+          'order_id': widget.orderId,
+        });
+
+        if (res['success'] == true) {
+          isPaid = res['data']?['is_paid'] == true ||
+              res['data']?['payment_status'] == 'paid' ||
+              res['data']?['status'] == 'settled' ||
+              res['data']?['status'] == 'success';
+          finalStatus = res['data']?['status']?.toString() ?? 'pending';
+          if (isPaid) break;
+        }
+      } catch (e) {
+        debugPrint('Polling attempt $attempt: $e');
+      }
+    }
 
     if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    widget.onPaymentComplete();
-    Navigator.pop(context, true);
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text('Pembayaran ${CurrencyFormatter.formatRupiah(widget.amount)} Berhasil!'),
-        backgroundColor: Colors.green.shade700,
-        duration: const Duration(seconds: 4),
-      ),
-    );
-  }
 
-  Future<void> _simulateSandboxPayment() async {
-    setState(() => _isLoading = true);
-    try {
-      final res = await ApiService.post(ApiConstants.paymentSimulate, {
-        'order_id': widget.orderId,
-        'amount': widget.amount,
-        'payment_type': 'doku_sandbox_inapp',
-      });
-      if (res['success'] == true && mounted) {
-        final messenger = ScaffoldMessenger.of(context);
-        widget.onPaymentComplete();
-        Navigator.pop(context, true);
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text('Pembayaran ${CurrencyFormatter.formatRupiah(widget.amount)} Berhasil (Sandbox Mode)!'),
-            backgroundColor: Colors.green.shade700,
-            duration: const Duration(seconds: 4),
+    setState(() {
+      _isPolling = false;
+    });
+
+    widget.onPaymentComplete();
+    Navigator.pop(context, isPaid);
+
+    final messenger = ScaffoldMessenger.of(context);
+    if (isPaid) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('🎉 Pembayaran ${CurrencyFormatter.formatRupiah(widget.amount)} Berhasil Dikonfirmasi!'),
+          backgroundColor: Colors.green.shade700,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } else {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            finalStatus == 'pending'
+                ? '⏳ Pembayaran belum terkonfirmasi. Saldo/pesanan akan diperbarui otomatis jika pembayaran berhasil.'
+                : 'Status: $finalStatus. Hubungi CS jika ada kendala.',
           ),
-        );
-        return;
-      }
-    } catch (e) {
-      debugPrint('Sandbox payment error: $e');
+          backgroundColor: Colors.orange.shade700,
+          duration: const Duration(seconds: 5),
+        ),
+      );
     }
-    if (mounted) setState(() => _isLoading = false);
   }
 
   @override
@@ -115,7 +130,7 @@ class _InAppPaymentScreenState extends State<InAppPaymentScreen> {
       return _buildWebPaymentPage(context);
     }
 
-    // Di mobile (Android/iOS): render native WebView lewat file terpisah
+    // Di mobile (Android/iOS): render native WebView
     return buildNativePaymentScreen(
       context: context,
       paymentUrl: widget.paymentUrl,
@@ -127,180 +142,278 @@ class _InAppPaymentScreenState extends State<InAppPaymentScreen> {
   }
 
   Widget _buildWebPaymentPage(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(
-        backgroundColor: AppTheme.primaryRed,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(widget.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            Text(
-              CurrencyFormatter.formatRupiah(widget.amount),
-              style: const TextStyle(fontSize: 11, color: Colors.white70),
-            ),
-          ],
-        ),
-      ),
-      body: _isLoading
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(color: AppTheme.primaryRed),
-                  SizedBox(height: 16),
-                  Text('Memproses...', style: TextStyle(color: Colors.grey)),
-                ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (!_isPolling) {
+          _cancelAndExit(context);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8F9FA),
+        appBar: AppBar(
+          backgroundColor: AppTheme.primaryRed,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(widget.title,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(
+                CurrencyFormatter.formatRupiah(widget.amount),
+                style: const TextStyle(fontSize: 11, color: Colors.white70),
               ),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 16),
-                  Container(
-                    width: 90,
-                    height: 90,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryRed.withOpacity(0.1),
-                      shape: BoxShape.circle,
+            ],
+          ),
+          bottom: _isPolling
+              ? const PreferredSize(
+                  preferredSize: Size.fromHeight(3.0),
+                  child: LinearProgressIndicator(
+                    color: Colors.green,
+                    backgroundColor: Colors.white24,
+                  ),
+                )
+              : null,
+        ),
+        body: _isPolling
+            ? const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: AppTheme.primaryRed),
+                    SizedBox(height: 16),
+                    Text(
+                      'Mengkonfirmasi Pembayaran...',
+                      style: TextStyle(
+                          color: Color(0xFF1A1A2E),
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold),
                     ),
-                    child: const Icon(Icons.open_in_browser_rounded, size: 48, color: AppTheme.primaryRed),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    _hasOpened ? 'Halaman Pembayaran Telah Dibuka' : 'Mengarahkan ke Pembayaran...',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1A1A2E)),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    _hasOpened
-                        ? 'Tab pembayaran sudah terbuka. Selesaikan di sana, lalu konfirmasi di bawah.'
-                        : 'Halaman pembayaran akan terbuka di tab baru...',
-                    style: const TextStyle(fontSize: 13, color: Colors.grey, height: 1.5),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 28),
+                    SizedBox(height: 8),
+                    Text(
+                      'Sedang menghubungi server DOKU untuk verifikasi.\nMohon tunggu sebentar...',
+                      style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.5),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 16),
 
-                  // Jumlah
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.shade200),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
-                    ),
-                    child: Column(
-                      children: [
-                        const Text('Total Pembayaran', style: TextStyle(fontSize: 13, color: Colors.grey)),
-                        const SizedBox(height: 4),
-                        Text(
-                          CurrencyFormatter.formatRupiah(widget.amount),
-                          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
-                        ),
-                        const SizedBox(height: 2),
-                        Text('ID: ${widget.orderId}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Buka / buka ulang
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryRed,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        elevation: 0,
+                    // Icon
+                    Container(
+                      width: 90,
+                      height: 90,
+                      decoration: BoxDecoration(
+                        color: _hasOpened
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : AppTheme.primaryRed.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
                       ),
-                      onPressed: _openPaymentUrl,
-                      icon: const Icon(Icons.open_in_browser),
-                      label: Text(
-                        _hasOpened ? 'Buka Ulang Halaman Pembayaran' : 'Buka Halaman Pembayaran',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      child: Icon(
+                        _hasOpened
+                            ? Icons.check_circle_outline_rounded
+                            : Icons.open_in_browser_rounded,
+                        size: 48,
+                        color: _hasOpened ? Colors.green : AppTheme.primaryRed,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
+                    const SizedBox(height: 20),
 
-                  // Tombol konfirmasi (muncul setelah dibuka)
-                  if (_hasOpened) ...[
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          elevation: 0,
-                        ),
-                        onPressed: _handlePaymentSuccess,
-                        icon: const Icon(Icons.check_circle),
-                        label: const Text(
-                          'Saya Sudah Selesai Membayar',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
+                    Text(
+                      _hasOpened
+                          ? 'Halaman Pembayaran Sudah Terbuka'
+                          : 'Mengarahkan ke Pembayaran DOKU...',
+                      style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A2E)),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 10),
-                  ],
-
-                  // Sandbox mode
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFFBEB),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.amber.shade300),
+                    Text(
+                      _hasOpened
+                          ? 'Selesaikan pembayaran di halaman DOKU, lalu kembali dan konfirmasi di bawah.'
+                          : 'Halaman pembayaran akan terbuka. Selesaikan di sana.',
+                      style:
+                          const TextStyle(fontSize: 13, color: Colors.grey, height: 1.5),
+                      textAlign: TextAlign.center,
                     ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.flash_on, color: Colors.amber, size: 20),
-                        const SizedBox(width: 10),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 28),
+
+                    // Kartu info pembayaran
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Mode Pengujian (Sandbox)',
-                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF92400E))),
-                              Text('Simulasi bayar tanpa membuka DOKU.',
-                                  style: TextStyle(fontSize: 11, color: Color(0xFFB45309))),
+                              const Text('Total Tagihan',
+                                  style: TextStyle(
+                                      color: Colors.grey, fontSize: 13)),
+                              Text(
+                                CurrencyFormatter.formatRupiah(widget.amount),
+                                style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1A1A2E)),
+                              ),
                             ],
                           ),
+                          const Divider(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Nomor Transaksi',
+                                  style: TextStyle(
+                                      color: Colors.grey, fontSize: 13)),
+                              Text(
+                                widget.orderId,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1A1A2E),
+                                    fontSize: 12),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          const Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Metode Pembayaran',
+                                  style: TextStyle(
+                                      color: Colors.grey, fontSize: 13)),
+                              Text(
+                                'DOKU Checkout Resmi',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1A1A2E),
+                                    fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Tombol Buka Halaman DOKU
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.primaryRed,
+                          side: const BorderSide(color: AppTheme.primaryRed),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
+                        onPressed: _openPaymentUrl,
+                        icon: const Icon(Icons.open_in_browser_rounded),
+                        label: Text(
+                          _hasOpened
+                              ? 'Buka Ulang Halaman DOKU'
+                              : 'Buka Halaman Pembayaran DOKU',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Tombol Konfirmasi Sudah Bayar (muncul setelah membuka DOKU)
+                    if (_hasOpened) ...[
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.amber.shade700,
+                            backgroundColor: Colors.green.shade600,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                             elevation: 0,
                           ),
-                          onPressed: _simulateSandboxPayment,
-                          child: const Text('Bayar Instant', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                          onPressed: _handlePaymentDoneClick,
+                          icon: const Icon(Icons.check_circle_rounded),
+                          label: const Text(
+                            'Saya Sudah Selesai Membayar',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
-                      ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Info: status diperbarui otomatis
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green.shade200),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.info_outline_rounded,
+                                color: Colors.green, size: 20),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Status saldo/pesanan akan diperbarui otomatis melalui notifikasi server DOKU. Tidak perlu khawatir jika belum langsung berubah.',
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF14532D),
+                                    height: 1.4),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    TextButton(
+                      onPressed: () => _cancelAndExit(context),
+                      child: const Text('Batalkan & Kembali',
+                          style: TextStyle(color: Colors.grey)),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: const Text('Batalkan', style: TextStyle(color: Colors.grey)),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+      ),
     );
+  }
+
+  void _cancelAndExit(BuildContext context) {
+    if (widget.orderId.startsWith('TOPUP-')) {
+      try {
+        ApiService.post('/payment/topup-update-status', {
+          'order_id': widget.orderId,
+          'status': 'canceled',
+          'notes': 'Sesi pembayaran ditutup oleh pengguna',
+        });
+      } catch (_) {}
+    }
+    Navigator.pop(context, false);
   }
 }

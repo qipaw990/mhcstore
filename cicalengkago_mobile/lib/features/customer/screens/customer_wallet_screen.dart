@@ -463,15 +463,15 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                       borderRadius: BorderRadius.circular(14),
                       color: const Color(0xFFE1251B).withValues(alpha: 0.05),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Container(
-                          padding: EdgeInsets.all(8),
-                          decoration: BoxDecoration(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
                             color: Color(0xFFE1251B),
                             borderRadius: BorderRadius.all(Radius.circular(10)),
                           ),
-                          child: Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 20),
+                          child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 20),
                         ),
                         SizedBox(width: 12),
                         Expanded(
@@ -568,8 +568,9 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
 
           if (completed == true && context.mounted) {
             context.read<CustomerController>().fetchWallet();
+          }
+          return;
         }
-        return;
       }
 
       if (context.mounted) {
@@ -1640,39 +1641,29 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
               ),
               const SizedBox(height: 20),
 
-              final pendingPaymentUrl = log['payment_url']?.toString() ?? log['redirect_url']?.toString() ?? '';
-              if (status == 'pending' && pendingPaymentUrl.isNotEmpty) ...[
-                SizedBox(
+              if (status == 'pending') ...[
+                Container(
                   width: double.infinity,
-                  height: 46,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => InAppPaymentScreen(
-                            paymentUrl: pendingPaymentUrl,
-                            orderId: code,
-                            amount: amount,
-                            title: 'Lanjutkan Top Up via DOKU',
-                            onPaymentComplete: () {
-                              context.read<CustomerController>().fetchWallet();
-                            },
-                          ),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 20),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Sesi pembayaran ini telah ditutup. Untuk isi ulang saldo, silakan buat permintaan Top Up baru di menu CicalengkaPay.',
+                          style: TextStyle(fontSize: 11, color: Color(0xFF92400E), height: 1.3, fontWeight: FontWeight.w500),
                         ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryRed,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    child: const Text('Lanjutkan Pembayaran Sekarang', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
               ],
 
               SizedBox(
