@@ -10,10 +10,7 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/services/global_call_service.dart';
 import '../../../core/theme/app_theme.dart';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:js' as js;
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:js_util' as js_util;
+import '../../../core/utils/web_audio_helper.dart';
 
 class InAppCallScreen extends StatefulWidget {
   final String orderCode;
@@ -66,14 +63,12 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
   RTCPeerConnection? _peerConnection;
   MediaStream? _localStream;
+  MediaStream? _remoteStream;
   final Set<String> _sentCandidateKeys = {};
   final Set<String> _addedCandidateKeys = {};
   final List<RTCIceCandidate> _pendingLocalCandidates = [];
   dynamic _pendingOffer;
   int _consecutiveNullPolls = 0;
-
-  // Web-only: HTML audio element ID for remote audio playback (managed via JS interop)
-  String? _webAudioElementId;
 
   @override
   void initState() {
@@ -244,8 +239,14 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     }
   }
 
+  void _unlockWebAudio() {
+    if (!kIsWeb) return;
+    unlockWebAudio();
+  }
+
   Future<void> _initCallSession() async {
     try {
+      _unlockWebAudio();
       final hasPermission = await _requestMicrophonePermission();
       if (!hasPermission) {
         if (mounted) {
@@ -381,16 +382,34 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         }
       };
 
+      _peerConnection!.onIceConnectionState = (RTCIceConnectionState state) {
+        debugPrint('[WebRTC] ICE connection state changed: $state');
+        if (state == RTCIceConnectionState.RTCIceConnectionStateConnected ||
+            state == RTCIceConnectionState.RTCIceConnectionStateCompleted) {
+          _stopRingtone();
+          if (mounted && !_isConnected) {
+            setState(() {
+              _isConnected = true;
+              _statusText = 'Panggilan Berlangsung';
+            });
+            _startTimer();
+            _setSpeakerphone(_isSpeakerOn);
+          }
+        }
+      };
+
       _peerConnection!.onTrack = (RTCTrackEvent event) async {
         debugPrint('[WebRTC] Received remote track: ${event.track.kind}, streams: ${event.streams.length}');
         if (event.track.kind == 'audio') {
           event.track.enabled = true;
           if (event.streams.isNotEmpty) {
+            _remoteStream = event.streams[0];
             _attachRemoteStream(event.streams[0]);
           } else {
             try {
               final newStream = await createLocalMediaStream('remote_audio_stream');
               await newStream.addTrack(event.track);
+              _remoteStream = newStream;
               _attachRemoteStream(newStream);
             } catch (_) {}
           }
@@ -404,6 +423,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         for (var track in stream.getAudioTracks()) {
           track.enabled = true;
         }
+        _remoteStream = stream;
         _attachRemoteStream(stream);
         _stopRingtone();
         _setSpeakerphone(_isSpeakerOn);
@@ -484,65 +504,91 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   }
 
   /// Attaches the remote MediaStream to the appropriate audio output.
-  /// On Web: creates a real <audio> DOM element and sets srcObject directly
-  /// via dart:js_util — avoids browser autoplay/mute policies.
-  /// On Native: uses RTCVideoRenderer which feeds the OS audio routing.
+  /// - Sets _remoteRenderer.srcObject for OS audio routing (Native) & Web platform view.
+  /// - On Web: Unhides WebRTC audio element container & calls .play(), plus creates explicit DOM <audio> element.
   void _attachRemoteStream(MediaStream stream) {
-    if (kIsWeb) {
-      try {
-        // Remove old audio element if exists
-        if (_webAudioElementId != null) {
-          final oldEl = js.context['document'].callMethod('getElementById', [_webAudioElementId!]);
-          if (oldEl != null) {
-            try { oldEl.callMethod('pause', []); } catch (_) {}
-            try { js_util.setProperty(oldEl, 'srcObject', null); } catch (_) {}
-            try { oldEl.callMethod('remove', []); } catch (_) {}
-          }
-          _webAudioElementId = null;
-        }
+    _remoteStream = stream;
+    debugPrint('[WebRTC] _attachRemoteStream called with stream: ${stream.id}, audio tracks: ${stream.getAudioTracks().length}');
 
-        final elId = 'cgo_remote_audio_${DateTime.now().millisecondsSinceEpoch}';
-        _webAudioElementId = elId;
-
-        // Create <audio> element via JS
-        final doc = js.context['document'];
-        final audioEl = doc.callMethod('createElement', ['audio']) as js.JsObject;
-
-        // Set attributes directly on the JS object
-        js_util.setProperty(audioEl, 'id', elId);
-        js_util.setProperty(audioEl, 'autoplay', true);
-        js_util.setProperty(audioEl, 'muted', false);
-
-        // Style: invisible but in DOM (browser will NOT block visible audio)
-        final style = js_util.getProperty(audioEl, 'style') as js.JsObject;
-        js_util.setProperty(style, 'position', 'fixed');
-        js_util.setProperty(style, 'opacity', '0.001'); // tiny opacity, not 0 — avoids mute
-        js_util.setProperty(style, 'width', '1px');
-        js_util.setProperty(style, 'height', '1px');
-        js_util.setProperty(style, 'bottom', '0px');
-        js_util.setProperty(style, 'right', '0px');
-        js_util.setProperty(style, 'pointerEvents', 'none');
-
-        // KEY: set srcObject to the native JS MediaStream
-        js_util.setProperty(audioEl, 'srcObject', stream.jsStream);
-
-        // Append to body and play
-        js.context['document']['body'].callMethod('appendChild', [audioEl]);
-        final playPromise = audioEl.callMethod('play', []);
-        // Handle promise rejection gracefully
-        if (playPromise != null) {
-          js_util.promiseToFuture<void>(playPromise as Object).catchError((e) {
-            debugPrint('[WebRTC-Web] audio.play() rejected: $e');
-          });
-        }
-
-        debugPrint('[WebRTC-Web] ✅ Remote audio element created and playing (id: $elId)');
-      } catch (e) {
-        debugPrint('[WebRTC-Web] _attachRemoteStream error: $e — falling back to renderer');
-        _remoteRenderer.srcObject = stream;
-      }
-    } else {
+    // 1. Always set on remote renderer (works on both native and web)
+    try {
       _remoteRenderer.srcObject = stream;
+    } catch (e) {
+      debugPrint('[WebRTC] _remoteRenderer.srcObject error: $e');
+    }
+
+    // 2. On Web: activate audio playback (unhide audio manager & play audio elements)
+    if (kIsWeb) {
+      activateWebRtcAudio(stream);
+    }
+  }
+
+  /// Processes remote ICE candidates safely without dropping candidates when remoteDescription is not yet ready.
+  Future<void> _processRemoteIceCandidates(dynamic rawCandidates) async {
+    if (_peerConnection == null || rawCandidates == null) return;
+
+    try {
+      final remoteDesc = await _peerConnection!.getRemoteDescription();
+      if (remoteDesc == null || (remoteDesc.sdp == null || remoteDesc.sdp!.isEmpty)) {
+        // DO NOT add candidates yet — remote description is not ready.
+        // They are NOT marked in _addedCandidateKeys so they will be added once remoteDescription is set!
+        return;
+      }
+    } catch (_) {
+      return;
+    }
+
+    dynamic cands = rawCandidates;
+    if (cands is String) {
+      try { cands = jsonDecode(cands); } catch (_) { cands = []; }
+    }
+    if (cands is! List) return;
+
+    // Caller: own role is 'caller'
+    // Callee: own roles are 'callee' and 'receiver'
+    final Set<String> ownRoles = widget.isIncoming
+        ? {'callee', 'receiver'}
+        : {'caller'};
+
+    for (var item in cands) {
+      if (item is! Map) continue;
+      final senderRole = item['role']?.toString() ?? '';
+      // Skip candidates sent by ourselves
+      if (ownRoles.contains(senderRole)) continue;
+
+      Map<String, dynamic>? candObj;
+      if (item['candidate'] is Map) {
+        candObj = Map<String, dynamic>.from(item['candidate']);
+      } else if (item['candidate'] is String) {
+        try { candObj = jsonDecode(item['candidate']); } catch (_) {
+          candObj = {
+            'candidate': item['candidate'],
+            'sdpMid': item['sdpMid'],
+            'sdpMLineIndex': item['sdpMLineIndex'],
+          };
+        }
+      }
+
+      final candStr = candObj?['candidate']?.toString() ?? '';
+      if (candObj != null && candStr.isNotEmpty) {
+        final key = '${candStr}_${candObj['sdpMid']}_${candObj['sdpMLineIndex']}';
+        if (!_addedCandidateKeys.contains(key)) {
+          try {
+            debugPrint('📥 [WebRTC] Adding remote ICE candidate (role: $senderRole): $candStr');
+            await _peerConnection!.addCandidate(
+              RTCIceCandidate(
+                candStr,
+                candObj['sdpMid']?.toString(),
+                int.tryParse(candObj['sdpMLineIndex']?.toString() ?? '0') ?? 0,
+              ),
+            );
+            // ONLY record after successful addition!
+            _addedCandidateKeys.add(key);
+          } catch (e) {
+            debugPrint('⚠️ [WebRTC] addCandidate error (will retry next poll): $e');
+          }
+        }
+      }
     }
   }
 
@@ -606,6 +652,10 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                     debugPrint('✅ [InAppCallScreen] Remote SDP answer successfully applied on caller!');
                     _stopRingtone();
                     _setSpeakerphone(_isSpeakerOn);
+                    // Process any ICE candidates buffered now that answer is set!
+                    if (call['ice_candidates'] != null) {
+                      await _processRemoteIceCandidates(call['ice_candidates']);
+                    }
                   } catch (e) {
                     debugPrint('⚠️ [InAppCallScreen] setRemoteDescription error on caller: $e');
                   }
@@ -613,60 +663,9 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
               }
             }
 
-            // Process remote ICE candidates
+            // Process remote ICE candidates (safely guarded: will only add if remoteDescription is set)
             if (call['ice_candidates'] != null && _peerConnection != null) {
-              dynamic cands = call['ice_candidates'];
-              if (cands is String) {
-                try { cands = jsonDecode(cands); } catch (_) { cands = []; }
-              }
-              if (cands is List) {
-                // Build the set of roles that belong to THIS side — skip them, accept the rest.
-                // Caller (outgoing): own role is 'caller'
-                // Callee (incoming): own roles are 'callee' and 'receiver'
-                final Set<String> ownRoles = widget.isIncoming
-                    ? {'callee', 'receiver'}
-                    : {'caller'};
-
-                for (var item in cands) {
-                  if (item is Map) {
-                    final senderRole = item['role']?.toString() ?? '';
-                    // Skip candidates sent by ourselves
-                    if (ownRoles.contains(senderRole)) continue;
-
-                    Map<String, dynamic>? candObj;
-                    if (item['candidate'] is Map) {
-                      candObj = Map<String, dynamic>.from(item['candidate']);
-                    } else if (item['candidate'] is String) {
-                      try { candObj = jsonDecode(item['candidate']); } catch (_) {
-                        candObj = {
-                          'candidate': item['candidate'],
-                          'sdpMid': item['sdpMid'],
-                          'sdpMLineIndex': item['sdpMLineIndex'],
-                        };
-                      }
-                    }
-
-                    if (candObj != null && candObj['candidate'] != null) {
-                      final key = '${candObj['candidate']}_${candObj['sdpMid']}_${candObj['sdpMLineIndex']}';
-                      if (!_addedCandidateKeys.contains(key)) {
-                        _addedCandidateKeys.add(key);
-                        try {
-                          debugPrint('📥 [WebRTC] Adding remote ICE candidate (role: $senderRole): ${candObj['candidate']}');
-                          await _peerConnection!.addCandidate(
-                            RTCIceCandidate(
-                              candObj['candidate']?.toString(),
-                              candObj['sdpMid']?.toString(),
-                              int.tryParse(candObj['sdpMLineIndex']?.toString() ?? '0') ?? 0,
-                            ),
-                          );
-                        } catch (e) {
-                          debugPrint('⚠️ [WebRTC] addCandidate error: $e');
-                        }
-                      }
-                    }
-                  }
-                }
-              }
+              await _processRemoteIceCandidates(call['ice_candidates']);
             }
 
             if (call['connected_at_ms'] != null) {
@@ -731,6 +730,8 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   Future<void> _answerCall() async {
     try {
       await _stopRingtone();
+      _unlockWebAudio();
+
       final hasPermission = await _requestMicrophonePermission();
       if (!hasPermission) {
         if (mounted) {
@@ -748,6 +749,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       await _setupWebRtcEngine();
 
       dynamic offerData = _pendingOffer;
+      dynamic pollIceCandidates = widget.callData?['ice_candidates'];
       if (offerData is String) {
         try {
           offerData = jsonDecode(offerData);
@@ -763,6 +765,9 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
           if (pollRes.statusCode == 200) {
             final pollJson = jsonDecode(pollRes.body);
             final rawOff = pollJson['data']?['active_call']?['offer'];
+            if (pollJson['data']?['active_call']?['ice_candidates'] != null) {
+              pollIceCandidates = pollJson['data']?['active_call']?['ice_candidates'];
+            }
             if (rawOff != null) {
               offerData = rawOff is String ? jsonDecode(rawOff) : rawOff;
               if (offerData is String) offerData = jsonDecode(offerData);
@@ -777,11 +782,19 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
           RTCSessionDescription(offerData['sdp'], offerData['type'] ?? 'offer'),
         );
 
+        // Process any remote ICE candidates already available now that remoteDescription is set!
+        if (pollIceCandidates != null) {
+          await _processRemoteIceCandidates(pollIceCandidates);
+        }
+
         final answer = await _peerConnection!.createAnswer({
           'offerToReceiveAudio': 1,
           'offerToReceiveVideo': 0,
         });
         await _peerConnection!.setLocalDescription(answer);
+
+        // Flush any buffered local ICE candidates gathered so far
+        _flushPendingIceCandidates();
 
         if (_callId != null) {
           await http.post(
@@ -816,6 +829,11 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       }
       _startTimer();
       _setSpeakerphone(_isSpeakerOn);
+
+      // Re-attach remote stream if it was already delivered via onTrack/onAddStream
+      if (_remoteStream != null) {
+        _attachRemoteStream(_remoteStream!);
+      }
     } catch (e) {
       debugPrint('[WebRTC] Answer error: $e');
       _handleCallEnded('Gagal menjawab panggilan');
@@ -886,13 +904,8 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
   Future<void> _cleanupWebRtc() async {
     try {
       // Cleanup web audio element via JS
-      if (kIsWeb && _webAudioElementId != null) {
-        try {
-          js.context.callMethod('eval', [
-            "(function(){ var el = document.getElementById('${_webAudioElementId!}'); if(el){ el.pause(); el.srcObject=null; el.remove(); } })()"
-          ]);
-          _webAudioElementId = null;
-        } catch (_) {}
+      if (kIsWeb) {
+        cleanupWebAudio();
       }
 
       _localStream?.getTracks().forEach((track) {
@@ -902,6 +915,13 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       });
       await _localStream?.dispose();
       _localStream = null;
+
+      _remoteStream?.getTracks().forEach((track) {
+        try {
+          track.stop();
+        } catch (_) {}
+      });
+      _remoteStream = null;
 
       await _peerConnection?.close();
       await _peerConnection?.dispose();
@@ -950,25 +970,22 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       backgroundColor: const Color(0xFF0F172A),
       body: Stack(
         children: [
-          // Embedded WebRTC Renderer View (Required for Native Audio Routing)
-          // On web, audio is handled via HTML <audio> element instead.
-          // Use Offstage to keep it in tree (for native) without painting on web.
-          if (!kIsWeb)
-            Positioned(
-              left: 0,
-              top: 0,
-              child: Opacity(
-                opacity: 0,
-                child: SizedBox(
-                  width: 1,
-                  height: 1,
-                  child: RTCVideoView(
-                    _remoteRenderer,
-                    objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                  ),
+          // Embedded WebRTC Renderer View (Required for Native Audio Routing and Web Platform View)
+          Positioned(
+            left: 0,
+            top: 0,
+            child: Opacity(
+              opacity: 0.001,
+              child: SizedBox(
+                width: 2,
+                height: 2,
+                child: RTCVideoView(
+                  _remoteRenderer,
+                  objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                 ),
               ),
             ),
+          ),
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {

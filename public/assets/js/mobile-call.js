@@ -330,11 +330,11 @@
             remoteAudio.setAttribute('playsinline', '');
             remoteAudio.setAttribute('webkit-playsinline', '');
             remoteAudio.style.position = 'fixed';
-            remoteAudio.style.top = '-9999px';
-            remoteAudio.style.left = '-9999px';
+            remoteAudio.style.bottom = '0px';
+            remoteAudio.style.right = '0px';
             remoteAudio.style.width = '1px';
             remoteAudio.style.height = '1px';
-            remoteAudio.style.opacity = '0.01';
+            remoteAudio.style.opacity = '0.001';
             remoteAudio.style.pointerEvents = 'none';
             remoteAudio.style.display = 'block';
             document.body.appendChild(remoteAudio);
@@ -355,11 +355,11 @@
             remoteAudio.setAttribute('playsinline', '');
             remoteAudio.setAttribute('webkit-playsinline', '');
             remoteAudio.style.position = 'fixed';
-            remoteAudio.style.top = '-9999px';
-            remoteAudio.style.left = '-9999px';
+            remoteAudio.style.bottom = '0px';
+            remoteAudio.style.right = '0px';
             remoteAudio.style.width = '1px';
             remoteAudio.style.height = '1px';
-            remoteAudio.style.opacity = '0.01';
+            remoteAudio.style.opacity = '0.001';
             remoteAudio.style.pointerEvents = 'none';
             remoteAudio.style.display = 'block';
             document.body.appendChild(remoteAudio);
@@ -857,19 +857,20 @@
                         }
 
                         // IGNORE OWN CANDIDATES so WebRTC connection doesn't reject
-                        if (isCaller && senderRole === 'caller') continue;
-                        if (!isCaller && senderRole === 'receiver') continue;
+                        const ownRoles = isCaller ? ['caller'] : ['receiver', 'callee'];
+                        if (senderRole && ownRoles.includes(senderRole)) continue;
 
                         if (!actualCandidateObj || typeof actualCandidateObj !== 'object') continue;
 
                         const candKey = JSON.stringify(actualCandidateObj);
                         if (!processedCandidates.has(candKey)) {
-                            processedCandidates.add(candKey);
-                            await peerConnection.addIceCandidate(new RTCIceCandidate(actualCandidateObj)).then(() => {
+                            try {
+                                await peerConnection.addIceCandidate(new RTCIceCandidate(actualCandidateObj));
+                                processedCandidates.add(candKey);
                                 console.log('[VoiceCall] Remote ICE candidate added successfully.');
-                            }).catch(err => {
-                                console.warn('[VoiceCall] addIceCandidate warning:', err);
-                            });
+                            } catch (err) {
+                                console.warn('[VoiceCall] addIceCandidate warning (will retry):', err);
+                            }
                         }
                     } catch (itemErr) {
                         console.warn('[VoiceCall] Candidate item error:', itemErr);
