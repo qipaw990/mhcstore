@@ -37,7 +37,6 @@ class MerchantDeliveryMapModal extends StatefulWidget {
 class _MerchantDeliveryMapModalState extends State<MerchantDeliveryMapModal> {
   late final MapController _mapController;
   List<LatLng> _routePoints = [];
-  bool _isLoadingRoute = true;
   double _distanceMeters = 0;
   int _etaMinutes = 1;
   bool _isDelivering = false;
@@ -154,21 +153,12 @@ class _MerchantDeliveryMapModalState extends State<MerchantDeliveryMapModal> {
     } catch (_) {}
   }
 
-  Future<void> _callCustomer(String phone) async {
-    if (phone.isEmpty || phone == '-') return;
-    final uri = Uri.parse('tel:$phone');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final order = widget.order;
     final orderId = int.tryParse(order['id']?.toString() ?? '0') ?? 0;
     final orderCode = order['order_code']?.toString() ?? order['id']?.toString() ?? '';
     final customerName = order['customer_name']?.toString() ?? 'Pelanggan';
-    final customerPhone = order['customer_phone']?.toString() ?? '';
     final delivAddr = order['delivery_address'] is Map ? order['delivery_address'] as Map : {};
     final addressText = delivAddr['address']?.toString() ?? delivAddr['contact_address']?.toString() ?? 'Cicalengka';
     final items = order['items'] is List ? (order['items'] as List) : [];

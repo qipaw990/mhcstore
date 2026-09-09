@@ -421,7 +421,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
 
   Widget _buildUnpaidView(Map<String, dynamic> order, Map<String, dynamic> live, double totalAmount) {
-    final paymentMethod = live['payment_method']?.toString() ?? order['payment_method']?.toString() ?? 'doku';
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -726,9 +725,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     required Map<String, dynamic> order,
     required Map<String, dynamic> live,
   }) {
-    // Calculate live distance and estimated ETA
+    // Calculate live distance
     final distKm = const Distance().as(LengthUnit.Kilometer, LatLng(driverLat, driverLng), LatLng(custLat, custLng));
-    final etaMin = (distKm * 3 + 5).round();
 
     final List batchStores = (batchInfo != null && batchInfo['stores'] is List && (batchInfo['stores'] as List).isNotEmpty)
         ? (batchInfo['stores'] as List)
@@ -1798,8 +1796,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         children: [
                           Builder(builder: (context) {
                             final firstStore = (batchStores.isNotEmpty && batchStores[0] is Map) ? batchStores[0] : null;
-                            final sName = (firstStore?['name'] ?? firstStore?['store_name'] ?? order?['store_name'] ?? 'Mitra Toko Cicalengka').toString();
-                            final sLogoRaw = (firstStore?['logo'] ?? firstStore?['store_logo'] ?? order?['store_logo'] ?? order?['store_cover'] ?? '').toString();
+                            final sName = (firstStore?['name'] ?? firstStore?['store_name'] ?? order['store_name'] ?? 'Mitra Toko Cicalengka').toString();
+                            final sLogoRaw = (firstStore?['logo'] ?? firstStore?['store_logo'] ?? order['store_logo'] ?? order['store_cover'] ?? '').toString();
                             final sLogoFormatted = sLogoRaw.isNotEmpty ? ApiConstants.formatImageUrl(sLogoRaw) : '';
 
                             return Row(
@@ -2697,7 +2695,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final storeAddress = liveStore['address']?.toString() ??
         order['store_address']?.toString() ??
         'Cicalengka, Kab. Bandung';
-    final storePhone = order['store_phone']?.toString() ?? '';
 
     final Map<String, dynamic>? batchInfo = live['batch_info'] is Map
         ? Map<String, dynamic>.from(live['batch_info'] as Map)
@@ -2800,7 +2797,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     final st = entry.value is Map ? (entry.value as Map) : {};
                     final sName = st['name']?.toString() ?? 'Toko Cicalengka';
                     final sAddress = st['address']?.toString() ?? 'Cicalengka, Bandung';
-                    final sPhone = st['phone']?.toString() ?? '';
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 8),
