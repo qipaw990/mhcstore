@@ -11,6 +11,29 @@ echo "======================================================="
 git fetch origin main
 git reset --hard origin/main
 
+# -------------------------------------------------------
+# Build Flutter Web App (jika Flutter terinstall di host)
+# Output: cicalengkago_mobile/build/web → public/flutter_web/
+# -------------------------------------------------------
+if command -v flutter &> /dev/null; then
+    echo "📱 Membangun Flutter Web App..."
+    cd cicalengkago_mobile
+    flutter pub get
+    if flutter build web --release; then
+        echo "✅ Flutter web build berhasil!"
+        # Salin hasil build ke folder public agar terbaca Docker
+        mkdir -p ../public/flutter_web
+        cp -rf build/web/* ../public/flutter_web/
+        echo "📁 Output disalin ke public/flutter_web/"
+    else
+        echo "⚠️ Flutter web build gagal, melanjutkan dengan versi sebelumnya..."
+    fi
+    cd ..
+else
+    echo "⚠️ Flutter tidak terinstall di host, skip build Flutter web."
+    echo "   Gunakan: sudo snap install flutter --classic  (lalu jalankan update.sh lagi)"
+fi
+
 # Pastikan folder uploads ada dan memiliki permission write
 mkdir -p public/uploads/profiles \
          public/uploads/stores \
