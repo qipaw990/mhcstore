@@ -149,18 +149,10 @@ class Review extends Model
      */
     public function getOrderReview(int $orderId, int $userId): array
     {
-        $order = Database::fetchOne("SELECT id, delivery_batch_id FROM `orders` WHERE `id` = ? LIMIT 1", [$orderId]);
-        $orderIds = [$orderId];
-        if ($order && !empty($order['delivery_batch_id'])) {
-            $batchOrds = Database::query("SELECT id FROM `orders` WHERE `delivery_batch_id` = ?", [$order['delivery_batch_id']]);
-            if (!empty($batchOrds)) {
-                $orderIds = array_column($batchOrds, 'id');
-            }
-        }
-
-        $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
-        $params = array_merge($orderIds, [$userId]);
-
+        // Strictly fetch reviews only for this specific order_id.
+        // Do NOT expand to delivery_batch_id — that batch belongs to the driver's
+        // trip, not a single customer transaction, causing "ghost reviews" to
+        // appear on unrelated orders handled by the same driver.
         $reviews = Database::query(
             "SELECT r.*, s.name as store_name, s.logo as store_logo,
                     dmu.name as dm_name, dmu.avatar as dm_avatar,
@@ -169,8 +161,8 @@ class Review extends Model
              LEFT JOIN `stores` s ON r.store_id = s.id
              LEFT JOIN `delivery_men` dm ON r.delivery_man_id = dm.id
              LEFT JOIN `users` dmu ON dm.user_id = dmu.id
-             WHERE r.order_id IN ({$placeholders}) AND r.user_id = ?",
-            $params
+             WHERE r.order_id = ? AND r.user_id = ?",
+            [$orderId, $userId]
         );
 
         $result = [
