@@ -1543,6 +1543,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
     final status = log['status']?.toString().toLowerCase() ?? 'pending';
     final paymentMethod = log['payment_method']?.toString().toUpperCase() ?? 'DOKU';
     final createdAt = log['created_at']?.toString() ?? '-';
+    final pendingPaymentUrl = log['payment_url']?.toString() ?? log['redirect_url']?.toString() ?? '';
 
     Color statusColor = const Color(0xFFD97706);
     Color statusBadgeBg = const Color(0xFFFEF3C7);
@@ -1642,31 +1643,82 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
               const SizedBox(height: 20),
 
               if (status == 'pending') ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF3C7),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFFDE68A)),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 20),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Sesi pembayaran ini belum selesai. Anda dapat membatalkan tiket ini agar riwayat Anda tetap rapi.',
-                          style: TextStyle(fontSize: 11, color: Color(0xFF92400E), height: 1.3, fontWeight: FontWeight.w500),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
-                  height: 44,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      String targetUrl = pendingPaymentUrl;
+
+                      // Jika payment URL belum tersedia di log, request sesi pembayaran baru dari backend
+                      if (targetUrl.isEmpty) {
+                        try {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (_) => const Center(child: CircularProgressIndicator(color: AppTheme.primaryRed)),
+                          );
+                          final res = await ApiService.post(ApiConstants.walletTopupDoku, {
+                            'amount': amount.toInt(),
+                            'old_topup_code': code,
+                          });
+                          if (context.mounted) {
+                            Navigator.of(context, rootNavigator: true).pop();
+                          }
+                          if (res['success'] == true && res['data'] != null) {
+                            targetUrl = res['data']['payment_url']?.toString() ??
+                                res['data']['redirect_url']?.toString() ?? '';
+                          } else {
+                            if (context.mounted) {
+                              AppAlert.showError(context, title: 'Gagal', message: res['message'] ?? 'Gagal membuat sesi pembayaran.');
+                            }
+                            return;
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            Navigator.of(context, rootNavigator: true).pop();
+                            AppAlert.showError(context, title: 'Error', message: e.toString());
+                          }
+                          return;
+                        }
+                      }
+
+                      if (targetUrl.isNotEmpty && context.mounted) {
+                        final completed = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => InAppPaymentScreen(
+                              paymentUrl: targetUrl,
+                              orderId: code,
+                              amount: amount,
+                              title: 'Bayar Top Up via DOKU',
+                              onPaymentComplete: () {
+                                context.read<CustomerController>().fetchWallet();
+                              },
+                            ),
+                          ),
+                        );
+
+                        if (completed == true && context.mounted) {
+                          context.read<CustomerController>().fetchWallet();
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.credit_card_rounded, size: 20),
+                    label: const Text('Bayar Sekarang', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryRed,
+                      foregroundColor: Colors.white,
+                      elevation: 1,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  height: 42,
                   child: OutlinedButton.icon(
                     onPressed: () async {
                       final confirmed = await showDialog<bool>(

@@ -377,12 +377,16 @@
 
                                 <?php if ($status === 'pending'): ?>
                                     <div class="d-flex align-items-center gap-1.5 topup-action-cell">
-                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 rounded-pill" style="font-size: 8.5px; font-weight: 600;">
-                                            <i class="bi bi-hourglass-split me-0.5"></i> Menunggu
-                                        </span>
+                                        <button type="button" 
+                                                onclick="retryTopUp('<?= htmlspecialchars($log['topup_code']) ?>', <?= (int)$log['amount'] ?>)"
+                                                class="btn btn-danger btn-sm rounded-pill py-0.5 px-2.5 fw-bold d-inline-flex align-items-center shadow-xs" 
+                                                style="font-size: 8.5px;"
+                                                title="Bayar tiket top up ini sekarang">
+                                            <i class="bi bi-credit-card-fill me-1"></i> Bayar
+                                        </button>
                                         <button type="button" 
                                                 onclick="cancelTopup('<?= htmlspecialchars($log['topup_code']) ?>', this)"
-                                                class="btn btn-outline-danger btn-sm rounded-pill py-0.5 px-2 fw-semibold d-inline-flex align-items-center" 
+                                                class="btn btn-outline-secondary btn-sm rounded-pill py-0.5 px-2 fw-semibold d-inline-flex align-items-center" 
                                                 style="font-size: 8.5px;"
                                                 title="Batalkan tiket top up ini">
                                             <i class="bi bi-x-circle me-1"></i> Batalkan
