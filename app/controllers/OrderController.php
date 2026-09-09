@@ -183,22 +183,39 @@ class OrderController extends Controller
                 $user        = auth_user();
                 $appConfig   = require APP_PATH . '/config/app.php';
                 $publicUrl   = rtrim($appConfig['public_url'] ?? '', '/');
-                $dokuInvoice = 'ORD-' . $firstCode . '-' . time();
+                $dokuInvoice = 'ORD-' . $firstCode . '-' . rand(100, 999);
+
+                $custName = trim($deliveryAddress['contact_name'] ?: ($user['name'] ?? 'Pelanggan'));
+                if (empty($custName)) $custName = 'Pelanggan CicalengkaGO';
+
+                $custEmail = trim($user['email'] ?? '');
+                if (empty($custEmail) || !filter_var($custEmail, FILTER_VALIDATE_EMAIL)) {
+                    $custEmail = 'customer@cicalengkago.id';
+                }
+
+                $rawPhone = $deliveryAddress['contact_phone'] ?: ($user['phone'] ?? '');
+                $cleanPhone = preg_replace('/[^0-9]/', '', $rawPhone);
+                if (strlen($cleanPhone) < 9 || strlen($cleanPhone) > 15) {
+                    $cleanPhone = '081234567890';
+                }
+
                 $dokuParams  = [
                     'invoice_number' => $dokuInvoice,
                     'amount'         => (int)round($grandTotal),
                     'callback_url'   => $publicUrl . '/payment/doku/callback?order=' . $firstCode,
                     'customer'       => [
                         'id'    => (string)($user['id'] ?? $userId),
-                        'name'  => $deliveryAddress['contact_name'] ?: ($user['name'] ?? 'Pelanggan'),
-                        'email' => $user['email'] ?? 'customer@cicalengkago.id',
-                        'phone' => $deliveryAddress['contact_phone'] ?: ($user['phone'] ?? '081234567890'),
+                        'name'  => $custName,
+                        'email' => $custEmail,
+                        'phone' => $cleanPhone,
                     ],
-                    'line_items'     => array_map(fn($code) => [
-                        'name'     => 'Pesanan CicalengkaGO #' . $code,
-                        'price'    => (int)round($grandTotal / count($allOrderCodes)),
-                        'quantity' => 1,
-                    ], $allOrderCodes),
+                    'line_items'     => [
+                        [
+                            'name'     => 'Pesanan CicalengkaGO ' . $firstCode,
+                            'price'    => (int)round($grandTotal),
+                            'quantity' => 1,
+                        ]
+                    ],
                 ];
 
                 $dokuResult = $this->dokuService->createPaymentUrl($dokuParams);
@@ -212,7 +229,7 @@ class OrderController extends Controller
                     : 'Pesanan berhasil dibuat!',
                 $responseData
             );
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             $this->errorResponse($e->getMessage());
         }
     }
@@ -243,20 +260,35 @@ class OrderController extends Controller
                 $user        = auth_user();
                 $appConfig   = require APP_PATH . '/config/app.php';
                 $publicUrl   = rtrim($appConfig['public_url'] ?? '', '/');
-                $dokuInvoice = 'PCL-' . $result['order_code'] . '-' . time();
+                $dokuInvoice = 'PCL-' . $result['order_code'] . '-' . rand(100, 999);
+
+                $custName = trim(sanitize($data['sender_name'] ?? ($user['name'] ?? 'Pengirim')));
+                if (empty($custName)) $custName = 'Pengirim CicalengkaGO';
+
+                $custEmail = trim($user['email'] ?? '');
+                if (empty($custEmail) || !filter_var($custEmail, FILTER_VALIDATE_EMAIL)) {
+                    $custEmail = 'customer@cicalengkago.id';
+                }
+
+                $rawPhone = sanitize($data['sender_phone'] ?? ($user['phone'] ?? ''));
+                $cleanPhone = preg_replace('/[^0-9]/', '', $rawPhone);
+                if (strlen($cleanPhone) < 9 || strlen($cleanPhone) > 15) {
+                    $cleanPhone = '081234567890';
+                }
+
                 $dokuParams = [
                     'invoice_number' => $dokuInvoice,
                     'amount'         => (int)round($result['total']),
                     'callback_url'   => $publicUrl . '/payment/doku/callback?order=' . $result['order_code'],
                     'customer'       => [
                         'id'    => (string)($user['id'] ?? $userId),
-                        'name'  => sanitize($data['sender_name'] ?? ($user['name'] ?? 'Pengirim')),
-                        'email' => $user['email'] ?? 'customer@cicalengkago.id',
-                        'phone' => sanitize($data['sender_phone'] ?? ($user['phone'] ?? '081234567890')),
+                        'name'  => $custName,
+                        'email' => $custEmail,
+                        'phone' => $cleanPhone,
                     ],
                     'line_items'     => [
                         [
-                            'name'     => 'Ongkir CicalengkaSend #' . $result['order_code'],
+                            'name'     => 'Ongkir CicalengkaSend ' . $result['order_code'],
                             'price'    => (int)round($result['total']),
                             'quantity' => 1,
                         ]
@@ -269,7 +301,7 @@ class OrderController extends Controller
             }
 
             $this->successResponse('Pengiriman Parcel berhasil dipesan!', $responseData);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             $this->errorResponse($e->getMessage());
         }
     }

@@ -173,7 +173,21 @@ class DokuService
             ];
         }
 
-        $errorMsg = $result['error']['message'] ?? $result['message'] ?? 'Gagal membuat sesi pembayaran DOKU (HTTP ' . $httpCode . ')';
+        // Ekstrak pesan error secara aman (DOKU sering mengembalikan array pada error.message)
+        $errorMsg = 'Gagal membuat sesi pembayaran DOKU (HTTP ' . $httpCode . ')';
+        if (!empty($result)) {
+            $rawMsg = $result['error']['message'] ?? $result['message'] ?? $result['errors']['message'] ?? $result['error'] ?? null;
+            if (is_array($rawMsg)) {
+                $errorMsg = implode(', ', array_map(function($v) {
+                    return is_array($v) ? json_encode($v, JSON_UNESCAPED_SLASHES) : (string)$v;
+                }, $rawMsg));
+            } elseif (is_string($rawMsg) && trim($rawMsg) !== '') {
+                $errorMsg = $rawMsg;
+            } else {
+                $errorMsg = json_encode($result, JSON_UNESCAPED_SLASHES);
+            }
+        }
+        error_log('[DOKU Checkout Error] ' . $errorMsg . ' | Response HTTP ' . $httpCode . ' | Request: ' . $jsonBody);
         throw new Exception($errorMsg);
     }
 
