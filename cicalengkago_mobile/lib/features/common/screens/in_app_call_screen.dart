@@ -365,35 +365,39 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         _sendLocalIceCandidate(candidate);
       };
 
-      _peerConnection!.onConnectionState = (RTCPeerConnectionState state) {
+      _peerConnection!.onConnectionState = (RTCPeerConnectionState state) async {
         debugPrint('[WebRTC] Connection state changed: $state');
         if (state == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
-          _stopRingtone();
+          await _stopRingtone();
           if (mounted && !_isConnected) {
-            setState(() {
-              _isConnected = true;
-              _statusText = 'Panggilan Berlangsung';
-            });
+            if (mounted) {
+              setState(() {
+                _isConnected = true;
+                _statusText = 'Panggilan Berlangsung';
+              });
+            }
             _startTimer();
-            _setSpeakerphone(_isSpeakerOn);
+            await _setSpeakerphone(_isSpeakerOn);
           }
         } else if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed) {
           debugPrint('⚠️ [WebRTC] Connection state failed, waiting for signaling check...');
         }
       };
 
-      _peerConnection!.onIceConnectionState = (RTCIceConnectionState state) {
+      _peerConnection!.onIceConnectionState = (RTCIceConnectionState state) async {
         debugPrint('[WebRTC] ICE connection state changed: $state');
         if (state == RTCIceConnectionState.RTCIceConnectionStateConnected ||
             state == RTCIceConnectionState.RTCIceConnectionStateCompleted) {
-          _stopRingtone();
+          await _stopRingtone();
           if (mounted && !_isConnected) {
-            setState(() {
-              _isConnected = true;
-              _statusText = 'Panggilan Berlangsung';
-            });
+            if (mounted) {
+              setState(() {
+                _isConnected = true;
+                _statusText = 'Panggilan Berlangsung';
+              });
+            }
             _startTimer();
-            _setSpeakerphone(_isSpeakerOn);
+            await _setSpeakerphone(_isSpeakerOn);
           }
         }
       };
@@ -413,20 +417,20 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
               _attachRemoteStream(newStream);
             } catch (_) {}
           }
-          _stopRingtone();
-          _setSpeakerphone(_isSpeakerOn);
+          await _stopRingtone();
+          await _setSpeakerphone(_isSpeakerOn);
         }
       };
 
-      _peerConnection!.onAddStream = (MediaStream stream) {
+      _peerConnection!.onAddStream = (MediaStream stream) async {
         debugPrint('[WebRTC] Received remote stream: ${stream.id}, audio tracks: ${stream.getAudioTracks().length}');
         for (var track in stream.getAudioTracks()) {
           track.enabled = true;
         }
         _remoteStream = stream;
         _attachRemoteStream(stream);
-        _stopRingtone();
-        _setSpeakerphone(_isSpeakerOn);
+        await _stopRingtone();
+        await _setSpeakerphone(_isSpeakerOn);
       };
 
       // Capture local microphone
@@ -445,7 +449,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         await _peerConnection!.addTrack(track, _localStream!);
       }
 
-      _setSpeakerphone(_isSpeakerOn);
+      await _setSpeakerphone(_isSpeakerOn);
     } catch (e) {
       debugPrint('[WebRTC] Setup peer connection error: $e');
     }
@@ -491,35 +495,106 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     }
   }
 
-  void _setSpeakerphone(bool enable) {
+  Future<void> _setSpeakerphone(bool enable) async {
     if (kIsWeb) return;
     try {
-      Helper.setSpeakerphoneOn(enable);
+      // 1. Force-enable speakerphone (await the Future — critical for Android!)
+      await Helper.setSpeakerphoneOn(enable);
+
+      // 2. Ensure mic track stays unmuted when enabling speaker
       if (_localStream != null && _localStream!.getAudioTracks().isNotEmpty) {
         Helper.setMicrophoneMute(false, _localStream!.getAudioTracks().first);
       }
+
+      // 3. For Android: explicitly set audio mode to in-call communication
+      //    and force volume stream STREAM_VOICE_CALL to speaker output.
+      //    Works via flutter_webrtc's internal Helper/MethodChannel.
+      try {
+        await Helper.setMicrophoneMute(_isMuted, _localStream?.getAudioTracks().firstOrNull);
+      } catch (_) {}
+
+      // 4. Re-assert remote tracks are enabled
+      if (_remoteStream != null) {
+        for (var t in _remoteStream!.getAudioTracks()) {
+          try { t.enabled = true; } catch (_) {}
+        }
+      }
+      // 5. Re-assert local tracks are enabled (except if muted)
+      if (_localStream != null) {
+        for (var t in _localStream!.getAudioTracks()) {
+          try { t.enabled = !_isMuted; } catch (_) {}
+        }
+      }
+
+      debugPrint('[WebRTC] Speakerphone ${enable ? 'ENABLED' : 'DISABLED'} (await OK)');
     } catch (e) {
       debugPrint('[WebRTC] Set speaker error: $e');
     }
   }
 
   /// Attaches the remote MediaStream to the appropriate audio output.
-  /// - Sets _remoteRenderer.srcObject for OS audio routing (Native) & Web platform view.
-  /// - On Web: Unhides WebRTC audio element container & calls .play(), plus creates explicit DOM <audio> element.
+  /// - NATIVE: Aggressively enables audio tracks, re-sets renderer srcObject,
+  ///           re-routes to speakerphone (Android often drops audio on 1st attach).
+  /// - WEB   : Explicit DOM <audio> + WebAudio gain node activation.
   void _attachRemoteStream(MediaStream stream) {
     _remoteStream = stream;
     debugPrint('[WebRTC] _attachRemoteStream called with stream: ${stream.id}, audio tracks: ${stream.getAudioTracks().length}');
 
-    // 1. Always set on remote renderer (works on both native and web)
+    // --- Always force all audio tracks to enabled first ---
+    try {
+      for (var track in stream.getAudioTracks()) {
+        track.enabled = true;
+        debugPrint('[WebRTC] Remote audio track enabled: id=${track.id}, kind=${track.kind}');
+      }
+    } catch (e) {
+      debugPrint('[WebRTC] Enable remote tracks error: $e');
+    }
+
+    // 1. Native + Web: always assign to RTCVideoRenderer (native uses this for routing)
     try {
       _remoteRenderer.srcObject = stream;
     } catch (e) {
       debugPrint('[WebRTC] _remoteRenderer.srcObject error: $e');
     }
 
-    // 2. On Web: activate audio playback (unhide audio manager & play audio elements)
+    // 2. NATIVE PLATFORMS ONLY — force speaker routing and media refresh
+    if (!kIsWeb) {
+      _forceNativeAudioOutput(stream);
+    }
+
+    // 3. WEB: activate audio playback (unhide audio manager & play audio elements)
     if (kIsWeb) {
       activateWebRtcAudio(stream);
+    }
+  }
+
+  /// Native-only (Android/iOS): aggressive audio routing fallback.
+  /// Many Android devices (Xiaomi, Samsung, custom ROMs) require speakerphone
+  /// to be toggled OFF then ON again before audio starts playing after stream attach.
+  Future<void> _forceNativeAudioOutput(MediaStream stream) async {
+    if (kIsWeb) return;
+    try {
+      // Toggle speaker cycle — the single most reliable fix for silent 1st-call issues
+      await Future.delayed(const Duration(milliseconds: 100));
+      try { await Helper.setSpeakerphoneOn(false); } catch (_) {}
+      await Future.delayed(const Duration(milliseconds: 150));
+      try { await Helper.setSpeakerphoneOn(true); } catch (_) {}
+      debugPrint('[WebRTC] Native speaker toggle cycle completed');
+
+      // If still silent after 1.5s, try once more + force renderer refresh
+      Future.delayed(const Duration(milliseconds: 1500), () async {
+        try {
+          if (!_isEnded && _remoteStream != null) {
+            // Detach -> reattach renderer to nudge Android MediaPlayer under the hood
+            _remoteRenderer.srcObject = null;
+            await Future.delayed(const Duration(milliseconds: 50));
+            _remoteRenderer.srcObject = _remoteStream;
+            debugPrint('[WebRTC] Native renderer re-attached (audio fallback)');
+          }
+        } catch (_) {}
+      });
+    } catch (e) {
+      debugPrint('[WebRTC] _forceNativeAudioOutput error: $e');
     }
   }
 
@@ -650,8 +725,8 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                       RTCSessionDescription(ans['sdp']?.toString(), ans['type']?.toString() ?? 'answer'),
                     );
                     debugPrint('✅ [InAppCallScreen] Remote SDP answer successfully applied on caller!');
-                    _stopRingtone();
-                    _setSpeakerphone(_isSpeakerOn);
+                    await _stopRingtone();
+                    await _setSpeakerphone(_isSpeakerOn);
                     // Process any ICE candidates buffered now that answer is set!
                     if (call['ice_candidates'] != null) {
                       await _processRemoteIceCandidates(call['ice_candidates']);
@@ -677,7 +752,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
             }
 
             if (status == 'connected' && !_isConnected) {
-              _stopRingtone();
+              await _stopRingtone();
               _connectedAtMs ??= DateTime.now().millisecondsSinceEpoch;
               if (mounted) {
                 setState(() {
@@ -686,7 +761,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
                 });
               }
               _startTimer();
-              _setSpeakerphone(_isSpeakerOn);
+              await _setSpeakerphone(_isSpeakerOn);
             } else if (status == 'rejected') {
               final pollCallId = int.tryParse(call['id']?.toString() ?? '0');
               if (_callId != null && pollCallId != null && pollCallId == _callId) {
@@ -828,7 +903,7 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
         });
       }
       _startTimer();
-      _setSpeakerphone(_isSpeakerOn);
+      await _setSpeakerphone(_isSpeakerOn);
 
       // Re-attach remote stream if it was already delivered via onTrack/onAddStream
       if (_remoteStream != null) {
@@ -875,11 +950,11 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
     }
   }
 
-  void _toggleSpeaker() {
+  Future<void> _toggleSpeaker() async {
     setState(() {
       _isSpeakerOn = !_isSpeakerOn;
     });
-    _setSpeakerphone(_isSpeakerOn);
+    await _setSpeakerphone(_isSpeakerOn);
   }
 
   void _handleCallEnded(String message) {

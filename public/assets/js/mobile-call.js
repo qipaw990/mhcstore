@@ -341,101 +341,220 @@
         }
     }
 
-    // Attach and play remote audio stream (Dual output: HTML Audio + Web Audio API Destination)
+    // Attach and play remote audio stream (Triple output: HTML Audio + Web Audio + Direct AudioContext dest)
     function attachAndPlayRemoteStream(event) {
         console.log('[VoiceCall] Remote voice stream event received:', event);
         const streamToPlay = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([event.track]);
-        
+
+        // --- Step 0: Immediately force-enable ALL audio tracks in the stream ---
+        try {
+            streamToPlay.getAudioTracks().forEach(t => {
+                try { t.enabled = true; } catch (_) {}
+            });
+            if (event && event.track) {
+                try { event.track.enabled = true; } catch (_) {}
+            }
+        } catch (e) {}
+
         let remoteAudio = document.getElementById('ccgRemoteAudio');
         if (!remoteAudio) {
             remoteAudio = document.createElement('audio');
             remoteAudio.id = 'ccgRemoteAudio';
             remoteAudio.autoplay = true;
             remoteAudio.playsInline = true;
+            remoteAudio.muted = false;
             remoteAudio.setAttribute('playsinline', '');
             remoteAudio.setAttribute('webkit-playsinline', '');
+            remoteAudio.setAttribute('x-webkit-airplay', 'allow');
+            // Keep audio element VISIBLE to some browsers (Chrome Android blocks display:none audio)
             remoteAudio.style.position = 'fixed';
             remoteAudio.style.bottom = '0px';
             remoteAudio.style.right = '0px';
-            remoteAudio.style.width = '1px';
-            remoteAudio.style.height = '1px';
+            remoteAudio.style.width = '2px';      // NOT 1x1 (some browsers treat <2x2 as invisible = no play)
+            remoteAudio.style.height = '2px';
             remoteAudio.style.opacity = '0.001';
             remoteAudio.style.pointerEvents = 'none';
             remoteAudio.style.display = 'block';
+            remoteAudio.style.visibility = 'visible';
+            remoteAudio.style.zIndex = '-1';
             document.body.appendChild(remoteAudio);
         }
 
-        // CRITICAL FIX: Clear any old 'src' attribute so 'srcObject' is never blocked!
-        if (remoteAudio.hasAttribute('src')) {
-            remoteAudio.removeAttribute('src');
-        }
-        remoteAudio.src = '';
+        // --- Step 1: SAFELY clean src attribute without interrupting srcObject ---
+        // NEVER set .src = '' while setting .srcObject in same tick on Firefox/Safari!
+        // Instead: remove src attribute ONLY if present (don't touch .src setter)
+        try {
+            if (remoteAudio.hasAttribute('src')) {
+                remoteAudio.removeAttribute('src');
+            }
+        } catch (e) {}
 
-        // Enable all remote audio tracks & bind onunmute listeners
+        // --- Step 2: Bind onunmute + onmute RECOVERY listeners to every track ---
         try {
             streamToPlay.getAudioTracks().forEach(t => {
-                t.enabled = true;
-                t.onunmute = () => {
-                    console.log('[VoiceCall] Remote audio track unmuted!');
-                    remoteAudio.play().catch(() => {});
+                try { t.enabled = true; } catch (_) {}
+                const origForce = () => {
+                    try { t.enabled = true; } catch (_) {}
+                    try {
+                        if (remoteAudio && remoteAudio.srcObject && remoteAudio.paused) {
+                            remoteAudio.play().catch(() => {});
+                        }
+                    } catch (_) {}
                 };
+                t.onunmute  = origForce;
+                t.onmute    = origForce;   // Auto-unmute if browser ever mutes it
             });
-            if (event.track) {
-                event.track.enabled = true;
+            if (event && event.track) {
                 event.track.onunmute = () => {
-                    console.log('[VoiceCall] Remote event.track unmuted!');
-                    remoteAudio.play().catch(() => {});
+                    console.log('[VoiceCall] Remote event.track unmuted! -> forcing play');
+                    try { remoteAudio.play().catch(() => {}); } catch (_) {}
                 };
             }
         } catch (e) {}
 
-        // Stop ringtone immediately when remote stream is ready
+        // --- Step 3: Stop ringtone ---
         stopRingtone();
 
-        if (remoteAudio.srcObject !== streamToPlay) {
-            remoteAudio.srcObject = streamToPlay;
+        // --- Step 4: Assign srcObject ONLY if different ---
+        try {
+            if (remoteAudio.srcObject !== streamToPlay) {
+                remoteAudio.srcObject = streamToPlay;
+            }
+        } catch (e) {
+            console.warn('[VoiceCall] srcObject assignment failed, retrying with clone:', e);
+            try {
+                remoteAudio.srcObject = streamToPlay.clone ? streamToPlay.clone() : streamToPlay;
+            } catch (_) {}
         }
 
-        remoteAudio.volume = 1.0;
-        remoteAudio.muted = false;
+        // --- Step 5: Triple-force volume/muted state ---
+        try {
+            remoteAudio.volume = 1.0;
+            remoteAudio.muted = false;
+            remoteAudio.defaultMuted = false;
+        } catch (e) {}
 
-        // Channel 1: Play via HTML Audio Element
-        const promise = remoteAudio.play();
-        if (promise !== undefined) {
-            promise.then(() => {
-                console.log('[VoiceCall] Remote audio playing via HTMLAudioElement successfully!');
-            }).catch(err => {
-                console.warn('[VoiceCall] Remote audio play catch:', err);
-                const retryHandler = () => {
-                    remoteAudio.play().catch(() => {});
-                    document.removeEventListener('click', retryHandler);
-                    document.removeEventListener('touchstart', retryHandler);
-                };
-                document.addEventListener('click', retryHandler);
-                document.addEventListener('touchstart', retryHandler);
-            });
-        }
+        // --- Step 6: CHANNEL 1 — HTML AudioElement .play() with aggressive retries ---
+        const forcePlayAudioEl = function (attempt) {
+            attempt = attempt || 0;
+            if (attempt > 8) return;         // 8 retries = ~2.4s
+            try {
+                const p = remoteAudio.play();
+                if (p !== undefined) {
+                    p.then(() => {
+                        console.log('[VoiceCall] ✔ HTMLAudioElement playing OK (attempt ' + attempt + ')');
+                    }).catch(err => {
+                        console.warn('[VoiceCall] AudioElement play (attempt ' + attempt + '):', err && err.name ? err.name : err);
+                        setTimeout(() => forcePlayAudioEl(attempt + 1), 300);
+                    });
+                } else {
+                    setTimeout(() => forcePlayAudioEl(attempt + 1), 300);
+                }
+            } catch (e) {
+                setTimeout(() => forcePlayAudioEl(attempt + 1), 300);
+            }
+        };
+        forcePlayAudioEl(0);
 
-        // Channel 2: Pipe directly into Web Audio API destination graph with volume gain!
+        // Fallback: also trigger play on ANY user interaction (catches autoplay blocks)
+        const userInteractRetry = function () {
+            try {
+                remoteAudio.muted = false;
+                remoteAudio.volume = 1.0;
+                remoteAudio.play().catch(() => {});
+            } catch (_) {}
+            // Only remove after 2 interactions, some 1st click is consumed elsewhere
+            userInteractRetry.callCount = (userInteractRetry.callCount || 0) + 1;
+            if (userInteractRetry.callCount >= 2) {
+                document.removeEventListener('click', userInteractRetry);
+                document.removeEventListener('touchstart', userInteractRetry);
+                document.removeEventListener('keydown', userInteractRetry);
+            }
+        };
+        document.addEventListener('click', userInteractRetry);
+        document.addEventListener('touchstart', userInteractRetry);
+        document.addEventListener('keydown', userInteractRetry);
+
+        // --- Step 7: CHANNEL 2 — Web Audio API GainNode (direct to speakers, bypasses some browser blocks) ---
         try {
             if (!audioContext || audioContext.state === 'closed') {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
             }
+            // Resume AudioContext — browsers suspend until user gesture; do it now + on click
             if (audioContext.state === 'suspended') {
-                audioContext.resume();
+                audioContext.resume().catch(() => {});
             }
+            // Also resume on first gesture
+            const resumeAC = () => {
+                try {
+                    if (audioContext && audioContext.state === 'suspended') {
+                        audioContext.resume().catch(() => {});
+                    }
+                } catch (_) {}
+                document.removeEventListener('click', resumeAC);
+                document.removeEventListener('touchstart', resumeAC);
+            };
+            document.addEventListener('click', resumeAC);
+            document.addEventListener('touchstart', resumeAC);
+
             if (remoteAudioSourceNode) {
                 try { remoteAudioSourceNode.disconnect(); } catch(e) {}
+                remoteAudioSourceNode = null;
             }
-            remoteAudioSourceNode = audioContext.createMediaStreamSource(streamToPlay);
-            const gainNode = audioContext.createGain();
-            gainNode.gain.setValueAtTime(1.5, audioContext.currentTime); // Boost voice volume by 150%
-            remoteAudioSourceNode.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            console.log('[VoiceCall] Remote voice stream connected to WebAudio destination graph with gain!');
+            try {
+                remoteAudioSourceNode = audioContext.createMediaStreamSource(streamToPlay);
+            } catch (srcErr) {
+                // Firefox Safari: can't create source from same stream twice; swallow
+                console.warn('[VoiceCall] createMediaStreamSource warning:', srcErr);
+            }
+            if (remoteAudioSourceNode) {
+                try {
+                    const gainNode = audioContext.createGain();
+                    // BOOST volume to 2.0x — speech-only stream, clipping risk is low
+                    try { gainNode.gain.setValueAtTime(2.0, audioContext.currentTime); } catch (_) { gainNode.gain.value = 2.0; }
+                    remoteAudioSourceNode.connect(gainNode);
+                    // Use a compressor to normalize quiet audio before reaching destination
+                    try {
+                        const comp = audioContext.createDynamicsCompressor();
+                        comp.threshold.value = -24;
+                        comp.knee.value = 30;
+                        comp.ratio.value = 12;
+                        comp.attack.value = 0.003;
+                        comp.release.value = 0.25;
+                        gainNode.connect(comp);
+                        comp.connect(audioContext.destination);
+                    } catch (_nocomp) {
+                        gainNode.connect(audioContext.destination);
+                    }
+                    console.log('[VoiceCall] ✔ WebAudio destination graph wired (Gain=2.0x + Compressor)!');
+                } catch (wireErr) {
+                    console.warn('[VoiceCall] WebAudio graph wire error:', wireErr);
+                }
+            }
         } catch (e) {
-            console.warn('[VoiceCall] WebAudio destination connect error:', e);
+            console.warn('[VoiceCall] WebAudio full pipeline error:', e);
         }
+
+        // --- Step 8: Safety watchdog — if still silent after 3s, force srcObject re-assign ---
+        setTimeout(function () {
+            try {
+                if (peerConnection && peerConnection.connectionState === 'connected' &&
+                    remoteAudio && remoteAudio.srcObject === streamToPlay &&
+                    (remoteAudio.paused || remoteAudio.volume < 0.01)) {
+                    console.log('[VoiceCall] ⚠ Silent call detected after 3s, forcing srcObject toggle');
+                    const cur = remoteAudio.srcObject;
+                    remoteAudio.srcObject = null;
+                    setTimeout(function () {
+                        try {
+                            remoteAudio.srcObject = cur;
+                            remoteAudio.muted = false;
+                            remoteAudio.volume = 1.0;
+                            remoteAudio.play().catch(() => {});
+                        } catch (_) {}
+                    }, 80);
+                }
+            } catch (_) {}
+        }, 3000);
     }
 
     let ringtoneAudio = null;

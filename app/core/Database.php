@@ -331,6 +331,13 @@ class Database
         return $stmt->fetchAll();
     }
 
+    public static function fetchAll(string $sql, array $params = []): array
+    {
+        $stmt = self::getPdo()->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public static function fetchOne(string $sql, array $params = []): ?array
     {
         $stmt = self::getPdo()->prepare($sql);

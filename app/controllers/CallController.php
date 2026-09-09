@@ -24,10 +24,35 @@ class CallController extends Controller
             return;
         }
 
+        // Ensure connected_at column exists (schema upgrade — safe to run every time)
+        try {
+            $hasConnectedAt = false;
+            $existingCols = [];
+            try {
+                $existingCols = Database::fetchAll("SHOW COLUMNS FROM voice_calls");
+            } catch (\Throwable $e) {
+                $existingCols = [];
+            }
+            if (is_array($existingCols)) {
+                foreach ($existingCols as $col) {
+                    if (strcasecmp($col['Field'] ?? '', 'connected_at') === 0) {
+                        $hasConnectedAt = true;
+                        break;
+                    }
+                }
+            }
+            if (!$hasConnectedAt) {
+                try {
+                    Database::execute("ALTER TABLE voice_calls ADD COLUMN `connected_at` timestamp NULL DEFAULT NULL");
+                } catch (\Throwable $e) {}
+            }
+        } catch (\Throwable $e) {}
+
         // Fetch order details with correct column names (customer_id & avatar)
+        // NOTE: orders.order_type (delivery|takeaway|parcel), NOT delivery_type
         $order = Database::fetchOne("
             SELECT o.id as order_id, o.order_code, o.customer_id as cust_user_id, o.delivery_man_id,
-                   o.store_id, o.delivery_type,
+                   o.store_id, o.order_type as delivery_type,
                    dm.user_id as dm_user_id, u_cust.name as cust_name, u_cust.phone as cust_phone,
                    u_cust.avatar as cust_avatar, u_dm.name as dm_name, u_dm.phone as dm_phone,
                    u_dm.avatar as dm_avatar,
@@ -152,6 +177,7 @@ class CallController extends Controller
      */
     public function poll(): void
     {
+        $data = $this->getPostData();
         try {
             $userId = auth_id() ?: (int)($_SESSION['user']['id'] ?? 0);
             $orderCode = sanitize(trim($_GET['order_code'] ?? ''));
@@ -293,8 +319,28 @@ class CallController extends Controller
             return;
         }
 
+        // Ensure connected_at exists (already done in initiate(), but double-safe for race)
         try {
-            Database::execute("ALTER TABLE voice_calls ADD COLUMN `connected_at` timestamp NULL DEFAULT NULL");
+            $hasConnectedAt = false;
+            $existingCols = [];
+            try {
+                $existingCols = Database::fetchAll("SHOW COLUMNS FROM voice_calls");
+            } catch (\Throwable $e) {
+                $existingCols = [];
+            }
+            if (is_array($existingCols)) {
+                foreach ($existingCols as $col) {
+                    if (strcasecmp($col['Field'] ?? '', 'connected_at') === 0) {
+                        $hasConnectedAt = true;
+                        break;
+                    }
+                }
+            }
+            if (!$hasConnectedAt) {
+                try {
+                    Database::execute("ALTER TABLE voice_calls ADD COLUMN `connected_at` timestamp NULL DEFAULT NULL");
+                } catch (\Throwable $e) {}
+            }
         } catch (\Throwable $e) {}
 
         $nowStr = date('Y-m-d H:i:s');
