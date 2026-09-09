@@ -99,7 +99,6 @@ class _MerchantDeliveryMapModalState extends State<MerchantDeliveryMapModal> {
               _routePoints = parsedRoute;
               _distanceMeters = double.tryParse(route['distance']?.toString() ?? '') ?? straightDistMeters;
               _etaMinutes = math.max(1, ((_distanceMeters / 1000) * 3 + 1).round());
-              _isLoadingRoute = false;
             });
             _fitMapBounds();
             return;
@@ -112,7 +111,6 @@ class _MerchantDeliveryMapModalState extends State<MerchantDeliveryMapModal> {
     if (mounted) {
       setState(() {
         _routePoints = [start, end];
-        _isLoadingRoute = false;
       });
       _fitMapBounds();
     }
