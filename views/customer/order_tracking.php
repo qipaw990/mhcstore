@@ -734,7 +734,7 @@ function cancelUnpaidOrder() {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    Swal.fire('Dibatalkan', 'Pesanan berhasil dibatalkan.', 'success').then(() => {
+                    Swal.fire('Dibatalkan', data.message || 'Pesanan berhasil dibatalkan.', 'success').then(() => {
                         window.location.href = window.BASE_URL + '/orders';
                     });
                 } else {

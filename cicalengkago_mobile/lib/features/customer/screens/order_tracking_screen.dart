@@ -191,6 +191,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         'order_code': widget.orderCode,
       });
       if (res['success'] == true) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res['message'] ?? 'Pesanan berhasil dibatalkan.'),
+              backgroundColor: Colors.grey.shade800,
+            ),
+          );
+        }
         _pollLiveTracking();
         _fetchFullOrderDetails();
       } else {

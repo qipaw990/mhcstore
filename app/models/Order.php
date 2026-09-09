@@ -485,47 +485,71 @@ class Order extends Model
             return false;
         }
 
+        // COD / tunai tidak pernah di-refund karena uang belum diterima sistem
+        if (in_array($paymentMethod, ['cod', 'cash', 'tunai'])) {
+            return false;
+        }
+
         // Cek apakah pernah ada catatan refund di wallet_transactions
         $existing = Database::fetchOne(
             "SELECT id FROM `wallet_transactions` WHERE `reference_id` = ? AND `category` IN ('refund', 'order_refund') LIMIT 1",
             [(string)$orderId]
         );
-
-        $validPaidMethods = ['wallet', 'cicalengkapay', 'cicago_pay', 'saldo', 'balance', 'doku', 'midtrans', 'online', 'qris', 'va', 'credit_card'];
-        $isEligible = ($paymentStatus === 'paid' || in_array($paymentMethod, $validPaidMethods));
-
-        if (!$existing && $amount > 0 && $isEligible) {
-            $walletModel = new Wallet();
-            $desc = "Refund pengembalian dana untuk pesanan #{$orderCode}";
-            if (!empty($reason)) {
-                $desc .= " ({$reason})";
-            }
-
-            // Tambahkan saldo ke CicalengkaPay
-            $walletModel->credit(
-                $customerId,
-                $amount,
-                'refund',
-                $desc,
-                (string)$orderId
-            );
-
-            // Update status pembayaran pesanan menjadi refunded
-            Database::update('orders', ['payment_status' => 'refunded'], 'id = ?', [$orderId]);
-
-            // Kirim Notifikasi ke Pelanggan
-            Database::insert('notifications', [
-                'user_id'   => $customerId,
-                'title'     => 'Pesanan Dibatalkan & Dana Dikembalikan 💚',
-                'message'   => "Pesanan #{$orderCode} dibatalkan. Dana sebesar Rp " . number_format($amount, 0, ',', '.') . " telah dikembalikan ke saldo CicalengkaPay Anda.",
-                'type'      => 'order',
-                'data_json' => json_encode(['order_code' => $orderCode, 'order_id' => $orderId])
-            ]);
-
-            return true;
+        if ($existing) {
+            return false;
         }
 
-        return false;
+        // KRUSIAL: Pesanan HANYA boleh di-refund jika dana BENAR-BENAR SUDAH DITERIMA!
+        // 1. payment_status == 'paid' (berlaku untuk semua gateway: DOKU, VA, QRIS, e-wallet, dll)
+        // 2. ATAU jika metode adalah wallet (CicalengkaPay), pastikan benar-benar pernah didebit dari saldo
+        $isWalletMethod = in_array($paymentMethod, ['wallet', 'cicalengkapay', 'cicago_pay', 'saldo', 'balance']);
+
+        $isEligible = false;
+        if ($paymentStatus === 'paid') {
+            $isEligible = true;
+        } elseif ($isWalletMethod) {
+            $hasDebit = Database::fetchOne(
+                "SELECT id FROM `wallet_transactions` WHERE `reference_id` = ? AND `type` = 'debit' LIMIT 1",
+                [(string)$orderId]
+            );
+            if ($hasDebit) {
+                $isEligible = true;
+            }
+        }
+
+        // JIKA TIDAK ELIGIBLE (misal DOKU tapi belum dibayar/unpaid), JANGAN REFUND!
+        if (!$isEligible || $amount <= 0) {
+            return false;
+        }
+
+        $walletModel = new Wallet();
+        $desc = "Refund pengembalian dana untuk pesanan #{$orderCode}";
+        if (!empty($reason)) {
+            $desc .= " ({$reason})";
+        }
+
+        // Tambahkan saldo ke CicalengkaPay
+        $walletModel->credit(
+            $customerId,
+            $amount,
+            'refund',
+            $desc,
+            (string)$orderId
+        );
+
+        // Update status pembayaran pesanan menjadi refunded
+        Database::update('orders', ['payment_status' => 'refunded'], 'id = ?', [$orderId]);
+
+        // Kirim Notifikasi ke Pelanggan
+        Database::insert('notifications', [
+            'user_id'   => $customerId,
+            'title'     => 'Pesanan Dibatalkan & Dana Dikembalikan 💚',
+            'message'   => "Pesanan #{$orderCode} dibatalkan. Dana sebesar Rp " . number_format($amount, 0, ',', '.') . " telah dikembalikan ke saldo CicalengkaPay Anda.",
+            'type'      => 'order',
+            'data_json' => json_encode(['order_code' => $orderCode, 'order_id' => $orderId])
+        ]);
+
+        return true;
     }
 
     /**
@@ -561,20 +585,51 @@ class Order extends Model
             return false;
         }
 
-        $validPaidMethods = ['wallet', 'cicalengkapay', 'cicago_pay', 'saldo', 'balance', 'doku', 'midtrans', 'online', 'qris', 'va', 'credit_card'];
         $totalRefundAmount = 0.0;
         $isAnyPaid = false;
 
         foreach ($batchOrders as $bOrd) {
             $pStatus = strtolower($bOrd['payment_status'] ?? 'unpaid');
             $pMethod = strtolower($bOrd['payment_method'] ?? 'wallet');
-            if ($pStatus === 'paid' || in_array($pMethod, $validPaidMethods)) {
+
+            if (in_array($pMethod, ['cod', 'cash', 'tunai'])) {
+                continue;
+            }
+
+            $isWallet = in_array($pMethod, ['wallet', 'cicalengkapay', 'cicago_pay', 'saldo', 'balance']);
+            $isThisPaid = false;
+
+            if ($pStatus === 'paid') {
+                $isThisPaid = true;
+            } elseif ($isWallet) {
+                $hasDebit = Database::fetchOne(
+                    "SELECT id FROM `wallet_transactions` WHERE `reference_id` = ? AND `type` = 'debit' LIMIT 1",
+                    [(string)$bOrd['id']]
+                );
+                if ($hasDebit) {
+                    $isThisPaid = true;
+                }
+            }
+
+            if ($isThisPaid) {
                 $isAnyPaid = true;
                 $totalRefundAmount += (float)$bOrd['total_amount'];
             }
         }
 
+        // JIKA TIDAK ADA YANG PERNAH DIBAYAR (misal belum bayar via DOKU), JANGAN KREDIT SALDO APAPUN!
         if (!$isAnyPaid || $totalRefundAmount <= 0) {
+            // Tetap pastikan order di-cancel jika status masih aktif
+            foreach ($batchOrders as $bOrd) {
+                if (in_array($bOrd['order_status'], ['pending', 'unpaid', 'confirmed'])) {
+                    Database::update('orders', [
+                        'order_status'        => 'canceled',
+                        'cancellation_reason' => $reason ?: 'Dibatalkan',
+                        'canceled_at'          => date('Y-m-d H:i:s'),
+                        'delivery_man_id'     => null,
+                    ], 'id = ?', [$bOrd['id']]);
+                }
+            }
             return false;
         }
 
@@ -629,8 +684,7 @@ class Order extends Model
             "SELECT * FROM `orders` 
              WHERE `customer_id` = ? 
                AND `order_status` = 'canceled' 
-               AND `payment_status` != 'refunded'
-               AND (`payment_status` = 'paid' OR `payment_method` IN ('wallet', 'cicalengkapay', 'cicago_pay', 'saldo', 'balance', 'doku', 'midtrans', 'qris', 'va', 'online', 'credit_card'))",
+               AND `payment_status` = 'paid'",
             [$customerId]
         );
 

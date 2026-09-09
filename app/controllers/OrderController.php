@@ -465,16 +465,28 @@ class OrderController extends Controller
             return;
         }
 
-        \App\Core\Database::update('orders', [
-            'order_status'        => 'canceled',
-            'cancellation_reason' => 'Dibatalkan oleh Pelanggan',
-            'canceled_at'          => date('Y-m-d H:i:s')
-        ], 'id = ?', [$order['id']]);
+        $batchId = $order['delivery_batch_id'] ?? null;
+        if (!empty($batchId)) {
+            \App\Core\Database::execute(
+                "UPDATE `orders` SET `order_status` = 'canceled', `cancellation_reason` = 'Dibatalkan oleh Pelanggan', `canceled_at` = NOW() WHERE `delivery_batch_id` = ? AND `order_status` NOT IN ('delivered')",
+                [$batchId]
+            );
+        } else {
+            \App\Core\Database::update('orders', [
+                'order_status'        => 'canceled',
+                'cancellation_reason' => 'Dibatalkan oleh Pelanggan',
+                'canceled_at'          => date('Y-m-d H:i:s')
+            ], 'id = ?', [$order['id']]);
+        }
 
-        // Proses auto-refund ke saldo CicalengkaPay pelanggan
-        Order::refundOrderIfPaid($order, 'Dibatalkan oleh pelanggan');
+        // Hanya proses refund jika pesanan memang sudah dibayar sebelumnya
+        $refunded = Order::refundOrderIfPaid($order, 'Dibatalkan oleh pelanggan');
 
-        $this->successResponse('Pesanan berhasil dibatalkan dan pengembalian dana telah dikreditkan ke CicalengkaPay.');
+        if ($refunded) {
+            $this->successResponse('Pesanan berhasil dibatalkan dan pengembalian dana telah dikreditkan ke CicalengkaPay.');
+        } else {
+            $this->successResponse('Pesanan berhasil dibatalkan.');
+        }
     }
 
     public function showOrder(string $code): void
