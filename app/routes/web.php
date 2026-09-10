@@ -378,3 +378,8 @@ Router::get('/api/admin/products', [\App\Controllers\AdminApiController::class, 
 Router::post('/api/admin/products/toggle', [\App\Controllers\AdminApiController::class, 'toggleProductStatus']);
 Router::get('/api/admin/drivers', [\App\Controllers\AdminApiController::class, 'drivers']);
 Router::post('/api/admin/drivers/toggle', [\App\Controllers\AdminApiController::class, 'toggleDriverStatus']);
+
+// Voice Calls Admin Monitoring
+Router::get('/api/admin/voice-calls', [\App\Controllers\AdminApiController::class, 'voiceCalls']);
+Router::get('/api/admin/voice-calls/detail', [\App\Controllers\AdminApiController::class, 'voiceCallDetail']);
+Router::post('/api/admin/voice-calls/force-end', [\App\Controllers\AdminApiController::class, 'voiceCallForceEnd']);

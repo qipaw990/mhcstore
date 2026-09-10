@@ -529,4 +529,296 @@ class AdminApiController extends Controller
         Database::execute("UPDATE delivery_men SET is_active = NOT is_active WHERE id = ?", [$id]);
         $this->successResponse('Status kurir berhasil diperbarui');
     }
+
+    /**
+     * Mapping role DB -> label Bahasa Indonesia
+     */
+    private function roleLabel(string $role): string
+    {
+        return match (strtolower($role)) {
+            'customer' => 'Pelanggan',
+            'delivery_man', 'driver', 'delivery' => 'Driver',
+            'vendor', 'merchant', 'store' => 'Merchant',
+            default => ucfirst(str_replace('_', ' ', $role))
+        };
+    }
+
+    private function statusLabel(string $status): string
+    {
+        return match ($status) {
+            'calling' => 'Berdering',
+            'connected' => 'Terhubung',
+            'rejected' => 'Ditolak',
+            'ended' => 'Selesai',
+            'no_answer' => 'Tidak Dijawab',
+            default => ucfirst($status)
+        };
+    }
+
+    private function directionLabel(string $callerRole, string $receiverRole): string
+    {
+        $c = $this->roleLabel($callerRole);
+        $d = $this->roleLabel($receiverRole);
+        return "{$c} → {$d}";
+    }
+
+    /**
+     * 9. Voice Calls Monitoring & History
+     * Arah panggilan yang didukung:
+     * - Pelanggan ↔ Driver
+     * - Pelanggan ↔ Merchant
+     */
+    public function voiceCalls(): void
+    {
+        $status = sanitize($this->getQuery('status') ?? '');
+        $search = sanitize($this->getQuery('search') ?? '');
+        $direction = sanitize($this->getQuery('direction') ?? ''); // e.g. cust_driver, cust_merchant
+        $page   = max(1, (int)($this->getQuery('page') ?? 1));
+        $limit  = max(10, min(100, (int)($this->getQuery('limit') ?? 25)));
+        $offset = ($page - 1) * $limit;
+
+        $where = [];
+        $params = [];
+
+        if (!empty($status) && $status !== 'all') {
+            $where[] = "vc.status = ?";
+            $params[] = $status;
+        }
+
+        if (!empty($search)) {
+            $where[] = "(vc.order_code LIKE ? OR uc.name LIKE ? OR ud.name LIKE ? OR s.name LIKE ?)";
+            $params[] = "%{$search}%";
+            $params[] = "%{$search}%";
+            $params[] = "%{$search}%";
+            $params[] = "%{$search}%";
+        }
+
+        if ($direction === 'cust_driver') {
+            $where[] = "((vc.caller_role = 'customer' AND vc.receiver_role IN ('delivery_man','driver','delivery')) OR (vc.caller_role IN ('delivery_man','driver','delivery') AND vc.receiver_role = 'customer'))";
+        } elseif ($direction === 'cust_merchant') {
+            $where[] = "((vc.caller_role = 'customer' AND vc.receiver_role IN ('vendor','merchant','store')) OR (vc.caller_role IN ('vendor','merchant','store') AND vc.receiver_role = 'customer'))";
+        } elseif ($direction === 'cust_to_driver') {
+            $where[] = "(vc.caller_role = 'customer' AND vc.receiver_role IN ('delivery_man','driver','delivery'))";
+        } elseif ($direction === 'driver_to_cust') {
+            $where[] = "(vc.caller_role IN ('delivery_man','driver','delivery') AND vc.receiver_role = 'customer')";
+        } elseif ($direction === 'cust_to_merchant') {
+            $where[] = "(vc.caller_role = 'customer' AND vc.receiver_role IN ('vendor','merchant','store'))";
+        } elseif ($direction === 'merchant_to_cust') {
+            $where[] = "(vc.caller_role IN ('vendor','merchant','store') AND vc.receiver_role = 'customer')";
+        }
+
+        $whereSql = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
+
+        $countRow = Database::fetchOne("
+            SELECT COUNT(*) as c 
+            FROM voice_calls vc
+            LEFT JOIN users uc ON vc.caller_id = uc.id
+            LEFT JOIN users ud ON vc.receiver_id = ud.id
+            LEFT JOIN orders o ON vc.order_code = o.order_code
+            LEFT JOIN stores s ON o.store_id = s.id
+            {$whereSql}
+        ", $params);
+        $totalCount = (int)($countRow['c'] ?? 0);
+
+        $sql = "
+            SELECT vc.*,
+                   uc.name as caller_name, uc.avatar as caller_avatar, uc.phone as caller_phone,
+                   ud.name as receiver_name, ud.avatar as receiver_avatar, ud.phone as receiver_phone,
+                   s.name as store_name, s.logo as store_logo
+            FROM voice_calls vc
+            LEFT JOIN users uc ON vc.caller_id = uc.id
+            LEFT JOIN users ud ON vc.receiver_id = ud.id
+            LEFT JOIN orders o ON vc.order_code = o.order_code
+            LEFT JOIN stores s ON o.store_id = s.id
+            {$whereSql}
+            ORDER BY vc.id DESC
+            LIMIT {$limit} OFFSET {$offset}
+        ";
+        $rawCalls = Database::query($sql, $params);
+        $calls = [];
+        foreach ($rawCalls as $vc) {
+            $callerRole = $vc['caller_role'] ?? 'unknown';
+            $receiverRole = $vc['receiver_role'] ?? 'unknown';
+
+            $cName = $vc['caller_name'] ?? 'Pengguna';
+            if (in_array(strtolower($callerRole), ['vendor', 'merchant', 'store'], true) && !empty($vc['store_name'])) {
+                $cName = $vc['store_name'];
+            }
+            $cAvatar = $vc['caller_avatar'] ?? '';
+            if (in_array(strtolower($callerRole), ['vendor', 'merchant', 'store'], true) && !empty($vc['store_logo'])) {
+                $cAvatar = $vc['store_logo'];
+            }
+
+            $rName = $vc['receiver_name'] ?? 'Pengguna';
+            if (in_array(strtolower($receiverRole), ['vendor', 'merchant', 'store'], true) && !empty($vc['store_name'])) {
+                $rName = $vc['store_name'];
+            }
+            $rAvatar = $vc['receiver_avatar'] ?? '';
+            if (in_array(strtolower($receiverRole), ['vendor', 'merchant', 'store'], true) && !empty($vc['store_logo'])) {
+                $rAvatar = $vc['store_logo'];
+            }
+
+            $durSec = null;
+            $durMin = null;
+            if (!empty($vc['connected_at']) && in_array($vc['status'], ['ended', 'connected'], true)) {
+                $endTime = $vc['status'] === 'connected' ? time() : strtotime($vc['updated_at'] ?? '');
+                $durSec = max(0, $endTime - strtotime($vc['connected_at']));
+                $durMin = sprintf('%02d:%02d', floor($durSec / 60), $durSec % 60);
+            }
+
+            $calls[] = array_merge($vc, [
+                'caller_name'         => $cName,
+                'caller_avatar'       => $cAvatar,
+                'caller_role_label'   => $this->roleLabel($callerRole),
+                'receiver_name'       => $rName,
+                'receiver_avatar'     => $rAvatar,
+                'receiver_role_label' => $this->roleLabel($receiverRole),
+                'status_label'        => $this->statusLabel($vc['status'] ?? ''),
+                'direction_label'     => $this->directionLabel($callerRole, $receiverRole),
+                'store_name'          => $vc['store_name'] ?? '',
+                'duration_seconds'    => $durSec,
+                'duration_formatted'  => $durMin,
+            ]);
+        }
+
+        $statsRow = Database::fetchOne("
+            SELECT 
+                COUNT(*) as total_calls,
+                SUM(CASE WHEN vc.status = 'connected' THEN 1 ELSE 0 END) as connected,
+                SUM(CASE WHEN vc.status = 'rejected' THEN 1 ELSE 0 END) as rejected,
+                SUM(CASE WHEN vc.status = 'ended' THEN 1 ELSE 0 END) as ended,
+                SUM(CASE WHEN vc.status = 'calling' THEN 1 ELSE 0 END) as calling,
+                SUM(CASE WHEN vc.status = 'no_answer' THEN 1 ELSE 0 END) as no_answer,
+                AVG(CASE WHEN vc.connected_at IS NOT NULL AND vc.updated_at IS NOT NULL 
+                    THEN TIMESTAMPDIFF(SECOND, vc.connected_at, vc.updated_at) ELSE NULL END) as avg_duration_sec,
+                SUM(CASE WHEN vc.caller_role = 'customer' AND vc.receiver_role IN ('delivery_man','driver','delivery') THEN 1 ELSE 0 END) as cust_to_driver,
+                SUM(CASE WHEN vc.caller_role IN ('delivery_man','driver','delivery') AND vc.receiver_role = 'customer' THEN 1 ELSE 0 END) as driver_to_cust,
+                SUM(CASE WHEN vc.caller_role = 'customer' AND vc.receiver_role IN ('vendor','merchant','store') THEN 1 ELSE 0 END) as cust_to_merchant,
+                SUM(CASE WHEN vc.caller_role IN ('vendor','merchant','store') AND vc.receiver_role = 'customer' THEN 1 ELSE 0 END) as merchant_to_cust
+            FROM voice_calls vc
+        ");
+
+        $this->successResponse('Daftar riwayat panggilan suara', [
+            'calls'        => $calls,
+            'total'        => $totalCount,
+            'current_page' => $page,
+            'total_pages'  => ceil($totalCount / $limit),
+            'limit'        => $limit,
+            'stats'        => [
+                'total'      => (int)($statsRow['total_calls'] ?? 0),
+                'connected'  => (int)($statsRow['connected'] ?? 0),
+                'rejected'   => (int)($statsRow['rejected'] ?? 0),
+                'ended'      => (int)($statsRow['ended'] ?? 0),
+                'calling'    => (int)($statsRow['calling'] ?? 0),
+                'no_answer'  => (int)($statsRow['no_answer'] ?? 0),
+                'avg_duration_sec' => round((float)($statsRow['avg_duration_sec'] ?? 0), 1),
+                'directions' => [
+                    'cust_to_driver'     => (int)($statsRow['cust_to_driver'] ?? 0),
+                    'driver_to_cust'     => (int)($statsRow['driver_to_cust'] ?? 0),
+                    'cust_to_merchant'   => (int)($statsRow['cust_to_merchant'] ?? 0),
+                    'merchant_to_cust'   => (int)($statsRow['merchant_to_cust'] ?? 0),
+                ]
+            ],
+            'supported_directions' => [
+                'cust_driver'    => 'Pelanggan ↔ Driver',
+                'cust_merchant'  => 'Pelanggan ↔ Merchant',
+            ]
+        ]);
+    }
+
+    /**
+     * 10. Voice Call Detail & Force End
+     */
+    public function voiceCallDetail(): void
+    {
+        $callId = (int)($this->getQuery('id') ?? 0);
+        if (!$callId) {
+            $this->errorResponse('ID panggilan tidak valid');
+            return;
+        }
+
+        $call = Database::fetchOne("
+            SELECT vc.*,
+                   uc.name as caller_name, uc.avatar as caller_avatar, uc.phone as caller_phone,
+                   ud.name as receiver_name, ud.avatar as receiver_avatar, ud.phone as receiver_phone,
+                   s.name as store_name, s.logo as store_logo
+            FROM voice_calls vc
+            LEFT JOIN users uc ON vc.caller_id = uc.id
+            LEFT JOIN users ud ON vc.receiver_id = ud.id
+            LEFT JOIN orders o ON vc.order_code = o.order_code
+            LEFT JOIN stores s ON o.store_id = s.id
+            WHERE vc.id = ? LIMIT 1
+        ", [$callId]);
+
+        if (!$call) {
+            $this->errorResponse('Data panggilan tidak ditemukan', null, 404);
+            return;
+        }
+
+        $callerRole = $call['caller_role'] ?? 'unknown';
+        $receiverRole = $call['receiver_role'] ?? 'unknown';
+
+        $cName = $call['caller_name'] ?? 'Pengguna';
+        if (in_array(strtolower($callerRole), ['vendor', 'merchant', 'store'], true) && !empty($call['store_name'])) {
+            $cName = $call['store_name'];
+        }
+        $cAvatar = $call['caller_avatar'] ?? '';
+        if (in_array(strtolower($callerRole), ['vendor', 'merchant', 'store'], true) && !empty($call['store_logo'])) {
+            $cAvatar = $call['store_logo'];
+        }
+
+        $rName = $call['receiver_name'] ?? 'Pengguna';
+        if (in_array(strtolower($receiverRole), ['vendor', 'merchant', 'store'], true) && !empty($call['store_name'])) {
+            $rName = $call['store_name'];
+        }
+        $rAvatar = $call['receiver_avatar'] ?? '';
+        if (in_array(strtolower($receiverRole), ['vendor', 'merchant', 'store'], true) && !empty($call['store_logo'])) {
+            $rAvatar = $call['store_logo'];
+        }
+
+        $durationSec = null;
+        if (!empty($call['connected_at']) && in_array($call['status'], ['ended', 'connected'], true)) {
+            $endTime = $call['status'] === 'connected' ? time() : strtotime($call['updated_at'] ?? '');
+            $durationSec = max(0, $endTime - strtotime($call['connected_at']));
+        }
+
+        $call['caller_name'] = $cName;
+        $call['caller_avatar'] = $cAvatar;
+        $call['caller_role_label'] = $this->roleLabel($callerRole);
+        $call['receiver_name'] = $rName;
+        $call['receiver_avatar'] = $rAvatar;
+        $call['receiver_role_label'] = $this->roleLabel($receiverRole);
+        $call['status_label'] = $this->statusLabel($call['status'] ?? '');
+        $call['direction_label'] = $this->directionLabel($callerRole, $receiverRole);
+        $call['duration_seconds'] = $durationSec;
+        $call['duration_formatted'] = $durationSec !== null
+            ? sprintf('%02d:%02d', floor($durationSec / 60), $durationSec % 60)
+            : null;
+
+        $this->successResponse('Detail panggilan suara', ['call' => $call]);
+    }
+
+    public function voiceCallForceEnd(): void
+    {
+        $data = $this->getPost();
+        $callId = (int)($data['id'] ?? 0);
+        if (!$callId) {
+            $this->errorResponse('ID panggilan tidak valid');
+            return;
+        }
+
+        $call = Database::fetchOne("SELECT id, status FROM voice_calls WHERE id = ? LIMIT 1", [$callId]);
+        if (!$call) {
+            $this->errorResponse('Panggilan tidak ditemukan', null, 404);
+            return;
+        }
+
+        if (!in_array($call['status'], ['calling', 'connected'], true)) {
+            $this->errorResponse('Panggilan sudah tidak aktif');
+            return;
+        }
+
+        Database::execute("UPDATE voice_calls SET status = 'ended' WHERE id = ?", [$callId]);
+        $this->successResponse('Panggilan berhasil diakhiri oleh admin');
+    }
 }
