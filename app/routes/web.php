@@ -126,6 +126,9 @@ Router::post('/payment/verify', [PaymentController::class, 'verifyClientCallback
 Router::get('/payment/doku/callback', [PaymentController::class, 'dokuCallback']);
 // Webhook server-to-server dari DOKU (POST, verifikasi HMAC)
 Router::post('/payment/doku/notification', [PaymentController::class, 'dokuNotification']);
+// Admin manual verify DOKU (reprocess webhook yang gagal / user sudah bayar tapi saldo tidak masuk)
+Router::post('/payment/doku/admin-manual-verify', [PaymentController::class, 'adminManualVerifyDoku'], ['AuthMiddleware']);
+Router::post('/api/payment/doku/admin-manual-verify', [PaymentController::class, 'adminManualVerifyDoku'], ['AuthMiddleware']);
 Router::get('/notifications', [CustomerController::class, 'notifications'], ['AuthMiddleware']);
 
 // Cart

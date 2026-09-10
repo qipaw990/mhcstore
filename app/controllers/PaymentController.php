@@ -374,13 +374,43 @@ class PaymentController extends Controller
     // =========================================================================
 
     /**
+     * Buat tabel `webhook_logs` secara on-the-fly jika belum ada
+     * (Defensive migration — tidak perlu run SQL manual)
+     */
+    private function ensureWebhookLogsTable(): void
+    {
+        try {
+            Database::execute("
+                CREATE TABLE IF NOT EXISTS `webhook_logs` (
+                    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    `source` VARCHAR(32) NOT NULL DEFAULT 'doku',
+                    `event` VARCHAR(64) NOT NULL DEFAULT '',
+                    `invoice_number` VARCHAR(128) NOT NULL DEFAULT '',
+                    `status_in` VARCHAR(32) NOT NULL DEFAULT '',
+                    `headers` LONGTEXT NULL,
+                    `payload` LONGTEXT NULL,
+                    `signature_valid` TINYINT(1) NOT NULL DEFAULT 0,
+                    `process_success` TINYINT(1) NOT NULL DEFAULT 0,
+                    `process_status` VARCHAR(32) NOT NULL DEFAULT '',
+                    `process_message` VARCHAR(500) NOT NULL DEFAULT '',
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    KEY `idx_invoice_number` (`invoice_number`),
+                    KEY `idx_created_at` (`created_at`),
+                    KEY `idx_process_success` (`process_success`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            ");
+        } catch (\Throwable $e) { /* table exists / ignore */ }
+    }
+
+    /**
      * Menerima Webhook Server-to-Server dari DOKU
      * POST /payment/doku/notification
      *
      * Flow:
      * 1. Baca raw body
-     * 2. Verifikasi HMAC-SHA256 signature dari DOKU
-     * 3. Proses payload (update wallet / order status)
+     * 2. Verifikasi HMAC-SHA256 signature dari DOKU (dengan detected path fallback)
+     * 3. Proses payload (update wallet / order status) — WITH DB LOGGING
      * 4. Return HTTP 200 → JSON {status: "success"}
      *
      * PENTING: Hanya perubahan status melalui webhook ini yang dianggap sah.
@@ -390,35 +420,86 @@ class PaymentController extends Controller
      */
     public function dokuNotification(): void
     {
+        $this->ensureWebhookLogsTable();
         $rawInput = file_get_contents('php://input');
 
+        // Ambil actual URI path yang diterima server — untuk signature path-match yang lebih akurat
+        $detectedPath = '';
+        if (!empty($_SERVER['REQUEST_URI'])) {
+            $uriPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+            if (is_string($uriPath)) $detectedPath = $uriPath;
+        }
+        if (empty($detectedPath) && !empty($_SERVER['PATH_INFO'])) {
+            $detectedPath = $_SERVER['PATH_INFO'];
+        }
+
+        // Kumpulkan headers DOKU untuk verifikasi signature
+        $dokuHeaders = [
+            'Client-Id'         => $_SERVER['HTTP_CLIENT_ID']         ?? $_SERVER['HTTP_X_CLIENT_ID']         ?? '',
+            'Request-Id'        => $_SERVER['HTTP_REQUEST_ID']        ?? $_SERVER['HTTP_X_REQUEST_ID']        ?? '',
+            'Request-Timestamp' => $_SERVER['HTTP_REQUEST_TIMESTAMP'] ?? $_SERVER['HTTP_X_REQUEST_TIMESTAMP'] ?? '',
+            'Signature'         => $_SERVER['HTTP_SIGNATURE']         ?? $_SERVER['HTTP_X_SIGNATURE']         ?? '',
+        ];
+
+        $logId = null;
+        $payload = json_decode($rawInput ?: '{}', true);
+        $orderNum = '';
+        $statusIn = '';
+        if (is_array($payload)) {
+            $orderNum = (string)($payload['order']['invoice_number'] ?? $payload['invoice_number'] ?? '');
+            $statusIn = (string)(strtoupper($payload['transaction']['status'] ?? $payload['order']['status'] ?? $payload['status'] ?? ''));
+        }
+
+        try {
+            $logId = Database::insert('webhook_logs', [
+                'source'           => 'doku',
+                'event'            => 'notification',
+                'invoice_number'   => $orderNum,
+                'status_in'        => $statusIn,
+                'headers'          => json_encode($dokuHeaders, JSON_UNESCAPED_SLASHES),
+                'payload'          => is_string($rawInput) ? substr($rawInput, 0, 2000000) : '',
+                'process_status'   => 'received',
+                'process_message'  => 'Payload diterima — path=' . $detectedPath,
+            ]);
+        } catch (\Throwable $e) { /* logging error tidak boleh halt execution */ }
+
         if (empty($rawInput)) {
+            if ($logId) Database::update('webhook_logs', [
+                'process_status'  => 'error',
+                'process_message' => 'Empty payload',
+            ], 'id = ?', [$logId]);
             http_response_code(400);
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Empty payload']);
             return;
         }
 
-        // Kumpulkan headers DOKU untuk verifikasi signature
-        $dokuHeaders = [
-            'Client-Id'         => $_SERVER['HTTP_CLIENT_ID'] ?? $_SERVER['HTTP_X_CLIENT_ID'] ?? '',
-            'Request-Id'        => $_SERVER['HTTP_REQUEST_ID'] ?? $_SERVER['HTTP_X_REQUEST_ID'] ?? '',
-            'Request-Timestamp' => $_SERVER['HTTP_REQUEST_TIMESTAMP'] ?? $_SERVER['HTTP_X_REQUEST_TIMESTAMP'] ?? '',
-            'Signature'         => $_SERVER['HTTP_SIGNATURE'] ?? $_SERVER['HTTP_X_SIGNATURE'] ?? '',
-        ];
+        // Verifikasi HMAC Signature dengan detected path + fallback multi-candidate
+        $signatureValid = $this->dokuService->verifyNotification($dokuHeaders, $rawInput, $detectedPath);
+        if ($logId) {
+            try { Database::update('webhook_logs', ['signature_valid' => $signatureValid ? 1 : 0], 'id = ?', [$logId]); } catch (\Throwable $e) {}
+        }
 
-        // Verifikasi HMAC Signature — tolak jika tidak valid
-        if (!$this->dokuService->verifyNotification($dokuHeaders, $rawInput)) {
-            error_log('[DOKU Webhook] Signature tidak valid. Headers: ' . json_encode($dokuHeaders));
+        if (!$signatureValid) {
+            $msg = 'Signature tidak valid — path=' . $detectedPath . ' ClientId=' . $dokuHeaders['Client-Id'];
+            error_log('[DOKU Webhook] ' . $msg . ' Headers: ' . json_encode($dokuHeaders));
+            if ($logId) {
+                try { Database::update('webhook_logs', [
+                    'process_status'  => 'signature_rejected',
+                    'process_message' => substr($msg, 0, 500),
+                ], 'id = ?', [$logId]); } catch (\Throwable $e) {}
+            }
             http_response_code(401);
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Invalid signature']);
             return;
         }
 
-        $payload = json_decode($rawInput, true);
-
         if (!is_array($payload)) {
+            if ($logId) Database::update('webhook_logs', [
+                'process_status'  => 'error',
+                'process_message' => 'Invalid JSON payload',
+            ], 'id = ?', [$logId]);
             http_response_code(400);
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Invalid JSON payload']);
@@ -427,15 +508,193 @@ class PaymentController extends Controller
 
         try {
             $result = $this->dokuService->processNotification($payload);
+            $procSuccess = !empty($result['success']);
+            $procStatus  = (string)($result['status'] ?? ($procSuccess ? 'processed' : 'failed'));
+            $procMsg     = substr((string)($result['message'] ?? ''), 0, 500);
+
+            if ($logId) {
+                try { Database::update('webhook_logs', [
+                    'process_success' => $procSuccess ? 1 : 0,
+                    'process_status'  => $procStatus,
+                    'process_message' => $procMsg,
+                ], 'id = ?', [$logId]); } catch (\Throwable $e) {}
+            }
+
             http_response_code(200);
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'success', 'result' => $result]);
+            echo json_encode(['status' => 'success', 'result' => $result, 'log_id' => $logId]);
         } catch (\Throwable $e) {
             error_log('[DOKU Webhook Error] ' . $e->getMessage());
+            if ($logId) {
+                try { Database::update('webhook_logs', [
+                    'process_success' => 0,
+                    'process_status'  => 'exception',
+                    'process_message' => substr($e->getMessage(), 0, 500),
+                ], 'id = ?', [$logId]); } catch (\Throwable $e2) {}
+            }
             http_response_code(500);
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
         }
+    }
+
+    /**
+     * Admin Manual Verify DOKU Payment (Reprocess webhook yang gagal)
+     * POST /payment/doku/admin-manual-verify
+     * Body: { invoice_number: "TOPUP-xxx-yyy" | "CCG-CODE", amount?: 100000, force?: false }
+     *
+     * Digunakan ketika:
+     *  - User sudah bukti transfer DOKU tapi webhook gagal (signature/proxy crash)
+     *  - Admin perlu "reprocess" transaksi yang statusnya masih pending
+     */
+    public function adminManualVerifyDoku(): void
+    {
+        // Hanya admin
+        $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Silakan login terlebih dahulu.', null, 401);
+            return;
+        }
+        $user = auth_user();
+        if (($user['role'] ?? '') !== 'admin') {
+            $this->errorResponse('Hanya admin yang dapat memproses manual verifikasi DOKU.', null, 403);
+            return;
+        }
+
+        $this->ensureWebhookLogsTable();
+        $data = $this->getPost();
+        if (empty($data)) {
+            $raw = file_get_contents('php://input');
+            $data = json_decode($raw, true) ?: [];
+        }
+
+        $invoice = trim((string)($data['invoice_number'] ?? $data['order_id'] ?? $data['order_code'] ?? ''));
+        $amountOverride = (float)($data['amount'] ?? 0);
+        $force = !empty($data['force']);
+
+        if (empty($invoice)) {
+            $this->errorResponse('invoice_number / order_code wajib diisi.');
+            return;
+        }
+
+        // Tentukan tipe transaksi
+        $isTopup = str_starts_with($invoice, 'TOPUP-');
+        $finalResult = null;
+
+        // 1. Ambil informasi dari webhook log TERAKHIR untuk invoice ini (jika ada)
+        $lastLog = Database::fetchOne(
+            "SELECT * FROM `webhook_logs` WHERE `invoice_number` = ? ORDER BY `id` DESC LIMIT 1",
+            [$invoice]
+        );
+
+        if ($isTopup) {
+            // --- MODE TOP UP ---
+            $log = Database::fetchOne(
+                "SELECT * FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1",
+                [$invoice]
+            );
+            if (!$log) {
+                $this->errorResponse('Log top up tidak ditemukan untuk invoice: ' . $invoice);
+                return;
+            }
+
+            $parts = explode('-', $invoice);
+            $targetUserId = (int)($parts[1] ?? 0);
+            if ($targetUserId <= 0) $targetUserId = (int)($log['user_id'] ?? 0);
+            if ($targetUserId <= 0) {
+                $this->errorResponse('Tidak dapat menentukan user_id untuk transaksi ini.');
+                return;
+            }
+
+            $statusNow = (string)($log['status'] ?? 'pending');
+            if ($statusNow === 'success' && !$force) {
+                $this->successResponse('Top up sudah dalam status SUCCESS — tidak perlu diproses lagi.', [
+                    'invoice'   => $invoice,
+                    'topup_log' => $log,
+                ]);
+                return;
+            }
+
+            $amount = $amountOverride > 0 ? $amountOverride : (float)($log['amount'] ?? 0);
+            if ($amount <= 0) {
+                $this->errorResponse('Amount top up tidak valid (0). Gunakan amount override jika perlu.');
+                return;
+            }
+
+            try {
+                $finalResult = $this->dokuService->processNotification([
+                    'order'       => ['invoice_number' => $invoice, 'amount' => $amount],
+                    'transaction' => ['status' => 'SUCCESS'],
+                    'channel'     => ['id' => $force ? 'admin_manual_force' : 'admin_manual_verify'],
+                ]);
+            } catch (\Throwable $e) {
+                $this->errorResponse('Gagal memproses manual verify: ' . $e->getMessage());
+                return;
+            }
+        } else {
+            // --- MODE ORDER CHECKOUT ---
+            $order = Database::fetchOne("SELECT * FROM `orders` WHERE `order_code` = ? LIMIT 1", [$invoice]);
+            if (!$order && preg_match('/^((?:CCG|PCL)-[A-Za-z0-9]+)/i', $invoice, $m)) {
+                $order = Database::fetchOne("SELECT * FROM `orders` WHERE `order_code` = ? LIMIT 1", [$m[1]]);
+            }
+            if (!$order) {
+                $this->errorResponse('Pesanan tidak ditemukan untuk code: ' . $invoice);
+                return;
+            }
+            if (($order['payment_status'] ?? '') === 'paid' && !$force) {
+                $this->successResponse('Pesanan sudah status PAID — tidak perlu diproses lagi.', [
+                    'invoice' => $invoice,
+                    'order'   => $order,
+                ]);
+                return;
+            }
+
+            try {
+                $finalResult = $this->dokuService->processNotification([
+                    'order'       => ['invoice_number' => $invoice, 'amount' => (float)($order['grand_total'] ?? 0)],
+                    'transaction' => ['status' => 'SUCCESS'],
+                    'channel'     => ['id' => $force ? 'admin_manual_force' : 'admin_manual_verify'],
+                ]);
+            } catch (\Throwable $e) {
+                $this->errorResponse('Gagal memproses manual verify: ' . $e->getMessage());
+                return;
+            }
+        }
+
+        // Catat log webhook manual entry
+        try {
+            Database::insert('webhook_logs', [
+                'source'           => 'doku',
+                'event'            => $force ? 'admin_manual_force' : 'admin_manual_verify',
+                'invoice_number'   => $invoice,
+                'status_in'        => 'SUCCESS',
+                'payload'          => json_encode([
+                    'invoice' => $invoice,
+                    'admin_user_id' => $userId,
+                    'admin_name' => $user['name'] ?? 'Admin',
+                    'amount_override' => $amountOverride,
+                    'force' => $force,
+                    'result' => $finalResult,
+                ], JSON_UNESCAPED_SLASHES),
+                'signature_valid'  => 1,
+                'process_success'  => !empty($finalResult['success']) ? 1 : 0,
+                'process_status'   => (string)($finalResult['status'] ?? 'done'),
+                'process_message'  => substr((string)($finalResult['message'] ?? ''), 0, 500),
+            ]);
+        } catch (\Throwable $e) { /* ignore */ }
+
+        if (empty($finalResult['success'])) {
+            $this->errorResponse('Manual verify gagal: ' . ($finalResult['message'] ?? 'unknown error'));
+            return;
+        }
+
+        $this->successResponse('Manual verify DOKU berhasil.', [
+            'invoice'    => $invoice,
+            'admin_name' => $user['name'] ?? 'Admin',
+            'force_mode' => $force,
+            'result'     => $finalResult,
+            'last_webhook_log' => $lastLog,
+        ]);
     }
 
     /**

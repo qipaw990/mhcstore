@@ -283,15 +283,17 @@ class DokuService
     /**
      * Verify Webhook Signature from DOKU
      *
-     * DOKU mengirim signature menggunakan path notifikasi yang didaftarkan
-     * di Merchant Portal DOKU. Pastikan $targetPath sesuai dengan
-     * Notification URL yang Anda daftarkan, contoh: /payment/doku/notification
+     * DOKU menghitung signature berdasarkan path yang TEPAT didaftarkan di
+     * Merchant Portal. Karena reverse proxy / trailing slash / rewrite dapat
+     * mengubah path yang diterima server, kita coba SEMUA kemungkinan path
+     * (fallback strategy) agar signature tidak sering ditolak palsu.
      *
      * @param array  $headers  HTTP headers dari DOKU
      * @param string $rawBody  Raw request body (JSON string)
+     * @param ?string $detectedPath Path yang diterima server dari $_SERVER
      * @return bool  true jika valid, false jika tidak
      */
-    public function verifyNotification(array $headers, string $rawBody): bool
+    public function verifyNotification(array $headers, string $rawBody, ?string $detectedPath = null): bool
     {
         if (empty($this->secretKey)) {
             error_log('[DOKU] verifyNotification: secretKey kosong, tolak semua webhook');
@@ -309,24 +311,45 @@ class DokuService
             return false;
         }
 
-        // Path harus sesuai dengan yang terdaftar di DOKU Merchant Portal
-        $targetPath = '/payment/doku/notification';
+        // Daftar kandidat path (urutan dari paling spesifik).
+        // Alasan butuh banyak kandidat: reverse proxy, URL rewrite,
+        // trailing slash di DOKU Merchant Portal vs actual URI.
+        $candidatePaths = [];
+        if (!empty($detectedPath)) {
+            $detectedPath = '/' . ltrim($detectedPath, '/');
+            $candidatePaths[] = $detectedPath;
+            $candidatePaths[] = rtrim($detectedPath, '/');
+            $candidatePaths[] = rtrim($detectedPath, '/') . '/';
+        }
+        // Path default yang umum terdaftar di DOKU Merchant Portal
+        $candidatePaths[] = '/payment/doku/notification';
+        $candidatePaths[] = '/payment/doku/notification/';
+        $candidatePaths[] = '/api/payment/doku/notification';
+        $candidatePaths[] = '/index.php/payment/doku/notification';
 
-        $expectedSignature = $this->generateSignature(
-            $this->clientId ?: $clientId,
-            $requestId,
-            $requestTimestamp,
-            $targetPath,
-            $rawBody
-        );
+        $effectiveClientId = $this->clientId ?: $clientId;
+        $lastExpected = '';
 
-        $valid = hash_equals($expectedSignature, $receivedSignature);
-
-        if (!$valid) {
-            error_log('[DOKU] Signature mismatch. Expected=' . $expectedSignature . ' Got=' . $receivedSignature);
+        foreach (array_values(array_unique($candidatePaths)) as $tryPath) {
+            $expectedSignature = $this->generateSignature(
+                $effectiveClientId,
+                $requestId,
+                $requestTimestamp,
+                $tryPath,
+                $rawBody
+            );
+            $lastExpected = $expectedSignature;
+            if (hash_equals($expectedSignature, $receivedSignature)) {
+                return true;
+            }
         }
 
-        return $valid;
+        error_log('[DOKU] Signature mismatch ALL candidates tried. ' .
+            'Got=' . $receivedSignature . ' ' .
+            'LastExpected=' . $lastExpected . ' ' .
+            'DetectedPath=' . ($detectedPath ?? 'null') . ' ' .
+            'ClientId=' . $effectiveClientId . ' RequestId=' . $requestId);
+        return false;
     }
 
     /**
@@ -356,47 +379,97 @@ class DokuService
             return $this->handleWalletTopup($invoiceNumber, $amount, $paymentChannel, $isSettled, $isPending, $isFailed);
         }
 
-        // 2. Order Checkout
-        return $this->handleOrderPayment($invoiceNumber, $paymentChannel, $isSettled, $isPending, $isFailed);
+        // 2. Order Checkout — pass $status string as $originalStatus untuk cancel_reason yang aman
+        return $this->handleOrderPayment($invoiceNumber, $paymentChannel, $isSettled, $isPending, $isFailed, $status);
     }
 
     private function handleWalletTopup(string $orderId, float $amount, string $paymentType, bool $isSettled, bool $isPending, bool $isFailed): array
     {
         $parts = explode('-', $orderId);
         $userId = (int)($parts[1] ?? 0);
+        $logStatus = 'unknown';
 
         if ($userId <= 0) {
-            return ['success' => false, 'message' => 'User ID tidak valid dalam ID topup'];
+            // Fallback: coba extract userId dari DB topup_logs jika tersedia
+            $existingLog = Database::fetchOne(
+                "SELECT user_id, amount, status FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1",
+                [$orderId]
+            );
+            if ($existingLog) {
+                $userId = (int)($existingLog['user_id'] ?? 0);
+                error_log("[DOKU handleWalletTopup] userId tidak bisa diextract dari orderId={$orderId}, fallback ke DB user_id={$userId}");
+            }
+            if ($userId <= 0) {
+                return ['success' => false, 'message' => 'User ID tidak valid dalam ID topup: ' . $orderId];
+            }
         }
 
         $topupLogModel = new TopupLog();
 
         if ($isSettled) {
-            $existing = Database::fetchOne(
+            // Cek amount kesesuaian antara payload DOKU vs log DB (security anti-tamper)
+            $dbLog = Database::fetchOne(
+                "SELECT id, amount, status FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1",
+                [$orderId]
+            );
+            if ($dbLog) {
+                $expectedAmount = (float)($dbLog['amount'] ?? 0);
+                // Toleransi Rp 1 mismatch karena kadang rounding / biaya admin
+                if ($expectedAmount > 0 && abs($expectedAmount - $amount) > 100) {
+                    error_log("[DOKU handleWalletTopup] AMOUNT MISMATCH! orderId={$orderId} db_amount={$expectedAmount} doku_amount={$amount}");
+                    $amount = $expectedAmount; // Pakai nilai dari DB (nilai yang user setujui)
+                }
+                $logStatus = (string)($dbLog['status'] ?? 'pending');
+            }
+
+            // Idempotency: cek ganda di wallet_transactions reference_id
+            $existingTx = Database::fetchOne(
                 "SELECT id FROM `wallet_transactions` WHERE `reference_id` = ? LIMIT 1",
                 [$orderId]
             );
 
-            if (!$existing) {
-                $walletModel = new Wallet();
-                $walletModel->credit(
-                    $userId,
-                    $amount,
-                    'topup',
-                    "Top Up CicalengkaPay via DOKU ({$paymentType})",
-                    $orderId
-                );
-
-                (new Notification())->createNotification(
-                    $userId,
-                    'Top Up DOKU Berhasil! 🎉',
-                    "Saldo CicalengkaPay sebesar " . format_rupiah($amount) . " berhasil ditambahkan via DOKU ({$paymentType}).",
-                    'wallet'
-                );
+            // Jika log sudah 'success' DAN transaksi sudah ada → skip, idempotent
+            if ($existingTx && $logStatus === 'success') {
+                return [
+                    'success' => true, 'status' => 'settled',
+                    'message' => 'Top Up sudah pernah diproses (idempotent)',
+                    'skipped' => true
+                ];
             }
 
-            $topupLogModel->markSuccess($orderId, 'doku_' . strtolower($paymentType), "Top Up via DOKU ({$paymentType}) berhasil");
-            return ['success' => true, 'status' => 'settled', 'message' => 'Top Up DOKU berhasil diproses'];
+            try {
+                // Gunakan DB Transaction agar EITHER semua berhasil OR gagal semua
+                Database::transaction(function () use (
+                    $topupLogModel,
+                    $userId, $orderId, $amount, $paymentType, $existingTx
+                ) {
+                    $walletModelInner = new Wallet();
+                    if (!$existingTx) {
+                        $walletModelInner->credit(
+                            $userId,
+                            $amount,
+                            'topup',
+                            "Top Up CicalengkaPay via DOKU ({$paymentType})",
+                            $orderId
+                        );
+                        (new Notification())->createNotification(
+                            $userId,
+                            'Top Up DOKU Berhasil! 🎉',
+                            "Saldo CicalengkaPay sebesar " . format_rupiah($amount) . " berhasil ditambahkan via DOKU ({$paymentType}).",
+                            'wallet'
+                        );
+                    }
+                    $topupLogModel->markSuccess(
+                        $orderId,
+                        'doku_' . strtolower($paymentType),
+                        "Top Up via DOKU ({$paymentType}) berhasil — " . date('d/m/Y H:i:s')
+                    );
+                });
+                return ['success' => true, 'status' => 'settled', 'message' => 'Top Up DOKU berhasil diproses'];
+            } catch (\Throwable $e) {
+                error_log("[DOKU handleWalletTopup FATAL] " . $e->getMessage());
+                return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
+            }
         }
 
         if ($isPending) {
@@ -408,7 +481,7 @@ class DokuService
         return ['success' => true, 'status' => 'failed', 'message' => 'Top Up DOKU gagal atau dibatalkan'];
     }
 
-    private function handleOrderPayment(string $invoiceNumber, string $paymentType, bool $isSettled, bool $isPending, bool $isFailed): array
+    private function handleOrderPayment(string $invoiceNumber, string $paymentType, bool $isSettled, bool $isPending, bool $isFailed, string $originalStatus = ''): array
     {
         $order = Database::fetchOne("SELECT * FROM `orders` WHERE `order_code` = ? LIMIT 1", [$invoiceNumber]);
         if (!$order) {
@@ -420,7 +493,7 @@ class DokuService
         }
 
         if (!$order) {
-            return ['success' => false, 'message' => 'Pesanan tidak ditemukan'];
+            return ['success' => false, 'message' => 'Pesanan tidak ditemukan: ' . $invoiceNumber];
         }
 
         $orderId = (int)$order['id'];
@@ -429,30 +502,38 @@ class DokuService
 
         if ($isSettled) {
             if ($order['payment_status'] !== 'paid') {
-                Database::update('orders', [
-                    'payment_status' => 'paid',
-                    'payment_method' => 'doku',
-                    'order_status'   => ($order['order_status'] === 'pending') ? 'confirmed' : $order['order_status'],
-                    'updated_at'     => date('Y-m-d H:i:s'),
-                ], '`id` = ?', [$orderId]);
+                try {
+                    Database::transaction(function () use ($orderId, $orderCode, $customerId, $paymentType) {
+                        Database::update('orders', [
+                            'payment_status' => 'paid',
+                            'payment_method' => 'doku',
+                            'order_status'   => ($order['order_status'] === 'pending') ? 'confirmed' : $order['order_status'],
+                            'updated_at'     => date('Y-m-d H:i:s'),
+                        ], '`id` = ?', [$orderId]);
 
-                (new Notification())->createNotification(
-                    $customerId,
-                    'Pembayaran DOKU Berhasil! ✅',
-                    "Pembayaran pesanan #{$orderCode} via DOKU telah berhasil diverifikasi.",
-                    'order',
-                    $orderId
-                );
+                        (new Notification())->createNotification(
+                            $customerId,
+                            'Pembayaran DOKU Berhasil! ✅',
+                            "Pembayaran pesanan #{$orderCode} via DOKU telah berhasil diverifikasi.",
+                            'order',
+                            $orderId
+                        );
+                    });
+                } catch (\Throwable $e) {
+                    error_log("[DOKU handleOrderPayment FATAL] " . $e->getMessage());
+                    return ['success' => false, 'status' => 'error', 'message' => $e->getMessage()];
+                }
             }
 
             return ['success' => true, 'status' => 'settled', 'message' => 'Pesanan berhasil diverifikasi'];
         }
 
         if ($isFailed) {
+            $safeStatus = !empty($originalStatus) ? $originalStatus : 'gagal';
             Database::update('orders', [
                 'payment_status' => 'unpaid',
                 'order_status'   => 'canceled',
-                'cancel_reason'  => "Pembayaran DOKU {$status} atau kedaluwarsa",
+                'cancel_reason'  => "Pembayaran DOKU {$safeStatus} atau kedaluwarsa",
                 'updated_at'     => date('Y-m-d H:i:s'),
             ], '`id` = ?', [$orderId]);
 
