@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_service.dart';
@@ -295,13 +297,24 @@ class MerchantController extends ChangeNotifier {
     return false;
   }
 
-  Future<bool> saveProduct(Map<String, String> fields, {String? imagePath}) async {
+  Future<bool> saveProduct(
+    Map<String, String> fields, {
+    String? imagePath,
+    Uint8List? imageBytes,
+    String? imageFileName,
+  }) async {
     try {
+      final updatedFields = Map<String, String>.from(fields);
+      if (imageBytes != null && imageBytes.isNotEmpty) {
+        updatedFields['image'] = 'data:image/jpeg;base64,${base64Encode(imageBytes)}';
+      }
       final res = await ApiService.postForm(
         ApiConstants.vendorSaveProduct,
-        fields,
-        fileFieldName: imagePath != null ? 'image' : null,
+        updatedFields,
+        fileFieldName: (imageBytes != null || (imagePath != null && imagePath.isNotEmpty)) ? 'image' : null,
         filePath: imagePath,
+        fileBytes: imageBytes,
+        fileName: imageFileName ?? 'prod_${DateTime.now().millisecondsSinceEpoch}.jpg',
       );
 
       if (res['success'] == true) {
@@ -370,13 +383,24 @@ class MerchantController extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> updateStoreProfile(Map<String, String> fields, {String? logoPath}) async {
+  Future<Map<String, dynamic>> updateStoreProfile(
+    Map<String, String> fields, {
+    String? logoPath,
+    Uint8List? logoBytes,
+    String? logoFileName,
+  }) async {
     try {
+      final updatedFields = Map<String, String>.from(fields);
+      if (logoBytes != null && logoBytes.isNotEmpty) {
+        updatedFields['store_logo'] = 'data:image/jpeg;base64,${base64Encode(logoBytes)}';
+      }
       final res = await ApiService.postForm(
         ApiConstants.vendorUpdateProfile,
-        fields,
-        fileFieldName: logoPath != null ? 'store_logo' : null,
+        updatedFields,
+        fileFieldName: (logoBytes != null || (logoPath != null && logoPath.isNotEmpty)) ? 'store_logo' : null,
         filePath: logoPath,
+        fileBytes: logoBytes,
+        fileName: logoFileName ?? 'logo_${DateTime.now().millisecondsSinceEpoch}.jpg',
       );
 
       if (res['success'] == true) {

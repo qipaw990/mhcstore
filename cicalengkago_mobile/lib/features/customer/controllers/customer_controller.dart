@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../core/constants/api_constants.dart';
@@ -501,20 +503,35 @@ class CustomerController extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateProfile(Map<String, dynamic> data, {String? avatarPath}) async {
+  Future<bool> updateProfile(
+    Map<String, dynamic> data, {
+    String? avatarPath,
+    Uint8List? avatarBytes,
+    String? avatarFileName,
+  }) async {
     try {
       final fields = <String, String>{};
       data.forEach((key, val) {
         if (val != null) fields[key] = val.toString();
       });
+      // Fallback base64 for smart_upload_field on server
+      if (avatarBytes != null && avatarBytes.isNotEmpty) {
+        fields['avatar'] = 'data:image/jpeg;base64,${base64Encode(avatarBytes)}';
+      }
       final res = await ApiService.postForm(
         ApiConstants.updateProfile,
         fields,
-        fileFieldName: avatarPath != null ? 'avatar' : null,
+        fileFieldName: (avatarBytes != null || (avatarPath != null && avatarPath.isNotEmpty)) ? 'avatar' : null,
         filePath: avatarPath,
+        fileBytes: avatarBytes,
+        fileName: avatarFileName ?? 'avatar_${DateTime.now().millisecondsSinceEpoch}.jpg',
       );
       if (res['success'] == true) {
+        if (res['data'] is Map && res['data']['user'] is Map) {
+          _profile = Map<String, dynamic>.from(res['data']['user'] as Map);
+        }
         await fetchProfile();
+        notifyListeners();
         return true;
       }
     } catch (_) {}

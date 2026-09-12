@@ -1249,6 +1249,8 @@ class _ProductFormBottomSheetState extends State<_ProductFormBottomSheet> {
                       final ok = await context.read<MerchantController>().saveProduct(
                             payload,
                             imagePath: _selectedImage?.path,
+                            imageBytes: _selectedImageBytes,
+                            imageFileName: _selectedImage?.name,
                           );
 
                       if (mounted) setState(() => _isSaving = false);

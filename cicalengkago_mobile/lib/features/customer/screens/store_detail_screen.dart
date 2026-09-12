@@ -14,7 +14,7 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../common/screens/in_app_chat_modal.dart';
 import '../widgets/product_detail_modal.dart';
 import 'cart_screen.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../../main.dart';
 
 class StoreDetailScreen extends StatefulWidget {
   final int storeId;
@@ -24,7 +24,7 @@ class StoreDetailScreen extends StatefulWidget {
   State<StoreDetailScreen> createState() => _StoreDetailScreenState();
 }
 
-class _StoreDetailScreenState extends State<StoreDetailScreen> {
+class _StoreDetailScreenState extends State<StoreDetailScreen> with RouteAware {
   bool _isLoading = true;
   Map<String, dynamic>? _storeData;
   List<dynamic> _products = [];
@@ -50,6 +50,25 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     _fetchStoreDetail();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    appRouteObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void dispose() {
+    appRouteObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  // Called when user navigates back to this screen (e.g., from cart)
+  @override
+  void didPopNext() {
+    // Refresh product data when returning to this screen
+    _fetchStoreDetail();
+  }
+
   Future<void> _fetchGpsLocation() async {
     try {
       final pos = await LocationService.getCurrentPosition();
@@ -68,7 +87,13 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
       final data = res['data'];
       final List<dynamic> storeAddons = data['addons'] is List ? data['addons'] : [];
       final List<dynamic> rawProducts = data['products'] is List ? data['products'] : [];
-      final processedProducts = rawProducts.map((p) {
+      final processedProducts = rawProducts.where((p) {
+        if (p is Map) {
+          final s = p['status'];
+          if (s == 0 || s == '0' || s == false) return false;
+        }
+        return true;
+      }).map((p) {
         if (p is Map<String, dynamic>) {
           final pAddons = p['addons'];
           if (pAddons == null || (pAddons is List && pAddons.isEmpty)) {
@@ -99,28 +124,6 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     }
   }
 
-  Future<void> _launchMerchantWhatsApp(String? rawPhone, String storeName) async {
-    String phone = (rawPhone ?? '').replaceAll(RegExp(r'[^0-9]'), '');
-    if (phone.startsWith('0')) {
-      phone = '62${phone.substring(1)}';
-    }
-    if (phone.isEmpty) {
-      phone = '6285158397756'; // Fallback CS CicalengkaGO
-    }
-
-    final message = 'Halo $storeName, saya ingin bertanya seputar menu dan produk Anda di aplikasi CicalengkaGO.';
-    final url = 'https://wa.me/$phone?text=${Uri.encodeComponent(message)}';
-    try {
-      final uri = Uri.parse(url);
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        await launchUrl(uri);
-      }
-    } catch (e) {
-      if (mounted) {
-        AppAlert.showError(context, title: 'Gagal Membuka WhatsApp', message: 'Tidak dapat membuka chat ke mitra toko.');
-      }
-    }
-  }
 
   String _getFoodImage(Map<String, dynamic> product) {
     final rawImg = product['image']?.toString() ??
@@ -160,7 +163,10 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: CustomScrollView(
+      body: RefreshIndicator(
+        onRefresh: _fetchStoreDetail,
+        color: AppTheme.primaryRed,
+        child: CustomScrollView(
         slivers: [
           // Banner Cover Header
           SliverAppBar(
@@ -815,6 +821,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
 
           const SliverPadding(padding: EdgeInsets.only(bottom: 90)),
         ],
+        ),
       ),
 
       // Floating Cart Bottom Bar

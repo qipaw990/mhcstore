@@ -180,6 +180,8 @@ class ApiService {
     Map<String, String> fields, {
     String? fileFieldName,
     String? filePath,
+    Uint8List? fileBytes,
+    String? fileName,
   }) async {
     try {
       final cookie = await _getSavedCookie();
@@ -207,12 +209,19 @@ class ApiService {
       }
       request.fields.addAll(updatedFields);
 
-      if (!kIsWeb && fileFieldName != null && filePath != null && filePath.isNotEmpty) {
+      if (fileBytes != null && fileBytes.isNotEmpty && fileFieldName != null) {
+        final multipartFile = http.MultipartFile.fromBytes(
+          fileFieldName,
+          fileBytes,
+          filename: fileName ?? 'upload_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        );
+        request.files.add(multipartFile);
+      } else if (!kIsWeb && fileFieldName != null && filePath != null && filePath.isNotEmpty) {
         final multipartFile = await http.MultipartFile.fromPath(fileFieldName, filePath);
         request.files.add(multipartFile);
       }
 
-      debugPrint('[ApiService postForm] Requesting: $url | Headers: ${request.headers} | Fields: $updatedFields');
+      debugPrint('[ApiService postForm] Requesting: $url | Headers: ${request.headers} | Fields: ${updatedFields.keys.toList()} | Files: ${request.files.map((f) => "${f.field}: ${f.filename} (${f.length} B)").toList()}');
 
       final streamed = await request.send().timeout(const Duration(seconds: 30));
       final response = await http.Response.fromStream(streamed);

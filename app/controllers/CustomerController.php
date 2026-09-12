@@ -254,7 +254,7 @@ class CustomerController extends Controller
         $store = $this->storeModel->findWithDetails($id);
         attach_store_schedule_data($store, true);
         
-        $products = $this->productModel->getByStore($id);
+        $products = $this->productModel->getByStore($id, true);
         $cartSummary = $this->cartModel->getUserCart(auth_id(), session_id());
         $reviews = $reviewModel->getStoreReviews($id, 15);
 
@@ -433,14 +433,20 @@ class CustomerController extends Controller
             return;
         }
 
-        // Handle Customer Avatar Upload
-        if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-            $avatarPath = upload_image($_FILES['avatar'], 'profiles');
-            if ($avatarPath) {
-                (new \App\Models\User())->update($userId, ['avatar' => $avatarPath]);
-                if (isset($_SESSION['user'])) {
-                    $_SESSION['user']['avatar'] = $avatarPath;
-                }
+        // Handle Customer Avatar Upload — SMART: multipart/form-data, base64, and aliases
+        $dbUser = (new \App\Models\User())->find($userId);
+        $newAvatar = smart_upload_field(
+            'avatar',
+            'profiles',
+            $dbUser['avatar'] ?? null,
+            ['photo', 'profile_picture', 'profilePicture', 'foto', 'image', 'userProfilePicture'],
+            $data,
+            $userId
+        );
+        if ($newAvatar !== null && $newAvatar !== ($dbUser['avatar'] ?? '')) {
+            (new \App\Models\User())->update($userId, ['avatar' => $newAvatar]);
+            if (isset($_SESSION['user'])) {
+                $_SESSION['user']['avatar'] = $newAvatar;
             }
         }
 
@@ -549,12 +555,13 @@ class CustomerController extends Controller
                 }
             }
 
-            $this->successResponse('Profil dan nomor WhatsApp berhasil diperbarui!', [
+            $this->successResponse('Profil dan foto berhasil diperbarui!', [
                 'user' => $freshUser ?? [
-                    'id'    => $userId,
-                    'name'  => $name,
-                    'phone' => $phone,
-                    'email' => $email,
+                    'id'     => $userId,
+                    'name'   => $name,
+                    'phone'  => $phone,
+                    'email'  => $email,
+                    'avatar' => $newAvatar ?? ($dbUser['avatar'] ?? null),
                 ]
             ]);
             return;

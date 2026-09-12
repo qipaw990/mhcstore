@@ -74,6 +74,7 @@ void main() {
 }
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+final RouteObserver<ModalRoute<void>> appRouteObserver = RouteObserver<ModalRoute<void>>();
 
 class CicalengkaGoApp extends StatelessWidget {
   const CicalengkaGoApp({super.key});
@@ -82,6 +83,7 @@ class CicalengkaGoApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: rootNavigatorKey,
+      navigatorObservers: [appRouteObserver],
       title: 'CicalengkaGO Mobile',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,

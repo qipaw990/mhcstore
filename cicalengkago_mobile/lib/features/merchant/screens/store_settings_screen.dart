@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -806,6 +808,27 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
   bool _obscureNew = true;
   bool _obscureConfirm = true;
   Timer? _debounceTimer;
+  XFile? _selectedLogo;
+  Uint8List? _selectedLogoBytes;
+
+  Future<void> _pickLogo() async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 600,
+        maxHeight: 600,
+        imageQuality: 80,
+      );
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        setState(() {
+          _selectedLogo = picked;
+          _selectedLogoBytes = bytes;
+        });
+      }
+    } catch (_) {}
+  }
 
   final List<String> _bankOptions = ['BCA', 'BRI', 'Mandiri', 'BNI', 'BSI', 'GoPay', 'OVO', 'DANA', 'ShopeePay'];
 
@@ -1013,6 +1036,68 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
               ],
             ),
             const Divider(height: 20),
+
+            // ── FOTO / LOGO RESTO ──
+            Center(
+              child: Stack(
+                children: [
+                  Container(
+                    width: 76,
+                    height: 76,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppTheme.primaryRed, width: 2.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: _selectedLogoBytes != null
+                          ? Image.memory(_selectedLogoBytes!, fit: BoxFit.cover)
+                          : CachedNetworkImage(
+                              imageUrl: ApiConstants.formatImageUrl(widget.store['logo']?.toString()),
+                              fit: BoxFit.cover,
+                              errorWidget: (_, __, ___) => Container(
+                                color: const Color(0xFFF1F5F9),
+                                child: const Icon(Icons.storefront_rounded, color: Color(0xFF94A3B8), size: 36),
+                              ),
+                            ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: InkWell(
+                      onTap: _pickLogo,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: AppTheme.primaryRed,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 14),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            Center(
+              child: TextButton.icon(
+                onPressed: _pickLogo,
+                icon: const Icon(Icons.photo_library_rounded, size: 14, color: AppTheme.primaryRed),
+                label: Text(
+                  _selectedLogoBytes != null ? 'Ganti Logo Toko' : 'Upload Logo Toko',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryRed),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
 
             // ── STATUS OPERASIONAL BUKA / TUTUP TOKO ──
             Container(
@@ -1555,7 +1640,12 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
                         payload['confirm_password'] = _confirmPasswordCtrl.text;
                       }
 
-                      final result = await context.read<MerchantController>().updateStoreProfile(payload);
+                      final result = await context.read<MerchantController>().updateStoreProfile(
+                            payload,
+                            logoPath: _selectedLogo?.path,
+                            logoBytes: _selectedLogoBytes,
+                            logoFileName: _selectedLogo?.name,
+                          );
 
                       if (mounted) setState(() => _isSaving = false);
 

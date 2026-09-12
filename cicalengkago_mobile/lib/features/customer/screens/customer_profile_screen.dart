@@ -28,6 +28,7 @@ class CustomerProfileScreen extends StatefulWidget {
 class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
   XFile? _selectedAvatarFile;
   Uint8List? _avatarBytes;
+  int _avatarCacheBust = 0; // increment to force CachedNetworkImage reload
 
   @override
   void initState() {
@@ -79,6 +80,10 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
             setState(() {
               _selectedAvatarFile = file;
               _avatarBytes = bytes;
+              // If avatar was cleared (saved), bump cache-bust to force network reload
+              if (file == null && bytes == null) {
+                _avatarCacheBust = DateTime.now().millisecondsSinceEpoch;
+              }
             });
           }
         },
@@ -128,7 +133,9 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
 
     String? avatarUrl;
     if (rawAvatar != null && rawAvatar.toString().trim().isNotEmpty) {
-      avatarUrl = ApiConstants.formatImageUrl(rawAvatar.toString().trim());
+      final baseUrl = ApiConstants.formatImageUrl(rawAvatar.toString().trim());
+      // Add cache-bust query param so CachedNetworkImage reloads the new photo
+      avatarUrl = _avatarCacheBust > 0 ? '$baseUrl?v=$_avatarCacheBust' : baseUrl;
     }
 
     final walletBalance = num.tryParse(ctrl.wallet?['balance']?.toString() ?? '0') ?? 0;
@@ -1874,6 +1881,8 @@ class _EditProfileModalSheetState extends State<_EditProfileModalSheet> {
                             final ok = await widget.ctrl.updateProfile(
                               payload,
                               avatarPath: _selectedAvatarFile?.path,
+                              avatarBytes: _avatarBytes,
+                              avatarFileName: _selectedAvatarFile?.name,
                             );
 
                             if (mounted) {

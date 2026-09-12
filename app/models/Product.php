@@ -51,13 +51,14 @@ class Product extends Model
         return $products;
     }
 
-    public function getByStore(int $storeId): array
+    public function getByStore(int $storeId, bool $activeOnly = false): array
     {
-        // Ambil semua produk aktif + produk stock habis (agar customer lihat badge Habis)
+        // Ambil produk aktif (jika customer) atau semua produk (jika vendor/admin)
+        $statusCondition = $activeOnly ? " AND p.status = 1" : "";
         $sql = "SELECT p.*, c.name as category_name
                 FROM `products` p
                 LEFT JOIN `categories` c ON p.category_id = c.id
-                WHERE p.store_id = ?
+                WHERE p.store_id = ? {$statusCondition}
                 ORDER BY p.status DESC, p.stock DESC, c.priority ASC, p.id DESC";
         $products = Database::query($sql, [$storeId]);
         $storeAddons = Database::query("SELECT * FROM `product_addons` WHERE `store_id` = ? AND `status` = 1 ORDER BY `price` ASC", [$storeId]);
