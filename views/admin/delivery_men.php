@@ -5,6 +5,22 @@
     $totalFleetBalance = array_sum(array_column($drivers, 'wallet_balance'));
 ?>
 
+<!-- Page Header -->
+<div class="page-header">
+    <div class="page-header-left">
+        <h4 class="page-title"><i class="bi bi-bicycle text-danger me-2"></i>Armada Driver &amp; Kurir CicalengkaGO</h4>
+        <p class="page-subtitle">Kelola verifikasi identitas, status operasional online/offline, dan dompet saldo mitra pengemudi.</p>
+    </div>
+    <div class="page-header-right">
+        <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" onclick="openAddDriverModal()">
+            <i class="bi bi-person-plus-fill me-1"></i> Daftarkan Driver
+        </button>
+        <a href="<?= $baseUrl ?>/admin/delivery-men" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+        </a>
+    </div>
+</div>
+
 <!-- Drivers KPI Summary Cards -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
@@ -62,20 +78,21 @@
 </div>
 
 <div class="row g-4">
-    <!-- Header & Action Bar -->
+    <!-- Search & Action Bar -->
     <div class="col-12">
         <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="card-body p-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <div class="d-flex align-items-center gap-3 flex-grow-1" style="max-width: 400px;">
                     <form method="GET" action="<?= $baseUrl ?>/admin/delivery-men" class="input-group input-group-sm w-100">
                         <span class="input-group-text bg-light border-end-0 rounded-start-pill"><i class="bi bi-search text-muted"></i></span>
                         <input type="text" name="search" value="<?= htmlspecialchars($search ?? '') ?>" class="form-control bg-light border-start-0 rounded-end-pill" placeholder="Cari Nama Driver, Plat, No HP... (Tekan Enter)">
                     </form>
                 </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" onclick="openAddDriverModal()">
+                        <i class="bi bi-person-plus-fill me-1"></i> Daftarkan Driver Baru
+                    </button>
                 </div>
-                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="openAddDriverModal()">
-                    <i class="bi bi-person-plus-fill me-1"></i> Daftarkan Driver Baru
-                </button>
             </div>
         </div>
     </div>

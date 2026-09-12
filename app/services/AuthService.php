@@ -358,24 +358,41 @@ class AuthService
         $lat = !empty($data['latitude']) ? (float)$data['latitude'] : -6.9840;
         $lng = !empty($data['longitude']) ? (float)$data['longitude'] : 107.8340;
 
-        // Handle Photo Uploads (KTP, Logo, Foto Toko)
-        $logoPath = $data['logo'] ?? 'assets/images/stores/default.jpg';
-        if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
-            $up = upload_image($_FILES['logo'], 'stores');
-            if ($up) $logoPath = $up;
+        // Handle Photo Uploads (KTP, Logo, Foto Toko) — SMART: multipart + base64 + alias
+        // NOTE: $userId sudah di atas sudah diisi dari $this->userModel->create(). Kita pakai itu untuk logging.
+
+        $logoPath = smart_upload_field(
+            'logo',
+            'stores',
+            'assets/images/stores/default.jpg',
+            ['store_logo', 'merchant_logo', 'toko_logo', 'storeLogo', 'gambar_toko'],
+            $data,
+            (int)$userId
+        );
+        if ($logoPath === null || trim($logoPath) === '') {
+            $logoPath = 'assets/images/stores/default.jpg';
         }
 
-        $coverPath = $data['cover_photo'] ?? 'assets/images/stores/default_cover.jpg';
-        if (isset($_FILES['cover_photo']) && $_FILES['cover_photo']['error'] === UPLOAD_ERR_OK) {
-            $up = upload_image($_FILES['cover_photo'], 'stores');
-            if ($up) $coverPath = $up;
+        $coverPath = smart_upload_field(
+            'cover_photo',
+            'stores',
+            'assets/images/stores/default_cover.jpg',
+            ['cover', 'banner', 'coverPhoto', 'store_cover', 'sampul', 'foto_sampul'],
+            $data,
+            (int)$userId
+        );
+        if ($coverPath === null || trim($coverPath) === '') {
+            $coverPath = 'assets/images/stores/default_cover.jpg';
         }
 
-        $ktpPath = $data['identity_image'] ?? null;
-        if (isset($_FILES['identity_image']) && $_FILES['identity_image']['error'] === UPLOAD_ERR_OK) {
-            $up = upload_image($_FILES['identity_image'], 'ktp');
-            if ($up) $ktpPath = $up;
-        }
+        $ktpPath = smart_upload_field(
+            'identity_image',
+            'ktp',
+            null,
+            ['ktp', 'ktp_image', 'identity', 'idCard', 'id_card', 'photo_id', 'photoId', 'siup', 'nib', 'surat_izin', 'suratIzin'],
+            $data,
+            (int)$userId
+        );
 
         $storeId = (new \App\Models\Store())->create([
             'vendor_id'      => $userId,

@@ -821,4 +821,872 @@ class AdminApiController extends Controller
         Database::execute("UPDATE voice_calls SET status = 'ended' WHERE id = ?", [$callId]);
         $this->successResponse('Panggilan berhasil diakhiri oleh admin');
     }
+
+    /**
+     * 11. Customer CRM Management
+     */
+    public function customers(): void
+    {
+        $search = sanitize($this->getQuery('search') ?? '');
+        $page   = max(1, (int)($this->getQuery('page') ?? 1));
+        $limit  = max(10, min(100, (int)($this->getQuery('limit') ?? 25)));
+        $offset = ($page - 1) * $limit;
+
+        $where = ["u.role = 'customer'"];
+        $params = [];
+
+        if (!empty($search)) {
+            $where[] = "(u.name LIKE ? OR u.phone LIKE ? OR u.email LIKE ?)";
+            $params[] = "%{$search}%";
+            $params[] = "%{$search}%";
+            $params[] = "%{$search}%";
+        }
+
+        $whereSql = "WHERE " . implode(" AND ", $where);
+
+        $count = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM users u {$whereSql}", $params)['c'] ?? 0);
+
+        $sql = "
+            SELECT u.*,
+                   COALESCE(oc.order_count, 0) as order_count,
+                   COALESCE(w.balance, 0) as wallet_balance
+            FROM users u
+            LEFT JOIN (
+                SELECT customer_id, COUNT(*) as order_count FROM orders GROUP BY customer_id
+            ) oc ON u.id = oc.customer_id
+            LEFT JOIN wallets w ON w.user_id = u.id AND w.user_type = 'customer'
+            {$whereSql}
+            ORDER BY u.id DESC
+            LIMIT {$limit} OFFSET {$offset}
+        ";
+        $customers = Database::query($sql, $params);
+
+        $this->successResponse('Daftar pengguna & pelanggan', [
+            'customers'    => $customers,
+            'total'        => $count,
+            'current_page' => $page,
+            'total_pages'  => ceil($count / $limit)
+        ]);
+    }
+
+    public function customerHistory(): void
+    {
+        $id = (int)($this->getQuery('id') ?? 0);
+        if (!$id) {
+            $this->errorResponse('Customer ID tidak valid');
+            return;
+        }
+
+        $orders = Database::query("
+            SELECT o.*, s.name as store_name
+            FROM orders o
+            LEFT JOIN stores s ON o.store_id = s.id
+            WHERE o.customer_id = ?
+            ORDER BY o.id DESC LIMIT 20
+        ", [$id]);
+
+        $this->successResponse('Riwayat pesanan pelanggan', ['orders' => $orders]);
+    }
+
+    public function toggleCustomerStatus(): void
+    {
+        $data = $this->getPost();
+        $id = (int)($data['id'] ?? 0);
+        if (!$id) {
+            $this->errorResponse('ID pelanggan tidak valid');
+            return;
+        }
+
+        Database::execute("UPDATE users SET is_active = NOT is_active WHERE id = ?", [$id]);
+        $updated = Database::fetchOne("SELECT is_active FROM users WHERE id = ?", [$id]);
+        $this->successResponse('Status pelanggan berhasil diperbarui', $updated);
+    }
+
+    public function topupCustomer(): void
+    {
+        $data = $this->getPost();
+        $userId = (int)($data['user_id'] ?? 0);
+        $amount = (float)($data['amount'] ?? 0);
+        $notes  = sanitize($data['notes'] ?? 'Top-up saldo CicalengkaPay oleh Super Admin');
+
+        if (!$userId || $amount <= 0) {
+            $this->errorResponse('User ID dan nominal topup wajib valid');
+            return;
+        }
+
+        (new \App\Models\Wallet())->credit($userId, $amount, 'topup', $notes);
+        (new \App\Models\TopupLog())->create([
+            'topup_code'     => 'ADM-TOP-' . $userId . '-' . time(),
+            'user_id'        => $userId,
+            'amount'         => $amount,
+            'payment_method' => 'manual_admin',
+            'payment_type'   => 'manual_admin',
+            'status'         => 'success',
+            'notes'          => $notes,
+            'created_at'     => date('Y-m-d H:i:s'),
+            'updated_at'     => date('Y-m-d H:i:s')
+        ]);
+
+        $wallet = Database::fetchOne("SELECT balance FROM wallets WHERE user_id = ? AND user_type = 'customer'", [$userId]);
+        $this->successResponse('Saldo berhasil ditambahkan ke pelanggan', ['balance' => $wallet['balance'] ?? $amount]);
+    }
+
+    /**
+     * 12. Banners Promo & Carousel Management
+     */
+    public function banners(): void
+    {
+        $banners = Database::query("
+            SELECT b.*, m.name as module_name
+            FROM banners b
+            LEFT JOIN modules m ON b.module_id = m.id
+            ORDER BY b.priority ASC, b.id DESC
+        ");
+
+        $modules = Database::query("SELECT id, name FROM modules WHERE status = 1 ORDER BY id ASC");
+        $stores = Database::query("SELECT id, name, module_id FROM stores WHERE status = 'approved' ORDER BY name ASC");
+
+        $this->successResponse('Daftar banner promo', [
+            'banners' => $banners,
+            'modules' => $modules,
+            'stores'  => $stores
+        ]);
+    }
+
+    public function saveBanner(): void
+    {
+        $data = $this->getPost();
+        $id = !empty($data['id']) ? (int)$data['id'] : null;
+        $title = sanitize($data['title'] ?? '');
+        $image = sanitize($data['image'] ?? '');
+        $moduleId = !empty($data['module_id']) ? (int)$data['module_id'] : null;
+        $priority = max(1, (int)($data['priority'] ?? 1));
+        $targetType = sanitize($data['target_type'] ?? 'store');
+        $targetId = sanitize($data['target_id'] ?? '1');
+        $status = isset($data['status']) ? (int)$data['status'] : 1;
+
+        if (empty($title)) {
+            $this->errorResponse('Judul banner wajib diisi');
+            return;
+        }
+
+        if ($id) {
+            Database::execute("
+                UPDATE banners SET 
+                    title = ?, image = ?, module_id = ?, priority = ?, 
+                    target_type = ?, target_id = ?, status = ?, updated_at = NOW()
+                WHERE id = ?
+            ", [$title, $image, $moduleId, $priority, $targetType, $targetId, $status, $id]);
+            $this->successResponse('Banner promo berhasil diperbarui');
+        } else {
+            Database::execute("
+                INSERT INTO banners (title, image, module_id, priority, target_type, target_id, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            ", [$title, $image, $moduleId, $priority, $targetType, $targetId, $status]);
+            $this->successResponse('Banner promo baru berhasil ditambahkan');
+        }
+    }
+
+    public function toggleBannerStatus(): void
+    {
+        $data = $this->getPost();
+        $id = (int)($data['id'] ?? 0);
+        if (!$id) {
+            $this->errorResponse('Banner ID tidak valid');
+            return;
+        }
+
+        Database::execute("UPDATE banners SET status = NOT status WHERE id = ?", [$id]);
+        $updated = Database::fetchOne("SELECT status FROM banners WHERE id = ?", [$id]);
+        $this->successResponse('Status banner berhasil diperbarui', $updated);
+    }
+
+    public function deleteBanner(): void
+    {
+        $data = $this->getPost();
+        $id = (int)($data['id'] ?? 0);
+        if (!$id) {
+            $this->errorResponse('Banner ID tidak valid');
+            return;
+        }
+
+        Database::execute("DELETE FROM banners WHERE id = ?", [$id]);
+        $this->successResponse('Banner berhasil dihapus');
+    }
+
+    /**
+     * 13. Service Modules Management
+     */
+    public function modules(): void
+    {
+        $modules = Database::query("
+            SELECT m.*, COUNT(s.id) as store_count
+            FROM modules m
+            LEFT JOIN stores s ON m.id = s.module_id
+            GROUP BY m.id
+            ORDER BY m.id ASC
+        ");
+
+        $this->successResponse('Daftar modul layanan', ['modules' => $modules]);
+    }
+
+    public function saveModule(): void
+    {
+        $data = $this->getPost();
+        $id = !empty($data['id']) ? (int)$data['id'] : null;
+        $name = sanitize($data['name'] ?? '');
+        $moduleType = sanitize($data['module_type'] ?? 'food');
+        $icon = sanitize($data['icon'] ?? 'bi-box');
+        $themeColor = sanitize($data['theme_color'] ?? '#00AA13');
+        $description = sanitize($data['description'] ?? '');
+        $status = isset($data['status']) ? (int)$data['status'] : 1;
+
+        if (empty($name)) {
+            $this->errorResponse('Nama modul wajib diisi');
+            return;
+        }
+
+        if ($id) {
+            Database::execute("
+                UPDATE modules SET 
+                    name = ?, module_type = ?, icon = ?, theme_color = ?, 
+                    description = ?, status = ?, updated_at = NOW()
+                WHERE id = ?
+            ", [$name, $moduleType, $icon, $themeColor, $description, $status, $id]);
+            $this->successResponse('Modul layanan berhasil diperbarui');
+        } else {
+            Database::execute("
+                INSERT INTO modules (name, module_type, icon, theme_color, description, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
+            ", [$name, $moduleType, $icon, $themeColor, $description, $status]);
+            $this->successResponse('Modul layanan baru berhasil ditambahkan');
+        }
+    }
+
+    public function toggleModuleStatus(): void
+    {
+        $data = $this->getPost();
+        $id = (int)($data['id'] ?? 0);
+        if (!$id) {
+            $this->errorResponse('Module ID tidak valid');
+            return;
+        }
+
+        Database::execute("UPDATE modules SET status = NOT status WHERE id = ?", [$id]);
+        $updated = Database::fetchOne("SELECT status FROM modules WHERE id = ?", [$id]);
+        $this->successResponse('Status modul berhasil diperbarui', $updated);
+    }
+
+    /**
+     * 14. Operational Zones & Geofencing
+     */
+    public function zones(): void
+    {
+        $zones = Database::query("SELECT * FROM zones ORDER BY id ASC");
+        $this->successResponse('Daftar zona operasional', ['zones' => $zones]);
+    }
+
+    public function saveZone(): void
+    {
+        $data = $this->getPost();
+        $id = !empty($data['id']) ? (int)$data['id'] : null;
+        $name = sanitize($data['name'] ?? 'Zona Cicalengka');
+        $coords = $data['coordinates_json'] ?? '[]';
+        if (is_array($coords)) {
+            $coords = json_encode($coords);
+        }
+        $minCharge = (float)($data['min_delivery_charge'] ?? 5000);
+        $perKmCharge = (float)($data['per_km_delivery_charge'] ?? 2500);
+        $lat = (float)($data['center_latitude'] ?? -6.9840);
+        $lng = (float)($data['center_longitude'] ?? 107.8340);
+        $status = isset($data['status']) ? (int)$data['status'] : 1;
+
+        if ($id) {
+            Database::execute("
+                UPDATE zones SET 
+                    name = ?, coordinates_json = ?, min_delivery_charge = ?, 
+                    per_km_delivery_charge = ?, center_latitude = ?, center_longitude = ?, 
+                    status = ?, updated_at = NOW()
+                WHERE id = ?
+            ", [$name, $coords, $minCharge, $perKmCharge, $lat, $lng, $status, $id]);
+            $this->successResponse('Zona operasional berhasil diperbarui');
+        } else {
+            Database::execute("
+                INSERT INTO zones (name, coordinates_json, min_delivery_charge, per_km_delivery_charge, center_latitude, center_longitude, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            ", [$name, $coords, $minCharge, $perKmCharge, $lat, $lng, $status]);
+            $this->successResponse('Zona operasional baru berhasil ditambahkan');
+        }
+    }
+
+    public function deleteZone(): void
+    {
+        $data = $this->getPost();
+        $id = (int)($data['id'] ?? 0);
+        if (!$id) {
+            $this->errorResponse('Zone ID tidak valid');
+            return;
+        }
+
+        Database::execute("DELETE FROM zones WHERE id = ?", [$id]);
+        $this->successResponse('Zona berhasil dihapus');
+    }
+
+    /**
+     * 15. Wallet Topups Management
+     */
+    public function topups(): void
+    {
+        $status = sanitize($this->getQuery('status') ?? 'all');
+        $search = sanitize($this->getQuery('search') ?? '');
+        $page   = max(1, (int)($this->getQuery('page') ?? 1));
+        $limit  = max(10, min(100, (int)($this->getQuery('limit') ?? 25)));
+        $offset = ($page - 1) * $limit;
+
+        $where = ["1=1"];
+        $params = [];
+
+        if (!empty($status) && $status !== 'all') {
+            $where[] = "tl.status = ?";
+            $params[] = $status;
+        }
+
+        if (!empty($search)) {
+            $where[] = "(tl.topup_code LIKE ? OR u.name LIKE ? OR u.phone LIKE ?)";
+            $params[] = "%{$search}%";
+            $params[] = "%{$search}%";
+            $params[] = "%{$search}%";
+        }
+
+        $whereSql = "WHERE " . implode(" AND ", $where);
+
+        $count = (int)(Database::fetchOne("
+            SELECT COUNT(*) as c 
+            FROM topup_logs tl 
+            JOIN users u ON tl.user_id = u.id 
+            {$whereSql}
+        ", $params)['c'] ?? 0);
+
+        $sql = "
+            SELECT tl.*, u.name as user_name, u.phone as user_phone, u.email as user_email, u.role as user_role,
+                   COALESCE(w.balance, 0) as current_wallet_balance
+            FROM topup_logs tl
+            JOIN users u ON tl.user_id = u.id
+            LEFT JOIN wallets w ON w.user_id = u.id AND w.user_type = 'customer'
+            {$whereSql}
+            ORDER BY tl.id DESC
+            LIMIT {$limit} OFFSET {$offset}
+        ";
+        $topups = Database::query($sql, $params);
+
+        $pendingCount = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM topup_logs WHERE status = 'pending'")['c'] ?? 0);
+
+        $this->successResponse('Daftar riwayat topup saldo', [
+            'topups'        => $topups,
+            'total'         => $count,
+            'pending_count' => $pendingCount,
+            'current_page'  => $page,
+            'total_pages'   => ceil($count / $limit)
+        ]);
+    }
+
+    public function manualApproveTopup(): void
+    {
+        $data = $this->getPost();
+        $id = (int)($data['id'] ?? 0);
+        $notes = sanitize($data['notes'] ?? 'Disetujui manual oleh Super Admin');
+
+        if (!$id) {
+            $this->errorResponse('ID topup tidak valid');
+            return;
+        }
+
+        $topup = Database::fetchOne("SELECT * FROM topup_logs WHERE id = ? LIMIT 1", [$id]);
+        if (!$topup) {
+            $this->errorResponse('Data topup tidak ditemukan', null, 404);
+            return;
+        }
+
+        if ($topup['status'] === 'success') {
+            $this->errorResponse('Topup ini sudah disetujui sebelumnya');
+            return;
+        }
+
+        $userId = (int)$topup['user_id'];
+        $amount = (float)$topup['amount'];
+
+        (new \App\Models\Wallet())->credit($userId, $amount, 'topup', "Top-up disetujui admin ({$topup['topup_code']})");
+        Database::execute("UPDATE topup_logs SET status = 'success', notes = ?, updated_at = NOW() WHERE id = ?", [$notes, $id]);
+
+        $this->successResponse('Topup berhasil disetujui dan saldo berhasil dikreditkan ke pengguna');
+    }
+
+    public function manualCancelTopup(): void
+    {
+        $data = $this->getPost();
+        $id = (int)($data['id'] ?? 0);
+        $notes = sanitize($data['notes'] ?? 'Ditolak oleh Super Admin');
+
+        if (!$id) {
+            $this->errorResponse('ID topup tidak valid');
+            return;
+        }
+
+        Database::execute("UPDATE topup_logs SET status = 'canceled', notes = ?, updated_at = NOW() WHERE id = ?", [$notes, $id]);
+        $this->successResponse('Pengajuan topup berhasil dibatalkan');
+    }
+
+    /**
+     * 16. Withdrawals Management
+     */
+    public function withdrawals(): void
+    {
+        $status = sanitize($this->getQuery('status') ?? 'all');
+        $page   = max(1, (int)($this->getQuery('page') ?? 1));
+        $limit  = max(10, min(100, (int)($this->getQuery('limit') ?? 25)));
+        $offset = ($page - 1) * $limit;
+
+        $where = ["1=1"];
+        $params = [];
+
+        if (in_array($status, ['pending', 'approved', 'rejected'])) {
+            $where[] = "wr.status = ?";
+            $params[] = $status;
+        }
+
+        $whereSql = "WHERE " . implode(" AND ", $where);
+
+        $count = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM withdraw_requests wr {$whereSql}", $params)['c'] ?? 0);
+
+        $sql = "
+            SELECT wr.*, u.name as user_name, u.phone as user_phone, u.email as user_email, u.role as user_role
+            FROM withdraw_requests wr
+            LEFT JOIN users u ON wr.user_id = u.id
+            {$whereSql}
+            ORDER BY wr.id DESC
+            LIMIT {$limit} OFFSET {$offset}
+        ";
+        $withdrawals = Database::query($sql, $params);
+
+        $pendingCount = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM withdraw_requests WHERE status = 'pending'")['c'] ?? 0);
+        $totalPaid = (float)(Database::fetchOne("SELECT COALESCE(SUM(amount), 0) as s FROM withdraw_requests WHERE status = 'approved'")['s'] ?? 0);
+
+        $this->successResponse('Daftar pencairan dana penarikan', [
+            'withdrawals'   => $withdrawals,
+            'total'         => $count,
+            'pending_count' => $pendingCount,
+            'total_paid'    => $totalPaid,
+            'current_page'  => $page,
+            'total_pages'   => ceil($count / $limit)
+        ]);
+    }
+
+    public function updateWithdrawalStatus(): void
+    {
+        $data = $this->getPost();
+        $id = (int)($data['id'] ?? 0);
+        $status = sanitize($data['status'] ?? '');
+        $notes = sanitize($data['admin_notes'] ?? '');
+
+        if (!$id || !in_array($status, ['approved', 'rejected'])) {
+            $this->errorResponse('ID atau status pencairan dana tidak valid');
+            return;
+        }
+
+        $req = Database::fetchOne("SELECT * FROM withdraw_requests WHERE id = ? LIMIT 1", [$id]);
+        if (!$req) {
+            $this->errorResponse('Pengajuan penarikan dana tidak ditemukan', null, 404);
+            return;
+        }
+
+        if ($req['status'] !== 'pending') {
+            $this->errorResponse('Pengajuan ini sudah diproses sebelumnya');
+            return;
+        }
+
+        Database::execute("
+            UPDATE withdraw_requests 
+            SET status = ?, admin_notes = ?, approved_at = NOW(), updated_at = NOW() 
+            WHERE id = ?
+        ", [$status, $notes, $id]);
+
+        if ($status === 'rejected') {
+            (new \App\Models\Wallet())->credit((int)$req['user_id'], (float)$req['amount'], 'refund', "Pengembalian dana penarikan ditolak: {$notes}");
+        }
+
+        $this->successResponse("Status penarikan dana berhasil diubah ke {$status}");
+    }
+
+    /**
+     * 17. Payment Methods & Gateway Configuration
+     */
+    public function paymentMethods(): void
+    {
+        $rows = Database::query("SELECT key_name, value_text FROM business_settings");
+        $settings = [];
+        foreach ($rows as $r) {
+            $settings[$r['key_name']] = $r['value_text'];
+        }
+
+        $banks = [];
+        if (!empty($settings['inhouse_banks'])) {
+            $banks = json_decode($settings['inhouse_banks'], true) ?: [];
+        }
+
+        $this->successResponse('Metode pembayaran & gateway', [
+            'banks'               => $banks,
+            'qris_image'          => $settings['inhouse_qris_image'] ?? '',
+            'qris_merchant_name'  => $settings['inhouse_qris_merchant_name'] ?? 'CicalengkaGO Official',
+            'qris_nmid'           => $settings['inhouse_qris_nmid'] ?? '',
+            'midtrans_enabled'    => ($settings['midtrans_enabled'] ?? '0') === '1',
+            'midtrans_server_key' => $settings['midtrans_server_key'] ?? '',
+            'midtrans_client_key' => $settings['midtrans_client_key'] ?? '',
+            'doku_enabled'        => ($settings['doku_enabled'] ?? '0') === '1',
+            'cod_enabled'         => ($settings['cod_enabled'] ?? '1') === '1',
+            'wallet_enabled'      => ($settings['wallet_enabled'] ?? '1') === '1',
+        ]);
+    }
+
+    public function savePaymentBank(): void
+    {
+        $data = $this->getPost();
+        $banks = $data['banks'] ?? [];
+        if (is_string($banks)) {
+            $banks = json_decode($banks, true) ?: [];
+        }
+
+        $jsonStr = json_encode($banks);
+        $exists = Database::fetchOne("SELECT id FROM business_settings WHERE key_name = 'inhouse_banks'");
+        if ($exists) {
+            Database::execute("UPDATE business_settings SET value_text = ? WHERE key_name = 'inhouse_banks'", [$jsonStr]);
+        } else {
+            Database::execute("INSERT INTO business_settings (key_name, value_text) VALUES ('inhouse_banks', ?)", [$jsonStr]);
+        }
+
+        $this->successResponse('Daftar rekening bank transfer berhasil diperbarui');
+    }
+
+    public function savePaymentQris(): void
+    {
+        $data = $this->getPost();
+        $merchantName = sanitize($data['merchant_name'] ?? '');
+        $nmid         = sanitize($data['nmid'] ?? '');
+        $image        = sanitize($data['image'] ?? '');
+
+        $updates = [
+            'inhouse_qris_merchant_name' => $merchantName,
+            'inhouse_qris_nmid'          => $nmid,
+            'inhouse_qris_image'         => $image
+        ];
+
+        foreach ($updates as $k => $v) {
+            $exists = Database::fetchOne("SELECT id FROM business_settings WHERE key_name = ?", [$k]);
+            if ($exists) {
+                Database::execute("UPDATE business_settings SET value_text = ? WHERE key_name = ?", [$v, $k]);
+            } else {
+                Database::execute("INSERT INTO business_settings (key_name, value_text) VALUES (?, ?)", [$k, $v]);
+            }
+        }
+
+        $this->successResponse('Pengaturan QRIS resmi berhasil disimpan');
+    }
+
+    /**
+     * 18. WhatsApp Notification Gateway Management
+     */
+    public function whatsapp(): void
+    {
+        $rows = Database::query("SELECT key_name, value_text FROM business_settings WHERE key_name LIKE 'wa_%'");
+        $settings = [];
+        foreach ($rows as $r) {
+            $settings[$r['key_name']] = $r['value_text'];
+        }
+
+        $this->successResponse('Pengaturan WhatsApp Gateway', [
+            'status'        => 'online',
+            'gateway_url'   => $settings['wa_gateway_url'] ?? 'http://localhost:3300',
+            'api_key'       => $settings['wa_api_key'] ?? '',
+            'sender_number' => $settings['wa_sender_number'] ?? '6281234567890',
+            'otp_channel'   => $settings['wa_otp_channel'] ?? 'whatsapp',
+            'tpl_order_placed'    => $settings['wa_tpl_order_placed'] ?? 'Halo {customer_name}, pesanan #{order_code} Anda telah dibuat.',
+            'tpl_driver_assigned' => $settings['wa_tpl_driver_assigned'] ?? 'Driver {driver_name} sedang menuju resto untuk pesanan #{order_code}.',
+            'tpl_delivered'       => $settings['wa_tpl_delivered'] ?? 'Pesanan #{order_code} telah berhasil diantar. Terima kasih!'
+        ]);
+    }
+
+    public function waSendTest(): void
+    {
+        $data = $this->getPost();
+        $phone = sanitize($data['phone'] ?? '');
+        $msg   = sanitize($data['message'] ?? 'Halo dari Super Admin CicalengkaGO!');
+
+        if (empty($phone)) {
+            $this->errorResponse('Nomor HP tujuan wajib diisi');
+            return;
+        }
+
+        $this->successResponse("Simulasi pesan WhatsApp berhasil dikirim ke {$phone}");
+    }
+
+    /**
+     * 19. Admin Profile Management
+     */
+    public function profile(): void
+    {
+        $user = Database::fetchOne("SELECT id, name, email, phone, avatar, role, created_at FROM users WHERE role = 'admin' OR role = 'super_admin' ORDER BY id ASC LIMIT 1");
+        $this->successResponse('Profil administrator', ['user' => $user]);
+    }
+
+    public function updateProfile(): void
+    {
+        $data = $this->getPost();
+        $id = (int)($data['id'] ?? 0);
+        $name = sanitize($data['name'] ?? '');
+        $email = sanitize($data['email'] ?? '');
+        $phone = sanitize($data['phone'] ?? '');
+        $password = $data['password'] ?? '';
+
+        if (!$id || empty($name) || empty($email)) {
+            $this->errorResponse('Nama dan email wajib diisi');
+            return;
+        }
+
+        if (!empty($password)) {
+            $hash = password_hash($password, PASSWORD_BCRYPT);
+            Database::execute("UPDATE users SET name = ?, email = ?, phone = ?, password = ?, updated_at = NOW() WHERE id = ?", [$name, $email, $phone, $hash, $id]);
+        } else {
+            Database::execute("UPDATE users SET name = ?, email = ?, phone = ?, updated_at = NOW() WHERE id = ?", [$name, $email, $phone, $id]);
+        }
+
+        $this->successResponse('Profil administrator berhasil diperbarui');
+    }
+
+    /**
+     * 20. Order Printable Invoice / Detail
+     */
+    public function orderInvoice(): void
+    {
+        $codeOrId = $this->getQuery('id') ?? $this->getQuery('code') ?? '';
+        if (empty($codeOrId)) {
+            $this->errorResponse('ID pesanan tidak valid');
+            return;
+        }
+
+        $order = (new Order())->findByIdOrCode((string)$codeOrId);
+        if (!$order) {
+            $this->errorResponse('Pesanan tidak ditemukan', null, 404);
+            return;
+        }
+
+        $orderId = (int)$order['id'];
+        $items = Database::query("SELECT * FROM order_items WHERE order_id = ?", [$orderId]);
+        $delAddress = json_decode($order['delivery_address_json'] ?? '{}', true) ?: [];
+        $parcelDetails = json_decode($order['parcel_details_json'] ?? '{}', true) ?: [];
+
+        $store = null;
+        if (!empty($order['store_id'])) {
+            $store = Database::fetchOne("SELECT * FROM stores WHERE id = ? LIMIT 1", [(int)$order['store_id']]);
+        }
+
+        $customer = Database::fetchOne("SELECT id, name, phone, email FROM users WHERE id = ? LIMIT 1", [(int)$order['customer_id']]);
+        $driver = null;
+        if (!empty($order['delivery_man_id'])) {
+            $driver = Database::fetchOne("
+                SELECT dm.*, u.name, u.phone 
+                FROM delivery_men dm 
+                JOIN users u ON dm.user_id = u.id 
+                WHERE dm.id = ? LIMIT 1
+            ", [(int)$order['delivery_man_id']]);
+        }
+
+        $this->successResponse('Data invoice pesanan', [
+            'order'          => $order,
+            'items'          => $items,
+            'store'          => $store,
+            'customer'       => $customer,
+            'driver'         => $driver,
+            'delAddress'     => $delAddress,
+            'parcelDetails'  => $parcelDetails
+        ]);
+    }
+
+    /**
+     * 21. Driver Management Actions
+     */
+    public function saveDeliveryMan(): void
+    {
+        $data = $this->getPost();
+        $id = !empty($data['id']) ? (int)$data['id'] : null;
+        $name = sanitize($data['name'] ?? '');
+        $phone = sanitize($data['phone'] ?? '');
+        $email = sanitize($data['email'] ?? '');
+        $vehicleType = sanitize($data['vehicle_type'] ?? 'motor');
+        $identityNumber = sanitize($data['identity_number'] ?? '');
+        $licensePlate = sanitize($data['license_plate'] ?? '');
+
+        if (empty($name) || empty($phone)) {
+            $this->errorResponse('Nama dan nomor HP kurir wajib diisi');
+            return;
+        }
+
+        if ($id) {
+            $dm = Database::fetchOne("SELECT user_id FROM delivery_men WHERE id = ?", [$id]);
+            if ($dm) {
+                Database::execute("UPDATE users SET name = ?, phone = ?, email = ? WHERE id = ?", [$name, $phone, $email, $dm['user_id']]);
+            }
+            Database::execute("
+                UPDATE delivery_men SET 
+                    vehicle_type = ?, identity_number = ?, license_plate = ?, updated_at = NOW() 
+                WHERE id = ?
+            ", [$vehicleType, $identityNumber, $licensePlate, $id]);
+            $this->successResponse('Data kurir berhasil diperbarui');
+        } else {
+            // Create user first
+            $pwd = password_hash('123456', PASSWORD_BCRYPT);
+            Database::execute("
+                INSERT INTO users (name, phone, email, password, role, is_active, created_at, updated_at)
+                VALUES (?, ?, ?, ?, 'delivery_man', 1, NOW(), NOW())
+            ", [$name, $phone, $email, $pwd]);
+            $newUserId = (int)Database::lastInsertId();
+
+            Database::execute("
+                INSERT INTO delivery_men (user_id, vehicle_type, identity_number, license_plate, is_active, created_at, updated_at)
+                VALUES (?, ?, ?, ?, 1, NOW(), NOW())
+            ", [$newUserId, $vehicleType, $identityNumber, $licensePlate]);
+
+            // Create initial wallet
+            Database::execute("
+                INSERT INTO wallets (user_id, user_type, balance, created_at, updated_at)
+                VALUES (?, 'delivery_man', 0, NOW(), NOW())
+            ", [$newUserId]);
+
+            $this->successResponse('Kurir delivery baru berhasil didaftarkan');
+        }
+    }
+
+    public function topupDeliveryMan(): void
+    {
+        $data = $this->getPost();
+        $id = (int)($data['id'] ?? 0);
+        $amount = (float)($data['amount'] ?? 0);
+        $notes = sanitize($data['notes'] ?? 'Top-up saldo operasional driver oleh Super Admin');
+
+        if (!$id || $amount <= 0) {
+            $this->errorResponse('ID Driver dan nominal saldo tidak valid');
+            return;
+        }
+
+        $dm = Database::fetchOne("SELECT user_id FROM delivery_men WHERE id = ?", [$id]);
+        if (!$dm) {
+            $this->errorResponse('Driver tidak ditemukan', null, 404);
+            return;
+        }
+
+        $userId = (int)$dm['user_id'];
+        (new \App\Models\Wallet())->credit($userId, $amount, 'topup', $notes);
+
+        $this->successResponse('Saldo driver berhasil ditambahkan');
+    }
+
+    public function deleteDeliveryMan(): void
+    {
+        $data = $this->getPost();
+        $id = (int)($data['id'] ?? 0);
+        if (!$id) {
+            $this->errorResponse('Driver ID tidak valid');
+            return;
+        }
+
+        $dm = Database::fetchOne("SELECT user_id FROM delivery_men WHERE id = ?", [$id]);
+        if ($dm) {
+            Database::execute("DELETE FROM delivery_men WHERE id = ?", [$id]);
+            Database::execute("DELETE FROM users WHERE id = ?", [$dm['user_id']]);
+        }
+        $this->successResponse('Driver berhasil dihapus');
+    }
+
+    /**
+     * 22. Store & Product Actions
+     */
+    public function saveStore(): void
+    {
+        $data = $this->getPost();
+        $id = !empty($data['id']) ? (int)$data['id'] : null;
+        $name = sanitize($data['name'] ?? '');
+        $phone = sanitize($data['phone'] ?? '');
+        $address = sanitize($data['address'] ?? '');
+        $moduleId = (int)($data['module_id'] ?? 1);
+        $commission = (float)($data['commission'] ?? 10);
+        $isOpen = isset($data['is_open']) ? (int)$data['is_open'] : 1;
+        $active = isset($data['active']) ? (int)$data['active'] : 1;
+
+        if (empty($name)) {
+            $this->errorResponse('Nama resto/toko wajib diisi');
+            return;
+        }
+
+        if ($id) {
+            Database::execute("
+                UPDATE stores SET 
+                    name = ?, phone = ?, address = ?, module_id = ?, 
+                    commission = ?, is_open = ?, active = ?, updated_at = NOW()
+                WHERE id = ?
+            ", [$name, $phone, $address, $moduleId, $commission, $isOpen, $active, $id]);
+            $this->successResponse('Mitra toko/resto berhasil diperbarui');
+        } else {
+            Database::execute("
+                INSERT INTO stores (name, phone, address, module_id, commission, is_open, active, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'approved', NOW(), NOW())
+            ", [$name, $phone, $address, $moduleId, $commission, $isOpen, $active]);
+            $this->successResponse('Mitra toko/resto baru berhasil ditambahkan');
+        }
+    }
+
+    public function saveProduct(): void
+    {
+        $data = $this->getPost();
+        $id = !empty($data['id']) ? (int)$data['id'] : null;
+        $name = sanitize($data['name'] ?? '');
+        $storeId = (int)($data['store_id'] ?? 1);
+        $price = (float)($data['price'] ?? 0);
+        $discount = (float)($data['discount'] ?? 0);
+        $description = sanitize($data['description'] ?? '');
+        $image = sanitize($data['image'] ?? '');
+        $status = isset($data['status']) ? (int)$data['status'] : 1;
+
+        if (empty($name) || $price <= 0) {
+            $this->errorResponse('Nama produk dan harga wajib valid');
+            return;
+        }
+
+        if ($id) {
+            Database::execute("
+                UPDATE products SET 
+                    name = ?, store_id = ?, price = ?, discount = ?, 
+                    description = ?, image = ?, status = ?, updated_at = NOW()
+                WHERE id = ?
+            ", [$name, $storeId, $price, $discount, $description, $image, $status, $id]);
+            $this->successResponse('Produk berhasil diperbarui');
+        } else {
+            Database::execute("
+                INSERT INTO products (name, store_id, price, discount, description, image, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            ", [$name, $storeId, $price, $discount, $description, $image, $status]);
+            $this->successResponse('Produk baru berhasil ditambahkan');
+        }
+    }
+
+    public function deleteProduct(): void
+    {
+        $data = $this->getPost();
+        $id = (int)($data['id'] ?? 0);
+        if (!$id) {
+            $this->errorResponse('Product ID tidak valid');
+            return;
+        }
+
+        Database::execute("DELETE FROM products WHERE id = ?", [$id]);
+        $this->successResponse('Produk berhasil dihapus');
+    }
 }
+

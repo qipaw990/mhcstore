@@ -5,6 +5,22 @@
     $countLowStockProds = $total_low_stock_products ?? 0;
 ?>
 
+<!-- Page Header -->
+<div class="page-header">
+    <div class="page-header-left">
+        <h4 class="page-title"><i class="bi bi-box-seam text-danger me-2"></i>Katalog Menu &amp; Produk Merchant</h4>
+        <p class="page-subtitle">Kelola harga, stok ketersediaan, promo diskon, dan persetujuan item dagangan merchant.</p>
+    </div>
+    <div class="page-header-right">
+        <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" onclick="openAddProductModal()">
+            <i class="bi bi-plus-circle me-1"></i> Tambah Produk
+        </button>
+        <a href="<?= $baseUrl ?>/admin/products" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+        </a>
+    </div>
+</div>
+
 <!-- Products KPI Summary Cards -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
@@ -62,10 +78,10 @@
 </div>
 
 <div class="row g-4">
-    <!-- Header & Action Bar -->
+    <!-- Search & Filter Action Bar -->
     <div class="col-12">
         <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="card-body p-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <div class="d-flex align-items-center gap-3 flex-grow-1" style="max-width: 400px;">
                     <form method="GET" action="<?= $baseUrl ?>/admin/products" class="input-group input-group-sm w-100">
                         <?php if (!empty($store_filter)): ?>
@@ -74,7 +90,6 @@
                         <span class="input-group-text bg-light border-end-0 rounded-start-pill"><i class="bi bi-search text-muted"></i></span>
                         <input type="text" name="search" value="<?= htmlspecialchars($search ?? '') ?>" class="form-control bg-light border-start-0 rounded-end-pill" placeholder="Cari Menu, Toko, Modul... (Tekan Enter)">
                     </form>
-                </div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <form method="GET" action="<?= $baseUrl ?>/admin/products" class="d-flex align-items-center gap-2">
@@ -87,7 +102,7 @@
                             <?php endforeach; ?>
                         </select>
                     </form>
-                    <button type="button" class="btn btn-primary btn-sm rounded-pill px-4 fw-bold" onclick="openAddProductModal()">
+                    <button type="button" class="btn btn-danger btn-sm rounded-pill px-3 fw-bold" onclick="openAddProductModal()">
                         <i class="bi bi-plus-lg me-1"></i> Tambah Produk
                     </button>
                 </div>

@@ -7,33 +7,24 @@ foreach ($banners as $b) {
 $inactiveCount = count($banners) - $activeCount;
 ?>
 
-<div class="row g-4">
-    <!-- Header & Summary Stats -->
-    <div class="col-12">
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
-                <div>
-                    <h4 class="fw-bold m-0 text-dark">
-                        <i class="bi bi-images text-danger me-2"></i>Manajemen Banner Promo & Carousel
-                    </h4>
-                    <p class="text-muted small mb-0 mt-1">Kelola spanduk promo di beranda aplikasi Mobile Customer CicalengkaGO.</p>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <div class="bg-light px-3 py-2 rounded-3 border text-center d-none d-md-block">
-                        <span class="text-muted small d-block" style="font-size: 11px;">Total Banner</span>
-                        <strong class="text-dark fs-6"><?= count($banners) ?></strong>
-                    </div>
-                    <div class="bg-success-subtle px-3 py-2 rounded-3 border border-success-subtle text-center d-none d-md-block">
-                        <span class="text-success small d-block" style="font-size: 11px;">Aktif Tampil</span>
-                        <strong class="text-success fs-6"><?= $activeCount ?></strong>
-                    </div>
-                    <button type="button" class="btn btn-danger rounded-pill px-4 fw-bold shadow-sm" onclick="openAddBannerModal()">
-                        <i class="bi bi-plus-lg me-1"></i> Tambah Banner Baru
-                    </button>
-                </div>
-            </div>
+<!-- Page Header -->
+<div class="page-header">
+    <div class="page-header-left">
+        <h4 class="page-title"><i class="bi bi-images text-danger me-2"></i>Manajemen Banner Promo &amp; Carousel</h4>
+        <p class="page-subtitle">Kelola spanduk promo di beranda aplikasi Mobile Customer CicalengkaGO.</p>
+    </div>
+    <div class="page-header-right">
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-light text-dark border px-3 py-2 rounded-pill font-monospace" style="font-size: 12px;">Total: <?= count($banners) ?></span>
+            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill font-monospace" style="font-size: 12px;">Aktif: <?= $activeCount ?></span>
+            <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" onclick="openAddBannerModal()">
+                <i class="bi bi-plus-circle me-1"></i> Tambah Banner
+            </button>
         </div>
     </div>
+</div>
+
+<div class="row g-4">
 
     <!-- Flash Messages -->
     <?php if (!empty($_SESSION['flash_success'])): ?>

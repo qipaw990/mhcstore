@@ -367,22 +367,69 @@ Router::post('/payment/transfer', [PaymentController::class, 'transfer']);
 Router::post('/wallet/transfer', [PaymentController::class, 'transfer']);
 
 // ==========================================
-// 6. React Super Admin REST API Routes
+// 6. Super Admin REST API Routes (Decoupled Next.js / React)
 // ==========================================
 Router::get('/api/admin/metrics', [\App\Controllers\AdminApiController::class, 'metrics']);
 Router::get('/api/admin/orders', [\App\Controllers\AdminApiController::class, 'orders']);
 Router::post('/api/admin/orders/assign-driver', [\App\Controllers\AdminApiController::class, 'assignDriver']);
 Router::post('/api/admin/orders/update-status', [\App\Controllers\AdminApiController::class, 'updateOrderStatus']);
+Router::get('/api/admin/orders/invoice', [\App\Controllers\AdminApiController::class, 'orderInvoice']);
+
 Router::get('/api/admin/settings', [\App\Controllers\AdminApiController::class, 'getSettings']);
 Router::post('/api/admin/settings', [\App\Controllers\AdminApiController::class, 'saveSettings']);
+
 Router::get('/api/admin/stores', [\App\Controllers\AdminApiController::class, 'stores']);
+Router::post('/api/admin/stores/save', [\App\Controllers\AdminApiController::class, 'saveStore']);
 Router::post('/api/admin/stores/toggle', [\App\Controllers\AdminApiController::class, 'toggleStoreStatus']);
+
 Router::get('/api/admin/products', [\App\Controllers\AdminApiController::class, 'products']);
+Router::post('/api/admin/products/save', [\App\Controllers\AdminApiController::class, 'saveProduct']);
 Router::post('/api/admin/products/toggle', [\App\Controllers\AdminApiController::class, 'toggleProductStatus']);
+Router::post('/api/admin/products/delete', [\App\Controllers\AdminApiController::class, 'deleteProduct']);
+
 Router::get('/api/admin/drivers', [\App\Controllers\AdminApiController::class, 'drivers']);
+Router::post('/api/admin/drivers/save', [\App\Controllers\AdminApiController::class, 'saveDeliveryMan']);
 Router::post('/api/admin/drivers/toggle', [\App\Controllers\AdminApiController::class, 'toggleDriverStatus']);
+Router::post('/api/admin/drivers/topup', [\App\Controllers\AdminApiController::class, 'topupDeliveryMan']);
+Router::post('/api/admin/drivers/delete', [\App\Controllers\AdminApiController::class, 'deleteDeliveryMan']);
+
+Router::get('/api/admin/customers', [\App\Controllers\AdminApiController::class, 'customers']);
+Router::get('/api/admin/customers/history', [\App\Controllers\AdminApiController::class, 'customerHistory']);
+Router::post('/api/admin/customers/toggle', [\App\Controllers\AdminApiController::class, 'toggleCustomerStatus']);
+Router::post('/api/admin/customers/topup', [\App\Controllers\AdminApiController::class, 'topupCustomer']);
+
+Router::get('/api/admin/banners', [\App\Controllers\AdminApiController::class, 'banners']);
+Router::post('/api/admin/banners/save', [\App\Controllers\AdminApiController::class, 'saveBanner']);
+Router::post('/api/admin/banners/toggle', [\App\Controllers\AdminApiController::class, 'toggleBannerStatus']);
+Router::post('/api/admin/banners/delete', [\App\Controllers\AdminApiController::class, 'deleteBanner']);
+
+Router::get('/api/admin/modules', [\App\Controllers\AdminApiController::class, 'modules']);
+Router::post('/api/admin/modules/save', [\App\Controllers\AdminApiController::class, 'saveModule']);
+Router::post('/api/admin/modules/toggle', [\App\Controllers\AdminApiController::class, 'toggleModuleStatus']);
+
+Router::get('/api/admin/zones', [\App\Controllers\AdminApiController::class, 'zones']);
+Router::post('/api/admin/zones/save', [\App\Controllers\AdminApiController::class, 'saveZone']);
+Router::post('/api/admin/zones/delete', [\App\Controllers\AdminApiController::class, 'deleteZone']);
+
+Router::get('/api/admin/topups', [\App\Controllers\AdminApiController::class, 'topups']);
+Router::post('/api/admin/topups/approve', [\App\Controllers\AdminApiController::class, 'manualApproveTopup']);
+Router::post('/api/admin/topups/cancel', [\App\Controllers\AdminApiController::class, 'manualCancelTopup']);
+
+Router::get('/api/admin/withdrawals', [\App\Controllers\AdminApiController::class, 'withdrawals']);
+Router::post('/api/admin/withdrawals/update-status', [\App\Controllers\AdminApiController::class, 'updateWithdrawalStatus']);
+
+Router::get('/api/admin/payment-methods', [\App\Controllers\AdminApiController::class, 'paymentMethods']);
+Router::post('/api/admin/payment-methods/save-bank', [\App\Controllers\AdminApiController::class, 'savePaymentBank']);
+Router::post('/api/admin/payment-methods/save-qris', [\App\Controllers\AdminApiController::class, 'savePaymentQris']);
+
+Router::get('/api/admin/whatsapp', [\App\Controllers\AdminApiController::class, 'whatsapp']);
+Router::post('/api/admin/whatsapp/send-test', [\App\Controllers\AdminApiController::class, 'waSendTest']);
+
+Router::get('/api/admin/profile', [\App\Controllers\AdminApiController::class, 'profile']);
+Router::post('/api/admin/profile/update', [\App\Controllers\AdminApiController::class, 'updateProfile']);
 
 // Voice Calls Admin Monitoring
 Router::get('/api/admin/voice-calls', [\App\Controllers\AdminApiController::class, 'voiceCalls']);
 Router::get('/api/admin/voice-calls/detail', [\App\Controllers\AdminApiController::class, 'voiceCallDetail']);
 Router::post('/api/admin/voice-calls/force-end', [\App\Controllers\AdminApiController::class, 'voiceCallForceEnd']);
+

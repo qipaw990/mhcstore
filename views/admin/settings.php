@@ -1,16 +1,14 @@
 <div class="row g-4 mb-5">
     <!-- Header -->
     <div class="col-12">
-        <div class="card border-0 shadow-sm rounded-4 text-white position-relative overflow-hidden" style="background: linear-gradient(135deg, #101820 0%, #1e293b 100%); border-left: 5px solid #EE2737 !important;">
-            <div class="card-body p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
-                <div>
-                    <h5 class="fw-bold m-0 text-white"><i class="bi bi-sliders text-danger me-2"></i>Pusat Konfigurasi System & API Setup</h5>
-                    <small class="text-white-50">Kelola API Keys (DOKU & WhatsApp Gateway), identitas aplikasi, tarif komisi, dan parameter operasional CicalengkaGO.</small>
-                </div>
-                <span class="badge bg-danger-subtle text-danger px-3 py-2 rounded-pill fw-bold" style="font-size: 11px;">
-                    <i class="bi bi-shield-lock-fill me-1"></i> System Admin Privilege
-                </span>
+        <div class="info-banner">
+            <div>
+                <p class="info-title"><i class="bi bi-sliders text-danger me-2"></i>Pusat Konfigurasi System &amp; API Setup</p>
+                <p class="info-sub">Kelola API Keys (DOKU &amp; WhatsApp Gateway), identitas aplikasi, tarif komisi, dan parameter operasional CicalengkaGO.</p>
             </div>
+            <span class="badge bg-danger-subtle text-danger fw-bold px-3 py-1.5 rounded-pill" style="font-size:11px;">
+                <i class="bi bi-shield-lock-fill me-1"></i> System Admin Privilege
+            </span>
         </div>
     </div>
 

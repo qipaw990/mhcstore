@@ -22,14 +22,76 @@ class AdminController extends Controller
     // =========================================================================
     public function dashboard(): void
     {
-        $totalOrders = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM orders")['c'] ?? 0);
-        $totalRevenue = (float)(Database::fetchOne("SELECT SUM(total_amount) as s FROM orders WHERE payment_status = 'paid'")['s'] ?? 0);
-        $totalStores = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM stores")['c'] ?? 0);
-        $totalDrivers = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM delivery_men")['c'] ?? 0);
+        $totalOrders    = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM orders")['c'] ?? 0);
+        $totalRevenue   = (float)(Database::fetchOne("SELECT SUM(total_amount) as s FROM orders WHERE payment_status = 'paid'")['s'] ?? 0);
+        $totalStores    = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM stores")['c'] ?? 0);
+        $totalDrivers   = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM delivery_men")['c'] ?? 0);
+        $activeDrivers  = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM delivery_men WHERE is_active = 1")['c'] ?? 0);
         $totalCustomers = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM users WHERE role = 'customer'")['c'] ?? 0);
 
+        // Commission / platform profit (10%)
+        $commissionRate   = 10;
+        $platformProfit   = $totalRevenue * ($commissionRate / 100);
+
+        // Success rate
+        $successOrders = (int)(Database::fetchOne("SELECT COUNT(*) as c FROM orders WHERE order_status = 'delivered'")['c'] ?? 0);
+        $successRate   = $totalOrders > 0 ? round(($successOrders / $totalOrders) * 100, 1) : 100;
+
+        // Pipeline counters by status
+        $pipelineRaw = Database::query("
+            SELECT order_status, COUNT(*) as total
+            FROM orders
+            GROUP BY order_status
+        ");
+        $pipeline = ['pending' => 0, 'confirmed' => 0, 'processing' => 0, 'on_the_way' => 0, 'delivered' => 0, 'canceled' => 0];
+        foreach ($pipelineRaw as $p) {
+            if (isset($pipeline[$p['order_status']])) {
+                $pipeline[$p['order_status']] = (int)$p['total'];
+            }
+        }
+
+        // 7-day revenue trend
+        $revenueTrend = Database::query("
+            SELECT DATE(created_at) as date_val,
+                   DAYNAME(created_at) as day_name,
+                   SUM(total_amount) as revenue
+            FROM orders
+            WHERE payment_status = 'paid'
+              AND created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+            GROUP BY DATE(created_at)
+            ORDER BY date_val ASC
+        ");
+        // Fill missing days with zero
+        $trendMap = [];
+        foreach ($revenueTrend as $t) {
+            $trendMap[$t['date_val']] = ['revenue' => (float)$t['revenue'], 'day' => substr($t['day_name'], 0, 3)];
+        }
+        $trend7days = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $d = date('Y-m-d', strtotime("-{$i} days"));
+            $dayLabel = date('D', strtotime($d));
+            $trend7days[] = [
+                'date_val' => $d,
+                'day'      => $dayLabel,
+                'revenue'  => $trendMap[$d]['revenue'] ?? 0,
+            ];
+        }
+
+        // Top 5 performing stores
+        $topStores = Database::query("
+            SELECT s.id, s.name,
+                   COUNT(o.id) as total_orders,
+                   SUM(o.total_amount) as total_omset
+            FROM stores s
+            JOIN orders o ON o.store_id = s.id
+            WHERE o.order_status = 'delivered'
+            GROUP BY s.id, s.name
+            ORDER BY total_omset DESC
+            LIMIT 5
+        ");
+
         $recentOrders = Database::query("
-            SELECT o.*, s.name as store_name, u.name as customer_name
+            SELECT o.*, s.name as store_name, u.name as customer_name, u.phone as customer_phone
             FROM `orders` o
             LEFT JOIN `stores` s ON o.store_id = s.id
             JOIN `users` u ON o.customer_id = u.id
@@ -44,7 +106,14 @@ class AdminController extends Controller
             'total_revenue'   => $totalRevenue,
             'total_stores'    => $totalStores,
             'total_drivers'   => $totalDrivers,
+            'active_drivers'  => $activeDrivers,
             'total_customers' => $totalCustomers,
+            'commission_rate' => $commissionRate,
+            'platform_profit' => $platformProfit,
+            'success_rate'    => $successRate,
+            'pipeline'        => $pipeline,
+            'revenue_trend'   => $trend7days,
+            'top_stores'      => $topStores,
             'recent_orders'   => $recentOrders,
             'modules'         => $modules,
             'active_tab'      => 'dashboard'

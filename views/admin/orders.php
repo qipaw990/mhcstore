@@ -1,13 +1,12 @@
 <!-- Header & Filter Toolbar -->
-<div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
-    <div>
-        <h4 class="page-title"><i class="bi bi-receipt-cutoff text-danger me-2"></i>Pusat Pemantauan & Dispatch Pesanan</h4>
+<div class="page-header">
+    <div class="page-header-left">
+        <h4 class="page-title"><i class="bi bi-receipt-cutoff text-danger me-2"></i>Pusat Pemantauan &amp; Dispatch Pesanan</h4>
         <p class="page-subtitle">Kelola penugasan kurir, lacak rute GPS real-time, dan pantau status seluruh transaksi di Cicalengka.</p>
     </div>
-    
-    <div class="d-flex align-items-center gap-2">
-        <button onclick="window.location.reload()" class="btn btn-light border btn-sm px-3 rounded-pill fw-bold shadow-2xs d-flex align-items-center gap-1.5" style="font-size: 12px;">
-            <i class="bi bi-arrow-clockwise"></i> Refresh Data
+    <div class="page-header-right">
+        <button onclick="window.location.reload()" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh Data
         </button>
     </div>
 </div>

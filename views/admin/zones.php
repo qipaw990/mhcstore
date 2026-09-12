@@ -4,6 +4,22 @@
     $avgPerKm = count($zones) ? array_sum(array_column($zones, 'per_km_delivery_charge')) / count($zones) : 2500;
 ?>
 
+<!-- Page Header -->
+<div class="page-header">
+    <div class="page-header-left">
+        <h4 class="page-title"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Zona Operasional &amp; Tarif Ongkir</h4>
+        <p class="page-subtitle">Atur batasan cakupan wilayah pengantaran kurir dan editor peta polygon interaktif Leaflet.</p>
+    </div>
+    <div class="page-header-right">
+        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="openFareSimulator()">
+            <i class="bi bi-calculator me-1"></i> Simulator Tarif
+        </button>
+        <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" onclick="openAddZoneModal()">
+            <i class="bi bi-plus-circle me-1"></i> Tambah Zona Baru
+        </button>
+    </div>
+</div>
+
 <?php if (!empty($_SESSION['success'])): ?>
     <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm p-3 mb-4 d-flex align-items-center gap-2" role="alert">
         <i class="bi bi-check-circle-fill text-success fs-5"></i>
@@ -66,25 +82,6 @@
 </div>
 
 <div class="row g-4">
-    <!-- Header -->
-    <div class="col-12">
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
-                <div>
-                    <h5 class="fw-bold m-0"><i class="bi bi-geo-alt-fill text-primary me-2"></i>Zona Operasional & Editor Polygon Leaflet</h5>
-                    <small class="text-muted">Atur batasan cakupan wilayah pengantaran kurir secara interaktif dengan peta Leaflet (geser titik polygon / radius).</small>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-outline-primary rounded-pill px-3 fw-semibold" onclick="openFareSimulator()">
-                        <i class="bi bi-calculator me-1"></i> Simulator Tarif
-                    </button>
-                    <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="openAddZoneModal()">
-                        <i class="bi bi-plus-lg me-1"></i> Tambah Zona Baru
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Zones Interactive Map -->
     <div class="col-12">

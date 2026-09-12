@@ -1,4 +1,13 @@
+<!-- Page Header -->
+<div class="page-header mb-4">
+    <div class="page-header-left">
+        <h4 class="page-title"><i class="bi bi-person-badge-fill text-danger me-2"></i>Profil Super Administrator</h4>
+        <p class="page-subtitle">Kelola identitas akun, foto profil, dan keamanan login sistem CicalengkaGO.</p>
+    </div>
+</div>
+
 <div class="row g-4">
+
     <div class="col-lg-4">
         <!-- Admin Profile Summary Card -->
         <div class="card border-0 shadow-sm rounded-4 p-4 text-center">

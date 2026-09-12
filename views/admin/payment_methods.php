@@ -3,24 +3,21 @@ $title = 'Setup Pembayaran Otomatis & Bank - CicalengkaGO Admin';
 $active_tab = 'payment_methods';
 ?>
 
-<div class="content-wrapper p-4">
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h3 class="fw-bold mb-1" style="color: #0f172a;">
-                <i class="bi bi-bank2 text-danger me-2"></i>Setup Pembayaran Mandiri (0% Fee)
-            </h3>
-            <p class="text-muted mb-0 small">Kelola rekening bank transfer, QRIS dinamis otomatis, webhook mutasi, dan verifikasi invoice.</p>
-        </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-outline-danger btn-sm rounded-3 px-3" data-bs-toggle="modal" data-bs-target="#webhookTesterModal">
-                <i class="bi bi-lightning-charge-fill me-1"></i>Test Webhook Scraper
-            </button>
-            <button class="btn btn-danger btn-sm rounded-3 px-3" data-bs-toggle="modal" data-bs-target="#addBankModal">
-                <i class="bi bi-plus-circle me-1"></i>Tambah Rekening Bank
-            </button>
-        </div>
+<!-- Page Header -->
+<div class="page-header">
+    <div class="page-header-left">
+        <h4 class="page-title"><i class="bi bi-bank2 text-danger me-2"></i>Setup Pembayaran Mandiri (0% Fee)</h4>
+        <p class="page-subtitle">Kelola rekening bank transfer, QRIS dinamis otomatis, webhook mutasi, dan verifikasi invoice.</p>
     </div>
+    <div class="page-header-right">
+        <button class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#webhookTesterModal">
+            <i class="bi bi-lightning-charge-fill me-1"></i> Test Webhook
+        </button>
+        <button class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#addBankModal">
+            <i class="bi bi-plus-circle me-1"></i> Tambah Rekening
+        </button>
+    </div>
+</div>
 
     <?php if (!empty($_SESSION['flash_success'])): ?>
         <div class="alert alert-success alert-dismissible fade show rounded-3 small" role="alert">
@@ -256,7 +253,6 @@ $active_tab = 'payment_methods';
             </div>
         </div>
     </div>
-</div>
 
 <!-- Modal Edit / Add Bank -->
 <div class="modal fade" id="addBankModal" tabindex="-1">

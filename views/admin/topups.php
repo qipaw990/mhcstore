@@ -1,17 +1,18 @@
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <div>
-        <h4 class="fw-bold mb-1"><i class="bi bi-wallet2 text-primary me-2"></i>Manajemen Top-Up Saldo DOKU</h4>
-        <p class="text-muted small mb-0">Pantau hasil transaksi top-up CicalengkaPay, sinkronkan status real-time via payment gateway DOKU, dan kelola saldo pengguna.</p>
+<div class="page-header">
+    <div class="page-header-left">
+        <h4 class="page-title"><i class="bi bi-wallet2 text-danger me-2"></i>Manajemen Top-Up Saldo CicalengkaPay</h4>
+        <p class="page-subtitle">Pantau transaksi top-up, sinkronkan status DOKU gateway, dan kelola saldo pengguna.</p>
     </div>
-    <div class="d-flex gap-2">
-        <button type="button" class="btn btn-primary btn-sm rounded-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#manualTopupModal">
-            <i class="bi bi-plus-circle me-1"></i> Top-Up Saldo Manual
+    <div class="page-header-right">
+        <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#manualTopupModal">
+            <i class="bi bi-plus-circle me-1"></i> Top-Up Manual
         </button>
-        <a href="<?= $baseUrl ?>/admin/topups" class="btn btn-outline-secondary btn-sm rounded-3">
+        <a href="<?= $baseUrl ?>/admin/topups" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold">
             <i class="bi bi-arrow-clockwise me-1"></i> Refresh
         </a>
     </div>
 </div>
+
 
 <!-- Financial KPI Summary Cards -->
 <div class="row g-3 mb-4">

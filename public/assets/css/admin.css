@@ -684,3 +684,226 @@ body.sidebar-open .sidebar-overlay {
   padding: 4px 8px !important;
   border-radius: 6px !important;
 }
+
+/* ============================================================
+   Page Header Component — Consistent across all admin pages
+   ============================================================ */
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--admin-border);
+  margin-bottom: 20px;
+}
+
+.page-header-left .page-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--admin-text-main);
+  letter-spacing: -0.2px;
+  margin: 0;
+}
+
+.page-header-left .page-subtitle {
+  font-size: 11px;
+  color: var(--admin-text-muted);
+  margin-top: 2px;
+  margin-bottom: 0;
+}
+
+.page-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Section divider inside cards */
+.section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--admin-text-main);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+/* Info banner (replaces dark-gradient header cards) */
+.info-banner {
+  background: #F8FAFC;
+  border: 1px solid var(--admin-border);
+  border-left: 4px solid var(--admin-primary);
+  border-radius: var(--admin-radius-md);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.info-banner .info-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--admin-text-main);
+  margin: 0;
+}
+
+.info-banner .info-sub {
+  font-size: 11px;
+  color: var(--admin-text-muted);
+  margin: 2px 0 0;
+}
+
+/* Card section header row */
+.card-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--admin-border-subtle);
+  margin-bottom: 14px;
+}
+
+/* Compact form label */
+.form-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--admin-text-main);
+  margin-bottom: 4px;
+}
+
+.form-control, .form-select {
+  font-size: 12px;
+  border-color: var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  color: var(--admin-text-main);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px rgba(238, 39, 55, 0.08);
+}
+
+/* Action icon button */
+.btn-icon {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: var(--admin-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--admin-text-muted);
+}
+
+.empty-state i {
+  font-size: 40px;
+  opacity: 0.2;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.empty-state p {
+  font-size: 12px;
+  margin: 0;
+}
+
+/* Summary pill chip */
+.summary-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 14px;
+  background: #F8FAFC;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  min-width: 72px;
+  text-align: center;
+}
+
+.summary-chip .chip-value {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.summary-chip .chip-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--admin-text-muted);
+  margin-top: 1px;
+}
+
+/* Compact switch row */
+.setting-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--admin-border-subtle);
+}
+
+.setting-row:last-child {
+  border-bottom: 0;
+}
+
+.setting-row-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--admin-text-main);
+}
+
+.setting-row-sub {
+  font-size: 10.5px;
+  color: var(--admin-text-muted);
+  margin-top: 1px;
+}
+
+/* Avatar circle */
+.avatar-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #EE2737, #C61524);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Scroll table wrapper */
+.scroll-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Alert compact */
+.alert {
+  font-size: 11.5px;
+  border-radius: var(--admin-radius-md);
+  padding: 8px 12px;
+  border: 1px solid transparent;
+}
+

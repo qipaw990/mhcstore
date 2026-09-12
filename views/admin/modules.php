@@ -1,18 +1,18 @@
-<div class="row g-4">
-    <!-- Header -->
-    <div class="col-12">
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
-                <div>
-                    <h5 class="fw-bold m-0"><i class="bi bi-grid-3x3-gap-fill text-primary me-2"></i>Modul Bisnis Multi-Vendor Platform</h5>
-                    <small class="text-muted">Konfigurasi modul layanan (CicaFood, CicaMart, CicaSend, CicaMed, dll).</small>
-                </div>
-                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="openAddModuleModal()">
-                    <i class="bi bi-plus-lg me-1"></i> Tambah Modul Baru
-                </button>
-            </div>
-        </div>
+<!-- Page Header -->
+<div class="page-header">
+    <div class="page-header-left">
+        <h4 class="page-title"><i class="bi bi-grid-3x3-gap-fill text-danger me-2"></i>Modul Bisnis Multi-Vendor</h4>
+        <p class="page-subtitle">Konfigurasi modul layanan (CicaFood, CicaMart, CicaSend, CicaMed, dll).</p>
     </div>
+    <div class="page-header-right">
+        <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" onclick="openAddModuleModal()">
+            <i class="bi bi-plus-lg me-1"></i> Tambah Modul
+        </button>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Modules Grid -->
 
     <!-- Modules Cards / Grid -->
     <div class="col-12">

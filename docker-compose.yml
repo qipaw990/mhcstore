@@ -64,18 +64,6 @@ services:
     ports:
       - "8095:80"
 
-  cicalengkago_admin_react:
-    build:
-      context: ./admin_react
-      dockerfile: Dockerfile
-    image: cicalengkago-admin-react:latest
-    container_name: cicalengkago_admin_react
-    restart: always
-    ports:
-      - "8096:80"
-    depends_on:
-      - cicalengkago_app
-
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
     container_name: cicalengkago_pma

@@ -348,13 +348,21 @@ class VendorController extends Controller
         // Ambil data produk eksisting jika update
         $existingProduct = $id ? $this->productModel->find($id) : null;
 
-        // Tentukan foto produk: upload baru -> foto eksisting -> string existing_image -> default
-        $imagePath = $existingProduct['image'] ?? ($data['existing_image'] ?? 'assets/images/products/default.jpg');
-        if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-            $uploaded = upload_image($_FILES['image'], 'products');
-            if ($uploaded) {
-                $imagePath = $uploaded;
-            }
+        // Tentukan foto produk: SMART UPLOAD (cek $_FILES dulu, lalu base64 JSON body, lalu alias field)
+        // Penyebab umum "foto tidak tersimpan": frontend kirim base64 di JSON body atau field name bukan 'image'
+        $defaultImg = 'assets/images/products/default.jpg';
+        $existingFallback = $existingProduct['image'] ?? ($data['existing_image'] ?? $defaultImg);
+        $imagePath = smart_upload_field(
+            'image',
+            'products',
+            $existingFallback,
+            ['photo', 'product_image', 'productImage', 'gambar', 'foto_produk', 'fotoProduk', 'picture', 'img', 'thumbnail'],
+            $data,
+            $userId
+        );
+        // Jika smart_upload_field return NULL (tidak ada upload + tidak ada existing), pakai default
+        if ($imagePath === null || trim($imagePath) === '') {
+            $imagePath = $defaultImg;
         }
 
         $productData = [
@@ -1614,12 +1622,19 @@ class VendorController extends Controller
             return;
         }
 
-        // Handle User Avatar Upload
-        if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-            $avatarPath = upload_image($_FILES['avatar'], 'profiles');
-            if ($avatarPath) {
-                $userModel->update($userId, ['avatar' => $avatarPath]);
-                $_SESSION['user']['avatar'] = $avatarPath;
+        // Handle User Avatar Upload — SMART: multipart/form-data ↔ base64 JSON ↔ alias field (foto/userProfilePicture/photo)
+        $newAvatar = smart_upload_field(
+            'avatar',
+            'profiles',
+            $dbUser['avatar'] ?? null,
+            ['photo', 'profile_picture', 'profilePicture', 'foto', 'image'],
+            $data,
+            $userId
+        );
+        if ($newAvatar !== null && $newAvatar !== ($dbUser['avatar'] ?? '')) {
+            $userModel->update($userId, ['avatar' => $newAvatar]);
+            if (isset($_SESSION['user'])) {
+                $_SESSION['user']['avatar'] = $newAvatar;
             }
         }
 
@@ -1657,20 +1672,44 @@ class VendorController extends Controller
             if (isset($data['bank_account_number'])) $storeUpdates['bank_account_number'] = sanitize($data['bank_account_number']);
             if (isset($data['bank_account_name'])) $storeUpdates['bank_account_name'] = sanitize($data['bank_account_name']);
 
-            // Handle Store Logo Upload
-            if (isset($_FILES['store_logo']) && $_FILES['store_logo']['error'] === UPLOAD_ERR_OK) {
-                $logoPath = upload_image($_FILES['store_logo'], 'stores');
-                if ($logoPath) {
-                    $storeUpdates['logo'] = $logoPath;
-                }
+            // Handle Store Logo Upload (nama field alias: store_logo / logo / merchant_logo — krn nama field tdk konsisten)
+            $newLogo = smart_upload_field(
+                'store_logo',
+                'stores',
+                $store['logo'] ?? null,
+                ['logo', 'merchant_logo', 'toko_logo', 'storeLogo', 'gambar_toko'],
+                $data,
+                $userId
+            );
+            if ($newLogo !== null && $newLogo !== ($store['logo'] ?? '')) {
+                $storeUpdates['logo'] = $newLogo;
             }
 
             // Handle Store Cover / Banner Upload
-            if (isset($_FILES['cover_photo']) && $_FILES['cover_photo']['error'] === UPLOAD_ERR_OK) {
-                $coverPath = upload_image($_FILES['cover_photo'], 'stores');
-                if ($coverPath) {
-                    $storeUpdates['cover_photo'] = $coverPath;
-                }
+            $newCover = smart_upload_field(
+                'cover_photo',
+                'stores',
+                $store['cover_photo'] ?? null,
+                ['cover', 'banner', 'coverPhoto', 'store_cover', 'sampul', 'foto_sampul'],
+                $data,
+                $userId
+            );
+            if ($newCover !== null && $newCover !== ($store['cover_photo'] ?? '')) {
+                $storeUpdates['cover_photo'] = $newCover;
+            }
+
+            // Handle Identity Image (KTP / SIUP / NIB) — PENTING: SEBELUMNYA TIDAK ADA UPLOAD DI SINI!
+            $ktpFolder = 'ktp'; // Folder khusus identitas agar tidak bercampur dgn logo produk
+            $newIdentity = smart_upload_field(
+                'identity_image',
+                $ktpFolder,
+                $store['identity_image'] ?? null,
+                ['ktp', 'ktp_image', 'identity', 'idCard', 'id_card', 'photo_id', 'photoId', 'siup', 'nib', 'surat_izin', 'suratIzin'],
+                $data,
+                $userId
+            );
+            if ($newIdentity !== null && $newIdentity !== ($store['identity_image'] ?? '')) {
+                $storeUpdates['identity_image'] = $newIdentity;
             }
 
             try {
@@ -1705,13 +1744,41 @@ class VendorController extends Controller
             }
         } else {
             // Auto-create store if vendor does not have a store record yet
-            $logoPath = 'assets/images/stores/default.jpg';
-            if (isset($_FILES['store_logo']) && $_FILES['store_logo']['error'] === UPLOAD_ERR_OK) {
-                $up = upload_image($_FILES['store_logo'], 'stores');
-                if ($up) $logoPath = $up;
+            $logoPath = smart_upload_field(
+                'store_logo',
+                'stores',
+                'assets/images/stores/default.jpg',
+                ['logo', 'merchant_logo', 'toko_logo', 'storeLogo', 'gambar_toko'],
+                $data,
+                $userId
+            );
+            if ($logoPath === null || trim($logoPath) === '') {
+                $logoPath = 'assets/images/stores/default.jpg';
             }
 
-            $storeId = $this->storeModel->create([
+            $coverPath = smart_upload_field(
+                'cover_photo',
+                'stores',
+                'assets/images/stores/default_cover.jpg',
+                ['cover', 'banner', 'coverPhoto', 'store_cover', 'sampul', 'foto_sampul'],
+                $data,
+                $userId
+            );
+            if ($coverPath === null || trim($coverPath) === '') {
+                $coverPath = 'assets/images/stores/default_cover.jpg';
+            }
+
+            // Identity image — KTP / SIUP / NIB (jika dikirim saat auto-create)
+            $identityPath = smart_upload_field(
+                'identity_image',
+                'ktp',
+                null,
+                ['ktp', 'ktp_image', 'identity', 'idCard', 'id_card', 'photo_id', 'photoId', 'siup', 'nib', 'surat_izin', 'suratIzin'],
+                $data,
+                $userId
+            );
+
+            $createData = [
                 'vendor_id'      => $userId,
                 'module_id'      => 1,
                 'zone_id'        => 1,
@@ -1719,7 +1786,7 @@ class VendorController extends Controller
                 'phone'          => !empty($storePhone) ? $storePhone : $phone,
                 'email'          => !empty($email) ? $email : ($dbUser['email'] ?? ''),
                 'logo'           => $logoPath,
-                'cover_photo'    => 'assets/images/stores/default_cover.jpg',
+                'cover_photo'    => $coverPath,
                 'address'        => !empty($storeAddress) ? $storeAddress : 'Cicalengka, Kab. Bandung',
                 'latitude'       => $storeLat ?? -6.9840,
                 'longitude'      => $storeLng ?? 107.8340,
@@ -1730,7 +1797,12 @@ class VendorController extends Controller
                 'rating'         => 5.0,
                 'reviews_count'  => 0,
                 'order_count'    => 0
-            ]);
+            ];
+            if ($identityPath !== null && trim($identityPath) !== '') {
+                $createData['identity_image'] = $identityPath;
+            }
+
+            $storeId = $this->storeModel->create($createData);
             $store = $this->storeModel->find($storeId);
         }
 
