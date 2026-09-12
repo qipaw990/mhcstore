@@ -510,7 +510,9 @@ class _InAppCallScreenState extends State<InAppCallScreen> with TickerProviderSt
       //    and force volume stream STREAM_VOICE_CALL to speaker output.
       //    Works via flutter_webrtc's internal Helper/MethodChannel.
       try {
-        await Helper.setMicrophoneMute(_isMuted, _localStream?.getAudioTracks().firstOrNull);
+        if (_localStream != null && _localStream!.getAudioTracks().isNotEmpty) {
+          await Helper.setMicrophoneMute(_isMuted, _localStream!.getAudioTracks().first);
+        }
       } catch (_) {}
 
       // 4. Re-assert remote tracks are enabled
