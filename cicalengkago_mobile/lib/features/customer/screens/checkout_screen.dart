@@ -29,7 +29,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _noteController = TextEditingController();
   final _voucherController = TextEditingController();
 
-  String _paymentMethod = 'wallet';
+  String _paymentMethod = 'cicalengka_go';
   String _deliveryType = 'driver'; // 'driver' or 'merchant'
   bool _isSubmitting = false;
   bool _isFetchingLocation = true;
@@ -171,16 +171,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final double deliveryFee = (chosenDeliveryType == 'merchant') ? 0.0 : dynamicDeliveryFee;
     final double grandTotal = (subtotal + deliveryFee + 1000.0 - _voucherDiscount).clamp(0.0, double.infinity);
 
-    // Check CicalengkaPay wallet balance if wallet payment selected
-    if (_paymentMethod == 'wallet') {
+    // Check Cicalengka Go wallet balance if selected
+    if (_paymentMethod == 'cicalengka_go') {
       final walletMap = customerCtrl.wallet;
       final double walletBalance = double.tryParse(walletMap?['balance']?.toString() ?? '0') ?? 0.0;
 
       if (walletBalance < grandTotal) {
         AppAlert.showError(
           context,
-          title: 'Saldo CicalengkaPay Kurang',
-          message: 'Saldo Anda (${CurrencyFormatter.formatRupiah(walletBalance)}) kurang dari total tagihan (${CurrencyFormatter.formatRupiah(grandTotal)}). Gunakan QRIS / COD.',
+          title: 'Saldo Cicalengka Go Kurang',
+          message: 'Saldo Anda (${CurrencyFormatter.formatRupiah(walletBalance)}) kurang dari total tagihan (${CurrencyFormatter.formatRupiah(grandTotal)}). Silakan isi saldo atau gunakan COD.',
         );
         return;
       }
@@ -213,62 +213,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             res['order_code'] ??
             '';
 
-        final String? redirectUrl =
-            res['data']?['redirect_url'] ?? res['data']?['payment_url'] ?? res['redirect_url'];
-
-        // ── Pembayaran via DOKU: buka WebView InAppPaymentScreen ──────────────
-        if (_paymentMethod == 'doku' &&
-            redirectUrl != null &&
-            redirectUrl.isNotEmpty) {
-          // Buka halaman DOKU dan tunggu hasilnya
-          final bool? paymentConfirmed = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(
-              builder: (_) => InAppPaymentScreen(
-                paymentUrl: redirectUrl,
-                orderId: orderCode,
-                amount: grandTotal,
-                title: 'Pembayaran Pesanan DOKU',
-                onPaymentComplete: () {
-                  context.read<CustomerController>().fetchOrders();
-                },
-              ),
-            ),
-          );
-
-          if (!mounted) return;
-
-          // Setelah WebView ditutup, navigasi ke halaman tracking
-          if (paymentConfirmed == true) {
-            // Pembayaran terkonfirmasi via polling
-            AppAlert.showSuccess(
-              context,
-              title: 'Pembayaran Berhasil! 🎉',
-              message: 'Pesanan Anda telah dikonfirmasi. Driver akan segera ditugaskan.',
-            );
-          } else {
-            // Belum terkonfirmasi atau masih pending — webhook server akan update otomatis
-            AppAlert.showSuccess(
-              context,
-              title: 'Pesanan Dibuat! ⏳',
-              message:
-                  'Pesanan Anda telah dibuat. Status pembayaran akan diperbarui otomatis setelah konfirmasi dari DOKU diterima.',
-            );
-          }
-
-          if (mounted && orderCode.isNotEmpty) {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(
-                builder: (_) => OrderTrackingScreen(orderCode: orderCode),
-              ),
-              (route) => route.isFirst,
-            );
-          }
-          return;
-        }
-
-        // ── Pembayaran non-DOKU (wallet, COD) ─────────────────────────────────
+        // ── Pembayaran Cicalengka Go / COD ───────────────────────────────────
         AppAlert.showSuccess(
           context,
           title: 'Pesanan Berhasil Dibuat! 🎉',
@@ -518,11 +463,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
               child: Column(
                 children: [
-                  // 1. CicalengkaPay (Saldo Dompet)
+                  // 1. Cicalengka Go (Saldo Dompet)
                   RadioListTile<String>(
-                    value: 'wallet',
+                    value: 'cicalengka_go',
                     groupValue: _paymentMethod,
-                    title: const Text('CicalengkaPay (Saldo Digital)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    title: const Text('Cicalengka Go', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     subtitle: Text(
                       isWalletInsufficient
                           ? 'Saldo: ${CurrencyFormatter.formatRupiah(walletBalance)} (Saldo Kurang)'
@@ -549,8 +494,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       if (isWalletInsufficient) {
                         AppAlert.showError(
                           context,
-                          title: 'Saldo CicalengkaPay Kurang',
-                          message: 'Saldo Anda (${CurrencyFormatter.formatRupiah(walletBalance)}) kurang dari total tagihan (${CurrencyFormatter.formatRupiah(grandTotal)}). Silakan gunakan QRIS/Transfer Bank atau Bayar Tunai (COD).',
+                          title: 'Saldo Cicalengka Go Kurang',
+                          message: 'Saldo Anda (${CurrencyFormatter.formatRupiah(walletBalance)}) kurang dari total tagihan (${CurrencyFormatter.formatRupiah(grandTotal)}). Silakan isi saldo atau gunakan Bayar Tunai (COD).',
                         );
                         return;
                       }
@@ -559,32 +504,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   const Divider(height: 1),
 
-                  // 2. DOKU Payment Gateway (QRIS, VA Bank, E-Wallet, Retail)
-                  RadioListTile<String>(
-                    value: 'doku',
-                    groupValue: _paymentMethod,
-                    title: const Text('DOKU Payment Gateway', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    subtitle: const Text(
-                      'QRIS, Semua Bank (BCA, BRI, Mandiri, BNI), OVO, DANA, Alfamart',
-                      style: TextStyle(fontSize: 11, color: Color(0xFFE1251B), fontWeight: FontWeight.w600),
-                    ),
-                    secondary: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE1251B).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.account_balance_wallet_rounded,
-                        color: Color(0xFFE1251B),
-                        size: 20,
-                      ),
-                    ),
-                    onChanged: (val) => setState(() => _paymentMethod = val!),
-                  ),
-                  const Divider(height: 1),
-
-                  // 4. Bayar Tunai / COD
+                  // 2. Bayar Tunai / COD
                   RadioListTile<String>(
                     value: 'cod',
                     groupValue: _paymentMethod,
