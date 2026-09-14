@@ -112,6 +112,7 @@
                             </td>
                             <td>
                                 <div class="fw-bold text-dark small"><?= htmlspecialchars($w['user_name']) ?></div>
+                                <div class="text-muted" style="font-size: 11px;">
                                     <?php 
                                         $uType = $w['user_type'] ?? 'customer';
                                         $typeBadge = 'Pelanggan';

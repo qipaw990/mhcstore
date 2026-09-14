@@ -88,7 +88,7 @@
                             <input type="hidden" name="store_id" value="<?= (int)$store_filter ?>">
                         <?php endif; ?>
                         <span class="input-group-text bg-light border-end-0 rounded-start-pill"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" name="search" value="<?= htmlspecialchars($search ?? '') ?>" class="form-control bg-light border-start-0 rounded-end-pill" placeholder="Cari Menu, Toko, Modul... (Tekan Enter)">
+                        <input type="text" id="productSearchInput" name="search" value="<?= htmlspecialchars($search ?? '') ?>" onkeyup="filterProductTable()" class="form-control bg-light border-start-0 rounded-end-pill" placeholder="Cari Menu, Toko, Modul... (Tekan Enter)">
                     </form>
                 </div>
                 <div class="d-flex align-items-center gap-2">

@@ -629,6 +629,15 @@ async function showTopupDetail(id) {
         const t = result.data;
         const wTx = result.wallet_tx;
         const gatewayStatus = result.gateway_status || {};
+
+        let statusBadge = '<span class="badge bg-secondary">Unknown</span>';
+        if (t.status === 'success' || t.status === 'completed' || t.status === 'paid') {
+            statusBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-check-circle me-1"></i> Success</span>';
+        } else if (t.status === 'pending') {
+            statusBadge = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1"><i class="bi bi-clock me-1"></i> Pending</span>';
+        } else if (t.status === 'failed' || t.status === 'cancelled' || t.status === 'expired') {
+            statusBadge = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="bi bi-x-circle me-1"></i> ' + t.status + '</span>';
+        }
         let gatewayInfoHtml = `
             <div class="p-2.5 bg-light rounded-3 border mb-3 small text-muted">
                 <i class="bi bi-shield-check me-1 text-success"></i> <strong>Payment Gateway:</strong> DOKU Checkout

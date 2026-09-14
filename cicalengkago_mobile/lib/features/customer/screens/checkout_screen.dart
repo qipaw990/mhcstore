@@ -14,7 +14,6 @@ import '../../../core/services/location_service.dart';
 import '../../../core/widgets/location_picker_modal.dart';
 import '../controllers/customer_controller.dart';
 import 'order_tracking_screen.dart';
-import 'in_app_payment_screen.dart';
 import 'vouchers_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {

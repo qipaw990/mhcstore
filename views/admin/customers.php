@@ -82,7 +82,7 @@
                 <div class="d-flex align-items-center gap-3 flex-grow-1" style="max-width: 400px;">
                     <form method="GET" action="<?= $baseUrl ?>/admin/customers" class="input-group input-group-sm w-100">
                         <span class="input-group-text bg-light border-end-0 rounded-start-pill"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" name="search" value="<?= htmlspecialchars($search ?? '') ?>" class="form-control bg-light border-start-0 rounded-end-pill" placeholder="Cari Nama, Email, No HP... (Tekan Enter)">
+                        <input type="text" id="customerSearchInput" name="search" value="<?= htmlspecialchars($search ?? '') ?>" onkeyup="filterCustomerTable()" class="form-control bg-light border-start-0 rounded-end-pill" placeholder="Cari Nama, Email, No HP... (Tekan Enter)">
                     </form>
                 </div>
             </div>

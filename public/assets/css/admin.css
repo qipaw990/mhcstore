@@ -907,3 +907,71 @@ body.sidebar-open .sidebar-overlay {
   border: 1px solid transparent;
 }
 
+/* ============================================================
+   Enhanced UI & Micro-interactions
+   ============================================================ */
+.stat-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+}
+
+.dashboard-bar {
+  transition: all 0.3s ease;
+}
+
+.dashboard-bar:hover {
+  filter: brightness(1.15);
+  transform: scaleY(1.02);
+  transform-origin: bottom;
+}
+
+.hover-row {
+  transition: background-color 0.15s ease;
+}
+
+.hover-row:hover {
+  background-color: #F8FAFC !important;
+}
+
+.btn {
+  transition: all 0.15s ease-in-out;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+/* Custom modern scrollbar for all modals and tables */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Polished badge hover effects */
+.badge {
+  transition: transform 0.1s ease;
+}
+
+.badge:hover {
+  transform: translateY(-1px);
+}
+
