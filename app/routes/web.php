@@ -294,8 +294,9 @@ Router::group(['prefix' => '/admin', 'middleware' => ['AdminMiddleware']], funct
     // Payouts & Withdrawals
     // Top-ups & Withdrawals
     Router::get('/topups', [AdminController::class, 'topups']);
-    Router::post('/topups/manual-approve', [AdminController::class, 'manualApproveTopup']);
-    Router::post('/topups/manual-cancel', [AdminController::class, 'manualCancelTopup']);
+Router::post('/topups/sync-status', [AdminController::class, 'syncTopupStatus']);
+Router::post('/topups/manual-approve', [AdminController::class, 'manualApproveTopup']);
+Router::post('/topups/manual-cancel', [AdminController::class, 'manualCancelTopup']);
     Router::get('/withdrawals', [AdminController::class, 'withdrawals']);
     Router::post('/withdrawals/update-status', [AdminController::class, 'updateWithdrawalStatus']);
 
