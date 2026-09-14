@@ -97,7 +97,7 @@ class DriverController extends ChangeNotifier {
     final r4 = double.tryParse(_earnings?['rating']?.toString() ?? '');
     final r5 = double.tryParse(_earnings?['wallet']?['rating']?.toString() ?? '');
 
-    return r1 ?? r2 ?? r3 ?? r4 ?? r5 ?? 5.0;
+    return r1 ?? r2 ?? r3 ?? r4 ?? r5 ?? 0.0;
   }
 
   int get reviewsCount {

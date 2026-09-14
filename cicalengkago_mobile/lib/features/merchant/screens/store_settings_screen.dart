@@ -360,7 +360,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
                   ...reviews.take(3).map((r) {
                     final rMap = r is Map ? r : {};
                     final custName = rMap['customer_name'] ?? 'Pelanggan';
-                    final comment = rMap['comment'] ?? 'Pelayanan sangat memuaskan!';
+                    final comment = rMap['comment'] ?? '';
                     final rRating = rMap['rating']?.toString() ?? '5';
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),

@@ -33,7 +33,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
   final TextEditingController _notesController = TextEditingController();
   bool _isLoadingReviews = true;
   List<dynamic> _reviews = [];
-  double _avgRating = 5.0;
+  double _avgRating = 0.0;
   int _reviewsCount = 0;
   Map<dynamic, dynamic> _ratingBreakdown = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0};
   bool? _storeIsOpenOverride;

@@ -409,9 +409,9 @@ class Order extends Model
             Database::execute("UPDATE `orders` SET `delivery_man_id` = NULL WHERE `order_status` = 'canceled' AND `delivery_man_id` IS NOT NULL");
             Database::execute("UPDATE `delivery_men` dm LEFT JOIN `orders` o ON dm.current_order_id = o.id SET dm.current_order_id = NULL WHERE dm.current_order_id IS NOT NULL AND (o.id IS NULL OR o.order_status IN ('delivered', 'canceled'))");
 
-            // Sync rating toko dan driver jika rating bernilai 0.0
-            Database::execute("UPDATE `stores` SET `rating` = 5.0 WHERE `rating` = 0.0 OR `rating` IS NULL");
-            Database::execute("UPDATE `delivery_men` SET `rating` = 5.0 WHERE `rating` = 0.0 OR `rating` IS NULL");
+            // Note: do not override 0.0 ratings to 5.0 here.
+            // New stores and drivers already default to 5.00 in DB schema.
+            // Overriding here would mask missing review data.
 
             // Batalkan pesanan lelang driver (handover) yang tidak diambil driver setelah 5 menit (300 detik)
             $expiredOrders = Database::query(
