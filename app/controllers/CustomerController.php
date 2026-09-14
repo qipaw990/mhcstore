@@ -35,83 +35,12 @@ class CustomerController extends Controller
 
     public function home(): void
     {
-        $userId = auth_id();
-        $selectedModuleId = (int)($_GET['module_id'] ?? 1); // Default to Kuliner/Food
-
-        $modules = $this->moduleModel->activeModules();
-        $banners = $this->bannerModel->getActiveBanners($selectedModuleId);
-        $categories = (new Category())->getByModule($selectedModuleId);
-        $popularStores = $this->storeModel->getByModule($selectedModuleId);
-        foreach ($popularStores as &$s) {
-            attach_store_schedule_data($s);
-        }
-        unset($s);
-        
-        $topRatedStores = Database::query("
-            SELECT s.*, m.name as module_name
-            FROM `stores` s
-            LEFT JOIN `modules` m ON s.module_id = m.id
-            WHERE s.status = 'approved'
-            ORDER BY s.rating DESC, s.order_count DESC
-            LIMIT 12
-        ");
-        foreach ($topRatedStores as &$s) {
-            attach_store_schedule_data($s);
-        }
-        unset($s);
-
-        $recommendedProducts = $this->productModel->getRecommended(12);
-        if (empty($recommendedProducts)) {
-            $recommendedProducts = Database::query("
-                SELECT p.*, s.name as store_name, s.is_open as store_is_open 
-                FROM `products` p 
-                JOIN `stores` s ON p.store_id = s.id 
-                WHERE p.status = 1 AND s.status = 'approved' 
-                ORDER BY p.id DESC LIMIT 12
-            ");
-            foreach ($recommendedProducts as &$p) {
-                $p['final_price'] = $this->productModel->calculateFinalPrice($p);
-            }
+        if ($this->isJsonRequest()) {
+            (new ApiController())->homeData();
+            return;
         }
 
-        $discountedProducts = Database::query("
-            SELECT p.*, s.name as store_name, s.is_open as store_is_open
-            FROM `products` p
-            JOIN `stores` s ON p.store_id = s.id
-            WHERE p.status = 1 AND s.status = 'approved' AND p.discount > 0
-            ORDER BY p.discount DESC LIMIT 10
-        ");
-        foreach ($discountedProducts as &$p) {
-            $p['final_price'] = $this->productModel->calculateFinalPrice($p);
-        }
-        unset($p);
-        $this->productModel->attachStoreStatus($discountedProducts);
-
-        $cartSummary = $this->cartModel->getUserCart($userId, session_id());
-        
-        $walletBalance = 0.00;
-        if ($userId) {
-            $wallet = $this->walletModel->getOrCreate($userId, 'customer');
-            $walletBalance = (float)$wallet['balance'];
-        }
-
-        $coupons = (new Coupon())->where('status', 1);
-
-        $this->view('customer.home', [
-            'title'               => 'CicalengkaGO - Pesan Antar Makanan & Kebutuhan Cicalengka',
-            'modules'             => $modules,
-            'selected_module_id'  => $selectedModuleId,
-            'banners'             => $banners,
-            'categories'          => $categories,
-            'popular_stores'      => $popularStores,
-            'top_rated_stores'    => $topRatedStores,
-            'recommended_products'=> $recommendedProducts,
-            'discounted_products' => $discountedProducts,
-            'cart_summary'        => $cartSummary,
-            'wallet_balance'      => $walletBalance,
-            'coupons'             => $coupons,
-            'active_tab'          => 'home'
-        ], 'customer_layout');
+        $this->redirect('admin');
     }
 
     public function exploreStores(): void
@@ -167,17 +96,7 @@ class CustomerController extends Controller
             return;
         }
 
-        $modules = $this->moduleModel->activeModules();
-
-        $this->view('customer.explore_stores', [
-            'title'           => 'Jelajah Resto & Toko Cicalengka - CicalengkaGO',
-            'stores'          => $stores,
-            'modules'         => $modules,
-            'selected_module' => $moduleId,
-            'search'          => $search,
-            'active_filter'   => $filter,
-            'active_tab'      => 'explore'
-        ], 'customer_layout');
+        $this->redirect('admin');
     }
 
     public function search(): void
@@ -226,15 +145,7 @@ class CustomerController extends Controller
             return;
         }
 
-        $this->view('customer.search', [
-            'title'              => 'Cari Kuliner & Produk di Cicalengka',
-            'query'              => $query,
-            'products'           => $products,
-            'stores'             => $stores,
-            'popular_stores'     => $popularStores,
-            'recommend_products' => $recommendProducts,
-            'active_tab'         => 'search'
-        ], 'customer_layout');
+        $this->redirect('admin');
     }
 
     public function storeDetail(int $id): void
@@ -268,19 +179,12 @@ class CustomerController extends Controller
             return;
         }
 
-        $this->view('customer.store', [
-            'title'        => $store['name'] . ' - CicalengkaGO',
-            'store'        => $store,
-            'products'     => $products,
-            'reviews'      => $reviews,
-            'cart_summary' => $cartSummary,
-            'active_tab'   => 'store'
-        ], 'customer_layout');
+        $this->redirect('admin');
     }
 
     public function parcel(): void
     {
-        $this->redirect('');
+        $this->redirect('admin');
     }
 
     public function profile(): void
@@ -304,13 +208,7 @@ class CustomerController extends Controller
             return;
         }
 
-        $this->view('customer.profile', [
-            'title'      => 'Akun Saya - CicalengkaGO',
-            'user'       => $user,
-            'wallet'     => $wallet,
-            'addresses'  => $addresses,
-            'active_tab' => 'profile'
-        ], 'customer_layout');
+        $this->redirect('admin');
     }
 
     public function wallet(): void
@@ -349,14 +247,7 @@ class CustomerController extends Controller
             return;
         }
 
-        $this->view('customer.wallet', [
-            'title'        => 'Dompet Digital CicalengkaPay',
-            'wallet'       => $wallet,
-            'transactions' => $transactions,
-            'topup_logs'   => $topupLogs,
-            'topup_stats'  => $topupStats,
-            'active_tab'   => 'profile'
-        ], 'customer_layout');
+        $this->redirect('admin');
     }
 
     public function notifications(): void
@@ -398,12 +289,7 @@ class CustomerController extends Controller
             return;
         }
 
-        $this->view('customer.notifications', [
-            'title'         => 'Chat & Notifikasi',
-            'notifications' => $notifications,
-            'active_chats'  => $activeChats,
-            'active_tab'    => 'chat'
-        ], 'customer_layout');
+        $this->redirect('admin');
     }
 
     public function updateProfile(): void

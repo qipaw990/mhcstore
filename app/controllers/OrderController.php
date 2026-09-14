@@ -56,16 +56,19 @@ class OrderController extends Controller
         }
         $zoneDetail = Zone::getZoneDetail($primaryZoneId);
 
-        $this->view('customer.checkout', [
-            'title'        => 'Checkout Pesanan - CicalengkaGO',
-            'cart_data'    => $cartData,
-            'wallet'       => $wallet,
-            'addresses'    => $addresses,
-            'coupons'      => $coupons,
-            'zone_tariff'  => $zoneDetail,
-            'zone_detail'  => $zoneDetail,
-            'active_tab'   => 'cart'
-        ], 'customer_layout');
+        if ($this->isJsonRequest()) {
+            $this->successResponse('Data checkout pesanan', [
+                'cart_data'    => $cartData,
+                'wallet'       => $wallet,
+                'addresses'    => $addresses,
+                'coupons'      => $coupons,
+                'zone_tariff'  => $zoneDetail,
+                'zone_detail'  => $zoneDetail,
+            ]);
+            return;
+        }
+
+        $this->redirect('admin');
     }
 
     public function placeOrder(): void
@@ -325,11 +328,7 @@ class OrderController extends Controller
             return;
         }
 
-        $this->view('customer.orders', [
-            'title'      => 'Pesanan Saya - CicalengkaGO',
-            'orders'     => $orders,
-            'active_tab' => 'orders'
-        ], 'customer_layout');
+        $this->redirect('admin');
     }
 
     public function getLiveOrdersList(): void
@@ -401,12 +400,7 @@ class OrderController extends Controller
             return;
         }
 
-        $this->view('customer.order_tracking', [
-            'title'      => "Lacak Pesanan #{$order['order_code']}",
-            'order'      => $order,
-            'doku_url'   => $dokuUrl,
-            'active_tab' => 'orders'
-        ], 'customer_layout');
+        $this->redirect('admin');
     }
 
     public function getSnapToken(): void
@@ -539,8 +533,8 @@ class OrderController extends Controller
             return;
         }
 
-        // Otherwise redirect to tracking page
-        $this->redirect('orders/' . $order['order_code'] . '/tracking');
+        // Otherwise redirect to admin
+        $this->redirect('admin');
     }
 
     public function getLiveTracking(string $code): void

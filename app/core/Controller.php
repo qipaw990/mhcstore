@@ -7,7 +7,7 @@ namespace App\Core;
 
 abstract class Controller
 {
-    protected function view(string $viewPath, array $data = [], ?string $layout = 'customer_layout'): void
+    protected function view(string $viewPath, array $data = [], ?string $layout = 'admin_layout'): void
     {
         View::render($viewPath, $data, $layout);
     }

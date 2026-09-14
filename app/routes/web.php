@@ -105,9 +105,14 @@ Router::get('/doku-check', function () {
 });
 
 // ==========================================
-// 2. Customer PWA Routes (Public / Auth)
+// 2. Customer & API Compatibility Routes
+// (Web browser hits redirect to /admin, API/JSON hits remain intact for Mobile Flutter)
 // ==========================================
-Router::get('/', [CustomerController::class, 'home']);
+Router::get('/', function () {
+    $appConfig = require APP_PATH . '/config/app.php';
+    header('Location: ' . rtrim($appConfig['public_url'], '/') . '/admin');
+    exit;
+});
 Router::get('/search', [CustomerController::class, 'search']);
 Router::get('/explore-stores', [CustomerController::class, 'exploreStores']);
 Router::get('/stores', [CustomerController::class, 'exploreStores']);

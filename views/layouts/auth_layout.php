@@ -10,60 +10,74 @@ $baseUrl = $appConfig['public_url'];
     <title><?= $title ?? 'Masuk - CicalengkaGO' ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="<?= $baseUrl ?>/assets/css/mobile.css">
+    <link rel="stylesheet" href="<?= $baseUrl ?>/assets/css/admin.css">
     <style>
         * { box-sizing: border-box; }
         body {
-            background: #F8FAFC;
-            background-image: radial-gradient(circle at 50% 0%, rgba(238, 39, 55, 0.07) 0%, transparent 55%);
+            background: #090A0F;
+            background-image: radial-gradient(circle at 50% 0%, rgba(39, 39, 42, 0.4) 0%, #090A0F 70%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px 16px;
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            padding: 24px 16px;
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            color: #F8FAFC;
         }
         .auth-card {
             background: #FFFFFF;
-            border-radius: 22px;
-            max-width: 390px;
+            border-radius: 24px;
+            max-width: 410px;
             width: 100%;
-            padding: 28px 24px 24px 24px;
-            box-shadow: 0 12px 40px rgba(16, 24, 32, 0.08), 0 2px 8px rgba(0,0,0,0.04);
-            border: 1px solid #E2E8F0;
+            padding: 32px 28px 28px 28px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #090A0F;
+        }
+        .auth-logo-box {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            background: #090A0F;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+            border: 1.5px solid #27272A;
+            margin-bottom: 12px;
+            overflow: hidden;
+            padding: 4px;
         }
         .auth-logo-img {
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
-            box-shadow: 0 4px 14px rgba(238, 39, 55, 0.28);
-            object-fit: cover;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
-        /* Flash alert banner */
+        /* Flash alert banners */
         .auth-flash-error {
-            background: #FEE2E2;
+            background: #FEF2F2;
             border: 1px solid #FECACA;
-            border-radius: 10px;
-            padding: 10px 14px;
-            font-size: 11.5px;
+            border-radius: 12px;
+            padding: 11px 14px;
+            font-size: 12px;
             color: #DC2626;
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-bottom: 16px;
+            margin-bottom: 18px;
         }
         .auth-flash-success {
             background: #F0FDF4;
             border: 1px solid #BBF7D0;
-            border-radius: 10px;
-            padding: 10px 14px;
-            font-size: 11.5px;
+            border-radius: 12px;
+            padding: 11px 14px;
+            font-size: 12px;
             color: #16A34A;
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-bottom: 16px;
+            margin-bottom: 18px;
         }
     </style>
 </head>
@@ -71,28 +85,31 @@ $baseUrl = $appConfig['public_url'];
 <?php require_once dirname(__DIR__) . '/partials/preloader.php'; ?>
 
 <div class="auth-card">
-    <!-- Top Nav: Back to Home -->
-    <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
-        <a href="<?= $baseUrl ?>/" style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #475569; text-decoration: none; background: #F1F5F9; padding: 6px 12px; border-radius: 20px; transition: all 0.2s;" onmouseover="this.style.color='#EE2737';this.style.background='#FEE2E2'" onmouseout="this.style.color='#475569';this.style.background='#F1F5F9'">
-            <i class="bi bi-house-door-fill" style="font-size: 12px;"></i> Beranda Utama
-        </a>
+    <!-- Top Security Badge -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <span class="badge bg-dark text-white rounded-pill px-2.5 py-1" style="font-size: 10px; letter-spacing: 0.5px; font-weight: 700;">
+            <i class="bi bi-shield-lock-fill me-1 text-light"></i> HQ ACCESS
+        </span>
+        <span class="text-muted" style="font-size: 11px; font-weight: 600;">CicalengkaGO HQ</span>
     </div>
 
-    <!-- Logo & Brand -->
-    <div style="text-align: center; margin-bottom: 24px;">
-        <a href="<?= $baseUrl ?>/" style="display: inline-block; text-decoration: none; margin-bottom: 10px;">
-            <img src="<?= $baseUrl ?>/assets/images/logo-icon.svg" alt="CicalengkaGO Logo" class="auth-logo-img">
-        </a>
-        <h5 style="font-size: 18px; font-weight: 800; color: #0F172A; margin: 0 0 4px; letter-spacing: -0.4px;">
-            Cicalengka<span style="color: #EE2737;">GO</span>
+    <!-- Logo & Brand Header -->
+    <div class="text-center mb-4">
+        <div class="auth-logo-box">
+            <img src="<?= $baseUrl ?>/assets/images/app_logo.png" alt="CicalengkaGO Logo" class="auth-logo-img">
+        </div>
+        <h5 class="fw-extrabold m-0 text-dark" style="letter-spacing: -0.5px; font-size: 20px;">
+            Cicalengka<span class="fw-black text-dark">GO</span>
         </h5>
-        <div style="font-size: 11px; color: #64748B; font-weight: 500;">Super App On-Demand & Kuliner Cicalengka</div>
+        <div class="text-muted mt-1" style="font-size: 11.5px; font-weight: 500;">
+            Enterprise Admin & Merchant Portal
+        </div>
     </div>
 
     <!-- Flash Error Banner -->
     <?php if (!empty($_SESSION['error'])): ?>
         <div class="auth-flash-error">
-            <i class="bi bi-exclamation-circle-fill" style="font-size: 14px; flex-shrink: 0;"></i>
+            <i class="bi bi-exclamation-circle-fill fs-6 flex-shrink-0"></i>
             <span><?= htmlspecialchars($_SESSION['error']) ?></span>
         </div>
         <?php unset($_SESSION['error']); ?>
@@ -101,7 +118,7 @@ $baseUrl = $appConfig['public_url'];
     <!-- Flash Success Banner -->
     <?php if (!empty($_SESSION['success'])): ?>
         <div class="auth-flash-success">
-            <i class="bi bi-check-circle-fill" style="font-size: 14px; flex-shrink: 0;"></i>
+            <i class="bi bi-check-circle-fill fs-6 flex-shrink-0"></i>
             <span><?= htmlspecialchars($_SESSION['success']) ?></span>
         </div>
         <?php unset($_SESSION['success']); ?>

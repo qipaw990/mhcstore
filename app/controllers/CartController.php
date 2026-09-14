@@ -217,10 +217,6 @@ class CartController extends Controller
             return;
         }
 
-        $this->view('customer.cart', [
-            'title'        => 'Keranjang Belanja - CicalengkaGO',
-            'cart_summary' => $cartSummary,
-            'active_tab'   => 'cart'
-        ], 'customer_layout');
+        $this->redirect('admin');
     }
 }

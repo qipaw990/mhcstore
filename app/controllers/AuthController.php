@@ -458,19 +458,19 @@ class AuthController extends Controller
     {
         if ($isProfileUpdate) {
             match ($role) {
-                'admin'        => $this->redirect('admin/profile'),
-                'vendor'       => $this->redirect('vendor/profile'),
-                'delivery_man' => $this->redirect('delivery/profile'),
-                default        => $this->redirect('profile')
+                'admin', 'super_admin' => $this->redirect('admin/profile'),
+                'vendor'               => $this->redirect('vendor/profile'),
+                'delivery_man'         => $this->redirect('delivery/profile'),
+                default                => $this->redirect('admin/profile')
             };
             return;
         }
 
         match ($role) {
-            'admin'        => $this->redirect('admin'),
-            'vendor'       => $this->redirect('vendor'),
-            'delivery_man' => $this->redirect('delivery'),
-            default        => $this->redirect('')
+            'admin', 'super_admin' => $this->redirect('admin'),
+            'vendor'               => $this->redirect('vendor'),
+            'delivery_man'         => $this->redirect('delivery'),
+            default                => $this->redirect('admin')
         };
     }
 }

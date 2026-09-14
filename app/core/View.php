@@ -7,7 +7,7 @@ namespace App\Core;
 
 class View
 {
-    public static function render(string $viewPath, array $data = [], ?string $layout = 'customer_layout'): void
+    public static function render(string $viewPath, array $data = [], ?string $layout = 'admin_layout'): void
     {
         // Extract variables to view scope
         extract($data);
