@@ -87,6 +87,17 @@ $user = auth_user();
                 </a>
             </li>
             <li>
+                <a href="<?= $baseUrl ?>/admin/features" class="menu-link <?= ($active_tab ?? '') === 'features' ? 'active' : '' ?>">
+                    <div class="menu-link-inner">
+                        <i class="bi bi-toggles"></i>
+                        <span>Fitur Aplikasi</span>
+                    </div>
+                    <?php if (($active_tab ?? '') !== 'features'): ?>
+                    <span class="badge bg-primary-subtle text-primary" style="font-size:9px;padding:2px 6px;border-radius:20px;">NEW</span>
+                    <?php endif; ?>
+                </a>
+            </li>
+            <li>
                 <a href="<?= $baseUrl ?>/admin/stores" class="menu-link <?= ($active_tab ?? '') === 'stores' ? 'active' : '' ?>">
                     <div class="menu-link-inner">
                         <i class="bi bi-shop-window"></i>

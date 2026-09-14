@@ -57,6 +57,65 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     return dist;
   }
 
+  Color _parseHexColor(String hex, Color fallback) {
+    try {
+      String clean = hex.replaceAll('#', '').trim();
+      if (clean.length == 6) clean = 'FF$clean';
+      return Color(int.parse(clean, radix: 16));
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  IconData _parseMaterialIcon(String name, IconData fallback) {
+    switch (name) {
+      case 'send_rounded': return Icons.send_rounded;
+      case 'add_circle_outline_rounded': return Icons.add_circle_outline_rounded;
+      case 'history_rounded': return Icons.history_rounded;
+      case 'confirmation_number_rounded': return Icons.confirmation_number_rounded;
+      case 'restaurant_rounded': return Icons.restaurant_rounded;
+      case 'local_fire_department_rounded': return Icons.local_fire_department_rounded;
+      case 'soup_kitchen_rounded': return Icons.soup_kitchen_rounded;
+      case 'rice_bowl_rounded': return Icons.rice_bowl_rounded;
+      case 'local_cafe_rounded': return Icons.local_cafe_rounded;
+      case 'fastfood_rounded': return Icons.fastfood_rounded;
+      case 'kebab_dining_rounded': return Icons.kebab_dining_rounded;
+      case 'local_drink_rounded': return Icons.local_drink_rounded;
+      case 'bolt_rounded': return Icons.bolt_rounded;
+      case 'shopping_bag_rounded': return Icons.shopping_bag_rounded;
+      case 'stars_rounded': return Icons.stars_rounded;
+      default: return fallback;
+    }
+  }
+
+  void _handleFeatureTap(BuildContext context, AppFeatureItem item) {
+    if (item.actionType == 'route') {
+      if (item.actionValue == 'wallet') {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerWalletScreen()));
+      } else if (item.actionValue == 'vouchers') {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const VouchersScreen()));
+      } else if (item.actionValue == 'orders') {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerOrdersScreen()));
+      } else if (item.actionValue == 'profile') {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerProfileScreen()));
+      } else if (item.actionValue == 'cart') {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const CartScreen()));
+      } else {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerSearchScreen()));
+      }
+    } else if (item.actionType == 'none') {
+      // no action
+    } else {
+      // default 'search' / 'module'
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CustomerSearchScreen(initialQuery: item.actionValue),
+        ),
+      );
+    }
+  }
+
   final List<Map<String, dynamic>> _categoriesGrid = const [
     {'name': 'Ayam & Bebek', 'icon': Icons.restaurant_rounded, 'color': Color(0xFFDC2626), 'bgColor': Color(0xFFFEE2E2), 'query': 'Ayam'},
     {'name': 'Seblak & Pedas', 'icon': Icons.local_fire_department_rounded, 'color': Color(0xFFE11D48), 'bgColor': Color(0xFFFFE4E6), 'query': 'Seblak'},
@@ -269,34 +328,37 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                           const SizedBox(height: 16),
 
                           // 5. Promo Banners Carousel
-                          if (customerCtrl.banners.isNotEmpty) ...[
+                          if (customerCtrl.banners.isNotEmpty && AppConfigService.instance.isSectionEnabled('banners')) ...[
                             _buildBannersCarousel(customerCtrl),
                             const SizedBox(height: 18),
                           ],
 
                           // 5.1 Kupon & Voucher Hemat Discovery
-                          _buildVoucherDiscoverySection(customerCtrl, context),
-
-                          const SizedBox(height: 18),
+                          if (AppConfigService.instance.isSectionEnabled('vouchers')) ...[
+                            _buildVoucherDiscoverySection(customerCtrl, context),
+                            const SizedBox(height: 18),
+                          ],
 
                           // 6. Flash Sale & Promo Diskon
-                          if (customerCtrl.discountedProducts.isNotEmpty) ...[
+                          if (customerCtrl.discountedProducts.isNotEmpty && AppConfigService.instance.isSectionEnabled('flash_sale')) ...[
                             _buildFlashSaleSection(customerCtrl, context),
                             const SizedBox(height: 20),
                           ],
 
                           // 6.1 Resto Terdekat Bebas Ongkir (< 300m) Merchant Delivery
-                          _buildFreeOngkirMerchantSection(customerCtrl, context),
-
-                          const SizedBox(height: 20),
+                          if (AppConfigService.instance.isSectionEnabled('free_ongkir')) ...[
+                            _buildFreeOngkirMerchantSection(customerCtrl, context),
+                            const SizedBox(height: 20),
+                          ],
 
                           // 7. Resto & Toko Paling Hit di Cicalengka
-                          _buildTopStoresSection(customerCtrl, context),
-
-                          const SizedBox(height: 20),
+                          if (AppConfigService.instance.isSectionEnabled('top_stores')) ...[
+                            _buildTopStoresSection(customerCtrl, context),
+                            const SizedBox(height: 20),
+                          ],
 
                           // 8. Recommended Food Menu Items
-                          if (customerCtrl.recommendedProducts.isNotEmpty) ...[
+                          if (customerCtrl.recommendedProducts.isNotEmpty && AppConfigService.instance.isSectionEnabled('recommended_products')) ...[
                             _buildRecommendedProductsSection(customerCtrl, context),
                             const SizedBox(height: 24),
                           ],
@@ -651,44 +713,56 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildGopayActionButton(
-                  icon: Icons.send_rounded,
-                  iconColor: const Color(0xFF6366F1),
-                  bgColor: const Color(0xFFEEF2FF),
-                  label: 'Kirim',
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerWalletScreen()));
-                  },
-                ),
-                _buildGopayActionButton(
-                  icon: Icons.add_circle_outline_rounded,
-                  iconColor: const Color(0xFF10B981),
-                  bgColor: const Color(0xFFECFDF5),
-                  label: 'Top Up',
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerWalletScreen()));
-                  },
-                ),
-                _buildGopayActionButton(
-                  icon: Icons.history_rounded,
-                  iconColor: const Color(0xFFF59E0B),
-                  bgColor: const Color(0xFFFFFBEB),
-                  label: 'Riwayat',
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerWalletScreen()));
-                  },
-                ),
-                _buildGopayActionButton(
-                  icon: Icons.confirmation_number_rounded,
-                  iconColor: const Color(0xFFEF4444),
-                  bgColor: const Color(0xFFFEF2F2),
-                  label: 'Voucher',
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const VouchersScreen()));
-                  },
-                ),
-              ],
+              children: AppConfigService.instance.quickActions.isNotEmpty
+                  ? AppConfigService.instance.quickActions.map((qa) {
+                      final isEmoji = qa.iconType == 'emoji';
+                      return _buildGopayActionButton(
+                        icon: isEmoji ? null : _parseMaterialIcon(qa.icon, Icons.bolt_rounded),
+                        emoji: isEmoji ? qa.icon : null,
+                        iconColor: _parseHexColor(qa.color, const Color(0xFF6366F1)),
+                        bgColor: _parseHexColor(qa.bgColor, const Color(0xFFEEF2FF)),
+                        label: qa.name,
+                        onTap: () => _handleFeatureTap(context, qa),
+                      );
+                    }).toList()
+                  : [
+                      _buildGopayActionButton(
+                        icon: Icons.send_rounded,
+                        iconColor: const Color(0xFF6366F1),
+                        bgColor: const Color(0xFFEEF2FF),
+                        label: 'Kirim',
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerWalletScreen()));
+                        },
+                      ),
+                      _buildGopayActionButton(
+                        icon: Icons.add_circle_outline_rounded,
+                        iconColor: const Color(0xFF10B981),
+                        bgColor: const Color(0xFFECFDF5),
+                        label: 'Top Up',
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerWalletScreen()));
+                        },
+                      ),
+                      _buildGopayActionButton(
+                        icon: Icons.history_rounded,
+                        iconColor: const Color(0xFFF59E0B),
+                        bgColor: const Color(0xFFFFFBEB),
+                        label: 'Riwayat',
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerWalletScreen()));
+                        },
+                      ),
+                      _buildGopayActionButton(
+                        icon: Icons.confirmation_number_rounded,
+                        iconColor: const Color(0xFFEF4444),
+                        bgColor: const Color(0xFFFEF2F2),
+                        label: 'Voucher',
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const VouchersScreen()));
+                        },
+                      ),
+                    ],
             ),
           ],
         ),
@@ -697,7 +771,8 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   }
 
   Widget _buildGopayActionButton({
-    required IconData icon,
+    IconData? icon,
+    String? emoji,
     required Color iconColor,
     required Color bgColor,
     required String label,
@@ -715,7 +790,11 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               color: bgColor,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: iconColor, size: 22),
+            child: Center(
+              child: emoji != null && emoji.isNotEmpty
+                  ? Text(emoji, style: const TextStyle(fontSize: 20))
+                  : Icon(icon ?? Icons.circle, color: iconColor, size: 22),
+            ),
           ),
           const SizedBox(height: 5),
           Text(
@@ -781,33 +860,55 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                   '🔥 TRENDING: ',
                   style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTheme.inkBlack),
                 ),
-                ..._trendingChips.map((chip) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 6.0),
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => CustomerSearchScreen(initialQuery: chip['query']!),
+                if (AppConfigService.instance.trendingChips.isNotEmpty)
+                  ...AppConfigService.instance.trendingChips.map((chip) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6.0),
+                      child: InkWell(
+                        onTap: () => _handleFeatureTap(context, chip),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: Text(
-                          '${chip['icon']} ${chip['label']}',
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                          child: Text(
+                            chip.icon.isNotEmpty ? '${chip.icon} ${chip.name}' : chip.name,
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                }),
+                    );
+                  })
+                else
+                  ..._trendingChips.map((chip) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6.0),
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CustomerSearchScreen(initialQuery: chip['query']!),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Text(
+                            '${chip['icon']} ${chip['label']}',
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
               ],
             ),
           ),
@@ -818,6 +919,10 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
 
   // --- Gojek-Style Service Grid Categories ---
   Widget _buildServiceCategoriesGrid(BuildContext context) {
+    final dynamicCategories = AppConfigService.instance.serviceGridItems;
+    final bool useDynamic = dynamicCategories.isNotEmpty;
+    final int count = useDynamic ? dynamicCategories.length : _categoriesGrid.length;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -861,8 +966,51 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               crossAxisSpacing: 8,
               childAspectRatio: 0.95,
             ),
-            itemCount: _categoriesGrid.length,
+            itemCount: count,
             itemBuilder: (context, index) {
+              if (useDynamic) {
+                final cat = dynamicCategories[index];
+                final bgColor = _parseHexColor(cat.bgColor, const Color(0xFFDBEAFE));
+                final iconColor = _parseHexColor(cat.color, const Color(0xFF2563EB));
+                final isEmoji = cat.iconType == 'emoji';
+
+                return GestureDetector(
+                  onTap: () => _handleFeatureTap(context, cat),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: bgColor,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: iconColor.withOpacity(0.12),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: isEmoji
+                              ? Text(cat.icon, style: const TextStyle(fontSize: 22))
+                              : Icon(_parseMaterialIcon(cat.icon, Icons.restaurant_rounded), color: iconColor, size: 24),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        cat.name,
+                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                );
+              }
+
               final cat = _categoriesGrid[index];
               return GestureDetector(
                 onTap: () {
@@ -911,7 +1059,10 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
 
   // --- Exploration Filter Chips ---
   Widget _buildExplorationFilterChips(BuildContext context) {
-    final filters = [
+    final dynamicChips = AppConfigService.instance.filterChips;
+    final bool useDynamic = dynamicChips.isNotEmpty;
+
+    final fallbackFilters = [
       {'icon': '🔥', 'label': 'Semua Kuliner', 'query': ''},
       {'icon': '🚶‍♂️', 'label': 'Gratis Ongkir (<300m)', 'query': 'Gratis Ongkir'},
       {'icon': '⚡', 'label': 'Flash Sale', 'query': 'Promo'},
@@ -927,45 +1078,80 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
-        children: filters.map((f) {
-          return Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CustomerSearchScreen(initialQuery: f['query']!),
-                  ),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(f['icon']!, style: const TextStyle(fontSize: 12)),
-                    const SizedBox(width: 6),
-                    Text(
-                      f['label']!,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
+        children: useDynamic
+            ? dynamicChips.map((chip) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () => _handleFeatureTap(context, chip),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (chip.icon.isNotEmpty) ...[
+                            Text(chip.icon, style: const TextStyle(fontSize: 12)),
+                            const SizedBox(width: 6),
+                          ],
+                          Text(
+                            chip.name,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }).toList(),
+                  ),
+                );
+              }).toList()
+            : fallbackFilters.map((f) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CustomerSearchScreen(initialQuery: f['query']!),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(f['icon']!, style: const TextStyle(fontSize: 12)),
+                          const SizedBox(width: 6),
+                          Text(
+                            f['label']!,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
       ),
     );
   }

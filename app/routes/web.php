@@ -323,6 +323,14 @@ Router::post('/topups/manual-cancel', [AdminController::class, 'manualCancelTopu
     Router::post('/whatsapp/restart', [AdminController::class, 'waRestart']);
     Router::get('/whatsapp/download-compose', [AdminController::class, 'waDownloadCompose']);
     Router::get('/whatsapp/download-dockerfile', [AdminController::class, 'waDownloadDockerfile']);
+
+    // App Features Manager — Fitur & Layanan yang tampil di Flutter
+    Router::get('/features', [AdminController::class, 'appFeatures']);
+    Router::post('/features/save', [AdminController::class, 'saveAppFeature']);
+    Router::post('/features/delete', [AdminController::class, 'deleteAppFeature']);
+    Router::post('/features/toggle', [AdminController::class, 'toggleAppFeature']);
+    Router::post('/features/reorder', [AdminController::class, 'reorderAppFeatures']);
+    Router::post('/features/migrate', [AdminController::class, 'migrateAppFeatures']);
 });
 
 // API Extension Scraper Import Route & Schedule Filler

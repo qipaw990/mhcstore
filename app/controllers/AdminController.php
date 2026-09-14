@@ -12,6 +12,7 @@ use App\Models\Banner;
 use App\Models\BusinessSetting;
 use App\Models\User;
 use App\Models\Wallet;
+use App\Models\AppFeature;
 use App\Core\Database;
 use Exception;
 
@@ -2174,5 +2175,103 @@ class AdminController extends Controller
             $this->errorResponse('Gagal memperbarui status pengajuan: ' . $e->getMessage());
         }
     }
-}
 
+    // =========================================================================
+    // APP FEATURES MANAGER — Fitur & Layanan Flutter App
+    // =========================================================================
+
+    public function appFeatures(): void
+    {
+        $featuresByType = [];
+        $allTypes = ['service_grid', 'filter_chip', 'trending_chip', 'quick_action', 'home_section'];
+        foreach ($allTypes as $type) {
+            $featuresByType[$type] = AppFeature::getByType($type, false);
+        }
+
+        $tableExists = (bool)Database::fetchOne(
+            "SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'app_features' LIMIT 1"
+        );
+
+        $this->view('admin/features', [
+            'active_tab'      => 'features',
+            'featuresByType'  => $featuresByType,
+            'tableExists'     => $tableExists,
+        ]);
+    }
+
+    public function saveAppFeature(): void
+    {
+        try {
+            $data = [
+                'id'           => $_POST['id'] ?? 0,
+                'feature_type' => $_POST['feature_type'] ?? 'service_grid',
+                'name'         => trim($_POST['name'] ?? ''),
+                'icon'         => trim($_POST['icon'] ?? ''),
+                'icon_type'    => $_POST['icon_type'] ?? 'emoji',
+                'color'        => trim($_POST['color'] ?? ''),
+                'bg_color'     => trim($_POST['bg_color'] ?? ''),
+                'action_type'  => $_POST['action_type'] ?? 'search',
+                'action_value' => trim($_POST['action_value'] ?? ''),
+                'sort_order'   => (int)($_POST['sort_order'] ?? 0),
+                'is_active'    => isset($_POST['is_active']) ? 1 : 0,
+            ];
+
+            if (empty($data['name'])) {
+                $this->errorResponse('Nama fitur tidak boleh kosong.');
+                return;
+            }
+
+            $savedId = AppFeature::save($data);
+            $this->successResponse('Fitur berhasil disimpan.', ['id' => $savedId]);
+        } catch (\Throwable $e) {
+            $this->errorResponse('Gagal menyimpan fitur: ' . $e->getMessage());
+        }
+    }
+
+    public function deleteAppFeature(): void
+    {
+        $id = (int)($_POST['id'] ?? 0);
+        if ($id <= 0) {
+            $this->errorResponse('ID tidak valid.');
+            return;
+        }
+        AppFeature::delete($id);
+        $this->successResponse('Fitur berhasil dihapus.');
+    }
+
+    public function toggleAppFeature(): void
+    {
+        $id = (int)($_POST['id'] ?? 0);
+        if ($id <= 0) {
+            $this->errorResponse('ID tidak valid.');
+            return;
+        }
+        $result = AppFeature::toggleActive($id);
+        $this->successResponse('Status fitur diperbarui.', $result);
+    }
+
+    public function reorderAppFeatures(): void
+    {
+        $json  = file_get_contents('php://input');
+        $items = json_decode($json, true) ?? [];
+        if (empty($items)) {
+            $items = $_POST['items'] ?? [];
+        }
+        AppFeature::reorder($items);
+        $this->successResponse('Urutan fitur berhasil diperbarui.');
+    }
+
+    public function migrateAppFeatures(): void
+    {
+        try {
+            $ok = AppFeature::migrate();
+            if ($ok) {
+                $this->successResponse('Tabel app_features berhasil dibuat & diisi data awal.');
+            } else {
+                $this->errorResponse('File migration SQL tidak ditemukan.');
+            }
+        } catch (\Throwable $e) {
+            $this->errorResponse('Gagal migrasi: ' . $e->getMessage());
+        }
+    }
+}

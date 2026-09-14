@@ -4,6 +4,46 @@ import '../constants/api_constants.dart';
 import '../network/api_service.dart';
 import 'package:latlong2/latlong.dart';
 
+/// A single dynamic feature item fetched from the admin panel.
+class AppFeatureItem {
+  final int id;
+  final String featureType;
+  final String name;
+  final String icon;
+  final String iconType;  // 'emoji' | 'bi' | 'material'
+  final String color;
+  final String bgColor;
+  final String actionType; // 'search' | 'module' | 'route' | 'url' | 'none'
+  final String actionValue;
+  final int sortOrder;
+
+  const AppFeatureItem({
+    required this.id,
+    required this.featureType,
+    required this.name,
+    required this.icon,
+    required this.iconType,
+    required this.color,
+    required this.bgColor,
+    required this.actionType,
+    required this.actionValue,
+    required this.sortOrder,
+  });
+
+  factory AppFeatureItem.fromJson(Map<String, dynamic> m) => AppFeatureItem(
+        id:          (m['id'] as num?)?.toInt() ?? 0,
+        featureType: m['feature_type']?.toString() ?? '',
+        name:        m['name']?.toString() ?? '',
+        icon:        m['icon']?.toString() ?? '',
+        iconType:    m['icon_type']?.toString() ?? 'emoji',
+        color:       m['color']?.toString() ?? '#2563EB',
+        bgColor:     m['bg_color']?.toString() ?? '#DBEAFE',
+        actionType:  m['action_type']?.toString() ?? 'search',
+        actionValue: m['action_value']?.toString() ?? '',
+        sortOrder:   (m['sort_order'] as num?)?.toInt() ?? 0,
+      );
+}
+
 /// AppConfig — holds all dynamic config fetched from /api/app-config
 class AppConfig {
   // App Info
@@ -42,6 +82,13 @@ class AppConfig {
   final List<Map<String, dynamic>> inhouseBanks;
   final bool dokuEnabled;
 
+  // Dynamic App Features (from admin panel)
+  final List<AppFeatureItem> serviceGridItems;
+  final List<AppFeatureItem> filterChips;
+  final List<AppFeatureItem> trendingChips;
+  final List<AppFeatureItem> quickActions;
+  final List<AppFeatureItem> homeSections;
+
   const AppConfig({
     required this.appName,
     required this.tagline,
@@ -67,6 +114,11 @@ class AppConfig {
     required this.zones,
     required this.inhouseBanks,
     required this.dokuEnabled,
+    this.serviceGridItems = const [],
+    this.filterChips      = const [],
+    this.trendingChips    = const [],
+    this.quickActions     = const [],
+    this.homeSections     = const [],
   });
 
   /// Safe fallback used before API response arrives
@@ -104,6 +156,7 @@ class AppConfig {
     final wallet   = json['wallet']   as Map<String, dynamic>? ?? {};
     final payment  = json['payment']  as Map<String, dynamic>? ?? {};
     final zoneList = json['zones']    as List<dynamic>? ?? [];
+    final featuresRaw = json['features'] as Map<String, dynamic>? ?? {};
 
     final nominals = (wallet['topup_nominals'] as List<dynamic>?)
             ?.map((e) => (e as num).toInt())
@@ -114,6 +167,13 @@ class AppConfig {
             ?.map((e) => Map<String, dynamic>.from(e as Map))
             .toList() ??
         [];
+
+    List<AppFeatureItem> parseFeatures(String key) {
+      final list = featuresRaw[key] as List<dynamic>? ?? [];
+      return list
+          .map((e) => AppFeatureItem.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    }
 
     return AppConfig(
       appName:              app['name']?.toString()            ?? 'CicalengkaGO',
@@ -140,6 +200,11 @@ class AppConfig {
       zones:                zoneList.map(ZoneInfo.fromJson).toList(),
       inhouseBanks:         banks,
       dokuEnabled:          payment['doku_enabled'] == true,
+      serviceGridItems: parseFeatures('service_grid'),
+      filterChips:      parseFeatures('filter_chip'),
+      trendingChips:    parseFeatures('trending_chip'),
+      quickActions:     parseFeatures('quick_action'),
+      homeSections:     parseFeatures('home_section'),
     );
   }
 
@@ -225,6 +290,20 @@ class AppConfigService {
   List<Map<String, dynamic>> get inhouseBanks => _config.inhouseBanks;
   String get currencySymbol            => _config.currencySymbol;
   bool   get maintenanceMode           => _config.maintenanceMode;
+
+  // ── Dynamic Feature Getters (from admin panel) ───────────────────────────
+  List<AppFeatureItem> get serviceGridItems => _config.serviceGridItems;
+  List<AppFeatureItem> get filterChips      => _config.filterChips;
+  List<AppFeatureItem> get trendingChips    => _config.trendingChips;
+  List<AppFeatureItem> get quickActions     => _config.quickActions;
+  List<AppFeatureItem> get homeSections     => _config.homeSections;
+
+  /// Returns true if a home section (by action_value) is enabled.
+  bool isSectionEnabled(String sectionKey) {
+    final sections = _config.homeSections;
+    if (sections.isEmpty) return true; // default: all visible when no config
+    return sections.any((s) => s.actionValue == sectionKey);
+  }
 
   /// Fetch config from backend and cache it. Safe to call multiple times —
   /// only re-fetches on cold-start (when [_initialized] is false) unless

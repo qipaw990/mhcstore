@@ -1105,6 +1105,7 @@ class ApiController extends Controller
                 'doku_enabled'      => (bool)($settings['doku_enabled']            ?? false),
             ],
             'zones'   => $zones,
+            'features' => \App\Models\AppFeature::getAllGrouped(),
         ]);
     }
 }
