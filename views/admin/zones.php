@@ -41,39 +41,39 @@
 <!-- Zones KPI Summary Cards -->
 <div class="row g-3 mb-4">
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-white">
+        <div class="card stat-card border-0 shadow-sm rounded-4 p-3 h-100 bg-white">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <small class="text-muted fw-semibold">Total Zona Operasional</small>
-                    <h4 class="fw-black text-dark mb-0 mt-1"><?= $countTotalZones ?> Wilayah</h4>
+                    <h4 class="fw-bold text-dark mb-0 mt-1"><?= $countTotalZones ?> Wilayah</h4>
                 </div>
-                <div style="width:42px;height:42px;border-radius:12px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#475569;font-size:20px;">
+                <div style="width:44px;height:44px;border-radius:12px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#475569;font-size:20px;">
                     <i class="bi bi-geo-alt-fill"></i>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-white">
+        <div class="card stat-card border-0 shadow-sm rounded-4 p-3 h-100 bg-white">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <small class="text-success fw-semibold">Rata-rata Tarif Dasar</small>
-                    <h4 class="fw-black text-success mb-0 mt-1"><?= format_rupiah($avgBaseCharge) ?></h4>
+                    <h4 class="fw-bold text-success mb-0 mt-1"><?= format_rupiah($avgBaseCharge) ?></h4>
                 </div>
-                <div style="width:42px;height:42px;border-radius:12px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;color:#16a34a;font-size:20px;">
+                <div style="width:44px;height:44px;border-radius:12px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;color:#16a34a;font-size:20px;">
                     <i class="bi bi-cash-coin"></i>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-white">
+        <div class="card stat-card border-0 shadow-sm rounded-4 p-3 h-100 bg-white">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <small class="text-primary fw-semibold">Tarif Tambahan per KM</small>
-                    <h4 class="fw-black text-primary mb-0 mt-1"><?= format_rupiah($avgPerKm) ?> / Km</h4>
+                    <h4 class="fw-bold text-primary mb-0 mt-1"><?= format_rupiah($avgPerKm) ?> / Km</h4>
                 </div>
-                <div style="width:42px;height:42px;border-radius:12px;background:#eff6ff;display:flex;align-items:center;justify-content:center;color:#2563eb;font-size:20px;">
+                <div style="width:44px;height:44px;border-radius:12px;background:#eff6ff;display:flex;align-items:center;justify-content:center;color:#2563eb;font-size:20px;">
                     <i class="bi bi-speedometer2"></i>
                 </div>
             </div>
@@ -130,7 +130,7 @@
                                     $parsedCoords = json_decode($z['coordinates_json'] ?? '[]', true);
                                     $pointCount = is_array($parsedCoords) ? count($parsedCoords) : 0;
                                 ?>
-                                <tr>
+                                <tr class="hover-row">
                                     <td>
                                         <div class="fw-bold text-dark"><i class="bi bi-geo-alt-fill text-danger me-1"></i><?= htmlspecialchars($z['name']) ?></div>
                                     </td>
@@ -139,32 +139,32 @@
                                     </td>
                                     <td>
                                         <?php if ($pointCount > 0): ?>
-                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1">
                                                 <i class="bi bi-polygon me-1"></i> <?= $pointCount ?> Titik Sudut
                                             </span>
                                         <?php else: ?>
-                                            <span class="badge bg-secondary-subtle text-secondary">
-                                                <i class="bi bi-circle me-1"></i> Radius Lingkaran Default
+                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2.5 py-1">
+                                                <i class="bi bi-circle me-1"></i> Radius Default
                                             </span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <div class="fw-semibold small text-success"><?= format_rupiah($z['min_delivery_charge'] ?? 5000) ?></div>
+                                        <div class="fw-bold small text-success"><?= format_rupiah($z['min_delivery_charge'] ?? 5000) ?></div>
                                     </td>
                                     <td>
-                                        <div class="fw-semibold small text-primary"><?= format_rupiah($z['per_km_delivery_charge'] ?? 2500) ?> / Km</div>
+                                        <div class="fw-bold small text-primary"><?= format_rupiah($z['per_km_delivery_charge'] ?? 2500) ?> / Km</div>
                                     </td>
                                     <td>
-                                        <span class="badge <?= $z['status'] ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary' ?>">
+                                        <span class="badge rounded-pill px-2.5 py-1 <?= $z['status'] ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary-subtle text-secondary border' ?>">
                                             <?= $z['status'] ? 'AKTIF' : 'NON-AKTIF' ?>
                                         </span>
                                     </td>
                                     <td class="text-end">
                                         <div class="d-flex justify-content-end gap-1">
-                                            <button class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 fw-bold" onclick="openEditZoneModal(<?= htmlspecialchars(json_encode($z, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8') ?>)">
-                                                <i class="bi bi-pencil-square me-1"></i> Edit Cakupan
+                                            <button class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 fw-semibold" onclick="openEditZoneModal(<?= htmlspecialchars(json_encode($z, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8') ?>)">
+                                                <i class="bi bi-pencil-square me-1"></i> Edit
                                             </button>
-                                            <button class="btn btn-light btn-sm rounded-circle text-danger" style="width:34px;height:34px;" onclick="deleteZone(<?= $z['id'] ?>, '<?= addslashes($z['name']) ?>')" title="Hapus Zona">
+                                            <button class="btn btn-light btn-sm rounded-circle text-danger border" style="width:32px;height:32px;" onclick="deleteZone(<?= $z['id'] ?>, '<?= addslashes($z['name']) ?>')" title="Hapus Zona">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>
