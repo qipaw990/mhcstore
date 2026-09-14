@@ -5,13 +5,13 @@
         <div class="preloader-spinner-wrapper mb-3">
             <div class="preloader-spin-ring"></div>
             <div class="preloader-inner-circle shadow-sm">
-                <i class="bi bi-rocket-takeoff-fill text-danger fs-3 preloader-icon"></i>
+                <i class="bi bi-speedometer2 text-dark fs-3 preloader-icon"></i>
             </div>
         </div>
 
         <!-- Brand Title & Tagline -->
         <h6 class="fw-extrabold m-0 text-dark preloader-brand-text" style="font-size: 17px; letter-spacing: -0.5px;">
-            Cicalengka<span style="color: #EE2737;">GO</span>
+            Cicalengka<span class="text-dark fw-black">GO</span>
         </h6>
         <div class="preloader-subtext text-muted" id="preloader-message" style="font-size: 11.5px; margin-top: 2px;">
             Memuat aplikasi...
@@ -78,9 +78,9 @@
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    border: 3px solid rgba(238, 39, 55, 0.12);
-    border-top-color: #EE2737;
-    border-right-color: #0F172A;
+    border: 3px solid rgba(15, 23, 42, 0.12);
+    border-top-color: #090A0F;
+    border-right-color: #64748B;
     animation: preloaderSpin 0.9s cubic-bezier(0.5, 0, 0.5, 1) infinite;
 }
 
@@ -121,7 +121,7 @@
 .preloader-progress-bar {
     width: 45%;
     height: 100%;
-    background: linear-gradient(90deg, #0F172A, #EE2737);
+    background: linear-gradient(90deg, #64748B, #090A0F);
     border-radius: 999px;
     position: absolute;
     animation: preloaderTrackSlide 1.2s infinite ease-in-out;

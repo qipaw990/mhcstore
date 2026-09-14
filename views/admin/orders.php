@@ -1,11 +1,11 @@
 <!-- Header & Filter Toolbar -->
 <div class="page-header">
     <div class="page-header-left">
-        <h4 class="page-title"><i class="bi bi-receipt-cutoff text-danger me-2"></i>Pusat Pemantauan &amp; Dispatch Pesanan</h4>
+        <h4 class="page-title"><i class="bi bi-receipt-cutoff text-dark me-2"></i>Pusat Pemantauan &amp; Dispatch Pesanan</h4>
         <p class="page-subtitle">Kelola penugasan kurir, lacak rute GPS real-time, dan pantau status seluruh transaksi di Cicalengka.</p>
     </div>
     <div class="page-header-right">
-        <button onclick="window.location.reload()" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold">
+        <button onclick="window.location.reload()" class="btn btn-sm btn-outline-theme rounded-pill px-3">
             <i class="bi bi-arrow-clockwise me-1"></i> Refresh Data
         </button>
     </div>
@@ -28,7 +28,7 @@
                 <span>Terkonfirmasi</span>
             </a>
             <a href="<?= $baseUrl ?>/admin/orders?status=processing" class="btn-filter-pill <?= ($status_filter === 'processing') ? 'active' : '' ?>">
-                <i class="bi bi-fire text-danger"></i>
+                <i class="bi bi-fire text-purple" style="color:#8b5cf6;"></i>
                 <span>Sedang Dimasak / Disiapkan</span>
             </a>
             <a href="<?= $baseUrl ?>/admin/orders?status=handover" class="btn-filter-pill <?= ($status_filter === 'handover') ? 'active' : '' ?>">
@@ -55,7 +55,7 @@
 <div class="card overflow-hidden mb-4 shadow-2xs">
     <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
         <div class="d-flex align-items-center gap-2.5">
-            <div class="rounded-3 bg-danger-subtle text-danger d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+            <div class="rounded-3 bg-dark text-white d-flex align-items-center justify-content-center shadow-xs" style="width: 38px; height: 38px;">
                 <i class="bi bi-radar fs-5"></i>
             </div>
             <div>
@@ -87,7 +87,7 @@
 <!-- Orders Table Card -->
 <div class="card overflow-hidden shadow-2xs">
     <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
-        <h6 class="fw-bold m-0 text-dark" style="font-size: 13.5px;"><i class="bi bi-table me-2 text-danger"></i>Daftar Transaksi Pesanan (<?= count($orders) ?>)</h6>
+        <h6 class="fw-bold m-0 text-dark" style="font-size: 13.5px;"><i class="bi bi-table me-2 text-dark"></i>Daftar Transaksi Pesanan (<?= count($orders) ?>)</h6>
         <div class="text-muted" style="font-size: 11.5px;">Data terurut dari transaksi paling baru</div>
     </div>
 
@@ -130,7 +130,7 @@
                         ?>
                         <tr>
                             <td class="ps-3.5">
-                                <a href="javascript:void(0)" onclick="viewOrderDetail(<?= $o['id'] ?>)" class="fw-bold text-danger text-decoration-none d-block">#<?= htmlspecialchars($o['order_code']) ?></a>
+                                <a href="javascript:void(0)" onclick="viewOrderDetail(<?= $o['id'] ?>)" class="fw-bold text-dark text-decoration-none d-block">#<?= htmlspecialchars($o['order_code']) ?></a>
                                 <div class="text-muted" style="font-size: 11px;"><?= date('d M Y, H:i', strtotime($o['created_at'])) ?></div>
                             </td>
                             <td>
@@ -147,7 +147,7 @@
                                 <div class="text-muted small" style="font-size: 11px;"><i class="bi bi-telephone me-1"></i><?= htmlspecialchars($o['customer_phone'] ?? '-') ?></div>
                                 <?php if (!empty($delAddr['address'])): ?>
                                     <div class="text-muted text-truncate" style="max-width: 180px; font-size: 11px;" title="<?= htmlspecialchars($delAddr['address']) ?>">
-                                        <i class="bi bi-geo-alt me-1 text-danger"></i><?= htmlspecialchars($delAddr['address']) ?>
+                                        <i class="bi bi-geo-alt me-1 text-muted"></i><?= htmlspecialchars($delAddr['address']) ?>
                                     </div>
                                 <?php endif; ?>
                             </td>
@@ -160,8 +160,8 @@
                             <td>
                                 <?php if (!empty($o['dm_name'])): ?>
                                     <div class="d-flex align-items-center gap-2">
-                                        <div class="rounded-circle bg-light border text-primary d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; font-size: 13px;">
-                                            <i class="bi bi-bicycle text-danger"></i>
+                                        <div class="rounded-circle bg-light border text-dark d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; font-size: 13px;">
+                                            <i class="bi bi-bicycle text-dark"></i>
                                         </div>
                                         <div>
                                             <div class="small fw-bold text-dark"><?= htmlspecialchars($o['dm_name']) ?></div>
@@ -169,7 +169,7 @@
                                         </div>
                                     </div>
                                 <?php else: ?>
-                                    <button onclick="openAssignDriverModal(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>')" class="btn btn-outline-danger btn-sm rounded-pill py-1 px-2.5 fw-bold" style="font-size: 10.5px;">
+                                    <button onclick="openAssignDriverModal(<?= $o['id'] ?>, '<?= htmlspecialchars($o['order_code']) ?>')" class="btn btn-outline-theme btn-sm rounded-pill py-1 px-2.5" style="font-size: 10.5px;">
                                         <i class="bi bi-person-plus me-1"></i> Tugaskan Kurir
                                     </button>
                                 <?php endif; ?>
@@ -179,7 +179,7 @@
                                     <?= str_replace('_', ' ', $o['order_status']) ?>
                                 </span>
                                 <?php if (!empty($o['delivery_otp']) && $o['order_status'] !== 'delivered'): ?>
-                                    <div class="text-muted fw-semibold mt-1" style="font-size: 10.5px;">OTP: <span class="text-danger fw-bold"><?= $o['delivery_otp'] ?></span></div>
+                                    <div class="text-muted fw-semibold mt-1" style="font-size: 10.5px;">OTP: <span class="text-dark fw-bold"><?= $o['delivery_otp'] ?></span></div>
                                 <?php endif; ?>
                             </td>
                             <td class="text-end pe-3.5">
@@ -274,11 +274,11 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h6 class="modal-title fw-bold text-dark"><i class="bi bi-bicycle text-danger me-2"></i>Tugaskan Kurir ke Pesanan</h6>
+                <h6 class="modal-title fw-bold text-dark"><i class="bi bi-bicycle text-dark me-2"></i>Tugaskan Kurir ke Pesanan</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <p class="text-muted small mb-3">Pilih mitra kurir aktif untuk mengantarkan order <span id="assign-order-code" class="fw-bold text-danger"></span></p>
+                <p class="text-muted small mb-3">Pilih mitra kurir aktif untuk mengantarkan order <span id="assign-order-code" class="fw-bold text-dark"></span></p>
                 <form id="assignDriverForm" onsubmit="submitAssignDriver(event)">
                     <input type="hidden" name="order_id" id="assign_order_id">
                     <div class="mb-3">
@@ -294,7 +294,7 @@
                     </div>
                     <div class="d-flex justify-content-end gap-2 pt-2">
                         <button type="button" class="btn btn-light btn-sm px-3 rounded-pill fw-semibold" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-danger btn-sm px-4 rounded-pill fw-bold" style="background: linear-gradient(135deg, #EE2737, #C61524);">Tugaskan Sekarang</button>
+                        <button type="submit" class="btn btn-admin-primary btn-sm px-4 rounded-pill">Tugaskan Sekarang</button>
                     </div>
                 </form>
             </div>
@@ -312,7 +312,7 @@
             </div>
             <div class="modal-body p-4" id="modal-order-content">
                 <div class="text-center py-4">
-                    <div class="spinner-border text-danger" role="status"></div>
+                    <div class="spinner-border text-dark" role="status"></div>
                 </div>
             </div>
         </div>
@@ -490,7 +490,7 @@ async function viewOrderDetail(orderId) {
     modal.show();
 
     const contentEl = document.getElementById('modal-order-content');
-    contentEl.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-danger" role="status"></div></div>';
+    contentEl.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-dark" role="status"></div></div>';
 
     try {
         const res = await fetch(window.BASE_URL + '/admin/orders/detail/' + orderId);
@@ -522,7 +522,7 @@ async function viewOrderDetail(orderId) {
                     <div class="col-md-6">
                         <div class="p-3 bg-light rounded-3 border">
                             <div class="text-muted small fw-bold">INFORMASI PESANAN</div>
-                            <div class="fw-bold fs-6 text-danger">#${o.order_code}</div>
+                            <div class="fw-bold fs-6 text-dark">#${o.order_code}</div>
                             <div class="small mt-1">Tipe: <b class="text-uppercase">${o.order_type}</b></div>
                             <div class="small mt-1">Status: <span class="badge badge-soft-primary text-uppercase">${o.order_status}</span></div>
                             <div class="small mt-1">Metode Bayar: <b>${(o.payment_method || '').toUpperCase()} (${(o.payment_status || '').toUpperCase()})</b></div>
@@ -534,7 +534,7 @@ async function viewOrderDetail(orderId) {
                             <div class="text-muted small fw-bold">PELANGGAN & ALAMAT</div>
                             <div class="fw-bold text-dark mt-1">${o.customer_name}</div>
                             <div class="small text-muted"><i class="bi bi-telephone me-1"></i>${o.customer_phone || '-'}</div>
-                            <div class="small text-dark mt-2"><i class="bi bi-geo-alt-fill text-danger me-1"></i>${o.delivery_address ? o.delivery_address.address : '-'}</div>
+                            <div class="small text-dark mt-2"><i class="bi bi-geo-alt-fill text-muted me-1"></i>${o.delivery_address ? o.delivery_address.address : '-'}</div>
                         </div>
                     </div>
                     <div class="col-12">
@@ -543,7 +543,7 @@ async function viewOrderDetail(orderId) {
                             ${itemsHtml || '<div class="text-muted small">Order Parcel / Layanan Ekspedisi</div>'}
                             <div class="d-flex justify-content-between border-top pt-2 mt-2 fw-bold">
                                 <span>Total Tagihan:</span>
-                                <span class="text-danger fs-6">Rp ${Number(o.total_amount).toLocaleString('id-ID')}</span>
+                                <span class="text-dark fs-5 fw-black">Rp ${Number(o.total_amount).toLocaleString('id-ID')}</span>
                             </div>
                         </div>
                     </div>

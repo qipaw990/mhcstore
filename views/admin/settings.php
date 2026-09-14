@@ -3,10 +3,10 @@
     <div class="col-12">
         <div class="info-banner">
             <div>
-                <p class="info-title"><i class="bi bi-sliders text-danger me-2"></i>Pusat Konfigurasi System &amp; API Setup</p>
+                <p class="info-title"><i class="bi bi-sliders text-dark me-2"></i>Pusat Konfigurasi System &amp; API Setup</p>
                 <p class="info-sub">Kelola API Keys (DOKU &amp; WhatsApp Gateway), identitas aplikasi, tarif komisi, dan parameter operasional CicalengkaGO.</p>
             </div>
-            <span class="badge bg-danger-subtle text-danger fw-bold px-3 py-1.5 rounded-pill" style="font-size:11px;">
+            <span class="badge badge-soft-dark fw-bold px-3 py-1.5 rounded-pill" style="font-size:11px;">
                 <i class="bi bi-shield-lock-fill me-1"></i> System Admin Privilege
             </span>
         </div>
@@ -19,10 +19,10 @@
 
                 <!-- 1. SETUP INTEGRASI API PAYMENT GATEWAY (DOKU CHECKOUT) -->
                 <div class="col-lg-12">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 p-4" style="border-top: 4px solid #E1251B !important;">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 p-4" style="border-top: 3px solid #090A0F !important;">
                         <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
                             <div class="d-flex align-items-center gap-2">
-                                <span class="badge bg-danger text-white rounded-pill px-2.5 py-1" style="font-size: 11px; font-weight: 800; letter-spacing: 0.5px;">DOKU</span>
+                                <span class="badge bg-dark text-white rounded-pill px-2.5 py-1" style="font-size: 11px; font-weight: 800; letter-spacing: 0.5px;">DOKU</span>
                                 <h6 class="fw-bold text-dark m-0">DOKU Payment Gateway API</h6>
                             </div>
                             <div class="form-check form-switch m-0">
@@ -59,7 +59,7 @@
                                 <small class="text-muted" style="font-size: 10px;">Masukkan URL ini di menu <em>Settings &gt; Notification / Webhook URL</em> di DOKU Back Office.</small>
                             </div>
                             <div class="col-12 mt-2">
-                                <button type="button" onclick="testDokuConnection()" class="btn btn-outline-danger btn-sm rounded-pill w-100 fw-bold py-2" id="btn-test-doku">
+                                <button type="button" onclick="testDokuConnection()" class="btn btn-outline-theme btn-sm rounded-pill w-100 py-2" id="btn-test-doku">
                                     <i class="bi bi-lightning-charge-fill me-1"></i> Tes Koneksi & Kredensial DOKU API
                                 </button>
                             </div>
@@ -148,7 +148,7 @@
                 <!-- 4. IDENTITAS PROFIL APLIKASI & MAPS KEY -->
                 <div class="col-lg-6">
                     <div class="card border-0 shadow-sm rounded-4 h-100 p-4">
-                        <h6 class="fw-bold text-dark mb-3 border-bottom pb-2"><i class="bi bi-building me-2 text-danger"></i>Profil & Identitas Aplikasi</h6>
+                        <h6 class="fw-bold text-dark mb-3 border-bottom pb-2"><i class="bi bi-building me-2 text-dark"></i>Profil & Identitas Aplikasi</h6>
                         <div class="row g-3">
                             <div class="col-12">
                                 <label class="form-label small fw-bold">Nama Platform Aplikasi</label>
@@ -178,7 +178,7 @@
                 <!-- 4. PENGATURAN TARIFF BIAYA & KOMISI -->
                 <div class="col-lg-6">
                     <div class="card border-0 shadow-sm rounded-4 h-100 p-4">
-                        <h6 class="fw-bold text-dark mb-3 border-bottom pb-2"><i class="bi bi-cash-stack me-2 text-danger"></i>Tarif Ongkir & Komisi Platform</h6>
+                        <h6 class="fw-bold text-dark mb-3 border-bottom pb-2"><i class="bi bi-cash-stack me-2 text-dark"></i>Tarif Ongkir & Komisi Platform</h6>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold">Komisi Platform per Order (%)</label>
@@ -208,7 +208,7 @@
                 <!-- 5. FITUR & SAKLAR OPERASIONAL -->
                 <div class="col-12">
                     <div class="card border-0 shadow-sm rounded-4 p-4">
-                        <h6 class="fw-bold text-dark mb-3 border-bottom pb-2"><i class="bi bi-sliders me-2 text-danger"></i>Saklar Operasional & Keamanan Transaksi</h6>
+                        <h6 class="fw-bold text-dark mb-3 border-bottom pb-2"><i class="bi bi-sliders me-2 text-dark"></i>Saklar Operasional & Keamanan Transaksi</h6>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded-3">
@@ -259,9 +259,9 @@
                             </div>
 
                             <div class="col-md-6">
-                                <div class="d-flex align-items-center justify-content-between p-3 rounded-3 border border-danger-subtle" style="background: #fff5f5;">
+                                <div class="d-flex align-items-center justify-content-between p-3 rounded-3 border border-secondary-subtle" style="background: #fafafa;">
                                     <div>
-                                        <div class="fw-bold small text-danger"><i class="bi bi-shield-lock-fill me-1"></i> Wajibkan OTP saat Login Admin & Driver</div>
+                                        <div class="fw-bold small text-dark"><i class="bi bi-shield-lock-fill me-1"></i> Wajibkan OTP saat Login Admin & Driver</div>
                                         <small class="text-muted">Jika aktif, login Admin/Vendor/Driver selalu memerlukan verifikasi kode OTP via WhatsApp.</small>
                                     </div>
                                     <div class="form-check form-switch">
@@ -287,7 +287,7 @@
 
                 <!-- Submit Button Bar -->
                 <div class="col-12 text-end mt-2">
-                    <button type="submit" class="btn text-white rounded-pill px-5 py-2.5 fw-bold shadow-sm fs-6" style="background: #EE2737;">
+                    <button type="submit" class="btn btn-admin-primary rounded-pill px-5 py-2.5 fs-6 shadow-sm">
                         <i class="bi bi-floppy2-fill me-2"></i> Simpan Semua Setup & Pengaturan System
                     </button>
                 </div>
@@ -344,7 +344,7 @@ async function testEmailConnection() {
         showCancelButton: true,
         confirmButtonText: '<i class="bi bi-send-fill me-1"></i> Kirim Email',
         cancelButtonText: 'Batal',
-        confirmButtonColor: '#EE2737'
+        confirmButtonColor: '#090A0F'
     });
 
     if (!email) return;

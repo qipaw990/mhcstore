@@ -46,10 +46,11 @@ class CicalengkaGoLogo extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFFEE2737),
-                    Color(0xFF991B1B),
+                    Color(0xFF262626),
+                    Color(0xFF000000),
                   ],
                 ),
+                border: Border.all(color: Colors.white24, width: 1.5),
               ),
               child: Stack(
                 alignment: Alignment.center,

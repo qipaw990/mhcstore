@@ -7,14 +7,14 @@
 <!-- Page Header -->
 <div class="page-header">
     <div class="page-header-left">
-        <h4 class="page-title"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Zona Operasional &amp; Tarif Ongkir</h4>
+        <h4 class="page-title"><i class="bi bi-geo-alt-fill text-dark me-2"></i>Zona Operasional &amp; Tarif Ongkir</h4>
         <p class="page-subtitle">Atur batasan cakupan wilayah pengantaran kurir dan editor peta polygon interaktif Leaflet.</p>
     </div>
     <div class="page-header-right">
-        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="openFareSimulator()">
+        <button type="button" class="btn btn-sm btn-outline-theme rounded-pill px-3" onclick="openFareSimulator()">
             <i class="bi bi-calculator me-1"></i> Simulator Tarif
         </button>
-        <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" onclick="openAddZoneModal()">
+        <button type="button" class="btn btn-sm btn-admin-primary rounded-pill px-3" onclick="openAddZoneModal()">
             <i class="bi bi-plus-circle me-1"></i> Tambah Zona Baru
         </button>
     </div>
@@ -185,7 +185,7 @@
         <div class="modal-content rounded-4 border-0 shadow-lg">
             <div class="modal-header border-bottom py-3 px-4 bg-light rounded-top-4">
                 <div class="d-flex align-items-center gap-2">
-                    <div style="width:36px;height:36px;border-radius:10px;background:#EE2737;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;">
+                    <div style="width:36px;height:36px;border-radius:10px;background:#090A0F;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;">
                         <i class="bi bi-pin-map-fill"></i>
                     </div>
                     <div>
@@ -485,7 +485,7 @@ function initZoneEditorMap(centerLat, centerLng, initialCoords) {
     // Create custom red pin for center
     const centerIcon = L.divIcon({
         className: 'custom-center-pin',
-        html: `<div style="background:#EE2737;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,0.3);border:2px solid white;font-size:16px;">📍</div>`,
+        html: `<div style="background:#090A0F;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,0.3);border:2px solid white;font-size:16px;">📍</div>`,
         iconSize: [32, 32],
         iconAnchor: [16, 16]
     });

@@ -31,14 +31,14 @@ $user = auth_user();
         <!-- Brand Header -->
         <a href="<?= $baseUrl ?>/admin" class="sidebar-brand text-decoration-none">
             <div class="brand-logo-container">
-                <img src="<?= $baseUrl ?>/assets/images/logo-icon.svg" alt="CicalengkaGO" class="brand-icon">
+                <img src="<?= $baseUrl ?>/assets/images/app_logo.png" alt="CicalengkaGO" class="brand-icon">
             </div>
             <div class="d-flex flex-column min-w-0">
                 <div class="d-flex align-items-center gap-1.5">
                     <span class="fw-extrabold brand-title">Cicalengka<span class="brand-accent">GO</span></span>
-                    <span class="sidebar-brand-badge">ADMIN</span>
+                    <span class="sidebar-brand-badge">HQ ADMIN</span>
                 </div>
-                <span class="brand-subtitle">Enterprise Operations System</span>
+                <span class="brand-subtitle">Executive Command Center</span>
             </div>
         </a>
 
@@ -56,7 +56,6 @@ $user = auth_user();
                     </div>
                 </a>
             </li>
-            <li>
             <li>
                 <a href="<?= $baseUrl ?>/admin/orders" class="menu-link <?= ($active_tab ?? '') === 'orders' ? 'active' : '' ?>">
                     <div class="menu-link-inner">
@@ -223,7 +222,7 @@ $user = auth_user();
 
                 <!-- PWA Customer Shortcut -->
                 <a href="<?= $baseUrl ?>" target="_blank" class="btn btn-sm btn-light border fw-semibold text-dark rounded-pill px-3 py-1.5 shadow-2xs d-flex align-items-center gap-1.5 hover-lift" style="font-size: 11.5px;">
-                    <i class="bi bi-phone text-danger fs-6"></i>
+                    <i class="bi bi-phone text-dark fs-6"></i>
                     <span class="d-none d-md-inline">Aplikasi Pelanggan</span>
                     <i class="bi bi-box-arrow-up-right text-muted" style="font-size: 10px;"></i>
                 </a>
@@ -231,7 +230,7 @@ $user = auth_user();
                 <!-- User Dropdown -->
                 <div class="dropdown">
                     <button class="btn btn-light btn-sm border rounded-pill d-flex align-items-center gap-2 px-2.5 py-1 shadow-2xs hover-lift" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <div class="rounded-circle bg-danger text-white fw-bold d-flex align-items-center justify-content-center shadow-xs" style="width: 28px; height: 28px; font-size: 12px; background: linear-gradient(135deg, #EE2737, #B71C1C);">
+                        <div class="rounded-circle text-white fw-bold d-flex align-items-center justify-content-center shadow-xs" style="width: 28px; height: 28px; font-size: 12px; background: linear-gradient(135deg, #27272A, #090A0F); border: 1px solid rgba(255,255,255,0.15);">
                             <?= strtoupper(substr($user['name'] ?? 'A', 0, 1)) ?>
                         </div>
                         <div class="text-start d-none d-md-block">
@@ -312,7 +311,7 @@ function toggleAdminSidebar() {
         icon: 'error',
         title: 'Perhatian',
         text: '<?= addslashes($_SESSION['error']) ?>',
-        confirmButtonColor: '#EE2737'
+        confirmButtonColor: '#090A0F'
     });
 </script>
 <?php unset($_SESSION['error']); ?>

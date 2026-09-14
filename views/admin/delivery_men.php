@@ -8,14 +8,14 @@
 <!-- Page Header -->
 <div class="page-header">
     <div class="page-header-left">
-        <h4 class="page-title"><i class="bi bi-bicycle text-danger me-2"></i>Armada Driver &amp; Kurir CicalengkaGO</h4>
+        <h4 class="page-title"><i class="bi bi-bicycle text-dark me-2"></i>Armada Driver &amp; Kurir CicalengkaGO</h4>
         <p class="page-subtitle">Kelola verifikasi identitas, status operasional online/offline, dan dompet saldo mitra pengemudi.</p>
     </div>
     <div class="page-header-right">
-        <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" onclick="openAddDriverModal()">
+        <button type="button" class="btn btn-sm btn-admin-primary rounded-pill px-3" onclick="openAddDriverModal()">
             <i class="bi bi-person-plus-fill me-1"></i> Daftarkan Driver
         </button>
-        <a href="<?= $baseUrl ?>/admin/delivery-men" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold">
+        <a href="<?= $baseUrl ?>/admin/delivery-men" class="btn btn-sm btn-outline-theme rounded-pill px-3">
             <i class="bi bi-arrow-clockwise me-1"></i> Refresh
         </a>
     </div>
@@ -89,7 +89,7 @@
                     </form>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" onclick="openAddDriverModal()">
+                    <button type="button" class="btn btn-sm btn-admin-primary rounded-pill px-3" onclick="openAddDriverModal()">
                         <i class="bi bi-person-plus-fill me-1"></i> Daftarkan Driver Baru
                     </button>
                 </div>

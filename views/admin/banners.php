@@ -10,14 +10,14 @@ $inactiveCount = count($banners) - $activeCount;
 <!-- Page Header -->
 <div class="page-header">
     <div class="page-header-left">
-        <h4 class="page-title"><i class="bi bi-images text-danger me-2"></i>Manajemen Banner Promo &amp; Carousel</h4>
+        <h4 class="page-title"><i class="bi bi-images text-dark me-2"></i>Manajemen Banner Promo &amp; Carousel</h4>
         <p class="page-subtitle">Kelola spanduk promo di beranda aplikasi Mobile Customer CicalengkaGO.</p>
     </div>
     <div class="page-header-right">
         <div class="d-flex align-items-center gap-2">
             <span class="badge bg-light text-dark border px-3 py-2 rounded-pill font-monospace" style="font-size: 12px;">Total: <?= count($banners) ?></span>
             <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill font-monospace" style="font-size: 12px;">Aktif: <?= $activeCount ?></span>
-            <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" onclick="openAddBannerModal()">
+            <button type="button" class="btn btn-sm btn-admin-primary rounded-pill px-3" onclick="openAddBannerModal()">
                 <i class="bi bi-plus-circle me-1"></i> Tambah Banner
             </button>
         </div>
@@ -57,7 +57,7 @@ $inactiveCount = count($banners) - $activeCount;
                         <h6 class="fw-bold text-dark">Belum ada banner promo dibuat.</h6>
                         <p class="small text-muted mb-3">Tambahkan banner promo untuk menarik pelanggan di beranda aplikasi.</p>
                         <div>
-                            <button type="button" class="btn btn-danger btn-sm rounded-pill px-4 fw-bold" onclick="openAddBannerModal()">
+                            <button type="button" class="btn btn-admin-primary btn-sm rounded-pill px-4" onclick="openAddBannerModal()">
                                 <i class="bi bi-plus-lg me-1"></i> Tambah Banner Sekarang
                             </button>
                         </div>
@@ -227,7 +227,7 @@ $inactiveCount = count($banners) - $activeCount;
                 
                 <div class="modal-footer border-top py-3">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">Simpan Banner</button>
+                    <button type="submit" class="btn btn-admin-primary rounded-pill px-4">Simpan Banner</button>
                 </div>
             </form>
         </div>

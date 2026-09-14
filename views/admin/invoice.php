@@ -35,7 +35,7 @@
         <a href="<?= $baseUrl ?>/admin/orders" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
             <i class="bi bi-arrow-left me-1"></i> Kembali ke Dashboard
         </a>
-        <button onclick="window.print()" class="btn btn-danger btn-sm rounded-pill px-4 fw-bold shadow-sm">
+        <button onclick="window.print()" class="btn btn-dark btn-sm rounded-pill px-4 fw-bold shadow-sm">
             <i class="bi bi-printer-fill me-1"></i> Cetak / Simpan PDF
         </button>
     </div>
@@ -44,17 +44,20 @@
     <div class="invoice-card">
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-start border-bottom pb-4 mb-4">
-            <div>
-                <div class="d-flex align-items-center gap-2 mb-1">
-                    <span class="fs-4 fw-black text-danger">⚡ Cicalengka<span class="text-dark">GO</span></span>
-                    <span class="badge bg-danger-subtle text-danger fw-bold px-2 py-1" style="font-size: 11px;">OFFICIAL RECEIPT</span>
+            <div class="d-flex align-items-center gap-3">
+                <img src="<?= $baseUrl ?>/assets/images/app_logo.png" alt="CicalengkaGO" style="width: 54px; height: 54px; object-fit: contain; border-radius: 12px; background: #000; padding: 2px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-0.5">
+                        <span class="fs-4 fw-black text-dark">Cicalengka<span class="text-secondary">GO</span></span>
+                        <span class="badge bg-dark text-white fw-bold px-2 py-0.5" style="font-size: 10px;">OFFICIAL RECEIPT</span>
+                    </div>
+                    <div class="text-muted small">Platform On-Demand Super-App Terpadu Cicalengka</div>
+                    <div class="text-muted small">support@cicalengkago.id • +62 812-3456-7890</div>
                 </div>
-                <div class="text-muted small">Platform On-Demand Super-App Terpadu Cicalengka</div>
-                <div class="text-muted small">support@cicalengkago.id • +62 812-3456-7890</div>
             </div>
             <div class="text-end">
                 <h5 class="fw-bold text-dark mb-1">INVOICE</h5>
-                <div class="fw-bold text-danger fs-6">#<?= htmlspecialchars($order['order_code']) ?></div>
+                <div class="fw-bold text-dark fs-5 font-monospace">#<?= htmlspecialchars($order['order_code']) ?></div>
                 <div class="small text-muted">Tanggal: <?= date('d F Y, H:i', strtotime($order['created_at'])) ?> WIB</div>
                 <div class="mt-2">
                     <span class="badge <?= $order['payment_status'] === 'paid' ? 'bg-success' : 'bg-warning text-dark' ?> px-3 py-1">

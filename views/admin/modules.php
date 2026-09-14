@@ -1,11 +1,11 @@
 <!-- Page Header -->
 <div class="page-header">
     <div class="page-header-left">
-        <h4 class="page-title"><i class="bi bi-grid-3x3-gap-fill text-danger me-2"></i>Modul Bisnis Multi-Vendor</h4>
+        <h4 class="page-title"><i class="bi bi-grid-3x3-gap-fill text-dark me-2"></i>Modul Bisnis Multi-Vendor</h4>
         <p class="page-subtitle">Konfigurasi modul layanan (CicaFood, CicaMart, CicaSend, CicaMed, dll).</p>
     </div>
     <div class="page-header-right">
-        <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" onclick="openAddModuleModal()">
+        <button type="button" class="btn btn-sm btn-admin-primary rounded-pill px-3" onclick="openAddModuleModal()">
             <i class="bi bi-plus-lg me-1"></i> Tambah Modul
         </button>
     </div>

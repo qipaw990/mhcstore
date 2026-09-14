@@ -1,13 +1,13 @@
 <div class="page-header">
     <div class="page-header-left">
-        <h4 class="page-title"><i class="bi bi-wallet2 text-danger me-2"></i>Manajemen Top-Up Saldo CicalengkaPay</h4>
+        <h4 class="page-title"><i class="bi bi-wallet2 text-dark me-2"></i>Manajemen Top-Up Saldo CicalengkaPay</h4>
         <p class="page-subtitle">Pantau transaksi top-up, sinkronkan status DOKU gateway, dan kelola saldo pengguna.</p>
     </div>
     <div class="page-header-right">
-        <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#manualTopupModal">
+        <button type="button" class="btn btn-sm btn-admin-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#manualTopupModal">
             <i class="bi bi-plus-circle me-1"></i> Top-Up Manual
         </button>
-        <a href="<?= $baseUrl ?>/admin/topups" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold">
+        <a href="<?= $baseUrl ?>/admin/topups" class="btn btn-sm btn-outline-theme rounded-pill px-3">
             <i class="bi bi-arrow-clockwise me-1"></i> Refresh
         </a>
     </div>

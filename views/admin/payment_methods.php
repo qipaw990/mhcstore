@@ -6,14 +6,14 @@ $active_tab = 'payment_methods';
 <!-- Page Header -->
 <div class="page-header">
     <div class="page-header-left">
-        <h4 class="page-title"><i class="bi bi-bank2 text-danger me-2"></i>Setup Pembayaran Mandiri (0% Fee)</h4>
+        <h4 class="page-title"><i class="bi bi-bank2 text-dark me-2"></i>Setup Pembayaran Mandiri (0% Fee)</h4>
         <p class="page-subtitle">Kelola rekening bank transfer, QRIS dinamis otomatis, webhook mutasi, dan verifikasi invoice.</p>
     </div>
     <div class="page-header-right">
-        <button class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#webhookTesterModal">
+        <button class="btn btn-sm btn-outline-theme rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#webhookTesterModal">
             <i class="bi bi-lightning-charge-fill me-1"></i> Test Webhook
         </button>
-        <button class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#addBankModal">
+        <button class="btn btn-sm btn-admin-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#addBankModal">
             <i class="bi bi-plus-circle me-1"></i> Tambah Rekening
         </button>
     </div>

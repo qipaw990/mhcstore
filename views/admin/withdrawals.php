@@ -1,10 +1,10 @@
 <div class="page-header">
     <div class="page-header-left">
-        <h4 class="page-title"><i class="bi bi-cash-stack text-danger me-2"></i>Pusat Pencairan Dana (Withdrawals)</h4>
+        <h4 class="page-title"><i class="bi bi-cash-stack text-dark me-2"></i>Pusat Pencairan Dana (Withdrawals)</h4>
         <p class="page-subtitle">Kelola dan proses pengajuan penarikan dana saldo dari Mitra Toko (Vendor) dan Driver Kurir.</p>
     </div>
     <div class="page-header-right">
-        <a href="<?= $baseUrl ?>/admin/withdrawals" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold">
+        <a href="<?= $baseUrl ?>/admin/withdrawals" class="btn btn-sm btn-outline-theme rounded-pill px-3">
             <i class="bi bi-arrow-clockwise me-1"></i> Refresh
         </a>
     </div>

@@ -8,11 +8,11 @@
 <!-- Page Header -->
 <div class="page-header">
     <div class="page-header-left">
-        <h4 class="page-title"><i class="bi bi-people-fill text-danger me-2"></i>Basis Data Pelanggan CicalengkaGO</h4>
+        <h4 class="page-title"><i class="bi bi-people-fill text-dark me-2"></i>Basis Data Pelanggan CicalengkaGO</h4>
         <p class="page-subtitle">Kelola profil pengguna, histori order, dan saldo CicalengkaPay konsumen di Cicalengka.</p>
     </div>
     <div class="page-header-right">
-        <a href="<?= $baseUrl ?>/admin/customers" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold">
+        <a href="<?= $baseUrl ?>/admin/customers" class="btn btn-sm btn-outline-theme rounded-pill px-3">
             <i class="bi bi-arrow-clockwise me-1"></i> Refresh
         </a>
     </div>

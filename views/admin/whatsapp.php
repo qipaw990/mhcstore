@@ -13,7 +13,7 @@ $casaosUrl    = \App\Models\BusinessSetting::get('whatsapp_casaos_url', '');
         <p class="page-subtitle">Monitor koneksi, scan QR Code, dan atur mode verifikasi OTP (WhatsApp / Email).</p>
     </div>
     <div class="page-header-right">
-        <button onclick="refreshStatus()" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold">
+        <button onclick="refreshStatus()" class="btn btn-sm btn-outline-theme rounded-pill px-3">
             <i class="bi bi-arrow-clockwise me-1"></i> Refresh Status
         </button>
         <?php if (!empty($casaosUrl)): ?>

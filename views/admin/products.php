@@ -8,14 +8,14 @@
 <!-- Page Header -->
 <div class="page-header">
     <div class="page-header-left">
-        <h4 class="page-title"><i class="bi bi-box-seam text-danger me-2"></i>Katalog Menu &amp; Produk Merchant</h4>
+        <h4 class="page-title"><i class="bi bi-box-seam text-dark me-2"></i>Katalog Menu &amp; Produk Merchant</h4>
         <p class="page-subtitle">Kelola harga, stok ketersediaan, promo diskon, dan persetujuan item dagangan merchant.</p>
     </div>
     <div class="page-header-right">
-        <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" onclick="openAddProductModal()">
+        <button type="button" class="btn btn-sm btn-admin-primary rounded-pill px-3" onclick="openAddProductModal()">
             <i class="bi bi-plus-circle me-1"></i> Tambah Produk
         </button>
-        <a href="<?= $baseUrl ?>/admin/products" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold">
+        <a href="<?= $baseUrl ?>/admin/products" class="btn btn-sm btn-outline-theme rounded-pill px-3">
             <i class="bi bi-arrow-clockwise me-1"></i> Refresh
         </a>
     </div>
@@ -102,7 +102,7 @@
                             <?php endforeach; ?>
                         </select>
                     </form>
-                    <button type="button" class="btn btn-danger btn-sm rounded-pill px-3 fw-bold" onclick="openAddProductModal()">
+                    <button type="button" class="btn btn-admin-primary btn-sm rounded-pill px-3" onclick="openAddProductModal()">
                         <i class="bi bi-plus-lg me-1"></i> Tambah Produk
                     </button>
                 </div>

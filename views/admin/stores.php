@@ -8,14 +8,14 @@
 <!-- Page Header -->
 <div class="page-header">
     <div class="page-header-left">
-        <h4 class="page-title"><i class="bi bi-shop text-danger me-2"></i>Mitra Toko &amp; Merchant CicalengkaGO</h4>
+        <h4 class="page-title"><i class="bi bi-shop text-dark me-2"></i>Mitra Toko &amp; Merchant CicalengkaGO</h4>
         <p class="page-subtitle">Kelola pendaftaran merchant resto &amp; retail, jam operasional, komisi, dan modul bisnis.</p>
     </div>
     <div class="page-header-right">
-        <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold" onclick="openAddStoreModal()">
+        <button type="button" class="btn btn-sm btn-admin-primary rounded-pill px-3" onclick="openAddStoreModal()">
             <i class="bi bi-plus-circle me-1"></i> Tambah Mitra Toko
         </button>
-        <a href="<?= $baseUrl ?>/admin/stores" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold">
+        <a href="<?= $baseUrl ?>/admin/stores" class="btn btn-sm btn-outline-theme rounded-pill px-3">
             <i class="bi bi-arrow-clockwise me-1"></i> Refresh
         </a>
     </div>
@@ -97,7 +97,7 @@
                             <i class="bi bi-eraser-fill me-1"></i> Kosongkan Semua Toko
                         </button>
                     <?php endif; ?>
-                    <button type="button" class="btn btn-danger rounded-pill px-3 fw-bold btn-sm" onclick="openAddStoreModal()">
+                    <button type="button" class="btn btn-admin-primary rounded-pill px-3 btn-sm" onclick="openAddStoreModal()">
                         <i class="bi bi-plus-lg me-1"></i> Tambah Mitra Toko
                     </button>
                 </div>
@@ -469,9 +469,9 @@ function initStorePickerMap(lat, lng) {
         // Radar Delivery Radius Circle (5000m)
         pickerRadar = L.circle([defaultLat, defaultLng], {
             radius: 5000,
-            color: '#EE2737',
+            color: '#18181B',
             weight: 2,
-            fillColor: '#EE2737',
+            fillColor: '#18181B',
             fillOpacity: 0.12,
             dashArray: '6, 6'
         }).addTo(pickerMap);

@@ -1,7 +1,7 @@
 <!-- Page Header -->
 <div class="page-header mb-4">
     <div class="page-header-left">
-        <h4 class="page-title"><i class="bi bi-person-badge-fill text-danger me-2"></i>Profil Super Administrator</h4>
+        <h4 class="page-title"><i class="bi bi-person-badge-fill text-dark me-2"></i>Profil Super Administrator</h4>
         <p class="page-subtitle">Kelola identitas akun, foto profil, dan keamanan login sistem CicalengkaGO.</p>
     </div>
 </div>
@@ -12,11 +12,11 @@
         <!-- Admin Profile Summary Card -->
         <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
             <div class="position-relative d-inline-block mx-auto mb-3">
-                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/default.png') ?>" alt="Admin" class="rounded-circle border border-3 border-danger shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
+                <img src="<?= $baseUrl ?>/<?= htmlspecialchars($user['avatar'] ?? 'assets/images/users/default.png') ?>" alt="Admin" class="rounded-circle border border-3 border-dark shadow-sm" style="width: 100px; height: 100px; object-fit: cover;">
                 <span class="position-absolute bottom-0 end-0 bg-success border border-2 border-white rounded-circle p-2" title="Aktif Online"></span>
             </div>
             <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($user['name'] ?? 'Super Admin') ?></h5>
-            <div class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1 mb-3 fw-bold" style="font-size: 11px;">
+            <div class="badge badge-soft-dark rounded-pill px-3 py-1 mb-3 fw-bold" style="font-size: 11px;">
                 <i class="bi bi-shield-lock-fill me-1"></i> <?= strtoupper($user['role'] ?? 'ADMIN') ?> PLATFORM
             </div>
             
@@ -24,13 +24,13 @@
 
             <div class="text-start small">
                 <div class="mb-2 text-muted">
-                    <i class="bi bi-envelope me-2 text-danger"></i> <strong>Email:</strong> <?= htmlspecialchars($user['email'] ?? '-') ?>
+                    <i class="bi bi-envelope me-2 text-dark"></i> <strong>Email:</strong> <?= htmlspecialchars($user['email'] ?? '-') ?>
                 </div>
                 <div class="mb-2 text-muted">
-                    <i class="bi bi-phone me-2 text-danger"></i> <strong>No. Telepon:</strong> <?= htmlspecialchars($user['phone'] ?? '-') ?>
+                    <i class="bi bi-phone me-2 text-dark"></i> <strong>No. Telepon:</strong> <?= htmlspecialchars($user['phone'] ?? '-') ?>
                 </div>
                 <div class="mb-0 text-muted">
-                    <i class="bi bi-calendar-check me-2 text-danger"></i> <strong>Terverifikasi:</strong> 
+                    <i class="bi bi-calendar-check me-2 text-dark"></i> <strong>Terverifikasi:</strong> 
                     <span class="badge bg-success-subtle text-success rounded-pill px-2 py-0.5" style="font-size: 10px;">
                         <i class="bi bi-check-circle-fill me-1"></i> Terverifikasi OTP
                     </span>
@@ -43,7 +43,7 @@
         <!-- Edit Form Card -->
         <div class="card border-0 shadow-sm rounded-4 p-4">
             <div class="d-flex align-items-center justify-content-between border-bottom pb-3 mb-4">
-                <h6 class="fw-bold text-dark m-0"><i class="bi bi-person-gear text-danger me-2"></i> Pengaturan Profil Administrator</h6>
+                <h6 class="fw-bold text-dark m-0"><i class="bi bi-person-gear text-dark me-2"></i> Pengaturan Profil Administrator</h6>
                 <span class="badge bg-light text-muted border px-2.5 py-1 rounded-pill" style="font-size: 11px;">Identitas & Otentikasi</span>
             </div>
 
@@ -144,7 +144,7 @@
                     </div>
 
                     <div class="col-12 mt-4 text-end">
-                        <button type="submit" class="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm" style="background:#EE2737;">
+                        <button type="submit" class="btn btn-admin-primary rounded-pill px-4 py-2 shadow-sm">
                             <i class="bi bi-floppy2-fill me-1"></i> Simpan Perubahan Profil Admin
                         </button>
                     </div>
