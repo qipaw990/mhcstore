@@ -12,6 +12,7 @@ import 'features/driver/screens/driver_dashboard_screen.dart';
 import 'features/merchant/controllers/merchant_controller.dart';
 import 'features/merchant/screens/merchant_dashboard_screen.dart';
 import 'core/services/global_call_service.dart';
+import 'core/services/zone_guard_service.dart';
 
 import 'package:google_fonts/google_fonts.dart';
 import 'core/widgets/cicalengkago_logo.dart';
@@ -93,7 +94,8 @@ class CicalengkaGoApp extends StatelessWidget {
 }
 
 /// Mandatory Location Guard — Full Screen Gatekeeper
-/// Prevents any access to the app until Location Permission is granted & GPS is active.
+/// Step 1: GPS permission must be granted and service enabled.
+/// Step 2: User's current position must be inside one of the active service zones.
 class LocationGuard extends StatefulWidget {
   final Widget child;
   const LocationGuard({super.key, required this.child});
@@ -102,17 +104,24 @@ class LocationGuard extends StatefulWidget {
   State<LocationGuard> createState() => _LocationGuardState();
 }
 
+enum _GuardState {
+  checking,
+  permissionDenied,
+  outsideZone,
+  allowed,
+}
+
 class _LocationGuardState extends State<LocationGuard> with WidgetsBindingObserver {
-  bool _isChecking = true;
-  bool _isGranted = false;
+  _GuardState _state = _GuardState.checking;
   bool _serviceEnabled = true;
   LocationPermission _permission = LocationPermission.denied;
+  String _outsideZoneMessage = 'Lokasi Anda berada di luar area layanan CicalengkaGO.';
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _checkLocationStatus();
+    _runFullCheck();
   }
 
   @override
@@ -123,30 +132,24 @@ class _LocationGuardState extends State<LocationGuard> with WidgetsBindingObserv
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Re-check permission automatically when user switches back from phone settings
     if (state == AppLifecycleState.resumed) {
-      _checkLocationStatus();
+      _runFullCheck();
     }
   }
 
-  Future<void> _checkLocationStatus() async {
+  Future<void> _runFullCheck() async {
+    if (!mounted) return;
+    setState(() => _state = _GuardState.checking);
+
+    // ── Web: skip all checks ─────────────────────────────────────────────────
     if (kIsWeb) {
-      if (mounted) {
-        setState(() {
-          _serviceEnabled = true;
-          _permission = LocationPermission.whileInUse;
-          _isGranted = true;
-          _isChecking = false;
-        });
-      }
+      if (mounted) setState(() => _state = _GuardState.allowed);
       return;
     }
 
-    setState(() => _isChecking = true);
-
+    // ── Step 1: Check GPS permission ─────────────────────────────────────────
     bool serviceEnabled = false;
     LocationPermission permission = LocationPermission.denied;
-    bool granted = false;
 
     try {
       serviceEnabled = await Geolocator.isLocationServiceEnabled().timeout(
@@ -164,53 +167,254 @@ class _LocationGuardState extends State<LocationGuard> with WidgetsBindingObserv
           onTimeout: () => LocationPermission.denied,
         );
       }
-
-      granted = serviceEnabled &&
-          (permission == LocationPermission.always || permission == LocationPermission.whileInUse);
     } catch (_) {
-      granted = false;
-    } finally {
+      permission = LocationPermission.denied;
+    }
+
+    final bool permissionGranted = serviceEnabled &&
+        (permission == LocationPermission.always ||
+            permission == LocationPermission.whileInUse);
+
+    if (!permissionGranted) {
       if (mounted) {
         setState(() {
           _serviceEnabled = serviceEnabled;
           _permission = permission;
-          _isGranted = granted;
-          _isChecking = false;
+          _state = _GuardState.permissionDenied;
         });
       }
+      return;
+    }
+
+    // ── Step 2: Get current position & check zone ────────────────────────────
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+
+      final result = await ZoneGuardService.checkUserInZone(position);
+
+      if (!mounted) return;
+      if (result.isInsideZone) {
+        setState(() => _state = _GuardState.allowed);
+      } else {
+        setState(() {
+          _outsideZoneMessage =
+              result.errorMessage ?? 'Lokasi Anda berada di luar area layanan CicalengkaGO.';
+          _state = _GuardState.outsideZone;
+        });
+      }
+    } catch (_) {
+      // If we can't get position at all, let the user in (fail open)
+      if (mounted) setState(() => _state = _GuardState.allowed);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isChecking) {
-      return const Scaffold(
-        backgroundColor: Colors.white,
-        body: Center(
+    switch (_state) {
+      case _GuardState.checking:
+        return const _CheckingScreen();
+      case _GuardState.permissionDenied:
+        return LocationPermissionScreen(
+          serviceEnabled: _serviceEnabled,
+          permission: _permission,
+          onRetry: _runFullCheck,
+        );
+      case _GuardState.outsideZone:
+        return OutsideZoneScreen(
+          message: _outsideZoneMessage,
+          onRetry: _runFullCheck,
+        );
+      case _GuardState.allowed:
+        return widget.child;
+    }
+  }
+}
+
+/// Loading screen shown while checking GPS & zone status.
+class _CheckingScreen extends StatelessWidget {
+  const _CheckingScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: AppTheme.primaryRed),
+            SizedBox(height: 16),
+            Text(
+              'Memeriksa lokasi Anda...',
+              style: TextStyle(
+                fontSize: 13,
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Full-Screen warning shown when user is outside all active service zones.
+class OutsideZoneScreen extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const OutsideZoneScreen({
+    super.key,
+    required this.message,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(color: AppTheme.primaryRed),
-              SizedBox(height: 16),
+              const Spacer(),
+
+              // Icon Badge
+              Container(
+                width: 110,
+                height: 110,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFFF97316).withValues(alpha: 0.15),
+                      const Color(0xFFEF4444).withValues(alpha: 0.10),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.location_city_rounded,
+                    size: 56,
+                    color: Color(0xFFF97316),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              const Text(
+                'Di Luar Area Layanan',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+
               Text(
-                'Memeriksa Izin Lokasi GPS...',
-                style: TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                message,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF64748B),
+                  height: 1.6,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 28),
+
+              // Info Card
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFFED7AA)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.info_outline_rounded,
+                      color: Color(0xFFF97316),
+                      size: 22,
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'CicalengkaGO saat ini hanya tersedia di area Cicalengka dan sekitarnya. Pastikan Anda berada di wilayah yang terdaftar sebagai area layanan kami.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF78350F),
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const Spacer(),
+
+              // Retry Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF97316),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    elevation: 3,
+                  ),
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh_rounded, size: 20),
+                  label: const Text(
+                    'CEK LOKASI ULANG',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              Text(
+                'Jika Anda merasa ini adalah kesalahan,\nhubungi support CicalengkaGO.',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey.shade500,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
         ),
-      );
-    }
-
-    if (!_isGranted) {
-      return LocationPermissionScreen(
-        serviceEnabled: _serviceEnabled,
-        permission: _permission,
-        onRetry: _checkLocationStatus,
-      );
-    }
-
-    return widget.child;
+      ),
+    );
   }
 }
 
