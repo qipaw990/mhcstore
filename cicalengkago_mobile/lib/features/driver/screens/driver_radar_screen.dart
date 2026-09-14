@@ -560,7 +560,7 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
 
   Widget _buildRatingCard(BuildContext context, DriverController driverCtrl) {
     final rating = driverCtrl.driverRating;
-    final reviewsCount = driverCtrl.reviews.length;
+    final reviewsCount = driverCtrl.reviewsCount;
 
     return Container(
       padding: const EdgeInsets.all(12),

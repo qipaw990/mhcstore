@@ -53,7 +53,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
   @override
   void initState() {
     super.initState();
-    final initialRating = double.tryParse(widget.product['rating']?.toString() ?? widget.product['avg_rating']?.toString() ?? '5.0') ?? 5.0;
+    final initialRating = double.tryParse(widget.product['rating']?.toString() ?? widget.product['avg_rating']?.toString() ?? '0.0') ?? 0.0;
     final initialCount = int.tryParse(widget.product['reviews_count']?.toString() ?? '0') ?? 0;
     _avgRating = initialRating;
     _reviewsCount = initialCount;
@@ -89,7 +89,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
         final data = res['data'];
         setState(() {
           _reviews = (data['reviews'] as List<dynamic>?) ?? [];
-          _avgRating = double.tryParse(data['avg_rating']?.toString() ?? '5.0') ?? 5.0;
+          _avgRating = double.tryParse(data['avg_rating']?.toString() ?? '0.0') ?? 0.0;
           _reviewsCount = int.tryParse(data['reviews_count']?.toString() ?? _reviews.length.toString()) ?? _reviews.length;
           if (data['rating_breakdown'] is Map) {
             _ratingBreakdown = data['rating_breakdown'];

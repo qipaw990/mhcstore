@@ -321,11 +321,11 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> with RouteAware {
                                   const Icon(Icons.star_rounded, size: 16, color: Colors.amber),
                                   const SizedBox(width: 2),
                                   Text(
-                                    '${store['rating'] ?? '4.8'}',
+                                    (double.tryParse(store['rating']?.toString() ?? '') ?? 5.0).toStringAsFixed(1),
                                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
                                   ),
                                   Text(
-                                    ' (${store['reviews_count'] ?? '50+'} ulasan)',
+                                    ' (${store['reviews_count']?.toString() ?? '0'} ulasan)',
                                     style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                   ),
                                   const SizedBox(width: 8),

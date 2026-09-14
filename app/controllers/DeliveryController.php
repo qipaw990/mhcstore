@@ -194,6 +194,8 @@ class DeliveryController extends Controller
                 'wallet'            => $wallet,
                 'wallet_balance'    => (float)($wallet['balance'] ?? 0),
                 'total_orders'      => $realDeliveredCount,
+                'rating'            => (float)($dm['rating'] ?? 5.0),
+                'reviews_count'     => (int)($dm['reviews_count'] ?? 0),
                 'reviews'           => $reviews,
                 'unread_chats'      => $unreadChats ?? 0,
             ]);
@@ -657,6 +659,8 @@ class DeliveryController extends Controller
                 'wallet_balance'    => (float)($wallet['balance'] ?? 0),
                 'total_orders'      => $realDeliveredCount,
                 'driver'            => $dm,
+                'rating'            => (float)($dm['rating'] ?? 5.0),
+                'reviews_count'     => (int)($dm['reviews_count'] ?? 0),
                 'delivered_orders'  => $deliveredOrders,
                 'reviews'           => $reviews,
                 'transactions'      => $transactions,
@@ -738,9 +742,11 @@ class DeliveryController extends Controller
 
         if ($this->isJsonRequest()) {
             $this->successResponse('Profil driver berhasil diambil', [
-                'user'    => $user,
-                'driver'  => $dm,
-                'reviews' => $reviews,
+                'user'          => $user,
+                'driver'        => $dm,
+                'rating'        => (float)($dm['rating'] ?? 5.0),
+                'reviews_count' => (int)($dm['reviews_count'] ?? 0),
+                'reviews'       => $reviews,
             ]);
             return;
         }

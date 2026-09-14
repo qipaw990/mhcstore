@@ -307,6 +307,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final vehicleType = driverMap['vehicle']?.toString() ?? order['vehicle_type']?.toString() ?? 'Motor';
     final vehiclePlate = driverMap['plate']?.toString() ?? order['vehicle_number']?.toString() ?? '';
 
+
     final Map<String, dynamic>? batchInfo = live['batch_info'] is Map
         ? Map<String, dynamic>.from(live['batch_info'] as Map)
         : (order['batch_stores'] != null ? <String, dynamic>{'is_multi_pickup': true} : null);
@@ -728,6 +729,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }) {
     // Calculate live distance
     final distKm = const Distance().as(LengthUnit.Kilometer, LatLng(driverLat, driverLng), LatLng(custLat, custLng));
+    final double? localDriverRating = double.tryParse(order['dm_rating']?.toString() ?? live['driver']?['rating']?.toString() ?? '');
+    final String driverRatingText = localDriverRating != null ? localDriverRating.toStringAsFixed(1) : '-';
+
 
     final List batchStores = (batchInfo != null && batchInfo['stores'] is List && (batchInfo['stores'] as List).isNotEmpty)
         ? (batchInfo['stores'] as List)
@@ -2157,7 +2161,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 2),
-                                Text('$vehicleType ${vehiclePlate.isNotEmpty ? "• $vehiclePlate" : ""}', style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                                Text('⭐ $driverRatingText • $vehicleType ${vehiclePlate.isNotEmpty ? "• $vehiclePlate" : ""}', style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
                               ],
                             ),
                           ),

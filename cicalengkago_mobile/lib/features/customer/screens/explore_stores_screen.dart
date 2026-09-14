@@ -87,7 +87,7 @@ class _ExploreStoresScreenState extends State<ExploreStoresScreen> {
       final address = (store['address'] ?? '').toString().toLowerCase();
       final description = (store['description'] ?? '').toString().toLowerCase();
       final isOpen = store['is_open'] == 1 || store['is_open'] == true || store['is_open'] == '1';
-      final rating = double.tryParse(store['rating']?.toString() ?? '4.8') ?? 4.8;
+      final rating = double.tryParse(store['rating']?.toString() ?? '') ?? 5.0;
 
       final double sLat = double.tryParse(store['latitude']?.toString() ?? '0') ?? 0.0;
       final double sLng = double.tryParse(store['longitude']?.toString() ?? '0') ?? 0.0;
@@ -563,7 +563,7 @@ class _ExploreStoresScreenState extends State<ExploreStoresScreen> {
                                                         const Icon(Icons.star_rounded, size: 13, color: Colors.amber),
                                                         const SizedBox(width: 2),
                                                         Text(
-                                                          '${store['rating'] ?? '4.8'}',
+                                                          (double.tryParse(store['rating']?.toString() ?? '') ?? 5.0).toStringAsFixed(1),
                                                           style: const TextStyle(
                                                             fontWeight: FontWeight.bold,
                                                             fontSize: 10.5,

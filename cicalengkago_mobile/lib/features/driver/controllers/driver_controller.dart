@@ -72,12 +72,42 @@ class DriverController extends ChangeNotifier {
   }
 
   double get driverRating {
-    final rc = int.tryParse(_earnings?['reviews_count']?.toString() ?? _earnings?['wallet']?['reviews_count']?.toString() ?? '0') ?? 0;
-    if (rc == 0 && _reviews.isEmpty) return 5.0;
-    final r1 = double.tryParse(_earnings?['rating']?.toString() ?? '');
-    final r2 = double.tryParse(_earnings?['wallet']?['rating']?.toString() ?? '');
+    // 1. If reviews list is loaded and not empty, calculate real average
+    if (_reviews.isNotEmpty) {
+      double sum = 0.0;
+      int count = 0;
+      for (final rev in _reviews) {
+        if (rev is Map && rev['rating'] != null) {
+          final val = double.tryParse(rev['rating'].toString());
+          if (val != null && val > 0) {
+            sum += val;
+            count++;
+          }
+        }
+      }
+      if (count > 0) {
+        return double.parse((sum / count).toStringAsFixed(1));
+      }
+    }
+
+    // 2. Check all possible keys from backend (driver profile, earnings, live-dashboard)
+    final r1 = double.tryParse(_driverProfile?['driver']?['rating']?.toString() ?? '');
+    final r2 = double.tryParse(_earnings?['driver']?['rating']?.toString() ?? '');
     final r3 = double.tryParse(_driverProfile?['rating']?.toString() ?? '');
-    return r1 ?? r2 ?? r3 ?? 5.0;
+    final r4 = double.tryParse(_earnings?['rating']?.toString() ?? '');
+    final r5 = double.tryParse(_earnings?['wallet']?['rating']?.toString() ?? '');
+
+    return r1 ?? r2 ?? r3 ?? r4 ?? r5 ?? 5.0;
+  }
+
+  int get reviewsCount {
+    if (_reviews.isNotEmpty) return _reviews.length;
+    final c1 = int.tryParse(_driverProfile?['driver']?['reviews_count']?.toString() ?? '');
+    final c2 = int.tryParse(_earnings?['driver']?['reviews_count']?.toString() ?? '');
+    final c3 = int.tryParse(_driverProfile?['reviews_count']?.toString() ?? '');
+    final c4 = int.tryParse(_earnings?['reviews_count']?.toString() ?? '');
+    final c5 = int.tryParse(_earnings?['wallet']?['reviews_count']?.toString() ?? '');
+    return c1 ?? c2 ?? c3 ?? c4 ?? c5 ?? 0;
   }
 
   double get rating => driverRating;
@@ -432,6 +462,9 @@ class DriverController extends ChangeNotifier {
       final res = await ApiService.get(ApiConstants.driverProfile);
       if (res['success'] == true && res['data'] != null) {
         _driverProfile = res['data'] as Map<String, dynamic>;
+        if (_driverProfile?['reviews'] != null && _driverProfile!['reviews'] is List) {
+          _reviews = _driverProfile!['reviews'] as List<dynamic>;
+        }
         notifyListeners();
       }
     } catch (_) {}

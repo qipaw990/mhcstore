@@ -22,6 +22,7 @@ class Order extends Model
                        s.latitude as store_lat, s.longitude as store_lng, s.logo as store_logo,
                        u.name as customer_name, u.phone as customer_phone,
                        dm.vehicle_type, dm.vehicle_number, dm.current_latitude as dm_lat, dm.current_longitude as dm_lng,
+                       dm.rating as dm_rating, dm.reviews_count as dm_reviews_count,
                        dmu.name as dm_name, dmu.phone as dm_phone, dmu.avatar as dm_avatar
                 FROM `orders` o
                 LEFT JOIN `stores` s ON o.store_id = s.id
@@ -43,6 +44,8 @@ class Order extends Model
                 $order['vehicle_number'] = null;
                 $order['dm_lat'] = null;
                 $order['dm_lng'] = null;
+                $order['dm_rating'] = null;
+                $order['dm_reviews_count'] = null;
             }
 
             $order['items'] = Database::query("SELECT oi.*, COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name, COALESCE(oi.product_image_snapshot, p.image) as product_image FROM `order_items` oi LEFT JOIN `products` p ON oi.product_id = p.id WHERE oi.`order_id` = ?", [$order['id']]);
@@ -72,6 +75,7 @@ class Order extends Model
                            s.latitude as store_lat, s.longitude as store_lng, s.logo as store_logo,
                            u.name as customer_name, u.phone as customer_phone,
                            dm.vehicle_type, dm.vehicle_number, dm.current_latitude as dm_lat, dm.current_longitude as dm_lng,
+                           dm.rating as dm_rating, dm.reviews_count as dm_reviews_count,
                            dmu.name as dm_name, dmu.phone as dm_phone, dmu.avatar as dm_avatar
                     FROM `orders` o
                     LEFT JOIN `stores` s ON o.store_id = s.id

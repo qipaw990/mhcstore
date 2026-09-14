@@ -6,6 +6,7 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../auth/screens/splash_screen.dart';
 import '../controllers/driver_controller.dart';
 import 'driver_order_history_screen.dart';
+import 'driver_reviews_screen.dart';
 
 class DriverProfileScreen extends StatefulWidget {
   const DriverProfileScreen({super.key});
@@ -98,7 +99,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             const SizedBox(height: 12),
 
             // 2. Rating & Customer Reviews Card
-            _buildRatingReviewsCard(rating, reviews),
+            _buildRatingReviewsCard(rating, reviews, driverCtrl),
             const SizedBox(height: 12),
 
             // 3. Edit Form or View Profile Info
@@ -205,57 +206,69 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
     );
   }
 
-  Widget _buildRatingReviewsCard(double rating, List<dynamic> reviews) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
+  Widget _buildRatingReviewsCard(double rating, List<dynamic> reviews, DriverController driverCtrl) {
+    final int count = reviews.isNotEmpty ? reviews.length : driverCtrl.reviewsCount;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E293B)),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 10,
-            offset: Offset(0, 2),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const DriverReviewsScreen()),
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0F172A),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF1E293B)),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 10,
+                offset: Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: const BoxDecoration(
-              color: Color(0xFF451A03),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 24),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF451A03),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '${rating.toStringAsFixed(1)} ★',
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFFDE68A)),
+                    Row(
+                      children: [
+                        Text(
+                          '${rating.toStringAsFixed(1)} ★',
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFFDE68A)),
+                        ),
+                        const SizedBox(width: 6),
+                        const Text('Kepuasan Pelanggan', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white)),
+                      ],
                     ),
-                    const SizedBox(width: 6),
-                    const Text('Kepuasan Pelanggan', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$count Ulasan Terverifikasi',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '${reviews.length} Ulasan Terverifikasi',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-                ),
-              ],
-            ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: Color(0xFF64748B), size: 20),
+            ],
           ),
-          const Icon(Icons.chevron_right_rounded, color: Color(0xFF64748B), size: 20),
-        ],
+        ),
       ),
     );
   }

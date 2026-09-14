@@ -26,8 +26,8 @@ class _DriverReviewsScreenState extends State<DriverReviewsScreen> {
   Widget build(BuildContext context) {
     final driverCtrl = context.watch<DriverController>();
     final List<dynamic> rawReviews = driverCtrl.reviews;
-    final double rating = driverCtrl.rating;
-    final int totalReviews = rawReviews.length;
+    final double rating = driverCtrl.driverRating;
+    final int totalReviews = rawReviews.isNotEmpty ? rawReviews.length : driverCtrl.reviewsCount;
 
     // Filter reviews based on user selection
     final List<dynamic> filteredReviews = rawReviews.where((item) {

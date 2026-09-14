@@ -77,7 +77,7 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
     final balance = double.tryParse(wallet['balance']?.toString() ?? '0') ?? 0.0;
     final totalWithdrawn = merchantCtrl.totalWithdrawn;
     final reviews = merchantCtrl.reviews;
-    final rating = store['rating']?.toString() ?? '4.8';
+    final rating = store['rating']?.toString() ?? '0.0';
     final reviewsCount = store['reviews_count']?.toString() ?? '${reviews.length}';
 
     final rawLogo = store['logo']?.toString();

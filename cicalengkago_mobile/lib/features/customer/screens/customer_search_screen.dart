@@ -166,7 +166,7 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
     return _stores.where((s) {
       final store = s is Map<String, dynamic> ? s : Map<String, dynamic>.from(s as Map);
       final isOpen = store['is_open'] == 1 || store['is_open'] == true || store['is_open'] == '1';
-      final rating = double.tryParse(store['rating']?.toString() ?? '4.8') ?? 4.8;
+      final rating = double.tryParse(store['rating']?.toString() ?? '') ?? 5.0;
 
       if (_activeFilter == 'Buka Sekarang' && !isOpen) return false;
       if (_activeFilter == 'Rating 4.5+' && rating < 4.5) return false;
@@ -683,7 +683,7 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
                         const Icon(Icons.star_rounded, size: 12, color: Colors.amber),
                         const SizedBox(width: 2),
                         Text(
-                          '${prod['rating'] ?? '4.8'}',
+                          (double.tryParse(prod['rating']?.toString() ?? prod['avg_rating']?.toString() ?? '') ?? 5.0).toStringAsFixed(1),
                           style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -934,7 +934,7 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
                               const Icon(Icons.star_rounded, size: 13, color: Colors.amber),
                               const SizedBox(width: 2),
                               Text(
-                                '${store['rating'] ?? '4.8'}',
+                                (double.tryParse(store['rating']?.toString() ?? '') ?? 5.0).toStringAsFixed(1),
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10.5, color: Color(0xFF0F172A)),
                               ),
                             ],

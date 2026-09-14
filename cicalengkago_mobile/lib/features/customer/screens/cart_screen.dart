@@ -20,49 +20,6 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  final List<Map<String, dynamic>> _foodSuggestions = const [
-    {
-      'id': 101,
-      'name': 'Ayam Bakar Madu Spesial',
-      'store': 'Ayam Bakar Cica',
-      'price': 22000.0,
-      'rating': '4.9',
-      'image': 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=300&q=80',
-    },
-    {
-      'id': 102,
-      'name': 'Seblak Jeletot Seafood',
-      'store': 'Seblak Prasmanan Cica',
-      'price': 18000.0,
-      'rating': '4.8',
-      'image': 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=300&q=80',
-    },
-    {
-      'id': 103,
-      'name': 'Es Kopi Gula Aren Cica',
-      'store': 'Kopi & Mood Cicalengka',
-      'price': 15000.0,
-      'rating': '4.9',
-      'image': 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=300&q=80',
-    },
-    {
-      'id': 104,
-      'name': 'Nasi Goreng Telur Double',
-      'store': 'Kedai Nasi Goreng Top',
-      'price': 20000.0,
-      'rating': '4.7',
-      'image': 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=300&q=80',
-    },
-    {
-      'id': 105,
-      'name': 'Bakso Urat Jumbo Kuah Pedas',
-      'store': 'Bakso & Mie Ayam Cica',
-      'price': 25000.0,
-      'rating': '4.8',
-      'image': 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=300&q=80',
-    },
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -659,8 +616,10 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildFoodSuggestionsSection(BuildContext context, CustomerController customerCtrl) {
-    final List<dynamic> realProducts = customerCtrl.recommendedProducts;
-    final itemsToDisplay = realProducts.isNotEmpty ? realProducts : _foodSuggestions;
+    final List<dynamic> itemsToDisplay = customerCtrl.recommendedProducts;
+    if (itemsToDisplay.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -691,7 +650,8 @@ class _CartScreenState extends State<CartScreen> {
               final String foodName = (food['name'] ?? food['product_name'] ?? 'Menu Kuliner').toString();
               final String storeName = (food['store_name'] ?? food['store'] ?? 'Mitra CicalengkaGO').toString();
               final double foodPrice = double.tryParse(food['final_price']?.toString() ?? food['price']?.toString() ?? '0') ?? 0.0;
-              final String rating = food['rating']?.toString() ?? '4.8';
+              final double? rVal = double.tryParse(food['rating']?.toString() ?? food['avg_rating']?.toString() ?? '');
+              final String rating = rVal != null ? rVal.toStringAsFixed(1) : '-';
               final String imgUrl = _getFoodImage(food);
               final rawStoreOpen = food['store_is_open'] ?? food['is_store_open'] ?? food['is_currently_open'] ?? food['is_open'];
               final bool isStoreClosed = rawStoreOpen == 0 || rawStoreOpen == false || rawStoreOpen == '0' || rawStoreOpen == 'false';

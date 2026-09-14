@@ -920,7 +920,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
       {'icon': '🍜', 'label': 'Mie & Seblak', 'query': 'Seblak'},
       {'icon': '🧋', 'label': 'Kopi & Boba', 'query': 'Kopi'},
       {'icon': '🍰', 'label': 'Camilan & Dessert', 'query': 'Camilan'},
-      {'icon': '⭐', 'label': 'Rating 4.8+', 'query': 'Top'},
+      {'icon': '⭐', 'label': 'Rating Tertinggi', 'query': 'Top'},
     ];
 
     return SingleChildScrollView(
@@ -1648,7 +1648,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                                   const Icon(Icons.star_rounded, size: 12, color: Colors.amber),
                                   const SizedBox(width: 2),
                                   Text(
-                                    '${store['rating'] ?? '4.8'}',
+                                    (double.tryParse(store['rating']?.toString() ?? '') ?? 5.0).toStringAsFixed(1),
                                     style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                                   ),
                                   const Spacer(),
@@ -1898,7 +1898,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                                         const Icon(Icons.star_rounded, size: 13, color: Colors.amber),
                                         const SizedBox(width: 2),
                                         Text(
-                                          '${store['rating'] ?? '4.8'}',
+                                          (double.tryParse(store['rating']?.toString() ?? '') ?? 5.0).toStringAsFixed(1),
                                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10.5, color: Color(0xFF0F172A)),
                                         ),
                                       ],
@@ -2066,7 +2066,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                                 const Icon(Icons.star_rounded, size: 12, color: Colors.amber),
                                 const SizedBox(width: 2),
                                 Text(
-                                  '${prod['rating'] ?? '4.8'}',
+                                  (double.tryParse(prod['rating']?.toString() ?? prod['avg_rating']?.toString() ?? '') ?? 5.0).toStringAsFixed(1),
                                   style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
                                 ),
                               ],
