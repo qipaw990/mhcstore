@@ -189,10 +189,8 @@ class _LocationGuardState extends State<LocationGuard> with WidgetsBindingObserv
     // ── Step 2: Get current position & check zone ────────────────────────────
     try {
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 10),
-        ),
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
       );
 
       final result = await ZoneGuardService.checkUserInZone(position);
