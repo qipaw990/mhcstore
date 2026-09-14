@@ -1,3 +1,6 @@
+<?php
+$zones = $zones ?? (new \App\Models\Zone())->all();
+?>
 <!-- Header & Filter Toolbar -->
 <div class="page-header">
     <div class="page-header-left">
@@ -64,6 +67,9 @@
             </div>
         </div>
         <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-purple-50 text-purple-700 border border-purple-200 px-3 py-1.5 rounded-pill fw-bold" style="font-size: 11px; background:#FAF5FF; color:#7E22CE; border-color:#E9D5FF;">
+                <i class="bi bi-geo-alt-fill me-1"></i> <?= count($zones) ?> Zona Wilayah
+            </span>
             <span class="badge bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-pill fw-bold" style="font-size: 11px; background:#ECFDF5; color:#047857; border-color:#A7F3D0;">
                 <i class="bi bi-bicycle me-1"></i> <?= count($drivers) ?> Driver Aktif
             </span>
@@ -79,6 +85,7 @@
                 <span class="d-flex align-items-center gap-1.5"><span style="width:10px;height:10px;background:#ef4444;border-radius:50%;display:inline-block;"></span> Toko / Resto</span>
                 <span class="d-flex align-items-center gap-1.5"><span style="width:10px;height:10px;background:#2563eb;border-radius:50%;display:inline-block;"></span> Driver Online</span>
                 <span class="d-flex align-items-center gap-1.5"><span style="width:10px;height:10px;background:#10b981;border-radius:50%;display:inline-block;"></span> Tujuan Pengantaran</span>
+                <span class="d-flex align-items-center gap-1.5"><span style="width:12px;height:10px;border:1.5px dashed #2563eb;background:rgba(37,99,235,0.15);border-radius:2px;display:inline-block;"></span> Batas Zona Database</span>
             </div>
         </div>
     </div>
@@ -335,21 +342,90 @@ function initAdminDispatchMap() {
         attribution: '© OpenStreetMap CicalengkaGO'
     }).addTo(dispatchMap);
 
-    // Cicalengka Operational Zone Area Polygon
-    const cicalengkaZoneCoords = [
-        [-6.9700, 107.8150],
-        [-6.9700, 107.8550],
-        [-6.9950, 107.8650],
-        [-7.0050, 107.8350],
-        [-6.9950, 107.8100]
+    // Render Dynamic Operational Zones from Database
+    const zonePalette = [
+        { stroke: '#2563EB', fill: '#3B82F6' },
+        { stroke: '#10B981', fill: '#059669' },
+        { stroke: '#F59E0B', fill: '#D97706' },
+        { stroke: '#8B5CF6', fill: '#7C3AED' },
+        { stroke: '#EC4899', fill: '#DB2777' },
+        { stroke: '#06B6D4', fill: '#0891B2' }
     ];
-    L.polygon(cicalengkaZoneCoords, {
-        color: '#2563eb',
-        fillColor: '#3b82f6',
-        fillOpacity: 0.08,
-        weight: 1.5,
-        dashArray: '4, 6'
-    }).addTo(dispatchMap);
+    let zonePaletteIdx = 0;
+    const allZoneBounds = [];
+
+    <?php foreach ($zones as $z): ?>
+        <?php
+            $rawCoords = json_decode($z['coordinates_json'] ?? '[]', true);
+            $normCoords = [];
+            if (!empty($rawCoords) && is_array($rawCoords)) {
+                foreach ($rawCoords as $pt) {
+                    if (is_array($pt) && isset($pt['lat'], $pt['lng'])) {
+                        $normCoords[] = [(float)$pt['lat'], (float)$pt['lng']];
+                    } elseif (is_array($pt) && count($pt) >= 2) {
+                        $normCoords[] = [(float)$pt[0], (float)$pt[1]];
+                    }
+                }
+            }
+            $centerLat = (float)($z['center_latitude'] ?? -6.9840);
+            $centerLng = (float)($z['center_longitude'] ?? 107.8340);
+            $isActive = (int)($z['status'] ?? 1) === 1;
+        ?>
+        <?php if (!empty($normCoords)): ?>
+            (function() {
+                const colorObj = zonePalette[zonePaletteIdx % zonePalette.length];
+                zonePaletteIdx++;
+                const coords_<?= $z['id'] ?> = <?= json_encode($normCoords) ?>;
+                L.polygon(coords_<?= $z['id'] ?>, {
+                    color: colorObj.stroke,
+                    fillColor: colorObj.fill,
+                    fillOpacity: <?= $isActive ? '0.12' : '0.04' ?>,
+                    weight: 2,
+                    dashArray: '<?= $isActive ? "4, 6" : "2, 4" ?>'
+                }).bindPopup(`
+                    <div style="min-width: 170px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif;">
+                        <div class="d-flex align-items-center gap-1.5 mb-1.5">
+                            <span class="badge <?= $isActive ? 'bg-success' : 'bg-secondary' ?> py-0.5 px-2" style="font-size: 9.5px;"><?= $isActive ? 'ZONA AKTIF' : 'NONAKTIF' ?></span>
+                            <strong class="text-dark" style="font-size: 13px;">📍 <?= htmlspecialchars($z['name']) ?></strong>
+                        </div>
+                        <div class="text-muted" style="font-size: 11px; line-height: 1.4;">
+                            Tarif Dasar: <b><?= format_rupiah($z['min_delivery_charge'] ?? 5000) ?></b><br>
+                            Biaya per KM: <b><?= format_rupiah($z['per_km_delivery_charge'] ?? 2500) ?>/km</b>
+                        </div>
+                    </div>
+                `).addTo(dispatchMap);
+
+                coords_<?= $z['id'] ?>.forEach(pt => allZoneBounds.push(pt));
+            })();
+        <?php else: ?>
+            (function() {
+                const colorObj = zonePalette[zonePaletteIdx % zonePalette.length];
+                zonePaletteIdx++;
+                L.circle([<?= $centerLat ?>, <?= $centerLng ?>], {
+                    radius: 4000,
+                    color: colorObj.stroke,
+                    fillColor: colorObj.fill,
+                    fillOpacity: <?= $isActive ? '0.10' : '0.04' ?>,
+                    weight: 2,
+                    dashArray: '4, 6'
+                }).bindPopup(`
+                    <div style="min-width: 170px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif;">
+                        <div class="d-flex align-items-center gap-1.5 mb-1.5">
+                            <span class="badge <?= $isActive ? 'bg-success' : 'bg-secondary' ?> py-0.5 px-2" style="font-size: 9.5px;"><?= $isActive ? 'ZONA AKTIF' : 'NONAKTIF' ?></span>
+                            <strong class="text-dark" style="font-size: 13px;">📍 <?= htmlspecialchars($z['name']) ?></strong>
+                        </div>
+                        <div class="text-muted" style="font-size: 11px;">Radius default 4 KM dari titik pusat</div>
+                    </div>
+                `).addTo(dispatchMap);
+
+                allZoneBounds.push([<?= $centerLat ?>, <?= $centerLng ?>]);
+            })();
+        <?php endif; ?>
+    <?php endforeach; ?>
+
+    if (allZoneBounds.length > 0) {
+        dispatchMap.fitBounds(allZoneBounds, { padding: [25, 25], maxZoom: 15 });
+    }
 
     const storeSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 46" width="32" height="46">
       <defs>

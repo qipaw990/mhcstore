@@ -168,12 +168,14 @@ class AdminController extends Controller
         ");
 
         $stores = Database::query("SELECT id, name, latitude, longitude, address, phone, logo FROM `stores`");
+        $zones = (new \App\Models\Zone())->all();
 
         $this->view('admin.orders', [
             'title'          => 'Pusat Pemantauan & Dispatch Pesanan',
             'orders'         => $orders,
             'drivers'        => $drivers,
             'stores'         => $stores,
+            'zones'          => $zones,
             'status_filter'  => $statusFilter,
             'active_tab'     => 'orders',
             'total_orders'   => $totalOrdersCount,
