@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_service.dart';
+import '../../../core/services/app_config_service.dart';
 
 class AuthController extends ChangeNotifier {
   bool _isLoading = false;
@@ -232,10 +233,10 @@ class AuthController extends ChangeNotifier {
       'password': password,
       'store_name': storeName,
       'store_phone': storePhone ?? phone,
-      'store_address': storeAddress ?? 'Kecamatan Cicalengka, Kab. Bandung',
+      'store_address': storeAddress ?? AppConfigService.instance.defaultLocationName,
       'module_id': moduleId ?? '1',
-      'latitude': latitude ?? '-6.9840',
-      'longitude': longitude ?? '107.8340',
+      'latitude': latitude ?? AppConfigService.instance.defaultLat.toString(),
+      'longitude': longitude ?? AppConfigService.instance.defaultLng.toString(),
     };
 
     final files = <String, String>{};

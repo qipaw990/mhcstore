@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_service.dart';
+import '../../../core/services/app_config_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../../core/widgets/app_alert.dart';
@@ -304,12 +305,26 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
   }
 
   Widget _buildQuickTopUpGrid(BuildContext context) {
-    final nominals = [
-      {'amount': 20000, 'label': 'Rp 20.000', 'tag': 'Hemat', 'tagColor': const Color(0xFF16A34A)},
-      {'amount': 50000, 'label': 'Rp 50.000', 'tag': 'Populer', 'tagColor': const Color(0xFF2563EB)},
-      {'amount': 100000, 'label': 'Rp 100.000', 'tag': 'Favorit', 'tagColor': const Color(0xFFD97706)},
-      {'amount': 200000, 'label': 'Rp 200.000', 'tag': 'Sultan', 'tagColor': const Color(0xFF7C3AED)},
+    final configNominals = AppConfigService.instance.walletTopupNominals;
+    final tags = ['Hemat', 'Populer', 'Favorit', 'Sultan', 'Super', 'Mega'];
+    final colors = [
+      const Color(0xFF16A34A),
+      const Color(0xFF2563EB),
+      const Color(0xFFD97706),
+      const Color(0xFF7C3AED),
+      const Color(0xFFE11D48),
+      const Color(0xFF0D9488),
     ];
+
+    final nominals = List.generate(configNominals.take(4).length, (i) {
+      final amt = configNominals[i];
+      return {
+        'amount': amt,
+        'label': CurrencyFormatter.formatRupiah(amt.toDouble()),
+        'tag': tags[i % tags.length],
+        'tagColor': colors[i % colors.length],
+      };
+    });
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -616,7 +631,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
         return StatefulBuilder(
           builder: (modalCtx, setModalState) {
             final int rawAmount = int.tryParse(amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? selectedAmount;
-            final double fee = (transferType == 'cicalengkapay') ? 0.0 : 1500.0;
+            final double fee = (transferType == 'cicalengkapay') ? 0.0 : AppConfigService.instance.walletTransferFee;
             final double totalDeducted = rawAmount > 0 ? (rawAmount + fee) : 0.0;
 
             return Container(
@@ -862,7 +877,9 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                         });
                       },
                       decoration: InputDecoration(
-                        hintText: transferType == 'cicalengkapay' ? 'Min. Rp 1.000' : 'Min. Rp 10.000',
+                        hintText: transferType == 'cicalengkapay'
+                            ? 'Min. ${CurrencyFormatter.formatRupiah(AppConfigService.instance.walletMinTransferPeer)}'
+                            : 'Min. ${CurrencyFormatter.formatRupiah(AppConfigService.instance.walletMinTransferBank)}',
                         hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                         prefixIcon: const Icon(Icons.payments_rounded, color: Color(0xFF16A34A), size: 20),
                         filled: true,
@@ -879,7 +896,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                     Wrap(
                       spacing: 6,
                       runSpacing: 6,
-                      children: [20000, 50000, 100000, 200000, 500000].map((nom) {
+                      children: AppConfigService.instance.walletTopupNominals.map((nom) {
                         final isSelected = selectedAmount == nom;
                         return InkWell(
                           onTap: () {
@@ -997,8 +1014,8 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                                     AppAlert.showWarning(context, title: 'Data Belum Lengkap', message: 'Nomor rekening dan nama pemilik rekening wajib diisi.');
                                     return;
                                   }
-                                  if (rawAmount < 10000) {
-                                    AppAlert.showWarning(context, title: 'Nominal Kurang', message: 'Nominal transfer bank minimal Rp 10.000.');
+                                  if (rawAmount < AppConfigService.instance.walletMinTransferBank) {
+                                    AppAlert.showWarning(context, title: 'Nominal Kurang', message: 'Nominal transfer bank minimal ${CurrencyFormatter.formatRupiah(AppConfigService.instance.walletMinTransferBank)}.');
                                     return;
                                   }
                                 } else if (transferType == 'ewallet') {
@@ -1006,8 +1023,8 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                                     AppAlert.showWarning(context, title: 'Data Belum Lengkap', message: 'Nomor HP e-wallet dan nama akun wajib diisi.');
                                     return;
                                   }
-                                  if (rawAmount < 10000) {
-                                    AppAlert.showWarning(context, title: 'Nominal Kurang', message: 'Nominal transfer e-wallet minimal Rp 10.000.');
+                                  if (rawAmount < AppConfigService.instance.walletMinTransferBank) {
+                                    AppAlert.showWarning(context, title: 'Nominal Kurang', message: 'Nominal transfer e-wallet minimal ${CurrencyFormatter.formatRupiah(AppConfigService.instance.walletMinTransferBank)}.');
                                     return;
                                   }
                                 } else {
@@ -1015,8 +1032,8 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                                     AppAlert.showWarning(context, title: 'Nomor HP Kosong', message: 'Masukkan nomor HP penerima transfer.');
                                     return;
                                   }
-                                  if (rawAmount < 1000) {
-                                    AppAlert.showWarning(context, title: 'Nominal Kurang', message: 'Nominal transfer minimal Rp 1.000.');
+                                  if (rawAmount < AppConfigService.instance.walletMinTransferPeer) {
+                                    AppAlert.showWarning(context, title: 'Nominal Kurang', message: 'Nominal transfer minimal ${CurrencyFormatter.formatRupiah(AppConfigService.instance.walletMinTransferPeer)}.');
                                     return;
                                   }
                                 }

@@ -1012,5 +1012,100 @@ class ApiController extends Controller
         $zoneDetail = \App\Models\Zone::getZoneDetail($zoneId);
         $this->successResponse('Konfigurasi tarif zona berhasil diambil dari database', $zoneDetail);
     }
+
+    /**
+     * GET /api/app-config
+     * Single endpoint untuk semua konfigurasi dinamis aplikasi Flutter.
+     * Mengembalikan business_settings + semua zona aktif.
+     */
+    public function appConfig(): void
+    {
+        // ── 1. Fetch semua business_settings ─────────────────────────────────
+        $rows = \App\Core\Database::query(
+            "SELECT key_name, value_text FROM business_settings ORDER BY id ASC"
+        );
+        $settings = [];
+        foreach ($rows as $row) {
+            $settings[$row['key_name']] = $row['value_text'];
+        }
+
+        // ── 2. Fetch semua zona aktif ─────────────────────────────────────────
+        $zones = \App\Core\Database::query(
+            "SELECT id, name, coordinates_json, status,
+                    min_delivery_charge, per_km_delivery_charge,
+                    center_latitude, center_longitude
+             FROM zones
+             WHERE status = 1
+             ORDER BY id ASC"
+        );
+
+        // Parse coordinates_json ke array untuk kemudahan Flutter
+        foreach ($zones as &$zone) {
+            $coords = $zone['coordinates_json'] ?? '[]';
+            $zone['polygon_coordinates'] = json_decode($coords, true) ?? [];
+            unset($zone['coordinates_json']);
+            $zone['min_delivery_charge']     = (float)$zone['min_delivery_charge'];
+            $zone['per_km_delivery_charge']  = (float)$zone['per_km_delivery_charge'];
+            $zone['center_latitude']         = (float)$zone['center_latitude'];
+            $zone['center_longitude']        = (float)$zone['center_longitude'];
+        }
+        unset($zone);
+
+        // ── 3. Parse inhouse_banks jika ada ──────────────────────────────────
+        $inhouseBanks = [];
+        if (!empty($settings['inhouse_banks'])) {
+            $inhouseBanks = json_decode($settings['inhouse_banks'], true) ?? [];
+            unset($settings['inhouse_banks']); // sudah di key terpisah
+        }
+
+        // ── 4. Wallet top-up nominals dari settings atau default ──────────────
+        $topupNominals = [10000, 20000, 50000, 100000, 200000, 500000];
+        if (!empty($settings['wallet_topup_nominals'])) {
+            $parsed = json_decode($settings['wallet_topup_nominals'], true);
+            if (is_array($parsed) && count($parsed) > 0) {
+                $topupNominals = array_map('intval', $parsed);
+            }
+        }
+
+        // ── 5. Bangun response terstruktur ────────────────────────────────────
+        $this->successResponse('Konfigurasi aplikasi berhasil diambil', [
+            'app' => [
+                'name'              => $settings['business_name']    ?? 'CicalengkaGO',
+                'tagline'           => $settings['business_tagline'] ?? 'Pesan Antar & Belanja Praktis',
+                'version'           => $settings['app_version']      ?? '1.0.0',
+                'support_phone'     => $settings['support_whatsapp'] ?? $settings['phone'] ?? '',
+                'support_email'     => $settings['support_email']    ?? $settings['email'] ?? '',
+                'currency_symbol'   => $settings['currency_symbol']  ?? 'Rp',
+                'currency_code'     => $settings['currency_code']    ?? 'IDR',
+                'timezone'          => $settings['timezone']         ?? 'Asia/Jakarta',
+                'maintenance_mode'  => (bool)($settings['maintenance_mode'] ?? false),
+            ],
+            'location' => [
+                'default_lat'   => (float)($settings['default_location_lat']  ?? -6.9840),
+                'default_lng'   => (float)($settings['default_location_lng']  ?? 107.8340),
+                'default_name'  => $settings['default_location_name'] ?? 'Cicalengka, Bandung',
+            ],
+            'delivery' => [
+                'min_charge'        => (float)($settings['delivery_charge_min']    ?? 5000),
+                'per_km_charge'     => (float)($settings['delivery_charge_per_km'] ?? 2500),
+                'free_delivery_over'=> (float)($settings['free_delivery_over']     ?? 100000),
+                'tax_percent'       => (float)($settings['tax_percent']            ?? 0),
+                'admin_commission'  => (float)($settings['admin_commission_percent'] ?? 10),
+            ],
+            'wallet' => [
+                'enabled'           => (bool)($settings['wallet_payment_status'] ?? false),
+                'topup_nominals'    => $topupNominals,
+                'transfer_fee'      => (float)($settings['wallet_transfer_fee']   ?? 1500),
+                'min_transfer_peer' => (float)($settings['wallet_min_transfer_peer'] ?? 1000),
+                'min_transfer_bank' => (float)($settings['wallet_min_transfer_bank'] ?? 10000),
+                'min_topup'         => (float)($settings['wallet_min_topup']      ?? 10000),
+            ],
+            'payment' => [
+                'inhouse_banks'     => $inhouseBanks,
+                'doku_enabled'      => (bool)($settings['doku_enabled']            ?? false),
+            ],
+            'zones'   => $zones,
+        ]);
+    }
 }
 

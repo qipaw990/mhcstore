@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/zone_constants.dart';
+import '../../../core/services/app_config_service.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/item_options_helper.dart';
 import '../../../core/services/route_service.dart';
@@ -131,7 +132,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     final double? custLng = double.tryParse((rawDeliv is Map ? (rawDeliv['lng'] ?? rawDeliv['longitude']) : trip['dest_lng'])?.toString() ?? '');
     final LatLng custPosition = (custLat != null && custLng != null && custLat != 0 && custLng != 0)
         ? LatLng(custLat, custLng)
-        : const LatLng(-6.9855, 107.8350);
+        : LatLng(AppConfigService.instance.defaultLat, AppConfigService.instance.defaultLng);
 
     // Auto-follow camera movement
     if (_autoFollow && _lastCenteredLocation != driverCtrl.currentLocation) {

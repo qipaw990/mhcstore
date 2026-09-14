@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../../core/services/app_config_service.dart';
 import '../../../core/widgets/uber_pill_button.dart';
 import '../../../core/widgets/location_picker_modal.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -867,11 +868,11 @@ class _EditStoreProfileBottomSheetState extends State<_EditStoreProfileBottomShe
     final currentBank = s['bank_name']?.toString() ?? 'BCA';
     _selectedBank = _bankOptions.contains(currentBank) ? currentBank : 'BCA';
 
-    _lat = double.tryParse(s['latitude']?.toString() ?? '') ?? -6.9840;
-    _lng = double.tryParse(s['longitude']?.toString() ?? '') ?? 107.8340;
+    _lat = double.tryParse(s['latitude']?.toString() ?? '') ?? AppConfigService.instance.defaultLat;
+    _lng = double.tryParse(s['longitude']?.toString() ?? '') ?? AppConfigService.instance.defaultLng;
     if (_lat == 0 || _lng == 0) {
-      _lat = -6.9840;
-      _lng = 107.8340;
+      _lat = AppConfigService.instance.defaultLat;
+      _lng = AppConfigService.instance.defaultLng;
     }
   }
 

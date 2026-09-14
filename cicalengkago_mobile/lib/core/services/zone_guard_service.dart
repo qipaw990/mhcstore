@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import '../constants/api_constants.dart';
 import '../network/api_service.dart';
 import '../constants/zone_constants.dart';
+import 'app_config_service.dart';
 
 /// Result returned after a zone-check
 class ZoneCheckResult {
@@ -21,20 +22,37 @@ class ZoneCheckResult {
 }
 
 /// Service responsible for:
-/// 1. Fetching all active zones from the backend.
+/// 1. Fetching all active zones from the backend / AppConfigService.
 /// 2. Getting the user's current GPS position.
 /// 3. Performing point-in-polygon checks against every active zone.
 class ZoneGuardService {
-  /// Fetch all active zones from API and check if [position] is in any of them.
-  /// Falls back to the hardcoded [ZoneConstants.cicalengkaZonePolygon] if API fails.
+  /// Fetch all active zones and check if [position] is in any of them.
   static Future<ZoneCheckResult> checkUserInZone(Position position) async {
     final userPoint = LatLng(position.latitude, position.longitude);
+
+    // 1. Cek dari AppConfigService yang sudah ter-sinkron dari database
+    final cachedZones = AppConfigService.instance.zones;
+    if (cachedZones.isNotEmpty) {
+      for (final zone in cachedZones) {
+        if (zone.polygon.isNotEmpty && _isPointInPolygon(userPoint, zone.polygon)) {
+          return ZoneCheckResult(
+            isInsideZone: true,
+            zoneName: zone.name,
+            polygon: zone.polygon,
+          );
+        }
+      }
+      return ZoneCheckResult(
+        isInsideZone: false,
+        errorMessage: 'Lokasi Anda berada di luar area layanan ${AppConfigService.instance.appName}.',
+      );
+    }
 
     List<Map<String, dynamic>> zones = [];
     bool apiFailed = false;
 
     try {
-      // Fetch all active zones
+      // Fetch all active zones jika config belum ada
       final res = await ApiService.get(ApiConstants.zoneConfig)
           .timeout(const Duration(seconds: 8));
 
@@ -65,9 +83,9 @@ class ZoneGuardService {
         }
       }
       // User not in any zone
-      return const ZoneCheckResult(
+      return ZoneCheckResult(
         isInsideZone: false,
-        errorMessage: 'Lokasi Anda berada di luar area layanan CicalengkaGO.',
+        errorMessage: 'Lokasi Anda berada di luar area layanan ${AppConfigService.instance.appName}.',
       );
     }
 

@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../../core/widgets/uber_pill_button.dart';
+import '../../../core/services/app_config_service.dart';
 import '../controllers/auth_controller.dart';
 
 class RegisterMerchantScreen extends StatefulWidget {
@@ -26,8 +27,8 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
   final TextEditingController _storeNameCtrl = TextEditingController();
   final TextEditingController _storePhoneCtrl = TextEditingController();
   final TextEditingController _storeAddressCtrl = TextEditingController();
-  final TextEditingController _latCtrl = TextEditingController(text: '-6.9840');
-  final TextEditingController _lngCtrl = TextEditingController(text: '107.8340');
+  late final TextEditingController _latCtrl = TextEditingController(text: AppConfigService.instance.defaultLat.toString());
+  late final TextEditingController _lngCtrl = TextEditingController(text: AppConfigService.instance.defaultLng.toString());
 
   String _selectedModuleId = '1';
   bool _obscurePass = true;

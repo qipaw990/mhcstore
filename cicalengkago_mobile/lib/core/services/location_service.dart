@@ -2,10 +2,19 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import '../constants/zone_constants.dart';
+import 'app_config_service.dart';
 
 class LocationService {
-  /// Default center position (Cicalengka, Kab. Bandung)
-  static const LatLng defaultPosition = LatLng(-6.9835, 107.8335);
+  /// Default center position (from AppConfigService / database fallback)
+  static LatLng get defaultPosition => LatLng(
+        AppConfigService.instance.defaultLat != 0.0
+            ? AppConfigService.instance.defaultLat
+            : ZoneConstants.fallbackLat,
+        AppConfigService.instance.defaultLng != 0.0
+            ? AppConfigService.instance.defaultLng
+            : ZoneConstants.fallbackLng,
+      );
 
   /// Multi-Stage Location Fetcher:
   /// Stage 1: Quick check Last Known Position for instant response

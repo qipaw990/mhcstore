@@ -354,6 +354,8 @@ Router::get('/api/wallet', [CustomerController::class, 'wallet']);
 Router::get('/api/profile', [CustomerController::class, 'profile']);
 Router::get('/api/notifications', [CustomerController::class, 'notifications']);
 Router::get('/api/zone-config', [\App\Controllers\ApiController::class, 'getZoneConfig']);
+Router::get('/api/app-config',  [\App\Controllers\ApiController::class, 'appConfig']);
+
 
 // ==========================================
 // In-House Payment System (Bank Transfer / QRIS / Kode Unik / Webhook)

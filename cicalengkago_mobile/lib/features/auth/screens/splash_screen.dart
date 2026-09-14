@@ -9,6 +9,7 @@ import '../../driver/screens/driver_dashboard_screen.dart';
 import '../../merchant/screens/merchant_dashboard_screen.dart';
 import '../../customer/screens/customer_home_screen.dart';
 import '../../../core/services/global_call_service.dart';
+import '../../../core/services/app_config_service.dart';
 import '../../../main.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -53,8 +54,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   Future<void> _initializeAppAndNavigate() async {
-    // Wait for at least 2.2 seconds for a smooth branded splash experience
-    await Future.delayed(const Duration(milliseconds: 2200));
+    // Fetch dynamic config from API backend simultaneously with splash timer
+    final configFuture = AppConfigService.instance.init();
+    final delayFuture = Future.delayed(const Duration(milliseconds: 2200));
+
+    await Future.wait([configFuture, delayFuture]);
+    if (mounted) setState(() {});
 
     if (!mounted) return;
 
@@ -175,14 +180,15 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     const SizedBox(height: 6),
 
                     // Tagline
-                    const Text(
-                      'Pesan Antar & Belanja Praktis Cicalengka',
-                      style: TextStyle(
+                    Text(
+                      AppConfigService.instance.tagline,
+                      style: const TextStyle(
                         fontSize: 12,
                         color: Color(0xFF64748B),
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0.2,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 36),
 
@@ -208,7 +214,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             right: 0,
             child: Center(
               child: Text(
-                'v2.4.0 • Made with ❤️ in Cicalengka',
+                'v${AppConfigService.instance.version} • Made with ❤️ in Cicalengka',
                 style: TextStyle(
                   fontSize: 10.5,
                   color: Colors.grey.shade400,

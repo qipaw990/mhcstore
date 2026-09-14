@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/services/global_call_service.dart';
+import '../../../core/services/app_config_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../common/screens/in_app_chat_modal.dart';
 import '../controllers/merchant_controller.dart';
@@ -51,10 +52,10 @@ class _MerchantDeliveryMapModalState extends State<MerchantDeliveryMapModal> {
   LatLng _getStorePosition() {
     final sLat = double.tryParse(widget.order['store_lat']?.toString() ?? '') ??
         double.tryParse(widget.order['store_latitude']?.toString() ?? '') ??
-        -6.9835;
+        AppConfigService.instance.defaultLat;
     final sLng = double.tryParse(widget.order['store_lng']?.toString() ?? '') ??
         double.tryParse(widget.order['store_longitude']?.toString() ?? '') ??
-        107.8335;
+        AppConfigService.instance.defaultLng;
     return LatLng(sLat, sLng);
   }
 
@@ -63,11 +64,11 @@ class _MerchantDeliveryMapModalState extends State<MerchantDeliveryMapModal> {
     final cLat = double.tryParse(delivAddr['lat']?.toString() ?? '') ??
         double.tryParse(delivAddr['latitude']?.toString() ?? '') ??
         double.tryParse(widget.order['customer_lat']?.toString() ?? '') ??
-        -6.9845;
+        AppConfigService.instance.defaultLat;
     final cLng = double.tryParse(delivAddr['lng']?.toString() ?? '') ??
         double.tryParse(delivAddr['longitude']?.toString() ?? '') ??
         double.tryParse(widget.order['customer_lng']?.toString() ?? '') ??
-        107.8345;
+        AppConfigService.instance.defaultLng;
     return LatLng(cLat, cLng);
   }
 

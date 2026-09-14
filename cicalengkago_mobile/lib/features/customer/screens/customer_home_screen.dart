@@ -27,6 +27,7 @@ import 'explore_stores_screen.dart';
 import 'vouchers_screen.dart';
 import '../widgets/product_detail_modal.dart';
 import '../../../core/widgets/require_auth_widget.dart';
+import '../../../core/services/app_config_service.dart';
 
 class CustomerHomeScreen extends StatefulWidget {
   const CustomerHomeScreen({super.key});
@@ -41,8 +42,8 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   int _currentBannerPage = 0;
   Timer? _bannerTimer;
 
-  double _userLat = -6.9835;
-  double _userLng = 107.8335;
+  late double _userLat = AppConfigService.instance.defaultLat;
+  late double _userLng = AppConfigService.instance.defaultLng;
   String _currentAddress = 'Mendeteksi lokasi GPS...';
   bool _isLocating = true;
 

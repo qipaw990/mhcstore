@@ -15,6 +15,7 @@ import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/item_options_helper.dart';
 import '../../../core/services/global_call_service.dart';
 import '../../../core/services/location_service.dart';
+import '../../../core/services/app_config_service.dart';
 import '../../../core/services/route_service.dart';
 import '../../common/screens/in_app_chat_modal.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -279,11 +280,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final storeMap = live['store'] is Map ? (live['store'] as Map) : {};
     final destMap = live['destination'] is Map ? (live['destination'] as Map) : {};
 
-    final storeLat = double.tryParse(storeMap['lat']?.toString() ?? order['store_lat']?.toString() ?? '') ?? -6.9835;
-    final storeLng = double.tryParse(storeMap['lng']?.toString() ?? order['store_lng']?.toString() ?? '') ?? 107.8335;
+    final storeLat = double.tryParse(storeMap['lat']?.toString() ?? order['store_lat']?.toString() ?? '') ?? AppConfigService.instance.defaultLat;
+    final storeLng = double.tryParse(storeMap['lng']?.toString() ?? order['store_lng']?.toString() ?? '') ?? AppConfigService.instance.defaultLng;
 
-    final custLat = double.tryParse(destMap['lat']?.toString() ?? order['delivery_lat']?.toString() ?? '') ?? -6.9855;
-    final custLng = double.tryParse(destMap['lng']?.toString() ?? order['delivery_lng']?.toString() ?? '') ?? 107.8350;
+    final custLat = double.tryParse(destMap['lat']?.toString() ?? order['delivery_lat']?.toString() ?? '') ?? AppConfigService.instance.defaultLat;
+    final custLng = double.tryParse(destMap['lng']?.toString() ?? order['delivery_lng']?.toString() ?? '') ?? AppConfigService.instance.defaultLng;
 
     final driverLat = double.tryParse(driverMap['lat']?.toString() ?? order['dm_lat']?.toString() ?? '') ?? storeLat;
     final driverLng = double.tryParse(driverMap['lng']?.toString() ?? order['dm_lng']?.toString() ?? '') ?? storeLng;

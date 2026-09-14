@@ -14,6 +14,7 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../common/screens/in_app_chat_modal.dart';
 import '../widgets/product_detail_modal.dart';
 import 'cart_screen.dart';
+import '../../../core/services/app_config_service.dart';
 import '../../../main.dart';
 
 class StoreDetailScreen extends StatefulWidget {
@@ -30,8 +31,8 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> with RouteAware {
   List<dynamic> _products = [];
   List<dynamic> _reviews = [];
 
-  double _userLat = -6.9835;
-  double _userLng = 107.8335;
+  late double _userLat = AppConfigService.instance.defaultLat;
+  late double _userLng = AppConfigService.instance.defaultLng;
 
   double _calculateDistanceKm(double sLat, double sLng, double uLat, double uLng) {
     if (sLat == 0 || sLng == 0 || uLat == 0 || uLng == 0) return 0.0;

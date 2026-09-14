@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/services/location_service.dart';
+import '../../../core/services/app_config_service.dart';
 import '../controllers/customer_controller.dart';
 import 'store_detail_screen.dart';
 
@@ -22,8 +23,8 @@ class _ExploreStoresScreenState extends State<ExploreStoresScreen> {
   String _selectedFilter = 'Semua';
   String _sortBy = 'popular'; // popular, rating, fastest, name
 
-  double _userLat = -6.9835;
-  double _userLng = 107.8335;
+  late double _userLat = AppConfigService.instance.defaultLat;
+  late double _userLng = AppConfigService.instance.defaultLng;
 
   final List<String> _filterCategories = const [
     'Semua',

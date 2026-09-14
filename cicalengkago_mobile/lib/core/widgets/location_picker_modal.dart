@@ -5,24 +5,25 @@ import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import '../theme/app_theme.dart';
 import '../services/location_service.dart';
+import '../services/app_config_service.dart';
 import '../constants/zone_constants.dart';
 import 'package:provider/provider.dart';
 import '../../features/customer/controllers/customer_controller.dart';
 
 class LocationPickerModal extends StatefulWidget {
-  final double initialLat;
-  final double initialLng;
+  final double? initialLat;
+  final double? initialLng;
 
   const LocationPickerModal({
     super.key,
-    this.initialLat = -6.9835,
-    this.initialLng = 107.8335,
+    this.initialLat,
+    this.initialLng,
   });
 
   static Future<Map<String, dynamic>?> show(
     BuildContext context, {
-    double initialLat = -6.9835,
-    double initialLng = 107.8335,
+    double? initialLat,
+    double? initialLng,
   }) {
     return showModalBottomSheet<Map<String, dynamic>>(
       context: context,
@@ -51,8 +52,8 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
   void initState() {
     super.initState();
     _mapController = MapController();
-    _pickedLat = widget.initialLat;
-    _pickedLng = widget.initialLng;
+    _pickedLat = widget.initialLat ?? AppConfigService.instance.defaultLat;
+    _pickedLng = widget.initialLng ?? AppConfigService.instance.defaultLng;
 
     // Trigger initial reverse geocode
     _reverseGeocode(_pickedLat, _pickedLng);

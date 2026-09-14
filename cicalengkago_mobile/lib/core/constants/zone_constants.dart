@@ -4,6 +4,8 @@ import 'package:latlong2/latlong.dart';
 
 class ZoneConstants {
   static const String defaultZoneName = 'Zona Cicalengka Raya';
+  static const double fallbackLat = -6.9840;
+  static const double fallbackLng = 107.8340;
   static const double defaultMinFee = 5000.0;
   static const double defaultPerKmFee = 2500.0;
 

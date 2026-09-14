@@ -41,6 +41,7 @@ class ApiConstants {
   static const String vouchers       = '$domainUrl/api/coupons';
   static const String validateCoupon = '$domainUrl/api/coupons/validate';
   static const String zoneConfig     = '$domainUrl/api/zone-config';
+  static const String appConfig      = '$domainUrl/api/app-config';
 
   // Fallbacks
   static const String modules       = '$domainUrl/api/home-data';

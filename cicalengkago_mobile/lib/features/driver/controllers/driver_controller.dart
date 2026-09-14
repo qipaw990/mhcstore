@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/zone_constants.dart';
+import '../../../core/services/app_config_service.dart';
 import '../../../core/network/api_service.dart';
 import '../../../core/services/location_service.dart';
 import '../../../main.dart';
@@ -83,11 +84,16 @@ class DriverController extends ChangeNotifier {
 
   Map<String, dynamic>? get zoneConfig => _zoneConfig;
   double get zoneMinDeliveryCharge =>
-      double.tryParse(_zoneConfig?['min_delivery_charge']?.toString() ?? '5000') ?? 5000.0;
+      double.tryParse(_zoneConfig?['min_delivery_charge']?.toString() ?? '') ??
+      AppConfigService.instance.deliveryMinCharge;
   double get zonePerKmDeliveryCharge =>
-      double.tryParse(_zoneConfig?['per_km_delivery_charge']?.toString() ?? '2500') ?? 2500.0;
+      double.tryParse(_zoneConfig?['per_km_delivery_charge']?.toString() ?? '') ??
+      AppConfigService.instance.deliveryPerKmCharge;
   String get zoneName =>
-      _zoneConfig?['name']?.toString() ?? 'Zona Cicalengka Raya';
+      _zoneConfig?['name']?.toString() ??
+      (AppConfigService.instance.zones.isNotEmpty
+          ? AppConfigService.instance.zones.first.name
+          : ZoneConstants.defaultZoneName);
 
   List<LatLng> get zonePolygon {
     final rawList = _zoneConfig?['polygon_coordinates'];
@@ -109,6 +115,10 @@ class DriverController extends ChangeNotifier {
         }
       }
       if (parsed.length >= 3) return parsed;
+    }
+    if (AppConfigService.instance.zones.isNotEmpty &&
+        AppConfigService.instance.zones.first.polygon.isNotEmpty) {
+      return AppConfigService.instance.zones.first.polygon;
     }
     return ZoneConstants.cicalengkaZonePolygon;
   }

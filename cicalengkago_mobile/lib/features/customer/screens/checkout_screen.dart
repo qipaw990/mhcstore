@@ -11,6 +11,7 @@ import '../../../core/utils/item_options_helper.dart';
 import '../../../core/widgets/app_alert.dart';
 import '../../../core/widgets/require_auth_widget.dart';
 import '../../../core/services/location_service.dart';
+import '../../../core/services/app_config_service.dart';
 import '../../../core/widgets/location_picker_modal.dart';
 import '../controllers/customer_controller.dart';
 import 'order_tracking_screen.dart';
@@ -38,8 +39,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String? _appliedVoucherTitle;
   double _voucherDiscount = 0.0;
 
-  double _userLat = -6.9835;
-  double _userLng = 107.8335;
+  late double _userLat = AppConfigService.instance.defaultLat;
+  late double _userLng = AppConfigService.instance.defaultLng;
   String _gpsStatusText = 'Mendeteksi lokasi GPS terkini...';
 
   double _calculateDistanceKm(double sLat, double sLng, double uLat, double uLng) {
@@ -150,8 +151,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     // Calculate real distance
     double realDistKm = 1.5;
     if (stores.isNotEmpty) {
-      final double sLat = double.tryParse(stores[0]['latitude']?.toString() ?? '-6.9835') ?? -6.9835;
-      final double sLng = double.tryParse(stores[0]['longitude']?.toString() ?? '107.8335') ?? 107.8335;
+      final double sLat = double.tryParse(stores[0]['latitude']?.toString() ?? '') ?? AppConfigService.instance.defaultLat;
+      final double sLng = double.tryParse(stores[0]['longitude']?.toString() ?? '') ?? AppConfigService.instance.defaultLng;
       if (sLat != 0 && sLng != 0 && _userLat != 0 && _userLng != 0) {
         realDistKm = _calculateDistanceKm(sLat, sLng, _userLat, _userLng);
       }
@@ -249,8 +250,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     // Calculate dynamic distance from store to GPS location
     double calculatedDistKm = 1.5;
     if (stores.isNotEmpty) {
-      final double sLat = double.tryParse(stores[0]['latitude']?.toString() ?? '-6.9835') ?? -6.9835;
-      final double sLng = double.tryParse(stores[0]['longitude']?.toString() ?? '107.8335') ?? 107.8335;
+      final double sLat = double.tryParse(stores[0]['latitude']?.toString() ?? '') ?? AppConfigService.instance.defaultLat;
+      final double sLng = double.tryParse(stores[0]['longitude']?.toString() ?? '') ?? AppConfigService.instance.defaultLng;
       if (sLat != 0 && sLng != 0 && _userLat != 0 && _userLng != 0) {
         calculatedDistKm = _calculateDistanceKm(sLat, sLng, _userLat, _userLng);
       }
