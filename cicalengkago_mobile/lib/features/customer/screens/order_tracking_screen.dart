@@ -728,7 +728,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     required Map<String, dynamic> live,
   }) {
     // Calculate live distance
-    final distKm = const Distance().as(LengthUnit.Kilometer, LatLng(driverLat, driverLng), LatLng(custLat, custLng));
     final double? localDriverRating = double.tryParse(order['dm_rating']?.toString() ?? live['driver']?['rating']?.toString() ?? '');
     final String driverRatingText = localDriverRating != null ? localDriverRating.toStringAsFixed(1) : '-';
 

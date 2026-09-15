@@ -1020,7 +1020,7 @@ class _ProductDetailModalState extends State<ProductDetailModal> {
                                         variationId: _selectedVariationId,
                                         addons: _selectedAddonIds.toList(),
                                       );
-                                      if (mounted) {
+                                      if (context.mounted) {
                                         setState(() => _isAdding = false);
                                         if (ok) {
                                           Navigator.pop(context);

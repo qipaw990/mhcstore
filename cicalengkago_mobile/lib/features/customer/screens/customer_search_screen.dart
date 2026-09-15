@@ -6,7 +6,6 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/network/api_service.dart';
-import '../../../core/widgets/app_alert.dart';
 import '../controllers/customer_controller.dart';
 import '../widgets/product_detail_modal.dart';
 import 'store_detail_screen.dart';
@@ -628,7 +627,6 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
     double finalPrice,
     bool hasDiscount,
   ) {
-    final customerCtrl = context.read<CustomerController>();
     final rawStoreOpen = prod['store_is_open'] ?? prod['is_store_open'] ?? prod['is_currently_open'] ?? prod['is_open'];
     final bool isStoreClosed = rawStoreOpen == 0 || rawStoreOpen == false || rawStoreOpen == '0' || rawStoreOpen == 'false';
     final bool storeIsOpen = (rawStoreOpen == 1 || rawStoreOpen == true || rawStoreOpen == '1' || rawStoreOpen == 'true') && !isStoreClosed;

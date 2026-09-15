@@ -9,7 +9,6 @@ import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../../core/widgets/require_auth_widget.dart';
 import '../../../core/widgets/uber_pill_button.dart';
 import '../../auth/controllers/auth_controller.dart';
-import '../../auth/screens/login_screen.dart';
 import '../../auth/screens/splash_screen.dart';
 import '../controllers/customer_controller.dart';
 import 'customer_orders_screen.dart';
@@ -632,97 +631,6 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     );
   }
 
-  // ── MODAL: NOTIFIKASI ──
-  void _showNotificationsModal(BuildContext context, CustomerController ctrl) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.75),
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Notifikasi & Promo',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(20)),
-                  child: Text(
-                    '${ctrl.notifications.length} Info',
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFD97706)),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Expanded(
-              child: ctrl.notifications.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.notifications_none_rounded, size: 48, color: Color(0xFFCBD5E1)),
-                          SizedBox(height: 12),
-                          Text('Belum ada notifikasi baru', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
-                          SizedBox(height: 4),
-                          Text('Semua info pesanan dan promo akan tampil di sini', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
-                        ],
-                      ),
-                    )
-                  : ListView.separated(
-                      shrinkWrap: true,
-                      itemCount: ctrl.notifications.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                      itemBuilder: (_, idx) {
-                        final n = ctrl.notifications[idx];
-                        return Material(
-                          color: Colors.transparent,
-                          child: ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: Container(
-                              width: 38,
-                              height: 38,
-                              decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(10)),
-                              child: const Icon(Icons.notifications_rounded, color: Color(0xFFD97706), size: 20),
-                            ),
-                            title: Text(n['title'] ?? 'Info CicalengkaGO', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                            subtitle: Text(n['message'] ?? '', style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-            const SizedBox(height: 12),
-            UberPillButton(
-              label: 'Tutup Notifikasi',
-              icon: Icons.close_rounded,
-              onPressed: () => Navigator.pop(ctx),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   // ── MODAL: BANTUAN & FAQ ──
   void _showFaqModal(BuildContext context) {
@@ -1145,143 +1053,6 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     );
   }
 
-  // ── GUEST VIEW (Match PHP line 157-190) ──
-  Widget _buildGuestView(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        title: const Text(
-          'Akun Saya',
-          style: TextStyle(
-            color: Color(0xFF0F172A),
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-            letterSpacing: -0.3,
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // Icon Squircle Illustration
-                  const CicalengkaGoLogo(size: 72, borderRadius: 22),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Selamat Datang di CicalengkaGO!',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF0F172A),
-                      letterSpacing: -0.3,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Masuk ke akun Anda untuk menikmati transaksi pesan antar makanan, saldo CicalengkaPay, dan promo menarik setiap hari.',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: Color(0xFF64748B),
-                      height: 1.5,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Button 1: Masuk Sekarang
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
-                      icon: const Icon(Icons.login_rounded, size: 16),
-                      label: const Text('Masuk Sekarang', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryRed,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9999)),
-                        elevation: 2,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Button 2: Daftar Akun Baru
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
-                      icon: const Icon(Icons.person_add_rounded, size: 15, color: AppTheme.primaryRed),
-                      label: const Text('Daftar Akun Baru', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A))),
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: const Color(0xFFF1F5F9),
-                        side: const BorderSide(color: Color(0xFFCBD5E1)),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9999)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
-                  const SizedBox(height: 14),
-
-                  // Features Grid
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.bolt_rounded, color: Color(0xFFD97706), size: 14),
-                      SizedBox(width: 4),
-                      Text('Cepat', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8),
-                        child: Text('•', style: TextStyle(color: Color(0xFFCBD5E1))),
-                      ),
-                      Icon(Icons.verified_user_rounded, color: Color(0xFF10B981), size: 14),
-                      SizedBox(width: 4),
-                      Text('Aman', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8),
-                        child: Text('•', style: TextStyle(color: Color(0xFFCBD5E1))),
-                      ),
-                      Icon(Icons.local_offer_rounded, color: AppTheme.primaryRed, size: 14),
-                      SizedBox(width: 4),
-                      Text('Hemat', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'CicalengkaGO v3.6.0 • Platform Layanan Lokal Cicalengka',
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: Color(0xFF94A3B8)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   void _confirmLogout(BuildContext context, AuthController authCtrl) {
     showDialog(
@@ -1882,7 +1653,7 @@ class _EditProfileModalSheetState extends State<_EditProfileModalSheet> {
                                   ),
                                 );
                               }
-                            } else if (mounted) {
+                            } else if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text('Gagal mengupdate profil. Periksa koneksi atau data Anda.'),
