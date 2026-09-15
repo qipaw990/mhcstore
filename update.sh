@@ -77,12 +77,15 @@ echo "🗄️ Menjalankan migrasi database otomatis & indeks performa..."
 docker compose exec -T cicalengkago_app php database/run_casaos_migration.php 2>/dev/null || php database/run_casaos_migration.php 2>/dev/null || true
 
 echo "📱 Menjalankan migrasi tabel app_features (Fitur & Layanan Dinamis)..."
-docker compose exec -T cicalengkago_app php database/migrate_app_features.php || php database/migrate_app_features.php || true
+docker compose exec -T cicalengkago_app php database/migrate_app_features.php || true
 if [ -f "database/migrate_app_features.sql" ]; then
-    docker compose exec -T cicalengkago_db mariadb -u root -prootpassword cicalengkago < database/migrate_app_features.sql 2>/dev/null || \
-    docker compose exec -T cicalengkago_db mysql -u root -prootpassword cicalengkago < database/migrate_app_features.sql 2>/dev/null || \
-    docker compose exec -T cicalengkago_db mariadb -u cicalengka_user -pcicalengka_pass cicalengkago < database/migrate_app_features.sql 2>/dev/null || \
-    docker compose exec -T cicalengkago_db mysql -u cicalengka_user -pcicalengka_pass cicalengkago < database/migrate_app_features.sql 2>/dev/null || true
+    # Gunakan cat + pipe agar berjalan di semua shell/Docker environment
+    # Coba root user dulu (mariadb / mysql), lalu fallback ke user biasa
+    cat database/migrate_app_features.sql | docker compose exec -T cicalengkago_db mariadb -u root -prootpassword cicalengkago 2>/dev/null || \
+    cat database/migrate_app_features.sql | docker compose exec -T cicalengkago_db mysql  -u root -prootpassword cicalengkago 2>/dev/null || \
+    cat database/migrate_app_features.sql | docker compose exec -T cicalengkago_db mariadb -u cicalengka_user -pcicalengka_pass cicalengkago 2>/dev/null || \
+    cat database/migrate_app_features.sql | docker compose exec -T cicalengkago_db mysql  -u cicalengka_user -pcicalengka_pass cicalengkago 2>/dev/null || true
+    echo "   ↳ SQL app_features selesai dieksekusi ke database."
 fi
 
 docker compose exec -T cicalengkago_app php database/optimize_performance_indexes.php 2>/dev/null || php database/optimize_performance_indexes.php 2>/dev/null || true
