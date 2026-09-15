@@ -86,65 +86,82 @@ class _CustomerNotificationsScreenState extends State<CustomerNotificationsScree
           ),
         ],
       ),
-      body: CustomScrollView(
-        slivers: [
-
-          if (notifications.isEmpty)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(
+      body: RefreshIndicator(
+        color: AppTheme.brandOrange,
+        backgroundColor: Colors.white,
+        onRefresh: () async => await ctrl.fetchNotifications(),
+        child: ctrl.isLoading && notifications.isEmpty
+            ? const Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(40),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 88,
-                        height: 88,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF7ED),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFFFEDD5), width: 2),
-                        ),
-                        child: const Icon(Icons.notifications_off_outlined, color: AppTheme.brandOrange, size: 40),
-                      ),
-                      const SizedBox(height: 20),
-                      const Text('Belum Ada Notifikasi',
-                          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Promo, update pesanan, dan info penting\nakan muncul di sini.',
-                        style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.5),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                  padding: EdgeInsets.all(40),
+                  child: CircularProgressIndicator(
+                    color: AppTheme.brandOrange,
+                    strokeWidth: 2.5,
                   ),
                 ),
-              ),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final notif = notifications[index];
-                    final isRead = notif['is_read'] == true || notif['is_read'] == 1;
-                    final type = notif['type']?.toString();
-                    final color = _getNotifColor(type);
-                    return _NotifCard(
-                      notif: notif, isRead: isRead, color: color,
-                      icon: _getNotifIcon(type), formatTime: _formatTime,
-                    );
-                  },
-                  childCount: notifications.length,
-                ),
-              ),
-            ),
-        ],
+              )
+            : notifications.isEmpty
+                ? Center(
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(40),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 88,
+                            height: 88,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF7ED),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: const Color(0xFFFFEDD5), width: 2),
+                            ),
+                            child: const Icon(
+                              Icons.notifications_off_outlined,
+                              color: AppTheme.brandOrange,
+                              size: 40,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          const Text(
+                            'Belum Ada Notifikasi',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Promo, update pesanan, dan info penting\nakan muncul di sini.',
+                            style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.5),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                    itemCount: notifications.length,
+                    itemBuilder: (context, index) {
+                      final notif = notifications[index];
+                      final isRead = notif['is_read'] == true || notif['is_read'] == 1;
+                      final type = notif['type']?.toString();
+                      return _NotifCard(
+                        notif: notif,
+                        isRead: isRead,
+                        color: _getNotifColor(type),
+                        icon: _getNotifIcon(type),
+                        formatTime: _formatTime,
+                      );
+                    },
+                  ),
       ),
     );
   }
+
 
   String _formatTime(String? dateStr) {
     if (dateStr == null) return '';
