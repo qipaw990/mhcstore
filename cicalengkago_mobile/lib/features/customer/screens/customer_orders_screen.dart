@@ -253,6 +253,7 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
         ],
       ),
     ));
+  }
 
   Widget _buildOrderCard(Map<String, dynamic> order, BuildContext context) {
     final orderCode = order['order_code']?.toString() ?? '';
