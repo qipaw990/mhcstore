@@ -227,6 +227,33 @@ try {
         }
     }
 
+    // Inisialisasi tabel app_features (Fitur & Layanan Dinamis Flutter)
+    try {
+        $sqlFile = __DIR__ . '/migrate_app_features.sql';
+        if (file_exists($sqlFile)) {
+            $sql = file_get_contents($sqlFile);
+            $statements = array_filter(
+                array_map('trim', explode(';', $sql)),
+                fn($s) => !empty($s) && !preg_match('/^--/', $s)
+            );
+            foreach ($statements as $stmt) {
+                if (!empty(trim($stmt))) {
+                    try {
+                        $pdo->exec($stmt);
+                    } catch (\Throwable $t) {
+                        if (strpos($t->getMessage(), '1062') === false) {
+                            echo "[!] Notice on app_features statement: " . $t->getMessage() . "\n";
+                        }
+                    }
+                }
+            }
+            $count = $pdo->query("SELECT COUNT(*) FROM `app_features`")->fetchColumn();
+            echo "[+] Ensured table `app_features` exists and seeded ({$count} features)\n";
+        }
+    } catch (Exception $e) {
+        echo "[=] Notice on app_features migration: " . $e->getMessage() . "\n";
+    }
+
     echo "\n=========================================================\n";
     echo " SUCCESS: Migrasi struktur tabel ke CasaOS berhasil!\n";
     echo "=========================================================\n";

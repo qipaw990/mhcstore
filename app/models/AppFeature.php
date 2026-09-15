@@ -11,15 +11,39 @@ use App\Core\Database;
 class AppFeature
 {
     /**
+     * Cek apakah tabel app_features sudah ada di database.
+     */
+    public static function tableExists(): bool
+    {
+        try {
+            return (bool)Database::fetchOne(
+                "SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'app_features' LIMIT 1"
+            );
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Pastikan tabel app_features ada, jika belum otomatis lakukan migrasi.
+     */
+    public static function ensureTableExists(): void
+    {
+        if (!self::tableExists()) {
+            try {
+                self::migrate();
+            } catch (\Throwable $e) {
+                error_log('[AppFeature] Auto-migration error: ' . $e->getMessage());
+            }
+        }
+    }
+
+    /**
      * Ambil semua fitur yang aktif, dikelompokkan per feature_type.
      * @return array<string, array<mixed>>
      */
     public static function getAllGrouped(): array
     {
-        $rows = Database::query(
-            "SELECT * FROM `app_features` WHERE `is_active` = 1 ORDER BY `sort_order` ASC, `id` ASC"
-        );
-
         $grouped = [
             'service_grid'  => [],
             'filter_chip'   => [],
@@ -28,11 +52,21 @@ class AppFeature
             'home_section'  => [],
         ];
 
-        foreach ($rows as $row) {
-            $type = $row['feature_type'] ?? '';
-            if (isset($grouped[$type])) {
-                $grouped[$type][] = $row;
+        try {
+            self::ensureTableExists();
+
+            $rows = Database::query(
+                "SELECT * FROM `app_features` WHERE `is_active` = 1 ORDER BY `sort_order` ASC, `id` ASC"
+            ) ?: [];
+
+            foreach ($rows as $row) {
+                $type = $row['feature_type'] ?? '';
+                if (isset($grouped[$type])) {
+                    $grouped[$type][] = $row;
+                }
             }
+        } catch (\Throwable $e) {
+            error_log('[AppFeature] Error getAllGrouped: ' . $e->getMessage());
         }
 
         return $grouped;
@@ -43,9 +77,15 @@ class AppFeature
      */
     public static function getAll(): array
     {
-        return Database::query(
-            "SELECT * FROM `app_features` ORDER BY `feature_type`, `sort_order` ASC, `id` ASC"
-        );
+        try {
+            self::ensureTableExists();
+            return Database::query(
+                "SELECT * FROM `app_features` ORDER BY `feature_type`, `sort_order` ASC, `id` ASC"
+            ) ?: [];
+        } catch (\Throwable $e) {
+            error_log('[AppFeature] Error getAll: ' . $e->getMessage());
+            return [];
+        }
     }
 
     /**
@@ -53,11 +93,17 @@ class AppFeature
      */
     public static function getByType(string $type, bool $activeOnly = true): array
     {
-        $where = $activeOnly ? 'WHERE `feature_type` = ? AND `is_active` = 1' : 'WHERE `feature_type` = ?';
-        return Database::query(
-            "SELECT * FROM `app_features` {$where} ORDER BY `sort_order` ASC, `id` ASC",
-            [$type]
-        );
+        try {
+            self::ensureTableExists();
+            $where = $activeOnly ? 'WHERE `feature_type` = ? AND `is_active` = 1' : 'WHERE `feature_type` = ?';
+            return Database::query(
+                "SELECT * FROM `app_features` {$where} ORDER BY `sort_order` ASC, `id` ASC",
+                [$type]
+            ) ?: [];
+        } catch (\Throwable $e) {
+            error_log('[AppFeature] Error getByType: ' . $e->getMessage());
+            return [];
+        }
     }
 
     /**

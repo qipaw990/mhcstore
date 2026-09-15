@@ -75,6 +75,7 @@ docker compose exec -u root cicalengkago_app chmod -R 777 /var/www/html/public/u
 # Jalankan migrasi database otomatis & indeks performa
 echo "🗄️ Menjalankan migrasi database otomatis & indeks performa..."
 docker compose exec -T cicalengkago_app php database/run_casaos_migration.php 2>/dev/null || php database/run_casaos_migration.php 2>/dev/null || true
+docker compose exec -T cicalengkago_app php database/migrate_app_features.php 2>/dev/null || php database/migrate_app_features.php 2>/dev/null || true
 docker compose exec -T cicalengkago_app php database/optimize_performance_indexes.php 2>/dev/null || php database/optimize_performance_indexes.php 2>/dev/null || true
 docker compose exec -T cicalengkago_app php database/add_doku_settings.php 2>/dev/null || php database/add_doku_settings.php 2>/dev/null || true
 

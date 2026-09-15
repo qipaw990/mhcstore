@@ -2182,15 +2182,21 @@ class AdminController extends Controller
 
     public function appFeatures(): void
     {
+        $tableExists = AppFeature::tableExists();
+        if (!$tableExists) {
+            try {
+                AppFeature::migrate();
+                $tableExists = AppFeature::tableExists();
+            } catch (\Throwable $e) {
+                // Ignore, view will show initialization button if failed
+            }
+        }
+
         $featuresByType = [];
         $allTypes = ['service_grid', 'filter_chip', 'trending_chip', 'quick_action', 'home_section'];
         foreach ($allTypes as $type) {
-            $featuresByType[$type] = AppFeature::getByType($type, false);
+            $featuresByType[$type] = $tableExists ? AppFeature::getByType($type, false) : [];
         }
-
-        $tableExists = (bool)Database::fetchOne(
-            "SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'app_features' LIMIT 1"
-        );
 
         $this->view('admin/features', [
             'active_tab'      => 'features',

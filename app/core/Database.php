@@ -301,6 +301,28 @@ class Database
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
             } catch (Exception $e) {}
 
+            // Guarantee app_features table existence and seed
+            try {
+                $chkFeatures = $this->pdo->query("SHOW TABLES LIKE 'app_features'")->fetch();
+                if (!$chkFeatures) {
+                    $sqlFile = dirname(__DIR__, 2) . '/database/migrate_app_features.sql';
+                    if (file_exists($sqlFile)) {
+                        $sql = file_get_contents($sqlFile);
+                        $statements = array_filter(
+                            array_map('trim', explode(';', $sql)),
+                            fn($s) => !empty($s) && !preg_match('/^--/', $s)
+                        );
+                        foreach ($statements as $stmt) {
+                            if (!empty(trim($stmt))) {
+                                try {
+                                    $this->pdo->exec($stmt);
+                                } catch (\Throwable $t) {}
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {}
+
         } catch (Exception $e) {
             error_log("Auto Migration Error: " . $e->getMessage());
         }
