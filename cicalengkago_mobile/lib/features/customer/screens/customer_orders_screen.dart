@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/widgets/cicalengkago_logo.dart';
 import '../../../core/widgets/require_auth_widget.dart';
+import '../../../core/widgets/app_shimmer.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -114,109 +115,144 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
       subtitle: 'Silakan masuk ke akun CicalengkaGO Anda untuk melihat daftar pesanan aktif dan riwayat belanja.',
       icon: Icons.receipt_long_rounded,
       child: Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: const Text(
-          'Pesanan Saya',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.inkBlack),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: AppTheme.inkBlack),
-            onPressed: () => ctrl.fetchOrders(),
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50),
-          child: Column(
-            children: [
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: List.generate(_filters.length, (idx) {
-                    final isSelected = _selectedFilterIndex == idx;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(_filters[idx]),
-                        selected: isSelected,
-                        onSelected: (val) {
-                          if (val) {
-                            setState(() {
-                              _selectedFilterIndex = idx;
-                            });
-                          }
-                        },
-                        selectedColor: const Color(0xFFEF4444),
-                        backgroundColor: const Color(0xFFF1F5F9),
-                        labelStyle: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : const Color(0xFF64748B),
-                        ),
-                        side: BorderSide.none,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      ),
-                    );
-                  }),
+      backgroundColor: AppTheme.canvasSofter,
+      body: CustomScrollView(
+        slivers: [
+          // ─── Gradient Header ───
+          SliverAppBar(
+            pinned: true,
+            expandedHeight: 110,
+            backgroundColor: AppTheme.brandOrange,
+            foregroundColor: Colors.white,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: const BoxDecoration(gradient: AppTheme.heroGradient),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        const Text('Pesanan Saya',
+                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white)),
+                        if (allOrders.isNotEmpty)
+                          Text('${allOrders.length} total pesanan',
+                              style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.8))),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-              Container(height: 1, color: const Color(0xFFE2E8F0)),
-            ],
-          ),
-        ),
-      ),
-      body: ctrl.isLoading && allOrders.isEmpty
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.inkBlack))
-          : RefreshIndicator(
-              color: AppTheme.inkBlack,
-              onRefresh: () async => ctrl.fetchOrders(),
-              child: filteredOrders.isEmpty
-                  ? SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      child: Container(
-                        height: MediaQuery.of(context).size.height * 0.6,
-                        alignment: Alignment.center,
-                        padding: const EdgeInsets.all(32),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const CicalengkaGoLogo(size: 76, borderRadius: 24),
-                            const SizedBox(height: 16),
-                            Text(
-                              _selectedFilterIndex == 0
-                                  ? 'Belum Ada Pesanan'
-                                  : 'Tidak ada pesanan (${_filters[_selectedFilterIndex]})',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
-                            ),
-                            const SizedBox(height: 6),
-                            const Text(
-                              'Pesanan makanan dan pengiriman barang Anda akan tampil rapi di sini.',
-                              style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: filteredOrders.length,
-                      itemBuilder: (context, index) {
-                        final order = filteredOrders[index] is Map<String, dynamic>
-                            ? filteredOrders[index] as Map<String, dynamic>
-                            : Map<String, dynamic>.from(filteredOrders[index] as Map);
-                        return _buildOrderCard(order, context);
-                      },
-                    ),
             ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                onPressed: () => ctrl.fetchOrders(),
+              ),
+            ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(52),
+              child: Container(
+                color: Colors.white,
+                child: Column(
+                  children: [
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        children: List.generate(_filters.length, (idx) {
+                          final isSelected = _selectedFilterIndex == idx;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: GestureDetector(
+                              onTap: () => setState(() => _selectedFilterIndex = idx),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                                decoration: BoxDecoration(
+                                  gradient: isSelected ? AppTheme.primaryGradient : null,
+                                  color: isSelected ? null : const Color(0xFFF3F3F3),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: isSelected ? AppTheme.floatShadow : null,
+                                ),
+                                child: Text(
+                                  _filters[idx],
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: isSelected ? Colors.white : AppTheme.textBody,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                    Container(height: 1, color: AppTheme.cardBorder),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // ─── Body ───
+          if (ctrl.isLoading && allOrders.isEmpty)
+            const SliverToBoxAdapter(child: Padding(
+              padding: EdgeInsets.all(16),
+              child: ShimmerList(count: 4, cardHeight: 120),
+            ))
+          else if (filteredOrders.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(40),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 96, height: 96,
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.warmGradient,
+                          shape: BoxShape.circle,
+                          boxShadow: AppTheme.floatShadow,
+                        ),
+                        child: const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 44),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        _selectedFilterIndex == 0 ? 'Belum Ada Pesanan' : 'Tidak ada pesanan (${_filters[_selectedFilterIndex]})',
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.textInk),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text('Pesanan makanan dan pengiriman barang Anda akan tampil rapi di sini.',
+                          style: TextStyle(fontSize: 13, color: AppTheme.textMute, height: 1.5),
+                          textAlign: TextAlign.center),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final order = filteredOrders[index] is Map<String, dynamic>
+                        ? filteredOrders[index] as Map<String, dynamic>
+                        : Map<String, dynamic>.from(filteredOrders[index] as Map);
+                    return _buildOrderCard(order, context);
+                  },
+                  childCount: filteredOrders.length,
+                ),
+              ),
+            ),
+        ],
       ),
-    );
-  }
+    ));
 
   Widget _buildOrderCard(Map<String, dynamic> order, BuildContext context) {
     final orderCode = order['order_code']?.toString() ?? '';
@@ -246,18 +282,12 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> with Single
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: isActive ? AppTheme.brandOrange.withValues(alpha: 0.2) : AppTheme.cardBorder),
+        boxShadow: AppTheme.cardShadow,
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         onTap: () => _openTracking(context, orderCode),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

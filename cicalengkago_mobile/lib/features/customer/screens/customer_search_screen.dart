@@ -181,7 +181,7 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
     final displayStores = _getFilteredStores();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppTheme.canvasSofter,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0.5,
@@ -189,7 +189,7 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
         titleSpacing: 0,
         leading: Navigator.canPop(context)
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
+                icon: const Icon(Icons.arrow_back_rounded, color: AppTheme.textInk),
                 onPressed: () => Navigator.pop(context),
               )
             : null,
@@ -199,25 +199,25 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
             right: 16.0,
           ),
           child: Container(
-            height: 42,
+            height: 44,
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
+              color: AppTheme.canvasSoft,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: AppTheme.cardBorder),
             ),
             child: TextField(
               controller: _searchCtrl,
               autofocus: widget.initialQuery.isEmpty,
-              style: const TextStyle(fontSize: 13.5, color: Color(0xFF0F172A)),
+              style: const TextStyle(fontSize: 13.5, color: AppTheme.textInk),
               onChanged: _onSearchChanged,
               onSubmitted: _performSearch,
               decoration: InputDecoration(
                 hintText: 'Cari seblak, ayam geprek, boba, resto...',
-                hintStyle: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
-                prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFFEF4444)),
+                hintStyle: TextStyle(fontSize: 12.5, color: AppTheme.textMute),
+                prefixIcon: const Icon(Icons.search_rounded, size: 20, color: AppTheme.brandOrange),
                 suffixIcon: _searchCtrl.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, size: 18, color: Color(0xFF64748B)),
+                        icon: Icon(Icons.clear_rounded, size: 18, color: AppTheme.textMute),
                         onPressed: () {
                           _searchCtrl.clear();
                           setState(() {
@@ -267,27 +267,29 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
                           final isSelected = _activeFilter == tag;
                           return Padding(
                             padding: const EdgeInsets.only(right: 6),
-                            child: FilterChip(
-                              label: Text(tag),
-                              selected: isSelected,
-                              onSelected: (val) {
-                                setState(() => _activeFilter = tag);
-                              },
-                              selectedColor: const Color(0xFFEF4444),
-                              backgroundColor: Colors.white,
-                              labelStyle: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: isSelected ? Colors.white : const Color(0xFF475569),
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                side: BorderSide(
-                                  color: isSelected ? const Color(0xFFEF4444) : const Color(0xFFE2E8F0),
+                            child: GestureDetector(
+                              onTap: () => setState(() => _activeFilter = tag),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 180),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                                decoration: BoxDecoration(
+                                  gradient: isSelected ? AppTheme.primaryGradient : null,
+                                  color: isSelected ? null : Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isSelected ? AppTheme.brandOrange : AppTheme.cardBorder,
+                                  ),
+                                  boxShadow: isSelected ? AppTheme.floatShadow : null,
+                                ),
+                                child: Text(
+                                  tag,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: isSelected ? Colors.white : AppTheme.textBody,
+                                  ),
                                 ),
                               ),
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
-                              showCheckmark: false,
                             ),
                           );
                         },

@@ -160,19 +160,25 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
 
   Widget _buildBalanceCard(double balance, BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF262626), Color(0xFF000000)],
+          colors: [Color(0xFF261814), Color(0xFF160B08), Color(0xFF0D0604)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFFF8C61).withValues(alpha: 0.25), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 20,
+            color: const Color(0xFFE8400C).withValues(alpha: 0.15),
+            blurRadius: 24,
             offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.4),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -188,46 +194,52 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                   Row(
                     children: [
                       const Text('Cicalengka',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15)),
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: -0.3)),
                       const Text('Pay',
-                          style: TextStyle(color: Color(0xFFFFE4E6), fontWeight: FontWeight.w900, fontSize: 15)),
+                          style: TextStyle(color: Color(0xFFFF8C61), fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: -0.3)),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          gradient: AppTheme.primaryGradient,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Text('E-WALLET',
-                            style: TextStyle(color: AppTheme.primaryRed, fontSize: 8, fontWeight: FontWeight.bold)),
+                            style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
                   const Text('SALDO UTAMA AKTIF',
-                      style: TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+                      style: TextStyle(color: Color(0xFFAFA09A), fontSize: 9.5, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
                   const SizedBox(height: 2),
                   Text(
                     CurrencyFormatter.formatRupiah(balance),
-                    style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                    ),
                   ),
                 ],
               ),
               Container(
-                width: 40,
-                height: 40,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                 ),
-                child: const Icon(Icons.shield_rounded, color: Colors.white, size: 20),
+                child: const Icon(Icons.shield_rounded, color: Color(0xFFFF8C61), size: 22),
               ),
             ],
           ),
+          const SizedBox(height: 18),
+          Divider(color: Colors.white.withValues(alpha: 0.12), height: 1),
           const SizedBox(height: 16),
-          const Divider(color: Colors.white24, height: 1),
-          const SizedBox(height: 14),
-          // Action buttons row: ONLY Top Up and Kirim Uang
+          // Action buttons row: Top Up and Kirim Uang
           Row(
             children: [
               Expanded(
@@ -235,26 +247,26 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () => _showTopUpSheet(context),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.18),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.white.withOpacity(0.25)),
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                       ),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add_circle_rounded, color: Colors.white, size: 20),
+                          Icon(Icons.add_circle_rounded, color: Colors.white, size: 19),
                           SizedBox(width: 8),
                           Text(
                             'Top Up',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.3,
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.2,
                             ),
                           ),
                         ],
@@ -269,13 +281,19 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () => _showSendMoneySheet(context),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryRed.withOpacity(0.85),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.white.withOpacity(0.3)),
+                        gradient: AppTheme.primaryGradient,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryRed.withValues(alpha: 0.4),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -286,9 +304,9 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                             'Kirim Uang',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.3,
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.2,
                             ),
                           ),
                         ],
@@ -330,8 +348,9 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFFFE5D0).withValues(alpha: 0.8)),
+        boxShadow: AppTheme.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,20 +358,20 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
           Row(
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFD97706)]),
+                  gradient: AppTheme.goldGradient,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 18),
+                child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 10),
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Isi Saldo Instan', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                  Text('Bebas biaya admin • Langsung masuk', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                  Text('Isi Saldo Instan', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppTheme.inkBlack)),
+                  Text('Bebas biaya admin • Langsung masuk otomatis', style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
                 ],
               ),
             ],
@@ -363,8 +382,8 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
               childAspectRatio: 2.6,
             ),
             itemCount: nominals.length,
@@ -377,26 +396,26 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: color.withOpacity(0.3)),
-                    boxShadow: [BoxShadow(color: color.withOpacity(0.05), blurRadius: 6)],
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: color.withValues(alpha: 0.3)),
+                    boxShadow: [BoxShadow(color: color.withValues(alpha: 0.06), blurRadius: 6)],
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         item['label'] as String,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: AppTheme.inkBlack),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
+                          color: color.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           item['tag'] as String,
-                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color),
+                          style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: color),
                         ),
                       ),
                     ],
@@ -405,23 +424,23 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
               );
             },
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           GestureDetector(
             onTap: () => _showTopUpSheet(context),
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.symmetric(vertical: 11),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF5F5),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFFECDD3), style: BorderStyle.values[1]),
+                color: AppTheme.brandCream,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFFFE5D0)),
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.edit_rounded, color: AppTheme.primaryRed, size: 14),
-                  SizedBox(width: 6),
-                  Text('Masukkan Nominal Lainnya', style: TextStyle(color: AppTheme.primaryRed, fontSize: 12, fontWeight: FontWeight.bold)),
+                  Icon(Icons.edit_rounded, color: AppTheme.primaryRed, size: 15),
+                  SizedBox(width: 8),
+                  Text('Masukkan Nominal Lainnya', style: TextStyle(color: AppTheme.primaryRed, fontSize: 12.5, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -670,7 +689,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryRed.withOpacity(0.1),
+                            color: AppTheme.primaryRed.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.send_rounded, color: AppTheme.primaryRed, size: 20),
@@ -1128,7 +1147,7 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
           decoration: BoxDecoration(
             color: isActive ? Colors.white : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
-            boxShadow: isActive ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4, offset: const Offset(0, 1))] : null,
+            boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 4, offset: const Offset(0, 1))] : null,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1242,38 +1261,38 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
       icon = isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded;
       title = description.isNotEmpty ? description : (isCredit ? 'Saldo Masuk' : 'Saldo Keluar');
       badgeText = isCredit ? 'Masuk' : 'Keluar';
-      badgeBg = color.withOpacity(0.1);
+      badgeBg = color.withValues(alpha: 0.1);
       badgeTextColor = color;
     }
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: withdrawStatus == 'pending' ? const Color(0xFFFDE68A) : const Color(0xFFF1F5F9),
+          color: withdrawStatus == 'pending' ? const Color(0xFFFDE68A) : const Color(0xFFFFE5D0).withValues(alpha: 0.6),
         ),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 2)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () => _showTransactionDetail(context, tx),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
                 Container(
-                  width: 42,
-                  height: 42,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.12),
+                    color: color.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(icon, color: color, size: 20),
+                  child: Icon(icon, color: color, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1282,17 +1301,17 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.inkBlack),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 3),
                       Text(
                         withdrawStatus == 'pending'
                             ? 'Pengajuan sedang ditinjau Admin'
                             : (tx['created_at'] != null ? tx['created_at'].toString() : (tx['description'] ?? '')),
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 10.5,
                           color: withdrawStatus == 'pending' ? const Color(0xFFD97706) : const Color(0xFF64748B),
                           fontWeight: withdrawStatus == 'pending' ? FontWeight.w600 : FontWeight.normal,
                         ),
@@ -1307,18 +1326,18 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                   children: [
                     Text(
                       '${isCredit ? '+' : '-'}${CurrencyFormatter.formatRupiah(amount)}',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: color),
                     ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                       decoration: BoxDecoration(
                         color: badgeBg,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         badgeText,
-                        style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: badgeTextColor),
+                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: badgeTextColor),
                       ),
                     ),
                   ],
@@ -1356,34 +1375,35 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 2)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () => _showTopUpDetail(context, log),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
-                  child: Icon(icon, color: color, size: 20),
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
+                  child: Icon(icon, color: color, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Top Up CicalengkaPay', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                      Text(log['topup_code'] ?? '', style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontFamily: 'monospace')),
+                      const Text('Top Up CicalengkaPay', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.inkBlack)),
+                      const SizedBox(height: 2),
+                      Text(log['topup_code'] ?? '', style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontFamily: 'monospace')),
                     ],
                   ),
                 ),
@@ -1392,13 +1412,13 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
                   children: [
                     Text(
                       '${status == 'success' ? '+' : ''}${CurrencyFormatter.formatRupiah(amount)}',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: color),
                     ),
                     Container(
-                      margin: const EdgeInsets.only(top: 3),
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-                      child: Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color)),
+                      margin: const EdgeInsets.only(top: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6)),
+                      child: Text(label, style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: color)),
                     ),
                   ],
                 ),

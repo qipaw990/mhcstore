@@ -147,7 +147,7 @@ class _VouchersScreenState extends State<VouchersScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryRed.withOpacity(0.3),
+                      color: AppTheme.primaryRed.withValues(alpha: 0.3),
                       blurRadius: 15,
                       offset: const Offset(0, 6),
                     ),
@@ -162,7 +162,7 @@ class _VouchersScreenState extends State<VouchersScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Text(
@@ -187,7 +187,7 @@ class _VouchersScreenState extends State<VouchersScreen> {
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: Colors.white.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.confirmation_number_rounded, color: Colors.white, size: 36),
@@ -209,7 +209,7 @@ class _VouchersScreenState extends State<VouchersScreen> {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2)),
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2)),
                   ],
                 ),
                 child: Column(
@@ -351,7 +351,7 @@ class _VouchersScreenState extends State<VouchersScreen> {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: isSelected ? AppTheme.primaryRed : const Color(0xFFE2E8F0)),
           boxShadow: isSelected
-              ? [BoxShadow(color: AppTheme.primaryRed.withOpacity(0.2), blurRadius: 6, offset: const Offset(0, 2))]
+              ? [BoxShadow(color: AppTheme.primaryRed.withValues(alpha: 0.2), blurRadius: 6, offset: const Offset(0, 2))]
               : null,
         ),
         child: Row(
@@ -395,7 +395,7 @@ class _VouchersScreenState extends State<VouchersScreen> {
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -414,9 +414,9 @@ class _VouchersScreenState extends State<VouchersScreen> {
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: themeColor.withOpacity(0.1),
+                    color: themeColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: themeColor.withOpacity(0.2)),
+                    border: Border.all(color: themeColor.withValues(alpha: 0.2)),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,

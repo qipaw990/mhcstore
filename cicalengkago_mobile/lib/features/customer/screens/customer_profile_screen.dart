@@ -165,33 +165,29 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
             borderRadius: BorderRadius.circular(20),
             child: Container(
               margin: const EdgeInsets.only(right: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFEE2737), Color(0xFFC61524)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                gradient: AppTheme.goldGradient,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFEE2737).withValues(alpha: 0.25),
-                    blurRadius: 6,
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
+                    blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              child: Row(
+              child: const Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 13),
+                children: [
+                  Icon(Icons.stars_rounded, color: Colors.white, size: 14),
                   SizedBox(width: 4),
                   Text(
                     'CicalengkaClub',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ],
@@ -207,18 +203,12 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
           children: [
             // ── 1. USER PROFILE CARD ──
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFFFE5D0).withValues(alpha: 0.8)),
+                boxShadow: AppTheme.cardShadow,
               ),
               child: Row(
                 children: [
@@ -228,11 +218,11 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                     child: Stack(
                       children: [
                         Container(
-                          width: 54,
-                          height: 54,
+                          width: 58,
+                          height: 58,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: const Color(0xFFEE2737), width: 2),
+                            border: Border.all(color: AppTheme.brandOrange, width: 2.5),
                           ),
                           child: ClipOval(
                             child: _avatarBytes != null
@@ -252,8 +242,8 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                           right: 0,
                           child: Container(
                             padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: AppTheme.primaryRed,
+                            decoration: BoxDecoration(
+                              gradient: AppTheme.primaryGradient,
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -276,23 +266,23 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                         Text(
                           name,
                           style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.inkBlack,
                             letterSpacing: -0.2,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 3),
                         Row(
                           children: [
-                            const Icon(Icons.phone_android_rounded, size: 11, color: Color(0xFF64748B)),
+                            const Icon(Icons.phone_android_rounded, size: 12, color: Color(0xFF64748B)),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
                                 phone,
-                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                                style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -300,15 +290,15 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                           ],
                         ),
                         if (email.isNotEmpty && email != '-') ...[
-                          const SizedBox(height: 1.5),
+                          const SizedBox(height: 2),
                           Row(
                             children: [
-                              const Icon(Icons.email_outlined, size: 11, color: Color(0xFF94A3B8)),
+                              const Icon(Icons.email_outlined, size: 12, color: Color(0xFF94A3B8)),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
                                   email,
-                                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -323,16 +313,16 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
 
                   // Edit Profile Icon Button
                   Material(
-                    color: const Color(0xFFF1F5F9),
-                    shape: CircleBorder(side: BorderSide(color: const Color(0xFFCBD5E1))),
+                    color: AppTheme.brandCream,
+                    shape: CircleBorder(side: BorderSide(color: const Color(0xFFFFE5D0))),
                     child: InkWell(
                       customBorder: const CircleBorder(),
                       onTap: () => _showEditProfileModal(context, user, ctrl, authCtrl),
                       child: Container(
-                        width: 36,
-                        height: 36,
+                        width: 38,
+                        height: 38,
                         alignment: Alignment.center,
-                        child: const Icon(Icons.edit_rounded, color: AppTheme.primaryRed, size: 15),
+                        child: const Icon(Icons.edit_rounded, color: AppTheme.primaryRed, size: 16),
                       ),
                     ),
                   ),
@@ -340,40 +330,30 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
               ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
 
             // ── 2. CICALENGKAPAY QUICK BALANCE CARD ──
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFFFE5D0).withValues(alpha: 0.8)),
+                boxShadow: AppTheme.cardShadow,
               ),
               child: Row(
                 children: [
                   // Wallet Icon Box
                   Container(
-                    width: 38,
-                    height: 38,
+                    width: 42,
+                    height: 42,
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [Color(0xFFEE2737), Color(0xFFC61524)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      gradient: AppTheme.primaryGradient,
                     ),
-                    child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 18),
+                    child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 20),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
 
                   // Label & Amount
                   Expanded(
@@ -382,7 +362,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                       children: [
                         RichText(
                           text: const TextSpan(
-                            style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, letterSpacing: 0.5, color: Color(0xFF64748B)),
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5, color: Color(0xFF64748B)),
                             children: [
                               TextSpan(text: 'SALDO CICALENGKA'),
                               TextSpan(text: 'PAY', style: TextStyle(color: AppTheme.primaryRed)),
@@ -393,9 +373,9 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                         Text(
                           _formatRupiah(walletBalance),
                           style: const TextStyle(
-                            fontSize: 15,
+                            fontSize: 16,
                             fontWeight: FontWeight.w900,
-                            color: Color(0xFF0F172A),
+                            color: AppTheme.inkBlack,
                             letterSpacing: -0.3,
                           ),
                         ),
@@ -414,18 +394,14 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                     },
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFEE2737), Color(0xFFC61524)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        gradient: AppTheme.primaryGradient,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFEE2737).withValues(alpha: 0.25),
-                            blurRadius: 6,
+                            color: AppTheme.primaryRed.withValues(alpha: 0.3),
+                            blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
                         ],
@@ -434,7 +410,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                         'Isi Saldo',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 11,
+                          fontSize: 11.5,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -444,15 +420,16 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
               ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
 
             // ── 3. MENU NAVIGATION LIST ──
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-                boxShadow: [
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFFFE5D0).withValues(alpha: 0.8)),
+                boxShadow: AppTheme.cardShadow,
+              ),
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.03),
                     blurRadius: 8,
@@ -1004,7 +981,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 18),

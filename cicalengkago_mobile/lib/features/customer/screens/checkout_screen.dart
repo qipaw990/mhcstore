@@ -278,13 +278,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       subtitle: 'Masuk ke akun CicalengkaGO Anda untuk melanjutkan proses pengantaran dan pembayaran.',
       icon: Icons.local_shipping_outlined,
       child: Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        foregroundColor: const Color(0xFF0F172A),
-        title: const Text('Checkout & Pengantaran', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-      ),
+        backgroundColor: const Color(0xFFF8FAFC),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          scrolledUnderElevation: 1,
+          foregroundColor: AppTheme.inkBlack,
+          centerTitle: false,
+          title: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Checkout & Pengantaran',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.inkBlack),
+              ),
+              Text(
+                'Konfirmasi alamat & detail pesanan Anda',
+                style: TextStyle(fontSize: 11, color: AppTheme.textMute, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -538,15 +552,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
       ),
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 16,
-              offset: const Offset(0, -4),
+              color: const Color(0xFF1E293B).withValues(alpha: 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, -6),
             ),
           ],
         ),
@@ -560,40 +574,65 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   children: [
                     const Text(
                       'Total Pembayaran',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                      style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Text(
                       CurrencyFormatter.formatRupiah(grandTotal),
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 20,
                         fontWeight: FontWeight.w900,
                         color: AppTheme.inkBlack,
+                        letterSpacing: -0.3,
                       ),
                     ),
                   ],
                 ),
               ),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFEF4444),
-                  foregroundColor: Colors.white,
-                  elevation: 2,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              const SizedBox(width: 14),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: (_isSubmitting || _isFetchingLocation) ? null : AppTheme.primaryGradient,
+                  color: (_isSubmitting || _isFetchingLocation) ? Colors.grey.shade400 : null,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: (_isSubmitting || _isFetchingLocation)
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: AppTheme.primaryRed.withValues(alpha: 0.35),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                 ),
-                icon: _isSubmitting
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.check_circle_rounded, size: 18),
-                label: Text(
-                  _isSubmitting ? 'Memproses...' : 'Pesan Sekarang',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: (_isSubmitting || _isFetchingLocation) ? null : _handleCheckout,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_isSubmitting)
+                            const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          else
+                            const Icon(Icons.check_circle_rounded, size: 18, color: Colors.white),
+                          const SizedBox(width: 8),
+                          Text(
+                            _isSubmitting ? 'Memproses...' : 'Pesan Sekarang',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                onPressed: (_isSubmitting || _isFetchingLocation) ? null : _handleCheckout,
               ),
             ],
           ),

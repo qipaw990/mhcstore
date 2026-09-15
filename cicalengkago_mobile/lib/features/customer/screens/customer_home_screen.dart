@@ -380,7 +380,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 15,
               offset: const Offset(0, -4),
             ),
@@ -546,7 +546,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.18),
+                      color: Colors.white.withValues(alpha: 0.18),
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
@@ -586,7 +586,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               if (authCtrl.isLoggedIn)
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.18),
+                    color: Colors.white.withValues(alpha: 0.18),
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
@@ -639,7 +639,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
@@ -655,7 +655,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     Container(
                       padding: const EdgeInsets.all(7),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryRed.withOpacity(0.1),
+                        color: AppTheme.primaryRed.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(Icons.account_balance_wallet_rounded, color: AppTheme.primaryRed, size: 18),
@@ -829,7 +829,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 border: Border.all(color: const Color(0xFFE2E8F0)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: Colors.black.withValues(alpha: 0.03),
                     blurRadius: 10,
                     offset: const Offset(0, 3),
                   ),
@@ -986,7 +986,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: iconColor.withOpacity(0.12),
+                              color: iconColor.withValues(alpha: 0.12),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                             ),
@@ -1031,7 +1031,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: (cat['color'] as Color).withOpacity(0.1),
+                            color: (cat['color'] as Color).withValues(alpha: 0.1),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -1385,7 +1385,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -1471,7 +1471,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFFFEF2F2),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.primaryRed.withOpacity(0.3)),
+                  border: Border.all(color: AppTheme.primaryRed.withValues(alpha: 0.3)),
                 ),
                 child: const Text(
                   'PROMO SPESIAL',

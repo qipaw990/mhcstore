@@ -81,106 +81,154 @@ class _CartScreenState extends State<CartScreen> {
       subtitle: 'Silakan masuk ke akun Anda untuk melihat isi keranjang belanja dan memproses checkout.',
       icon: Icons.shopping_bag_outlined,
       child: Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        scrolledUnderElevation: 0.5,
-        foregroundColor: AppTheme.inkBlack,
-        title: const Text(
-          'Keranjang Belanja',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
-        ),
-        actions: [
-          if (!isEmpty)
-            IconButton(
-              tooltip: 'Kosongkan Keranjang',
-              icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444)),
-              onPressed: () => _confirmClearCart(context, customerCtrl),
-            ),
-        ],
-      ),
-      body: isEmpty
-          ? _buildEmptyState(context)
-          : RefreshIndicator(
-              color: AppTheme.inkBlack,
-              onRefresh: () => customerCtrl.fetchCart(),
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  if (stores.isNotEmpty)
-                    ...stores.map((store) => _buildStoreCard(context, customerCtrl, store))
-                  else
-                    _buildFlatItemsCard(context, customerCtrl, rawItems, cart?['store'] as Map<String, dynamic>?),
-                  const SizedBox(height: 24),
-                  _buildFoodSuggestionsSection(context, customerCtrl),
-                  const SizedBox(height: 80),
-                ],
+        backgroundColor: const Color(0xFFF8FAFC),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          scrolledUnderElevation: 1,
+          foregroundColor: AppTheme.inkBlack,
+          centerTitle: false,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Keranjang Belanja',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.inkBlack),
               ),
-            ),
-      bottomNavigationBar: isEmpty
-          ? null
-          : Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 16,
-                    offset: const Offset(0, -4),
+              if (!isEmpty)
+                Text(
+                  '${stores.isNotEmpty ? stores.length : 1} Toko • Siap checkout',
+                  style: const TextStyle(fontSize: 11, color: AppTheme.textMute, fontWeight: FontWeight.w500),
+                ),
+            ],
+          ),
+          actions: [
+            if (!isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: IconButton(
+                  tooltip: 'Kosongkan Keranjang',
+                  icon: Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEE2E2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 18),
                   ),
-                ],
+                  onPressed: () => _confirmClearCart(context, customerCtrl),
+                ),
               ),
-              child: SafeArea(
-                child: Row(
+          ],
+        ),
+        body: isEmpty
+            ? _buildEmptyState(context)
+            : RefreshIndicator(
+                color: AppTheme.primaryRed,
+                onRefresh: () => customerCtrl.fetchCart(),
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   children: [
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Total Pembelian',
-                            style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            CurrencyFormatter.formatRupiah(subtotal),
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF0F172A),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEF4444),
-                        foregroundColor: Colors.white,
-                        elevation: 2,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                      label: const Text(
-                        'Lanjut Checkout',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const CheckoutScreen()),
-                        );
-                      },
-                    ),
+                    if (stores.isNotEmpty)
+                      ...stores.map((store) => _buildStoreCard(context, customerCtrl, store))
+                    else
+                      _buildFlatItemsCard(context, customerCtrl, rawItems, cart?['store'] as Map<String, dynamic>?),
+                    const SizedBox(height: 20),
+                    _buildFoodSuggestionsSection(context, customerCtrl),
+                    const SizedBox(height: 100),
                   ],
                 ),
               ),
-            ),
+        bottomNavigationBar: isEmpty
+            ? null
+            : Container(
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF1E293B).withValues(alpha: 0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, -6),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Text(
+                                  'Total Pesanan',
+                                  style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.info_outline_rounded, size: 12, color: Color(0xFF94A3B8)),
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              CurrencyFormatter.formatRupiah(subtotal),
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                                color: AppTheme.inkBlack,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.primaryGradient,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primaryRed.withValues(alpha: 0.35),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const CheckoutScreen()),
+                              );
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Checkout',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Icon(Icons.arrow_forward_rounded, size: 18, color: Colors.white),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
       ),
     );
   }
@@ -188,37 +236,68 @@ class _CartScreenState extends State<CartScreen> {
   Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 90,
-              height: 90,
-              decoration: const BoxDecoration(
-                color: Color(0xFFEFEFEF),
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: AppTheme.brandCream,
                 shape: BoxShape.circle,
+                border: Border.all(color: AppTheme.cardBorder, width: 2),
+                boxShadow: AppTheme.cardShadow,
               ),
-              child: const Icon(Icons.shopping_bag_outlined, size: 44, color: AppTheme.inkBlack),
+              child: const Center(
+                child: Icon(Icons.shopping_bag_outlined, size: 48, color: AppTheme.primaryRed),
+              ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             const Text(
-              'Keranjang Belanja Kosong',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.inkBlack),
+              'Keranjang Masih Kosong',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppTheme.inkBlack),
             ),
             const SizedBox(height: 8),
             const Text(
               'Yuk, temukan makanan dan kuliner favoritmu\ndi CicalengkaGO dan tambahkan ke keranjang!',
-              style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.4),
+              style: TextStyle(fontSize: 13.5, color: Color(0xFF64748B), height: 1.5),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
-            UberPillButton(
-              label: 'Mulai Jelajah Kuliner',
-              icon: Icons.restaurant_menu_rounded,
-              onPressed: () {
-                Navigator.pop(context);
-              },
+            const SizedBox(height: 28),
+            Container(
+              decoration: BoxDecoration(
+                gradient: AppTheme.primaryGradient,
+                borderRadius: BorderRadius.circular(999),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryRed.withValues(alpha: 0.3),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(999),
+                  onTap: () => Navigator.pop(context),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.restaurant_menu_rounded, color: Colors.white, size: 20),
+                        SizedBox(width: 10),
+                        Text(
+                          'Mulai Jelajah Kuliner',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -237,15 +316,9 @@ class _CartScreenState extends State<CartScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFFFE5D0).withValues(alpha: 0.8)),
+        boxShadow: AppTheme.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -255,11 +328,11 @@ class _CartScreenState extends State<CartScreen> {
             child: Row(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   child: Container(
-                    width: 38,
-                    height: 38,
-                    color: const Color(0xFFF1F5F9),
+                    width: 40,
+                    height: 40,
+                    color: AppTheme.brandCream,
                     child: (storeLogoUrl != null)
                         ? CachedNetworkImage(
                             imageUrl: storeLogoUrl,
@@ -268,19 +341,19 @@ class _CartScreenState extends State<CartScreen> {
                               child: SizedBox(
                                 width: 14,
                                 height: 14,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.inkBlack),
+                                child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryRed),
                               ),
                             ),
                             errorWidget: (_, __, ___) => const Icon(
                               Icons.storefront_rounded,
-                              color: AppTheme.inkBlack,
-                              size: 20,
+                              color: AppTheme.primaryRed,
+                              size: 22,
                             ),
                           )
                         : const Icon(
                             Icons.storefront_rounded,
-                            color: AppTheme.inkBlack,
-                            size: 20,
+                            color: AppTheme.primaryRed,
+                            size: 22,
                           ),
                   ),
                 ),
@@ -291,14 +364,20 @@ class _CartScreenState extends State<CartScreen> {
                     children: [
                       Text(
                         store['store_name'] ?? store['name'] ?? 'Mitra Resto Cicalengka',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.5, color: AppTheme.inkBlack),
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: AppTheme.inkBlack),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
-                      const Text(
-                        'Mitra Resmi CicalengkaGO',
-                        style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                      Row(
+                        children: [
+                          Icon(Icons.verified_rounded, size: 12, color: AppTheme.brandOrange),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'Mitra Resmi CicalengkaGO',
+                            style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -306,18 +385,19 @@ class _CartScreenState extends State<CartScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
+                    color: AppTheme.brandCream,
                     borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFFFE5D0)),
                   ),
                   child: Text(
                     '${items.length} Menu',
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.primaryRed),
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          const Divider(height: 1, color: Color(0xFFF8FAFC)),
           ...items.asMap().entries.map((entry) {
             final idx = entry.key;
             final item = entry.value;
@@ -344,15 +424,9 @@ class _CartScreenState extends State<CartScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFFFE5D0).withValues(alpha: 0.8)),
+        boxShadow: AppTheme.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -362,11 +436,11 @@ class _CartScreenState extends State<CartScreen> {
             child: Row(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   child: Container(
-                    width: 38,
-                    height: 38,
-                    color: const Color(0xFFF1F5F9),
+                    width: 40,
+                    height: 40,
+                    color: AppTheme.brandCream,
                     child: (storeLogoUrl != null)
                         ? CachedNetworkImage(
                             imageUrl: storeLogoUrl,
@@ -375,19 +449,19 @@ class _CartScreenState extends State<CartScreen> {
                               child: SizedBox(
                                 width: 14,
                                 height: 14,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.inkBlack),
+                                child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryRed),
                               ),
                             ),
                             errorWidget: (_, __, ___) => const Icon(
                               Icons.storefront_rounded,
-                              color: AppTheme.inkBlack,
-                              size: 20,
+                              color: AppTheme.primaryRed,
+                              size: 22,
                             ),
                           )
                         : const Icon(
                             Icons.storefront_rounded,
-                            color: AppTheme.inkBlack,
-                            size: 20,
+                            color: AppTheme.primaryRed,
+                            size: 22,
                           ),
                   ),
                 ),
@@ -398,14 +472,20 @@ class _CartScreenState extends State<CartScreen> {
                     children: [
                       Text(
                         rawStoreName,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.5, color: AppTheme.inkBlack),
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: AppTheme.inkBlack),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
-                      const Text(
-                        'Mitra Resmi CicalengkaGO',
-                        style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                      Row(
+                        children: [
+                          Icon(Icons.verified_rounded, size: 12, color: AppTheme.brandOrange),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'Mitra Resmi CicalengkaGO',
+                            style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -413,18 +493,19 @@ class _CartScreenState extends State<CartScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
+                    color: AppTheme.brandCream,
                     borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFFFE5D0)),
                   ),
                   child: Text(
                     '${items.length} Menu',
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.primaryRed),
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          const Divider(height: 1, color: Color(0xFFF8FAFC)),
           ...items.asMap().entries.map((entry) {
             final idx = entry.key;
             final item = entry.value;
@@ -435,7 +516,7 @@ class _CartScreenState extends State<CartScreen> {
                 if (!isLast) const Divider(height: 1, indent: 16, endIndent: 16, color: Color(0xFFF8FAFC)),
               ],
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -449,7 +530,7 @@ class _CartScreenState extends State<CartScreen> {
     final imageUrl = _getFoodImage(item);
 
     return Padding(
-      padding: const EdgeInsets.all(14.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -457,8 +538,8 @@ class _CartScreenState extends State<CartScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(14),
             child: SizedBox(
-              width: 64,
-              height: 64,
+              width: 68,
+              height: 68,
               child: (imageUrl.isNotEmpty)
                   ? CachedNetworkImage(
                       imageUrl: imageUrl,
@@ -469,18 +550,18 @@ class _CartScreenState extends State<CartScreen> {
                           child: SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.inkBlack),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryRed),
                           ),
                         ),
                       ),
                       errorWidget: (context, url, error) => Container(
-                        color: const Color(0xFFF1F5F9),
-                        child: const Icon(Icons.fastfood_rounded, color: Color(0xFF94A3B8), size: 26),
+                        color: AppTheme.brandCream,
+                        child: const Icon(Icons.fastfood_rounded, color: AppTheme.brandOrange, size: 26),
                       ),
                     )
                   : Container(
-                      color: const Color(0xFFF1F5F9),
-                      child: const Icon(Icons.fastfood_rounded, color: Color(0xFF94A3B8), size: 26),
+                      color: AppTheme.brandCream,
+                      child: const Icon(Icons.fastfood_rounded, color: AppTheme.brandOrange, size: 26),
                     ),
             ),
           ),
@@ -493,7 +574,7 @@ class _CartScreenState extends State<CartScreen> {
               children: [
                 Text(
                   item['product_name'] ?? item['name'] ?? 'Produk Kuliner',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.inkBlack),
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.inkBlack),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -503,17 +584,17 @@ class _CartScreenState extends State<CartScreen> {
                     final varName = ItemOptionsHelper.getVariationName(item);
                     if (varName == null || varName.isEmpty) return const SizedBox.shrink();
                     return Padding(
-                      padding: const EdgeInsets.only(top: 2.5),
+                      padding: const EdgeInsets.only(top: 3),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFEE2E2),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: const Color(0xFFFECACA)),
+                          color: const Color(0xFFFFF3E0),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFFFCC80)),
                         ),
                         child: Text(
-                          '• Varian: $varName',
-                          style: const TextStyle(fontSize: 10, color: AppTheme.primaryRed, fontWeight: FontWeight.bold),
+                          'Varian: $varName',
+                          style: const TextStyle(fontSize: 10.5, color: Color(0xFFE65100), fontWeight: FontWeight.bold),
                         ),
                       ),
                     );
@@ -527,7 +608,7 @@ class _CartScreenState extends State<CartScreen> {
                     return Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
-                        '• Topping: ${addons.join(", ")}',
+                        '+ Topping: ${addons.join(", ")}',
                         style: const TextStyle(fontSize: 10.5, color: Color(0xFFD97706), fontWeight: FontWeight.w600),
                       ),
                     );
@@ -539,7 +620,7 @@ class _CartScreenState extends State<CartScreen> {
                     final notes = ItemOptionsHelper.getItemNotes(item);
                     if (notes == null || notes.isEmpty) return const SizedBox.shrink();
                     return Padding(
-                      padding: const EdgeInsets.only(top: 1.5),
+                      padding: const EdgeInsets.only(top: 2),
                       child: Text(
                         'Catatan: $notes',
                         style: const TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: Color(0xFF64748B)),
@@ -549,15 +630,21 @@ class _CartScreenState extends State<CartScreen> {
                     );
                   },
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  '${CurrencyFormatter.formatRupiah(itemPrice)} / porsi',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                ),
                 const SizedBox(height: 4),
-                Text(
-                  CurrencyFormatter.formatRupiah(itemPrice * qty),
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppTheme.inkBlack),
+                Row(
+                  children: [
+                    Text(
+                      CurrencyFormatter.formatRupiah(itemPrice * qty),
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: AppTheme.primaryRed),
+                    ),
+                    if (qty > 1) ...[
+                      const SizedBox(width: 4),
+                      Text(
+                        '(${CurrencyFormatter.formatRupiah(itemPrice)} / porsi)',
+                        style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
@@ -569,9 +656,9 @@ class _CartScreenState extends State<CartScreen> {
           Container(
             height: 36,
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: AppTheme.brandCream,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: const Color(0xFFFFE5D0)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -596,11 +683,11 @@ class _CartScreenState extends State<CartScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 6),
                   child: Text(
                     '$qty',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.inkBlack),
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: AppTheme.inkBlack),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.add_rounded, size: 16, color: AppTheme.inkBlack),
+                  icon: const Icon(Icons.add_rounded, size: 16, color: AppTheme.primaryRed),
                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   padding: EdgeInsets.zero,
                   onPressed: () async {
