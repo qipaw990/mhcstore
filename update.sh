@@ -75,7 +75,16 @@ docker compose exec -u root cicalengkago_app chmod -R 777 /var/www/html/public/u
 # Jalankan migrasi database otomatis & indeks performa
 echo "🗄️ Menjalankan migrasi database otomatis & indeks performa..."
 docker compose exec -T cicalengkago_app php database/run_casaos_migration.php 2>/dev/null || php database/run_casaos_migration.php 2>/dev/null || true
-docker compose exec -T cicalengkago_app php database/migrate_app_features.php 2>/dev/null || php database/migrate_app_features.php 2>/dev/null || true
+
+echo "📱 Menjalankan migrasi tabel app_features (Fitur & Layanan Dinamis)..."
+docker compose exec -T cicalengkago_app php database/migrate_app_features.php || php database/migrate_app_features.php || true
+if [ -f "database/migrate_app_features.sql" ]; then
+    docker compose exec -T cicalengkago_db mariadb -u root -prootpassword cicalengkago < database/migrate_app_features.sql 2>/dev/null || \
+    docker compose exec -T cicalengkago_db mysql -u root -prootpassword cicalengkago < database/migrate_app_features.sql 2>/dev/null || \
+    docker compose exec -T cicalengkago_db mariadb -u cicalengka_user -pcicalengka_pass cicalengkago < database/migrate_app_features.sql 2>/dev/null || \
+    docker compose exec -T cicalengkago_db mysql -u cicalengka_user -pcicalengka_pass cicalengkago < database/migrate_app_features.sql 2>/dev/null || true
+fi
+
 docker compose exec -T cicalengkago_app php database/optimize_performance_indexes.php 2>/dev/null || php database/optimize_performance_indexes.php 2>/dev/null || true
 docker compose exec -T cicalengkago_app php database/add_doku_settings.php 2>/dev/null || php database/add_doku_settings.php 2>/dev/null || true
 

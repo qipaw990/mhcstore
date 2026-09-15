@@ -232,9 +232,11 @@ try {
         $sqlFile = __DIR__ . '/migrate_app_features.sql';
         if (file_exists($sqlFile)) {
             $sql = file_get_contents($sqlFile);
+            $sqlClean = preg_replace('/--.*$/m', '', $sql);
+            $sqlClean = preg_replace('/\/\*.*?\*\//s', '', $sqlClean);
             $statements = array_filter(
-                array_map('trim', explode(';', $sql)),
-                fn($s) => !empty($s) && !preg_match('/^--/', $s)
+                array_map('trim', explode(';', $sqlClean)),
+                fn($s) => !empty($s)
             );
             foreach ($statements as $stmt) {
                 if (!empty(trim($stmt))) {
