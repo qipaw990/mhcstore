@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/app_shimmer.dart';
 import '../controllers/customer_controller.dart';
 
 class CustomerNotificationsScreen extends StatefulWidget {
@@ -47,58 +46,48 @@ class _CustomerNotificationsScreenState extends State<CustomerNotificationsScree
     final unreadCount = notifications.where((n) => n['is_read'] != true && n['is_read'] != 1).length;
 
     return Scaffold(
-      backgroundColor: AppTheme.canvasSofter,
-      body: CustomScrollView(
-        slivers: [
-          // ─── Gradient Header ────────────────────────────────────────────
-          SliverAppBar(
-            pinned: true,
-            expandedHeight: 110,
-            backgroundColor: AppTheme.brandOrange,
-            foregroundColor: Colors.white,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(gradient: AppTheme.heroGradient),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Row(
-                          children: [
-                            const Text(
-                              '🔔  Notifikasi',
-                              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white),
-                            ),
-                            if (unreadCount > 0) ...[const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.25),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text('$unreadCount baru',
-                                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 1,
+        centerTitle: false,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Notifikasi',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF0F172A),
+                letterSpacing: -0.3,
               ),
             ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-                onPressed: () => ctrl.fetchNotifications(),
+            if (unreadCount > 0)
+              Text(
+                '$unreadCount pesan belum dibaca',
+                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w500, color: AppTheme.brandOrange),
               ),
-              const SizedBox(width: 4),
-            ],
+          ],
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: IconButton(
+              tooltip: 'Perbarui',
+              icon: Container(
+                padding: const EdgeInsets.all(7),
+                decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle),
+                child: const Icon(Icons.refresh_rounded, color: Color(0xFF475569), size: 18),
+              ),
+              onPressed: () => ctrl.fetchNotifications(),
+            ),
           ),
+        ],
+      ),
+      body: CustomScrollView(
+        slivers: [
 
           if (notifications.isEmpty)
             SliverFillRemaining(
@@ -110,22 +99,24 @@ class _CustomerNotificationsScreenState extends State<CustomerNotificationsScree
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        width: 96,
-                        height: 96,
+                        width: 88,
+                        height: 88,
                         decoration: BoxDecoration(
-                          gradient: AppTheme.warmGradient,
+                          color: const Color(0xFFFFF7ED),
                           shape: BoxShape.circle,
-                          boxShadow: AppTheme.floatShadow,
+                          border: Border.all(color: const Color(0xFFFFEDD5), width: 2),
                         ),
-                        child: const Icon(Icons.notifications_off_rounded, color: Colors.white, size: 44),
+                        child: const Icon(Icons.notifications_off_outlined, color: AppTheme.brandOrange, size: 40),
                       ),
                       const SizedBox(height: 20),
                       const Text('Belum Ada Notifikasi',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.textInk)),
+                          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
                       const SizedBox(height: 8),
-                      const Text('Promo, update pesanan, dan info penting\nakan muncul di sini.',
-                          style: TextStyle(fontSize: 13, color: AppTheme.textMute, height: 1.5),
-                          textAlign: TextAlign.center),
+                      const Text(
+                        'Promo, update pesanan, dan info penting\nakan muncul di sini.',
+                        style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.5),
+                        textAlign: TextAlign.center,
+                      ),
                     ],
                   ),
                 ),
@@ -167,7 +158,7 @@ class _CustomerNotificationsScreenState extends State<CustomerNotificationsScree
       if (diff.inDays < 7)     return '${diff.inDays} hari lalu';
       return '${dt.day}/${dt.month}/${dt.year}';
     } catch (_) {
-      return dateStr ?? '';
+      return dateStr;
     }
   }
 }
