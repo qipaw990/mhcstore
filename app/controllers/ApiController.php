@@ -170,6 +170,28 @@ class ApiController extends Controller
             return;
         }
 
+        // Cek error upload file di $_FILES
+        $uploadErrMap = [
+            UPLOAD_ERR_INI_SIZE   => 'File terlalu besar (maksimal 20MB).',
+            UPLOAD_ERR_FORM_SIZE  => 'File melebihi batas form.',
+            UPLOAD_ERR_PARTIAL    => 'File hanya terupload sebagian — silakan coba lagi.',
+            UPLOAD_ERR_NO_TMP_DIR => 'Folder temporary server bermasalah.',
+            UPLOAD_ERR_CANT_WRITE => 'Gagal menulis file ke disk server.',
+        ];
+        $uploadFields = [
+            'identity_image' => 'Foto KTP',
+            'logo'           => 'Logo Toko',
+            'cover_photo'    => 'Foto Cover Toko',
+        ];
+        foreach ($uploadFields as $field => $label) {
+            $errCode = (int)($_FILES[$field]['error'] ?? UPLOAD_ERR_NO_FILE);
+            if ($errCode !== UPLOAD_ERR_OK && $errCode !== UPLOAD_ERR_NO_FILE) {
+                $errMsg = $uploadErrMap[$errCode] ?? "Kode error PHP #{$errCode}.";
+                $this->errorResponse("Upload {$label} gagal: {$errMsg}", null, 422);
+                return;
+            }
+        }
+
         try {
             $result = (new AuthService())->registerVendor($data);
             $this->successResponse('Pendaftaran mitra merchant berhasil! Akun Anda sedang dalam proses review oleh Tim Admin CicalengkaGO.', [
