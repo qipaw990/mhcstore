@@ -1,16 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 50" fill="none">
-    <rect width="160" height="50" rx="8" fill="#FFFFFF"/>
-    <!-- Cash / Courier Icon -->
-    <g transform="translate(14, 11)">
-        <rect width="30" height="28" rx="6" fill="#10B981"/>
-        <!-- Money icon -->
-        <rect x="5" y="7" width="20" height="14" rx="2" stroke="#FFFFFF" stroke-width="1.8"/>
-        <circle cx="15" cy="14" r="3" stroke="#FFFFFF" stroke-width="1.5"/>
-        <path d="M5 10 L8 7 M25 18 L22 21" stroke="#FFFFFF" stroke-width="1.2"/>
-    </g>
-    <!-- COD text -->
-    <g transform="translate(52, 13)">
-        <text x="0" y="17" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="18" font-weight="900" fill="#047857" letter-spacing="0.5">COD</text>
-        <text x="0" y="27" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="8" font-weight="700" fill="#6B7280" letter-spacing="0.3">BAYAR DI TEMPAT</text>
-    </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 50" fill="none">
+  <!-- Rounded Badge / Icon -->
+  <g transform="translate(10, 8)">
+    <rect width="34" height="34" rx="8" fill="#10B981" />
+    <!-- Banknote -->
+    <rect x="6" y="9" width="22" height="16" rx="3" stroke="#FFFFFF" stroke-width="2" fill="none" />
+    <circle cx="17" cy="17" r="3.5" fill="#FFFFFF" />
+    <path d="M6 13 L10 9 M28 21 L24 25" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" />
+  </g>
+  <!-- COD Text -->
+  <text x="54" y="24" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="18" font-weight="900" fill="#065F46" letter-spacing="0.8">COD</text>
+  <text x="54" y="36" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="8" font-weight="700" fill="#6B7280" letter-spacing="0.4">BAYAR DI TEMPAT</text>
 </svg>

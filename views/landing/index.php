@@ -1189,7 +1189,7 @@
             </div>
             <div class="payment-card fade-in fade-in-delay-2">
                 <div class="payment-badge-wrap">
-                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/shopeepay.svg" alt="ShopeePay" class="payment-img">
+                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/shopeepay.png" alt="ShopeePay" class="payment-img">
                 </div>
                 <div class="payment-name">ShopeePay</div>
                 <div class="payment-desc">E-Wallet Instan</div>
