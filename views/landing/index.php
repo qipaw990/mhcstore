@@ -196,18 +196,92 @@
 
         /* Floating phone mockup */
         .hero-visual {
-            position: absolute; right: 5%; top: 50%;
+            position: absolute; right: 3%; top: 50%;
             transform: translateY(-50%);
             z-index: 1;
+            width: 420px;
+        }
+        /* City backdrop photo behind phone */
+        .city-backdrop {
+            position: absolute;
+            right: -20px; top: 50%; transform: translateY(-50%);
+            width: 340px; height: 480px;
+            border-radius: 24px; overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+            z-index: 0;
+        }
+        .city-backdrop img {
+            width: 100%; height: 100%; object-fit: cover;
+            filter: brightness(0.75) saturate(1.1);
+        }
+        .city-backdrop::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg, rgba(232,35,42,0.25) 0%, rgba(15,23,42,0.5) 100%);
+        }
+        /* Floating city label tag */
+        .city-label {
+            position: absolute;
+            bottom: 24px; left: 50%; transform: translateX(-50%);
+            z-index: 2;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.6);
+            border-radius: 100px;
+            padding: 8px 16px;
+            display: flex; align-items: center; gap: 8px;
+            font-size: 12px; font-weight: 700; color: #0f172a;
+            white-space: nowrap;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        }
+        .city-label .cl-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 8px rgba(34,197,94,0.6);
+            flex-shrink: 0;
+        }
+        /* Floating mini stat cards */
+        .hero-float-card {
+            position: absolute;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.7);
+            border-radius: 14px;
+            padding: 10px 14px;
+            display: flex; align-items: center; gap: 10px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            z-index: 3;
+            font-size: 12px; font-weight: 700; color: #0f172a;
+        }
+        .hero-float-card .fc-icon { font-size: 22px; }
+        .hero-float-card .fc-val { font-size: 16px; font-weight: 900; color: var(--red); }
+        .hero-float-card .fc-sub { font-size: 10px; color: var(--muted); font-weight: 500; }
+        .float-top-left {
+            top: 30px; left: -30px;
+            animation: floatCard1 5s ease-in-out infinite;
+        }
+        .float-bottom-right {
+            bottom: 50px; right: -20px;
+            animation: floatCard2 6s ease-in-out infinite;
+        }
+        @keyframes floatCard1 {
+            0%,100% { transform: translateY(0px) rotate(-1deg); }
+            50% { transform: translateY(-10px) rotate(1deg); }
+        }
+        @keyframes floatCard2 {
+            0%,100% { transform: translateY(0px) rotate(1deg); }
+            50% { transform: translateY(-8px) rotate(-1deg); }
         }
         .phone-mockup {
-            width: 290px;
+            width: 260px;
+            position: relative; z-index: 2;
+            margin: 0 auto;
             background: #ffffff;
             border-radius: 38px;
             border: 3px solid #0f172a;
             box-shadow:
-                0 30px 70px rgba(0,0,0,0.15),
-                0 10px 25px rgba(232,35,42,0.08),
+                0 30px 70px rgba(0,0,0,0.18),
+                0 10px 25px rgba(232,35,42,0.1),
                 inset 0 0 0 2px #e2e8f0;
             padding: 14px 12px;
             animation: float 6s ease-in-out infinite;
@@ -239,6 +313,33 @@
             border: 1px solid var(--border);
         }
         .phone-svc span:first-child { font-size: 20px; }
+        /* City photo in phone banner */
+        .phone-city-photo {
+            margin: 0 14px 14px;
+            border-radius: 12px; overflow: hidden;
+            position: relative;
+            height: 100px;
+        }
+        .phone-city-photo img {
+            width: 100%; height: 100%; object-fit: cover;
+            border-radius: 12px;
+        }
+        .phone-city-photo::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(to top, rgba(15,23,42,0.7) 0%, transparent 55%);
+            border-radius: 12px;
+        }
+        .phone-city-label {
+            position: absolute; bottom: 8px; left: 10px; right: 10px;
+            z-index: 2; color: #fff;
+            font-size: 9.5px; font-weight: 700;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .phone-city-label span.tag {
+            background: var(--red);
+            padding: 2px 6px; border-radius: 100px; font-size: 8.5px;
+        }
         .phone-banner {
             margin: 0 14px 14px;
             background: #fff1f2;
@@ -858,15 +959,44 @@
         </div>
     </div>
 
-    <!-- Phone Mockup -->
+    <!-- Hero Visual: Phone + City Photo -->
     <div class="hero-visual">
+
+        <!-- City backdrop photo -->
+        <div class="city-backdrop">
+            <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/alun_alun_cicalengka.jpg" alt="Alun-alun Cicalengka malam hari" loading="lazy">
+            <div class="city-label">
+                <span class="cl-dot"></span>
+                📍 Cicalengka, Jawa Barat
+            </div>
+        </div>
+
+        <!-- Floating stat card top-left -->
+        <div class="hero-float-card float-top-left">
+            <span class="fc-icon">🏪</span>
+            <div>
+                <div class="fc-val"><?= (int)($stats['stores'] ?? 0) ?>+</div>
+                <div class="fc-sub">Toko Mitra</div>
+            </div>
+        </div>
+
+        <!-- Floating stat card bottom-right -->
+        <div class="hero-float-card float-bottom-right">
+            <span class="fc-icon">🛵</span>
+            <div>
+                <div class="fc-val"><?= (int)($stats['drivers'] ?? 0) ?>+</div>
+                <div class="fc-sub">Driver Siap</div>
+            </div>
+        </div>
+
+        <!-- Phone Mockup -->
         <div class="phone-mockup">
             <div class="phone-screen">
                 <div class="phone-header">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/app_logo.png" alt="CicalengkaGO" style="width:32px; height:32px; border-radius:9px; object-fit:cover; border:1px solid rgba(255,255,255,0.2); box-shadow:0 2px 8px rgba(0,0,0,0.4);">
                         <div>
-                            <div class="phone-header-title">Cicalengka<span style="color:var(--red);">GO</span></div>
+                            <div class="phone-header-title">Cicalengka<span style="color:rgba(255,200,200,1);">GO</span></div>
                             <div class="phone-header-sub">Selamat datang! 👋</div>
                         </div>
                     </div>
@@ -886,13 +1016,18 @@
                     <div class="phone-svc"><span>⭐</span>Promo</div>
                     <div class="phone-svc"><span>📍</span>Lacak</div>
                 </div>
-                <div class="phone-banner">
-                    <strong>🎉 Belanja Praktis</strong>
-                    Buka di market.cicago.store
+                <!-- City photo inside phone -->
+                <div class="phone-city-photo">
+                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/alun_alun_cicalengka.jpg" alt="Alun-alun Cicalengka" loading="lazy">
+                    <div class="phone-city-label">
+                        <span class="tag">🏙️ Kota</span>
+                        Alun-alun Cicalengka
+                    </div>
                 </div>
-                <a href="https://market.cicago.store" target="_blank" rel="noopener" style="display:block;margin-top:10px;background:var(--red);color:#fff;text-align:center;padding:9px;border-radius:9px;font-size:11.5px;font-weight:700;text-decoration:none;box-shadow:0 2px 10px rgba(232,35,42,0.4);">Buka market.cicago.store ➔</a>
+                <a href="https://market.cicago.store" target="_blank" rel="noopener" style="display:block;margin:0 14px 14px;background:var(--red);color:#fff;text-align:center;padding:10px;border-radius:10px;font-size:11.5px;font-weight:700;text-decoration:none;box-shadow:0 2px 10px rgba(232,35,42,0.4);">🚀 Buka market.cicago.store</a>
             </div>
         </div>
+
     </div>
 </section>
 
