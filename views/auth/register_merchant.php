@@ -100,14 +100,14 @@
 
         <!-- Foto KTP Pemilik -->
         <div>
-            <label style="display: block; font-size: 11px; font-weight: 700; color: #0F172A; margin-bottom: 4px;">Foto KTP Pemilik Toko *</label>
+            <label style="display: block; font-size: 11px; font-weight: 700; color: #0F172A; margin-bottom: 4px;">Foto KTP Pemilik Toko * <span style="font-weight:400;color:#64748B;">(maks. 20MB)</span></label>
             <div class="image-upload-box" onclick="document.getElementById('input_ktp').click()">
                 <input type="file" name="identity_image" id="input_ktp" accept="image/*" style="display: none;" onchange="previewUpload(this, 'preview_ktp', 'icon_ktp')" required>
                 <img id="preview_ktp" class="preview-img mb-1">
                 <div id="icon_ktp">
                     <i class="bi bi-card-heading text-primary fs-4"></i>
                     <div class="small fw-bold text-dark mt-1" style="font-size: 11px;">Upload Foto KTP</div>
-                    <small class="text-muted" style="font-size: 10px;">Format: JPG, PNG (Maks 5MB)</small>
+                    <small class="text-muted" style="font-size: 10px;">Format: JPG, PNG (Maks 20MB)</small>
                 </div>
             </div>
         </div>
@@ -297,6 +297,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function previewUpload(input, previewId, iconId) {
     if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const maxSizeMB = 20;
+        if (file.size > maxSizeMB * 1024 * 1024) {
+            alert('❌ Foto terlalu besar!\n\nUkuran file: ' + (file.size / 1024 / 1024).toFixed(1) + ' MB\nMaksimal: ' + maxSizeMB + ' MB\n\nSilakan kompres foto atau pilih foto lain.');
+            input.value = '';
+            return;
+        }
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = document.getElementById(previewId);
@@ -305,7 +312,7 @@ function previewUpload(input, previewId, iconId) {
             img.style.display = 'block';
             if (icon) icon.style.display = 'none';
         };
-        reader.readAsDataURL(input.files[0]);
+        reader.readAsDataURL(file);
     }
 }
 

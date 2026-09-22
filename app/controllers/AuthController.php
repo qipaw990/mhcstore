@@ -364,6 +364,29 @@ class AuthController extends Controller
             return;
         }
 
+        // ── Cek error upload foto (PHP upload limit / file terlalu besar) ──────
+        $uploadErrMap = [
+            UPLOAD_ERR_INI_SIZE  => 'terlalu besar (maks 20MB).',
+            UPLOAD_ERR_FORM_SIZE => 'melebihi batas form.',
+            UPLOAD_ERR_PARTIAL   => 'hanya terupload sebagian — coba lagi.',
+            UPLOAD_ERR_NO_TMP_DIR => 'folder temporary server bermasalah.',
+            UPLOAD_ERR_CANT_WRITE => 'gagal ditulis ke disk server.',
+        ];
+        $uploadFields = [
+            'identity_image' => 'Foto KTP',
+            'logo'           => 'Logo Toko',
+            'cover_photo'    => 'Foto Cover Toko',
+        ];
+        foreach ($uploadFields as $field => $label) {
+            $errCode = (int)($_FILES[$field]['error'] ?? UPLOAD_ERR_NO_FILE);
+            if ($errCode !== UPLOAD_ERR_OK && $errCode !== UPLOAD_ERR_NO_FILE) {
+                $errMsg = $uploadErrMap[$errCode] ?? "kode error PHP #{$errCode}.";
+                $_SESSION['error'] = "Upload {$label} gagal: file {$errMsg} Gunakan foto maksimal 20MB.";
+                $this->redirect('register-merchant');
+                return;
+            }
+        }
+
         try {
             $result = $this->authService->registerVendor($data);
             $_SESSION['merchant_registered_store'] = $result['store']['name'];

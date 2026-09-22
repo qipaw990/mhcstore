@@ -1,6 +1,32 @@
 # Prevent directory browsing
 Options -Indexes
 
+# ── PHP Upload Limits (untuk Apache mod_php) ──────────────────────────────────
+# Meningkatkan batas upload agar foto KTP, Logo Toko, Cover Toko bisa tersimpan
+# (default PHP server = 2M, terlalu kecil untuk foto kamera HP yang 2-8MB)
+<IfModule mod_php.c>
+    php_value upload_max_filesize 20M
+    php_value post_max_size 25M
+    php_value max_execution_time 120
+    php_value max_input_time 120
+    php_value memory_limit 256M
+</IfModule>
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 20M
+    php_value post_max_size 25M
+    php_value max_execution_time 120
+    php_value max_input_time 120
+    php_value memory_limit 256M
+</IfModule>
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 20M
+    php_value post_max_size 25M
+    php_value max_execution_time 120
+    php_value max_input_time 120
+    php_value memory_limit 256M
+</IfModule>
+
+
 # Block access to hidden files and sensitive configuration
 <IfModule mod_authz_core.c>
     <FilesMatch "^\.">
