@@ -6,6 +6,7 @@ use App\Models\Chat;
 use App\Models\Order;
 use App\Models\Store;
 use App\Models\User;
+use App\Services\ChatWhatsAppForwarder;
 use Exception;
 
 class ChatController extends Controller
@@ -262,6 +263,37 @@ class ChatController extends Controller
         $storeId = (int)($order['store_id'] ?? 0);
         $msgId = $this->chatModel->saveMessage((int)$order['order_id'], $senderId, $receiverId, $message, null, $storeId);
 
+        // ─── Forward ke WhatsApp penerima (fire-and-forget) ───────────────────
+        try {
+            $receiverPhone = '';
+            if ($isDriver) {
+                $receiverPhone = $order['customer_phone'] ?? '';
+            } elseif ($isMerchant) {
+                $receiverPhone = $order['customer_phone'] ?? '';
+            } elseif ($isAdmin) {
+                $receiverPhone = !empty($order['dm_phone'])
+                    ? $order['dm_phone']
+                    : ($order['customer_phone'] ?? '');
+            } else {
+                $dmUserId2 = (int)($order['dm_user_id'] ?? 0);
+                $isDriverDelivery = $dmUserId2 > 0 && ($order['delivery_type'] ?? '') !== 'merchant';
+                $receiverPhone = $isDriverDelivery
+                    ? ($order['dm_phone'] ?? '')
+                    : ($order['store_phone'] ?? '');
+            }
+            if (!empty(trim($receiverPhone))) {
+                if ($isDriver)        $senderName = $order['dm_name'] ?? 'Driver';
+                elseif ($isMerchant)  $senderName = $order['store_name'] ?? 'Merchant';
+                else                  $senderName = $order['customer_name'] ?? 'Pelanggan';
+                (new ChatWhatsAppForwarder())->forwardOrderChat(
+                    $order, $userRole, $senderName, $message, $receiverPhone
+                );
+            }
+        } catch (\Throwable $waEx) {
+            error_log('[ChatController] WA forward error: ' . $waEx->getMessage());
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
         $this->successResponse('Pesan berhasil dikirim', [
             'id'             => $msgId,
             'order_id'       => (int)$order['order_id'],
@@ -478,6 +510,36 @@ class ChatController extends Controller
         }
 
         $msgId = $this->chatModel->saveMessage($orderId, $senderId, $receiverId, $message, null, $storeId);
+
+        // ─── Forward ke WhatsApp penerima (fire-and-forget) ───────────────────
+        try {
+            $receiverPhone     = '';
+            $senderDisplayName = '';
+            if ($isMerchant) {
+                $targetUser        = $receiverId > 0 ? (new User())->find($receiverId) : null;
+                $receiverPhone     = $targetUser['phone'] ?? '';
+                $senderDisplayName = $store['name'] ?? 'Toko';
+            } else {
+                $vendorUser        = $vendorUserId > 0 ? (new User())->find($vendorUserId) : null;
+                $receiverPhone     = $vendorUser['phone'] ?? $store['phone'] ?? $store['vendor_phone'] ?? '';
+                if ($senderId > 0) {
+                    $senderUser        = (new User())->find($senderId);
+                    $senderDisplayName = $senderUser['name'] ?? 'Pelanggan';
+                }
+            }
+            if (!empty(trim($receiverPhone))) {
+                (new ChatWhatsAppForwarder())->forwardStoreChat(
+                    $store['name'] ?? 'Toko',
+                    $role,
+                    $senderDisplayName,
+                    $message,
+                    $receiverPhone
+                );
+            }
+        } catch (\Throwable $waEx) {
+            error_log('[ChatController] WA store-forward error: ' . $waEx->getMessage());
+        }
+        // ─────────────────────────────────────────────────────────────────────
 
         $this->successResponse('Pesan berhasil dikirim', [
             'id'             => $msgId,
