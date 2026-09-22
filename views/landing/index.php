@@ -845,7 +845,30 @@
 
         /* ========== RESPONSIVE ========== */
         @media (max-width: 1024px) {
-            .hero-visual { display: none; }
+            .hero {
+                flex-direction: column;
+                min-height: auto;
+                padding: 100px 5% 40px;
+                align-items: flex-start;
+            }
+            .hero-content { max-width: 100%; }
+            .hero-visual {
+                position: relative;
+                right: auto; top: auto;
+                transform: none;
+                width: 100%;
+                margin-top: 40px;
+                height: 340px;
+            }
+            /* On tablet/mobile: hide phone frame, show only city backdrop full-width */
+            .phone-mockup { display: none; }
+            .hero-float-card { display: none; }
+            .city-backdrop {
+                position: relative;
+                right: auto; top: auto; transform: none;
+                width: 100%; height: 340px;
+                border-radius: 20px;
+            }
             .features-grid { grid-template-columns: 1fr; }
             .feature-card.featured { grid-column: span 1; grid-template-columns: 1fr; }
             .footer-top { grid-template-columns: 1fr 1fr; }
@@ -853,6 +876,11 @@
             .cicalengka-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
         }
         @media (max-width: 768px) {
+            .hero {
+                padding: 90px 5% 32px;
+            }
+            .hero-visual { height: 260px; margin-top: 28px; }
+            .city-backdrop { height: 260px; border-radius: 16px; }
             .navbar { padding: 12px 16px; gap: 10px; }
             .navbar.scrolled { padding: 10px 16px; }
             .nav-logo { font-size: 18px; gap: 8px; flex-shrink: 0; }
@@ -867,6 +895,9 @@
             .footer-bottom { flex-direction: column; text-align: center; }
         }
         @media (max-width: 480px) {
+            .hero { padding: 80px 4% 24px; }
+            .hero-visual { height: 220px; margin-top: 24px; }
+            .city-backdrop { height: 220px; border-radius: 14px; }
             .navbar { padding: 10px 12px; gap: 8px; }
             .nav-logo { font-size: 16px; gap: 6px; }
             .nav-logo .logo-img { width: 28px; height: 28px; border-radius: 8px; }
@@ -875,6 +906,9 @@
             .steps-grid { grid-template-columns: 1fr; }
         }
         @media (max-width: 360px) {
+            .hero { padding: 75px 4% 20px; }
+            .hero-visual { height: 190px; margin-top: 20px; }
+            .city-backdrop { height: 190px; border-radius: 12px; }
             .navbar { padding: 8px 10px; gap: 6px; }
             .nav-logo { font-size: 14.5px; gap: 5px; }
             .nav-logo .logo-img { width: 25px; height: 25px; border-radius: 6px; }
