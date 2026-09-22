@@ -84,6 +84,33 @@ class ChatController extends Controller
 
         $storeId = (int)($order['store_id'] ?? 0);
         $custId  = (int)($order['cust_user_id'] ?? 0);
+        $dmUserId = (int)($order['dm_user_id'] ?? 0);
+        $vendorUserId = (int)($order['store_vendor_user_id'] ?? 0);
+
+        // Tentukan participantId untuk memisahkan room chat driver vs toko
+        // Dengan ini query hanya mengembalikan pesan yang relevan untuk chat room ini
+        $participantId = 0;
+        if ($isDriver) {
+            // Driver melihat chat: filter pesan yang melibatkan driver ini
+            $participantId = ($userId > 0) ? $userId : $dmUserId;
+        } elseif ($isMerchant) {
+            // Merchant melihat chat: filter pesan yang melibatkan vendor ini
+            $participantId = ($userId > 0) ? $userId : $vendorUserId;
+        } else {
+            // Pelanggan melihat: tentukan partner berdasarkan parameter target
+            $target = sanitize($_GET['target'] ?? $_GET['target_role'] ?? '');
+            $reqStoreId = (int)($_GET['store_id'] ?? 0);
+            $isStoreTarget = ($target === 'store' || $target === 'vendor' || $reqStoreId > 0);
+            $isMerchantDelivery = ($order['delivery_type'] ?? '') === 'merchant' || empty($order['dm_id']);
+
+            if ($isStoreTarget || $isMerchantDelivery || empty($order['dm_id'])) {
+                // Pelanggan chat dengan toko: hanya tampilkan pesan yang melibatkan vendor
+                $participantId = $vendorUserId;
+            } else {
+                // Pelanggan chat dengan driver: hanya tampilkan pesan yang melibatkan driver
+                $participantId = $dmUserId;
+            }
+        }
 
         // Only mark as read if user identity is known
         if ($markRead) {
@@ -93,7 +120,7 @@ class ChatController extends Controller
             }
         }
 
-        $messages = $this->chatModel->getOrderMessages((int)$order['order_id'], $sinceId, $batchId, $storeId, $custId);
+        $messages = $this->chatModel->getOrderMessages((int)$order['order_id'], $sinceId, $batchId, $storeId, $custId, $participantId);
 
         // Define partner information based on viewer role
         $partner = null;
@@ -125,7 +152,7 @@ class ChatController extends Controller
                 'vehicle_info' => 'Pesanan #' . $order['order_code']
             ];
         } else {
-            // Customer or guest:
+            // Customer or guest — sama dengan logika participantId di atas
             $target = sanitize($_GET['target'] ?? $_GET['target_role'] ?? '');
             $reqStoreId = (int)($_GET['store_id'] ?? 0);
             $isStoreTarget = ($target === 'store' || $target === 'vendor' || $reqStoreId > 0);
@@ -263,7 +290,20 @@ class ChatController extends Controller
             }
         }
 
-        $storeId = (int)($order['store_id'] ?? 0);
+        // Pesan driver↔pelanggan tidak perlu menyimpan store_id
+        // agar bisa dibedakan secara bersih dari pesan store↔pelanggan di DB
+        if ($isDriver) {
+            $storeId = 0;
+        } elseif ($isMerchant) {
+            // Merchant chat disimpan dengan store_id agar bisa difilter per toko
+            $storeId = (int)($order['store_id'] ?? 0);
+        } else {
+            // Pelanggan: tergantung target (driver atau store)
+            $targetRole2 = strtolower($data['target_role'] ?? $_POST['target_role'] ?? $_GET['target_role'] ?? '');
+            $reqStoreId2 = (int)($data['store_id'] ?? $_POST['store_id'] ?? $_GET['store_id'] ?? 0);
+            $isTargetStore = ($targetRole2 === 'vendor' || $targetRole2 === 'store' || $targetRole2 === 'merchant' || $reqStoreId2 > 0);
+            $storeId = $isTargetStore ? (int)($order['store_id'] ?? 0) : 0;
+        }
 
         // ─── Upload foto (jika ada) ──────────────────────────────────────────
         $filePath = null;

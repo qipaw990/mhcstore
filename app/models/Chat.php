@@ -31,21 +31,39 @@ class Chat extends Model
      * Get chat messages for an order (or full batch trip), optionally filtering newer than $sinceId
      * Also merges any store messages linked to this order's store and customer
      */
-    public function getOrderMessages(int $orderId, int $sinceId = 0, ?string $batchId = null, int $storeId = 0, int $custId = 0): array
+    /**
+     * @param int $participantId Jika > 0, hanya ambil pesan yang melibatkan user ini
+     *                          (sebagai pengirim ATAU penerima). Digunakan untuk memisahkan
+     *                          room chat driver vs toko dalam order yang sama.
+     */
+    public function getOrderMessages(int $orderId, int $sinceId = 0, ?string $batchId = null, int $storeId = 0, int $custId = 0, int $participantId = 0): array
     {
         $orderIds = $this->getRelatedOrderIds($orderId, $batchId);
         $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
         $params = $orderIds;
 
+        // Hanya sertakan pesan store langsung (order_id=0) jika TIDAK ada participantId filter
+        // Jika participantId ada, kita filter berdasarkan peserta sehingga tidak perlu storeClause
         $storeClause = '';
-        if ($storeId > 0 && $custId > 0) {
-            $storeClause = " OR (c.order_id = 0 AND c.store_id = ? AND (c.sender_id = ? OR c.receiver_id = ?)) ";
-            $params[] = $storeId;
-            $params[] = $custId;
-            $params[] = $custId;
-        } elseif ($storeId > 0) {
-            $storeClause = " OR (c.order_id = 0 AND c.store_id = ?) ";
-            $params[] = $storeId;
+        if ($participantId <= 0) {
+            if ($storeId > 0 && $custId > 0) {
+                $storeClause = " OR (c.order_id = 0 AND c.store_id = ? AND (c.sender_id = ? OR c.receiver_id = ?)) ";
+                $params[] = $storeId;
+                $params[] = $custId;
+                $params[] = $custId;
+            } elseif ($storeId > 0) {
+                $storeClause = " OR (c.order_id = 0 AND c.store_id = ?) ";
+                $params[] = $storeId;
+            }
+        }
+
+        // Filter berdasarkan peserta spesifik (driver user_id atau vendor user_id)
+        // Ini memastikan chat driver dan chat toko tidak tercampur
+        $participantClause = '';
+        if ($participantId > 0) {
+            $participantClause = ' AND (c.sender_id = ? OR c.receiver_id = ?) ';
+            $params[] = $participantId;
+            $params[] = $participantId;
         }
 
         $sinceClause = '';
@@ -61,7 +79,8 @@ class Chat extends Model
                        DATE_FORMAT(c.created_at, '%H:%i') as time_formatted
                 FROM `chats` c
                 LEFT JOIN `users` u ON c.sender_id = u.id
-                WHERE (c.order_id IN ({$placeholders}) {$storeClause}) {$sinceClause}
+                WHERE (c.order_id IN ({$placeholders}) {$storeClause})
+                      {$participantClause} {$sinceClause}
                 ORDER BY c.id ASC";
 
         return Database::query($sql, $params);

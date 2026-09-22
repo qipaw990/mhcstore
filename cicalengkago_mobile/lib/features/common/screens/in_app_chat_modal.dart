@@ -16,6 +16,8 @@ class InAppChatModal extends StatefulWidget {
   final String? initialStoreLogo;
   final int currentUserId;
   final String currentUserRole;
+  /// 'driver' | 'store' | 'vendor' | '' — menentukan chat room mana yang dibuka
+  final String targetRole;
 
   const InAppChatModal({
     super.key,
@@ -25,6 +27,7 @@ class InAppChatModal extends StatefulWidget {
     this.initialStoreLogo,
     required this.currentUserId,
     required this.currentUserRole,
+    this.targetRole = '',
   });
 
   static void show(
@@ -35,6 +38,7 @@ class InAppChatModal extends StatefulWidget {
     String? initialStoreLogo,
     required int currentUserId,
     required String currentUserRole,
+    String targetRole = '',
   }) {
     showModalBottomSheet(
       context: context,
@@ -51,6 +55,7 @@ class InAppChatModal extends StatefulWidget {
             initialStoreLogo: initialStoreLogo,
             currentUserId: currentUserId,
             currentUserRole: currentUserRole,
+            targetRole: targetRole,
           ),
         ),
       ),
@@ -79,6 +84,17 @@ class _InAppChatModalState extends State<InAppChatModal> {
       widget.storeId != null &&
       widget.storeId! > 0;
 
+  /// Resolusi target_role efektif:
+  /// - Jika ini store chat (tanpa orderCode) → 'store'
+  /// - Jika targetRole eksplisit disediakan → gunakan itu
+  /// - Jika ada storeId dalam order chat → 'vendor'
+  /// - Default → 'driver'
+  String get _effectiveTargetRole {
+    if (_isStoreChat) return 'store';
+    if (widget.targetRole.isNotEmpty) return widget.targetRole;
+    return 'driver';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -106,8 +122,9 @@ class _InAppChatModalState extends State<InAppChatModal> {
       if (_isStoreChat) {
         url = '${ApiConstants.baseUrl}/chats/store-messages?store_id=${widget.storeId}&mark_read=1&user_id=${widget.currentUserId}&user_role=${widget.currentUserRole}';
       } else {
+        final targetParam = '&target_role=${_effectiveTargetRole}';
         final storeParam = (widget.storeId != null && widget.storeId! > 0) ? '&store_id=${widget.storeId}' : '';
-        url = '${ApiConstants.baseUrl}/chats/messages?order_code=${widget.orderCode ?? ''}&mark_read=1&user_id=${widget.currentUserId}&user_role=${widget.currentUserRole}$storeParam';
+        url = '${ApiConstants.baseUrl}/chats/messages?order_code=${widget.orderCode ?? ''}&mark_read=1&user_id=${widget.currentUserId}&user_role=${widget.currentUserRole}$targetParam$storeParam';
       }
 
       final res = await http.get(
@@ -319,11 +336,9 @@ class _InAppChatModalState extends State<InAppChatModal> {
           request.fields['message'] = text;
           request.fields['user_id'] = widget.currentUserId.toString();
           request.fields['user_role'] = widget.currentUserRole;
+          request.fields['target_role'] = _effectiveTargetRole;
           if (widget.storeId != null && widget.storeId! > 0) {
             request.fields['store_id'] = widget.storeId.toString();
-          }
-          if (widget.storeId != null && widget.storeId! > 0 && widget.currentUserRole == 'customer') {
-            request.fields['target_role'] = 'vendor';
           }
         }
 
@@ -357,8 +372,8 @@ class _InAppChatModalState extends State<InAppChatModal> {
             'message': text,
             'user_id': widget.currentUserId,
             'user_role': widget.currentUserRole,
+            'target_role': _effectiveTargetRole,
             if (widget.storeId != null && widget.storeId! > 0) 'store_id': widget.storeId,
-            if (widget.storeId != null && widget.storeId! > 0 && widget.currentUserRole == 'customer') 'target_role': 'vendor',
           };
         }
 

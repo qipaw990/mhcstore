@@ -1873,6 +1873,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                             orderCode: widget.orderCode,
                                             currentUserId: uid,
                                             currentUserRole: 'customer',
+                                            targetRole: 'store',
                                           );
                                         },
                                         child: Container(
@@ -2181,6 +2182,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                         orderCode: widget.orderCode,
                                         currentUserId: uid,
                                         currentUserRole: 'customer',
+                                        targetRole: 'driver',
                                       );
                                     },
                                     icon: const Icon(Icons.chat_bubble_rounded, color: AppTheme.primaryRed, size: 18),
@@ -2859,6 +2861,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                 initialStoreName: sName,
                                 currentUserId: uid,
                                 currentUserRole: 'customer',
+                                targetRole: 'store',
                               );
                             },
                             icon: const Icon(Icons.chat_bubble_rounded, color: AppTheme.primaryRed, size: 18),
@@ -2940,6 +2943,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         initialStoreLogo: rawStoreLogo,
                         currentUserId: uid,
                         currentUserRole: 'customer',
+                        targetRole: 'store',
                       );
                     },
                     icon: const Icon(Icons.chat_bubble_rounded, color: AppTheme.primaryRed, size: 18),
