@@ -1748,7 +1748,10 @@ class AdminController extends Controller
     public function waStatus(): void
     {
         $wa = new \App\Services\WhatsAppService();
-        $gatewayUrl = rtrim(\App\Models\BusinessSetting::get('whatsapp_gateway_url', 'http://localhost:3005'), '/');
+        $gatewayUrl = rtrim(\App\Models\BusinessSetting::get('whatsapp_gateway_url', 'https://otp.cicago.store'), '/');
+        if (empty($gatewayUrl) || str_contains($gatewayUrl, 'localhost:3005')) {
+            $gatewayUrl = 'https://otp.cicago.store';
+        }
         $secret     = \App\Models\BusinessSetting::get('whatsapp_gateway_secret', 'cicago_wa_secret_2024');
 
         $context = stream_context_create([
@@ -1805,7 +1808,7 @@ class AdminController extends Controller
     {
         $data = $this->getPost();
 
-        $url    = sanitize(trim($data['whatsapp_gateway_url']    ?? 'http://localhost:3005'));
+        $url    = sanitize(trim($data['whatsapp_gateway_url']    ?? 'https://otp.cicago.store'));
         $secret = sanitize(trim($data['whatsapp_gateway_secret'] ?? 'cicago_wa_secret_2024'));
         $casaos = sanitize(trim($data['whatsapp_casaos_url']     ?? ''));
 
@@ -1874,7 +1877,10 @@ class AdminController extends Controller
 
     public function waRestart(): void
     {
-        $gatewayUrl = rtrim(\App\Models\BusinessSetting::get('whatsapp_gateway_url', 'http://localhost:3005'), '/');
+        $gatewayUrl = rtrim(\App\Models\BusinessSetting::get('whatsapp_gateway_url', 'https://otp.cicago.store'), '/');
+        if (empty($gatewayUrl) || str_contains($gatewayUrl, 'localhost:3005')) {
+            $gatewayUrl = 'https://otp.cicago.store';
+        }
         $secret     = \App\Models\BusinessSetting::get('whatsapp_gateway_secret', 'cicago_wa_secret_2024');
 
         $context = stream_context_create([

@@ -1,5 +1,8 @@
 <?php
-$waGatewayUrl = rtrim(\App\Models\BusinessSetting::get('whatsapp_gateway_url', 'http://localhost:3005'), '/');
+$waGatewayUrl = rtrim(\App\Models\BusinessSetting::get('whatsapp_gateway_url', 'https://otp.cicago.store'), '/');
+if (empty($waGatewayUrl) || str_contains($waGatewayUrl, 'localhost:3005')) {
+    $waGatewayUrl = 'https://otp.cicago.store';
+}
 $waSecret     = \App\Models\BusinessSetting::get('whatsapp_gateway_secret', 'cicago_wa_secret_2024');
 $waEnabled    = \App\Models\BusinessSetting::get('whatsapp_otp_enabled', '1') === '1';
 $otpChannel   = \App\Models\BusinessSetting::get('otp_verification_channel', 'whatsapp_only');

@@ -5,16 +5,7 @@ namespace App\Services;
  * ChatWhatsAppForwarder
  *
  * Mem-forward pesan chat in-app ke WhatsApp penerima.
- * Dipanggil secara non-blocking (fire-and-forget) setelah pesan disimpan ke DB,
- * sehingga tidak menghambat respons API ke user.
- *
- * Alur:
- *   User/Driver/Tenant kirim chat di app
- *       → disimpan ke tabel chats
- *       → ChatWhatsAppForwarder::forward() dipanggil
- *           → cek nomor WA penerima
- *           → format pesan dengan konteks order/toko
- *           → kirim ke WhatsApp gateway (localhost:3005/send-message)
+ * Menggunakan WhatsAppService (gateway: https://otp.cicago.store).
  */
 class ChatWhatsAppForwarder
 {
@@ -32,7 +23,7 @@ class ChatWhatsAppForwarder
      * @param string $senderRole 'customer' | 'driver' | 'delivery_man' | 'vendor' | 'merchant' | 'admin'
      * @param string $senderName Nama pengirim
      * @param string $message    Isi pesan
-     * @param string $receiverPhone Nomor WA penerima (62xxxxxxxxxx)
+     * @param string $receiverPhone Nomor WA penerima (08xxx / 62xxx)
      */
     public function forwardOrderChat(
         array  $order,
@@ -43,11 +34,12 @@ class ChatWhatsAppForwarder
     ): void {
         $phone = $this->normalizePhone($receiverPhone);
         if (empty($phone)) {
-            return; // Tidak ada nomor WA → skip
+            error_log("[ChatWhatsAppForwarder] Order chat skip: receiverPhone kosong/invalid (raw: '{$receiverPhone}')");
+            return;
         }
 
-        $orderCode  = $order['order_code']  ?? '-';
-        $storeName  = $order['store_name']  ?? 'Toko';
+        $orderCode  = $order['order_code'] ?? '-';
+        $storeName  = $order['store_name'] ?? 'Toko';
 
         // Label pengirim berdasarkan role
         $senderLabel = match(true) {
@@ -67,7 +59,13 @@ class ChatWhatsAppForwarder
         $waMessage .= "💬 {$message}\n\n";
         $waMessage .= "_Balas pesan ini di aplikasi CicalengkaGO atau kunjungi market.cicago.store_";
 
-        $this->wa->sendMessage($phone, $waMessage);
+        error_log("[ChatWhatsAppForwarder] Mengirim WA order #{$orderCode} ke {$phone} (dari: {$senderName})");
+        $sent = $this->wa->sendMessage($phone, $waMessage);
+        if ($sent) {
+            error_log("[ChatWhatsAppForwarder] ✅ Berhasil forward chat order #{$orderCode} ke WA {$phone}");
+        } else {
+            error_log("[ChatWhatsAppForwarder] ❌ Gagal forward chat order #{$orderCode} ke WA {$phone}. Error: " . $this->wa->getLastError());
+        }
     }
 
     /**
@@ -89,6 +87,7 @@ class ChatWhatsAppForwarder
     ): void {
         $phone = $this->normalizePhone($receiverPhone);
         if (empty($phone)) {
+            error_log("[ChatWhatsAppForwarder] Store chat skip: receiverPhone kosong/invalid (raw: '{$receiverPhone}')");
             return;
         }
 
@@ -106,43 +105,49 @@ class ChatWhatsAppForwarder
         $waMessage .= "💬 {$message}\n\n";
         $waMessage .= "_Balas di aplikasi CicalengkaGO atau market.cicago.store_";
 
-        $this->wa->sendMessage($phone, $waMessage);
+        error_log("[ChatWhatsAppForwarder] Mengirim WA toko '{$storeName}' ke {$phone} (dari: {$senderName})");
+        $sent = $this->wa->sendMessage($phone, $waMessage);
+        if ($sent) {
+            error_log("[ChatWhatsAppForwarder] ✅ Berhasil forward chat toko '{$storeName}' ke WA {$phone}");
+        } else {
+            error_log("[ChatWhatsAppForwarder] ❌ Gagal forward chat toko '{$storeName}' ke WA {$phone}. Error: " . $this->wa->getLastError());
+        }
     }
 
     /**
      * Normalisasi nomor HP ke format 62xxxxxxxxxx.
+     * Mendukung format 08xxx, +62xxx, 62xxx, 8xxx.
      * Mengembalikan string kosong jika nomor tidak valid.
      */
-    private function normalizePhone(string $phone): string
+    public function normalizePhone(string $phone): string
     {
         $phone = trim($phone);
         if (empty($phone)) {
             return '';
         }
 
-        // Hapus semua karakter non-digit kecuali +
-        $phone = preg_replace('/[^\d+]/', '', $phone);
-
-        // Ganti awalan 0 dengan 62
-        if (str_starts_with($phone, '0')) {
-            $phone = '62' . substr($phone, 1);
-        }
-
-        // Hapus tanda +
-        if (str_starts_with($phone, '+')) {
-            $phone = substr($phone, 1);
-        }
-
-        // Tambahkan 62 jika belum ada
-        if (!str_starts_with($phone, '62')) {
-            $phone = '62' . $phone;
-        }
-
-        // Validasi panjang minimal (8 digit setelah 62)
-        if (strlen($phone) < 10 || strlen($phone) > 15) {
+        // Hapus semua karakter non-digit
+        $digits = preg_replace('/\D/', '', $phone);
+        if (empty($digits)) {
             return '';
         }
 
-        return $phone;
+        // Tangani awalan
+        if (str_starts_with($digits, '0')) {
+            $digits = '62' . substr($digits, 1);
+        } elseif (str_starts_with($digits, '62')) {
+            if (str_starts_with($digits, '620')) {
+                $digits = '62' . substr($digits, 3);
+            }
+        } else {
+            $digits = '62' . $digits;
+        }
+
+        // Validasi panjang nomor HP Indonesia (10-16 digit)
+        if (strlen($digits) < 10 || strlen($digits) > 16) {
+            return '';
+        }
+
+        return $digits;
     }
 }

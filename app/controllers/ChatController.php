@@ -287,20 +287,43 @@ class ChatController extends Controller
         try {
             $receiverPhone = '';
             if ($isDriver) {
+                // Driver mengirim ke pelanggan
                 $receiverPhone = $order['customer_phone'] ?? '';
             } elseif ($isMerchant) {
+                // Merchant mengirim ke pelanggan
                 $receiverPhone = $order['customer_phone'] ?? '';
             } elseif ($isAdmin) {
                 $receiverPhone = !empty($order['dm_phone'])
                     ? $order['dm_phone']
                     : ($order['customer_phone'] ?? '');
             } else {
-                $dmUserId2 = (int)($order['dm_user_id'] ?? 0);
-                $isDriverDelivery = $dmUserId2 > 0 && ($order['delivery_type'] ?? '') !== 'merchant';
-                $receiverPhone = $isDriverDelivery
-                    ? ($order['dm_phone'] ?? '')
-                    : ($order['store_phone'] ?? '');
+                // Pelanggan mengirim pesan: cek target apakah vendor atau driver
+                $targetRole = strtolower($data['target_role'] ?? '');
+                $dmPhone    = trim($order['dm_phone'] ?? '');
+                $storePhone = trim($order['store_phone'] ?? '');
+
+                if ($targetRole === 'vendor' || $targetRole === 'merchant' || $targetRole === 'store') {
+                    $receiverPhone = !empty($storePhone) ? $storePhone : $dmPhone;
+                } else {
+                    $dmUserId2 = (int)($order['dm_user_id'] ?? 0);
+                    $isDriverDelivery = $dmUserId2 > 0 && ($order['delivery_type'] ?? '') !== 'merchant';
+                    $receiverPhone = $isDriverDelivery
+                        ? (!empty($dmPhone) ? $dmPhone : $storePhone)
+                        : (!empty($storePhone) ? $storePhone : $dmPhone);
+                }
             }
+
+            // Fallback cari nomor di database jika belum ditemukan
+            if (empty(trim($receiverPhone))) {
+                if (!$isDriver && !$isMerchant && !empty($order['store_id'])) {
+                    $st = (new Store())->findWithDetails((int)$order['store_id']);
+                    $receiverPhone = $st['phone'] ?? $st['vendor_phone'] ?? '';
+                } elseif (($isDriver || $isMerchant) && !empty($order['cust_user_id'])) {
+                    $cu = (new User())->find((int)$order['cust_user_id']);
+                    $receiverPhone = $cu['phone'] ?? '';
+                }
+            }
+
             if (!empty(trim($receiverPhone))) {
                 if ($isDriver)        $senderName = $order['dm_name'] ?? 'Driver';
                 elseif ($isMerchant)  $senderName = $order['store_name'] ?? 'Merchant';
@@ -318,6 +341,8 @@ class ChatController extends Controller
                 (new ChatWhatsAppForwarder())->forwardOrderChat(
                     $order, $userRole, $senderName, $msgToForward, $receiverPhone
                 );
+            } else {
+                error_log("[ChatController] WA forward skip: Nomor WA penerima tidak ditemukan untuk order " . ($order['order_code'] ?? ''));
             }
         } catch (\Throwable $waEx) {
             error_log('[ChatController] WA forward error: ' . $waEx->getMessage());
@@ -600,6 +625,8 @@ class ChatController extends Controller
                     $msgToForward2,
                     $receiverPhone
                 );
+            } else {
+                error_log("[ChatController] WA store forward skip: Nomor WA penerima tidak ditemukan untuk store '" . ($store['name'] ?? '') . "'");
             }
         } catch (\Throwable $waEx) {
             error_log('[ChatController] WA store-forward error: ' . $waEx->getMessage());

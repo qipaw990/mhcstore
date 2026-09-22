@@ -6,8 +6,8 @@ use App\Models\BusinessSetting;
 /**
  * WhatsAppService
  * 
- * Service untuk mengirim pesan WhatsApp melalui self-hosted gateway
- * (whatsapp-web.js berbasis Node.js yang berjalan di localhost:3005)
+ * Service untuk mengirim pesan WhatsApp melalui gateway CicalengkaGO
+ * URL Gateway Produksi: https://otp.cicago.store
  */
 class WhatsAppService
 {
@@ -18,15 +18,25 @@ class WhatsAppService
 
     public function __construct()
     {
-        $this->gatewayUrl = rtrim(
-            BusinessSetting::get('whatsapp_gateway_url', 'http://localhost:3005'),
-            '/'
-        );
-        $this->secretKey = BusinessSetting::get(
-            'whatsapp_gateway_secret',
-            'cicago_wa_secret_2024'
-        );
-        $this->timeout = 8; // detik
+        // Default URL gateway resmi CicalengkaGO: https://otp.cicago.store
+        $dbUrl = '';
+        try {
+            $dbUrl = BusinessSetting::get('whatsapp_gateway_url', '');
+        } catch (\Throwable $e) {}
+
+        if (empty($dbUrl) || str_contains($dbUrl, 'localhost:3005') || str_contains($dbUrl, '127.0.0.1:3005')) {
+            $this->gatewayUrl = 'https://otp.cicago.store';
+        } else {
+            $this->gatewayUrl = rtrim($dbUrl, '/');
+        }
+
+        $secret = 'cicago_wa_secret_2024';
+        try {
+            $secret = BusinessSetting::get('whatsapp_gateway_secret', 'cicago_wa_secret_2024');
+        } catch (\Throwable $e) {}
+
+        $this->secretKey = $secret;
+        $this->timeout = 10; // detik
     }
 
     public function getLastError(): string
@@ -147,43 +157,84 @@ class WhatsAppService
             $this->gatewayUrl . $endpoint
         ];
 
-        // Docker container hostname fallback if running inside Docker network
-        if (strpos($this->gatewayUrl, 'cicago_wa_gateway') === false) {
-            $urlsToTry[] = 'http://cicago_wa_gateway:3005' . $endpoint;
+        // Fallback ke https://otp.cicago.store jika gatewayUrl berbeda
+        if ($this->gatewayUrl !== 'https://otp.cicago.store') {
+            $urlsToTry[] = 'https://otp.cicago.store' . $endpoint;
         }
 
         $body = json_encode($data);
 
         foreach ($urlsToTry as $url) {
-            $context = stream_context_create([
-                'http' => [
-                    'method'        => 'POST',
-                    'header'        => implode("\r\n", [
+            if (function_exists('curl_init')) {
+                $ch = curl_init($url);
+                curl_setopt_array($ch, [
+                    CURLOPT_POST           => true,
+                    CURLOPT_POSTFIELDS     => $body,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_TIMEOUT        => $this->timeout,
+                    CURLOPT_CONNECTTIMEOUT => 4,
+                    CURLOPT_HTTPHEADER     => [
                         'Content-Type: application/json',
                         'X-WA-Secret: ' . $this->secretKey,
                         'Accept: application/json',
-                    ]),
-                    'content'       => $body,
-                    'timeout'       => $this->timeout,
-                    'ignore_errors' => true,
-                ],
-            ]);
+                    ],
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_SSL_VERIFYHOST => false,
+                ]);
 
-            $response = @file_get_contents($url, false, $context);
+                $response = curl_exec($ch);
+                $curlErr  = curl_error($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
 
-            if ($response === false) {
-                $this->lastError = "Gagal terhubung ke {$url}";
-                continue;
+                if ($response !== false && $httpCode >= 200 && $httpCode < 500) {
+                    $json = json_decode((string)$response, true);
+                    if (!empty($json['success']) && $json['success'] === true) {
+                        $this->lastError = '';
+                        return true;
+                    }
+                    $this->lastError = $json['message'] ?? "Gateway HTTP {$httpCode}";
+                    if (!empty($json)) {
+                        return false;
+                    }
+                } else {
+                    $this->lastError = "cURL error ke {$url}: " . ($curlErr ?: "HTTP {$httpCode}");
+                    continue;
+                }
+            } else {
+                $context = stream_context_create([
+                    'http' => [
+                        'method'        => 'POST',
+                        'header'        => implode("\r\n", [
+                            'Content-Type: application/json',
+                            'X-WA-Secret: ' . $this->secretKey,
+                            'Accept: application/json',
+                        ]),
+                        'content'       => $body,
+                        'timeout'       => $this->timeout,
+                        'ignore_errors' => true,
+                    ],
+                    'ssl' => [
+                        'verify_peer'      => false,
+                        'verify_peer_name' => false,
+                    ]
+                ]);
+
+                $response = @file_get_contents($url, false, $context);
+                if ($response === false) {
+                    $this->lastError = "Gagal terhubung ke {$url}";
+                    continue;
+                }
+
+                $json = json_decode($response, true);
+                if (!empty($json['success']) && $json['success'] === true) {
+                    $this->lastError = '';
+                    return true;
+                }
+
+                $this->lastError = $json['message'] ?? 'Gateway merespon dengan error.';
+                return false;
             }
-
-            $json = json_decode($response, true);
-            if (!empty($json['success']) && $json['success'] === true) {
-                $this->lastError = '';
-                return true;
-            }
-
-            $this->lastError = $json['message'] ?? 'Gateway merespon dengan error.';
-            return false;
         }
 
         return false;
@@ -195,22 +246,42 @@ class WhatsAppService
             $this->gatewayUrl . $endpoint
         ];
 
-        if (strpos($this->gatewayUrl, 'cicago_wa_gateway') === false) {
-            $urlsToTry[] = 'http://cicago_wa_gateway:3005' . $endpoint;
+        if ($this->gatewayUrl !== 'https://otp.cicago.store') {
+            $urlsToTry[] = 'https://otp.cicago.store' . $endpoint;
         }
 
         foreach ($urlsToTry as $url) {
-            $context = stream_context_create([
-                'http' => [
-                    'method'        => 'GET',
-                    'timeout'       => $this->timeout,
-                    'ignore_errors' => true,
-                ],
-            ]);
-
-            $response = @file_get_contents($url, false, $context);
-            if ($response !== false) {
-                return json_decode($response, true) ?? ['ready' => false];
+            if (function_exists('curl_init')) {
+                $ch = curl_init($url);
+                curl_setopt_array($ch, [
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_TIMEOUT        => $this->timeout,
+                    CURLOPT_CONNECTTIMEOUT => 4,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_SSL_VERIFYHOST => false,
+                ]);
+                $response = curl_exec($ch);
+                curl_close($ch);
+                if ($response !== false) {
+                    $json = json_decode((string)$response, true);
+                    if (is_array($json)) return $json;
+                }
+            } else {
+                $context = stream_context_create([
+                    'http' => [
+                        'method'        => 'GET',
+                        'timeout'       => $this->timeout,
+                        'ignore_errors' => true,
+                    ],
+                    'ssl' => [
+                        'verify_peer'      => false,
+                        'verify_peer_name' => false,
+                    ]
+                ]);
+                $response = @file_get_contents($url, false, $context);
+                if ($response !== false) {
+                    return json_decode($response, true) ?? ['ready' => false];
+                }
             }
         }
 
