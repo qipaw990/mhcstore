@@ -36,10 +36,22 @@ class LandingController extends Controller
     private function getStats(): array
     {
         try {
-            $storeCount = Database::fetchOne("SELECT COUNT(*) as c FROM `stores` WHERE `status` = 'active'")['c'] ?? 0;
+            $storeCount = Database::fetchOne("SELECT COUNT(*) as c FROM `stores` WHERE `status` = 'approved' OR `status` IS NULL")['c'] ?? 0;
+            if ($storeCount === 0) {
+                $storeCount = Database::fetchOne("SELECT COUNT(*) as c FROM `stores`")['c'] ?? 0;
+            }
+
             $orderCount = Database::fetchOne("SELECT COUNT(*) as c FROM `orders`")['c'] ?? 0;
-            $userCount  = Database::fetchOne("SELECT COUNT(*) as c FROM `users` WHERE `role` = 'customer'")['c'] ?? 0;
-            $driverCount = Database::fetchOne("SELECT COUNT(*) as c FROM `delivery_men` WHERE `status` = 'active'")['c'] ?? 0;
+
+            $userCount = Database::fetchOne("SELECT COUNT(*) as c FROM `users` WHERE `role` = 'customer'")['c'] ?? 0;
+            if ($userCount === 0) {
+                $userCount = Database::fetchOne("SELECT COUNT(*) as c FROM `users` WHERE `role` != 'admin'")['c'] ?? 0;
+            }
+
+            $driverCount = Database::fetchOne("SELECT COUNT(*) as c FROM `delivery_men` WHERE `is_active` = 1")['c'] ?? 0;
+            if ($driverCount === 0) {
+                $driverCount = Database::fetchOne("SELECT COUNT(*) as c FROM `delivery_men`")['c'] ?? 0;
+            }
         } catch (\Throwable $e) {
             $storeCount = $orderCount = $userCount = $driverCount = 0;
         }

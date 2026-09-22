@@ -13,7 +13,7 @@
     <meta property="og:description" content="Pesan makanan, belanja sembako, farmasi, dan kirim paket di Cicalengka langsung lewat browser di market.cicago.store!">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://cicago.store">
-    <meta name="theme-color" content="#e8232a">
+    <meta name="theme-color" content="#ffffff">
 
     <!-- Favicon & Brand Icons -->
     <link rel="icon" type="image/png" sizes="32x32" href="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/icons/favicon.png">
@@ -30,24 +30,30 @@
         /* ========== RESET & BASE ========== */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
-            --red:      #e8232a;
-            --red-dark: #b91c22;
-            --red-glow: rgba(232,35,42,0.25);
-            --orange:   #f59e0b;
-            --dark:     #0a0a0f;
-            --dark2:    #111118;
-            --dark3:    #1a1a26;
-            --card:     #16161f;
-            --border:   rgba(255,255,255,0.07);
-            --text:     #f0f0f5;
-            --muted:    #8888a0;
-            --radius:   18px;
-            --font:     'Plus Jakarta Sans', system-ui, sans-serif;
+            --red:            #e8232a;
+            --red-dark:       #b91c22;
+            --red-light:      #fff1f2;
+            --red-glow:       rgba(232,35,42,0.18);
+            --orange:         #f59e0b;
+            --bg:             #ffffff;
+            --bg-subtle:      #f8fafc;
+            --bg-muted:       #f1f5f9;
+            --card:           #ffffff;
+            --border:         #e2e8f0;
+            --border-light:   #f1f5f9;
+            --text:           #0f172a;
+            --text-secondary: #334155;
+            --muted:          #64748b;
+            --radius:         18px;
+            --font:           'Plus Jakarta Sans', system-ui, sans-serif;
+            --shadow-sm:      0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+            --shadow-card:    0 4px 20px -2px rgba(0,0,0,0.05), 0 2px 6px -1px rgba(0,0,0,0.02);
+            --shadow-hover:   0 20px 35px -5px rgba(232,35,42,0.1), 0 8px 16px -4px rgba(0,0,0,0.04);
         }
         html { scroll-behavior: smooth; }
         body {
             font-family: var(--font);
-            background: var(--dark);
+            background: var(--bg);
             color: var(--text);
             overflow-x: hidden;
             line-height: 1.6;
@@ -57,7 +63,7 @@
 
         /* ========== SCROLLBAR ========== */
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: var(--dark2); }
+        ::-webkit-scrollbar-track { background: var(--bg-muted); }
         ::-webkit-scrollbar-thumb { background: var(--red); border-radius: 3px; }
 
         /* ========== NAVBAR ========== */
@@ -66,7 +72,7 @@
             display: flex; align-items: center; justify-content: space-between;
             gap: 16px;
             padding: 16px 5%;
-            background: rgba(10,10,15,0.85);
+            background: rgba(255, 255, 255, 0.92);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border);
@@ -74,43 +80,43 @@
             box-sizing: border-box;
             width: 100%;
         }
-        .navbar.scrolled { padding: 12px 5%; box-shadow: 0 4px 40px rgba(0,0,0,0.5); }
+        .navbar.scrolled { padding: 12px 5%; box-shadow: 0 4px 30px rgba(0,0,0,0.07); }
         .nav-logo {
             display: inline-flex; align-items: center; gap: 10px;
             font-size: 20px; font-weight: 800; letter-spacing: -0.5px;
-            text-decoration: none; color: #ffffff;
+            text-decoration: none; color: var(--text);
             white-space: nowrap;
             flex-shrink: 0;
         }
         .nav-logo .logo-img {
             width: 36px; height: 36px; border-radius: 10px;
             object-fit: cover; display: block; flex-shrink: 0;
-            box-shadow: 0 0 18px var(--red-glow), 0 3px 10px rgba(0,0,0,0.4);
-            border: 1.5px solid rgba(255,255,255,0.15);
+            box-shadow: 0 0 16px var(--red-glow), 0 2px 8px rgba(0,0,0,0.1);
+            border: 1.5px solid rgba(232,35,42,0.25);
             transition: transform 0.25s ease, box-shadow 0.25s ease;
         }
         .nav-logo:hover .logo-img {
             transform: scale(1.08) rotate(-2deg);
-            box-shadow: 0 0 26px rgba(232,35,42,0.5), 0 6px 16px rgba(0,0,0,0.5);
+            box-shadow: 0 0 22px rgba(232,35,42,0.35);
         }
         .nav-logo span { color: var(--red); }
         .nav-links { display: flex; align-items: center; gap: 32px; }
         .nav-links a {
-            font-size: 14px; font-weight: 500; color: var(--muted);
+            font-size: 14px; font-weight: 600; color: var(--text-secondary);
             transition: color 0.2s;
         }
-        .nav-links a:hover { color: var(--text); }
+        .nav-links a:hover { color: var(--red); }
         .nav-cta {
             background: var(--red); color: #fff;
             padding: 10px 22px; border-radius: 10px;
-            font-size: 14px; font-weight: 600;
-            box-shadow: 0 0 20px var(--red-glow);
+            font-size: 14px; font-weight: 700;
+            box-shadow: 0 4px 18px var(--red-glow);
             transition: transform 0.2s, box-shadow 0.2s;
             white-space: nowrap;
             display: inline-flex; align-items: center; justify-content: center;
             flex-shrink: 0;
         }
-        .nav-cta:hover { transform: translateY(-2px); box-shadow: 0 4px 30px var(--red-glow); }
+        .nav-cta:hover { transform: translateY(-2px); box-shadow: 0 6px 25px var(--red-glow); }
         .nav-mobile { display: none; }
 
         /* ========== HERO ========== */
@@ -118,30 +124,30 @@
             min-height: 100vh;
             display: flex; align-items: center;
             position: relative; overflow: hidden;
-            padding: 120px 5% 80px;
+            padding: 125px 5% 80px;
+            background: #ffffff;
         }
         .hero-bg {
             position: absolute; inset: 0; z-index: 0;
             background:
-                radial-gradient(ellipse 70% 60% at 60% 40%, rgba(232,35,42,0.12) 0%, transparent 70%),
-                radial-gradient(ellipse 40% 40% at 10% 80%, rgba(245,158,11,0.06) 0%, transparent 60%),
-                linear-gradient(180deg, var(--dark) 0%, var(--dark2) 100%);
+                radial-gradient(ellipse 65% 55% at 75% 35%, rgba(232,35,42,0.07) 0%, transparent 65%),
+                radial-gradient(ellipse 45% 45% at 15% 75%, rgba(245,158,11,0.05) 0%, transparent 60%),
+                linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
         }
-        /* Animated grid */
         .hero-grid {
             position: absolute; inset: 0; z-index: 0;
             background-image:
-                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-            background-size: 60px 60px;
-            mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 80%);
+                linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 85%);
         }
         .hero-content { position: relative; z-index: 1; max-width: 620px; }
         .hero-badge {
             display: inline-flex; align-items: center; gap: 8px;
-            background: rgba(232,35,42,0.15); border: 1px solid rgba(232,35,42,0.3);
-            color: #ff6b70; padding: 6px 14px; border-radius: 100px;
-            font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
+            background: #fff1f2; border: 1px solid rgba(232,35,42,0.25);
+            color: var(--red); padding: 6px 14px; border-radius: 100px;
+            font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
             margin-bottom: 24px;
         }
         .hero-badge .dot {
@@ -153,38 +159,40 @@
             50% { opacity: 0.5; transform: scale(0.8); }
         }
         .hero h1 {
-            font-size: clamp(40px, 6vw, 72px);
-            font-weight: 900; line-height: 1.05;
-            letter-spacing: -2px; margin-bottom: 24px;
+            font-size: clamp(38px, 5.5vw, 68px);
+            font-weight: 900; line-height: 1.08;
+            letter-spacing: -2px; margin-bottom: 22px;
+            color: var(--text);
         }
         .hero h1 .highlight {
-            background: linear-gradient(135deg, var(--red) 0%, #ff6b35 100%);
+            background: linear-gradient(135deg, var(--red) 0%, #ea580c 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             background-clip: text;
         }
         .hero p {
-            font-size: 18px; color: var(--muted); line-height: 1.7;
-            max-width: 520px; margin-bottom: 40px;
+            font-size: 17px; color: var(--text-secondary); line-height: 1.7;
+            max-width: 520px; margin-bottom: 36px;
         }
         .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
         .btn-primary {
             display: inline-flex; align-items: center; gap: 10px;
             background: var(--red); color: #fff;
-            padding: 16px 28px; border-radius: 14px;
+            padding: 15px 28px; border-radius: 14px;
             font-size: 15px; font-weight: 700;
-            box-shadow: 0 0 30px var(--red-glow);
-            transition: all 0.3s;
+            box-shadow: 0 6px 25px var(--red-glow);
+            transition: all 0.25s ease;
         }
-        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 40px var(--red-glow); }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 32px var(--red-glow); }
         .btn-secondary {
             display: inline-flex; align-items: center; gap: 10px;
-            background: rgba(255,255,255,0.06); color: var(--text);
-            border: 1px solid var(--border);
-            padding: 16px 28px; border-radius: 14px;
-            font-size: 15px; font-weight: 600;
-            transition: all 0.3s;
+            background: #ffffff; color: var(--text);
+            border: 1.5px solid var(--border);
+            padding: 15px 28px; border-radius: 14px;
+            font-size: 15px; font-weight: 700;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.25s ease;
         }
-        .btn-secondary:hover { background: rgba(255,255,255,0.10); transform: translateY(-3px); }
+        .btn-secondary:hover { background: var(--bg-subtle); border-color: #cbd5e1; transform: translateY(-3px); }
 
         /* Floating phone mockup */
         .hero-visual {
@@ -193,28 +201,28 @@
             z-index: 1;
         }
         .phone-mockup {
-            width: 280px;
-            background: linear-gradient(145deg, #1e1e2e, #2a2a3e);
-            border-radius: 36px;
-            border: 1.5px solid rgba(255,255,255,0.1);
+            width: 290px;
+            background: #ffffff;
+            border-radius: 38px;
+            border: 3px solid #0f172a;
             box-shadow:
-                0 40px 80px rgba(0,0,0,0.6),
-                0 0 0 1px rgba(255,255,255,0.05),
-                inset 0 1px 0 rgba(255,255,255,0.1);
-            padding: 20px 16px;
+                0 30px 70px rgba(0,0,0,0.15),
+                0 10px 25px rgba(232,35,42,0.08),
+                inset 0 0 0 2px #e2e8f0;
+            padding: 14px 12px;
             animation: float 6s ease-in-out infinite;
         }
         @keyframes float {
             0%, 100% { transform: translateY(0px); }
             50% { transform: translateY(-14px); }
         }
-        .phone-screen { border-radius: 22px; overflow: hidden; background: #0f0f1a; }
+        .phone-screen { border-radius: 26px; overflow: hidden; background: #ffffff; border: 1px solid #e2e8f0; }
         .phone-header {
-            background: var(--red); padding: 16px;
+            background: linear-gradient(135deg, #e8232a, #ff4757); padding: 14px;
             display: flex; justify-content: space-between; align-items: center;
         }
         .phone-header-title { font-size: 13px; font-weight: 700; color: #fff; }
-        .phone-header-sub { font-size: 10px; color: rgba(255,255,255,0.7); }
+        .phone-header-sub { font-size: 10px; color: rgba(255,255,255,0.85); }
         .phone-greeting {
             padding: 14px 14px 8px;
             font-size: 12px; color: var(--muted);
@@ -226,26 +234,27 @@
         }
         .phone-svc {
             display: flex; flex-direction: column; align-items: center; gap: 4px;
-            background: rgba(255,255,255,0.04); border-radius: 12px; padding: 10px 4px;
-            font-size: 9px; color: var(--muted);
+            background: var(--bg-subtle); border-radius: 12px; padding: 10px 4px;
+            font-size: 9px; color: var(--text-secondary); font-weight: 600;
             border: 1px solid var(--border);
         }
         .phone-svc span:first-child { font-size: 20px; }
         .phone-banner {
             margin: 0 14px 14px;
-            background: linear-gradient(135deg, #1a1a2e, #e8232a22);
+            background: #fff1f2;
             border-radius: 12px; padding: 12px;
             border: 1px solid rgba(232,35,42,0.2);
-            font-size: 10px; color: var(--muted);
+            font-size: 10px; color: var(--text-secondary);
         }
         .phone-banner strong { color: var(--red); display: block; font-size: 12px; margin-bottom: 2px; }
 
         /* ========== STATS ========== */
         .stats-bar {
-            background: var(--dark3);
+            background: #ffffff;
             border-top: 1px solid var(--border);
             border-bottom: 1px solid var(--border);
-            padding: 32px 5%;
+            padding: 36px 5%;
+            box-shadow: var(--shadow-sm);
         }
         .stats-inner {
             max-width: 1100px; margin: 0 auto;
@@ -254,20 +263,20 @@
         }
         .stat-item { }
         .stat-num {
-            font-size: 36px; font-weight: 900;
-            background: linear-gradient(135deg, #fff 0%, var(--muted) 100%);
+            font-size: 38px; font-weight: 900;
+            background: linear-gradient(135deg, #0f172a 0%, #e8232a 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             background-clip: text;
             letter-spacing: -1px;
         }
         .stat-num .stat-suffix { font-size: 22px; }
-        .stat-label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+        .stat-label { font-size: 13.5px; color: var(--text-secondary); font-weight: 600; margin-top: 4px; }
 
         /* ========== SECTIONS COMMON ========== */
         section { padding: 90px 5%; }
         .section-label {
             display: inline-flex; align-items: center; gap: 8px;
-            font-size: 12px; font-weight: 700; letter-spacing: 2px;
+            font-size: 12px; font-weight: 800; letter-spacing: 2px;
             text-transform: uppercase; color: var(--red);
             margin-bottom: 16px;
         }
@@ -275,59 +284,61 @@
             font-size: clamp(28px, 4vw, 44px);
             font-weight: 800; letter-spacing: -1px;
             line-height: 1.15; margin-bottom: 16px;
+            color: var(--text);
         }
-        .section-subtitle { font-size: 16px; color: var(--muted); max-width: 540px; }
+        .section-subtitle { font-size: 16px; color: var(--text-secondary); max-width: 540px; }
         .section-header { margin-bottom: 60px; }
         .max-w { max-width: 1100px; margin: 0 auto; }
 
         /* ========== SERVICES ========== */
-        .services-bg { background: var(--dark2); }
+        .services-bg { background: #f8fafc; }
         .services-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
         }
         .service-card {
-            background: var(--card);
+            background: #ffffff;
             border: 1px solid var(--border);
             border-radius: var(--radius);
             padding: 28px 24px;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
             position: relative; overflow: hidden;
+            box-shadow: var(--shadow-card);
             cursor: default;
         }
         .service-card::before {
             content: '';
             position: absolute; inset: 0;
-            background: radial-gradient(circle at top left, var(--svc-color, var(--red))22 0%, transparent 60%);
+            background: radial-gradient(circle at top left, var(--svc-color, var(--red))18 0%, transparent 60%);
             opacity: 0; transition: opacity 0.3s;
         }
-        .service-card:hover { transform: translateY(-6px); border-color: rgba(255,255,255,0.14); }
+        .service-card:hover { transform: translateY(-6px); border-color: rgba(232,35,42,0.3); box-shadow: var(--shadow-hover); }
         .service-card:hover::before { opacity: 1; }
         .svc-icon {
             width: 52px; height: 52px; border-radius: 14px;
             display: flex; align-items: center; justify-content: center;
             font-size: 26px; margin-bottom: 16px;
         }
-        .svc-name { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
-        .svc-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+        .svc-name { font-size: 17px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+        .svc-desc { font-size: 13.5px; color: var(--text-secondary); line-height: 1.6; }
         .svc-badge {
             display: inline-block; margin-top: 14px;
-            font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px;
+            font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px;
         }
 
         /* Service Colors */
-        .svc-food .svc-icon   { background: rgba(239,68,68,0.15); }
-        .svc-grocery .svc-icon { background: rgba(16,185,129,0.15); }
-        .svc-pharma .svc-icon  { background: rgba(6,182,212,0.15); }
-        .svc-shop .svc-icon    { background: rgba(139,92,246,0.15); }
-        .svc-parcel .svc-icon  { background: rgba(245,158,11,0.15); }
+        .svc-food .svc-icon   { background: rgba(239,68,68,0.12); }
+        .svc-grocery .svc-icon { background: rgba(16,185,129,0.12); }
+        .svc-pharma .svc-icon  { background: rgba(6,182,212,0.12); }
+        .svc-shop .svc-icon    { background: rgba(139,92,246,0.12); }
+        .svc-parcel .svc-icon  { background: rgba(245,158,11,0.12); }
 
-        .svc-food .svc-badge   { background: rgba(239,68,68,0.15); color: #ef4444; }
-        .svc-grocery .svc-badge { background: rgba(16,185,129,0.15); color: #10b981; }
-        .svc-pharma .svc-badge  { background: rgba(6,182,212,0.15); color: #06b6d4; }
-        .svc-shop .svc-badge    { background: rgba(139,92,246,0.15); color: #8b5cf6; }
-        .svc-parcel .svc-badge  { background: rgba(245,158,11,0.15); color: #f59e0b; }
+        .svc-food .svc-badge   { background: rgba(239,68,68,0.12); color: #dc2626; }
+        .svc-grocery .svc-badge { background: rgba(16,185,129,0.12); color: #059669; }
+        .svc-pharma .svc-badge  { background: rgba(6,182,212,0.12); color: #0891b2; }
+        .svc-shop .svc-badge    { background: rgba(139,92,246,0.12); color: #7c3aed; }
+        .svc-parcel .svc-badge  { background: rgba(245,158,11,0.12); color: #d97706; }
 
         /* ========== FEATURES ========== */
         .features-grid {
@@ -335,18 +346,20 @@
             gap: 24px;
         }
         .feature-card {
-            background: var(--card); border: 1px solid var(--border);
+            background: #ffffff; border: 1px solid var(--border);
             border-radius: var(--radius); padding: 32px;
+            box-shadow: var(--shadow-card);
             transition: all 0.3s; position: relative; overflow: hidden;
         }
         .feature-card.featured {
             grid-column: span 2;
             display: grid; grid-template-columns: 1fr 1fr; gap: 40px;
             align-items: center;
-            background: linear-gradient(135deg, var(--card) 0%, rgba(232,35,42,0.06) 100%);
-            border-color: rgba(232,35,42,0.2);
+            background: linear-gradient(135deg, #ffffff 0%, #fff7f7 100%);
+            border-color: rgba(232,35,42,0.25);
+            box-shadow: 0 10px 30px rgba(232,35,42,0.06);
         }
-        .feature-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.14); }
+        .feature-card:hover { transform: translateY(-4px); border-color: rgba(232,35,42,0.35); box-shadow: var(--shadow-hover); }
         .feat-icon {
             width: 56px; height: 56px; border-radius: 16px;
             background: linear-gradient(135deg, var(--red), #ff6b35);
@@ -354,15 +367,18 @@
             font-size: 28px; margin-bottom: 20px;
             box-shadow: 0 8px 24px var(--red-glow);
         }
-        .feature-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 10px; }
-        .feature-card p  { font-size: 14px; color: var(--muted); line-height: 1.7; }
+        .feature-card h3 { font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 10px; }
+        .feature-card p  { font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
         .feat-visual {
-            background: var(--dark3); border-radius: 14px; padding: 24px;
+            background: #ffffff; border: 1px solid var(--border);
+            border-radius: 16px; padding: 24px;
+            box-shadow: var(--shadow-sm);
             display: flex; flex-direction: column; gap: 12px;
         }
         .feat-track-item {
             display: flex; align-items: center; gap: 12px;
-            background: rgba(255,255,255,0.04); border-radius: 10px; padding: 12px 16px;
+            background: var(--bg-subtle); border: 1px solid var(--border-light);
+            border-radius: 10px; padding: 12px 16px;
         }
         .track-dot {
             width: 10px; height: 10px; border-radius: 50%;
@@ -371,10 +387,10 @@
         }
         .track-line { width: 1px; height: 24px; background: var(--border); margin-left: 4px; }
         .track-label { font-size: 12px; color: var(--muted); }
-        .track-label strong { color: var(--text); display: block; font-size: 13px; }
+        .track-label strong { color: var(--text); display: block; font-size: 13px; font-weight: 700; }
 
         /* ========== HOW IT WORKS ========== */
-        .how-bg { background: var(--dark2); }
+        .how-bg { background: #ffffff; }
         .steps-grid {
             display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
             position: relative;
@@ -391,17 +407,18 @@
         }
         .step-num {
             width: 64px; height: 64px; border-radius: 50%;
-            background: linear-gradient(135deg, var(--red), #ff6b35);
+            background: linear-gradient(135deg, var(--red), #ff4d4d);
             display: flex; align-items: center; justify-content: center;
             font-size: 24px; font-weight: 900; color: #fff;
             margin: 0 auto 20px;
-            box-shadow: 0 0 30px var(--red-glow);
+            box-shadow: 0 8px 24px var(--red-glow);
             position: relative; z-index: 1;
         }
-        .step-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
-        .step-card p  { font-size: 13px; color: var(--muted); }
+        .step-card h3 { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+        .step-card p  { font-size: 13.5px; color: var(--text-secondary); }
 
         /* ========== PAYMENT ========== */
+        #pembayaran { background: #f8fafc; }
         .payment-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
@@ -414,16 +431,17 @@
             }
         }
         .payment-card {
-            background: var(--card); border: 1px solid var(--border);
+            background: #ffffff; border: 1px solid var(--border);
             border-radius: 16px; padding: 18px 12px;
             display: flex; flex-direction: column; align-items: center; gap: 12px;
+            box-shadow: var(--shadow-card);
             transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
             text-align: center;
         }
         .payment-card:hover {
             transform: translateY(-4px);
             border-color: rgba(232,35,42,0.4);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+            box-shadow: var(--shadow-hover);
         }
         .payment-badge-wrap {
             width: 100%;
@@ -431,9 +449,10 @@
             height: 46px;
             background: #ffffff;
             border-radius: 10px;
+            border: 1px solid #edf2f7;
             display: flex; align-items: center; justify-content: center;
             padding: 5px 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
             transition: transform 0.2s ease;
         }
         .payment-card:hover .payment-badge-wrap {
@@ -447,13 +466,13 @@
             object-fit: contain;
             display: block;
         }
-        .payment-name { font-size: 13px; font-weight: 700; color: #ffffff; line-height: 1.3; }
-        .payment-desc { font-size: 11px; color: var(--muted); }
+        .payment-name { font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.3; }
+        .payment-desc { font-size: 11px; color: var(--muted); font-weight: 500; }
 
         /* ========== PESONA CICALENGKA GALLERY ========== */
         .cicalengka-section {
             padding: 90px 5%;
-            background: linear-gradient(180deg, var(--dark) 0%, var(--dark2) 50%, var(--dark) 100%);
+            background: #ffffff;
             position: relative;
         }
         .cicalengka-grid {
@@ -466,15 +485,15 @@
             position: relative;
             border-radius: 20px;
             overflow: hidden;
-            background: var(--card);
+            background: #ffffff;
             border: 1px solid var(--border);
             height: 320px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+            box-shadow: var(--shadow-card);
             transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease;
         }
         .cicalengka-card:hover {
             transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.55), 0 0 25px var(--red-glow);
+            box-shadow: var(--shadow-hover);
             border-color: rgba(232, 35, 42, 0.45);
         }
         .cicalengka-card img {
@@ -490,7 +509,7 @@
         .cicalengka-overlay {
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(10,10,15,0.4) 40%, rgba(10,10,15,0.95) 100%);
+            background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(15,23,42,0.4) 40%, rgba(15,23,42,0.92) 100%);
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
@@ -499,13 +518,13 @@
         }
         .cicalengka-tag {
             align-self: flex-start;
-            background: rgba(232, 35, 42, 0.9);
+            background: rgba(232, 35, 42, 0.95);
             backdrop-filter: blur(8px);
             color: #fff;
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 11px;
-            font-weight: 700;
+            font-weight: 800;
             letter-spacing: 0.5px;
             margin-bottom: 8px;
             text-transform: uppercase;
@@ -519,14 +538,14 @@
         }
         .cicalengka-desc {
             font-size: 13px;
-            color: rgba(255,255,255,0.75);
+            color: rgba(255,255,255,0.85);
             line-height: 1.5;
         }
 
         /* ========== BUKA APLIKASI WEB APP CTA ========== */
         .app-cta-section {
             padding: 90px 5%;
-            background: radial-gradient(ellipse at center, rgba(232,35,42,0.12) 0%, rgba(10,10,15,0) 70%), var(--dark2);
+            background: #f8fafc;
             position: relative;
             overflow: hidden;
             border-top: 1px solid var(--border);
@@ -537,12 +556,13 @@
             grid-template-columns: 1.15fr 0.85fr;
             gap: 50px;
             align-items: center;
-            background: linear-gradient(135deg, rgba(232,35,42,0.12) 0%, rgba(26,26,38,0.85) 100%);
-            border: 1px solid rgba(232,35,42,0.3);
+            background: linear-gradient(135deg, #b91c22 0%, #e8232a 60%, #ea580c 100%);
+            border: 1px solid rgba(255,255,255,0.25);
             border-radius: 32px;
             padding: 56px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            box-shadow: 0 20px 50px rgba(232,35,42,0.25);
             position: relative;
+            color: #ffffff;
         }
         .app-cta-title {
             font-size: clamp(26px, 3.5vw, 40px);
@@ -554,7 +574,7 @@
         }
         .app-cta-sub {
             font-size: 15px;
-            color: var(--muted);
+            color: rgba(255,255,255,0.9);
             line-height: 1.6;
             margin-bottom: 28px;
         }
@@ -565,12 +585,12 @@
             margin-bottom: 28px;
         }
         .app-pill {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
             border-radius: 10px;
             padding: 8px 14px;
             font-size: 12.5px;
-            color: #e4e4e7;
+            color: #ffffff;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -579,26 +599,27 @@
             display: inline-flex;
             align-items: center;
             gap: 12px;
-            background: linear-gradient(135deg, #ff3848 0%, #c61524 100%);
-            color: #fff;
+            background: #ffffff;
+            color: var(--red);
             padding: 16px 32px;
             border-radius: 14px;
             font-size: 16px;
             font-weight: 800;
             text-decoration: none;
-            box-shadow: 0 10px 30px rgba(232,35,42,0.45);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
             transition: all 0.25s ease;
         }
         .app-cta-btn-main:hover {
             transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 14px 40px rgba(232,35,42,0.6);
-            color: #fff;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.3);
+            background: #fdfdfd;
+            color: var(--red-dark);
         }
         .app-browser-card {
             background: #0d0e15;
             border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.12);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.35);
             overflow: hidden;
         }
         .browser-bar {
@@ -607,17 +628,17 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
         }
         .browser-dots { display: flex; gap: 6px; }
         .browser-dot { width: 10px; height: 10px; border-radius: 50%; }
         .browser-address {
             flex: 1;
-            background: rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.08);
             border-radius: 8px;
             padding: 6px 14px;
             font-size: 12.5px;
-            color: #a1a1aa;
+            color: #d4d4d8;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -634,37 +655,44 @@
         /* ========== FAQ ========== */
         .faq-list { display: flex; flex-direction: column; gap: 12px; }
         .faq-item {
-            background: var(--card); border: 1px solid var(--border);
+            background: #ffffff; border: 1px solid var(--border);
             border-radius: 14px; overflow: hidden;
-            transition: border-color 0.3s;
+            box-shadow: var(--shadow-sm);
+            transition: border-color 0.3s, box-shadow 0.3s;
         }
-        .faq-item.open { border-color: rgba(232,35,42,0.3); }
+        .faq-item:hover { border-color: #cbd5e1; }
+        .faq-item.open {
+            border-color: rgba(232,35,42,0.4);
+            box-shadow: 0 8px 25px rgba(232,35,42,0.06);
+        }
         .faq-question {
             display: flex; justify-content: space-between; align-items: center;
             padding: 20px 24px; cursor: pointer;
-            font-size: 15px; font-weight: 600; user-select: none;
+            font-size: 15px; font-weight: 700; user-select: none;
+            color: var(--text);
         }
-        .faq-question:hover { color: #fff; }
+        .faq-question:hover { color: var(--red); }
         .faq-icon {
             width: 28px; height: 28px; border-radius: 8px;
-            background: rgba(232,35,42,0.15); color: var(--red);
+            background: #fff1f2; color: var(--red);
             display: flex; align-items: center; justify-content: center;
             font-size: 16px; flex-shrink: 0; transition: transform 0.3s;
         }
-        .faq-item.open .faq-icon { transform: rotate(45deg); }
+        .faq-item.open .faq-icon { transform: rotate(45deg); background: var(--red); color: #fff; }
         .faq-answer {
             max-height: 0; overflow: hidden;
             transition: max-height 0.4s ease, padding 0.3s ease;
-            font-size: 14px; color: var(--muted); line-height: 1.7;
+            font-size: 14px; color: var(--text-secondary); line-height: 1.7;
             padding: 0 24px;
         }
         .faq-item.open .faq-answer { max-height: 400px; padding: 0 24px 20px; }
 
         /* ========== FOOTER ========== */
         footer {
-            background: var(--dark2);
+            background: #f8fafc;
             border-top: 1px solid var(--border);
             padding: 60px 5% 30px;
+            color: var(--text-secondary);
         }
         .footer-inner {
             max-width: 1100px; margin: 0 auto;
@@ -677,15 +705,16 @@
         .social-links { display: flex; gap: 12px; }
         .social-btn {
             width: 40px; height: 40px; border-radius: 10px;
-            background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+            background: #ffffff; border: 1px solid var(--border);
             display: flex; align-items: center; justify-content: center;
             font-size: 18px; transition: all 0.2s;
+            box-shadow: var(--shadow-sm);
         }
-        .social-btn:hover { background: var(--red); border-color: var(--red); transform: translateY(-2px); }
-        .footer-col h4 { font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
+        .social-btn:hover { background: var(--red); border-color: var(--red); color:#fff; transform: translateY(-2px); }
+        .footer-col h4 { font-size: 13px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--text); margin-bottom: 20px; }
         .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
-        .footer-col ul li a { font-size: 14px; color: var(--muted); transition: color 0.2s; }
-        .footer-col ul li a:hover { color: var(--text); }
+        .footer-col ul li a { font-size: 14px; color: var(--muted); font-weight: 500; transition: color 0.2s; }
+        .footer-col ul li a:hover { color: var(--red); }
         .footer-bottom {
             border-top: 1px solid var(--border); padding-top: 24px;
             display: flex; justify-content: space-between; align-items: center;
@@ -703,13 +732,14 @@
             gap: 12px;
         }
         .area-chip {
-            background: var(--card); border: 1px solid var(--border);
+            background: #ffffff; border: 1px solid var(--border);
             border-radius: 10px; padding: 12px 16px;
             display: flex; align-items: center; gap: 8px;
-            font-size: 13px; font-weight: 500;
+            font-size: 13px; font-weight: 600; color: var(--text-secondary);
+            box-shadow: var(--shadow-sm);
             transition: all 0.2s;
         }
-        .area-chip:hover { border-color: rgba(232,35,42,0.3); color: var(--red); }
+        .area-chip:hover { border-color: rgba(232,35,42,0.4); color: var(--red); transform: translateY(-2px); }
         .area-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); flex-shrink: 0; }
 
         /* ========== RESPONSIVE ========== */
@@ -869,41 +899,41 @@
 <!-- ========== STATS BAR ========== -->
 <div class="stats-bar">
     <div class="stats-inner">
+        <?php
+        $stores  = (int)($stats['stores']  ?? 0);
+        $orders  = (int)($stats['orders']  ?? 0);
+        $users   = (int)($stats['users']   ?? 0);
+        $drivers = (int)($stats['drivers'] ?? 0);
+        ?>
         <div class="stat-item fade-in">
-            <div class="stat-num">
-                <?php
-                $stores = (int)($stats['stores'] ?? 0);
-                echo $stores > 0 ? $stores . '<span class="stat-suffix">+</span>' : '50<span class="stat-suffix">+</span>';
-                ?>
+            <div class="stat-num" data-target="<?= $stores ?>" data-suffix="+">
+                <?= $stores ?><span class="stat-suffix">+</span>
             </div>
             <div class="stat-label">🏪 Toko Mitra Aktif</div>
         </div>
         <div class="stat-item fade-in fade-in-delay-1">
-            <div class="stat-num">
-                <?php
-                $orders = (int)($stats['orders'] ?? 0);
-                if ($orders >= 1000) echo round($orders/1000, 1) . '<span class="stat-suffix">K+</span>';
-                else echo ($orders > 0 ? $orders : '500') . '<span class="stat-suffix">+</span>';
-                ?>
+            <div class="stat-num" data-target="<?= $orders ?>" data-suffix="+">
+                <?php if ($orders >= 1000): ?>
+                    <?= number_format($orders/1000, 1) ?><span class="stat-suffix">K+</span>
+                <?php else: ?>
+                    <?= $orders ?><span class="stat-suffix">+</span>
+                <?php endif; ?>
             </div>
             <div class="stat-label">📦 Pesanan Terselesaikan</div>
         </div>
         <div class="stat-item fade-in fade-in-delay-2">
-            <div class="stat-num">
-                <?php
-                $users = (int)($stats['users'] ?? 0);
-                if ($users >= 1000) echo round($users/1000, 1) . '<span class="stat-suffix">K+</span>';
-                else echo ($users > 0 ? $users : '1') . '<span class="stat-suffix">K+</span>';
-                ?>
+            <div class="stat-num" data-target="<?= $users ?>" data-suffix="+">
+                <?php if ($users >= 1000): ?>
+                    <?= number_format($users/1000, 1) ?><span class="stat-suffix">K+</span>
+                <?php else: ?>
+                    <?= $users ?><span class="stat-suffix">+</span>
+                <?php endif; ?>
             </div>
             <div class="stat-label">👥 Pengguna Terdaftar</div>
         </div>
         <div class="stat-item fade-in fade-in-delay-3">
-            <div class="stat-num">
-                <?php
-                $drivers = (int)($stats['drivers'] ?? 0);
-                echo ($drivers > 0 ? $drivers : '20') . '<span class="stat-suffix">+</span>';
-                ?>
+            <div class="stat-num" data-target="<?= $drivers ?>" data-suffix="+">
+                <?= $drivers ?><span class="stat-suffix">+</span>
             </div>
             <div class="stat-label">🛵 Driver Aktif</div>
         </div>
@@ -975,25 +1005,6 @@
                 </div>
             </div>
 
-            <!-- Card 2: Curug Cinulang -->
-            <div class="cicalengka-card fade-in fade-in-delay-1">
-                <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/curug_cinulang.jpg" alt="Curug Cinulang Cicalengka" loading="lazy">
-                <div class="cicalengka-overlay">
-                    <span class="cicalengka-tag" style="background:#06b6d4;">Wisata Alam Legendaris</span>
-                    <div class="cicalengka-title">Curug Cinulang</div>
-                    <div class="cicalengka-desc">Air terjun kembar legendaris Cicalengka di perbatasan asri Priangan Timur yang sejuk menenangkan.</div>
-                </div>
-            </div>
-
-            <!-- Card 3: Cicalengka Dreamland -->
-            <div class="cicalengka-card fade-in fade-in-delay-2">
-                <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/cicalengka_dreamland.jpg" alt="Cicalengka Dreamland" loading="lazy">
-                <div class="cicalengka-overlay">
-                    <span class="cicalengka-tag" style="background:#8b5cf6;">Destinasi Hits</span>
-                    <div class="cicalengka-title">Cicalengka Dreamland</div>
-                    <div class="cicalengka-desc">Wisata keluarga dan rekreasi panorama perbukitan modern dengan spot foto instagramable.</div>
-                </div>
-            </div>
 
             <!-- Card 4: Bukit Teletubbies -->
             <div class="cicalengka-card fade-in">
@@ -1015,15 +1026,7 @@
                 </div>
             </div>
 
-            <!-- Card 6: Kebun Teh & Alam Hijau -->
-            <div class="cicalengka-card fade-in fade-in-delay-2">
-                <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/kebun_teh.jpg" alt="Kebun Teh & Alam Hijau Cicalengka" loading="lazy">
-                <div class="cicalengka-overlay">
-                    <span class="cicalengka-tag" style="background:#14b8a6;">Kesejukan Priangan</span>
-                    <div class="cicalengka-title">Kebun Teh & Perbukitan Hijau</div>
-                    <div class="cicalengka-desc">Tanah subur dan udara sejuk yang menghidupkan sektor pertanian, UMKM, dan kuliner lokal.</div>
-                </div>
-            </div>
+
         </div>
     </div>
 </section>
@@ -1122,91 +1125,9 @@
     </div>
 </section>
 
-<!-- ========== PEMBAYARAN ========== -->
-<section id="pembayaran">
-    <div class="max-w">
-        <div class="section-header fade-in">
-            <div class="section-label">💰 Pembayaran</div>
-            <h2 class="section-title">Beragam Metode<br>Pembayaran Tersedia</h2>
-            <p class="section-subtitle">Bayar sesuka hati — dari tunai, dompet digital, hingga transfer bank. Semua aman & terpercaya.</p>
-        </div>
-        <div class="payment-grid">
-            <div class="payment-card fade-in">
-                <div class="payment-badge-wrap">
-                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/cod.svg" alt="COD - Cash on Delivery" class="payment-img">
-                </div>
-                <div class="payment-name">COD</div>
-                <div class="payment-desc">Bayar Tunai ke Driver</div>
-            </div>
-            <div class="payment-card fade-in fade-in-delay-1">
-                <div class="payment-badge-wrap">
-                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/qris.svg" alt="QRIS Standar Nasional" class="payment-img">
-                </div>
-                <div class="payment-name">QRIS</div>
-                <div class="payment-desc">Semua E-Wallet & Bank</div>
-            </div>
-            <div class="payment-card fade-in fade-in-delay-2">
-                <div class="payment-badge-wrap">
-                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/bca.svg" alt="Bank BCA" class="payment-img">
-                </div>
-                <div class="payment-name">BCA Virtual Account</div>
-                <div class="payment-desc">Transfer Otomatis</div>
-            </div>
-            <div class="payment-card fade-in">
-                <div class="payment-badge-wrap">
-                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/mandiri.svg" alt="Bank Mandiri" class="payment-img">
-                </div>
-                <div class="payment-name">Mandiri VA / Livin</div>
-                <div class="payment-desc">Transfer Otomatis</div>
-            </div>
-            <div class="payment-card fade-in fade-in-delay-1">
-                <div class="payment-badge-wrap">
-                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/bri.svg" alt="Bank BRI" class="payment-img">
-                </div>
-                <div class="payment-name">BRI BRIVA</div>
-                <div class="payment-desc">Transfer Otomatis</div>
-            </div>
-            <div class="payment-card fade-in fade-in-delay-2">
-                <div class="payment-badge-wrap">
-                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/bni.svg" alt="Bank BNI" class="payment-img">
-                </div>
-                <div class="payment-name">BNI Virtual Account</div>
-                <div class="payment-desc">Transfer Otomatis</div>
-            </div>
-            <div class="payment-card fade-in">
-                <div class="payment-badge-wrap">
-                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/dana.svg" alt="DANA Indonesia" class="payment-img">
-                </div>
-                <div class="payment-name">DANA</div>
-                <div class="payment-desc">E-Wallet Instan</div>
-            </div>
-            <div class="payment-card fade-in fade-in-delay-1">
-                <div class="payment-badge-wrap">
-                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/gopay.svg" alt="GoPay" class="payment-img">
-                </div>
-                <div class="payment-name">GoPay</div>
-                <div class="payment-desc">E-Wallet Instan</div>
-            </div>
-            <div class="payment-card fade-in fade-in-delay-2">
-                <div class="payment-badge-wrap">
-                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/shopeepay.png" alt="ShopeePay" class="payment-img">
-                </div>
-                <div class="payment-name">ShopeePay</div>
-                <div class="payment-desc">E-Wallet Instan</div>
-            </div>
-            <div class="payment-card fade-in">
-                <div class="payment-badge-wrap">
-                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/cicalengkapay.svg" alt="CicalengkaPay" class="payment-img">
-                </div>
-                <div class="payment-name">CicalengkaPay</div>
-                <div class="payment-desc">Dompet Internal Cicago</div>
-            </div>
-        </div>
-    </div>
-</section>
 
 <!-- ========== AREA LAYANAN ========== -->
-<section style="background:var(--dark2); padding:70px 5%;">
+<section id="area" style="background:#f8fafc; padding:70px 5%; border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
     <div class="max-w">
         <div class="section-header fade-in">
             <div class="section-label">📍 Area Layanan</div>
