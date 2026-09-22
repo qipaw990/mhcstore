@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 50" fill="none">
+    <rect width="160" height="50" rx="8" fill="#FFFFFF"/>
+    <!-- BCA Symbol -->
+    <g transform="translate(18, 11)">
+        <path d="M14 0 C6.3 0 0 6.3 0 14 C0 21.7 6.3 28 14 28 C21.7 28 28 21.7 28 14 C28 6.3 21.7 0 14 0 Z" fill="#00529C"/>
+        <!-- Inner ribbon shapes -->
+        <path d="M14 4 C19.5 4 24 8.5 24 14 C24 17.5 22.2 20.6 19.5 22.4 L14 14 Z" fill="#003366" opacity="0.3"/>
+        <path d="M9 10 L15 10 C17.2 10 19 11.8 19 14 C19 16.2 17.2 18 15 18 L9 18 Z" fill="#FFFFFF"/>
+        <circle cx="14" cy="14" r="2.5" fill="#00529C"/>
+    </g>
+    <!-- BCA Text -->
+    <g transform="translate(56, 12)">
+        <text x="0" y="22" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="24" font-weight="900" fill="#00529C" letter-spacing="1.5">BCA</text>
+    </g>
+</svg>

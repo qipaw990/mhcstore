@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 50" fill="none">
+    <rect width="160" height="50" rx="8" fill="#FFFFFF"/>
+    <!-- Shopee Wallet Icon -->
+    <g transform="translate(14, 11)">
+        <rect width="28" height="28" rx="6" fill="#EE4D2D"/>
+        <!-- Bag/Wallet shape -->
+        <path d="M7 11 C7 9.5 8 8 9.5 8 H18.5 C20 8 21 9.5 21 11 V20 C21 21.5 20 22.5 18.5 22.5 H9.5 C8 22.5 7 21.5 7 20 Z" fill="#FFFFFF"/>
+        <!-- S mark -->
+        <path d="M15.5 12 C15 11.5 14.2 11.2 13.5 11.2 C12.5 11.2 11.8 11.7 11.8 12.5 C11.8 14 15.8 13.5 15.8 16 C15.8 17.5 14.5 18.2 13.3 18.2 C12.2 18.2 11.2 17.7 10.7 17 L11.5 16 C12 16.5 12.6 16.8 13.3 16.8 C14 16.8 14.5 16.5 14.5 15.8 C14.5 14.5 10.5 15 10.5 12.5 C10.5 11.2 11.8 10.5 13.3 10.5 C14.2 10.5 15.2 10.8 15.8 11.5 Z" fill="#EE4D2D"/>
+    </g>
+    <!-- ShopeePay text -->
+    <g transform="translate(48, 14)">
+        <text x="0" y="20" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="16" font-weight="900" fill="#EE4D2D" letter-spacing="-0.5">Shopee<tspan fill="#333333">Pay</tspan></text>
+    </g>
+</svg>

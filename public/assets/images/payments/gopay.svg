@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 50" fill="none">
+    <rect width="160" height="50" rx="8" fill="#FFFFFF"/>
+    <!-- GoPay Round Icon -->
+    <g transform="translate(18, 11)">
+        <circle cx="14" cy="14" r="14" fill="#00AED6"/>
+        <circle cx="14" cy="14" r="6" fill="#FFFFFF"/>
+        <circle cx="14" cy="14" r="2.5" fill="#00AED6"/>
+    </g>
+    <!-- gopay text -->
+    <g transform="translate(56, 14)">
+        <text x="0" y="21" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="22" font-weight="900" fill="#00AED6" letter-spacing="-0.5">gopay</text>
+    </g>
+</svg>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 50" fill="none">
+    <rect width="160" height="50" rx="8" fill="#FFFFFF"/>
+    <!-- CicalengkaGO Red Badge -->
+    <g transform="translate(12, 10)">
+        <rect width="30" height="30" rx="7" fill="#E8232A"/>
+        <!-- App mark: stylized C with speed wings/arrow -->
+        <path d="M21 9 C19 7.5 16.5 7 14 7 C9.5 7 6 10.5 6 15 C6 19.5 9.5 23 14 23 C17 23 19.5 22 21.5 20 L19 17.5 C17.8 19 16 19.8 14 19.8 C11.2 19.8 9 17.6 9 15 C9 12.4 11.2 10.2 14 10.2 C15.8 10.2 17.2 11 18.2 12.2 L21 9 Z" fill="#FFFFFF"/>
+        <polygon points="15,11 19,15 15,19 16.5,15" fill="#FFE500"/>
+    </g>
+    <!-- CicalengkaPay text -->
+    <g transform="translate(48, 14)">
+        <text x="0" y="15" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="12" font-weight="900" fill="#111118" letter-spacing="-0.3">Cicalengka<tspan fill="#E8232A">Pay</tspan></text>
+        <text x="0" y="26" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="7.5" font-weight="700" fill="#8888A0" letter-spacing="0.2">SALDO & E-WALLET</text>
+    </g>
+</svg>

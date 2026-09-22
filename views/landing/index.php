@@ -64,21 +64,27 @@
         .navbar {
             position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
             display: flex; align-items: center; justify-content: space-between;
-            padding: 18px 5%;
-            background: rgba(10,10,15,0.8);
+            gap: 16px;
+            padding: 16px 5%;
+            background: rgba(10,10,15,0.85);
             backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border);
-            transition: all 0.3s;
+            transition: padding 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+            box-sizing: border-box;
+            width: 100%;
         }
-        .navbar.scrolled { padding: 12px 5%; box-shadow: 0 4px 40px rgba(0,0,0,0.4); }
+        .navbar.scrolled { padding: 12px 5%; box-shadow: 0 4px 40px rgba(0,0,0,0.5); }
         .nav-logo {
-            display: flex; align-items: center; gap: 11px;
-            font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
+            display: inline-flex; align-items: center; gap: 10px;
+            font-size: 20px; font-weight: 800; letter-spacing: -0.5px;
             text-decoration: none; color: #ffffff;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
         .nav-logo .logo-img {
-            width: 38px; height: 38px; border-radius: 11px;
-            object-fit: cover; display: block;
+            width: 36px; height: 36px; border-radius: 10px;
+            object-fit: cover; display: block; flex-shrink: 0;
             box-shadow: 0 0 18px var(--red-glow), 0 3px 10px rgba(0,0,0,0.4);
             border: 1.5px solid rgba(255,255,255,0.15);
             transition: transform 0.25s ease, box-shadow 0.25s ease;
@@ -100,6 +106,9 @@
             font-size: 14px; font-weight: 600;
             box-shadow: 0 0 20px var(--red-glow);
             transition: transform 0.2s, box-shadow 0.2s;
+            white-space: nowrap;
+            display: inline-flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
         }
         .nav-cta:hover { transform: translateY(-2px); box-shadow: 0 4px 30px var(--red-glow); }
         .nav-mobile { display: none; }
@@ -196,8 +205,8 @@
             animation: float 6s ease-in-out infinite;
         }
         @keyframes float {
-            0%, 100% { transform: translateY(-50%) translateY(0px); }
-            50% { transform: translateY(-50%) translateY(-18px); }
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-14px); }
         }
         .phone-screen { border-radius: 22px; overflow: hidden; background: #0f0f1a; }
         .phone-header {
@@ -394,18 +403,51 @@
 
         /* ========== PAYMENT ========== */
         .payment-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 14px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 16px;
+        }
+        @media (max-width: 480px) {
+            .payment-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
         }
         .payment-card {
             background: var(--card); border: 1px solid var(--border);
-            border-radius: 14px; padding: 20px 16px;
-            display: flex; flex-direction: column; align-items: center; gap: 10px;
-            transition: all 0.3s; text-align: center;
+            border-radius: 16px; padding: 18px 12px;
+            display: flex; flex-direction: column; align-items: center; gap: 12px;
+            transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+            text-align: center;
         }
-        .payment-card:hover { transform: translateY(-4px); border-color: rgba(232,35,42,0.3); }
-        .payment-icon { font-size: 30px; }
-        .payment-name { font-size: 13px; font-weight: 600; }
+        .payment-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(232,35,42,0.4);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+        }
+        .payment-badge-wrap {
+            width: 100%;
+            max-width: 135px;
+            height: 46px;
+            background: #ffffff;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            padding: 5px 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+            transition: transform 0.2s ease;
+        }
+        .payment-card:hover .payment-badge-wrap {
+            transform: scale(1.04);
+        }
+        .payment-img {
+            max-width: 100%;
+            max-height: 34px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+        }
+        .payment-name { font-size: 13px; font-weight: 700; color: #ffffff; line-height: 1.3; }
         .payment-desc { font-size: 11px; color: var(--muted); }
 
         /* ========== PESONA CICALENGKA GALLERY ========== */
@@ -680,33 +722,44 @@
             .cicalengka-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
         }
         @media (max-width: 768px) {
+            .navbar { padding: 12px 16px; gap: 10px; }
+            .navbar.scrolled { padding: 10px 16px; }
+            .nav-logo { font-size: 18px; gap: 8px; flex-shrink: 0; }
+            .nav-logo .logo-img { width: 32px; height: 32px; border-radius: 9px; }
+            .nav-links { display: none !important; }
+            .nav-mobile { display: flex; align-items: center; flex-shrink: 0; }
+            .nav-mobile .nav-cta { padding: 8px 14px; font-size: 13px; font-weight: 700; border-radius: 8px; }
             .stats-inner { grid-template-columns: repeat(2, 1fr); }
             .steps-grid { grid-template-columns: repeat(2, 1fr); }
             .steps-grid::before { display: none; }
-            .nav-links { display: none; }
-            .nav-mobile { display: flex; gap: 10px; align-items: center; }
             .footer-top { grid-template-columns: 1fr; }
             .footer-bottom { flex-direction: column; text-align: center; }
         }
         @media (max-width: 480px) {
+            .navbar { padding: 10px 12px; gap: 8px; }
+            .nav-logo { font-size: 16px; gap: 6px; }
+            .nav-logo .logo-img { width: 28px; height: 28px; border-radius: 8px; }
+            .nav-mobile .nav-cta { padding: 7px 11px; font-size: 12px; border-radius: 7px; }
             .stats-inner { grid-template-columns: repeat(2, 1fr); }
             .steps-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 360px) {
+            .navbar { padding: 8px 10px; gap: 6px; }
+            .nav-logo { font-size: 14.5px; gap: 5px; }
+            .nav-logo .logo-img { width: 25px; height: 25px; border-radius: 6px; }
+            .nav-mobile .nav-cta { padding: 6px 9px; font-size: 11px; }
         }
 
         /* ========== ANIMATIONS ========== */
         .fade-in {
-            opacity: 0; transform: translateY(30px);
-            transition: opacity 0.7s ease, transform 0.7s ease;
+            opacity: 0; transform: translateY(24px);
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: opacity, transform;
         }
         .fade-in.visible { opacity: 1; transform: translateY(0); }
         .fade-in-delay-1 { transition-delay: 0.1s; }
         .fade-in-delay-2 { transition-delay: 0.2s; }
         .fade-in-delay-3 { transition-delay: 0.3s; }
-
-        /* Anime.js handles the physics directly when active */
-        body.anime-active .fade-in {
-            transition: none !important;
-        }
 
         /* ========== TOAST / BACK TO TOP ========== */
         .back-top {
@@ -1079,44 +1132,74 @@
         </div>
         <div class="payment-grid">
             <div class="payment-card fade-in">
-                <div class="payment-icon">💵</div>
+                <div class="payment-badge-wrap">
+                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/cod.svg" alt="COD - Cash on Delivery" class="payment-img">
+                </div>
                 <div class="payment-name">COD</div>
                 <div class="payment-desc">Bayar Tunai ke Driver</div>
             </div>
             <div class="payment-card fade-in fade-in-delay-1">
-                <div class="payment-icon">📲</div>
+                <div class="payment-badge-wrap">
+                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/qris.svg" alt="QRIS Standar Nasional" class="payment-img">
+                </div>
                 <div class="payment-name">QRIS</div>
-                <div class="payment-desc">Scan & Bayar Instan</div>
+                <div class="payment-desc">Semua E-Wallet & Bank</div>
             </div>
             <div class="payment-card fade-in fade-in-delay-2">
-                <div class="payment-icon">🏦</div>
-                <div class="payment-name">BCA</div>
-                <div class="payment-desc">Transfer Bank</div>
+                <div class="payment-badge-wrap">
+                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/bca.svg" alt="Bank BCA" class="payment-img">
+                </div>
+                <div class="payment-name">BCA Virtual Account</div>
+                <div class="payment-desc">Transfer Otomatis</div>
             </div>
             <div class="payment-card fade-in">
-                <div class="payment-icon">🏦</div>
-                <div class="payment-name">BRI</div>
-                <div class="payment-desc">Transfer Bank</div>
+                <div class="payment-badge-wrap">
+                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/mandiri.svg" alt="Bank Mandiri" class="payment-img">
+                </div>
+                <div class="payment-name">Mandiri VA / Livin</div>
+                <div class="payment-desc">Transfer Otomatis</div>
             </div>
             <div class="payment-card fade-in fade-in-delay-1">
-                <div class="payment-icon">🏦</div>
-                <div class="payment-name">Mandiri</div>
-                <div class="payment-desc">Transfer Bank</div>
+                <div class="payment-badge-wrap">
+                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/bri.svg" alt="Bank BRI" class="payment-img">
+                </div>
+                <div class="payment-name">BRI BRIVA</div>
+                <div class="payment-desc">Transfer Otomatis</div>
             </div>
             <div class="payment-card fade-in fade-in-delay-2">
-                <div class="payment-icon">💙</div>
+                <div class="payment-badge-wrap">
+                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/bni.svg" alt="Bank BNI" class="payment-img">
+                </div>
+                <div class="payment-name">BNI Virtual Account</div>
+                <div class="payment-desc">Transfer Otomatis</div>
+            </div>
+            <div class="payment-card fade-in">
+                <div class="payment-badge-wrap">
+                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/dana.svg" alt="DANA Indonesia" class="payment-img">
+                </div>
                 <div class="payment-name">DANA</div>
-                <div class="payment-desc">E-Wallet</div>
-            </div>
-            <div class="payment-card fade-in">
-                <div class="payment-icon">💚</div>
-                <div class="payment-name">GoPay</div>
-                <div class="payment-desc">E-Wallet</div>
+                <div class="payment-desc">E-Wallet Instan</div>
             </div>
             <div class="payment-card fade-in fade-in-delay-1">
-                <div class="payment-icon">⭐</div>
+                <div class="payment-badge-wrap">
+                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/gopay.svg" alt="GoPay" class="payment-img">
+                </div>
+                <div class="payment-name">GoPay</div>
+                <div class="payment-desc">E-Wallet Instan</div>
+            </div>
+            <div class="payment-card fade-in fade-in-delay-2">
+                <div class="payment-badge-wrap">
+                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/shopeepay.svg" alt="ShopeePay" class="payment-img">
+                </div>
+                <div class="payment-name">ShopeePay</div>
+                <div class="payment-desc">E-Wallet Instan</div>
+            </div>
+            <div class="payment-card fade-in">
+                <div class="payment-badge-wrap">
+                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/payments/cicalengkapay.svg" alt="CicalengkaPay" class="payment-img">
+                </div>
                 <div class="payment-name">CicalengkaPay</div>
-                <div class="payment-desc">Dompet Internal</div>
+                <div class="payment-desc">Dompet Internal Cicago</div>
             </div>
         </div>
     </div>
@@ -1340,443 +1423,106 @@
 <!-- Back to Top -->
 <button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Kembali ke atas">↑</button>
 
-<!-- Anime.js Library (CDN with local fallback) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
-<script>
-    if (!window.anime) {
-        document.write('<script src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/js/anime.min.js"><\/script>');
-    }
-</script>
-
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // Flag to disable CSS transition conflicts on animated elements
-    document.body.classList.add('anime-active');
+    // 1. Intersection Observer for Scroll Fade-in Animations
+    const fadeElements = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    obs.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
 
-    if (typeof anime === 'undefined') {
-        console.warn('Anime.js not loaded, using fallback CSS animations.');
-        document.querySelectorAll('.fade-in').forEach(el => el.classList.add('visible'));
-        return;
+        fadeElements.forEach(el => observer.observe(el));
+    } else {
+        fadeElements.forEach(el => el.classList.add('visible'));
     }
 
-    // =========================================================================
-    // 1. HERO SECTION ENTRANCE TIMELINE
-    // =========================================================================
-    const heroTl = anime.timeline({
-        easing: 'easeOutExpo',
-        duration: 900
-    });
-
-    heroTl
-        .add({
-            targets: '.navbar',
-            translateY: [-30, 0],
-            opacity: [0, 1],
-            duration: 800,
-            easing: 'easeOutCubic'
-        })
-        .add({
-            targets: '.hero-badge',
-            translateY: [25, 0],
-            opacity: [0, 1],
-            scale: [0.9, 1],
-            duration: 650,
-            easing: 'easeOutBack'
-        }, '-=500')
-        .add({
-            targets: '.hero-content h1',
-            translateY: [40, 0],
-            opacity: [0, 1],
-            duration: 800,
-            easing: 'easeOutCubic'
-        }, '-=450')
-        .add({
-            targets: '.hero-content p',
-            translateY: [25, 0],
-            opacity: [0, 1],
-            duration: 700,
-            easing: 'easeOutCubic'
-        }, '-=550')
-        .add({
-            targets: '.hero-actions a',
-            translateY: [20, 0],
-            scale: [0.92, 1],
-            opacity: [0, 1],
-            delay: anime.stagger(120),
-            duration: 650,
-            easing: 'easeOutBack'
-        }, '-=500')
-        .add({
-            targets: '.phone-mockup',
-            translateY: [60, 0],
-            opacity: [0, 1],
-            scale: [0.94, 1],
-            duration: 1000,
-            easing: 'easeOutCubic'
-        }, '-=800')
-        .add({
-            targets: '.phone-svc',
-            scale: [0.75, 1],
-            opacity: [0, 1],
-            delay: anime.stagger(35),
-            duration: 450,
-            easing: 'easeOutBack'
-        }, '-=600');
-
-    // Continuous Floating Loop for Phone Mockup
-    anime({
-        targets: '.phone-mockup',
-        translateY: [-6, 6],
-        duration: 3000,
-        direction: 'alternate',
-        loop: true,
-        easing: 'easeInOutSine'
-    });
-
-    // Continuous Bell Wobble inside Phone Mockup
-    anime({
-        targets: '.phone-header span',
-        rotate: [-14, 14],
-        duration: 380,
-        direction: 'alternate',
-        loop: true,
-        delay: 2000,
-        easing: 'easeInOutSine'
-    });
-
-    // Subtle Glowing Pulse on Hero Background
-    anime({
-        targets: '.hero-bg',
-        scale: [1, 1.15],
-        opacity: [0.15, 0.28],
-        duration: 4500,
-        direction: 'alternate',
-        loop: true,
-        easing: 'easeInOutSine'
-    });
-
-    // Continuous Subtle Pulse on Main Web App CTA Button
-    anime({
-        targets: '.app-cta-btn-main',
-        scale: [1, 1.025],
-        boxShadow: [
-            '0 10px 30px rgba(232,35,42,0.4)',
-            '0 14px 45px rgba(232,35,42,0.75)'
-        ],
-        duration: 1800,
-        direction: 'alternate',
-        loop: true,
-        easing: 'easeInOutQuad'
-    });
-
-    // =========================================================================
-    // 2. STATS COUNTER & SECTION REVEALS VIA INTERSECTION OBSERVER
-    // =========================================================================
-    const animatedSections = new Set();
-
-    const scrollObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (!entry.isIntersecting) return;
-            const target = entry.target;
-
-            // Stats Section
-            if (target.classList.contains('stats-inner') && !animatedSections.has(target)) {
-                animatedSections.add(target);
-                
-                anime({
-                    targets: target.querySelectorAll('.stat-item'),
-                    translateY: [35, 0],
-                    opacity: [0, 1],
-                    scale: [0.88, 1],
-                    delay: anime.stagger(110),
-                    duration: 800,
-                    easing: 'easeOutBack'
-                });
-
-                // Count-up numbers with Anime.js
-                target.querySelectorAll('.stat-item').forEach(item => {
-                    const numEl = item.querySelector('.stat-num');
-                    const raw = numEl.textContent.trim();
-                    const isK = raw.includes('K');
-                    const targetVal = parseFloat(raw.replace(/[^0-9.]/g, '')) || 0;
-                    const suffix = isK ? 'K+' : '+';
-                    const counterObj = { val: 0 };
-
-                    anime({
-                        targets: counterObj,
-                        val: targetVal,
-                        duration: 1800,
-                        easing: 'easeOutExpo',
-                        round: isK ? 10 : 1,
-                        update: () => {
-                            const formatted = isK ? counterObj.val.toFixed(1) : Math.round(counterObj.val);
-                            numEl.innerHTML = formatted + '<span class="stat-suffix">' + suffix + '</span>';
-                        }
-                    });
-                });
-            }
-
-            // Layanan Section Grid
-            if (target.id === 'layanan' && !animatedSections.has(target)) {
-                animatedSections.add(target);
-                anime({
-                    targets: '#layanan .service-card',
-                    translateY: [45, 0],
-                    opacity: [0, 1],
-                    scale: [0.93, 1],
-                    delay: anime.stagger(100),
-                    duration: 850,
-                    easing: 'easeOutCubic'
-                });
-            }
-
-            // Pesona Cicalengka Gallery
-            if (target.id === 'cicalengka' && !animatedSections.has(target)) {
-                animatedSections.add(target);
-                anime({
-                    targets: '#cicalengka .cicalengka-card',
-                    translateY: [55, 0],
-                    opacity: [0, 1],
-                    scale: [0.9, 1],
-                    delay: anime.stagger(120),
-                    duration: 900,
-                    easing: 'easeOutCubic'
-                });
-            }
-
-            // Fitur Unggulan
-            if (target.id === 'fitur' && !animatedSections.has(target)) {
-                animatedSections.add(target);
-                anime({
-                    targets: '#fitur .feature-card',
-                    translateY: [45, 0],
-                    opacity: [0, 1],
-                    delay: anime.stagger(110),
-                    duration: 800,
-                    easing: 'easeOutCubic'
-                });
-            }
-
-            // Cara Pesan / Steps
-            if (target.id === 'cara-kerja' && !animatedSections.has(target)) {
-                animatedSections.add(target);
-                anime({
-                    targets: '#cara-kerja .step-card',
-                    translateY: [40, 0],
-                    opacity: [0, 1],
-                    delay: anime.stagger(140),
-                    duration: 750,
-                    easing: 'easeOutBack'
-                });
-                anime({
-                    targets: '#cara-kerja .step-num',
-                    scale: [0, 1],
-                    rotate: ['-180deg', '0deg'],
-                    delay: anime.stagger(140, {start: 150}),
-                    duration: 850,
-                    easing: 'easeOutElastic(1, .7)'
-                });
-            }
-
-            // Pembayaran
-            if (target.id === 'pembayaran' && !animatedSections.has(target)) {
-                animatedSections.add(target);
-                anime({
-                    targets: '#pembayaran .payment-card',
-                    scale: [0.82, 1],
-                    opacity: [0, 1],
-                    delay: anime.stagger(50),
-                    duration: 650,
-                    easing: 'easeOutBack'
-                });
-            }
-
-            // Area Section
-            if (target.id === 'area' && !animatedSections.has(target)) {
-                animatedSections.add(target);
-                anime({
-                    targets: '#area .area-chip',
-                    scale: [0.85, 1],
-                    opacity: [0, 1],
-                    delay: anime.stagger(35),
-                    duration: 600,
-                    easing: 'easeOutCubic'
-                });
-            }
-
-            // Buka Aplikasi CTA Section
-            if (target.id === 'buka-aplikasi' && !animatedSections.has(target)) {
-                animatedSections.add(target);
-                anime({
-                    targets: '.app-cta-inner > div:first-child',
-                    translateX: [-40, 0],
-                    opacity: [0, 1],
-                    duration: 850,
-                    easing: 'easeOutCubic'
-                });
-                anime({
-                    targets: '.app-browser-card',
-                    translateX: [40, 0],
-                    opacity: [0, 1],
-                    scale: [0.93, 1],
-                    duration: 950,
-                    easing: 'easeOutBack'
-                });
-            }
-
-            // Generic section headers
-            if (target.classList.contains('section-header') && !animatedSections.has(target)) {
-                animatedSections.add(target);
-                anime({
-                    targets: target,
-                    translateY: [30, 0],
-                    opacity: [0, 1],
-                    duration: 700,
-                    easing: 'easeOutCubic'
-                });
-            }
-        });
-    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-
-    // Observe specific sections & containers
-    document.querySelectorAll('.stats-inner, #layanan, #cicalengka, #fitur, #cara-kerja, #pembayaran, #area, #buka-aplikasi, .section-header')
-        .forEach(el => scrollObserver.observe(el));
-
-    // =========================================================================
-    // 3. MICRO-INTERACTIONS WITH ANIME.JS
-    // =========================================================================
-    // Service Cards Hover Icon Pop
-    document.querySelectorAll('.service-card').forEach(card => {
-        const icon = card.querySelector('.svc-icon');
-        if (!icon) return;
-        card.addEventListener('mouseenter', () => {
-            anime({
-                targets: icon,
-                scale: 1.25,
-                rotate: '8deg',
-                duration: 300,
-                easing: 'easeOutBack'
+    // 2. Animated Stats Numbers Count-Up
+    const statsContainer = document.querySelector('.stats-inner');
+    let statsAnimated = false;
+    if (statsContainer && 'IntersectionObserver' in window) {
+        const statsObserver = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !statsAnimated) {
+                    statsAnimated = true;
+                    obs.unobserve(entry.target);
+                    animateCounters();
+                }
             });
-        });
-        card.addEventListener('mouseleave', () => {
-            anime({
-                targets: icon,
-                scale: 1,
-                rotate: '0deg',
-                duration: 250,
-                easing: 'easeOutQuad'
-            });
-        });
-    });
+        }, { threshold: 0.3 });
+        statsObserver.observe(statsContainer);
+    }
 
-    // Payment Cards Hover
-    document.querySelectorAll('.payment-card').forEach(card => {
-        const icon = card.querySelector('.payment-icon');
-        if (!icon) return;
-        card.addEventListener('mouseenter', () => {
-            anime({
-                targets: icon,
-                translateY: -4,
-                scale: 1.15,
-                duration: 250,
-                easing: 'easeOutCubic'
-            });
-        });
-        card.addEventListener('mouseleave', () => {
-            anime({
-                targets: icon,
-                translateY: 0,
-                scale: 1,
-                duration: 250,
-                easing: 'easeOutQuad'
-            });
-        });
-    });
+    function animateCounters() {
+        document.querySelectorAll('.stat-num').forEach(numEl => {
+            const rawText = numEl.textContent.trim();
+            const isK = rawText.includes('K');
+            const targetVal = parseFloat(rawText.replace(/[^0-9.]/g, '')) || 0;
+            const suffix = isK ? 'K+' : (rawText.includes('+') ? '+' : '');
+            const duration = 1600;
+            const startTime = performance.now();
 
-    // =========================================================================
-    // 4. ACCORDION FAQ WITH ANIME.JS
-    // =========================================================================
+            function updateCount(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                // Ease out exponential curve
+                const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+                const currentVal = easeProgress * targetVal;
+
+                if (isK) {
+                    numEl.innerHTML = currentVal.toFixed(1) + '<span class="stat-suffix">' + suffix + '</span>';
+                } else if (Number.isInteger(targetVal)) {
+                    numEl.innerHTML = Math.round(currentVal) + '<span class="stat-suffix">' + suffix + '</span>';
+                } else {
+                    numEl.innerHTML = currentVal.toFixed(1) + '<span class="stat-suffix">' + suffix + '</span>';
+                }
+
+                if (progress < 1) {
+                    requestAnimationFrame(updateCount);
+                } else {
+                    numEl.innerHTML = (isK ? targetVal.toFixed(1) : targetVal) + '<span class="stat-suffix">' + suffix + '</span>';
+                }
+            }
+            requestAnimationFrame(updateCount);
+        });
+    }
+
+    // 3. Accordion FAQ
     window.toggleFaq = function(id) {
         const item = document.getElementById('faq-' + id);
         if (!item) return;
-        const answer = item.querySelector('.faq-answer');
-        const icon = item.querySelector('.faq-icon');
         const isOpen = item.classList.contains('open');
 
-        // Close other open FAQ items with smooth anime
+        // Close other items
         document.querySelectorAll('.faq-item.open').forEach(openItem => {
             if (openItem !== item) {
-                const openAnswer = openItem.querySelector('.faq-answer');
-                const openIcon = openItem.querySelector('.faq-icon');
-                anime({
-                    targets: openAnswer,
-                    height: 0,
-                    opacity: [1, 0],
-                    duration: 300,
-                    easing: 'easeInOutQuad',
-                    complete: () => {
-                        openItem.classList.remove('open');
-                        openAnswer.style.height = '';
-                    }
-                });
-                anime({
-                    targets: openIcon,
-                    rotate: 0,
-                    duration: 300,
-                    easing: 'easeInOutQuad'
-                });
+                openItem.classList.remove('open');
             }
         });
 
+        // Toggle current item
         if (isOpen) {
-            anime({
-                targets: answer,
-                height: 0,
-                opacity: [1, 0],
-                duration: 300,
-                easing: 'easeInOutQuad',
-                complete: () => {
-                    item.classList.remove('open');
-                    answer.style.height = '';
-                }
-            });
-            anime({
-                targets: icon,
-                rotate: 0,
-                duration: 300,
-                easing: 'easeInOutQuad'
-            });
+            item.classList.remove('open');
         } else {
             item.classList.add('open');
-            answer.style.height = 'auto';
-            const fullHeight = answer.scrollHeight;
-            answer.style.height = '0px';
-
-            anime({
-                targets: answer,
-                height: [0, fullHeight + 20],
-                opacity: [0, 1],
-                duration: 350,
-                easing: 'easeOutCubic'
-            });
-            anime({
-                targets: icon,
-                rotate: 45,
-                duration: 350,
-                easing: 'easeOutBack'
-            });
         }
     };
 
-    // Navbar Scroll & Back to top
+    // 4. Navbar Scroll Effect & Back to Top Button
     const navbar = document.getElementById('navbar');
     const backTop = document.getElementById('backTop');
     window.addEventListener('scroll', () => {
-        if (navbar) navbar.classList.toggle('scrolled', window.scrollY > 50);
-        if (backTop) backTop.classList.toggle('show', window.scrollY > 400);
-    });
+        const scrolled = window.scrollY > 40;
+        if (navbar) navbar.classList.toggle('scrolled', scrolled);
+        if (backTop) backTop.classList.toggle('show', window.scrollY > 350);
+    }, { passive: true });
 
-    // Smooth Scroll Anchor Links
+    // 5. Smooth Scroll for Anchor Links with Header Offset
     document.querySelectorAll('a[href^="#"]').forEach(a => {
         a.addEventListener('click', e => {
             const targetId = a.getAttribute('href');
@@ -1784,7 +1530,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const targetEl = document.querySelector(targetId);
             if (targetEl) {
                 e.preventDefault();
-                const offset = 80;
+                const offset = 75;
                 const top = targetEl.getBoundingClientRect().top + window.scrollY - offset;
                 window.scrollTo({ top, behavior: 'smooth' });
             }

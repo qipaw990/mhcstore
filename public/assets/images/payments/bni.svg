@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 50" fill="none">
+    <rect width="160" height="50" rx="8" fill="#FFFFFF"/>
+    <!-- BNI Teal Letters -->
+    <g transform="translate(20, 12)">
+        <text x="0" y="24" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="24" font-weight="900" fill="#005E6A" letter-spacing="1">BNI</text>
+    </g>
+    <!-- 46 Orange Graphic -->
+    <g transform="translate(85, 12)">
+        <path d="M12 0 L0 18 H15 V26 H20 V18 H24 V13 H20 V0 Z M15 13 H6 L15 3 Z" fill="#F15A24"/>
+        <path d="M38 12 C38 4 33 0 26 0 C19 0 15 6 15 14 C15 22 20 26 27 26 C34 26 38 21 38 15 C38 14.5 38 14 37.9 13.5 C36 14.8 33.5 15.5 30.5 15.5 C25 15.5 21 12 21 7 C21 6 21.2 5 21.6 4.2 C22.8 1.6 25 0.5 27 0.5 C30 0.5 32 3 32 8 C32 14 28 20 23 20" fill="none" stroke="#F15A24" stroke-width="3" stroke-linecap="round"/>
+    </g>
+</svg>
