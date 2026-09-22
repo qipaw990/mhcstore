@@ -239,8 +239,9 @@ class ApiService {
   static Future<Map<String, dynamic>> postMultipartFiles(
     String url,
     Map<String, String> fields,
-    Map<String, String> files,
-  ) async {
+    Map<String, String> files, {
+    Map<String, Uint8List>? fileBytesMap,
+  }) async {
     try {
       final cookie = await _getSavedCookie();
       final token = await _getSavedToken();
@@ -267,20 +268,48 @@ class ApiService {
       }
       request.fields.addAll(updatedFields);
 
-      if (!kIsWeb) {
-        for (final entry in files.entries) {
+      final addedFieldKeys = <String>{};
+
+      // 1. Tambahkan file dari bytes (paling aman & kompatibel lintas platform termasuk Web & Android)
+      if (fileBytesMap != null && fileBytesMap.isNotEmpty) {
+        for (final entry in fileBytesMap.entries) {
           if (entry.value.isNotEmpty) {
-            final mf = await http.MultipartFile.fromPath(entry.key, entry.value);
+            final mf = http.MultipartFile.fromBytes(
+              entry.key,
+              entry.value,
+              filename: '${entry.key}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+            );
             request.files.add(mf);
+            addedFieldKeys.add(entry.key);
           }
         }
       }
 
-      final streamed = await request.send().timeout(const Duration(seconds: 30));
+      // 2. Fallback path disk jika belum dimasukkan lewat bytes
+      if (!kIsWeb) {
+        for (final entry in files.entries) {
+          if (entry.value.isNotEmpty && !addedFieldKeys.contains(entry.key)) {
+            try {
+              final mf = await http.MultipartFile.fromPath(entry.key, entry.value);
+              request.files.add(mf);
+            } catch (err) {
+              debugPrint('[ApiService postMultipartFiles] Gagal load path ${entry.value}: $err');
+            }
+          }
+        }
+      }
+
+      debugPrint('[ApiService postMultipartFiles] URL: $url | Fields: ${updatedFields.keys.toList()} | Files: ${request.files.map((f) => "${f.field}: ${f.filename} (${f.length} B)").toList()}');
+
+      final streamed = await request.send().timeout(const Duration(seconds: 45));
       final response = await http.Response.fromStream(streamed);
+
+      debugPrint('[ApiService postMultipartFiles] Code: ${response.statusCode} | Body: ${response.body.length > 300 ? "${response.body.substring(0, 300)}..." : response.body}');
+
       await _saveCookiesFromResponse(response);
       return _parseResponse(response);
     } catch (e) {
+      debugPrint('[ApiService postMultipartFiles ERROR] $url | $e');
       return {'success': false, 'message': 'Kesalahan koneksi: $e'};
     }
   }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/api_constants.dart';
@@ -219,8 +220,11 @@ class AuthController extends ChangeNotifier {
     String? latitude,
     String? longitude,
     String? ktpPath,
+    Uint8List? ktpBytes,
     String? logoPath,
+    Uint8List? logoBytes,
     String? coverPath,
+    Uint8List? coverBytes,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -239,13 +243,37 @@ class AuthController extends ChangeNotifier {
       'longitude': longitude ?? AppConfigService.instance.defaultLng.toString(),
     };
 
+    // ── Fallback Base64 untuk smart_upload_field di server (persis seperti profil tenant & produk) ──
+    if (ktpBytes != null && ktpBytes.isNotEmpty) {
+      fields['identity_image'] = 'data:image/jpeg;base64,${base64Encode(ktpBytes)}';
+    }
+    if (logoBytes != null && logoBytes.isNotEmpty) {
+      final base64Logo = 'data:image/jpeg;base64,${base64Encode(logoBytes)}';
+      fields['logo'] = base64Logo;
+      fields['store_logo'] = base64Logo;
+    }
+    if (coverBytes != null && coverBytes.isNotEmpty) {
+      fields['cover_photo'] = 'data:image/jpeg;base64,${base64Encode(coverBytes)}';
+    }
+
     final files = <String, String>{};
     if (ktpPath != null && ktpPath.isNotEmpty) files['identity_image'] = ktpPath;
     if (logoPath != null && logoPath.isNotEmpty) files['logo'] = logoPath;
     if (coverPath != null && coverPath.isNotEmpty) files['cover_photo'] = coverPath;
 
-    final response = files.isNotEmpty
-        ? await ApiService.postMultipartFiles(ApiConstants.vendorRegister, fields, files)
+    final fileBytesMap = <String, Uint8List>{};
+    if (ktpBytes != null && ktpBytes.isNotEmpty) fileBytesMap['identity_image'] = ktpBytes;
+    if (logoBytes != null && logoBytes.isNotEmpty) fileBytesMap['logo'] = logoBytes;
+    if (coverBytes != null && coverBytes.isNotEmpty) fileBytesMap['cover_photo'] = coverBytes;
+
+    final hasFiles = files.isNotEmpty || fileBytesMap.isNotEmpty;
+    final response = hasFiles
+        ? await ApiService.postMultipartFiles(
+            ApiConstants.vendorRegister,
+            fields,
+            files,
+            fileBytesMap: fileBytesMap,
+          )
         : await ApiService.postForm(ApiConstants.vendorRegister, fields);
 
     _isLoading = false;

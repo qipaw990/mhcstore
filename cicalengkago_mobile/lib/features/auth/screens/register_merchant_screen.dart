@@ -552,6 +552,17 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
                           return;
                         }
 
+                        // Pastikan bytes terbaca sempurna
+                        if (_ktpFile != null && _ktpBytes == null) {
+                          _ktpBytes = await _ktpFile!.readAsBytes();
+                        }
+                        if (_logoFile != null && _logoBytes == null) {
+                          _logoBytes = await _logoFile!.readAsBytes();
+                        }
+                        if (_coverFile != null && _coverBytes == null) {
+                          _coverBytes = await _coverFile!.readAsBytes();
+                        }
+
                         final res = await authCtrl.registerMerchant(
                           name: _nameCtrl.text.trim(),
                           email: _emailCtrl.text.trim(),
@@ -564,8 +575,11 @@ class _RegisterMerchantScreenState extends State<RegisterMerchantScreen> {
                           latitude: _latCtrl.text.trim(),
                           longitude: _lngCtrl.text.trim(),
                           ktpPath: _ktpFile?.path,
+                          ktpBytes: _ktpBytes,
                           logoPath: _logoFile?.path,
+                          logoBytes: _logoBytes,
                           coverPath: _coverFile?.path,
+                          coverBytes: _coverBytes,
                         );
 
                         if (res['success'] == true && mounted) {

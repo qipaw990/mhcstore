@@ -186,6 +186,10 @@ class ApiController extends Controller
         foreach ($uploadFields as $field => $label) {
             $errCode = (int)($_FILES[$field]['error'] ?? UPLOAD_ERR_NO_FILE);
             if ($errCode !== UPLOAD_ERR_OK && $errCode !== UPLOAD_ERR_NO_FILE) {
+                // Jika client mengirim fallback base64 yang valid, jangan gagalkan request
+                if (!empty($data[$field]) && is_string($data[$field]) && str_starts_with($data[$field], 'data:image/')) {
+                    continue;
+                }
                 $errMsg = $uploadErrMap[$errCode] ?? "Kode error PHP #{$errCode}.";
                 $this->errorResponse("Upload {$label} gagal: {$errMsg}", null, 422);
                 return;

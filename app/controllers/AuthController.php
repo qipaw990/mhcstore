@@ -380,6 +380,9 @@ class AuthController extends Controller
         foreach ($uploadFields as $field => $label) {
             $errCode = (int)($_FILES[$field]['error'] ?? UPLOAD_ERR_NO_FILE);
             if ($errCode !== UPLOAD_ERR_OK && $errCode !== UPLOAD_ERR_NO_FILE) {
+                if (!empty($data[$field]) && is_string($data[$field]) && str_starts_with($data[$field], 'data:image/')) {
+                    continue;
+                }
                 $errMsg = $uploadErrMap[$errCode] ?? "kode error PHP #{$errCode}.";
                 $_SESSION['error'] = "Upload {$label} gagal: file {$errMsg} Gunakan foto maksimal 20MB.";
                 $this->redirect('register-merchant');
