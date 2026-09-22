@@ -1048,8 +1048,8 @@ if (document.readyState === 'loading') {
             </button>
         </div>
         <form id="dChatForm" class="ccg-chat-input-bar no-preloader" onsubmit="handleSendDriverChat(event)">
-            <label for="dChatFileInput" class="btn btn-light rounded-circle d-flex align-items-center justify-content-center p-0 mb-0 me-1" style="width: 36px; height: 36px; cursor: pointer; flex-shrink: 0;" title="Kirim Foto">
-                <i class="bi bi-camera-fill text-muted" style="font-size: 16px;"></i>
+            <label for="dChatFileInput" class="btn rounded-circle d-flex align-items-center justify-content-center p-0 mb-0 me-2" style="width: 38px; height: 38px; background: #FEE2E2; border: 1.5px solid #EF4444; color: #EE2737; cursor: pointer; flex-shrink: 0; box-shadow: 0 2px 4px rgba(238,39,55,0.15);" title="Lampirkan Foto">
+                <i class="bi bi-camera-fill text-danger" style="font-size: 17px;"></i>
                 <input type="file" id="dChatFileInput" accept="image/*" style="display: none;" onchange="handleDriverPhotoSelected(this)">
             </label>
             <input type="text" id="dChatInput" name="message" class="ccg-chat-input" placeholder="Ketik pesan untuk pelanggan..." autocomplete="off" maxlength="500">

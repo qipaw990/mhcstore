@@ -672,61 +672,122 @@ class _InAppChatModalState extends State<InAppChatModal> {
               ),
             ),
 
-          // Input Bar
-          Container(
-            padding: const EdgeInsets.fromLTRB(10, 8, 16, 16),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.add_photo_alternate_rounded, color: AppTheme.primaryRed, size: 26),
-                  tooltip: 'Kirim Foto',
-                  onPressed: _isSending ? null : _showImageSourcePicker,
-                ),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: TextField(
-                      controller: _msgCtrl,
-                      decoration: const InputDecoration(
-                        hintText: 'Ketik pesan...',
-                        hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        border: InputBorder.none,
-                      ),
-                      onSubmitted: (_) => _sendMessage(),
-                    ),
+          // Input Bar (Wrapped in SafeArea agar tidak tertutup navigation bar HP)
+          SafeArea(
+            top: false,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(top: BorderSide(color: Color(0xFFF1F5F9), width: 1.5)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x0A000000),
+                    blurRadius: 6,
+                    offset: Offset(0, -2),
                   ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: _isSending ? null : _sendMessage,
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: _isSending ? Colors.grey : AppTheme.primaryRed,
-                      shape: BoxShape.circle,
-                    ),
-                    child: _isSending
-                        ? const Center(
-                            child: SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                ],
+              ),
+              child: Row(
+                children: [
+                  // Tombol Lampirkan Foto (Desain kontras tinggi, background merah muda, border merah tegas)
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(22),
+                      onTap: _isSending ? null : _showImageSourcePicker,
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEE2E2),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFFEF4444), width: 1.5),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x22EF4444),
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
                             ),
-                          )
-                        : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.add_a_photo_rounded,
+                          color: AppTheme.primaryRed,
+                          size: 21,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+
+                  // Kotak Input Teks + Ikon Kamera Cepat
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.only(left: 14, right: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: const Color(0xFFCBD5E1), width: 1),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _msgCtrl,
+                              decoration: const InputDecoration(
+                                hintText: 'Ketik pesan...',
+                                hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(vertical: 11),
+                              ),
+                              onSubmitted: (_) => _sendMessage(),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.camera_alt_rounded, color: Color(0xFF64748B), size: 20),
+                            tooltip: 'Kamera',
+                            padding: const EdgeInsets.all(6),
+                            constraints: const BoxConstraints(),
+                            onPressed: _isSending ? null : () => _pickImage(ImageSource.camera),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Tombol Kirim Pesan
+                  GestureDetector(
+                    onTap: _isSending ? null : _sendMessage,
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: _isSending ? Colors.grey : AppTheme.primaryRed,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: _isSending ? const Color(0x339E9E9E) : const Color(0x4DEE2737),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: _isSending
+                          ? const Center(
+                              child: SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              ),
+                            )
+                          : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
