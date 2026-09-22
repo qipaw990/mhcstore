@@ -703,6 +703,11 @@
         .fade-in-delay-2 { transition-delay: 0.2s; }
         .fade-in-delay-3 { transition-delay: 0.3s; }
 
+        /* Anime.js handles the physics directly when active */
+        body.anime-active .fade-in {
+            transition: none !important;
+        }
+
         /* ========== TOAST / BACK TO TOP ========== */
         .back-top {
             position: fixed; bottom: 30px; right: 30px; z-index: 999;
@@ -1335,73 +1340,457 @@
 <!-- Back to Top -->
 <button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Kembali ke atas">↑</button>
 
+<!-- Anime.js Library (CDN with local fallback) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
 <script>
-    // ========== NAVBAR SCROLL ==========
-    const navbar = document.getElementById('navbar');
-    window.addEventListener('scroll', () => {
-        navbar.classList.toggle('scrolled', window.scrollY > 50);
-        document.getElementById('backTop').classList.toggle('show', window.scrollY > 400);
-    });
+    if (!window.anime) {
+        document.write('<script src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/js/anime.min.js"><\/script>');
+    }
+</script>
 
-    // ========== FAQ TOGGLE ==========
-    function toggleFaq(id) {
-        const item = document.getElementById('faq-' + id);
-        const isOpen = item.classList.contains('open');
-        // Close all
-        document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
-        // Open clicked if it was closed
-        if (!isOpen) item.classList.add('open');
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Flag to disable CSS transition conflicts on animated elements
+    document.body.classList.add('anime-active');
+
+    if (typeof anime === 'undefined') {
+        console.warn('Anime.js not loaded, using fallback CSS animations.');
+        document.querySelectorAll('.fade-in').forEach(el => el.classList.add('visible'));
+        return;
     }
 
-    // ========== INTERSECTION OBSERVER (fade-in) ==========
-    const observer = new IntersectionObserver((entries) => {
+    // =========================================================================
+    // 1. HERO SECTION ENTRANCE TIMELINE
+    // =========================================================================
+    const heroTl = anime.timeline({
+        easing: 'easeOutExpo',
+        duration: 900
+    });
+
+    heroTl
+        .add({
+            targets: '.navbar',
+            translateY: [-30, 0],
+            opacity: [0, 1],
+            duration: 800,
+            easing: 'easeOutCubic'
+        })
+        .add({
+            targets: '.hero-badge',
+            translateY: [25, 0],
+            opacity: [0, 1],
+            scale: [0.9, 1],
+            duration: 650,
+            easing: 'easeOutBack'
+        }, '-=500')
+        .add({
+            targets: '.hero-content h1',
+            translateY: [40, 0],
+            opacity: [0, 1],
+            duration: 800,
+            easing: 'easeOutCubic'
+        }, '-=450')
+        .add({
+            targets: '.hero-content p',
+            translateY: [25, 0],
+            opacity: [0, 1],
+            duration: 700,
+            easing: 'easeOutCubic'
+        }, '-=550')
+        .add({
+            targets: '.hero-actions a',
+            translateY: [20, 0],
+            scale: [0.92, 1],
+            opacity: [0, 1],
+            delay: anime.stagger(120),
+            duration: 650,
+            easing: 'easeOutBack'
+        }, '-=500')
+        .add({
+            targets: '.phone-mockup',
+            translateY: [60, 0],
+            opacity: [0, 1],
+            scale: [0.94, 1],
+            duration: 1000,
+            easing: 'easeOutCubic'
+        }, '-=800')
+        .add({
+            targets: '.phone-svc',
+            scale: [0.75, 1],
+            opacity: [0, 1],
+            delay: anime.stagger(35),
+            duration: 450,
+            easing: 'easeOutBack'
+        }, '-=600');
+
+    // Continuous Floating Loop for Phone Mockup
+    anime({
+        targets: '.phone-mockup',
+        translateY: [-6, 6],
+        duration: 3000,
+        direction: 'alternate',
+        loop: true,
+        easing: 'easeInOutSine'
+    });
+
+    // Continuous Bell Wobble inside Phone Mockup
+    anime({
+        targets: '.phone-header span',
+        rotate: [-14, 14],
+        duration: 380,
+        direction: 'alternate',
+        loop: true,
+        delay: 2000,
+        easing: 'easeInOutSine'
+    });
+
+    // Subtle Glowing Pulse on Hero Background
+    anime({
+        targets: '.hero-bg',
+        scale: [1, 1.15],
+        opacity: [0.15, 0.28],
+        duration: 4500,
+        direction: 'alternate',
+        loop: true,
+        easing: 'easeInOutSine'
+    });
+
+    // Continuous Subtle Pulse on Main Web App CTA Button
+    anime({
+        targets: '.app-cta-btn-main',
+        scale: [1, 1.025],
+        boxShadow: [
+            '0 10px 30px rgba(232,35,42,0.4)',
+            '0 14px 45px rgba(232,35,42,0.75)'
+        ],
+        duration: 1800,
+        direction: 'alternate',
+        loop: true,
+        easing: 'easeInOutQuad'
+    });
+
+    // =========================================================================
+    // 2. STATS COUNTER & SECTION REVEALS VIA INTERSECTION OBSERVER
+    // =========================================================================
+    const animatedSections = new Set();
+
+    const scrollObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
+            if (!entry.isIntersecting) return;
+            const target = entry.target;
+
+            // Stats Section
+            if (target.classList.contains('stats-inner') && !animatedSections.has(target)) {
+                animatedSections.add(target);
+                
+                anime({
+                    targets: target.querySelectorAll('.stat-item'),
+                    translateY: [35, 0],
+                    opacity: [0, 1],
+                    scale: [0.88, 1],
+                    delay: anime.stagger(110),
+                    duration: 800,
+                    easing: 'easeOutBack'
+                });
+
+                // Count-up numbers with Anime.js
+                target.querySelectorAll('.stat-item').forEach(item => {
+                    const numEl = item.querySelector('.stat-num');
+                    const raw = numEl.textContent.trim();
+                    const isK = raw.includes('K');
+                    const targetVal = parseFloat(raw.replace(/[^0-9.]/g, '')) || 0;
+                    const suffix = isK ? 'K+' : '+';
+                    const counterObj = { val: 0 };
+
+                    anime({
+                        targets: counterObj,
+                        val: targetVal,
+                        duration: 1800,
+                        easing: 'easeOutExpo',
+                        round: isK ? 10 : 1,
+                        update: () => {
+                            const formatted = isK ? counterObj.val.toFixed(1) : Math.round(counterObj.val);
+                            numEl.innerHTML = formatted + '<span class="stat-suffix">' + suffix + '</span>';
+                        }
+                    });
+                });
+            }
+
+            // Layanan Section Grid
+            if (target.id === 'layanan' && !animatedSections.has(target)) {
+                animatedSections.add(target);
+                anime({
+                    targets: '#layanan .service-card',
+                    translateY: [45, 0],
+                    opacity: [0, 1],
+                    scale: [0.93, 1],
+                    delay: anime.stagger(100),
+                    duration: 850,
+                    easing: 'easeOutCubic'
+                });
+            }
+
+            // Pesona Cicalengka Gallery
+            if (target.id === 'cicalengka' && !animatedSections.has(target)) {
+                animatedSections.add(target);
+                anime({
+                    targets: '#cicalengka .cicalengka-card',
+                    translateY: [55, 0],
+                    opacity: [0, 1],
+                    scale: [0.9, 1],
+                    delay: anime.stagger(120),
+                    duration: 900,
+                    easing: 'easeOutCubic'
+                });
+            }
+
+            // Fitur Unggulan
+            if (target.id === 'fitur' && !animatedSections.has(target)) {
+                animatedSections.add(target);
+                anime({
+                    targets: '#fitur .feature-card',
+                    translateY: [45, 0],
+                    opacity: [0, 1],
+                    delay: anime.stagger(110),
+                    duration: 800,
+                    easing: 'easeOutCubic'
+                });
+            }
+
+            // Cara Pesan / Steps
+            if (target.id === 'cara-kerja' && !animatedSections.has(target)) {
+                animatedSections.add(target);
+                anime({
+                    targets: '#cara-kerja .step-card',
+                    translateY: [40, 0],
+                    opacity: [0, 1],
+                    delay: anime.stagger(140),
+                    duration: 750,
+                    easing: 'easeOutBack'
+                });
+                anime({
+                    targets: '#cara-kerja .step-num',
+                    scale: [0, 1],
+                    rotate: ['-180deg', '0deg'],
+                    delay: anime.stagger(140, {start: 150}),
+                    duration: 850,
+                    easing: 'easeOutElastic(1, .7)'
+                });
+            }
+
+            // Pembayaran
+            if (target.id === 'pembayaran' && !animatedSections.has(target)) {
+                animatedSections.add(target);
+                anime({
+                    targets: '#pembayaran .payment-card',
+                    scale: [0.82, 1],
+                    opacity: [0, 1],
+                    delay: anime.stagger(50),
+                    duration: 650,
+                    easing: 'easeOutBack'
+                });
+            }
+
+            // Area Section
+            if (target.id === 'area' && !animatedSections.has(target)) {
+                animatedSections.add(target);
+                anime({
+                    targets: '#area .area-chip',
+                    scale: [0.85, 1],
+                    opacity: [0, 1],
+                    delay: anime.stagger(35),
+                    duration: 600,
+                    easing: 'easeOutCubic'
+                });
+            }
+
+            // Buka Aplikasi CTA Section
+            if (target.id === 'buka-aplikasi' && !animatedSections.has(target)) {
+                animatedSections.add(target);
+                anime({
+                    targets: '.app-cta-inner > div:first-child',
+                    translateX: [-40, 0],
+                    opacity: [0, 1],
+                    duration: 850,
+                    easing: 'easeOutCubic'
+                });
+                anime({
+                    targets: '.app-browser-card',
+                    translateX: [40, 0],
+                    opacity: [0, 1],
+                    scale: [0.93, 1],
+                    duration: 950,
+                    easing: 'easeOutBack'
+                });
+            }
+
+            // Generic section headers
+            if (target.classList.contains('section-header') && !animatedSections.has(target)) {
+                animatedSections.add(target);
+                anime({
+                    targets: target,
+                    translateY: [30, 0],
+                    opacity: [0, 1],
+                    duration: 700,
+                    easing: 'easeOutCubic'
+                });
             }
         });
-    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
 
-    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    // Observe specific sections & containers
+    document.querySelectorAll('.stats-inner, #layanan, #cicalengka, #fitur, #cara-kerja, #pembayaran, #area, #buka-aplikasi, .section-header')
+        .forEach(el => scrollObserver.observe(el));
 
-    // ========== SMOOTH NAV LINKS ==========
+    // =========================================================================
+    // 3. MICRO-INTERACTIONS WITH ANIME.JS
+    // =========================================================================
+    // Service Cards Hover Icon Pop
+    document.querySelectorAll('.service-card').forEach(card => {
+        const icon = card.querySelector('.svc-icon');
+        if (!icon) return;
+        card.addEventListener('mouseenter', () => {
+            anime({
+                targets: icon,
+                scale: 1.25,
+                rotate: '8deg',
+                duration: 300,
+                easing: 'easeOutBack'
+            });
+        });
+        card.addEventListener('mouseleave', () => {
+            anime({
+                targets: icon,
+                scale: 1,
+                rotate: '0deg',
+                duration: 250,
+                easing: 'easeOutQuad'
+            });
+        });
+    });
+
+    // Payment Cards Hover
+    document.querySelectorAll('.payment-card').forEach(card => {
+        const icon = card.querySelector('.payment-icon');
+        if (!icon) return;
+        card.addEventListener('mouseenter', () => {
+            anime({
+                targets: icon,
+                translateY: -4,
+                scale: 1.15,
+                duration: 250,
+                easing: 'easeOutCubic'
+            });
+        });
+        card.addEventListener('mouseleave', () => {
+            anime({
+                targets: icon,
+                translateY: 0,
+                scale: 1,
+                duration: 250,
+                easing: 'easeOutQuad'
+            });
+        });
+    });
+
+    // =========================================================================
+    // 4. ACCORDION FAQ WITH ANIME.JS
+    // =========================================================================
+    window.toggleFaq = function(id) {
+        const item = document.getElementById('faq-' + id);
+        if (!item) return;
+        const answer = item.querySelector('.faq-answer');
+        const icon = item.querySelector('.faq-icon');
+        const isOpen = item.classList.contains('open');
+
+        // Close other open FAQ items with smooth anime
+        document.querySelectorAll('.faq-item.open').forEach(openItem => {
+            if (openItem !== item) {
+                const openAnswer = openItem.querySelector('.faq-answer');
+                const openIcon = openItem.querySelector('.faq-icon');
+                anime({
+                    targets: openAnswer,
+                    height: 0,
+                    opacity: [1, 0],
+                    duration: 300,
+                    easing: 'easeInOutQuad',
+                    complete: () => {
+                        openItem.classList.remove('open');
+                        openAnswer.style.height = '';
+                    }
+                });
+                anime({
+                    targets: openIcon,
+                    rotate: 0,
+                    duration: 300,
+                    easing: 'easeInOutQuad'
+                });
+            }
+        });
+
+        if (isOpen) {
+            anime({
+                targets: answer,
+                height: 0,
+                opacity: [1, 0],
+                duration: 300,
+                easing: 'easeInOutQuad',
+                complete: () => {
+                    item.classList.remove('open');
+                    answer.style.height = '';
+                }
+            });
+            anime({
+                targets: icon,
+                rotate: 0,
+                duration: 300,
+                easing: 'easeInOutQuad'
+            });
+        } else {
+            item.classList.add('open');
+            answer.style.height = 'auto';
+            const fullHeight = answer.scrollHeight;
+            answer.style.height = '0px';
+
+            anime({
+                targets: answer,
+                height: [0, fullHeight + 20],
+                opacity: [0, 1],
+                duration: 350,
+                easing: 'easeOutCubic'
+            });
+            anime({
+                targets: icon,
+                rotate: 45,
+                duration: 350,
+                easing: 'easeOutBack'
+            });
+        }
+    };
+
+    // Navbar Scroll & Back to top
+    const navbar = document.getElementById('navbar');
+    const backTop = document.getElementById('backTop');
+    window.addEventListener('scroll', () => {
+        if (navbar) navbar.classList.toggle('scrolled', window.scrollY > 50);
+        if (backTop) backTop.classList.toggle('show', window.scrollY > 400);
+    });
+
+    // Smooth Scroll Anchor Links
     document.querySelectorAll('a[href^="#"]').forEach(a => {
         a.addEventListener('click', e => {
-            const target = document.querySelector(a.getAttribute('href'));
-            if (target) {
+            const targetId = a.getAttribute('href');
+            if (targetId === '#' || targetId === '') return;
+            const targetEl = document.querySelector(targetId);
+            if (targetEl) {
                 e.preventDefault();
                 const offset = 80;
-                const top = target.getBoundingClientRect().top + window.scrollY - offset;
+                const top = targetEl.getBoundingClientRect().top + window.scrollY - offset;
                 window.scrollTo({ top, behavior: 'smooth' });
             }
         });
     });
-
-    // ========== STATS COUNTER ANIMATION ==========
-    function animateCounter(el) {
-        const target = parseInt(el.textContent.replace(/[^0-9]/g, ''));
-        if (!target) return;
-        const suffix = el.querySelector('.stat-suffix')?.outerHTML || '';
-        const isK = el.textContent.includes('K');
-        let current = 0;
-        const step = Math.max(1, Math.floor(target / 60));
-        const interval = setInterval(() => {
-            current = Math.min(current + step, target);
-            el.innerHTML = (isK ? current + '<span class="stat-suffix">K+</span>' : current + suffix);
-            if (current >= target) clearInterval(interval);
-        }, 25);
-    }
-
-    const statsObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.querySelectorAll('.stat-num').forEach(animateCounter);
-                statsObserver.unobserve(entry.target);
-            }
-        });
-    }, { threshold: 0.5 });
-
-    document.querySelectorAll('.stats-inner').forEach(el => statsObserver.observe(el));
+});
 </script>
 </body>
 </html>
