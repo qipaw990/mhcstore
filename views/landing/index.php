@@ -10,7 +10,7 @@
     <meta name="keywords" content="CicalengkaGO, cicago, cicalengka, delivery, ojek online, pesan makanan, sembako, farmasi, kirim paket, bandung">
     <meta name="author" content="CicalengkaGO">
     <meta property="og:title" content="CicalengkaGO — Super App On-Demand Cicalengka">
-    <meta property="og:description" content="Pesan makanan, belanja, farmasi, dan kirim paket di Cicalengka. Unduh sekarang!">
+    <meta property="og:description" content="Pesan makanan, belanja sembako, farmasi, dan kirim paket di Cicalengka langsung lewat browser di market.cicago.store!">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://cicago.store">
     <meta name="theme-color" content="#e8232a">
@@ -408,44 +408,186 @@
         .payment-name { font-size: 13px; font-weight: 600; }
         .payment-desc { font-size: 11px; color: var(--muted); }
 
-        /* ========== DOWNLOAD CTA ========== */
-        .download-section {
-            background: linear-gradient(135deg, var(--dark3) 0%, rgba(232,35,42,0.06) 100%);
+        /* ========== PESONA CICALENGKA GALLERY ========== */
+        .cicalengka-section {
+            padding: 90px 5%;
+            background: linear-gradient(180deg, var(--dark) 0%, var(--dark2) 50%, var(--dark) 100%);
+            position: relative;
+        }
+        .cicalengka-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-top: 48px;
+        }
+        .cicalengka-card {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            background: var(--card);
+            border: 1px solid var(--border);
+            height: 320px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease;
+        }
+        .cicalengka-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.55), 0 0 25px var(--red-glow);
+            border-color: rgba(232, 35, 42, 0.45);
+        }
+        .cicalengka-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .cicalengka-card:hover img {
+            transform: scale(1.08);
+        }
+        .cicalengka-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(10,10,15,0.4) 40%, rgba(10,10,15,0.95) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 24px;
+            pointer-events: none;
+        }
+        .cicalengka-tag {
+            align-self: flex-start;
+            background: rgba(232, 35, 42, 0.9);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .cicalengka-title {
+            font-size: 19px;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.3;
+            margin-bottom: 6px;
+        }
+        .cicalengka-desc {
+            font-size: 13px;
+            color: rgba(255,255,255,0.75);
+            line-height: 1.5;
+        }
+
+        /* ========== BUKA APLIKASI WEB APP CTA ========== */
+        .app-cta-section {
+            padding: 90px 5%;
+            background: radial-gradient(ellipse at center, rgba(232,35,42,0.12) 0%, rgba(10,10,15,0) 70%), var(--dark2);
+            position: relative;
+            overflow: hidden;
             border-top: 1px solid var(--border);
             border-bottom: 1px solid var(--border);
         }
-        .download-inner {
-            display: grid; grid-template-columns: 1fr 1fr;
-            gap: 60px; align-items: center;
+        .app-cta-inner {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 50px;
+            align-items: center;
+            background: linear-gradient(135deg, rgba(232,35,42,0.12) 0%, rgba(26,26,38,0.85) 100%);
+            border: 1px solid rgba(232,35,42,0.3);
+            border-radius: 32px;
+            padding: 56px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            position: relative;
         }
-        .dl-title {
-            font-size: clamp(28px, 3.5vw, 42px);
-            font-weight: 800; letter-spacing: -1px;
-            line-height: 1.2; margin-bottom: 16px;
+        .app-cta-title {
+            font-size: clamp(26px, 3.5vw, 40px);
+            font-weight: 900;
+            line-height: 1.2;
+            letter-spacing: -1px;
+            margin: 16px 0;
+            color: #fff;
         }
-        .dl-subtitle { font-size: 16px; color: var(--muted); margin-bottom: 32px; }
-        .store-buttons { display: flex; gap: 14px; flex-wrap: wrap; }
-        .store-btn {
-            display: flex; align-items: center; gap: 12px;
-            background: rgba(255,255,255,0.06); border: 1px solid var(--border);
-            padding: 14px 20px; border-radius: 14px;
-            transition: all 0.3s; min-width: 160px;
+        .app-cta-sub {
+            font-size: 15px;
+            color: var(--muted);
+            line-height: 1.6;
+            margin-bottom: 28px;
         }
-        .store-btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-3px); }
-        .store-btn .store-icon { font-size: 28px; }
-        .store-btn .store-text { font-size: 10px; color: var(--muted); }
-        .store-btn .store-name { font-size: 15px; font-weight: 700; }
-        .dl-qr {
-            display: flex; flex-direction: column; align-items: center; gap: 16px;
+        .app-pills {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
         }
-        .qr-box {
-            width: 160px; height: 160px;
-            background: #fff; border-radius: 18px; padding: 12px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 12px; color: #333; text-align: center;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        .app-pill {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: 12.5px;
+            color: #e4e4e7;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-        .qr-label { font-size: 13px; color: var(--muted); text-align: center; }
+        .app-cta-btn-main {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, #ff3848 0%, #c61524 100%);
+            color: #fff;
+            padding: 16px 32px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 800;
+            text-decoration: none;
+            box-shadow: 0 10px 30px rgba(232,35,42,0.45);
+            transition: all 0.25s ease;
+        }
+        .app-cta-btn-main:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 14px 40px rgba(232,35,42,0.6);
+            color: #fff;
+        }
+        .app-browser-card {
+            background: #0d0e15;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.12);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            overflow: hidden;
+        }
+        .browser-bar {
+            background: #161822;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .browser-dots { display: flex; gap: 6px; }
+        .browser-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .browser-address {
+            flex: 1;
+            background: rgba(255,255,255,0.06);
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 12.5px;
+            color: #a1a1aa;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: monospace;
+        }
+        .browser-body {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            text-align: center;
+        }
 
         /* ========== FAQ ========== */
         .faq-list { display: flex; flex-direction: column; gap: 12px; }
@@ -534,7 +676,8 @@
             .features-grid { grid-template-columns: 1fr; }
             .feature-card.featured { grid-column: span 1; grid-template-columns: 1fr; }
             .footer-top { grid-template-columns: 1fr 1fr; }
-            .download-inner { grid-template-columns: 1fr; }
+            .app-cta-inner { grid-template-columns: 1fr; padding: 36px 24px; }
+            .cicalengka-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
         }
         @media (max-width: 768px) {
             .stats-inner { grid-template-columns: repeat(2, 1fr); }
@@ -583,14 +726,15 @@
     </a>
     <div class="nav-links">
         <a href="#layanan">Layanan</a>
+        <a href="#cicalengka">Pesona Cicalengka</a>
         <a href="#fitur">Fitur</a>
-        <a href="#cara-kerja">Cara Kerja</a>
+        <a href="#cara-kerja">Cara Pesan</a>
         <a href="#pembayaran">Pembayaran</a>
         <a href="#faq">FAQ</a>
-        <a href="/admin" class="nav-cta">Admin Panel</a>
+        <a href="https://market.cicago.store" target="_blank" rel="noopener" class="nav-cta" style="background:var(--red);">🚀 Buka Aplikasi</a>
     </div>
     <div class="nav-mobile">
-        <a href="#download" class="nav-cta">Unduh App</a>
+        <a href="https://market.cicago.store" target="_blank" rel="noopener" class="nav-cta">Buka Aplikasi</a>
     </div>
 </nav>
 
@@ -611,15 +755,18 @@
         </h1>
         <p>
             Dari pesan makanan, belanja sembako, obat-obatan, olshop lokal, hingga kirim paket —
-            semuanya dalam satu aplikasi. Cepat, mudah, dan lokal banget.
+            semuanya dalam satu web app. Cepat, mudah, langsung buka di browser tanpa install!
         </p>
         <div class="hero-actions">
-            <a href="#download" class="btn-primary">
-                📱 Unduh Aplikasi
+            <a href="https://market.cicago.store" target="_blank" rel="noopener" class="btn-primary">
+                🚀 Buka Aplikasi Sekarang
             </a>
             <a href="#layanan" class="btn-secondary">
                 Lihat Layanan →
             </a>
+        </div>
+        <div style="margin-top:16px; font-size:13px; color:var(--muted); display:flex; align-items:center; gap:8px;">
+            <span style="color:#22c55e;">●</span> Langsung dibuka di browser HP & PC — Tanpa perlu download atau instal!
         </div>
     </div>
 
@@ -652,9 +799,10 @@
                     <div class="phone-svc"><span>📍</span>Lacak</div>
                 </div>
                 <div class="phone-banner">
-                    <strong>🎉 Gratis Ongkir!</strong>
-                    Belanja di atas Rp 100.000
+                    <strong>🎉 Belanja Praktis</strong>
+                    Buka di market.cicago.store
                 </div>
+                <a href="https://market.cicago.store" target="_blank" rel="noopener" style="display:block;margin-top:10px;background:var(--red);color:#fff;text-align:center;padding:9px;border-radius:9px;font-size:11.5px;font-weight:700;text-decoration:none;box-shadow:0 2px 10px rgba(232,35,42,0.4);">Buka market.cicago.store ➔</a>
             </div>
         </div>
     </div>
@@ -747,6 +895,81 @@
     </div>
 </section>
 
+<!-- ========== PESONA CICALENGKA ========== -->
+<section id="cicalengka" class="cicalengka-section">
+    <div class="max-w">
+        <div class="section-header fade-in" style="text-align:center;">
+            <div class="section-label" style="justify-content:center;">🌄 Dari Cicalengka, Untuk Warga Cicalengka</div>
+            <h2 class="section-title">Kenali Lebih Dekat Cicalengka<br>Bersama Ekosistem CicalengkaGO</h2>
+            <p class="section-subtitle" style="margin:0 auto; max-width:680px;">
+                Dari ikon stasiun modern, bukit hijau yang asri, hingga air terjun legendaris — CicalengkaGO hadir menghubungkan setiap warga, pedagang, dan sudut indah di Cicalengka.
+            </p>
+        </div>
+
+        <div class="cicalengka-grid">
+            <!-- Card 1: Stasiun Cicalengka -->
+            <div class="cicalengka-card fade-in">
+                <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/stasiun_cicalengka.jpg" alt="Stasiun Cicalengka Baru" loading="lazy">
+                <div class="cicalengka-overlay">
+                    <span class="cicalengka-tag">Transportasi & Ikon Kota</span>
+                    <div class="cicalengka-title">Stasiun Cicalengka Modern</div>
+                    <div class="cicalengka-desc">Bangunan megah kebanggaan Cicalengka, gerbang mobilitas Commuter Line Bandung Raya dan Garut.</div>
+                </div>
+            </div>
+
+            <!-- Card 2: Curug Cinulang -->
+            <div class="cicalengka-card fade-in fade-in-delay-1">
+                <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/curug_cinulang.jpg" alt="Curug Cinulang Cicalengka" loading="lazy">
+                <div class="cicalengka-overlay">
+                    <span class="cicalengka-tag" style="background:#06b6d4;">Wisata Alam Legendaris</span>
+                    <div class="cicalengka-title">Curug Cinulang</div>
+                    <div class="cicalengka-desc">Air terjun kembar legendaris Cicalengka di perbatasan asri Priangan Timur yang sejuk menenangkan.</div>
+                </div>
+            </div>
+
+            <!-- Card 3: Cicalengka Dreamland -->
+            <div class="cicalengka-card fade-in fade-in-delay-2">
+                <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/cicalengka_dreamland.jpg" alt="Cicalengka Dreamland" loading="lazy">
+                <div class="cicalengka-overlay">
+                    <span class="cicalengka-tag" style="background:#8b5cf6;">Destinasi Hits</span>
+                    <div class="cicalengka-title">Cicalengka Dreamland</div>
+                    <div class="cicalengka-desc">Wisata keluarga dan rekreasi panorama perbukitan modern dengan spot foto instagramable.</div>
+                </div>
+            </div>
+
+            <!-- Card 4: Bukit Teletubbies -->
+            <div class="cicalengka-card fade-in">
+                <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/bukit_teletubbies.jpg" alt="Bukit Teletubbies Cicalengka" loading="lazy">
+                <div class="cicalengka-overlay">
+                    <span class="cicalengka-tag" style="background:#10b981;">Dataran Tinggi Asri</span>
+                    <div class="cicalengka-title">Bukit Teletubbies Cicalengka</div>
+                    <div class="cicalengka-desc">Hamparan sabana hijau bergelombang di atas perbukitan Cicalengka, tempat terbaik menikmati sunset.</div>
+                </div>
+            </div>
+
+            <!-- Card 5: Gunung Geulis & Kerenceng -->
+            <div class="cicalengka-card fade-in fade-in-delay-1">
+                <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/gunung_geulis.jpg" alt="Lanskap Gunung Geulis Cicalengka" loading="lazy">
+                <div class="cicalengka-overlay">
+                    <span class="cicalengka-tag" style="background:#f59e0b;">Panorama Pegunungan</span>
+                    <div class="cicalengka-title">Gunung Geulis & Kerenceng</div>
+                    <div class="cicalengka-desc">Latar pegunungan megah nan menawan yang memayungi kawasan Cicalengka dan sekitarnya.</div>
+                </div>
+            </div>
+
+            <!-- Card 6: Kebun Teh & Alam Hijau -->
+            <div class="cicalengka-card fade-in fade-in-delay-2">
+                <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/kebun_teh.jpg" alt="Kebun Teh & Alam Hijau Cicalengka" loading="lazy">
+                <div class="cicalengka-overlay">
+                    <span class="cicalengka-tag" style="background:#14b8a6;">Kesejukan Priangan</span>
+                    <div class="cicalengka-title">Kebun Teh & Perbukitan Hijau</div>
+                    <div class="cicalengka-desc">Tanah subur dan udara sejuk yang menghidupkan sektor pertanian, UMKM, dan kuliner lokal.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- ========== FITUR UNGGULAN ========== -->
 <section id="fitur">
     <div class="max-w">
@@ -819,8 +1042,8 @@
         <div class="steps-grid">
             <div class="step-card fade-in">
                 <div class="step-num">1</div>
-                <h3>Unduh & Daftar</h3>
-                <p>Download aplikasi CicalengkaGO, daftar dengan nomor WhatsApp, dan verifikasi OTP.</p>
+                <h3>Buka Web App</h3>
+                <p>Kunjungi <a href="https://market.cicago.store" target="_blank" rel="noopener" style="color:var(--orange);font-weight:600;">market.cicago.store</a> langsung di browser HP Anda tanpa perlu download.</p>
             </div>
             <div class="step-card fade-in fade-in-delay-1">
                 <div class="step-num">2</div>
@@ -919,47 +1142,63 @@
     </div>
 </section>
 
-<!-- ========== DOWNLOAD ========== -->
-<section id="download" class="download-section">
+<!-- ========== BUKA APLIKASI WEB APP ========== -->
+<section id="buka-aplikasi" class="app-cta-section">
     <div class="max-w">
-        <div class="download-inner">
-            <div class="fade-in">
-                <div class="section-label">📱 Download</div>
-                <div class="dl-title">
-                    Mulai Gunakan<br>
-                    CicalengkaGO<br>
-                    <span style="color: var(--red);">Sekarang!</span>
+        <div class="app-cta-inner fade-in">
+            <div>
+                <div class="section-label">⚡ Akses Instan Tanpa Install</div>
+                <div class="app-cta-title">
+                    Langsung Buka CicalengkaGO<br>
+                    di HP & Laptop Kamu!<br>
+                    <span style="color: var(--red);">Tanpa Perlu Download</span>
                 </div>
-                <p class="dl-subtitle">Ribuan warga Cicalengka sudah merasakan kemudahan berbelanja lewat CicalengkaGO. Kapan giliranmu?</p>
-                <div class="store-buttons">
-                    <a href="#" class="store-btn">
-                        <div class="store-icon">🤖</div>
-                        <div>
-                            <div class="store-text">Tersedia di</div>
-                            <div class="store-name">Google Play</div>
-                        </div>
-                    </a>
-                    <a href="#" class="store-btn">
-                        <div class="store-icon">🍎</div>
-                        <div>
-                            <div class="store-text">Tersedia di</div>
-                            <div class="store-name">App Store</div>
-                        </div>
+                <p class="app-cta-sub">
+                    Hemat kuota dan memori ponsel! CicalengkaGO hadir sebagai Progressive Web App modern.
+                    Cukup buka alamat webnya, Anda langsung bisa berbelanja makanan, sembako, farmasi, dan kirim paket secepat aplikasi biasa.
+                </p>
+
+                <div class="app-pills">
+                    <div class="app-pill">🚀 <span>Buka Instan via Browser</span></div>
+                    <div class="app-pill">💾 <span>Hemat 100% Memori HP</span></div>
+                    <div class="app-pill">📌 <span>Bisa 'Add to Home Screen'</span></div>
+                </div>
+
+                <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
+                    <a href="https://market.cicago.store" target="_blank" rel="noopener" class="app-cta-btn-main">
+                        🚀 Buka Aplikasi Sekarang (market.cicago.store) ➔
                     </a>
                 </div>
+
                 <div style="margin-top:20px; font-size:13px; color:var(--muted);">
-                    ✅ Gratis · ✅ Tanpa biaya berlangganan · ✅ Aman & terpercaya
+                    ✅ Aman & Resmi · ✅ Bebas Biaya Langganan · ✅ Terhubung Langsung ke Merchant Lokal
                 </div>
             </div>
-            <div class="dl-qr fade-in fade-in-delay-1">
-                <div class="qr-box">
-                    <div style="text-align:center;">
-                        <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/app_logo.png" alt="CicalengkaGO App" style="width:56px; height:56px; border-radius:14px; margin:0 auto 12px; display:block; box-shadow:0 4px 16px rgba(232,35,42,0.35); border:1px solid rgba(0,0,0,0.08);">
-                        <div style="font-weight:800;color:#111;font-size:15px;letter-spacing:-0.3px;">Cicalengka<span style="color:var(--red);">GO</span></div>
-                        <div style="color:#666;font-size:12px;margin-top:4px;font-weight:500;">Scan untuk download aplikasi</div>
+
+            <div class="app-browser-card fade-in fade-in-delay-1">
+                <div class="browser-bar">
+                    <div class="browser-dots">
+                        <div class="browser-dot" style="background:#ef4444;"></div>
+                        <div class="browser-dot" style="background:#f59e0b;"></div>
+                        <div class="browser-dot" style="background:#10b981;"></div>
+                    </div>
+                    <div class="browser-address">
+                        <span>🔒</span> https://market.cicago.store
                     </div>
                 </div>
-                <div class="qr-label">📲 Scan dengan kamera HP kamu</div>
+                <div class="browser-body">
+                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/app_logo.png" alt="CicalengkaGO" style="width:64px; height:64px; border-radius:16px; margin:0 auto; box-shadow:0 6px 20px var(--red-glow);">
+                    <div>
+                        <div style="font-size:18px; font-weight:800; color:#fff;">Cicalengka<span style="color:var(--red);">GO</span> Web App</div>
+                        <div style="font-size:13px; color:var(--muted); margin-top:4px;">Platform Belanja & On-Demand Cicalengka</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:12px; padding:14px; text-align:left; font-size:12.5px; color:#d4d4d8; line-height:1.6;">
+                        💡 <strong>Tips Praktis:</strong> Buka di Google Chrome atau Safari di HP, lalu ketuk menu opsi (titik tiga atau tombol Share) dan pilih <strong>"Tambahkan ke Layar Utama" (Add to Home Screen)</strong> untuk pengalaman seperti aplikasi native!
+                    </div>
+                    <a href="https://market.cicago.store" target="_blank" rel="noopener" class="btn-primary" style="padding:12px 20px; font-size:14px; width:100%; text-align:center;">
+                        Mulai Belanja Sekarang ➔
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -981,8 +1220,8 @@
                         'a' => 'CicalengkaGO adalah platform super app on-demand pertama di Cicalengka, Kabupaten Bandung. Kami menyediakan layanan pesan antar makanan, belanja sembako, farmasi, olshop lokal, dan kirim paket dalam satu aplikasi. Misi kami adalah memberdayakan UMKM lokal dan memudahkan kehidupan sehari-hari warga Cicalengka.'
                     ],
                     [
-                        'q' => 'Bagaimana cara mendaftar sebagai pelanggan?',
-                        'a' => 'Cukup unduh aplikasi CicalengkaGO dari Google Play Store atau App Store, masukkan nomor WhatsApp aktif, dan verifikasi dengan kode OTP yang dikirim ke WhatsApp kamu. Proses registrasi selesai dalam hitungan detik!'
+                        'q' => 'Bagaimana cara mendaftar dan mulai memesan?',
+                        'a' => 'Tidak perlu unduh aplikasi dari Play Store atau App Store! Cukup buka website https://market.cicago.store di browser HP Anda, masukkan nomor WhatsApp aktif, dan verifikasi kode OTP. Anda langsung bisa memilih toko mitra favorit dan melakukan pemesanan.'
                     ],
                     [
                         'q' => 'Berapa biaya pengiriman?',
@@ -1065,7 +1304,8 @@
             <div class="footer-col">
                 <h4>Bergabung</h4>
                 <ul>
-                    <li><a href="#">Daftar sebagai Pelanggan</a></li>
+                    <li><a href="https://market.cicago.store" target="_blank" rel="noopener">🚀 Buka Web App (market.cicago.store)</a></li>
+                    <li><a href="https://market.cicago.store" target="_blank" rel="noopener">Daftar sebagai Pelanggan</a></li>
                     <li><a href="#">Daftar Toko Mitra</a></li>
                     <li><a href="#">Daftar sebagai Driver</a></li>
                     <li><a href="/vendor">Portal Vendor</a></li>
