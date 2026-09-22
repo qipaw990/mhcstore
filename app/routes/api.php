@@ -38,8 +38,10 @@ Router::group(['prefix' => '/api/v1'], function () {
         // Chat API
         Router::get('/chats/messages', [\App\Controllers\ChatController::class, 'getMessages']);
         Router::post('/chats/send', [\App\Controllers\ChatController::class, 'sendMessage']);
+        Router::post('/chats/send-photo', [\App\Controllers\ChatController::class, 'sendPhoto']);
         Router::get('/chats/store-messages', [\App\Controllers\ChatController::class, 'getStoreMessages']);
         Router::post('/chats/store-send', [\App\Controllers\ChatController::class, 'sendStoreMessage']);
+        Router::post('/chats/store-send-photo', [\App\Controllers\ChatController::class, 'sendStorePhoto']);
         Router::post('/chats/read', [\App\Controllers\ChatController::class, 'markAsRead']);
         Router::get('/chats/unread-count', [\App\Controllers\ChatController::class, 'unreadCount']);
 
@@ -89,8 +91,10 @@ Router::group(['prefix' => '/api'], function () {
     // Chat API
     Router::get('/chats/messages', [\App\Controllers\ChatController::class, 'getMessages']);
     Router::post('/chats/send', [\App\Controllers\ChatController::class, 'sendMessage']);
+    Router::post('/chats/send-photo', [\App\Controllers\ChatController::class, 'sendPhoto']);
     Router::get('/chats/store-messages', [\App\Controllers\ChatController::class, 'getStoreMessages']);
     Router::post('/chats/store-send', [\App\Controllers\ChatController::class, 'sendStoreMessage']);
+    Router::post('/chats/store-send-photo', [\App\Controllers\ChatController::class, 'sendStorePhoto']);
     Router::post('/chats/read', [\App\Controllers\ChatController::class, 'markAsRead']);
     Router::get('/chats/unread-count', [\App\Controllers\ChatController::class, 'unreadCount']);
 

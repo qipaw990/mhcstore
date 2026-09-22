@@ -194,8 +194,11 @@ class ChatController extends Controller
             return;
         }
 
-        if ($message === '') {
-            $this->errorResponse('Pesan tidak boleh kosong.');
+        // Boleh kirim pesan kosong JIKA ada foto
+        $hasFile = isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK;
+        $hasFileBody = !empty($data['file']) || !empty($data['image']);
+        if ($message === '' && !$hasFile && !$hasFileBody) {
+            $this->errorResponse('Pesan atau foto tidak boleh kosong.');
             return;
         }
 
@@ -261,7 +264,24 @@ class ChatController extends Controller
         }
 
         $storeId = (int)($order['store_id'] ?? 0);
-        $msgId = $this->chatModel->saveMessage((int)$order['order_id'], $senderId, $receiverId, $message, null, $storeId);
+
+        // ─── Upload foto (jika ada) ──────────────────────────────────────────
+        $filePath = null;
+        try {
+            [$senderId2] = [$senderId]; // alias for upload logging
+            $filePath = smart_upload_field(
+                'file',
+                'chats',
+                null,
+                ['image', 'photo', 'attachment'],
+                $data,
+                $senderId2 > 0 ? $senderId2 : null
+            );
+        } catch (\Throwable $upEx) {
+            error_log('[ChatController] Photo upload error: ' . $upEx->getMessage());
+        }
+
+        $msgId = $this->chatModel->saveMessage((int)$order['order_id'], $senderId, $receiverId, $message, $filePath, $storeId);
 
         // ─── Forward ke WhatsApp penerima (fire-and-forget) ───────────────────
         try {
@@ -285,8 +305,18 @@ class ChatController extends Controller
                 if ($isDriver)        $senderName = $order['dm_name'] ?? 'Driver';
                 elseif ($isMerchant)  $senderName = $order['store_name'] ?? 'Merchant';
                 else                  $senderName = $order['customer_name'] ?? 'Pelanggan';
+
+                // Tambahkan notifikasi foto jika ada
+                $msgToForward = $message;
+                if (!empty($filePath)) {
+                    $appCfg = require APP_PATH . '/config/app.php';
+                    $baseUrl = rtrim($appCfg['public_url'] ?? 'https://cicago.store', '/');
+                    $msgToForward = ($message !== '' ? $message . "\n" : '') .
+                        "📷 Foto dikirim: {$baseUrl}/{$filePath}";
+                }
+
                 (new ChatWhatsAppForwarder())->forwardOrderChat(
-                    $order, $userRole, $senderName, $message, $receiverPhone
+                    $order, $userRole, $senderName, $msgToForward, $receiverPhone
                 );
             }
         } catch (\Throwable $waEx) {
@@ -300,10 +330,20 @@ class ChatController extends Controller
             'sender_id'      => $senderId,
             'receiver_id'    => $receiverId,
             'message'        => $message,
+            'file'           => $filePath,
+            'has_image'      => !empty($filePath),
             'user_role'      => $userRole,
             'created_at'     => date('Y-m-d H:i:s'),
             'time_formatted' => date('H:i')
         ]);
+    }
+
+    /**
+     * Alias: kirim foto di order chat (same as sendMessage, exposed as /chats/send-photo)
+     */
+    public function sendPhoto(): void
+    {
+        $this->sendMessage();
     }
 
     /**
@@ -470,8 +510,11 @@ class ChatController extends Controller
             return;
         }
 
-        if ($message === '') {
-            $this->errorResponse('Pesan tidak boleh kosong.');
+        // Boleh kirim pesan kosong JIKA ada foto
+        $hasFile2 = isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK;
+        $hasFileBody2 = !empty($data['file']) || !empty($data['image']);
+        if ($message === '' && !$hasFile2 && !$hasFileBody2) {
+            $this->errorResponse('Pesan atau foto tidak boleh kosong.');
             return;
         }
 
@@ -509,7 +552,22 @@ class ChatController extends Controller
             }
         }
 
-        $msgId = $this->chatModel->saveMessage($orderId, $senderId, $receiverId, $message, null, $storeId);
+        // ─── Upload foto (jika ada) ──────────────────────────────────────────
+        $filePath2 = null;
+        try {
+            $filePath2 = smart_upload_field(
+                'file',
+                'chats',
+                null,
+                ['image', 'photo', 'attachment'],
+                $data,
+                $senderId > 0 ? $senderId : null
+            );
+        } catch (\Throwable $upEx2) {
+            error_log('[ChatController] Store photo upload error: ' . $upEx2->getMessage());
+        }
+
+        $msgId = $this->chatModel->saveMessage($orderId, $senderId, $receiverId, $message, $filePath2, $storeId);
 
         // ─── Forward ke WhatsApp penerima (fire-and-forget) ───────────────────
         try {
@@ -528,11 +586,18 @@ class ChatController extends Controller
                 }
             }
             if (!empty(trim($receiverPhone))) {
+                $msgToForward2 = $message;
+                if (!empty($filePath2)) {
+                    $appCfg2  = require APP_PATH . '/config/app.php';
+                    $baseUrl2 = rtrim($appCfg2['public_url'] ?? 'https://cicago.store', '/');
+                    $msgToForward2 = ($message !== '' ? $message . "\n" : '') .
+                        "📷 Foto dikirim: {$baseUrl2}/{$filePath2}";
+                }
                 (new ChatWhatsAppForwarder())->forwardStoreChat(
                     $store['name'] ?? 'Toko',
                     $role,
                     $senderDisplayName,
-                    $message,
+                    $msgToForward2,
                     $receiverPhone
                 );
             }
@@ -548,8 +613,18 @@ class ChatController extends Controller
             'sender_id'      => $senderId,
             'receiver_id'    => $receiverId,
             'message'        => $message,
+            'file'           => $filePath2,
+            'has_image'      => !empty($filePath2),
             'time_formatted' => date('H:i'),
             'created_at'     => date('Y-m-d H:i:s')
         ]);
+    }
+
+    /**
+     * Alias: kirim foto di direct store chat (same as sendStoreMessage, exposed as /chats/store-send-photo)
+     */
+    public function sendStorePhoto(): void
+    {
+        $this->sendStoreMessage();
     }
 }

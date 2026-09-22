@@ -1037,8 +1037,21 @@ if (document.readyState === 'loading') {
             <button type="button" class="ccg-chip-btn" onclick="sendDriverQuickReply('Boleh minta patokan atau warna pagar rumahnya kak? 🙏')">🔍 Minta patokan rumah</button>
         </div>
 
-        <!-- Chat Input Bar -->
+        <!-- Chat Input Bar with Photo Support -->
+        <div id="dChatImagePreviewWrap" class="px-3 py-1 bg-light border-top d-none align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <img id="dChatImagePreview" src="" style="width: 38px; height: 38px; object-fit: cover; border-radius: 6px;">
+                <span class="small text-muted text-truncate" id="dChatImageName" style="max-width: 200px;">Foto terpilih</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-link text-danger p-0 text-decoration-none" onclick="clearDriverSelectedPhoto()" title="Batal pilih foto">
+                <i class="bi bi-x-circle-fill fs-6"></i>
+            </button>
+        </div>
         <form id="dChatForm" class="ccg-chat-input-bar no-preloader" onsubmit="handleSendDriverChat(event)">
+            <label for="dChatFileInput" class="btn btn-light rounded-circle d-flex align-items-center justify-content-center p-0 mb-0 me-1" style="width: 36px; height: 36px; cursor: pointer; flex-shrink: 0;" title="Kirim Foto">
+                <i class="bi bi-camera-fill text-muted" style="font-size: 16px;"></i>
+                <input type="file" id="dChatFileInput" accept="image/*" style="display: none;" onchange="handleDriverPhotoSelected(this)">
+            </label>
             <input type="text" id="dChatInput" name="message" class="ccg-chat-input" placeholder="Ketik pesan untuk pelanggan..." autocomplete="off" maxlength="500">
             <button type="submit" id="btnSendDriverChat" class="ccg-chat-send-btn" title="Kirim">
                 <i class="bi bi-send-fill"></i>
@@ -1148,10 +1161,19 @@ async function fetchDriverChatMessages(isFirstLoad = false) {
             const rowClass = isOutgoing ? 'outgoing' : 'incoming';
             const checkIcon = isOutgoing ? `<i class="bi bi-check2-all ${msg.is_read ? 'text-primary' : ''}"></i>` : '';
 
+            const photoHtml = msg.file ? `
+                <div class="mb-1">
+                    <a href="${window.BASE_URL}/${msg.file}" target="_blank" rel="noopener">
+                        <img src="${window.BASE_URL}/${msg.file}" class="img-fluid rounded" style="max-height: 180px; max-width: 100%; border-radius: 8px; cursor: pointer;" alt="Foto obrolan">
+                    </a>
+                </div>` : '';
+            const textHtml = msg.message ? `<span>${escapeHtml(msg.message)}</span>` : '';
+
             html += `
                 <div class="ccg-chat-row ${rowClass}">
                     <div class="ccg-chat-bubble">
-                        <span>${escapeHtml(msg.message)}</span>
+                        ${photoHtml}
+                        ${textHtml}
                         <span class="ccg-chat-time">
                             ${msg.time_formatted || ''} ${checkIcon}
                         </span>
@@ -1171,6 +1193,35 @@ async function fetchDriverChatMessages(isFirstLoad = false) {
     }
 }
 
+function handleDriverPhotoSelected(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    const previewWrap = document.getElementById('dChatImagePreviewWrap');
+    const previewImg = document.getElementById('dChatImagePreview');
+    const previewName = document.getElementById('dChatImageName');
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        if (previewImg) previewImg.src = e.target.result;
+        if (previewName) previewName.textContent = file.name;
+        if (previewWrap) {
+            previewWrap.classList.remove('d-none');
+            previewWrap.classList.add('d-flex');
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+function clearDriverSelectedPhoto() {
+    const fileInput = document.getElementById('dChatFileInput');
+    const previewWrap = document.getElementById('dChatImagePreviewWrap');
+    if (fileInput) fileInput.value = '';
+    if (previewWrap) {
+        previewWrap.classList.add('d-none');
+        previewWrap.classList.remove('d-flex');
+    }
+}
+
 async function handleSendDriverChat(e) {
     if (e) {
         e.preventDefault();
@@ -1179,9 +1230,11 @@ async function handleSendDriverChat(e) {
     if (window.hidePreloader) window.hidePreloader();
 
     const input = document.getElementById('dChatInput');
+    const fileInput = document.getElementById('dChatFileInput');
     const btn = document.getElementById('btnSendDriverChat');
     const message = input.value.trim();
-    if (!message || !currentDriverChatOrderCode) return;
+    const hasPhoto = fileInput && fileInput.files && fileInput.files[0];
+    if ((!message && !hasPhoto) || !currentDriverChatOrderCode) return;
 
     // Optimistic UI preview
     const chatBody = document.getElementById('dChatBody');
@@ -1192,10 +1245,15 @@ async function handleSendDriverChat(e) {
         const emptyState = chatBody.querySelector('.text-center.py-5');
         if (emptyState) emptyState.remove();
 
+        const previewImg = document.getElementById('dChatImagePreview');
+        const previewSrc = (hasPhoto && previewImg) ? previewImg.src : null;
+        const tempPhotoHtml = previewSrc ? `<div class="mb-1"><img src="${previewSrc}" class="img-fluid rounded" style="max-height: 140px; border-radius: 8px;"></div>` : '';
+
         const tempBubbleHtml = `
             <div class="ccg-chat-row outgoing ccg-temp-bubble" style="opacity: 0.85;">
                 <div class="ccg-chat-bubble">
-                    <span>${escapeHtml(message)}</span>
+                    ${tempPhotoHtml}
+                    ${message ? `<span>${escapeHtml(message)}</span>` : ''}
                     <span class="ccg-chat-time">
                         ${timeStr} <i class="bi bi-clock"></i>
                     </span>
@@ -1207,13 +1265,18 @@ async function handleSendDriverChat(e) {
         chatBody.scrollTop = chatBody.scrollHeight;
     }
 
+    const savedPhoto = hasPhoto ? fileInput.files[0] : null;
     input.value = '';
+    clearDriverSelectedPhoto();
     btn.disabled = true;
 
     try {
         const fd = new FormData();
         fd.append('order_code', currentDriverChatOrderCode);
         fd.append('message', message);
+        if (savedPhoto) {
+            fd.append('file', savedPhoto);
+        }
 
         const res = await fetch(window.BASE_URL + '/chats/send', {
             method: 'POST',
