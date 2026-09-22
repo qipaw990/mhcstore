@@ -206,7 +206,44 @@ class PaymentController extends Controller
         // Redirect target setelah informasi ditampilkan
         $appConfig   = require APP_PATH . '/config/app.php';
         $publicUrl   = rtrim($appConfig['public_url'] ?? '', '/');
-        $redirectUrl = $isTopup ? $publicUrl . '/wallet' : $publicUrl . '/orders';
+
+        // =================================================================
+        // FIX: Gunakan halaman result khusus yang TIDAK butuh session auth.
+        // Halaman /wallet dan /orders butuh login (AuthMiddleware) → menyebabkan
+        // redirect ke /login (atau /admin jika session admin masih aktif)
+        // ketika browser WebView DOKU tidak punya session cookie aplikasi.
+        //
+        // Solusi: redirect ke /payment/doku/result?order=...&status=...
+        // yang bisa dideteksi oleh Flutter WebView sebagai tanda selesai bayar.
+        // =================================================================
+
+        // Cek apakah mobile mengirim return_to custom (parameter dikirim saat buat sesi)
+        $customReturnTo = trim($_GET['return_to'] ?? '');
+        $allowedPrefixes = [
+            $publicUrl,
+            'https://market.cicago.store',
+            'cicalengkago://',
+        ];
+        $useCustomReturn = false;
+        if (!empty($customReturnTo)) {
+            foreach ($allowedPrefixes as $prefix) {
+                if (str_starts_with($customReturnTo, $prefix)) {
+                    $useCustomReturn = true;
+                    break;
+                }
+            }
+        }
+
+        if ($useCustomReturn) {
+            // Mobile deep link langsung — Flutter menangkap URL ini
+            $redirectUrl = $customReturnTo;
+        } else {
+            // Halaman result tanpa auth, Flutter WebView deteksi URL ini untuk close WebView
+            $redirectUrl = $publicUrl . '/payment/doku/result'
+                . '?order=' . urlencode($orderId)
+                . '&status=' . urlencode(strtolower($status))
+                . '&type=' . ($isTopup ? 'topup' : 'order');
+        }
 
         // Ambil info dari DB jika tersedia
         $dbStatus = null;
@@ -698,12 +735,191 @@ class PaymentController extends Controller
     }
 
     /**
+     * Halaman result pembayaran DOKU — TIDAK memerlukan login/session.
+     * GET /payment/doku/result?order=TOPUP-xxx&status=success&type=topup
+     *
+     * Flutter WebView mendeteksi URL ini (navigationDelegate) lalu:
+     *  1. Menutup WebView
+     *  2. Memanggil /payment/verify untuk cek status terkini
+     *  3. Menampilkan UI berhasil/gagal ke pengguna
+     *
+     * Halaman ini juga menampilkan UI sederhana sebagai fallback
+     * jika dibuka dari browser biasa (bukan Flutter WebView).
+     */
+    public function dokuResult(): void
+    {
+        $orderId = trim($_GET['order'] ?? $_GET['order_id'] ?? '');
+        $status  = strtolower(trim($_GET['status'] ?? ''));
+        $type    = trim($_GET['type'] ?? (str_starts_with($orderId, 'TOPUP-') ? 'topup' : 'order'));
+
+        $isSuccess = in_array($status, ['success', 'completed', 'paid', '00']);
+        $isPending = in_array($status, ['pending', 'waiting', 'process']) && !$isSuccess;
+
+        // Cek DB untuk status yang lebih akurat
+        if (!empty($orderId) && !$isSuccess) {
+            if ($type === 'topup') {
+                $log = Database::fetchOne(
+                    "SELECT status FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1",
+                    [$orderId]
+                );
+                $dbSt = strtolower($log['status'] ?? '');
+                if (in_array($dbSt, ['success', 'paid'])) {
+                    $isSuccess = true;
+                    $isPending = false;
+                }
+            } else {
+                $order = Database::fetchOne(
+                    "SELECT payment_status FROM `orders` WHERE `order_code` = ? LIMIT 1",
+                    [$orderId]
+                );
+                if (($order['payment_status'] ?? '') === 'paid') {
+                    $isSuccess = true;
+                    $isPending = false;
+                }
+            }
+        }
+
+        http_response_code(200);
+        header('Content-Type: text/html; charset=UTF-8');
+        ?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Status Pembayaran - CicalengkaGO</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 40px 32px;
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,.10);
+        }
+        .icon { font-size: 72px; margin-bottom: 16px; }
+        h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+        p  { font-size: 15px; color: #555; line-height: 1.6; margin-bottom: 20px; }
+        .note {
+            background: #fff8e1;
+            border-left: 4px solid #f5a623;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 13px;
+            color: #7a5500;
+            text-align: left;
+            margin-bottom: 24px;
+        }
+        .btn {
+            display: inline-block;
+            background: #e8232a;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 12px;
+            padding: 14px 32px;
+            font-size: 15px;
+            font-weight: 600;
+        }
+        .progress {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #888;
+            font-size: 13px;
+            margin-top: 16px;
+        }
+        .spinner {
+            width: 18px; height: 18px;
+            border: 2px solid #ddd;
+            border-top-color: #e8232a;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+<div class="card">
+    <?php if ($isSuccess): ?>
+        <div class="icon">✅</div>
+        <h1>Pembayaran Berhasil!</h1>
+        <p>Transaksi Anda berhasil. Kembali ke aplikasi untuk melihat status terbaru.</p>
+        <div class="note">
+            🔔 <strong>Info:</strong> Saldo atau status pesanan akan diperbarui otomatis. Jika belum berubah, tunggu beberapa detik lalu refresh.
+        </div>
+    <?php elseif ($isPending): ?>
+        <div class="icon">⏳</div>
+        <h1>Menunggu Pembayaran</h1>
+        <p>Pembayaran masih dalam proses. Sistem akan memperbarui status Anda otomatis.</p>
+    <?php else: ?>
+        <div class="icon">❌</div>
+        <h1>Pembayaran Dibatalkan</h1>
+        <p>Transaksi tidak berhasil. Tidak ada saldo yang terpotong.</p>
+    <?php endif; ?>
+
+    <div class="progress">
+        <div class="spinner"></div>
+        <span>Kembali ke aplikasi dalam <span id="cd">3</span> detik...</span>
+    </div>
+</div>
+<script>
+    // Kirim pesan ke Flutter WebView jika ada handler
+    if (window.FlutterChannel) {
+        try {
+            window.FlutterChannel.postMessage(JSON.stringify({
+                type: 'payment_result',
+                order_id: <?= json_encode($orderId) ?>,
+                status: <?= json_encode($isSuccess ? 'success' : ($isPending ? 'pending' : 'failed')) ?>,
+                transaction_type: <?= json_encode($type) ?>
+            }));
+        } catch(e) {}
+    }
+
+    // Countdown & auto-close (Flutter WebView mendeteksi URL ini, tapi
+    // jika dibuka browser biasa, countdown tetap jalan tanpa redirect berarti)
+    let sec = 3;
+    const cd = document.getElementById('cd');
+    const timer = setInterval(() => {
+        sec--;
+        if (cd) cd.textContent = sec;
+        if (sec <= 0) {
+            clearInterval(timer);
+            // Tutup tab/window jika bisa (untuk browser in-app)
+            window.close();
+            // Fallback: kembali ke history sebelumnya
+            if (window.history.length > 1) {
+                window.history.back();
+            }
+        }
+    }, 1000);
+</script>
+</body>
+</html>
+        <?php
+        exit;
+    }
+
+
+    /**
      * Legacy alias → dokuNotification()
      */
     public function notification(): void
     {
         $this->dokuNotification();
     }
+
 
     // =========================================================================
     // UPDATE STATUS LOG TOP UP (CLIENT-SIDE: user close/cancel)

@@ -91,6 +91,8 @@ class ApiConstants {
   static const String paymentNotification     = '$domainUrl/payment/doku/notification';
   static const String paymentDokuNotification = '$domainUrl/payment/doku/notification';
   static const String paymentDokuCallback     = '$domainUrl/payment/doku/callback';
+  // Halaman result tanpa auth — Flutter WebView deteksi URL ini untuk close WebView
+  static const String paymentDokuResult       = '$domainUrl/payment/doku/result';
 
   static const String walletTransfer      = '$domainUrl/wallet/transfer';
   static const String paymentTransfer     = '$domainUrl/api/payment/transfer';

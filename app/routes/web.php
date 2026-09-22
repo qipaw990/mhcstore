@@ -13,6 +13,7 @@ use App\Controllers\DeliveryController;
 use App\Controllers\VendorController;
 use App\Controllers\AdminController;
 use App\Controllers\ChatController;
+use App\Controllers\LandingController;
 
 // ==========================================
 // 1. Auth Routes
@@ -108,11 +109,10 @@ Router::get('/doku-check', function () {
 // 2. Customer & API Compatibility Routes
 // (Web browser hits redirect to /admin, API/JSON hits remain intact for Mobile Flutter)
 // ==========================================
-Router::get('/', function () {
-    $appConfig = require APP_PATH . '/config/app.php';
-    header('Location: ' . rtrim($appConfig['public_url'], '/') . '/admin');
-    exit;
-});
+// Landing page publik — cicago.store → tampilkan halaman utama CicalengkaGO
+// Admin panel tetap accessible langsung di /admin
+Router::get('/', [LandingController::class, 'index']);
+
 Router::get('/search', [CustomerController::class, 'search']);
 Router::get('/explore-stores', [CustomerController::class, 'exploreStores']);
 Router::get('/stores', [CustomerController::class, 'exploreStores']);
@@ -129,8 +129,12 @@ Router::post('/payment/topup-cancel-all', [PaymentController::class, 'cancelAllP
 Router::post('/payment/verify', [PaymentController::class, 'verifyClientCallback']);
 // Callback redirect dari DOKU setelah user selesai di halaman bayar (GET, bukan webhook)
 Router::get('/payment/doku/callback', [PaymentController::class, 'dokuCallback']);
+// Halaman result tanpa auth — Flutter WebView mendeteksi URL ini untuk menutup WebView
+// TIDAK pakai AuthMiddleware agar tidak redirect ke /login saat browser DOKU tidak punya session
+Router::get('/payment/doku/result', [PaymentController::class, 'dokuResult']);
 // Webhook server-to-server dari DOKU (POST, verifikasi HMAC)
 Router::post('/payment/doku/notification', [PaymentController::class, 'dokuNotification']);
+
 // Admin manual verify DOKU (reprocess webhook yang gagal / user sudah bayar tapi saldo tidak masuk)
 Router::post('/payment/doku/admin-manual-verify', [PaymentController::class, 'adminManualVerifyDoku'], ['AuthMiddleware']);
 Router::post('/api/payment/doku/admin-manual-verify', [PaymentController::class, 'adminManualVerifyDoku'], ['AuthMiddleware']);

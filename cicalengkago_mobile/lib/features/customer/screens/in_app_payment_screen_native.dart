@@ -94,12 +94,32 @@ class _NativePaymentWebViewState extends State<_NativePaymentWebView> {
 
   /// Deteksi apakah user sudah diredirect ke callback URL DOKU production
   /// URL callback kita: /payment/doku/callback?status=...&order=...
+  /// URL result kita  : /payment/doku/result?order=...&status=...&type=...
   void _checkPaymentCallbackUrl(String url) {
     if (_isProcessingFinish) return;
 
     final lowerUrl = url.toLowerCase();
 
-    // Deteksi URL callback DOKU kita sendiri
+    // Deteksi URL result BARU (tanpa auth) — ini yang kita kirim sekarang
+    if (lowerUrl.contains('/payment/doku/result')) {
+      final uri = Uri.tryParse(url);
+      final status = uri?.queryParameters['status']?.toUpperCase() ?? '';
+
+      if (status == 'SUCCESS' ||
+          status == 'COMPLETED' ||
+          status == 'PAID' ||
+          status == '00') {
+        _handlePaymentCallback(confirmedSuccess: true);
+      } else if (status == 'PENDING' || status == 'PROCESS' || status == 'WAITING') {
+        _handlePaymentCallback(confirmedSuccess: false);
+      } else {
+        // Status kosong atau gagal — tetap trigger callback untuk close WebView
+        _handlePaymentCallback(confirmedSuccess: false);
+      }
+      return;
+    }
+
+    // Deteksi URL callback DOKU lama (legacy — masih tetap support)
     if (lowerUrl.contains('/payment/doku/callback')) {
       // Ambil status dari query parameter
       final uri = Uri.tryParse(url);
@@ -125,12 +145,17 @@ class _NativePaymentWebViewState extends State<_NativePaymentWebView> {
       return;
     }
 
-    // Deteksi redirect ke halaman /wallet atau /orders kita (fallback lama)
-    if (lowerUrl.contains(RegExp(r'cicago\.store/(wallet|orders)')) ||
-        lowerUrl.contains('/wallet') && lowerUrl.contains('cicago')) {
-      _handlePaymentCallback(confirmedSuccess: false);
+    // Deteksi redirect ke /login atau /admin — ini tanda session expired (bug lama)
+    // Anggap sebagai selesai (pending) agar WebView tidak stuck di halaman login
+    if (lowerUrl.contains('/login') || lowerUrl.contains('/admin')) {
+      debugPrint('[PaymentWebView] Terdeteksi redirect ke login/admin — tutup WebView (session issue)');
+      if (!_isProcessingFinish) {
+        _handlePaymentCallback(confirmedSuccess: false);
+      }
+      return;
     }
   }
+
 
   /// Handle ketika DOKU redirect ke callback URL kita
   /// [confirmedSuccess] true jika DOKU melaporkan sukses lewat redirect
