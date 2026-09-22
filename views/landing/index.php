@@ -1273,7 +1273,7 @@
             <div class="step-card fade-in">
                 <div class="step-num">1</div>
                 <h3>Buka Web App</h3>
-                <p>Kunjungi <a href="https://market.cicago.store" target="_blank" rel="noopener" style="color:var(--orange);font-weight:600;">market.cicago.store</a> langsung di browser HP Anda tanpa perlu download.</p>
+                <p>Kunjungi <a href="https://market.cicago.store" target="_blank" rel="noopener" style="color:#b45309;font-weight:700;text-decoration:underline;text-underline-offset:2px;">market.cicago.store</a> langsung di browser HP Anda tanpa perlu download.</p>
             </div>
             <div class="step-card fade-in fade-in-delay-1">
                 <div class="step-num">2</div>
@@ -1325,11 +1325,11 @@
     <div class="max-w">
         <div class="app-cta-inner fade-in">
             <div>
-                <div class="section-label">⚡ Akses Instan Tanpa Install</div>
+                <div class="section-label" style="color:rgba(255,255,255,0.92); background:rgba(255,255,255,0.18); border-color:rgba(255,255,255,0.35);">⚡ Akses Instan Tanpa Install</div>
                 <div class="app-cta-title">
                     Langsung Buka CicalengkaGO<br>
                     di HP & Laptop Kamu!<br>
-                    <span style="color: var(--red);">Tanpa Perlu Download</span>
+                    <span style="color: #fde68a;">Tanpa Perlu Download</span>
                 </div>
                 <p class="app-cta-sub">
                     Hemat kuota dan memori ponsel! CicalengkaGO hadir sebagai Progressive Web App modern.
@@ -1348,7 +1348,7 @@
                     </a>
                 </div>
 
-                <div style="margin-top:20px; font-size:13px; color:var(--muted);">
+                <div style="margin-top:20px; font-size:13px; color:rgba(255,255,255,0.82); font-weight:500;">
                     ✅ Aman & Resmi · ✅ Bebas Biaya Langganan · ✅ Terhubung Langsung ke Merchant Lokal
                 </div>
             </div>
@@ -1365,13 +1365,13 @@
                     </div>
                 </div>
                 <div class="browser-body">
-                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/app_logo.png" alt="CicalengkaGO" style="width:64px; height:64px; border-radius:16px; margin:0 auto; box-shadow:0 6px 20px var(--red-glow);">
+                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/app_logo.png" alt="CicalengkaGO" style="width:64px; height:64px; border-radius:16px; margin:0 auto; box-shadow:0 6px 24px rgba(232,35,42,0.55);">
                     <div>
-                        <div style="font-size:18px; font-weight:800; color:#fff;">Cicalengka<span style="color:var(--red);">GO</span> Web App</div>
-                        <div style="font-size:13px; color:var(--muted); margin-top:4px;">Platform Belanja & On-Demand Cicalengka</div>
+                        <div style="font-size:18px; font-weight:800; color:#ffffff;">Cicalengka<span style="color:#ff6b6b;">GO</span> Web App</div>
+                        <div style="font-size:13px; color:#a1a1aa; margin-top:4px;">Platform Belanja &amp; On-Demand Cicalengka</div>
                     </div>
-                    <div style="background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:12px; padding:14px; text-align:left; font-size:12.5px; color:#d4d4d8; line-height:1.6;">
-                        💡 <strong>Tips Praktis:</strong> Buka di Google Chrome atau Safari di HP, lalu ketuk menu opsi (titik tiga atau tombol Share) dan pilih <strong>"Tambahkan ke Layar Utama" (Add to Home Screen)</strong> untuk pengalaman seperti aplikasi native!
+                    <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:14px; text-align:left; font-size:12.5px; color:#d4d4d8; line-height:1.6;">
+                        💡 <strong style="color:#ffffff;">Tips Praktis:</strong> Buka di Google Chrome atau Safari di HP, lalu ketuk menu opsi (titik tiga atau tombol Share) dan pilih <strong style="color:#ffffff;">"Tambahkan ke Layar Utama" (Add to Home Screen)</strong> untuk pengalaman seperti aplikasi native!
                     </div>
                     <a href="https://market.cicago.store" target="_blank" rel="noopener" class="btn-primary" style="padding:12px 20px; font-size:14px; width:100%; text-align:center;">
                         Mulai Belanja Sekarang ➔
