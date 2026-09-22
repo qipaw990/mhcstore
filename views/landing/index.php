@@ -15,6 +15,12 @@
     <meta property="og:url" content="https://cicago.store">
     <meta name="theme-color" content="#e8232a">
 
+    <!-- Favicon & Brand Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/icons/favicon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/app_logo.png">
+    <meta property="og:image" content="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/app_logo.png">
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -66,13 +72,20 @@
         }
         .navbar.scrolled { padding: 12px 5%; box-shadow: 0 4px 40px rgba(0,0,0,0.4); }
         .nav-logo {
-            display: flex; align-items: center; gap: 10px;
+            display: flex; align-items: center; gap: 11px;
             font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
+            text-decoration: none; color: #ffffff;
         }
-        .nav-logo .logo-icon {
-            width: 38px; height: 38px; background: var(--red);
-            border-radius: 10px; display: flex; align-items: center; justify-content: center;
-            font-size: 20px; box-shadow: 0 0 16px var(--red-glow);
+        .nav-logo .logo-img {
+            width: 38px; height: 38px; border-radius: 11px;
+            object-fit: cover; display: block;
+            box-shadow: 0 0 18px var(--red-glow), 0 3px 10px rgba(0,0,0,0.4);
+            border: 1.5px solid rgba(255,255,255,0.15);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        .nav-logo:hover .logo-img {
+            transform: scale(1.08) rotate(-2deg);
+            box-shadow: 0 0 26px rgba(232,35,42,0.5), 0 6px 16px rgba(0,0,0,0.5);
         }
         .nav-logo span { color: var(--red); }
         .nav-links { display: flex; align-items: center; gap: 32px; }
@@ -564,10 +577,10 @@
 
 <!-- ========== NAVBAR ========== -->
 <nav class="navbar" id="navbar">
-    <div class="nav-logo">
-        <div class="logo-icon">🚀</div>
+    <a href="#home" class="nav-logo">
+        <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/app_logo.png" alt="CicalengkaGO Logo" class="logo-img">
         Cicalengka<span>GO</span>
-    </div>
+    </a>
     <div class="nav-links">
         <a href="#layanan">Layanan</a>
         <a href="#fitur">Fitur</a>
@@ -615,11 +628,14 @@
         <div class="phone-mockup">
             <div class="phone-screen">
                 <div class="phone-header">
-                    <div>
-                        <div class="phone-header-title">CicalengkaGO</div>
-                        <div class="phone-header-sub">Selamat datang! 👋</div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/app_logo.png" alt="CicalengkaGO" style="width:32px; height:32px; border-radius:9px; object-fit:cover; border:1px solid rgba(255,255,255,0.2); box-shadow:0 2px 8px rgba(0,0,0,0.4);">
+                        <div>
+                            <div class="phone-header-title">Cicalengka<span style="color:var(--red);">GO</span></div>
+                            <div class="phone-header-sub">Selamat datang! 👋</div>
+                        </div>
                     </div>
-                    <span style="font-size:22px;">🔔</span>
+                    <span style="font-size:20px;">🔔</span>
                 </div>
                 <div class="phone-greeting">
                     <strong>Mau pesan apa hari ini?</strong>
@@ -937,10 +953,10 @@
             </div>
             <div class="dl-qr fade-in fade-in-delay-1">
                 <div class="qr-box">
-                    <div>
-                        <div style="font-size:40px;margin-bottom:8px;">📱</div>
-                        <div style="font-weight:700;color:#333;font-size:13px;">Scan QR Code</div>
-                        <div style="color:#666;font-size:11px;margin-top:4px;">untuk download aplikasi</div>
+                    <div style="text-align:center;">
+                        <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/app_logo.png" alt="CicalengkaGO App" style="width:56px; height:56px; border-radius:14px; margin:0 auto 12px; display:block; box-shadow:0 4px 16px rgba(232,35,42,0.35); border:1px solid rgba(0,0,0,0.08);">
+                        <div style="font-weight:800;color:#111;font-size:15px;letter-spacing:-0.3px;">Cicalengka<span style="color:var(--red);">GO</span></div>
+                        <div style="color:#666;font-size:12px;margin-top:4px;font-weight:500;">Scan untuk download aplikasi</div>
                     </div>
                 </div>
                 <div class="qr-label">📲 Scan dengan kamera HP kamu</div>
@@ -1024,10 +1040,10 @@
     <div class="footer-inner">
         <div class="footer-top">
             <div class="footer-brand">
-                <div class="nav-logo" style="margin-bottom:0;">
-                    <div class="logo-icon">🚀</div>
-                    Cicalengka<span style="color:var(--red);">GO</span>
-                </div>
+                <a href="#home" class="nav-logo" style="margin-bottom:0;">
+                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/app_logo.png" alt="CicalengkaGO Logo" class="logo-img">
+                    Cicalengka<span>GO</span>
+                </a>
                 <p>Platform super app on-demand pertama di Cicalengka. Menghubungkan pelanggan, pedagang lokal, dan driver dalam satu ekosistem digital yang mudah dan terpercaya.</p>
                 <div class="social-links">
                     <a href="#" class="social-btn" title="Instagram">📸</a>

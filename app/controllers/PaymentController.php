@@ -357,6 +357,7 @@ class PaymentController extends Controller
 </head>
 <body>
 <div class="card">
+    <img src="<?= htmlspecialchars($publicUrl) ?>/assets/images/app_logo.png" alt="CicalengkaGO" style="width:48px;height:48px;border-radius:12px;margin:0 auto 16px;display:block;box-shadow:0 3px 10px rgba(0,0,0,0.12);">
     <?php if ($isSuccess): ?>
         <div class="icon">✅</div>
         <h1>Pembayaran Sedang Diproses</h1>
