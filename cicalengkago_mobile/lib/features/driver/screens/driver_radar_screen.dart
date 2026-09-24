@@ -839,8 +839,12 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
   }
 
   Widget _buildOrderCard(BuildContext context, DriverController driverCtrl, Map<String, dynamic> order) {
+    final double distVal = double.tryParse(order['distance_km']?.toString() ?? order['distance']?.toString() ?? '') ?? 0.0;
     final fee = double.tryParse(order['delivery_charge']?.toString() ?? '5000') ?? 5000.0;
-    final distance = order['distance']?.toString() ?? '~2';
+    final int storeCount = (order['stores_count'] as num?)?.toInt() ??
+        (order['batch_stores'] is List ? (order['batch_stores'] as List).length : 1);
+    final bool isMulti = (order['is_multi_store'] == true) || storeCount > 1;
+    final distance = distVal > 0 ? '${distVal.toStringAsFixed(1)} km' : (order['distance'] != null ? '${order['distance']} km' : '~2 km');
     final orderCode = order['order_code'] ?? order['id'];
     final storeName = order['store_name'] ?? 'Mitra Resto';
     final storeAddress = order['store_address'] ?? 'Cicalengka';
@@ -870,22 +874,48 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF450A0A),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '#$orderCode',
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFFCA5A5)),
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF450A0A),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '#$orderCode',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFFCA5A5)),
+                    ),
+                  ),
+                  if (isMulti) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E3A8A),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.storefront_rounded, size: 10, color: Color(0xFF93C5FD)),
+                          const SizedBox(width: 3),
+                          Text(
+                            '$storeCount Toko',
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF93C5FD)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
               Row(
                 children: [
                   const Icon(Icons.near_me_rounded, size: 12, color: Color(0xFF94A3B8)),
                   const SizedBox(width: 4),
-                  Text('$distance km', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8))),
+                  Text(distance, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8))),
                   const SizedBox(width: 10),
                   Text(
                     CurrencyFormatter.formatRupiah(fee),

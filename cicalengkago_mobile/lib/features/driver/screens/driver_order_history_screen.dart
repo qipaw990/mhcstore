@@ -311,8 +311,8 @@ class _DriverOrderHistoryScreenState extends State<DriverOrderHistoryScreen> {
     final isDelivered = orderStatus == 'delivered' || orderStatus == 'completed';
     final isCanceled = orderStatus == 'canceled';
 
-    final fee = double.tryParse((order['driver_earning'] ?? order['delivery_charge'])?.toString() ?? '5000') ?? 5000.0;
-    final double distKm = double.tryParse(order['distance_km']?.toString() ?? '0') ?? 0.0;
+    double fee = double.tryParse((order['driver_earning'] ?? order['delivery_charge'])?.toString() ?? '5000') ?? 5000.0;
+    double distKm = double.tryParse(order['distance_km']?.toString() ?? '0') ?? 0.0;
     final createdAt = order['created_at']?.toString() ?? '';
     final customerName = order['customer_name']?.toString() ?? 'Pelanggan';
     final storeName = order['store_name']?.toString() ?? 'Mitra Resto';
@@ -324,6 +324,26 @@ class _DriverOrderHistoryScreenState extends State<DriverOrderHistoryScreen> {
     final rawItems = (order['items'] is List) ? (order['items'] as List) : [];
     final bool isMultiStore = (order['batch_stores'] is List && (order['batch_stores'] as List).isNotEmpty) ||
         (order['batch_sub_orders'] is List && (order['batch_sub_orders'] as List).isNotEmpty);
+
+    // Untuk multi-store, jumlahkan total komisi dan total rute jarak dari semua sub-order
+    final batchList = (order['batch_sub_orders'] is List && (order['batch_sub_orders'] as List).isNotEmpty)
+        ? (order['batch_sub_orders'] as List)
+        : (order['sub_orders'] is List && (order['sub_orders'] as List).isNotEmpty)
+            ? (order['sub_orders'] as List)
+            : null;
+    if (batchList != null) {
+      final sumFee = batchList.fold<double>(
+        0.0,
+        (s, bo) => s + (double.tryParse((bo is Map ? (bo['driver_earning'] ?? bo['delivery_charge']) : null)?.toString() ?? '0') ?? 0.0),
+      );
+      if (sumFee > 0) fee = sumFee;
+
+      final sumDist = batchList.fold<double>(
+        0.0,
+        (s, bo) => s + (double.tryParse((bo is Map ? bo['distance_km'] : null)?.toString() ?? '0') ?? 0.0),
+      );
+      if (sumDist > 0) distKm = sumDist;
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -573,13 +593,36 @@ class _DriverOrderDetailSheetState extends State<_DriverOrderDetailSheet> {
     final isDelivered = status == 'delivered' || status == 'completed';
     final isCanceled = status == 'canceled';
 
-    final double deliveryFee = double.tryParse((order['delivery_charge'] ?? order['driver_earning'])?.toString() ?? '5000') ?? 5000.0;
-    final double driverEarning = double.tryParse((order['driver_earning'] ?? order['delivery_charge'])?.toString() ?? '5000') ?? deliveryFee;
+    double deliveryFee = double.tryParse((order['delivery_charge'] ?? order['driver_earning'])?.toString() ?? '5000') ?? 5000.0;
+    double driverEarning = double.tryParse((order['driver_earning'] ?? order['delivery_charge'])?.toString() ?? '5000') ?? deliveryFee;
     final double orderAmount = double.tryParse(order['order_amount']?.toString() ?? '0') ?? 0.0;
     final double couponDiscount = double.tryParse(order['coupon_discount']?.toString() ?? '0') ?? 0.0;
     final double taxAmount = double.tryParse(order['tax_amount']?.toString() ?? '0') ?? 0.0;
     final double totalAmount = double.tryParse(order['total_amount']?.toString() ?? '') ?? (orderAmount + deliveryFee - couponDiscount + taxAmount);
-    final double distKm = double.tryParse(order['distance_km']?.toString() ?? '0') ?? 0.0;
+    double distKm = double.tryParse(order['distance_km']?.toString() ?? '0') ?? 0.0;
+
+    // Untuk multi-store, jumlahkan total komisi dan total rute jarak dari semua sub-order
+    final detailBatchList = (order['batch_sub_orders'] is List && (order['batch_sub_orders'] as List).isNotEmpty)
+        ? (order['batch_sub_orders'] as List)
+        : (order['sub_orders'] is List && (order['sub_orders'] as List).isNotEmpty)
+            ? (order['sub_orders'] as List)
+            : null;
+    if (detailBatchList != null) {
+      final sumFee = detailBatchList.fold<double>(
+        0.0,
+        (s, bo) => s + (double.tryParse((bo is Map ? (bo['driver_earning'] ?? bo['delivery_charge']) : null)?.toString() ?? '0') ?? 0.0),
+      );
+      if (sumFee > 0) {
+        deliveryFee = sumFee;
+        driverEarning = sumFee;
+      }
+
+      final sumDist = detailBatchList.fold<double>(
+        0.0,
+        (s, bo) => s + (double.tryParse((bo is Map ? bo['distance_km'] : null)?.toString() ?? '0') ?? 0.0),
+      );
+      if (sumDist > 0) distKm = sumDist;
+    }
     final String customerName = order['customer_name']?.toString() ?? 'Pelanggan';
     final String customerPhone = order['customer_phone']?.toString() ?? '';
     final String createdAt = order['created_at']?.toString() ?? '';

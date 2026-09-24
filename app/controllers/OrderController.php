@@ -147,50 +147,27 @@ class OrderController extends Controller
                 // Tiap toko mendapat porsi jarak yg sudah dihitung
                 $storeRouteKm = [$stId0 => $totalRouteKm];
             } else {
-                // Multi-store: hitung rute total Store1→Store2→...→StoreN→Dest
-                // Urutkan toko berdasarkan urutan di cart (sesuai pickup_sequence)
+                // Multi-store: driver melakukan penjemputan di setiap toko dan mengantar ke rumah customer.
+                // Setiap toko dihitung jarak penjemputannya ke tujuan, dan dijumlahkan untuk total rute driver.
                 $orderedStores = array_values($stores);
+                $storeRouteKm  = [];
                 $totalRouteKm  = 0.0;
-                $prevLat = null;
-                $prevLng = null;
-                $storeCoords = [];
 
                 foreach ($orderedStores as $sg) {
                     $stId  = (int)($sg['store_id'] ?? 0);
                     $stObj = $storeDetailCache[$stId] ?? $storeModel->findWithDetails($stId);
-                    $sLat  = (float)($stObj['latitude'] ?? 0);
-                    $sLng  = (float)($stObj['longitude'] ?? 0);
-                    $storeCoords[$stId] = ['lat' => $sLat, 'lng' => $sLng];
+                    $sLat  = (float)($stObj['latitude'] ?? -6.9835);
+                    $sLng  = (float)($stObj['longitude'] ?? 107.8335);
 
-                    if ($prevLat !== null && $prevLng !== null && $sLat != 0 && $sLng != 0) {
-                        $totalRouteKm += haversine_distance($prevLat, $prevLng, $sLat, $sLng);
-                    }
-                    if ($sLat != 0 && $sLng != 0) {
-                        $prevLat = $sLat;
-                        $prevLng = $sLng;
-                    }
-                }
-
-                // Leg terakhir: toko terakhir → rumah customer
-                if ($prevLat !== null && $prevLng !== null && $destLat != 0 && $destLng != 0) {
-                    $totalRouteKm += haversine_distance($prevLat, $prevLng, $destLat, $destLng);
-                }
-
-                $totalRouteKm = max(0.5, round($totalRouteKm, 2));
-
-                // Distribusi jarak per toko secara proporsional berdasarkan subtotal
-                // (toko dengan belanjaan lebih besar menanggung porsi ongkir lebih besar)
-                $totalSubtotal = array_sum(array_column($orderedStores, 'subtotal'));
-                $storeRouteKm  = [];
-                foreach ($orderedStores as $sg) {
-                    $stId = (int)($sg['store_id'] ?? 0);
-                    if ($totalSubtotal > 0) {
-                        $portion = (float)($sg['subtotal'] ?? 0) / $totalSubtotal;
+                    if ($sLat != 0 && $sLng != 0 && $destLat != 0 && $destLng != 0) {
+                        $km = max(0.5, round(haversine_distance($sLat, $sLng, $destLat, $destLng), 2));
                     } else {
-                        $portion = 1.0 / $storeCount;
+                        $km = max(0.5, (float)($data['distance_km'] ?? 1.5));
                     }
-                    $storeRouteKm[$stId] = max(0.5, round($totalRouteKm * $portion, 2));
+                    $storeRouteKm[$stId] = $km;
+                    $totalRouteKm += $km;
                 }
+                $totalRouteKm = max(0.5, round($totalRouteKm, 2));
             }
 
             // ──────────────────────────────────────────────────────────────────

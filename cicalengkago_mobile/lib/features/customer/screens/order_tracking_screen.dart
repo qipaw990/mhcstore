@@ -3118,6 +3118,20 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final couponDiscount = double.tryParse(live['coupon_discount']?.toString() ?? order['coupon_discount']?.toString() ?? '0') ?? 0.0;
     final taxAmount = double.tryParse(live['tax_amount']?.toString() ?? order['tax_amount']?.toString() ?? '0') ?? 0.0;
 
+    // Untuk pesanan multi-toko (batch), jumlahkan ongkir dari semua sub-order jika order induk belum memuat totalnya
+    final batchSubOrders = (live['batch_sub_orders'] is List && (live['batch_sub_orders'] as List).isNotEmpty)
+        ? (live['batch_sub_orders'] as List)
+        : (order['batch_sub_orders'] is List && (order['batch_sub_orders'] as List).isNotEmpty)
+            ? (order['batch_sub_orders'] as List)
+            : null;
+    if (batchSubOrders != null && batchSubOrders.isNotEmpty) {
+      final sumDelivery = batchSubOrders.fold<double>(
+        0.0,
+        (s, bo) => s + (double.tryParse((bo is Map ? bo['delivery_charge'] : null)?.toString() ?? '0') ?? 0.0),
+      );
+      if (sumDelivery > 0) deliveryCharge = sumDelivery;
+    }
+
     double totalAmount = double.tryParse(live['total_amount']?.toString() ?? order['total_amount']?.toString() ?? order['order_amount']?.toString() ?? '0') ?? 0.0;
 
     if (deliveryCharge == 0.0 && totalAmount > itemsSubtotal && itemsSubtotal > 0) {
@@ -3235,7 +3249,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Ongkos Kirim (Delivery)', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+              Text(
+                (batchSubOrders != null && batchSubOrders.length > 1)
+                    ? 'Ongkos Kirim (${batchSubOrders.length} Toko)'
+                    : 'Ongkos Kirim (Delivery)',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              ),
               Text(CurrencyFormatter.formatRupiah(deliveryCharge), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
             ],
           ),

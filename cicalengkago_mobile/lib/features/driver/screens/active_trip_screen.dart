@@ -113,17 +113,30 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     // Extract all pickup stores for multi-store trip
     final List<Map<String, dynamic>> pickupStores = _extractPickupStores(trip, storeName, storeAddress);
 
+    // Hitung total jarak rute sesungguhnya untuk batch multi-store:
+    // Jika ada batch_orders, jumlahkan semua distance_km setiap sub-order
+    // agar tampilan jarak mencerminkan rute total driver (Store1→Store2→...→StoreN→Tujuan)
+    double totalBatchDistKm = double.tryParse(trip['distance_km']?.toString() ?? '0') ?? 0.0;
+
     if (pickupStores.length > 1) {
       final estCom = double.tryParse(trip['est_commission']?.toString() ??
           (trip['batch_info'] is Map ? trip['batch_info']['est_commission']?.toString() : null) ?? '0') ?? 0;
       if (estCom > 0) {
         deliveryCharge = estCom;
       } else if (trip['batch_orders'] is List && (trip['batch_orders'] as List).isNotEmpty) {
-        final sumBatch = (trip['batch_orders'] as List).fold<double>(
+        final batchOrders = trip['batch_orders'] as List;
+        final sumBatch = batchOrders.fold<double>(
           0.0,
           (sum, bo) => sum + (double.tryParse((bo is Map ? bo['delivery_charge'] : null)?.toString() ?? '0') ?? 0),
         );
         if (sumBatch > 0) deliveryCharge = sumBatch;
+
+        // Hitung total distance batch = jumlah distance_km semua sub-order
+        final sumDist = batchOrders.fold<double>(
+          0.0,
+          (sum, bo) => sum + (double.tryParse((bo is Map ? bo['distance_km'] : null)?.toString() ?? '0') ?? 0),
+        );
+        if (sumDist > 0) totalBatchDistKm = sumDist;
       }
     }
 
@@ -178,7 +191,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                     ],
                   ),
                 ),
-                if (trip['distance_km'] != null) ...[
+                if (totalBatchDistKm > 0) ...[
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -193,7 +206,8 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                         const Icon(Icons.route_rounded, color: Color(0xFF2563EB), size: 14),
                         const SizedBox(width: 5),
                         Text(
-                          '${double.tryParse(trip['distance_km']?.toString() ?? '0')?.toStringAsFixed(1) ?? '0'} km',
+                          // Tampilkan total rute: untuk batch, ini adalah jumlah semua leg perjalanan
+                          '${totalBatchDistKm.toStringAsFixed(1)} km${pickupStores.length > 1 ? " (Total)" : ""}',
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
                         ),
                       ],
@@ -305,7 +319,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
           const SizedBox(height: 14),
 
           // Zone & Distance Breakdown Card
-          _buildZoneRouteBreakdownCard(trip, deliveryCharge),
+          _buildZoneRouteBreakdownCard(trip, deliveryCharge, totalBatchDistKm),
 
           const SizedBox(height: 14),
 
@@ -347,8 +361,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     );
   }
 
-  Widget _buildZoneRouteBreakdownCard(Map<String, dynamic> trip, double deliveryCharge) {
-    final double distKm = double.tryParse(trip['distance_km']?.toString() ?? '1.5') ?? 1.5;
+  Widget _buildZoneRouteBreakdownCard(Map<String, dynamic> trip, double deliveryCharge, double totalDistKm) {
+    // Gunakan totalDistKm yang sudah dihitung dari luar (total rute multi-stop jika batch)
+    final double distKm = totalDistKm > 0 ? totalDistKm : (double.tryParse(trip['distance_km']?.toString() ?? '1.5') ?? 1.5);
     final bool isBase = distKm <= 2.0;
     final double extraKm = isBase ? 0.0 : (distKm - 2.0);
     final String zoneName = trip['zone_name']?.toString() ?? 'Zona Cicalengka Raya';

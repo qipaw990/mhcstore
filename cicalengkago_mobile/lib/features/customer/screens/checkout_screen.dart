@@ -58,43 +58,76 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return (minFee + (distanceKm - 2.0) * perKm).roundToDouble();
   }
 
-  /// Hitung total rute yang ditempuh driver untuk multi-store:
-  /// Store1 → Store2 → ... → StoreN → Rumah Customer
-  /// Untuk single store: hanya Store → Rumah Customer.
-  double _calcTotalRouteKm(List<dynamic> stores, double userLat, double userLng) {
-    if (stores.isEmpty) return 1.5;
+class _DeliveryCalculationSummary {
+  final double totalDistanceKm;
+  final double totalDeliveryFee;
+  final List<Map<String, dynamic>> storeBreakdowns;
 
-    if (stores.length == 1) {
-      final double sLat = double.tryParse(stores[0]['latitude']?.toString() ?? '') ?? 0.0;
-      final double sLng = double.tryParse(stores[0]['longitude']?.toString() ?? '') ?? 0.0;
-      if (sLat == 0 || sLng == 0 || userLat == 0 || userLng == 0) return 1.5;
-      return _calculateDistanceKm(sLat, sLng, userLat, userLng);
+  const _DeliveryCalculationSummary({
+    required this.totalDistanceKm,
+    required this.totalDeliveryFee,
+    required this.storeBreakdowns,
+  });
+}
+
+  /// Hitung kalkulasi jarak dan ongkir untuk penjemputan driver:
+  /// Jika 1 toko: Jarak toko ke rumah customer.
+  /// Jika multi-store: Driver menjemput ke masing-masing toko dan mengantar ke rumah customer,
+  /// sehingga total jarak adalah jumlah seluruh penjemputan dan total ongkir adalah jumlah ongkir penjemputan setiap toko.
+  _DeliveryCalculationSummary _calcDeliverySummary(
+    List<dynamic> stores,
+    double userLat,
+    double userLng, {
+    double minFee = 5000,
+    double perKm = 2500,
+  }) {
+    if (stores.isEmpty) {
+      return const _DeliveryCalculationSummary(
+        totalDistanceKm: 1.5,
+        totalDeliveryFee: 5000.0,
+        storeBreakdowns: [],
+      );
     }
 
-    // Multi-store: jumlahkan semua leg perjalanan
     double totalKm = 0.0;
-    double prevLat = 0.0;
-    double prevLng = 0.0;
+    double totalFee = 0.0;
+    final List<Map<String, dynamic>> breakdowns = [];
 
     for (int i = 0; i < stores.length; i++) {
-      final double sLat = double.tryParse(stores[i]['latitude']?.toString() ?? '') ?? 0.0;
-      final double sLng = double.tryParse(stores[i]['longitude']?.toString() ?? '') ?? 0.0;
-      if (sLat == 0 || sLng == 0) continue;
+      final st = stores[i] is Map ? (stores[i] as Map) : {};
+      final String sName = st['name']?.toString() ?? 'Toko ${i + 1}';
+      final double sLat = double.tryParse(st['latitude']?.toString() ??
+                                          st['lat']?.toString() ??
+                                          st['store_lat']?.toString() ?? '') ?? 0.0;
+      final double sLng = double.tryParse(st['longitude']?.toString() ??
+                                          st['lng']?.toString() ??
+                                          st['store_lng']?.toString() ?? '') ?? 0.0;
 
-      if (i > 0 && prevLat != 0 && prevLng != 0) {
-        // Leg antar toko: Store[i-1] → Store[i]
-        totalKm += _calculateDistanceKm(prevLat, prevLng, sLat, sLng);
+      double distKm = 1.5;
+      if (sLat != 0 && sLng != 0 && userLat != 0 && userLng != 0) {
+        distKm = _calculateDistanceKm(sLat, sLng, userLat, userLng);
       }
-      prevLat = sLat;
-      prevLng = sLng;
+      distKm = distKm < 0.5 ? 1.5 : double.parse(distKm.toStringAsFixed(2));
+
+      final double fee = _calcZoneDeliveryFee(distKm, minFee: minFee, perKm: perKm);
+
+      totalKm += distKm;
+      totalFee += fee;
+
+      breakdowns.add({
+        'store_name': sName,
+        'distance_km': distKm,
+        'fee': fee,
+      });
     }
 
-    // Leg terakhir: toko terakhir → rumah customer
-    if (prevLat != 0 && prevLng != 0 && userLat != 0 && userLng != 0) {
-      totalKm += _calculateDistanceKm(prevLat, prevLng, userLat, userLng);
-    }
+    totalKm = double.parse(totalKm.toStringAsFixed(2));
 
-    return totalKm < 0.5 ? 1.5 : double.parse(totalKm.toStringAsFixed(2));
+    return _DeliveryCalculationSummary(
+      totalDistanceKm: totalKm,
+      totalDeliveryFee: totalFee,
+      storeBreakdowns: breakdowns,
+    );
   }
 
   @override
@@ -184,19 +217,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final stores = (cart?['stores'] as List<dynamic>?) ?? [];
     final storeId = int.tryParse(stores.isNotEmpty ? stores[0]['store_id']?.toString() ?? '1' : '1') ?? 1;
 
-    // Hitung total rute sesungguhnya: Store1→Store2→...→StoreN→Rumah Customer
-    final double realDistKm = _calcTotalRouteKm(stores, _userLat, _userLng);
+    // Hitung kalkulasi jarak dan ongkir sesungguhnya untuk seluruh penjemputan driver
+    final summary = _calcDeliverySummary(
+      stores,
+      _userLat,
+      _userLng,
+      minFee: customerCtrl.zoneMinDeliveryCharge,
+      perKm: customerCtrl.zonePerKmDeliveryCharge,
+    );
+    final double realDistKm = summary.totalDistanceKm;
+    final double dynamicDeliveryFee = summary.totalDeliveryFee;
 
     final bool isCloseProximity = (realDistKm <= 0.30);
     final String chosenDeliveryType = (isCloseProximity && _deliveryType == 'merchant') ? 'merchant' : 'driver';
 
     // Compute totals for checkout
     final double subtotal = customerCtrl.cartSubtotal;
-    final double dynamicDeliveryFee = _calcZoneDeliveryFee(
-      realDistKm,
-      minFee: customerCtrl.zoneMinDeliveryCharge,
-      perKm: customerCtrl.zonePerKmDeliveryCharge,
-    );
     final double deliveryFee = (chosenDeliveryType == 'merchant') ? 0.0 : dynamicDeliveryFee;
     final double grandTotal = (subtotal + deliveryFee + 1000.0 - _voucherDiscount).clamp(0.0, double.infinity);
 
@@ -276,15 +312,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final cart = customerCtrl.cart;
     final stores = (cart?['stores'] as List<dynamic>?) ?? [];
 
-    // Hitung total rute sesungguhnya: Store1→Store2→...→StoreN→Rumah Customer
-    final double calculatedDistKm = _calcTotalRouteKm(stores, _userLat, _userLng);
-
-    final bool isCloseProximity = (calculatedDistKm <= 0.30); // Jarak < 300 meter
     final double zoneMinFee = customerCtrl.zoneMinDeliveryCharge;
     final double zonePerKm = customerCtrl.zonePerKmDeliveryCharge;
     final String zoneName = customerCtrl.zoneName;
-    final double dynamicDeliveryFee = _calcZoneDeliveryFee(calculatedDistKm, minFee: zoneMinFee, perKm: zonePerKm);
 
+    // Hitung rincian komprehensif seluruh penjemputan toko driver
+    final summary = _calcDeliverySummary(
+      stores,
+      _userLat,
+      _userLng,
+      minFee: zoneMinFee,
+      perKm: zonePerKm,
+    );
+    final double calculatedDistKm = summary.totalDistanceKm;
+    final double dynamicDeliveryFee = summary.totalDeliveryFee;
+
+    final bool isCloseProximity = (calculatedDistKm <= 0.30); // Jarak < 300 meter
     double subtotal = customerCtrl.cartSubtotal;
     double deliveryFee = (isCloseProximity && _deliveryType == 'merchant') ? 0.0 : dynamicDeliveryFee;
 
@@ -450,7 +493,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               _buildDeliveryTypeSelectorCard(calculatedDistKm, dynamicDeliveryFee),
 
             // Skema Tarif Zona Cicalengka Card (Transparan)
-            _buildZoneTariffCard(calculatedDistKm, zoneMinFee, zonePerKm, deliveryFee, zoneName),
+            _buildZoneTariffCard(calculatedDistKm, zoneMinFee, zonePerKm, deliveryFee, zoneName, summary.storeBreakdowns),
 
             const SizedBox(height: 16),
 
@@ -567,7 +610,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             const SizedBox(height: 20),
 
             // 3. Rincian Pembayaran Card
-            _buildPaymentDetailCard(subtotal, deliveryFee, serviceFee, grandTotal),
+            _buildPaymentDetailCard(subtotal, deliveryFee, serviceFee, grandTotal, stores.length),
 
             const SizedBox(height: 40),
           ],
@@ -1140,7 +1183,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildPaymentDetailCard(double subtotal, double deliveryFee, double serviceFee, double grandTotal) {
+  Widget _buildPaymentDetailCard(double subtotal, double deliveryFee, double serviceFee, double grandTotal, [int storeCount = 1]) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1178,9 +1221,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
           // Ongkir
           _buildPaymentRow(
-            'Ongkos Kirim (Pengantaran)',
+            storeCount > 1 ? 'Ongkos Kirim ($storeCount Toko)' : 'Ongkos Kirim (Pengantaran)',
             CurrencyFormatter.formatRupiah(deliveryFee),
-            subtitle: 'Jarak GPS Terdeteksi',
+            subtitle: storeCount > 1 ? 'Total seluruh penjemputan driver' : 'Jarak GPS Terdeteksi',
           ),
           const SizedBox(height: 10),
 
@@ -1472,7 +1515,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildZoneTariffCard(double distKm, double minFee, double perKm, double totalOngkir, String zoneName) {
+  Widget _buildZoneTariffCard(
+    double distKm,
+    double minFee,
+    double perKm,
+    double totalOngkir,
+    String zoneName, [
+    List<Map<String, dynamic>> storeBreakdowns = const [],
+  ]) {
+    final bool isMulti = storeBreakdowns.length > 1;
     final bool isBase = distKm <= 2.0;
     final double extraKm = isBase ? 0.0 : (distKm - 2.0);
 
@@ -1501,15 +1552,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Expanded(
+              Expanded(
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline_rounded, color: Color(0xFF2563EB), size: 16),
-                    SizedBox(width: 6),
+                    const Icon(Icons.info_outline_rounded, color: Color(0xFF2563EB), size: 16),
+                    const SizedBox(width: 6),
                     Flexible(
                       child: Text(
-                        'Skema Tarif Zona',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
+                        isMulti ? 'Skema Multi-Toko (${storeBreakdowns.length} Toko)' : 'Skema Tarif Zona',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -1591,6 +1642,61 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
             ],
           ),
+
+          // Jika multi-store, tampilkan rincian penjemputan per toko
+          if (isMulti) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.two_wheeler_rounded, size: 13, color: Color(0xFF2563EB)),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Rincian Penjemputan Driver (${storeBreakdowns.length} Toko):',
+                        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  ...storeBreakdowns.map((b) {
+                    final String sName = b['store_name']?.toString() ?? 'Toko';
+                    final double dKm = (b['distance_km'] as num?)?.toDouble() ?? 0.0;
+                    final double fRupiah = (b['fee'] as num?)?.toDouble() ?? 0.0;
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2.5),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '• $sName (${dKm.toStringAsFixed(1)} km)',
+                              style: const TextStyle(fontSize: 10.5, color: Color(0xFF475569)),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Text(
+                            CurrencyFormatter.formatRupiah(fRupiah),
+                            style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ],
+
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -1606,7 +1712,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   children: [
                     const Icon(Icons.alt_route_rounded, color: AppTheme.primaryRed, size: 14),
                     const SizedBox(width: 5),
-                    const Text('Jarak Rute: ', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                    Text(
+                      isMulti ? 'Total Jarak Rute: ' : 'Jarak Rute: ',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                    ),
                     Text(
                       '${distKm.toStringAsFixed(1)} Km',
                       style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
@@ -1616,18 +1725,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: isBase ? const Color(0xFFDCFCE7) : const Color(0xFFEFF6FF),
+                    color: isMulti
+                        ? const Color(0xFFEFF6FF)
+                        : (isBase ? const Color(0xFFDCFCE7) : const Color(0xFFEFF6FF)),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: isBase ? const Color(0xFF86EFAC) : const Color(0xFF93C5FD)),
+                    border: Border.all(
+                      color: isMulti
+                          ? const Color(0xFF93C5FD)
+                          : (isBase ? const Color(0xFF86EFAC) : const Color(0xFF93C5FD)),
+                    ),
                   ),
                   child: Text(
-                    isBase
-                        ? 'Tarif Dasar ${CurrencyFormatter.formatRupiah(minFee)}'
-                        : 'Dasar + (${extraKm.toStringAsFixed(1)} km × ${CurrencyFormatter.formatRupiah(perKm)}) = ${CurrencyFormatter.formatRupiah(totalOngkir)}',
+                    isMulti
+                        ? 'Total Ongkir: ${CurrencyFormatter.formatRupiah(totalOngkir)}'
+                        : (isBase
+                            ? 'Tarif Dasar ${CurrencyFormatter.formatRupiah(minFee)}'
+                            : 'Dasar + (${extraKm.toStringAsFixed(1)} km × ${CurrencyFormatter.formatRupiah(perKm)}) = ${CurrencyFormatter.formatRupiah(totalOngkir)}'),
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: isBase ? const Color(0xFF15803D) : const Color(0xFF1D4ED8),
+                      color: isMulti
+                          ? const Color(0xFF1D4ED8)
+                          : (isBase ? const Color(0xFF15803D) : const Color(0xFF1D4ED8)),
                     ),
                   ),
                 ),
