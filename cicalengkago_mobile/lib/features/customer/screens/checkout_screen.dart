@@ -17,6 +17,82 @@ import '../controllers/customer_controller.dart';
 import 'order_tracking_screen.dart';
 import 'vouchers_screen.dart';
 
+// ─── Top-level helper class ────────────────────────────────────────────────
+class _DeliveryCalculationSummary {
+  final double totalDistanceKm;
+  final double totalDeliveryFee;
+  final List<Map<String, dynamic>> storeBreakdowns;
+
+  const _DeliveryCalculationSummary({
+    required this.totalDistanceKm,
+    required this.totalDeliveryFee,
+    required this.storeBreakdowns,
+  });
+}
+
+// ─── Top-level helper functions ─────────────────────────────────────────────
+double _haversineDistanceKm(double sLat, double sLng, double uLat, double uLng) {
+  if (sLat == 0 || sLng == 0 || uLat == 0 || uLng == 0) return 1.5;
+  const double p = 0.017453292519943295;
+  final double a = 0.5 -
+      math.cos((uLat - sLat) * p) / 2 +
+      math.cos(sLat * p) * math.cos(uLat * p) * (1 - math.cos((uLng - sLng) * p)) / 2;
+  return double.parse((12742 * math.asin(math.sqrt(a))).toStringAsFixed(2));
+}
+
+double _calcTotalRouteKm(List<dynamic> stores, double userLat, double userLng) {
+  double total = 0.0;
+  for (final st in stores) {
+    final m = st is Map ? st : <String, dynamic>{};
+    final double sLat = double.tryParse(m['latitude']?.toString() ?? m['lat']?.toString() ?? m['store_lat']?.toString() ?? '') ?? 0.0;
+    final double sLng = double.tryParse(m['longitude']?.toString() ?? m['lng']?.toString() ?? m['store_lng']?.toString() ?? '') ?? 0.0;
+    total += _haversineDistanceKm(sLat, sLng, userLat, userLng);
+  }
+  return double.parse(total.toStringAsFixed(2));
+}
+
+double _calcZoneDeliveryFeeTopLevel(double distanceKm, {double minFee = 5000, double perKm = 2500}) {
+  if (distanceKm <= 2.0) return minFee;
+  return (minFee + (distanceKm - 2.0) * perKm).roundToDouble();
+}
+
+_DeliveryCalculationSummary _calcDeliverySummaryTopLevel(
+  List<dynamic> stores,
+  double userLat,
+  double userLng, {
+  double minFee = 5000,
+  double perKm = 2500,
+}) {
+  if (stores.isEmpty) {
+    return const _DeliveryCalculationSummary(
+      totalDistanceKm: 1.5,
+      totalDeliveryFee: 5000.0,
+      storeBreakdowns: [],
+    );
+  }
+  double totalKm = 0.0;
+  double totalFee = 0.0;
+  final List<Map<String, dynamic>> breakdowns = [];
+  for (int i = 0; i < stores.length; i++) {
+    final st = stores[i] is Map ? (stores[i] as Map) : {};
+    final String sName = st['name']?.toString() ?? 'Toko ${i + 1}';
+    final double sLat = double.tryParse(st['latitude']?.toString() ?? st['lat']?.toString() ?? st['store_lat']?.toString() ?? '') ?? 0.0;
+    final double sLng = double.tryParse(st['longitude']?.toString() ?? st['lng']?.toString() ?? st['store_lng']?.toString() ?? '') ?? 0.0;
+    double distKm = _haversineDistanceKm(sLat, sLng, userLat, userLng);
+    distKm = distKm < 0.5 ? 1.5 : double.parse(distKm.toStringAsFixed(2));
+    final double fee = _calcZoneDeliveryFeeTopLevel(distKm, minFee: minFee, perKm: perKm);
+    totalKm += distKm;
+    totalFee += fee;
+    breakdowns.add({'store_name': sName, 'distance_km': distKm, 'fee': fee});
+  }
+  return _DeliveryCalculationSummary(
+    totalDistanceKm: double.parse(totalKm.toStringAsFixed(2)),
+    totalDeliveryFee: totalFee,
+    storeBreakdowns: breakdowns,
+  );
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
 
@@ -43,92 +119,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   late double _userLng = AppConfigService.instance.defaultLng;
   String _gpsStatusText = 'Mendeteksi lokasi GPS terkini...';
 
-  double _calculateDistanceKm(double sLat, double sLng, double uLat, double uLng) {
-    if (sLat == 0 || sLng == 0 || uLat == 0 || uLng == 0) return 1.5;
-    const double p = 0.017453292519943295; // Math.PI / 180
-    final double a = 0.5 -
-        math.cos((uLat - sLat) * p) / 2 +
-        math.cos(sLat * p) * math.cos(uLat * p) * (1 - math.cos((uLng - sLng) * p)) / 2;
-    final double dist = 12742 * math.asin(math.sqrt(a)); // 2 * R; R = 6371 km
-    return double.parse(dist.toStringAsFixed(2));
-  }
+  // Wrapper methods memanggil top-level functions
+  double _calculateDistanceKm(double sLat, double sLng, double uLat, double uLng) =>
+      _haversineDistanceKm(sLat, sLng, uLat, uLng);
 
-  double _calcZoneDeliveryFee(double distanceKm, {double minFee = 5000, double perKm = 2500}) {
-    if (distanceKm <= 2.0) return minFee;
-    return (minFee + (distanceKm - 2.0) * perKm).roundToDouble();
-  }
+  double _calcZoneDeliveryFee(double distanceKm, {double minFee = 5000, double perKm = 2500}) =>
+      _calcZoneDeliveryFeeTopLevel(distanceKm, minFee: minFee, perKm: perKm);
 
-class _DeliveryCalculationSummary {
-  final double totalDistanceKm;
-  final double totalDeliveryFee;
-  final List<Map<String, dynamic>> storeBreakdowns;
-
-  const _DeliveryCalculationSummary({
-    required this.totalDistanceKm,
-    required this.totalDeliveryFee,
-    required this.storeBreakdowns,
-  });
-}
-
-  /// Hitung kalkulasi jarak dan ongkir untuk penjemputan driver:
-  /// Jika 1 toko: Jarak toko ke rumah customer.
-  /// Jika multi-store: Driver menjemput ke masing-masing toko dan mengantar ke rumah customer,
-  /// sehingga total jarak adalah jumlah seluruh penjemputan dan total ongkir adalah jumlah ongkir penjemputan setiap toko.
   _DeliveryCalculationSummary _calcDeliverySummary(
     List<dynamic> stores,
     double userLat,
     double userLng, {
     double minFee = 5000,
     double perKm = 2500,
-  }) {
-    if (stores.isEmpty) {
-      return const _DeliveryCalculationSummary(
-        totalDistanceKm: 1.5,
-        totalDeliveryFee: 5000.0,
-        storeBreakdowns: [],
-      );
-    }
-
-    double totalKm = 0.0;
-    double totalFee = 0.0;
-    final List<Map<String, dynamic>> breakdowns = [];
-
-    for (int i = 0; i < stores.length; i++) {
-      final st = stores[i] is Map ? (stores[i] as Map) : {};
-      final String sName = st['name']?.toString() ?? 'Toko ${i + 1}';
-      final double sLat = double.tryParse(st['latitude']?.toString() ??
-                                          st['lat']?.toString() ??
-                                          st['store_lat']?.toString() ?? '') ?? 0.0;
-      final double sLng = double.tryParse(st['longitude']?.toString() ??
-                                          st['lng']?.toString() ??
-                                          st['store_lng']?.toString() ?? '') ?? 0.0;
-
-      double distKm = 1.5;
-      if (sLat != 0 && sLng != 0 && userLat != 0 && userLng != 0) {
-        distKm = _calculateDistanceKm(sLat, sLng, userLat, userLng);
-      }
-      distKm = distKm < 0.5 ? 1.5 : double.parse(distKm.toStringAsFixed(2));
-
-      final double fee = _calcZoneDeliveryFee(distKm, minFee: minFee, perKm: perKm);
-
-      totalKm += distKm;
-      totalFee += fee;
-
-      breakdowns.add({
-        'store_name': sName,
-        'distance_km': distKm,
-        'fee': fee,
-      });
-    }
-
-    totalKm = double.parse(totalKm.toStringAsFixed(2));
-
-    return _DeliveryCalculationSummary(
-      totalDistanceKm: totalKm,
-      totalDeliveryFee: totalFee,
-      storeBreakdowns: breakdowns,
-    );
-  }
+  }) => _calcDeliverySummaryTopLevel(stores, userLat, userLng, minFee: minFee, perKm: perKm);
 
   @override
   void initState() {
