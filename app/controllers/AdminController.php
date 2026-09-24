@@ -582,6 +582,7 @@ class AdminController extends Controller
         $isOpen = (int)($data['is_open'] ?? 0);
 
         (new Store())->update($storeId, ['is_open' => $isOpen]);
+        \App\Models\Module::syncStoresCount();
         $this->successResponse('Status buka/tutup toko berhasil diubah.');
     }
 
@@ -592,6 +593,7 @@ class AdminController extends Controller
         $status = sanitize($data['status'] ?? 'approved');
 
         (new Store())->update($storeId, ['status' => $status]);
+        \App\Models\Module::syncStoresCount();
         $this->successResponse('Status akun toko berhasil diperbarui.');
     }
 

@@ -181,6 +181,7 @@ class VendorController extends Controller
 
         $newStatus = $store['is_open'] ? 0 : 1;
         $this->storeModel->update($store['id'], ['is_open' => $newStatus]);
+        \App\Models\Module::syncStoresCount((int)($store['module_id'] ?? 1));
 
         $this->successResponse($newStatus ? 'Toko Anda sekarang BUKA untuk menerima pesanan.' : 'Toko Anda sekarang TUTUP.', [
             'is_open' => $newStatus
@@ -2000,6 +2001,11 @@ class VendorController extends Controller
 
         $rm = new \App\Models\RawMaterial();
         $list = $rm->getByStore((int)$store['id']);
+        foreach ($list as &$item) {
+            $item['price'] = (float)($item['price_per_unit'] ?? 0);
+            $item['stock'] = (float)($item['stock_qty'] ?? 0);
+        }
+        unset($item);
 
         $this->successResponse('OK', ['raw_materials' => $list]);
     }
@@ -2007,7 +2013,7 @@ class VendorController extends Controller
     /**
      * POST /api/v1/vendor/raw-materials/save
      * Buat atau update bahan baku
-     * Body: { id?, name, unit, price_per_unit, stock_qty, description? }
+     * Body: { id?, name, unit, price_per_unit/price, stock_qty/stock, description? }
      */
     public function saveRawMaterial(): void
     {
@@ -2023,19 +2029,19 @@ class VendorController extends Controller
             return;
         }
 
-        $body = $this->getJsonBody();
+        $body = array_merge($_POST, $_REQUEST, $this->getJsonBody());
         $name          = trim($body['name'] ?? '');
         $unit          = trim($body['unit'] ?? 'gr');
-        $pricePerUnit  = (float)($body['price_per_unit'] ?? 0);
-        $stockQty      = (float)($body['stock_qty'] ?? 0);
+        $pricePerUnit  = (float)($body['price_per_unit'] ?? $body['price'] ?? 0);
+        $stockQty      = (float)($body['stock_qty'] ?? $body['stock'] ?? 0);
         $description   = trim($body['description'] ?? '');
 
         if ($name === '') {
-            $this->errorResponse('Nama bahan baku wajib diisi');
+            $this->errorResponse('Nama bahan baku wajib diisi', ['name' => 'Nama bahan baku wajib diisi'], 422);
             return;
         }
         if ($pricePerUnit < 0) {
-            $this->errorResponse('Harga tidak boleh negatif');
+            $this->errorResponse('Harga tidak boleh negatif', ['price' => 'Harga tidak boleh negatif'], 422);
             return;
         }
 
@@ -2052,6 +2058,10 @@ class VendorController extends Controller
 
         $savedId = $rm->save($data);
         $saved   = $rm->find($savedId);
+        if ($saved) {
+            $saved['price'] = (float)$saved['price_per_unit'];
+            $saved['stock'] = (float)$saved['stock_qty'];
+        }
 
         $this->successResponse('Bahan baku berhasil disimpan', ['raw_material' => $saved]);
     }
@@ -2074,10 +2084,10 @@ class VendorController extends Controller
             return;
         }
 
-        $body = $this->getJsonBody();
+        $body = array_merge($_POST, $_REQUEST, $this->getJsonBody());
         $id   = (int)($body['id'] ?? 0);
         if ($id <= 0) {
-            $this->errorResponse('ID bahan baku tidak valid');
+            $this->errorResponse('ID bahan baku tidak valid', ['id' => 'ID bahan baku tidak valid'], 422);
             return;
         }
 
@@ -2120,6 +2130,11 @@ class VendorController extends Controller
         $rm         = new \App\Models\RawMaterial();
         $recipeData = $rm->getProductRecipe($productId);
         $allMats    = $rm->getByStore((int)$store['id']);
+        foreach ($allMats as &$m) {
+            $m['price'] = (float)($m['price_per_unit'] ?? 0);
+            $m['stock'] = (float)($m['stock_qty'] ?? 0);
+        }
+        unset($m);
 
         $baseRecipe = $recipeData['base_recipe'] ?? [];
         $variations = $recipeData['variations'] ?? [];
@@ -2137,14 +2152,8 @@ class VendorController extends Controller
     /**
      * POST /api/v1/vendor/products/recipe/save
      * Simpan / update resep produk beserta resep variasi produk
-     * Body: {
-     *   product_id: int,
-     *   ingredients: [{ raw_material_id, qty_used }],
-     *   new_price?: float,
-     *   variations?: [{ id?, name, price, stock, ingredients: [{ raw_material_id, qty_used }] }]
-     * }
      */
-    public function saveProductRecipe(): void
+    public function saveProductRecipe(?string $id = null): void
     {
         $userId = auth_id();
         if (!$userId) {
@@ -2158,13 +2167,26 @@ class VendorController extends Controller
             return;
         }
 
-        $body        = $this->getJsonBody();
-        $productId   = (int)($body['product_id'] ?? 0);
+        $body        = array_merge($_POST, $_REQUEST, $this->getJsonBody());
+        $productId   = (int)($body['product_id'] ?? $body['productId'] ?? $body['id'] ?? $id ?? 0);
         $ingredients = (array)($body['ingredients'] ?? []);
         $variations  = isset($body['variations']) ? (array)$body['variations'] : null;
 
+        if (is_string($ingredients)) {
+            $decoded = json_decode($ingredients, true);
+            if (is_array($decoded)) {
+                $ingredients = $decoded;
+            }
+        }
+        if (is_string($variations)) {
+            $decoded = json_decode($variations, true);
+            if (is_array($decoded)) {
+                $variations = $decoded;
+            }
+        }
+
         if ($productId <= 0) {
-            $this->errorResponse('product_id wajib diisi');
+            $this->errorResponse('product_id wajib diisi', ['product_id' => 'product_id wajib diisi'], 422);
             return;
         }
 

@@ -135,7 +135,7 @@ class AppConfig {
         defaultLng: ZoneConstants.fallbackLng,
         defaultLocationName: 'Cicalengka, Bandung',
         deliveryMinCharge: 5000,
-        deliveryPerKmCharge: 2500,
+        deliveryPerKmCharge: 3000,
         freeDeliveryOver: 100000,
         taxPercent: 0,
         walletEnabled: false,
@@ -188,10 +188,10 @@ class AppConfig {
       defaultLng:           _d(location['default_lng'],  ZoneConstants.fallbackLng),
       defaultLocationName:  location['default_name']?.toString() ?? 'Cicalengka, Bandung',
       deliveryMinCharge:    _d(delivery['min_charge'],         5000),
-      deliveryPerKmCharge:  _d(delivery['per_km_charge'],      2500),
+      deliveryPerKmCharge:  _d(delivery['per_km_charge'],      3000),
       freeDeliveryOver:     _d(delivery['free_delivery_over'], 100000),
       taxPercent:           _d(delivery['tax_percent'],        0),
-      walletEnabled:        wallet['enabled'] == true,
+      walletEnabled:        _parseBool(wallet['enabled']),
       walletTopupNominals:  nominals,
       walletTransferFee:    _d(wallet['transfer_fee'],         1500),
       walletMinTransferPeer:_d(wallet['min_transfer_peer'],    1000),
@@ -210,6 +210,15 @@ class AppConfig {
 
   static double _d(dynamic v, double fallback) =>
       v == null ? fallback : double.tryParse(v.toString()) ?? fallback;
+
+  /// Handle PHP bool-like values: true, 1, "1", false, 0, "0", "false"
+  static bool _parseBool(dynamic v) {
+    if (v == null) return false;
+    if (v is bool) return v;
+    final s = v.toString();
+    if (s == '0' || s.toLowerCase() == 'false') return false;
+    return s == '1' || s.toLowerCase() == 'true';
+  }
 }
 
 /// Lightweight zone info from API

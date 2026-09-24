@@ -43,11 +43,11 @@ class ApiConstants {
   static const String zoneConfig     = '$domainUrl/api/zone-config';
   static const String appConfig      = '$domainUrl/api/app-config';
 
-  // Fallbacks
+  // Fallbacks / Direct endpoints
   static const String modules       = '$domainUrl/api/home-data';
-  static const String stores        = '$domainUrl/explore-stores';
-  static const String products      = '$domainUrl/api/home-data';
-  static const String productDetail = '$domainUrl/api/products';
+  static const String stores        = '$domainUrl/api/stores';        // ← /api/stores (ApiController)
+  static const String products      = '$domainUrl/api/products';     // ← /api/products (ApiController)
+  static const String productDetail = '$domainUrl/api/products';     // + /{id}
 
   // ==========================================
   // Auth Routes (Gunakan endpoint dedicated /api/ agar SELALU murni JSON tanpa form redirect)
@@ -61,16 +61,16 @@ class ApiConstants {
   // ==========================================
   // Customer Routes  (prefix: /)
   // ==========================================
-  static const String storeDetail    = '$domainUrl/stores';          // + /{id}
-  static const String exploreStores  = '$domainUrl/explore-stores';
-  static const String search         = '$domainUrl/search';
+  static const String storeDetail    = '$domainUrl/api/stores';      // + /{id} (ApiController::storeDetail)
+  static const String exploreStores  = '$domainUrl/api/explore-stores';
+  static const String search         = '$domainUrl/api/search';      // ← /api/search (ApiController)
 
-  // Cart — sesuai web.php: /cart, /cart/add, /cart/update-qty, /cart/remove, /cart/clear
-  static const String cart          = '$domainUrl/cart';
-  static const String cartAdd       = '$domainUrl/cart/add';
-  static const String cartUpdateQty = '$domainUrl/cart/update-qty';
-  static const String cartRemove    = '$domainUrl/cart/remove';
-  static const String cartClear     = '$domainUrl/cart/clear';
+  // Cart — sesuai web.php + api.php: /api/cart, /api/cart/add, dst.
+  static const String cart          = '$domainUrl/api/cart';
+  static const String cartAdd       = '$domainUrl/api/cart/add';
+  static const String cartUpdateQty = '$domainUrl/api/cart/update-qty';
+  static const String cartRemove    = '$domainUrl/api/cart/remove';
+  static const String cartClear     = '$domainUrl/api/cart/clear';
 
   // Checkout & Orders — sesuai web.php
   static const String checkout       = '$domainUrl/checkout';

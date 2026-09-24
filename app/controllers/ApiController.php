@@ -24,6 +24,19 @@ class ApiController extends Controller
         $username = trim($data['username'] ?? $data['email'] ?? '');
         $password = trim($data['password'] ?? '');
 
+        // Validasi input kosong -> 422 Unprocessable Entity
+        $errors = [];
+        if (empty($username)) {
+            $errors['email'] = 'Email atau nomor telepon wajib diisi.';
+        }
+        if (empty($password)) {
+            $errors['password'] = 'Password wajib diisi.';
+        }
+        if (!empty($errors)) {
+            $this->errorResponse('Validasi gagal. Harap lengkapi semua kolom wajib.', $errors, 422);
+            return;
+        }
+
         try {
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
@@ -217,13 +230,14 @@ class ApiController extends Controller
     public function homeData(): void
     {
         $selectedModuleId = !empty($_GET['module_id']) ? (int)$_GET['module_id'] : 1;
+        $zoneId = !empty($_GET['zone_id']) ? (int)$_GET['zone_id'] : null;
 
         $moduleModel = new Module();
         $bannerModel = new \App\Models\Banner();
         $storeModel  = new Store();
         $productModel= new Product();
 
-        $modules = $moduleModel->activeModules();
+        $modules = $moduleModel->activeModules($zoneId);
         $banners = $bannerModel->getActiveBanners($selectedModuleId);
         $categories = (new Category())->getByModule($selectedModuleId);
 
@@ -255,7 +269,7 @@ class ApiController extends Controller
             FROM `stores` s
             LEFT JOIN `modules` m ON s.module_id = m.id
             WHERE s.status = 'approved'
-            ORDER BY s.rating DESC, s.order_count DESC
+            ORDER BY s.is_open DESC, s.rating DESC, s.order_count DESC
             LIMIT 12
         ");
         foreach ($topRatedStores as &$s) {
@@ -265,18 +279,10 @@ class ApiController extends Controller
 
         $recommendedProducts = $productModel->getRecommended(12);
         if (empty($recommendedProducts)) {
-            $recommendedProducts = \App\Core\Database::query("
-                SELECT p.*, s.name as store_name, s.is_open as store_is_open 
-                FROM `products` p 
-                JOIN `stores` s ON p.store_id = s.id 
-                WHERE p.status = 1 AND s.status = 'approved' 
-                ORDER BY p.id DESC LIMIT 12
-            ");
-            foreach ($recommendedProducts as &$p) {
-                $p['final_price'] = $productModel->calculateFinalPrice($p);
+            $recommendedProducts = $productModel->getPublicProducts($selectedModuleId, null, null, 12);
+            if (empty($recommendedProducts) && $selectedModuleId != 1) {
+                $recommendedProducts = $productModel->getPublicProducts(null, null, null, 12);
             }
-            unset($p);
-            $productModel->attachStoreStatus($recommendedProducts);
         }
 
         $discountedProducts = \App\Core\Database::query("
@@ -390,11 +396,15 @@ class ApiController extends Controller
     {
         $query = trim($_GET['q'] ?? '');
         $moduleId = !empty($_GET['module_id']) ? (int)$_GET['module_id'] : null;
+        $storeId = !empty($_GET['store_id']) ? (int)$_GET['store_id'] : null;
+        $categoryId = !empty($_GET['category_id']) ? (int)$_GET['category_id'] : null;
+        $limit = !empty($_GET['limit']) ? min(100, max(1, (int)$_GET['limit'])) : 50;
 
+        $productModel = new Product();
         if (!empty($query)) {
-            $products = (new Product())->search($query, $moduleId);
+            $products = $productModel->search($query, $moduleId);
         } else {
-            $products = (new Product())->getRecommended(20);
+            $products = $productModel->getPublicProducts($moduleId, $storeId, $categoryId, $limit);
         }
 
         $this->successResponse('Daftar produk berhasil diambil', $products);
@@ -403,6 +413,13 @@ class ApiController extends Controller
     public function cart(): void
     {
         $userId = auth_id();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data = $this->getPost();
+            if (!empty($data['product_id']) || ($data['action'] ?? '') === 'add') {
+                (new CartController())->add();
+                return;
+            }
+        }
         $cart = (new Cart())->getUserCart($userId, session_id());
         $this->successResponse('Data keranjang', $cart);
     }
@@ -468,6 +485,21 @@ class ApiController extends Controller
         $userId = auth_id();
         if (!$userId) {
             $this->errorResponse('Unauthorized', null, 401);
+            return;
+        }
+
+        $user = auth_user();
+        $role = $user['role'] ?? auth_role();
+        $isVendor = ($role === 'vendor' || $role === 'merchant');
+        if (!$isVendor) {
+            $store = \App\Core\Database::fetchOne("SELECT id FROM stores WHERE vendor_id = ? LIMIT 1", [$userId]);
+            if ($store) {
+                $isVendor = true;
+            }
+        }
+
+        if ($isVendor) {
+            (new VendorController())->wallet();
             return;
         }
 
@@ -1113,13 +1145,13 @@ class ApiController extends Controller
             ],
             'delivery' => [
                 'min_charge'        => (float)($settings['delivery_charge_min']    ?? 5000),
-                'per_km_charge'     => (float)($settings['delivery_charge_per_km'] ?? 2500),
+                'per_km_charge'     => (float)($settings['delivery_charge_per_km'] ?? 3000),
                 'free_delivery_over'=> (float)($settings['free_delivery_over']     ?? 100000),
                 'tax_percent'       => (float)($settings['tax_percent']            ?? 0),
                 'admin_commission'  => (float)($settings['admin_commission_percent'] ?? 10),
             ],
             'wallet' => [
-                'enabled'           => (bool)($settings['wallet_payment_status'] ?? false),
+                'enabled'           => isset($settings['wallet_payment_status']) ? ($settings['wallet_payment_status'] !== '0' && $settings['wallet_payment_status'] !== false && $settings['wallet_payment_status'] !== 0) : true,
                 'topup_nominals'    => $topupNominals,
                 'transfer_fee'      => (float)($settings['wallet_transfer_fee']   ?? 1500),
                 'min_transfer_peer' => (float)($settings['wallet_min_transfer_peer'] ?? 1000),

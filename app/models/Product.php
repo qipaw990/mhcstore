@@ -43,6 +43,53 @@ class Product extends Model
                 ORDER BY s.is_open DESC, p.order_count DESC
                 LIMIT {$limit}";
         $products = Database::query($sql);
+        if (empty($products)) {
+            $sqlFallback = "SELECT p.*, s.name as store_name, s.is_open as store_is_open
+                            FROM `products` p
+                            JOIN `stores` s ON p.store_id = s.id
+                            WHERE p.status = 1 AND s.status = 'approved'
+                            ORDER BY s.is_open DESC, p.order_count DESC, p.id DESC
+                            LIMIT {$limit}";
+            $products = Database::query($sqlFallback);
+        }
+        foreach ($products as &$p) {
+            $p['final_price'] = $this->calculateFinalPrice($p);
+        }
+        unset($p);
+        $this->attachStoreStatus($products);
+        return $products;
+    }
+
+    public function getPublicProducts(?int $moduleId = null, ?int $storeId = null, ?int $categoryId = null, int $limit = 50): array
+    {
+        $where = ["p.status = 1", "s.status = 'approved'"];
+        $params = [];
+
+        if ($moduleId) {
+            $where[] = "p.module_id = ?";
+            $params[] = $moduleId;
+        }
+        if ($storeId) {
+            $where[] = "p.store_id = ?";
+            $params[] = $storeId;
+        }
+        if ($categoryId) {
+            $where[] = "p.category_id = ?";
+            $params[] = $categoryId;
+        }
+
+        $whereClause = implode(" AND ", $where);
+        $sql = "SELECT p.*, s.name as store_name, s.is_open as store_is_open,
+                       s.delivery_time, s.delivery_fee, c.name as category_name, m.name as module_name
+                FROM `products` p
+                JOIN `stores` s ON p.store_id = s.id
+                LEFT JOIN `categories` c ON p.category_id = c.id
+                LEFT JOIN `modules` m ON p.module_id = m.id
+                WHERE {$whereClause}
+                ORDER BY s.is_open DESC, p.is_recommended DESC, p.order_count DESC, p.id DESC
+                LIMIT {$limit}";
+
+        $products = Database::query($sql, $params);
         foreach ($products as &$p) {
             $p['final_price'] = $this->calculateFinalPrice($p);
         }
