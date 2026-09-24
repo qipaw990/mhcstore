@@ -96,16 +96,25 @@ class OrderService
             $orderAmount = array_sum(array_column($storeItems, 'item_total'));
 
             // Calculate distance-based delivery fee
-            $destLat  = (float)($data['delivery_address']['lat'] ?? -6.9840);
-            $destLng  = (float)($data['delivery_address']['lng'] ?? 107.8340);
-            $storeLat = (float)($store['latitude'] ?? -6.9835);
-            $storeLng = (float)($store['longitude'] ?? 107.8335);
-
-            if ($destLat != 0 && $destLng != 0 && $storeLat != 0 && $storeLng != 0) {
-                $calculatedDist = haversine_distance($storeLat, $storeLng, $destLat, $destLng);
-                $distanceKm = max(0.5, round($calculatedDist, 2));
+            // Jika route_distance_km tersedia (sudah dihitung rute multi-stop oleh controller),
+            // gunakan langsung tanpa override. Ini memastikan untuk multi-store,
+            // jarak yang dihitung adalah rute TOTAL driver (Store1→Store2→...→StoreN→Tujuan)
+            // dan bukan hanya jarak lurus store ini ke tujuan.
+            if (isset($data['route_distance_km']) && (float)$data['route_distance_km'] > 0) {
+                $distanceKm = max(0.5, round((float)$data['route_distance_km'], 2));
             } else {
-                $distanceKm = (float)($data['distance_km'] ?? 1.5);
+                // Fallback: hitung haversine dari toko ini ke tujuan (untuk order tunggal / langsung)
+                $destLat  = (float)($data['delivery_address']['lat'] ?? -6.9840);
+                $destLng  = (float)($data['delivery_address']['lng'] ?? 107.8340);
+                $storeLat = (float)($store['latitude'] ?? -6.9835);
+                $storeLng = (float)($store['longitude'] ?? 107.8335);
+
+                if ($destLat != 0 && $destLng != 0 && $storeLat != 0 && $storeLng != 0) {
+                    $calculatedDist = haversine_distance($storeLat, $storeLng, $destLat, $destLng);
+                    $distanceKm = max(0.5, round($calculatedDist, 2));
+                } else {
+                    $distanceKm = max(0.5, (float)($data['distance_km'] ?? 1.5));
+                }
             }
 
             // Ambil tarif dari zona toko (bukan hardcode)

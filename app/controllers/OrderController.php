@@ -107,10 +107,12 @@ class OrderController extends Controller
 
             // Validasi apakah seluruh toko dalam keranjang masih BUKA
             $storeModel = new \App\Models\Store();
+            $storeDetailCache = [];
             foreach ($stores as $sg) {
                 $stId = (int)($sg['store_id'] ?? 0);
                 $stObj = $storeModel->findWithDetails($stId);
                 if ($stObj) {
+                    $storeDetailCache[$stId] = $stObj;
                     attach_store_schedule_data($stObj, true);
                     if (empty($stObj['is_open'])) {
                         $stName = $stObj['name'] ?? 'Toko Mitra';
@@ -120,6 +122,80 @@ class OrderController extends Controller
                 }
             }
 
+            // ──────────────────────────────────────────────────────────────────
+            // Hitung total rute yang BENAR-BENAR ditempuh driver:
+            //   Store1 → Store2 → ... → StoreN → Rumah Customer
+            // Untuk single store: jarak Store → Rumah Customer.
+            // ──────────────────────────────────────────────────────────────────
+            $destLat = (float)($deliveryAddress['lat'] ?? -6.9840);
+            $destLng = (float)($deliveryAddress['lng'] ?? 107.8340);
+            $storeCount = count($stores);
+
+            if ($storeCount === 1) {
+                // Single store: hitung jarak toko ke tujuan saja
+                $sg0   = reset($stores);
+                $stId0 = (int)($sg0['store_id'] ?? 0);
+                $stObj0 = $storeDetailCache[$stId0] ?? $storeModel->findWithDetails($stId0);
+                $sLat0 = (float)($stObj0['latitude'] ?? -6.9835);
+                $sLng0 = (float)($stObj0['longitude'] ?? 107.8335);
+
+                if ($sLat0 != 0 && $sLng0 != 0 && $destLat != 0 && $destLng != 0) {
+                    $totalRouteKm = max(0.5, round(haversine_distance($sLat0, $sLng0, $destLat, $destLng), 2));
+                } else {
+                    $totalRouteKm = max(0.5, (float)($data['distance_km'] ?? 1.5));
+                }
+                // Tiap toko mendapat porsi jarak yg sudah dihitung
+                $storeRouteKm = [$stId0 => $totalRouteKm];
+            } else {
+                // Multi-store: hitung rute total Store1→Store2→...→StoreN→Dest
+                // Urutkan toko berdasarkan urutan di cart (sesuai pickup_sequence)
+                $orderedStores = array_values($stores);
+                $totalRouteKm  = 0.0;
+                $prevLat = null;
+                $prevLng = null;
+                $storeCoords = [];
+
+                foreach ($orderedStores as $sg) {
+                    $stId  = (int)($sg['store_id'] ?? 0);
+                    $stObj = $storeDetailCache[$stId] ?? $storeModel->findWithDetails($stId);
+                    $sLat  = (float)($stObj['latitude'] ?? 0);
+                    $sLng  = (float)($stObj['longitude'] ?? 0);
+                    $storeCoords[$stId] = ['lat' => $sLat, 'lng' => $sLng];
+
+                    if ($prevLat !== null && $prevLng !== null && $sLat != 0 && $sLng != 0) {
+                        $totalRouteKm += haversine_distance($prevLat, $prevLng, $sLat, $sLng);
+                    }
+                    if ($sLat != 0 && $sLng != 0) {
+                        $prevLat = $sLat;
+                        $prevLng = $sLng;
+                    }
+                }
+
+                // Leg terakhir: toko terakhir → rumah customer
+                if ($prevLat !== null && $prevLng !== null && $destLat != 0 && $destLng != 0) {
+                    $totalRouteKm += haversine_distance($prevLat, $prevLng, $destLat, $destLng);
+                }
+
+                $totalRouteKm = max(0.5, round($totalRouteKm, 2));
+
+                // Distribusi jarak per toko secara proporsional berdasarkan subtotal
+                // (toko dengan belanjaan lebih besar menanggung porsi ongkir lebih besar)
+                $totalSubtotal = array_sum(array_column($orderedStores, 'subtotal'));
+                $storeRouteKm  = [];
+                foreach ($orderedStores as $sg) {
+                    $stId = (int)($sg['store_id'] ?? 0);
+                    if ($totalSubtotal > 0) {
+                        $portion = (float)($sg['subtotal'] ?? 0) / $totalSubtotal;
+                    } else {
+                        $portion = 1.0 / $storeCount;
+                    }
+                    $storeRouteKm[$stId] = max(0.5, round($totalRouteKm * $portion, 2));
+                }
+            }
+
+            // ──────────────────────────────────────────────────────────────────
+            // Cek saldo wallet menggunakan total rute yang sudah benar
+            // ──────────────────────────────────────────────────────────────────
             if ($paymentMethod === 'wallet') {
                 $walletModel = new \App\Models\Wallet();
                 $wallet = $walletModel->getOrCreate($userId, 'customer');
@@ -127,9 +203,13 @@ class OrderController extends Controller
 
                 $totalRequired = 0.0;
                 foreach ($stores as $sg) {
+                    $stId       = (int)($sg['store_id'] ?? 0);
                     $sgSubtotal = (float)($sg['subtotal'] ?? 0);
-                    $distKm = (float)($data['distance_km'] ?? 1.5);
-                    $sgDelivery = calculate_delivery_fee($distKm, (float)($sg['delivery_fee'] ?? 5000));
+                    $sgDistKm   = $storeRouteKm[$stId] ?? $totalRouteKm;
+                    $stObj      = $storeDetailCache[$stId] ?? null;
+                    $zoneId     = (int)($stObj['zone_id'] ?? 1);
+                    $tariff     = Zone::getZoneTariff($zoneId);
+                    $sgDelivery = calculate_delivery_fee($sgDistKm, $tariff['min_delivery_charge'], $tariff['per_km_delivery_charge']);
                     $totalRequired += ($sgSubtotal + $sgDelivery);
                 }
 
@@ -148,14 +228,19 @@ class OrderController extends Controller
             $seq           = 1;
 
             // Create one order per store atomically inside a single batch transaction
-            \App\Core\Database::transaction(function () use ($stores, $userId, $deliveryAddress, $paymentMethod, $data, $batchId, $sharedOtp, &$seq, &$allOrderCodes, &$grandTotal) {
+            \App\Core\Database::transaction(function () use ($stores, $userId, $deliveryAddress, $paymentMethod, $data, $batchId, $sharedOtp, $storeRouteKm, &$seq, &$allOrderCodes, &$grandTotal) {
                 foreach ($stores as $storeGroup) {
+                    $stId         = (int)($storeGroup['store_id'] ?? 0);
+                    // Gunakan jarak rute yang sudah dihitung dengan benar (bukan jarak lurus store→tujuan)
+                    $routeKmForStore = $storeRouteKm[$stId] ?? (float)($data['distance_km'] ?? 1.5);
+
                     $result = $this->orderService->createOrderFromCart($userId, [
                         'delivery_address'  => $deliveryAddress,
                         'payment_method'    => $paymentMethod,
                         'coupon_code'       => sanitize($data['coupon_code'] ?? ''),
                         'order_notes'       => sanitize($data['order_notes'] ?? ''),
-                        'distance_km'       => (float)($data['distance_km'] ?? 1.5),
+                        'distance_km'       => $routeKmForStore,  // jarak rute yang benar
+                        'route_distance_km' => $routeKmForStore,  // flag eksplisit agar service tidak override
                         'order_type'        => $data['order_type'] ?? 'delivery',
                         'delivery_type'     => sanitize($data['delivery_type'] ?? 'driver'),
                         'store_id'          => $storeGroup['store_id'],   // scoped to this store
