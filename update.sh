@@ -43,30 +43,36 @@ mkdir -p public/uploads/profiles \
 
 chmod -R 777 public/uploads
 
-# Matikan BuildKit gRPC daemon jika kehabisan memori / crash RPC EOF
+# Matikan BuildKit gRPC daemon jika kehabisan memori / crash RPC EOF di low-spec host
 export DOCKER_BUILDKIT=0
 export COMPOSE_DOCKER_CLI_BUILD=0
 
-# Bersihkan container lama jika ada konflik nama container
-docker rm -f cicalengkago_web 2>/dev/null || true
-
-# Prune build cache lama terlebih dahulu agar tidak menghabiskan disk
-docker builder prune -f 2>/dev/null || true
-
-# Opsi update cepat (hanya restart PHP backend tanpa rebuild image berat)
+# Opsi pembaruan:
+# 1. ./update.sh quick / --quick : Hanya restart PHP backend (~1 detik)
+# 2. ./update.sh web / --web     : Rebuild seluruh container termasuk Flutter Web (~12 menit jika compile di Docker)
+# 3. ./update.sh                 : Update default: Rebuild container backend (cicalengkago_app & cicago_wa_gateway ~3 detik)
 if [ "$1" == "quick" ] || [ "$1" == "--quick" ]; then
     echo "⚡ Mode Update Cepat: Me-restart container backend..."
     docker compose restart cicalengkago_app
-else
-    # Rebuild dan jalankan ulang container Docker (App, DB, & WhatsApp Gateway)
-    echo "📦 Membangun ulang container Docker..."
+elif [ "$1" == "web" ] || [ "$1" == "--web" ] || [ "$1" == "all" ] || [ "$1" == "--all" ]; then
+    echo "📦 Mode Full: Membangun ulang seluruh container termasuk Flutter Web..."
+    docker rm -f cicalengkago_web 2>/dev/null || true
     if ! docker compose up -d --build --remove-orphans; then
         echo "⚠️ Build reguler gagal. Menjalankan build bersih tanpa cache (--no-cache)..."
-        docker builder prune -a -f 2>/dev/null || true
+        docker builder prune -f 2>/dev/null || true
         DOCKER_BUILDKIT=0 docker compose build --no-cache
-        docker rm -f cicalengkago_web 2>/dev/null || true
         docker compose up -d --remove-orphans
     fi
+else
+    # Rebuild cepat hanya untuk container backend (App & WhatsApp Gateway).
+    # Container Flutter Web (cicalengkago_web) dan DB tetap berjalan tanpa harus di-compile ulang 750+ detik.
+    echo "📦 Membangun container backend (cicalengkago_app & cicago_wa_gateway)..."
+    if ! docker compose build cicalengkago_app cicago_wa_gateway; then
+        echo "⚠️ Build backend gagal, mencoba build bersih..."
+        DOCKER_BUILDKIT=0 docker compose build --no-cache cicalengkago_app cicago_wa_gateway
+    fi
+    echo "🚀 Menjalankan container dengan docker compose up..."
+    docker compose up -d --remove-orphans
 fi
 
 # Pastikan permission di dalam container dan host aman
