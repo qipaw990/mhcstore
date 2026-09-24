@@ -58,6 +58,45 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return (minFee + (distanceKm - 2.0) * perKm).roundToDouble();
   }
 
+  /// Hitung total rute yang ditempuh driver untuk multi-store:
+  /// Store1 → Store2 → ... → StoreN → Rumah Customer
+  /// Untuk single store: hanya Store → Rumah Customer.
+  double _calcTotalRouteKm(List<dynamic> stores, double userLat, double userLng) {
+    if (stores.isEmpty) return 1.5;
+
+    if (stores.length == 1) {
+      final double sLat = double.tryParse(stores[0]['latitude']?.toString() ?? '') ?? 0.0;
+      final double sLng = double.tryParse(stores[0]['longitude']?.toString() ?? '') ?? 0.0;
+      if (sLat == 0 || sLng == 0 || userLat == 0 || userLng == 0) return 1.5;
+      return _calculateDistanceKm(sLat, sLng, userLat, userLng);
+    }
+
+    // Multi-store: jumlahkan semua leg perjalanan
+    double totalKm = 0.0;
+    double prevLat = 0.0;
+    double prevLng = 0.0;
+
+    for (int i = 0; i < stores.length; i++) {
+      final double sLat = double.tryParse(stores[i]['latitude']?.toString() ?? '') ?? 0.0;
+      final double sLng = double.tryParse(stores[i]['longitude']?.toString() ?? '') ?? 0.0;
+      if (sLat == 0 || sLng == 0) continue;
+
+      if (i > 0 && prevLat != 0 && prevLng != 0) {
+        // Leg antar toko: Store[i-1] → Store[i]
+        totalKm += _calculateDistanceKm(prevLat, prevLng, sLat, sLng);
+      }
+      prevLat = sLat;
+      prevLng = sLng;
+    }
+
+    // Leg terakhir: toko terakhir → rumah customer
+    if (prevLat != 0 && prevLng != 0 && userLat != 0 && userLng != 0) {
+      totalKm += _calculateDistanceKm(prevLat, prevLng, userLat, userLng);
+    }
+
+    return totalKm < 0.5 ? 1.5 : double.parse(totalKm.toStringAsFixed(2));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -100,13 +139,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         final cart = customerCtrl.cart;
         final stores = (cart?['stores'] as List<dynamic>?) ?? [];
         if (stores.isNotEmpty) {
-          final double sLat = double.tryParse(stores[0]['latitude']?.toString() ?? '0') ?? 0.0;
-          final double sLng = double.tryParse(stores[0]['longitude']?.toString() ?? '0') ?? 0.0;
-          if (sLat != 0 && sLng != 0) {
-            final dist = _calculateDistanceKm(sLat, sLng, _userLat, _userLng);
-            if (dist <= 0.30) {
-              _deliveryType = 'merchant';
-            }
+          // Gunakan total rute multi-stop untuk deteksi merchant delivery
+          final double totalDist = _calcTotalRouteKm(stores, pos.latitude, pos.longitude);
+          if (totalDist <= 0.30) {
+            _deliveryType = 'merchant';
           }
         }
 
@@ -148,15 +184,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final stores = (cart?['stores'] as List<dynamic>?) ?? [];
     final storeId = int.tryParse(stores.isNotEmpty ? stores[0]['store_id']?.toString() ?? '1' : '1') ?? 1;
 
-    // Calculate real distance
-    double realDistKm = 1.5;
-    if (stores.isNotEmpty) {
-      final double sLat = double.tryParse(stores[0]['latitude']?.toString() ?? '') ?? AppConfigService.instance.defaultLat;
-      final double sLng = double.tryParse(stores[0]['longitude']?.toString() ?? '') ?? AppConfigService.instance.defaultLng;
-      if (sLat != 0 && sLng != 0 && _userLat != 0 && _userLng != 0) {
-        realDistKm = _calculateDistanceKm(sLat, sLng, _userLat, _userLng);
-      }
-    }
+    // Hitung total rute sesungguhnya: Store1→Store2→...→StoreN→Rumah Customer
+    final double realDistKm = _calcTotalRouteKm(stores, _userLat, _userLng);
 
     final bool isCloseProximity = (realDistKm <= 0.30);
     final String chosenDeliveryType = (isCloseProximity && _deliveryType == 'merchant') ? 'merchant' : 'driver';
@@ -247,15 +276,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final cart = customerCtrl.cart;
     final stores = (cart?['stores'] as List<dynamic>?) ?? [];
 
-    // Calculate dynamic distance from store to GPS location
-    double calculatedDistKm = 1.5;
-    if (stores.isNotEmpty) {
-      final double sLat = double.tryParse(stores[0]['latitude']?.toString() ?? '') ?? AppConfigService.instance.defaultLat;
-      final double sLng = double.tryParse(stores[0]['longitude']?.toString() ?? '') ?? AppConfigService.instance.defaultLng;
-      if (sLat != 0 && sLng != 0 && _userLat != 0 && _userLng != 0) {
-        calculatedDistKm = _calculateDistanceKm(sLat, sLng, _userLat, _userLng);
-      }
-    }
+    // Hitung total rute sesungguhnya: Store1→Store2→...→StoreN→Rumah Customer
+    final double calculatedDistKm = _calcTotalRouteKm(stores, _userLat, _userLng);
 
     final bool isCloseProximity = (calculatedDistKm <= 0.30); // Jarak < 300 meter
     final double zoneMinFee = customerCtrl.zoneMinDeliveryCharge;
