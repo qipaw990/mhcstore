@@ -191,42 +191,46 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
           color: Colors.white,
           border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
         ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          selectedItemColor: AppTheme.primaryRed,
-          unselectedItemColor: const Color(0xFF94A3B8),
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 11),
-          backgroundColor: Colors.white,
-          elevation: 0,
-          type: BottomNavigationBarType.fixed,
-          onTap: (idx) {
-            setState(() {
-              _currentIndex = idx;
-            });
-          },
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard_outlined),
-              activeIcon: Icon(Icons.dashboard_rounded),
-              label: 'Ringkasan',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.receipt_long_outlined),
-              activeIcon: Icon(Icons.receipt_long_rounded),
-              label: 'Pesanan',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.restaurant_menu_outlined),
-              activeIcon: Icon(Icons.restaurant_menu_rounded),
-              label: 'Menu',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.storefront_outlined),
-              activeIcon: Icon(Icons.storefront_rounded),
-              label: 'Resto Saya',
-            ),
-          ],
+        child: SafeArea(
+          child: BottomNavigationBar(
+            currentIndex: _currentIndex,
+            selectedItemColor: AppTheme.primaryRed,
+            unselectedItemColor: const Color(0xFF94A3B8),
+            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
+            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 10),
+            backgroundColor: Colors.white,
+            elevation: 0,
+            type: BottomNavigationBarType.fixed,
+            selectedIconTheme: const IconThemeData(size: 22),
+            unselectedIconTheme: const IconThemeData(size: 22),
+            onTap: (idx) {
+              setState(() {
+                _currentIndex = idx;
+              });
+            },
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.dashboard_outlined),
+                activeIcon: Icon(Icons.dashboard_rounded),
+                label: 'Ringkasan',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.receipt_long_outlined),
+                activeIcon: Icon(Icons.receipt_long_rounded),
+                label: 'Pesanan',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.restaurant_menu_outlined),
+                activeIcon: Icon(Icons.restaurant_menu_rounded),
+                label: 'Menu',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.storefront_outlined),
+                activeIcon: Icon(Icons.storefront_rounded),
+                label: 'Toko',
+              ),
+            ],
+          ),
         ),
       ),
     );
