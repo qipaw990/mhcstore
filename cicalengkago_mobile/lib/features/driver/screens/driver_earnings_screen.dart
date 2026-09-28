@@ -36,13 +36,32 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
     final earnings = ctrl.earnings;
     final wallet = earnings?['wallet'] as Map<String, dynamic>? ?? {};
     final balance = double.tryParse(wallet['balance']?.toString() ?? '0') ?? 0.0;
-    final totalEarned = double.tryParse(wallet['total_earned']?.toString() ?? '0') ?? 0.0;
+    double totalEarned = double.tryParse(wallet['total_earned']?.toString() ?? '0') ?? 0.0;
     final totalWithdrawn = double.tryParse(earnings?['total_withdrawn']?.toString() ?? '0') ?? 0.0;
     final withdrawRequests = (earnings?['withdraw_requests'] as List<dynamic>?) ?? [];
     final transactions = (earnings?['transactions'] as List<dynamic>?) ?? [];
     final deliveredOrders = (earnings?['delivered_orders'] as List<dynamic>?) ?? ctrl.deliveredOrders;
     final reviews = ctrl.reviews;
+    // Fallback total komisi kumulatif dari riwayat antar (jelas untuk COD yang tidak masuk wallet)
+    if (totalEarned == 0 && deliveredOrders.isNotEmpty) {
+      double sumDelivered = 0;
+      for (final o in deliveredOrders) {
+        if (o is Map) sumDelivered += double.tryParse(o['delivery_charge']?.toString() ?? '0') ?? 0;
+      }
+      if (sumDelivered > 0) totalEarned = sumDelivered;
+    }
+    if (totalEarned == 0 && transactions.isNotEmpty) {
+      double sumTx = 0;
+      for (final t in transactions) {
+        if (t is Map && (t['type'] == 'credit' || t['type'] == null)) {
+          sumTx += double.tryParse((t['amount'] ?? t['delivery_charge'])?.toString() ?? '0') ?? 0;
+        }
+      }
+      if (sumTx > 0) totalEarned = sumTx;
+    }
     final commissionCount = transactions.isNotEmpty ? transactions.length : deliveredOrders.length;
+    // Info banner: bedakan dompet vs COD tunai
+    final hasCodOrders = deliveredOrders.any((o) => o is Map && ['cod','cash','tunai'].contains((o['payment_method'] ?? '').toString().toLowerCase()));
 
     if (ctrl.isLoading && earnings == null) {
       return const Center(child: CircularProgressIndicator(color: AppTheme.primaryRed));
@@ -58,7 +77,32 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
               child: Column(
                 children: [
                   // Driver wallet balance card
-                  _buildWalletCard(balance, totalEarned, totalWithdrawn, context, ctrl),
+                  _buildWalletCard(balance, totalEarned, totalWithdrawn, hasCodOrders, context, ctrl),
+                  const SizedBox(height: 12),
+
+                  // Banner penjelas COD vs dompet (hilangkan ambigu Rp 0)
+                  if (hasCodOrders)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF064E3B),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF059669)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.info_rounded, color: Color(0xFF34D399), size: 18),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Order COD dibayar tunai langsung oleh pelanggan. Dompet hanya menampung komisi order non-tunai.',
+                              style: TextStyle(fontSize: 11, color: Color(0xFFD1FAE5)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   const SizedBox(height: 12),
 
                   // Performance metrics
@@ -135,7 +179,7 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
     );
   }
 
-  Widget _buildWalletCard(double balance, double totalEarned, double totalWithdrawn, BuildContext context, DriverController ctrl) {
+  Widget _buildWalletCard(double balance, double totalEarned, double totalWithdrawn, bool hasCodOrders, BuildContext context, DriverController ctrl) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -373,18 +417,51 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
   }
 
   Widget _buildCommissionTab(List<dynamic> transactions, List<dynamic> deliveredOrders) {
-    final list = transactions.isNotEmpty ? transactions : deliveredOrders;
-    if (list.isEmpty) {
+    // Backend sudah grouping batch 1 trip 1 baris; jika belum (data lama), grouping lokal disini
+    List<dynamic> groupLocal(List<dynamic> src) {
+      final Map<String, Map<String, dynamic>> batchMap = {};
+      final List<dynamic> out = [];
+      for (final raw in src) {
+        final m = raw is Map<String, dynamic> ? raw : Map<String, dynamic>.from(raw as Map);
+        final bid = (m['delivery_batch_id'] ?? m['deliveryBatchId'])?.toString().trim();
+        final isCred = (m['type'] == null || m['type'] == 'credit');
+        if (bid != null && bid.isNotEmpty && isCred) {
+          if (!batchMap.containsKey(bid)) {
+            final p = Map<String, dynamic>.from(m);
+            p['sub_orders'] = [m];
+            p['store_names'] = [(m['store_name'] ?? 'Toko').toString()];
+            p['is_multi_store'] = false;
+            batchMap[bid] = p;
+            out.add(p);
+          } else {
+            final p = batchMap[bid]!;
+            (p['sub_orders'] as List).add(m);
+            (p['store_names'] as List).add((m['store_name'] ?? 'Toko').toString());
+            p['amount'] = (double.tryParse((p['amount'] ?? p['delivery_charge'])?.toString() ?? '0') ?? 0) +
+                (double.tryParse((m['amount'] ?? m['delivery_charge'])?.toString() ?? '0') ?? 0);
+            p['delivery_charge'] = p['amount'];
+            p['store_name'] = (p['store_names'] as List).toSet().join(' • ');
+            p['is_multi_store'] = true;
+          }
+        } else {
+          out.add(m);
+        }
+      }
+      return out;
+    }
+
+    final txList = groupLocal(transactions.isNotEmpty ? transactions : deliveredOrders);
+    if (txList.isEmpty) {
       return _emptyState(Icons.two_wheeler_rounded, 'Belum Ada Komisi', 'Selesaikan orderan pertama untuk mengumpulkan saldo.');
     }
     return ListView.separated(
       padding: const EdgeInsets.only(top: 12, bottom: 16),
-      itemCount: list.length,
+      itemCount: txList.length,
       separatorBuilder: (context, index) => const SizedBox(height: 8),
       itemBuilder: (_, i) {
-        final item = list[i] is Map<String, dynamic>
-            ? list[i] as Map<String, dynamic>
-            : Map<String, dynamic>.from(list[i] as Map);
+        final item = txList[i] is Map<String, dynamic>
+            ? txList[i] as Map<String, dynamic>
+            : Map<String, dynamic>.from(txList[i] as Map);
         return _buildCommissionCard(item);
       },
     );
@@ -396,6 +473,16 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
     final orderCode = tx['order_code']?.toString();
     final storeName = tx['store_name']?.toString();
     final customerName = tx['customer_name']?.toString();
+    // Multi-toko: tampil jumlah toko, bukan store_name gabungan yg panjang
+    final subOrders = (tx['sub_orders'] is List) ? (tx['sub_orders'] as List) : null;
+    final storeNames = (tx['store_names'] is List) ? (tx['store_names'] as List).map((e) => e.toString()).toList() : null;
+    final bool isMulti = (tx['is_multi_store'] == true) || (subOrders != null && subOrders.length > 1) || (storeNames != null && storeNames.length > 1);
+    final int tokoCount = subOrders?.length ?? storeNames?.length ?? 1;
+    final payLower = (tx['payment_method'] ?? '').toString().toLowerCase();
+    final bool isCod = payLower == 'cod' || payLower == 'cash' || payLower == 'tunai';
+    final String storeLine = isMulti
+        ? '$tokoCount Toko • ${storeNames?.take(2).join(' • ') ?? storeName ?? 'Toko'}${(storeNames != null && storeNames.length > 2) ? ' +${storeNames.length - 2} lainnya' : ''}'
+        : (storeName ?? 'Toko');
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -424,19 +511,45 @@ class _DriverEarningsScreenState extends State<DriverEarningsScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  orderCode != null ? '#$orderCode' : (tx['description'] ?? 'Komisi Pengantaran'),
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        orderCode != null ? '#$orderCode' : (tx['description'] ?? 'Komisi Pengantaran'),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (isMulti)
+                      Container(
+                        margin: const EdgeInsets.only(left: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: const Color(0xFF334155), borderRadius: BorderRadius.circular(8)),
+                        child: Text('$tokoCount toko', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFFFBBF24))),
+                      ),
+                    if (isCod)
+                      Container(
+                        margin: const EdgeInsets.only(left: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: const Color(0xFF064E3B), borderRadius: BorderRadius.circular(8)),
+                        child: const Text('TUNAI', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF34D399))),
+                      ),
+                  ],
                 ),
+                const SizedBox(height: 2),
                 if (storeName != null || customerName != null) ...[
-                  const SizedBox(height: 2),
                   Text(
-                    '${storeName ?? 'Toko'} → ${customerName ?? 'Pelanggan'}',
+                    '$storeLine → ${customerName ?? 'Pelanggan'}',
                     style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
                     overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
+                  if (isMulti && storeNames != null && storeNames.length > 1)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 1),
+                      child: Text(storeNames.join(' • '), style: const TextStyle(fontSize: 9, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis, maxLines: 1),
+                    ),
                 ] else if (tx['created_at'] != null) ...[
-                  const SizedBox(height: 2),
                   Text(
                     tx['created_at'].toString(),
                     style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),

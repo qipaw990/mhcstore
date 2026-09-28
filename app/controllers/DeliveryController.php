@@ -591,9 +591,10 @@ class DeliveryController extends Controller
         $reviewModel = new \App\Models\Review();
         $reviews = $reviewModel->getDmReviews((int)$dm['id'], 20);
 
-        // Fetch detailed delivered orders history for driver
+        // Fetch detailed delivered orders history for driver (ikut grouping batch 1 trip 1 baris)
         $deliveredOrders = Database::query(
-            "SELECT o.id, o.order_code, o.order_status, o.delivery_charge, o.delivered_at, o.created_at,
+            "SELECT o.id, o.order_code, o.order_status, o.delivery_charge, o.distance_km,
+                    o.delivery_batch_id, o.payment_method, o.delivered_at, o.created_at,
                     s.name as store_name, u.name as customer_name
              FROM `orders` o
              LEFT JOIN `stores` s ON o.store_id = s.id
@@ -602,6 +603,36 @@ class DeliveryController extends Controller
              ORDER BY o.delivered_at DESC, o.id DESC LIMIT 50",
             [(int)$dm['id'], (int)$dm['user_id']]
         );
+        // Group batch: parent + sub_orders/store_names, jarak MAX, fee SUM
+        $groupedDelivered = [];
+        $delBatchMap = [];
+        foreach (($deliveredOrders ?: []) as $do) {
+            $batchId = $do['delivery_batch_id'] ?? null;
+            if (!empty($batchId)) {
+                if (!isset($delBatchMap[$batchId])) {
+                    $parent = $do;
+                    $parent['sub_orders'] = [$do];
+                    $parent['store_names'] = [$do['store_name'] ?? 'Toko'];
+                    $parent['batch_total_delivery'] = (float)($do['delivery_charge'] ?? 0);
+                    $parent['is_multi_store'] = false;
+                    $delBatchMap[$batchId] = count($groupedDelivered);
+                    $groupedDelivered[] = $parent;
+                } else {
+                    $idx = $delBatchMap[$batchId];
+                    $groupedDelivered[$idx]['sub_orders'][] = $do;
+                    $groupedDelivered[$idx]['store_names'][] = $do['store_name'] ?? 'Toko';
+                    $groupedDelivered[$idx]['batch_total_delivery'] += (float)($do['delivery_charge'] ?? 0);
+                    $groupedDelivered[$idx]['is_multi_store'] = true;
+                    $groupedDelivered[$idx]['store_name'] = implode(' • ', array_unique($groupedDelivered[$idx]['store_names']));
+                    $groupedDelivered[$idx]['distance_km'] = max((float)$groupedDelivered[$idx]['distance_km'], (float)($do['distance_km'] ?? 0));
+                    $groupedDelivered[$idx]['delivery_charge'] = $groupedDelivered[$idx]['batch_total_delivery'];
+                }
+            } else {
+                $do['is_multi_store'] = false;
+                $groupedDelivered[] = $do;
+            }
+        }
+        $deliveredOrders = $groupedDelivered;
 
         // Fetch recent transactions for delivery_man
         $transactions = $this->walletModel->getTransactions($userId, 50, 'delivery_man');
@@ -613,7 +644,7 @@ class DeliveryController extends Controller
             if (!empty($numericIds)) {
                 $inPlaceholders = implode(',', array_fill(0, count($numericIds), '?'));
                 $orderRows = Database::query(
-                    "SELECT o.id, o.order_code, s.name as store_name, u.name as customer_name
+                    "SELECT o.id, o.order_code, o.delivery_batch_id, o.payment_method, s.name as store_name, u.name as customer_name
                      FROM `orders` o
                      LEFT JOIN `stores` s ON o.store_id = s.id
                      LEFT JOIN `users` u ON o.customer_id = u.id
@@ -630,8 +661,39 @@ class DeliveryController extends Controller
                         $tx['order_code'] = $ordersMap[$ref]['order_code'];
                         $tx['store_name'] = $ordersMap[$ref]['store_name'];
                         $tx['customer_name'] = $ordersMap[$ref]['customer_name'];
+                        $tx['delivery_batch_id'] = $ordersMap[$ref]['delivery_batch_id'] ?? null;
+                        $tx['payment_method'] = $ordersMap[$ref]['payment_method'] ?? null;
                     }
                 }
+                unset($tx);
+                // Group transaksi kredit batch 1 trip jadi 1 baris komisi (amount SUM, sub_orders/store_names)
+                $groupedTx = [];
+                $txBatchMap = [];
+                foreach ($transactions as $txRow) {
+                    $tBatch = $txRow['delivery_batch_id'] ?? null;
+                    $isCred = (($txRow['type'] ?? '') === 'credit');
+                    if (!empty($tBatch) && $isCred) {
+                        if (!isset($txBatchMap[$tBatch])) {
+                            $p = $txRow;
+                            $p['sub_orders'] = [$txRow];
+                            $p['store_names'] = [$txRow['store_name'] ?? 'Toko'];
+                            $p['is_multi_store'] = false;
+                            $txBatchMap[$tBatch] = count($groupedTx);
+                            $groupedTx[] = $p;
+                        } else {
+                            $tIdx = $txBatchMap[$tBatch];
+                            $groupedTx[$tIdx]['sub_orders'][] = $txRow;
+                            $groupedTx[$tIdx]['store_names'][] = $txRow['store_name'] ?? 'Toko';
+                            $groupedTx[$tIdx]['amount'] = (float)$groupedTx[$tIdx]['amount'] + (float)($txRow['amount'] ?? 0);
+                            $groupedTx[$tIdx]['is_multi_store'] = true;
+                            $groupedTx[$tIdx]['store_name'] = implode(' • ', array_unique($groupedTx[$tIdx]['store_names']));
+                            $groupedTx[$tIdx]['description'] = 'Komisi ' . count($groupedTx[$tIdx]['sub_orders']) . ' toko (' . ($groupedTx[$tIdx]['order_code'] ?? '') . ')';
+                        }
+                    } else {
+                        $groupedTx[] = $txRow;
+                    }
+                }
+                $transactions = $groupedTx;
             }
         }
 
