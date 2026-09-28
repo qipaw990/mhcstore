@@ -1926,10 +1926,16 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Text(
-                          'Subtotal $sName: ',
-                          style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                        Flexible(
+                          child: Text(
+                            'Subtotal $sName: ',
+                            style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            textAlign: TextAlign.right,
+                          ),
                         ),
+                        const SizedBox(width: 4),
                         Text(
                           CurrencyFormatter.formatRupiah(groupSubtotal),
                           style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
