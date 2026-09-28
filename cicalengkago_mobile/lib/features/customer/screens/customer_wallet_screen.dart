@@ -1353,6 +1353,8 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
   Widget _buildTopUpCard(Map<String, dynamic> log) {
     final status = log['status'] ?? 'pending';
     final amount = double.tryParse(log['amount']?.toString() ?? '0') ?? 0;
+    final notes = (log['notes'] ?? '').toString().toLowerCase();
+    final isExpired = notes.contains('kadaluarsa');
 
     Color color;
     String label;
@@ -1363,9 +1365,15 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
       label = 'Berhasil';
       icon = Icons.check_circle_rounded;
     } else if (status == 'failed' || status == 'canceled') {
-      color = AppTheme.primaryRed;
-      label = status == 'canceled' ? 'Dibatalkan' : 'Gagal';
-      icon = Icons.cancel_rounded;
+      if (isExpired) {
+        color = const Color(0xFF64748B);
+        label = 'Kadaluarsa — Buat Ulang';
+        icon = Icons.timer_off_rounded;
+      } else {
+        color = AppTheme.primaryRed;
+        label = status == 'canceled' ? 'Dibatalkan' : 'Gagal';
+        icon = Icons.cancel_rounded;
+      }
     } else {
       color = const Color(0xFFD97706);
       label = 'Menunggu';
@@ -1591,9 +1599,16 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
       statusBadgeBg = const Color(0xFFDCFCE7);
       statusLabel = 'Top Up Berhasil';
     } else if (status == 'failed' || status == 'canceled') {
-      statusColor = AppTheme.primaryRed;
-      statusBadgeBg = const Color(0xFFFFE4E6);
-      statusLabel = status == 'canceled' ? 'Dibatalkan' : 'Gagal / Kadaluarsa';
+      final isExpired = (log['notes'] ?? '').toString().toLowerCase().contains('kadaluarsa');
+      if (isExpired) {
+        statusColor = const Color(0xFF64748B);
+        statusBadgeBg = const Color(0xFFF1F5F9);
+        statusLabel = 'Kadaluarsa — Sesi DOKU Habis';
+      } else {
+        statusColor = AppTheme.primaryRed;
+        statusBadgeBg = const Color(0xFFFFE4E6);
+        statusLabel = status == 'canceled' ? 'Dibatalkan' : 'Gagal / Kadaluarsa';
+      }
     }
 
     showModalBottomSheet(
@@ -1680,6 +1695,53 @@ class _CustomerWalletScreenState extends State<CustomerWalletScreen>
               const SizedBox(height: 20),
 
               if (status == 'pending') ...[
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      try {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (_) => const Center(child: CircularProgressIndicator(color: AppTheme.primaryRed)),
+                        );
+                        final res = await ApiService.post(ApiConstants.topupCheckStatus, {
+                          'order_id': code,
+                        });
+                        if (context.mounted) {
+                          Navigator.of(context, rootNavigator: true).pop();
+                        }
+                        final ok = res['success'] == true;
+                        final paid = res['data']?['is_paid'] == true;
+                        if (context.mounted) {
+                          context.read<CustomerController>().fetchWallet();
+                          if (ok && paid) {
+                            AppAlert.showSuccess(context, title: 'Saldo Masuk', message: res['message'] ?? 'Top up berhasil dikonfirmasi DOKU.');
+                          } else if (ok) {
+                            AppAlert.showError(context, title: 'Belum Dibayar', message: res['message'] ?? 'DOKU menyatakan transaksi ini belum dibayar / kadaluarsa.');
+                          } else {
+                            AppAlert.showError(context, title: 'Gagal Cek', message: res['message'] ?? 'Tidak bisa cek status ke DOKU.');
+                          }
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          try { Navigator.of(context, rootNavigator: true).pop(); } catch (_) {}
+                          AppAlert.showError(context, title: 'Error', message: e.toString());
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.refresh_rounded, size: 19, color: Color(0xFF0F172A)),
+                    label: const Text('Cek Status ke DOKU', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFE2E8F0)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      backgroundColor: const Color(0xFFF8FAFC),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
                 SizedBox(
                   width: double.infinity,
                   height: 48,

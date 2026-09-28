@@ -736,6 +736,89 @@ class PaymentController extends Controller
     }
 
     /**
+     * User menekan "Cek Status" di riwayat top up — query langsung ke DOKU
+     * Check Status API lalu proses hasilnya (saldo masuk jika SUCCESS).
+     * POST /payment/topup-check-status  |  POST /api/payment/topup-check-status
+     * Body: { order_id: "TOPUP-xxx" }
+     */
+    public function checkTopupStatus(): void
+    {
+        $userId = auth_id();
+        if (!$userId) {
+            $this->errorResponse('Silakan login terlebih dahulu.', null, 401);
+            return;
+        }
+
+        $rawInput = file_get_contents('php://input');
+        $data = json_decode($rawInput, true) ?: $this->getPost();
+        $orderId = trim($data['order_id'] ?? $data['invoice_number'] ?? '');
+
+        if (empty($orderId) || !str_starts_with($orderId, 'TOPUP-')) {
+            $this->errorResponse('Order ID top up tidak valid.');
+            return;
+        }
+
+        $log = Database::fetchOne(
+            "SELECT * FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1",
+            [$orderId]
+        );
+        if (!$log || (int)$log['user_id'] !== (int)$userId) {
+            $this->errorResponse('Transaksi tidak ditemukan atau bukan milik Anda.');
+            return;
+        }
+
+        if (($log['status'] ?? '') === 'success') {
+            $this->successResponse('Top up sudah berhasil — saldo sudah masuk.', [
+                'order_id' => $orderId,
+                'status'   => 'settled',
+                'is_paid'  => true,
+            ]);
+            return;
+        }
+
+        try {
+            $result = $this->dokuService->checkOrderStatus($orderId);
+            $payload = $result['data'];
+
+            // Log hasil cek manual (audit trail, source=manual_check)
+            $this->ensureWebhookLogsTable();
+            try {
+                Database::insert('webhook_logs', [
+                    'source'          => 'manual_check',
+                    'event'           => 'check_status',
+                    'invoice_number'  => $orderId,
+                    'status_in'       => substr((string)($payload['order']['status'] ?? $payload['transaction']['status'] ?? ''), 0, 32),
+                    'payload'         => substr(json_encode($payload, JSON_UNESCAPED_SLASHES), 0, 2000000),
+                    'signature_valid' => 1,
+                    'process_status'  => 'received',
+                    'process_message' => 'Cek status manual oleh user ' . $userId,
+                ]);
+            } catch (\Throwable $e) { /* ignore */ }
+
+            // Teruskan ke pipeline yang sama dengan webhook → idempotent & aman
+            $processed = $this->dokuService->processNotification($payload);
+
+            $fresh = Database::fetchOne(
+                "SELECT status FROM `topup_logs` WHERE `topup_code` = ? LIMIT 1",
+                [$orderId]
+            );
+            $dbStatus = strtolower($fresh['status'] ?? 'pending');
+            $isPaid = in_array($dbStatus, ['success', 'paid', 'settled']);
+
+            $this->successResponse($processed['message'] ?? 'Status berhasil dicek ke DOKU', [
+                'order_id'    => $orderId,
+                'status'      => $isPaid ? 'settled' : $dbStatus,
+                'amount'      => (float)($log['amount'] ?? 0),
+                'is_paid'     => $isPaid,
+                'doku_result' => $processed,
+            ]);
+        } catch (\Throwable $e) {
+            error_log('[DOKU CheckStatus] ' . $e->getMessage());
+            $this->errorResponse('Gagal cek ke DOKU: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Halaman result pembayaran DOKU — TIDAK memerlukan login/session.
      * GET /payment/doku/result?order=TOPUP-xxx&status=success&type=topup
      *

@@ -117,6 +117,29 @@ class TopupLog extends Model
         return true;
     }
 
+    /**
+     * TTL pending: tiket pending yang umurnya melewati batas dianggap kadaluarsa
+     * (sesi DOKU payment_due_date 60 menit, beri toleransi hingga 2 jam).
+     * Dipanggil setiap buka dompet + via cron scripts/expire_pending_topups.php.
+     *
+     * @return int jumlah tiket yang dikadaluarsakan
+     */
+    public function expireStalePending(int $hoursThreshold = 2): int
+    {
+        try {
+            $stmt = Database::getPdo()->prepare(
+                "UPDATE `topup_logs` SET `status` = 'canceled',
+                    `notes` = 'Kadaluarsa otomatis — sesi DOKU habis, silakan buat tiket baru',
+                    `updated_at` = ? WHERE `status` = 'pending' AND `created_at` < DATE_SUB(NOW(), INTERVAL ? HOUR)"
+            );
+            $stmt->execute([date('Y-m-d H:i:s'), $hoursThreshold]);
+            return $stmt->rowCount();
+        } catch (\Throwable $e) {
+            error_log('[TopupLog expireStalePending] ' . $e->getMessage());
+            return 0;
+        }
+    }
+
     public function getByUser(int $userId, ?string $status = null, int $limit = 50): array
     {
         if ($status) {

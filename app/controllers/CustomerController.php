@@ -231,6 +231,8 @@ class CustomerController extends Controller
         $transactions = $this->walletModel->getTransactions($userId, 50);
 
         $topupLogModel = new \App\Models\TopupLog();
+        // TTL: tiket pending >2 jam = sesi DOKU sudah habis → tandai kadaluarsa
+        $topupLogModel->expireStalePending(2);
         $topupLogs = $topupLogModel->getByUser($userId, null, 50);
         $topupStats = $topupLogModel->getStats($userId);
         $withdrawRequests = Database::query("SELECT * FROM `withdraw_requests` WHERE `user_id` = ? ORDER BY `id` DESC LIMIT 50", [$userId]);

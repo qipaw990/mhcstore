@@ -192,6 +192,67 @@ class DokuService
     }
 
     /**
+     * Cek status order langsung ke DOKU (Check Status API)
+     * GET /orders/v1/status/{invoice_number}
+     *
+     * Dipakai tombol "Cek Status" saat webhook telat/gagal —
+     * hasil SUCCESS langsung diproses via processNotification()
+     * sehingga saldo masuk tanpa menunggu webhook.
+     */
+    public function checkOrderStatus(string $invoiceNumber): array
+    {
+        if (empty($this->clientId) || empty($this->secretKey)) {
+            throw new Exception('Kredensial DOKU Payment Gateway belum dikonfigurasi di Pengaturan Admin.');
+        }
+
+        $targetPath = '/orders/v1/status/' . $invoiceNumber;
+        $requestId = 'check-' . uniqid() . '-' . time();
+        $requestTimestamp = gmdate('Y-m-d\\TH:i:s\\Z');
+
+        // GET tanpa body — signature TANPA baris Digest (format DOKU Check Status API)
+        $component = "Client-Id:" . $this->clientId . "\n" .
+                     "Request-Id:" . $requestId . "\n" .
+                     "Request-Timestamp:" . $requestTimestamp . "\n" .
+                     "Request-Target:" . $targetPath;
+        $signature = "HMACSHA256=" . base64_encode(hash_hmac('sha256', $component, $this->secretKey, true));
+
+        $headers = [
+            'Client-Id: ' . $this->clientId,
+            'Request-Id: ' . $requestId,
+            'Request-Timestamp: ' . $requestTimestamp,
+            'Signature: ' . $signature,
+        ];
+
+        $ch = curl_init($this->baseUrl . $targetPath);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPGET, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($response === false) {
+            throw new Exception('Koneksi ke DOKU Check Status gagal: ' . $curlError);
+        }
+
+        $result = json_decode($response, true);
+        if ($httpCode >= 200 && $httpCode < 300 && is_array($result)) {
+            return ['success' => true, 'data' => $result];
+        }
+
+        $msg = 'DOKU Check Status HTTP ' . $httpCode;
+        if (is_array($result)) {
+            $rawMsg = $result['error']['message'] ?? $result['message'] ?? null;
+            if (is_string($rawMsg) && trim($rawMsg) !== '') $msg .= ' — ' . $rawMsg;
+        }
+        throw new Exception($msg);
+    }
+
+    /**
      * Test connection to DOKU API
      */
     public function testApiConnection(): array
@@ -503,7 +564,7 @@ class DokuService
         if ($isSettled) {
             if ($order['payment_status'] !== 'paid') {
                 try {
-                    Database::transaction(function () use ($orderId, $orderCode, $customerId, $paymentType) {
+                    Database::transaction(function () use ($orderId, $orderCode, $customerId, $paymentType, $order) {
                         Database::update('orders', [
                             'payment_status' => 'paid',
                             'payment_method' => 'doku',
