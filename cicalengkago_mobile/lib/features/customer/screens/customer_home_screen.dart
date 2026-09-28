@@ -647,9 +647,6 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
         ),
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
                 Row(
                   children: [
                     Container(
@@ -688,26 +685,6 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.amber.shade300),
-                  ),
-                  child: Row(
-                    children: const [
-                      Icon(Icons.stars_rounded, color: Colors.amber, size: 14),
-                      SizedBox(width: 4),
-                      Text(
-                        '250 Poin',
-                        style: TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
             const SizedBox(height: 14),
             const Divider(height: 1, color: Color(0xFFF1F5F9)),
             const SizedBox(height: 12),
