@@ -52,17 +52,28 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
         titleSpacing: 16,
         title: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: (logoUrl.isNotEmpty)
-                  ? CachedNetworkImage(
-                      imageUrl: logoUrl,
-                      width: 38,
-                      height: 38,
-                      fit: BoxFit.cover,
-                      errorWidget: (context, url, error) => const CicalengkaGoLogo(size: 38, borderRadius: 10, showShadow: false),
-                    )
-                  : const CicalengkaGoLogo(size: 38, borderRadius: 10, showShadow: false),
+            Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: isOpen
+                      ? [const Color(0xFF16A34A), const Color(0xFF4ADE80)]
+                      : [const Color(0xFFDC2626), const Color(0xFFF87171)],
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: (logoUrl.isNotEmpty)
+                    ? CachedNetworkImage(
+                        imageUrl: logoUrl,
+                        width: 36,
+                        height: 36,
+                        fit: BoxFit.cover,
+                        errorWidget: (context, url, error) => const CicalengkaGoLogo(size: 36, borderRadius: 18, showShadow: false),
+                      )
+                    : const CicalengkaGoLogo(size: 36, borderRadius: 18, showShadow: false),
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -71,31 +82,43 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
                 children: [
                   Text(
                     store?['name'] ?? 'Mitra Resto',
-                    style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                    style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, color: Color(0xFF0F172A), letterSpacing: -0.2),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Container(
-                        width: 7,
-                        height: 7,
-                        decoration: BoxDecoration(
-                          color: isOpen ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
-                          shape: BoxShape.circle,
-                        ),
+                  const SizedBox(height: 3),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                    decoration: BoxDecoration(
+                      color: isOpen ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isOpen ? const Color(0xFF86EFAC) : const Color(0xFFFECACA),
                       ),
-                      const SizedBox(width: 5),
-                      Text(
-                        isOpen ? 'Toko BUKA' : 'Toko TUTUP',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: isOpen ? const Color(0xFF15803D) : const Color(0xFFB91C1C),
-                          fontWeight: FontWeight.bold,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: isOpen ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 5),
+                        Text(
+                          isOpen ? 'BUKA • Terima Pesanan' : 'TUTUP • Istirahat',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: isOpen ? const Color(0xFF15803D) : const Color(0xFFB91C1C),
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -103,37 +126,43 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const MerchantPosScreen()),
-              );
-            },
-            icon: const Icon(Icons.point_of_sale_rounded, color: Color(0xFF16A34A), size: 22),
-            tooltip: 'Aplikasi Kasir POS & Barcode',
+          Container(
+            margin: const EdgeInsets.only(right: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFDCFCE7),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MerchantPosScreen()),
+                );
+              },
+              icon: const Icon(Icons.point_of_sale_rounded, color: Color(0xFF16A34A), size: 20),
+              tooltip: 'Aplikasi Kasir POS & Barcode',
+            ),
           ),
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const MerchantAnalyticsScreen()),
-              );
-            },
-            icon: const Icon(Icons.insights_rounded, color: Color(0xFF2563EB), size: 22),
-            tooltip: 'Statistik & Insight Penjualan',
+          Container(
+            margin: const EdgeInsets.only(right: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MerchantAnalyticsScreen()),
+                );
+              },
+              icon: const Icon(Icons.insights_rounded, color: Color(0xFF2563EB), size: 20),
+              tooltip: 'Statistik & Insight Penjualan',
+            ),
           ),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                isOpen ? 'Buka' : 'Tutup',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: isOpen ? const Color(0xFF15803D) : const Color(0xFF94A3B8),
-                ),
-              ),
               const SizedBox(width: 4),
               Switch(
                 value: isOpen,
@@ -145,7 +174,7 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
               ),
             ],
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 8),
         ],
       ),
       body: IndexedStack(
@@ -328,18 +357,24 @@ class _MerchantOverviewTab extends StatelessWidget {
 
           // ── KARTU STATISTIK KEUANGAN HARI INI ──
           Container(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFFDC2626), Color(0xFF991B1B)],
+                colors: [Color(0xFF0F172A), Color(0xFF1E3A5F), Color(0xFFDC2626)],
+                stops: [0.0, 0.52, 1.0],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryRed.withValues(alpha: 0.25),
-                  blurRadius: 12,
+                  color: const Color(0xFFDC2626).withValues(alpha: 0.25),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 30,
                   offset: const Offset(0, 4),
                 ),
               ],
@@ -348,21 +383,30 @@ class _MerchantOverviewTab extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.account_balance_wallet_rounded, size: 16, color: Colors.white),
+                    ),
+                    const SizedBox(width: 10),
                     const Text(
                       'Pendapatan Hari Ini',
-                      style: TextStyle(fontSize: 12.5, color: Color(0xFFFCA5A5), fontWeight: FontWeight.w600),
+                      style: TextStyle(fontSize: 12.5, color: Colors.white, fontWeight: FontWeight.w700, letterSpacing: -0.2),
                     ),
+                    const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         '$todayOrders Pesanan Hari Ini',
-                        style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
+                        style: const TextStyle(color: Color(0xFFDC2626), fontSize: 10.5, fontWeight: FontWeight.w900),
                       ),
                     ),
                   ],
@@ -376,48 +420,58 @@ class _MerchantOverviewTab extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   CurrencyFormatter.formatRupiah(todayRevenue),
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5),
+                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.8),
                 ),
                 const SizedBox(height: 14),
-                const Divider(height: 1, color: Color(0xFFEF4444)),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Saldo Dompet Aktif', style: TextStyle(fontSize: 11, color: Color(0xFFFCA5A5))),
-                        const SizedBox(height: 2),
-                        Text(
-                          CurrencyFormatter.formatRupiah(balance),
-                          style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Colors.white),
-                        ),
-                      ],
-                    ),
-                    InkWell(
-                      onTap: () => onNavigateToTab(3), // Navigate to StoreSettings/Wallet Tab
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            const Text('Saldo Dompet Aktif', style: TextStyle(fontSize: 10, color: Colors.white70)),
+                            const SizedBox(height: 2),
                             Text(
-                              'Kelola Saldo',
-                              style: TextStyle(color: AppTheme.primaryRed, fontSize: 11.5, fontWeight: FontWeight.bold),
+                              CurrencyFormatter.formatRupiah(balance),
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
                             ),
-                            SizedBox(width: 4),
-                            Icon(Icons.arrow_forward_ios_rounded, size: 10, color: AppTheme.primaryRed),
                           ],
                         ),
                       ),
-                    ),
-                  ],
+                      InkWell(
+                        onTap: () => onNavigateToTab(3),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8, offset: const Offset(0, 2)),
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Tarik Saldo',
+                                style: TextStyle(color: Color(0xFFDC2626), fontSize: 12, fontWeight: FontWeight.w900),
+                              ),
+                              SizedBox(width: 4),
+                              Icon(Icons.arrow_forward_rounded, size: 14, color: Color(0xFFDC2626)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
