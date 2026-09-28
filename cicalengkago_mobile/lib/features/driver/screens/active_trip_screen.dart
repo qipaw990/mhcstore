@@ -113,30 +113,29 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     // Extract all pickup stores for multi-store trip
     final List<Map<String, dynamic>> pickupStores = _extractPickupStores(trip, storeName, storeAddress);
 
-    // Hitung total jarak rute sesungguhnya untuk batch multi-store:
-    // Jika ada batch_orders, jumlahkan semua distance_km setiap sub-order
-    // agar tampilan jarak mencerminkan rute total driver (Store1→Store2→...→StoreN→Tujuan)
+    // Total jarak = trip['distance_km'] (sudah total rute berantai dari backend, JANGAN dijumlah per sub-order
+    // karena tiap sub-order menyimpan distance_km rute total yang sama).
     double totalBatchDistKm = double.tryParse(trip['distance_km']?.toString() ?? '0') ?? 0.0;
+
+    // Daftar batch terpadu: backend kirim batch_sub_orders (+ batch_total_delivery), fallback batch_orders lama
+    final List batchListForFee = (trip['batch_sub_orders'] is List && (trip['batch_sub_orders'] as List).isNotEmpty)
+        ? trip['batch_sub_orders'] as List
+        : (trip['batch_orders'] is List ? trip['batch_orders'] as List : []);
 
     if (pickupStores.length > 1) {
       final estCom = double.tryParse(trip['est_commission']?.toString() ??
           (trip['batch_info'] is Map ? trip['batch_info']['est_commission']?.toString() : null) ?? '0') ?? 0;
+      final batchTotal = double.tryParse(trip['batch_total_delivery']?.toString() ?? '0') ?? 0;
       if (estCom > 0) {
         deliveryCharge = estCom;
-      } else if (trip['batch_orders'] is List && (trip['batch_orders'] as List).isNotEmpty) {
-        final batchOrders = trip['batch_orders'] as List;
-        final sumBatch = batchOrders.fold<double>(
+      } else if (batchTotal > 0) {
+        deliveryCharge = batchTotal;
+      } else if (batchListForFee.isNotEmpty) {
+        final sumBatch = batchListForFee.fold<double>(
           0.0,
           (sum, bo) => sum + (double.tryParse((bo is Map ? bo['delivery_charge'] : null)?.toString() ?? '0') ?? 0),
         );
         if (sumBatch > 0) deliveryCharge = sumBatch;
-
-        // Hitung total distance batch = jumlah distance_km semua sub-order
-        final sumDist = batchOrders.fold<double>(
-          0.0,
-          (sum, bo) => sum + (double.tryParse((bo is Map ? bo['distance_km'] : null)?.toString() ?? '0') ?? 0),
-        );
-        if (sumDist > 0) totalBatchDistKm = sumDist;
       }
     }
 
@@ -395,28 +394,36 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: const [
-                  Icon(Icons.route_rounded, color: Color(0xFF2563EB), size: 16),
-                  SizedBox(width: 6),
-                  Text(
-                    'Rute & Skema Tarif Pengantaran',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFBFDBFE)),
+              Expanded(
+                child: Row(
+                  children: [
+                    const Icon(Icons.route_rounded, color: Color(0xFF2563EB), size: 16),
+                    const SizedBox(width: 6),
+                    const Flexible(
+                      child: Text(
+                        'Rute & Skema Tarif Pengantaran',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  zoneName,
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8)),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFBFDBFE)),
+                  ),
+                  child: Text(
+                    zoneName,
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8)),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
             ],
