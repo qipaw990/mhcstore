@@ -347,10 +347,6 @@ class DeliveryController extends Controller
             $dm['image'] = !empty($user['avatar']) ? $user['avatar'] : ($dm['image'] ?? '');
         }
 
-        $latestDbOrders = Database::query(
-            "SELECT id, order_code, customer_id, store_id, delivery_man_id, order_status, payment_status, payment_method, created_at FROM `orders` ORDER BY `id` DESC LIMIT 5"
-        );
-
         $this->successResponse('Live dashboard sync', [
             'is_online'        => (int)$dm['is_online'],
             'has_active_order' => !empty($activeOrder),
@@ -365,14 +361,7 @@ class DeliveryController extends Controller
             'total_orders'     => $realDeliveredCount,
             'rating'           => (float)($dm['rating'] ?? 5.0),
             'reviews_count'    => (int)($dm['reviews_count'] ?? 0),
-            'unread_chats'     => $unreadChats,
-            'debug_db_orders'  => $latestDbOrders,
-            'debug_dm'         => [
-                'id'               => $dm['id'],
-                'user_id'          => $dm['user_id'],
-                'is_online'        => $dm['is_online'],
-                'current_order_id' => $dm['current_order_id']
-            ]
+            'unread_chats'     => $unreadChats
         ]);
     }
 
@@ -505,9 +494,6 @@ class DeliveryController extends Controller
                 'wallet'         => $wallet,
                 'wallet_balance' => (float)($wallet['balance'] ?? 0),
             ];
-            if ($ensureError) {
-                $responseData['debug_ensure_error'] = $ensureError;
-            }
 
             $this->successResponse('Status pengantaran berhasil diperbarui.', $responseData);
         } catch (\Throwable $e) {

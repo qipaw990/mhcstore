@@ -89,15 +89,52 @@ _DeliveryCalculationSummary _calcDeliverySummaryTopLevel(
   // Total route distance = chained stores -> customer
   final double totalKm = _calcTotalRouteKm(stores, userLat, userLng);
   final double totalFee = _calcZoneDeliveryFeeTopLevel(totalKm, minFee: minFee, perKm: perKm);
+  // Leg distances: S0->S1, S1->S2, ..., SN->customer (satu trip berantai)
+  final List<double> legKms = [];
+  double prevLat = 0, prevLng = 0;
+  for (int i = 0; i < stores.length; i++) {
+    final st = stores[i] is Map ? (stores[i] as Map) : {};
+    final double sLat = double.tryParse(st['latitude']?.toString() ?? st['lat']?.toString() ?? st['store_lat']?.toString() ?? '') ?? 0.0;
+    final double sLng = double.tryParse(st['longitude']?.toString() ?? st['lng']?.toString() ?? st['store_lng']?.toString() ?? '') ?? 0.0;
+    if (i == 0) {
+      prevLat = sLat;
+      prevLng = sLng;
+      legKms.add(0.0); // toko pertama = titik mulai jemput
+    } else {
+      final double leg = _haversineDistanceKm(prevLat, prevLng, sLat, sLng);
+      legKms.add(double.parse(leg.toStringAsFixed(2)));
+      prevLat = sLat;
+      prevLng = sLng;
+    }
+  }
+  final double lastLeg = _haversineDistanceKm(prevLat, prevLng, userLat, userLng);
+  legKms.add(double.parse(lastLeg.toStringAsFixed(2)));
+  // Porsi fee proporsional per leg agar sum = totalFee (tidak ambigu, bukan N x fee)
+  final double legSum = legKms.fold(0.0, (s, e) => s + e);
   final List<Map<String, dynamic>> breakdowns = [];
   for (int i = 0; i < stores.length; i++) {
     final st = stores[i] is Map ? (stores[i] as Map) : {};
     final String sName = st['name']?.toString() ?? 'Toko ${i + 1}';
-    final double sLat = double.tryParse(st['latitude']?.toString() ?? st['lat']?.toString() ?? st['store_lat']?.toString() ?? '') ?? 0.0;
-    final double sLng = double.tryParse(st['longitude']?.toString() ?? st['lng']?.toString() ?? st['store_lng']?.toString() ?? '') ?? 0.0;
-    double distKm = _haversineDistanceKm(sLat, sLng, userLat, userLng);
-    distKm = distKm < 0.5 ? 1.5 : double.parse(distKm.toStringAsFixed(2));
-    breakdowns.add({'store_name': sName, 'distance_km': distKm, 'fee': 0});
+    final double legKm = i < legKms.length ? legKms[i] : 0.0;
+    final double share = (legSum > 0 && i > 0) ? (legKm / legSum * totalFee) : 0.0;
+    breakdowns.add({
+      'store_name': sName,
+      'distance_km': i == 0 ? _haversineDistanceKm(
+          double.tryParse(st['latitude']?.toString() ?? st['lat']?.toString() ?? st['store_lat']?.toString() ?? '') ?? 0.0,
+          double.tryParse(st['longitude']?.toString() ?? st['lng']?.toString() ?? st['store_lng']?.toString() ?? '') ?? 0.0,
+          userLat, userLng) : legKm,
+      'leg_km': legKm,
+      'fee': i == 0 ? 0.0 : double.parse(share.toStringAsFixed(0)),
+    });
+  }
+  // Koreksi rounding porsi agar jumlah = totalFee persis
+  if (breakdowns.length > 1) {
+    double shareSum = 0;
+    for (int i = 1; i < breakdowns.length; i++) {
+      shareSum += (breakdowns[i]['fee'] as num).toDouble();
+    }
+    final double lastLegShare = (breakdowns.last['fee'] as num).toDouble();
+    breakdowns.last['fee'] = lastLegShare + (totalFee - shareSum);
   }
   return _DeliveryCalculationSummary(
     totalDistanceKm: totalKm,

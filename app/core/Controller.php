@@ -122,6 +122,11 @@ abstract class Controller
             return true;
         }
 
+        // 4b. Bearer token → pasti API (Flutter/mobile mengirim Authorization: Bearer ...)
+        if (!empty($_SERVER['HTTP_AUTHORIZATION']) && str_starts_with(trim($_SERVER['HTTP_AUTHORIZATION']), 'Bearer ')) {
+            return true;
+        }
+
         // 5. Accept: application/json SAJA tanpa text/html
         // Browser normal selalu menyertakan text/html di Accept header
         // Mobile/API client biasanya hanya mengirim application/json
