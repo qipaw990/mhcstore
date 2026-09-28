@@ -867,7 +867,7 @@ class VendorController extends Controller
                 COALESCE(SUM(CASE WHEN order_status = 'delivered' AND MONTH(created_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND YEAR(created_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) THEN order_amount * 0.90 ELSE 0 END), 0) as prev_month_revenue,
 
                 -- Jumlah Pelanggan Unik
-                COUNT(DISTINCT user_id) as total_unique_customers
+                COUNT(DISTINCT customer_id) as total_unique_customers
              FROM `orders`
              WHERE `store_id` = ?",
             [$storeId]
@@ -900,10 +900,10 @@ class VendorController extends Controller
         // 1c. Hitung repeat customer count
         $repeatCustomerData = Database::fetchOne(
             "SELECT COUNT(*) as repeat_count FROM (
-                SELECT user_id, COUNT(*) as cnt
+                SELECT customer_id, COUNT(*) as cnt
                 FROM `orders`
                 WHERE `store_id` = ? AND `order_status` = 'delivered'
-                GROUP BY user_id
+                GROUP BY customer_id
                 HAVING cnt >= 2
             ) as t",
             [$storeId]
