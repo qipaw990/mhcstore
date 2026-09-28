@@ -418,16 +418,33 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> {
     final statusBgColor = _getStatusBgColor(order);
     final statusIcon = _getStatusIcon(status);
 
-    final totalAmount = double.tryParse(order['total_amount']?.toString() ?? '0') ?? 0;
+    final bool isMulti = (order['is_multi_store'] == true) ||
+        ((order['sub_orders'] is List) && (order['sub_orders'] as List).length > 1) ||
+        ((order['store_names'] is List) && (order['store_names'] as List).length > 1);
+    final List subOrders = (order['sub_orders'] is List) ? (order['sub_orders'] as List) : [];
+    final List allItems = (order['all_items'] is List) ? (order['all_items'] as List) : [];
+    final List parentItems = (order['items'] is List) ? (order['items'] as List) : [];
+    final double batchTotal = double.tryParse(order['batch_total_amount']?.toString() ?? '') ??
+        subOrders.fold(0.0, (s, e) => s + (double.tryParse((e is Map ? e['total_amount'] : null)?.toString() ?? '0') ?? 0.0));
+    final double singleTotal = double.tryParse(order['total_amount']?.toString() ?? '0') ?? 0;
+    final totalAmount = isMulti && batchTotal > 0 ? batchTotal : singleTotal;
     final int? storeId = int.tryParse(order['store_id']?.toString() ?? '');
 
-    final List items = (order['items'] is List && (order['items'] as List).isNotEmpty)
-        ? (order['items'] as List)
-        : (order['all_items'] is List && (order['all_items'] as List).isNotEmpty)
-            ? (order['all_items'] as List)
-            : [];
+    final List items = isMulti && allItems.isNotEmpty
+        ? allItems
+        : (parentItems.isNotEmpty
+            ? parentItems
+            : (allItems.isNotEmpty ? allItems : []));
 
-    final storeName = order['store_name']?.toString() ?? 'Mitra Resto CicalengkaGO';
+    final List storeNames = (order['store_names'] is List)
+        ? (order['store_names'] as List)
+        : (isMulti && subOrders.isNotEmpty
+            ? subOrders.where((e) => e is Map && e['store_name'] != null).map((e) => (e as Map)['store_name'].toString()).toList()
+            : []);
+    final String multiStoreLabel = storeNames.map((e) => e.toString()).toSet().join(' • ');
+    final storeName = isMulti && multiStoreLabel.isNotEmpty
+        ? multiStoreLabel
+        : (order['store_name']?.toString() ?? 'Mitra Resto CicalengkaGO');
     final bool isParcel = order['order_type']?.toString() == 'parcel';
     final rawStoreLogo = order['store_logo'] ?? order['logo'] ?? (order['store'] is Map ? order['store']['logo'] : null);
     final storeLogoUrl = (rawStoreLogo != null && rawStoreLogo.toString().isNotEmpty)
@@ -577,10 +594,28 @@ class _CustomerOrdersScreenState extends State<CustomerOrdersScreen> {
                                     fontWeight: FontWeight.w700,
                                     color: Color(0xFF0F172A),
                                   ),
-                                  maxLines: 1,
+                                  maxLines: isMulti ? 2 : 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
+                              if (isMulti)
+                                Container(
+                                  margin: const EdgeInsets.only(left: 6),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEFF6FF),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: const Color(0xFFBFDBFE)),
+                                  ),
+                                  child: Text(
+                                    '${storeNames.toSet().length} Toko',
+                                    style: const TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF1D4ED8),
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                           const SizedBox(height: 3),
