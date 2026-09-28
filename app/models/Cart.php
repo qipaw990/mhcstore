@@ -67,7 +67,8 @@ class Cart extends Model
             $allItems[]     = $item;
         }
 
-        $grandDelivery = array_sum(array_column($stores, 'delivery_fee'));
+        // 1 trip driver = 1 ongkir (estimasi). Real fee hitung di checkout via GPS totalRouteKm.
+        $grandDelivery = empty($stores) ? 0.0 : (float)array_values($stores)[0]['delivery_fee'];
 
         // Backward-compat single-store fields (first store in list)
         $firstStore = !empty($stores) ? array_values($stores)[0] : null;

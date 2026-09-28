@@ -41,13 +41,29 @@ double _haversineDistanceKm(double sLat, double sLng, double uLat, double uLng) 
 }
 
 double _calcTotalRouteKm(List<dynamic> stores, double userLat, double userLng) {
-  double total = 0.0;
-  for (final st in stores) {
-    final m = st is Map ? st : <String, dynamic>{};
+  if (stores.isEmpty) return 1.5;
+  if (stores.length == 1) {
+    final m = stores[0] is Map ? stores[0] as Map : <String,dynamic>{};
     final double sLat = double.tryParse(m['latitude']?.toString() ?? m['lat']?.toString() ?? m['store_lat']?.toString() ?? '') ?? 0.0;
     final double sLng = double.tryParse(m['longitude']?.toString() ?? m['lng']?.toString() ?? m['store_lng']?.toString() ?? '') ?? 0.0;
-    total += _haversineDistanceKm(sLat, sLng, userLat, userLng);
+    return _haversineDistanceKm(sLat, sLng, userLat, userLng);
   }
+  // Multi-store: chained route Store0 -> Store1 -> ... -> Customer (driver 1 trip)
+  double total = 0.0;
+  double prevLat = 0, prevLng = 0;
+  for (int i = 0; i < stores.length; i++) {
+    final m = stores[i] is Map ? stores[i] as Map : <String,dynamic>{};
+    final double sLat = double.tryParse(m['latitude']?.toString() ?? m['lat']?.toString() ?? m['store_lat']?.toString() ?? '') ?? 0.0;
+    final double sLng = double.tryParse(m['longitude']?.toString() ?? m['lng']?.toString() ?? m['store_lng']?.toString() ?? '') ?? 0.0;
+    if (i == 0) {
+      prevLat = sLat; prevLng = sLng;
+    } else {
+      total += _haversineDistanceKm(prevLat, prevLng, sLat, sLng);
+      prevLat = sLat; prevLng = sLng;
+    }
+  }
+  // last store -> customer
+  total += _haversineDistanceKm(prevLat, prevLng, userLat, userLng);
   return double.parse(total.toStringAsFixed(2));
 }
 
@@ -70,8 +86,9 @@ _DeliveryCalculationSummary _calcDeliverySummaryTopLevel(
       storeBreakdowns: [],
     );
   }
-  double totalKm = 0.0;
-  double totalFee = 0.0;
+  // Total route distance = chained stores -> customer
+  final double totalKm = _calcTotalRouteKm(stores, userLat, userLng);
+  final double totalFee = _calcZoneDeliveryFeeTopLevel(totalKm, minFee: minFee, perKm: perKm);
   final List<Map<String, dynamic>> breakdowns = [];
   for (int i = 0; i < stores.length; i++) {
     final st = stores[i] is Map ? (stores[i] as Map) : {};
@@ -80,13 +97,10 @@ _DeliveryCalculationSummary _calcDeliverySummaryTopLevel(
     final double sLng = double.tryParse(st['longitude']?.toString() ?? st['lng']?.toString() ?? st['store_lng']?.toString() ?? '') ?? 0.0;
     double distKm = _haversineDistanceKm(sLat, sLng, userLat, userLng);
     distKm = distKm < 0.5 ? 1.5 : double.parse(distKm.toStringAsFixed(2));
-    final double fee = _calcZoneDeliveryFeeTopLevel(distKm, minFee: minFee, perKm: perKm);
-    totalKm += distKm;
-    totalFee += fee;
-    breakdowns.add({'store_name': sName, 'distance_km': distKm, 'fee': fee});
+    breakdowns.add({'store_name': sName, 'distance_km': distKm, 'fee': 0});
   }
   return _DeliveryCalculationSummary(
-    totalDistanceKm: double.parse(totalKm.toStringAsFixed(2)),
+    totalDistanceKm: totalKm,
     totalDeliveryFee: totalFee,
     storeBreakdowns: breakdowns,
   );

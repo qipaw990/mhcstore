@@ -147,10 +147,12 @@ class OrderController extends Controller
                 // Tiap toko mendapat porsi jarak yg sudah dihitung
                 $storeRouteKm = [$stId0 => $totalRouteKm];
             } else {
-                // Multi-store: driver melakukan penjemputan di setiap toko dan mengantar ke rumah customer.
-                // Setiap toko dihitung jarak penjemputannya ke tujuan, dan dijumlahkan untuk total rute driver.
+                // Multi-store: SATU trip driver berantai Store1 -> Store2 -> ... -> StoreN -> Tujuan.
+                // Jarak = jumlah leg berantai (bukan jumlah jarak tiap toko ke tujuan).
                 $orderedStores = array_values($stores);
                 $storeRouteKm  = [];
+                $prevLat = null;
+                $prevLng = null;
                 $totalRouteKm  = 0.0;
 
                 foreach ($orderedStores as $sg) {
@@ -159,15 +161,42 @@ class OrderController extends Controller
                     $sLat  = (float)($stObj['latitude'] ?? -6.9835);
                     $sLng  = (float)($stObj['longitude'] ?? 107.8335);
 
-                    if ($sLat != 0 && $sLng != 0 && $destLat != 0 && $destLng != 0) {
-                        $km = max(0.5, round(haversine_distance($sLat, $sLng, $destLat, $destLng), 2));
+                    if ($prevLat !== null && $sLat != 0 && $sLng != 0 && $prevLat != 0 && $prevLng != 0) {
+                        $legKm = haversine_distance($prevLat, $prevLng, $sLat, $sLng);
+                        $totalRouteKm += $legKm;
+                        $storeRouteKm[$stId] = round($legKm, 2);
                     } else {
-                        $km = max(0.5, (float)($data['distance_km'] ?? 1.5));
+                        $storeRouteKm[$stId] = 0.0;
                     }
-                    $storeRouteKm[$stId] = $km;
-                    $totalRouteKm += $km;
+                    $prevLat = $sLat;
+                    $prevLng = $sLng;
+                }
+                // Leg terakhir: toko terakhir -> rumah customer
+                if ($prevLat != 0 && $prevLng != 0 && $destLat != 0 && $destLng != 0) {
+                    $totalRouteKm += haversine_distance($prevLat, $prevLng, $destLat, $destLng);
+                } else {
+                    $totalRouteKm += max(0.5, (float)($data['distance_km'] ?? 1.5));
                 }
                 $totalRouteKm = max(0.5, round($totalRouteKm, 2));
+            }
+
+            // SATU ongkir untuk seluruh batch (driver 1 trip = 1 fee):
+            // fee = 5000 (s/d 2 km) + 2500 x kelebihan km. Dibagi rata per sub-order
+            // agar SUM(delivery_charge) batch = 1 fee, bukan N x 5000.
+            $firstStoreForTariff = reset($storeDetailCache);
+            $batchZoneId  = (int)(($firstStoreForTariff['zone_id'] ?? 1));
+            $batchTariff  = Zone::getZoneTariff($batchZoneId);
+            $deliveryTypePre = sanitize($data['delivery_type'] ?? 'driver');
+            $totalBatchFee = ($deliveryTypePre === 'merchant')
+                ? 0.0
+                : calculate_delivery_fee($totalRouteKm, $batchTariff['min_delivery_charge'], $batchTariff['per_km_delivery_charge']);
+            $feeShares = [];
+            if ($storeCount > 0) {
+                $baseShare = floor($totalBatchFee / $storeCount);
+                for ($fi = 0; $fi < $storeCount; $fi++) {
+                    $feeShares[$fi] = $baseShare;
+                }
+                $feeShares[0] += ($totalBatchFee - ($baseShare * $storeCount));
             }
 
             // ──────────────────────────────────────────────────────────────────
@@ -178,16 +207,9 @@ class OrderController extends Controller
                 $wallet = $walletModel->getOrCreate($userId, 'customer');
                 $currentBalance = (float)($wallet['balance'] ?? 0);
 
-                $totalRequired = 0.0;
+                $totalRequired = (float)$totalBatchFee;
                 foreach ($stores as $sg) {
-                    $stId       = (int)($sg['store_id'] ?? 0);
-                    $sgSubtotal = (float)($sg['subtotal'] ?? 0);
-                    $sgDistKm   = $storeRouteKm[$stId] ?? $totalRouteKm;
-                    $stObj      = $storeDetailCache[$stId] ?? null;
-                    $zoneId     = (int)($stObj['zone_id'] ?? 1);
-                    $tariff     = Zone::getZoneTariff($zoneId);
-                    $sgDelivery = calculate_delivery_fee($sgDistKm, $tariff['min_delivery_charge'], $tariff['per_km_delivery_charge']);
-                    $totalRequired += ($sgSubtotal + $sgDelivery);
+                    $totalRequired += (float)($sg['subtotal'] ?? 0);
                 }
 
                 if ($currentBalance < $totalRequired) {
@@ -205,19 +227,18 @@ class OrderController extends Controller
             $seq           = 1;
 
             // Create one order per store atomically inside a single batch transaction
-            \App\Core\Database::transaction(function () use ($stores, $userId, $deliveryAddress, $paymentMethod, $data, $batchId, $sharedOtp, $storeRouteKm, &$seq, &$allOrderCodes, &$grandTotal) {
-                foreach ($stores as $storeGroup) {
-                    $stId         = (int)($storeGroup['store_id'] ?? 0);
-                    // Gunakan jarak rute yang sudah dihitung dengan benar (bukan jarak lurus store→tujuan)
-                    $routeKmForStore = $storeRouteKm[$stId] ?? (float)($data['distance_km'] ?? 1.5);
+            \App\Core\Database::transaction(function () use ($stores, $userId, $deliveryAddress, $paymentMethod, $data, $batchId, $sharedOtp, $totalRouteKm, $feeShares, &$seq, &$allOrderCodes, &$grandTotal) {
+                foreach (array_values($stores) as $sIdx => $storeGroup) {
+                    $feeShare = $feeShares[$sIdx] ?? 0;
 
                     $result = $this->orderService->createOrderFromCart($userId, [
                         'delivery_address'  => $deliveryAddress,
                         'payment_method'    => $paymentMethod,
                         'coupon_code'       => sanitize($data['coupon_code'] ?? ''),
                         'order_notes'       => sanitize($data['order_notes'] ?? ''),
-                        'distance_km'       => $routeKmForStore,  // jarak rute yang benar
-                        'route_distance_km' => $routeKmForStore,  // flag eksplisit agar service tidak override
+                        'distance_km'       => $totalRouteKm,  // jarak rute batch (1 trip berantai)
+                        'route_distance_km' => $totalRouteKm,  // flag eksplisit agar service tidak override
+                        'delivery_fee_share'=> $feeShare,      // porsi ongkir batch (SUM share = 1 fee)
                         'order_type'        => $data['order_type'] ?? 'delivery',
                         'delivery_type'     => sanitize($data['delivery_type'] ?? 'driver'),
                         'store_id'          => $storeGroup['store_id'],   // scoped to this store

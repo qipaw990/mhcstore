@@ -117,19 +117,29 @@ class OrderService
                 }
             }
 
-            // Ambil tarif dari zona toko (bukan hardcode)
-            $zoneId  = (int)($store['zone_id'] ?? 1);
-            $tariff  = Zone::getZoneTariff($zoneId);
-            $deliveryCharge = calculate_delivery_fee(
-                $distanceKm,
-                $tariff['min_delivery_charge'],
-                $tariff['per_km_delivery_charge']
-            );
+            // delivery_fee_share: porsi ongkir batch (1 fee dibagi N). Jika ada, pakai itu
+            // agar SUM(batch) = 1 ongkir, bukan N x 5000.
+            if (isset($data['delivery_fee_share'])) {
+                $deliveryCharge = max(0.0, (float)$data['delivery_fee_share']);
+                $deliveryType = $data['delivery_type'] ?? 'driver';
+                if ($deliveryType === 'merchant') {
+                    $deliveryCharge = 0.00;
+                }
+            } else {
+                // Ambil tarif dari zona toko (bukan hardcode)
+                $zoneId  = (int)($store['zone_id'] ?? 1);
+                $tariff  = Zone::getZoneTariff($zoneId);
+                $deliveryCharge = calculate_delivery_fee(
+                    $distanceKm,
+                    $tariff['min_delivery_charge'],
+                    $tariff['per_km_delivery_charge']
+                );
 
-            // delivery_type: 'merchant' (diantar kurir toko langsung < 300m) atau 'driver' (lelang ke mitra driver)
-            $deliveryType = $data['delivery_type'] ?? 'driver';
-            if ($deliveryType === 'merchant') {
-                $deliveryCharge = 0.00;
+                // delivery_type: 'merchant' (diantar kurir toko langsung < 300m) atau 'driver' (lelang ke mitra driver)
+                $deliveryType = $data['delivery_type'] ?? 'driver';
+                if ($deliveryType === 'merchant') {
+                    $deliveryCharge = 0.00;
+                }
             }
 
             // Coupon

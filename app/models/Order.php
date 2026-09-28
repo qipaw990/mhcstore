@@ -215,23 +215,24 @@ class Order extends Model
 
             if ($batchId) {
                 if (!isset($batchMap[$batchId])) {
-                    $parent                   = $o;
-                    $parent['sub_orders']     = [$o];
-                    $parent['store_names']   = [$o['store_name'] ?? 'Toko'];
-                    $parent['all_items']      = $o['items'];
-                    $parent['total_amount']   = (float)$o['total_amount'];
-                    $parent['is_multi_store'] = false;
-                    $batchMap[$batchId]       = count($grouped);
-                    $grouped[]                = $parent;
+                    $parent                       = $o;
+                    $parent['sub_orders']         = [$o];
+                    $parent['store_names']        = [$o['store_name'] ?? 'Toko'];
+                    $parent['all_items']          = $o['items'];
+                    $parent['batch_total_amount'] = (float)$o['total_amount'];
+                    $parent['is_multi_store']     = false;
+                    $batchMap[$batchId]           = count($grouped);
+                    $grouped[]                    = $parent;
                 } else {
                     $idx = $batchMap[$batchId];
-                    $grouped[$idx]['sub_orders'][]   = $o;
-                    $grouped[$idx]['store_names'][] = $o['store_name'] ?? 'Toko';
-                    $grouped[$idx]['all_items']      = array_merge($grouped[$idx]['all_items'], $o['items']);
-                    $grouped[$idx]['total_amount']   += (float)$o['total_amount'];
-                    $grouped[$idx]['is_multi_store'] = true;
-                    $grouped[$idx]['store_name']     = implode(' • ', array_unique($grouped[$idx]['store_names']));
-                    $grouped[$idx]['items']          = $grouped[$idx]['all_items'];
+                    $grouped[$idx]['sub_orders'][]       = $o;
+                    $grouped[$idx]['store_names'][]     = $o['store_name'] ?? 'Toko';
+                    $grouped[$idx]['all_items']          = array_merge($grouped[$idx]['all_items'], $o['items']);
+                    $grouped[$idx]['batch_total_amount'] += (float)$o['total_amount'];
+                    $grouped[$idx]['is_multi_store']     = true;
+                    $grouped[$idx]['store_name']         = implode(' • ', array_unique($grouped[$idx]['store_names']));
+                    // jangan timpa total_amount / items induk — biar per-order tetap akurat
+                    // items = item order induk saja; all_items = gabungan batch untuk UI batch
                 }
             } else {
                 $o['is_multi_store'] = false;

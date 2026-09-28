@@ -223,9 +223,29 @@ class VendorController extends Controller
             return;
         }
 
+        $store = $this->storeModel->findByVendorId(auth_id());
+        if (!$store || (int)$order['store_id'] !== (int)$store['id']) {
+            $this->errorResponse('Akses ditolak. Pesanan bukan milik toko Anda.');
+            return;
+        }
+
         $updateData = ['order_status' => $status];
         if (!empty($deliveryType)) {
             $updateData['delivery_type'] = $deliveryType;
+        }
+
+        $allowedNext = [
+            'confirmed'  => ['processing', 'canceled'],
+            'processing' => ['handover', 'on_the_way', 'canceled'],
+            'handover'   => ['canceled'],
+            'on_the_way' => ['delivered', 'canceled'],
+            'picked_up'  => ['on_the_way', 'delivered'],
+            'pending'    => ['confirmed', 'canceled'],
+        ];
+        $current = $order['order_status'] ?? '';
+        if (isset($allowedNext[$current]) && !in_array($status, $allowedNext[$current], true)) {
+            $this->errorResponse("Transisi status {$current} -> {$status} tidak diizinkan.");
+            return;
         }
 
         if ($status === 'processing') {

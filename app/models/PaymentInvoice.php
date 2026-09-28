@@ -278,7 +278,8 @@ class PaymentInvoice extends Model
             $orderId = (int)$invoice['order_id'];
             Database::update('orders', [
                 'payment_status' => 'paid',
-                'status'         => 'confirmed',
+                'order_status'   => 'confirmed',
+                'confirmed_at'   => date('Y-m-d H:i:s'),
                 'updated_at'     => date('Y-m-d H:i:s')
             ], 'id = ?', [$orderId]);
 

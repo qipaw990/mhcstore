@@ -412,7 +412,12 @@ class DeliveryService
             );
 
             if (!$alreadyCredited) {
-                $charge = $this->calcSingleCommission($bOrd);
+                // Untuk batch: delivery_charge sudah porsi (SUM porsi = 1 fee), pakai raw tanpa min per-order
+                // agar tidak menggelembung N x 5000 lagi.
+                $charge = (float)($bOrd['delivery_charge'] ?? 0);
+                if ($charge <= 0) {
+                    $charge = $this->calcSingleCommission($bOrd);
+                }
                 $this->walletModel->credit(
                     (int)$dm['user_id'],
                     $charge,
