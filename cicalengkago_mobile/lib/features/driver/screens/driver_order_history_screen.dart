@@ -664,13 +664,18 @@ class _DriverOrderDetailSheetState extends State<_DriverOrderDetailSheet> {
     final double totalAmount = double.tryParse(order['total_amount']?.toString() ?? '') ?? (orderAmount + deliveryFee - couponDiscount + taxAmount);
     double distKm = double.tryParse(order['distance_km']?.toString() ?? '0') ?? 0.0;
 
-    // Untuk multi-store, jumlahkan total komisi dan total rute jarak dari semua sub-order
+    // Batch detail: backend sudah hitung fee total (batch_total_delivery) & jarak MAX.
+    // Fallback hitung lokal hanya kalau field batch belum ada.
     final detailBatchList = (order['batch_sub_orders'] is List && (order['batch_sub_orders'] as List).isNotEmpty)
         ? (order['batch_sub_orders'] as List)
         : (order['sub_orders'] is List && (order['sub_orders'] as List).isNotEmpty)
             ? (order['sub_orders'] as List)
             : null;
-    if (detailBatchList != null) {
+    final double? batchTotalDelivery = double.tryParse(order['batch_total_delivery']?.toString() ?? '');
+    if (batchTotalDelivery != null && batchTotalDelivery > 0) {
+      deliveryFee = batchTotalDelivery;
+      driverEarning = batchTotalDelivery;
+    } else if (detailBatchList != null) {
       final sumFee = detailBatchList.fold<double>(
         0.0,
         (s, bo) => s + (double.tryParse((bo is Map ? (bo['driver_earning'] ?? bo['delivery_charge']) : null)?.toString() ?? '0') ?? 0.0),
@@ -679,12 +684,17 @@ class _DriverOrderDetailSheetState extends State<_DriverOrderDetailSheet> {
         deliveryFee = sumFee;
         driverEarning = sumFee;
       }
-
-      final sumDist = detailBatchList.fold<double>(
-        0.0,
-        (s, bo) => s + (double.tryParse((bo is Map ? bo['distance_km'] : null)?.toString() ?? '0') ?? 0.0),
-      );
-      if (sumDist > 0) distKm = sumDist;
+    }
+    // Jarak: tiap sub-order simpan rute total yg sama -> pakai MAX, bukan SUM
+    if (detailBatchList != null) {
+      double maxDist = distKm;
+      for (final bo in detailBatchList) {
+        if (bo is Map) {
+          final d = double.tryParse(bo['distance_km']?.toString() ?? '0') ?? 0.0;
+          if (d > maxDist) maxDist = d;
+        }
+      }
+      distKm = maxDist;
     }
     final String customerName = order['customer_name']?.toString() ?? 'Pelanggan';
     final String customerPhone = order['customer_phone']?.toString() ?? '';

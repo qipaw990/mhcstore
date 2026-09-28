@@ -1090,6 +1090,35 @@ class DeliveryController extends Controller
         $order['items'] = $this->orderModel->getItems((int)$order['id']);
         if (!empty($order['delivery_batch_id'])) {
             $this->orderModel->attachMultiStoreDetails($order);
+
+            // Samakan dgn ordersHistory: gabungkan batch jadi 1 payload modal
+            $batchSubs = $order['batch_sub_orders'] ?? [];
+            if (count($batchSubs) > 1) {
+                $storeNames = [];
+                $allItems   = [];
+                $batchTotal = 0.0;
+                $batchDeliv = 0.0;
+                $maxDist    = (float)($order['distance_km'] ?? 0);
+                foreach ($batchSubs as $sub) {
+                    $storeNames[] = $sub['store_name'] ?? 'Toko';
+                    foreach (($sub['items'] ?? []) as $it) {
+                        $it['store_name'] = $sub['store_name'] ?? ($order['store_name'] ?? 'Toko');
+                        $allItems[] = $it;
+                    }
+                    $batchTotal += (float)($sub['total_amount'] ?? 0);
+                    $batchDeliv += (float)($sub['delivery_charge'] ?? 0);
+                    $maxDist = max($maxDist, (float)($sub['distance_km'] ?? 0));
+                }
+                $order['is_multi_store']       = true;
+                $order['sub_orders']           = $batchSubs;
+                $order['store_names']          = array_values(array_unique($storeNames));
+                $order['store_name']           = implode(' • ', $order['store_names']);
+                $order['all_items']            = $allItems;
+                $order['items']                = $allItems;
+                $order['batch_total_amount']   = $batchTotal;
+                $order['batch_total_delivery'] = $batchDeliv;
+                $order['distance_km']          = $maxDist;
+            }
         }
 
         $orderDeliveryCharge = (float)($order['delivery_charge'] ?? 0);
