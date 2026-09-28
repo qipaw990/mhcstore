@@ -149,10 +149,24 @@ class Review extends Model
      */
     public function getOrderReview(int $orderId, int $userId): array
     {
-        // Strictly fetch reviews only for this specific order_id.
-        // Do NOT expand to delivery_batch_id — that batch belongs to the driver's
-        // trip, not a single customer transaction, causing "ghost reviews" to
-        // appear on unrelated orders handled by the same driver.
+        // Batch-aware: 1 checkout 3 toko = 3 order_id satu delivery_batch_id.
+        // Ambil semua order_id dalam batch yang sama (customer sama) agar
+        // review 3 toko tampil utuh saat buka salah satu sub-order.
+        // Filter r.user_id cegah ghost review lintas pelanggan.
+        $orderIds = [$orderId];
+        try {
+            $batchRow = Database::fetchOne("SELECT delivery_batch_id, customer_id FROM `orders` WHERE `id` = ? LIMIT 1", [$orderId]);
+            $batchId = trim((string)($batchRow['delivery_batch_id'] ?? ''));
+            if ($batchId !== '') {
+                $batchOrders = Database::query("SELECT id FROM `orders` WHERE delivery_batch_id = ? AND customer_id = ?", [$batchId, $userId]);
+                if (!empty($batchOrders)) {
+                    $orderIds = array_map(fn($r) => (int)$r['id'], $batchOrders);
+                }
+            }
+        } catch (\Throwable $e) { /* fallback single */ }
+
+        $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
+        $params = array_merge($orderIds, [$userId]);
         $reviews = Database::query(
             "SELECT r.*, s.name as store_name, s.logo as store_logo,
                     dmu.name as dm_name, dmu.avatar as dm_avatar,
@@ -161,8 +175,8 @@ class Review extends Model
              LEFT JOIN `stores` s ON r.store_id = s.id
              LEFT JOIN `delivery_men` dm ON r.delivery_man_id = dm.id
              LEFT JOIN `users` dmu ON dm.user_id = dmu.id
-             WHERE r.order_id = ? AND r.user_id = ?",
-            [$orderId, $userId]
+             WHERE r.order_id IN ($placeholders) AND r.user_id = ?",
+            $params
         );
 
         $result = [
