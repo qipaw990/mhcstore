@@ -109,7 +109,7 @@ class _MerchantDashboardScreenState extends State<MerchantDashboardScreen> {
                         ),
                         const SizedBox(width: 5),
                         Text(
-                          isOpen ? 'BUKA • Terima Pesanan' : 'TUTUP • Istirahat',
+                          isOpen ? 'BUKA' : 'TUTUP',
                           style: TextStyle(
                             fontSize: 10,
                             color: isOpen ? const Color(0xFF15803D) : const Color(0xFFB91C1C),
