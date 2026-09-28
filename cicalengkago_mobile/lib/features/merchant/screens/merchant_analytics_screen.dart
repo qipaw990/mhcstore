@@ -270,6 +270,11 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                             letterSpacing: -0.5,
                           ),
                         ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          '90% nilai menu • Ongkir 100% ke driver • Hanya order selesai',
+                          style: TextStyle(fontSize: 10, color: Color(0xFFFECACA)),
+                        ),
                         if (growthLabel.isNotEmpty && growthPct != null) ...[
                           const SizedBox(height: 3),
                           Text(
@@ -324,8 +329,8 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                       Expanded(
                         child: _kpiCard(
                           title: 'Tingkat Sukses',
-                          value: '${successRate.toStringAsFixed(1)}%',
-                          subtitle: '$ordersCount Selesai, $canceledCount Batal',
+                          value: totalAllAttempts > 0 ? '${successRate.toStringAsFixed(1)}%' : '-',
+                          subtitle: totalAllAttempts > 0 ? '$ordersCount Selesai, $canceledCount Batal' : 'Belum ada transaksi periode ini',
                           icon: Icons.check_circle_outline_rounded,
                           iconColor: const Color(0xFF16A34A),
                           bgColor: const Color(0xFFDCFCE7),
@@ -570,6 +575,7 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
     required double netProfit,
     required double marginPct,
   }) {
+    final bool isEmpty = grossSales == 0 && netRevenue == 0;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -591,17 +597,38 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
                 child: const Icon(Icons.account_balance_wallet_outlined, size: 16, color: Color(0xFF334155)),
               ),
               const SizedBox(width: 8),
-              const Text(
-                'Arus & Laba Keuangan Transparan',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+              const Expanded(
+                child: Text(
+                  'Arus & Laba Keuangan Transparan',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                ),
               ),
             ],
           ),
+          if (isEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE2E8F0))),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF64748B)),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Hanya pesanan Selesai yang dihitung. Pesanan Baru/Dimasak/Diantar & Batal tidak masuk omzet.',
+                      style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
-          _flowItem('1. Total Omzet Kotor Pelanggan (100%)', CurrencyFormatter.formatRupiah(grossSales), const Color(0xFF0F172A), isHeader: true),
-          _flowItem('2. Biaya Layanan CicalengkaGO (10%)', '- ${CurrencyFormatter.formatRupiah(platformFee)}', const Color(0xFFDC2626)),
-          _flowItem('3. Pendapatan Bersih Mitra (90%)', CurrencyFormatter.formatRupiah(netRevenue), const Color(0xFF2563EB), isBold: true),
-          _flowItem('4. Estimasi Biaya Bahan / Modal (HPP)', '- ${CurrencyFormatter.formatRupiah(cogs)}', const Color(0xFFD97706)),
+          _flowItem('1. Total Omzet Kotor Pelanggan (100%)', CurrencyFormatter.formatRupiah(grossSales), const Color(0xFF0F172A), isHeader: true, caption: 'Yang dibayar pelanggan untuk menu'),
+          _flowItem('2. Biaya Layanan CicalengkaGO (10%)', '- ${CurrencyFormatter.formatRupiah(platformFee)}', const Color(0xFFDC2626), caption: 'Ongkir 100% milik driver, tidak dipotong disini'),
+          _flowItem('3. Pendapatan Bersih Mitra (90%)', CurrencyFormatter.formatRupiah(netRevenue), const Color(0xFF2563EB), isBold: true, caption: 'Masuk dompet setelah Selesai'),
+          _flowItem('4. Estimasi Biaya Bahan / Modal (HPP)', '- ${CurrencyFormatter.formatRupiah(cogs)}', const Color(0xFFD97706), caption: cogs == 0 ? 'Set HPP di Menu agar laba akurat' : 'Snapshot HPP saat transaksi'),
           const Divider(height: 14, color: Color(0xFFE2E8F0)),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -625,20 +652,31 @@ class _MerchantAnalyticsScreenState extends State<MerchantAnalyticsScreen> {
     );
   }
 
-  Widget _flowItem(String title, String value, Color color, {bool isHeader = false, bool isBold = false}) {
+  Widget _flowItem(String title, String value, Color color, {bool isHeader = false, bool isBold = false, String? caption}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
+        crossAxisAlignment: caption != null ? CrossAxisAlignment.start : CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 11,
-              color: isHeader ? const Color(0xFF334155) : const Color(0xFF64748B),
-              fontWeight: (isHeader || isBold) ? FontWeight.bold : FontWeight.normal,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isHeader ? const Color(0xFF334155) : const Color(0xFF64748B),
+                    fontWeight: (isHeader || isBold) ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+                if (caption != null)
+                  Text(caption, style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8))),
+              ],
             ),
           ),
+          const SizedBox(width: 12),
           Text(
             value,
             style: TextStyle(
