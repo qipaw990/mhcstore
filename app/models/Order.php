@@ -153,6 +153,7 @@ class Order extends Model
             $order['batch_sub_orders']     = [];
             $order['batch_stores']         = [];
             $order['batch_total_amount']   = 0.0;
+            $order['batch_total_delivery'] = 0.0;
 
             $storeSeen = [];
 
@@ -160,6 +161,7 @@ class Order extends Model
                 $subOrd['items'] = Database::query("SELECT oi.*, COALESCE(NULLIF(oi.product_name, ''), p.name, 'Menu Kuliner') as product_name, COALESCE(oi.product_image_snapshot, p.image) as product_image FROM `order_items` oi LEFT JOIN `products` p ON oi.product_id = p.id WHERE oi.`order_id` = ?", [$subOrd['id']]);
                 $order['batch_sub_orders'][] = $subOrd;
                 $order['batch_total_amount'] += (float)$subOrd['total_amount'];
+                $order['batch_total_delivery'] += (float)($subOrd['delivery_charge'] ?? 0);
 
                 $sId = $subOrd['store_id'];
                 if ($sId && !isset($storeSeen[$sId])) {

@@ -109,14 +109,17 @@ _DeliveryCalculationSummary _calcDeliverySummaryTopLevel(
   }
   final double lastLeg = _haversineDistanceKm(prevLat, prevLng, userLat, userLng);
   legKms.add(double.parse(lastLeg.toStringAsFixed(2)));
-  // Porsi fee proporsional per leg agar sum = totalFee (tidak ambigu, bukan N x fee)
-  final double legSum = legKms.fold(0.0, (s, e) => s + e);
+  // Porsi fee dibagi RATA per toko agar SUM = totalFee (sinkron dengan backend OrderController feeShares)
+  // Backend: baseShare=floor(totalFee/N), sisa di toko pertama. Frontend harus sama biar tidak mismatch.
   final List<Map<String, dynamic>> breakdowns = [];
+  final int n = stores.length;
+  final int baseShare = n > 0 ? (totalFee ~/ n) : 0;
+  final int remainder = n > 0 ? (totalFee.toInt() - baseShare * n) : 0;
   for (int i = 0; i < stores.length; i++) {
     final st = stores[i] is Map ? (stores[i] as Map) : {};
     final String sName = st['name']?.toString() ?? 'Toko ${i + 1}';
     final double legKm = i < legKms.length ? legKms[i] : 0.0;
-    final double share = (legSum > 0 && i > 0) ? (legKm / legSum * totalFee) : 0.0;
+    final int share = baseShare + (i == 0 ? remainder : 0);
     breakdowns.add({
       'store_name': sName,
       'distance_km': i == 0 ? _haversineDistanceKm(
@@ -124,17 +127,8 @@ _DeliveryCalculationSummary _calcDeliverySummaryTopLevel(
           double.tryParse(st['longitude']?.toString() ?? st['lng']?.toString() ?? st['store_lng']?.toString() ?? '') ?? 0.0,
           userLat, userLng) : legKm,
       'leg_km': legKm,
-      'fee': i == 0 ? 0.0 : double.parse(share.toStringAsFixed(0)),
+      'fee': share.toDouble(),
     });
-  }
-  // Koreksi rounding porsi agar jumlah = totalFee persis
-  if (breakdowns.length > 1) {
-    double shareSum = 0;
-    for (int i = 1; i < breakdowns.length; i++) {
-      shareSum += (breakdowns[i]['fee'] as num).toDouble();
-    }
-    final double lastLegShare = (breakdowns.last['fee'] as num).toDouble();
-    breakdowns.last['fee'] = lastLegShare + (totalFee - shareSum);
   }
   return _DeliveryCalculationSummary(
     totalDistanceKm: totalKm,

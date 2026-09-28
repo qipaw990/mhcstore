@@ -3245,16 +3245,29 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           ),
           const SizedBox(height: 6),
 
-          // Delivery Fee
+          // Delivery Fee — total 1 trip 1 fee, dibagi rata per sub-order (mis. 6560 = 2188+2186+2186)
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                (batchSubOrders != null && batchSubOrders.length > 1)
-                    ? 'Ongkos Kirim (${batchSubOrders.length} Toko)'
-                    : 'Ongkos Kirim (Delivery)',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      (batchSubOrders != null && batchSubOrders.length > 1)
+                          ? 'Ongkos Kirim (${batchSubOrders.length} Toko)'
+                          : 'Ongkos Kirim (Delivery)',
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    ),
+                    if (batchSubOrders != null && batchSubOrders.length > 1)
+                      Text(
+                        'Total 1 trip • ${batchSubOrders.map((bo) => CurrencyFormatter.formatRupiah(double.tryParse((bo is Map ? bo['delivery_charge'] : null)?.toString() ?? '0') ?? 0)).join(' + ')}',
+                        style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontStyle: FontStyle.italic),
+                      ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Text(CurrencyFormatter.formatRupiah(deliveryCharge), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
             ],
           ),

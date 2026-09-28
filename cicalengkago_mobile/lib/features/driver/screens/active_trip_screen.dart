@@ -184,9 +184,21 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                     children: [
                       const Icon(Icons.monetization_on_rounded, color: Color(0xFF059669), size: 14),
                       const SizedBox(width: 5),
-                      Text(
-                        'Komisi: ${CurrencyFormatter.formatRupiah(deliveryCharge)}',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+                      Flexible(
+                        child: Builder(builder: (context) {
+                          final batchOrdersForLabel = trip['batch_orders'] is List ? trip['batch_orders'] as List : (trip['batch_sub_orders'] is List ? trip['batch_sub_orders'] as List : []);
+                          final isMultiFee = batchOrdersForLabel.length > 1;
+                          final feeParts = isMultiFee
+                              ? batchOrdersForLabel.map((bo) => CurrencyFormatter.formatRupiah(double.tryParse((bo is Map ? bo['delivery_charge'] : null)?.toString() ?? '0') ?? 0)).join(' + ')
+                              : '';
+                          return Text(
+                            isMultiFee
+                                ? 'Komisi: ${CurrencyFormatter.formatRupiah(deliveryCharge)} (${batchOrdersForLabel.length} toko • $feeParts)'
+                                : 'Komisi: ${CurrencyFormatter.formatRupiah(deliveryCharge)}',
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+                            overflow: TextOverflow.ellipsis,
+                          );
+                        }),
                       ),
                     ],
                   ),
@@ -443,7 +455,12 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Komisi Bersih', style: TextStyle(fontSize: 9.5, color: Color(0xFF166534))),
+                      Text(
+                        (trip['batch_sub_orders'] is List && (trip['batch_sub_orders'] as List).length > 1) || (trip['batch_orders'] is List && (trip['batch_orders'] as List).length > 1)
+                            ? 'Komisi Bersih (${((trip['batch_sub_orders'] ?? trip['batch_orders']) as List).length} Toko • 1 Trip)'
+                            : 'Komisi Bersih',
+                        style: const TextStyle(fontSize: 9.5, color: Color(0xFF166534)),
+                      ),
                       const SizedBox(height: 1),
                       Text(
                         CurrencyFormatter.formatRupiah(deliveryCharge),
@@ -456,12 +473,23 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
             ],
           ),
           const SizedBox(height: 6),
-          Text(
-            isBase
-                ? '✓ Sesuai tarif dasar zona: ${CurrencyFormatter.formatRupiah(minFee)} (≤ 2.0 km)'
-                : '✓ Hitungan: Dasar ${CurrencyFormatter.formatRupiah(minFee)} + (${extraKm.toStringAsFixed(1)} km × ${CurrencyFormatter.formatRupiah(perKm)}) = ${CurrencyFormatter.formatRupiah(deliveryCharge)}',
-            style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
-          ),
+          Builder(builder: (context) {
+            final batchList = trip['batch_sub_orders'] is List
+                ? trip['batch_sub_orders'] as List
+                : (trip['batch_orders'] is List ? trip['batch_orders'] as List : []);
+            final isMultiFee = batchList.length > 1;
+            final feeParts = isMultiFee
+                ? batchList.map((bo) => CurrencyFormatter.formatRupiah(double.tryParse((bo is Map ? bo['delivery_charge'] : null)?.toString() ?? '0') ?? 0)).join(' + ')
+                : '';
+            return Text(
+              isBase && !isMultiFee
+                  ? '✓ Sesuai tarif dasar zona: ${CurrencyFormatter.formatRupiah(minFee)} (≤ 2.0 km)'
+                  : (isMultiFee
+                      ? '✓ Total 1 trip: Dasar ${CurrencyFormatter.formatRupiah(minFee)} + (${extraKm.toStringAsFixed(1)} km × ${CurrencyFormatter.formatRupiah(perKm)}) = ${CurrencyFormatter.formatRupiah(deliveryCharge)} ($feeParts)'
+                      : '✓ Hitungan: Dasar ${CurrencyFormatter.formatRupiah(minFee)} + (${extraKm.toStringAsFixed(1)} km × ${CurrencyFormatter.formatRupiah(perKm)}) = ${CurrencyFormatter.formatRupiah(deliveryCharge)}'),
+              style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+            );
+          }),
         ],
       ),
     );
