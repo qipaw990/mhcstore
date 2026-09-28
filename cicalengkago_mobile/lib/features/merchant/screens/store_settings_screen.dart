@@ -143,6 +143,11 @@ class _StoreSettingsScreenState extends State<StoreSettingsScreen> {
                   CurrencyFormatter.formatRupiah(balance),
                   style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5),
                 ),
+                const SizedBox(height: 6),
+                const Text(
+                  '90% nilai menu • Ongkir 100% milik driver • Masuk dompet setelah order selesai',
+                  style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),
+                ),
                 const SizedBox(height: 14),
                 const Divider(height: 1, color: Color(0xFF334155)),
                 const SizedBox(height: 14),

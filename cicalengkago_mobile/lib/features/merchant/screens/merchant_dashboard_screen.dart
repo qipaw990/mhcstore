@@ -367,6 +367,12 @@ class _MerchantOverviewTab extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 4),
+                // Penjelas ongkir milik driver — anti ambigu
+                const Text(
+                  'Bersih tenant (ongkir 100% untuk driver)',
+                  style: TextStyle(fontSize: 9.5, color: Color(0xFFFECACA)),
+                ),
                 const SizedBox(height: 8),
                 Text(
                   CurrencyFormatter.formatRupiah(todayRevenue),
@@ -748,9 +754,26 @@ class _MerchantOverviewTab extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('#$code • $customer', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A))),
+                          Row(
+                            children: [
+                              Expanded(child: Text('#$code • $customer', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF0F172A)), overflow: TextOverflow.ellipsis)),
+                              if ((oMap['delivery_batch_id']?.toString().isNotEmpty ?? false))
+                                Container(
+                                  margin: const EdgeInsets.only(left: 6),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFF93C5FD))),
+                                  child: const Text('Trip Gabungan', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+                                ),
+                            ],
+                          ),
                           const SizedBox(height: 2),
-                          Text(CurrencyFormatter.formatRupiah(total * 0.90), style: const TextStyle(fontSize: 11.5, color: Color(0xFF16A34A), fontWeight: FontWeight.bold)),
+                          Row(
+                            children: [
+                              Expanded(child: Text(CurrencyFormatter.formatRupiah(total * 0.90), style: const TextStyle(fontSize: 11.5, color: Color(0xFF16A34A), fontWeight: FontWeight.bold))),
+                              if ((oMap['delivery_batch_id']?.toString().isNotEmpty ?? false))
+                                const Text('• Ongkir ke driver', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
+                            ],
+                          ),
                         ],
                       ),
                     ),

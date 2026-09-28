@@ -234,10 +234,20 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
                   children: [
                     const Icon(Icons.receipt_outlined, size: 16, color: AppTheme.primaryRed),
                     const SizedBox(width: 6),
-                    Text(
-                      '#$orderCode',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                    Expanded(
+                      child: Text(
+                        '#$orderCode',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
+                    if ((order['delivery_batch_id']?.toString().isNotEmpty ?? false))
+                      Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF93C5FD))),
+                        child: const Text('Trip Gabungan Multi-Toko', style: TextStyle(color: Color(0xFF2563EB), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                      ),
                   ],
                 ),
                 Row(
@@ -401,15 +411,39 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
                   const SizedBox(height: 10),
                 ],
 
+                // Info driver kurir (kurangi ambigu siapa yg antar, ongkir milik driver)
+                if ((order['dm_name']?.toString().isNotEmpty ?? false) || (order['delivery_man_id']?.toString().isNotEmpty ?? false))
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.two_wheeler_rounded, size: 14, color: Color(0xFF0369A1)),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            'Kurir: ${order['dm_name'] ?? 'Driver'}${(order['dm_phone']?.toString().isNotEmpty ?? false) ? ' • ${order['dm_phone']}' : ''}${(order['delivery_batch_id']?.toString().isNotEmpty ?? false) ? ' • Trip gabungan multi-toko' : ''}',
+                            style: const TextStyle(fontSize: 10.5, color: Color(0xFF0369A1), fontWeight: FontWeight.w600),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                 // Total Earning
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Pendapatan Bersih Toko (90%):', style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
-                    Text(
-                      CurrencyFormatter.formatRupiah(vendorEarning),
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF16A34A)),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(CurrencyFormatter.formatRupiah(vendorEarning), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF16A34A))),
+                          const Text('90% nilai menu • Ongkir 100% ke driver', style: TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8))),
+                        ],
+                      ),
                     ),
+                    const Text('Bersih toko', style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
                   ],
                 ),
                 const SizedBox(height: 12),
