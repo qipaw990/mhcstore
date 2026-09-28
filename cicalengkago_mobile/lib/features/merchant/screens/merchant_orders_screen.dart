@@ -228,28 +228,33 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
               border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    const Icon(Icons.receipt_outlined, size: 16, color: AppTheme.primaryRed),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        '#$orderCode',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
-                        overflow: TextOverflow.ellipsis,
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.receipt_outlined, size: 16, color: AppTheme.primaryRed),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          '#$orderCode',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       ),
-                    ),
-                    if ((order['delivery_batch_id']?.toString().isNotEmpty ?? false))
-                      Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF93C5FD))),
-                        child: const Text('Trip Gabungan Multi-Toko', style: TextStyle(color: Color(0xFF2563EB), fontSize: 9.5, fontWeight: FontWeight.bold)),
-                      ),
-                  ],
+                      if ((order['delivery_batch_id']?.toString().isNotEmpty ?? false))
+                        Flexible(
+                          child: Container(
+                            margin: const EdgeInsets.only(left: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF93C5FD))),
+                            child: const Text('Gabungan', style: TextStyle(color: Color(0xFF2563EB), fontSize: 9, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis, maxLines: 1),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -260,16 +265,20 @@ class _MerchantOrdersScreenState extends State<MerchantOrdersScreen> with Single
                       tooltip: 'Cetak Struk Pesanan',
                       onPressed: () => ReceiptPrinterService.printReceipt(order),
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: statusBgColor,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        statusLabel,
-                        style: TextStyle(color: statusTextColor, fontSize: 10.5, fontWeight: FontWeight.bold),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: statusBgColor,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          statusLabel,
+                          style: TextStyle(color: statusTextColor, fontSize: 10, fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       ),
                     ),
                   ],
