@@ -143,7 +143,7 @@ class Order extends Model
                     s.latitude as store_lat, s.longitude as store_lng, s.logo as store_logo
              FROM `orders` o
              LEFT JOIN `stores` s ON o.store_id = s.id
-             WHERE o.delivery_batch_id = ? AND o.order_status != 'canceled'
+             WHERE o.delivery_batch_id = ?
              ORDER BY o.pickup_sequence ASC, o.id ASC",
             [$order['delivery_batch_id']]
         );
