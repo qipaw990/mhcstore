@@ -962,6 +962,43 @@ class DeliveryController extends Controller
         }
         unset($order);
 
+        // Kelompokkan 1 trip batch jadi 1 baris (samakan pola getCustomerOrders).
+        // distance_km tiap sub-order simpan rute total yg sama -> pakai MAX, bukan SUM.
+        $grouped  = [];
+        $batchMap = [];
+        foreach ($orders as $o) {
+            $batchId = $o['delivery_batch_id'] ?? null;
+            if (!empty($batchId)) {
+                if (!isset($batchMap[$batchId])) {
+                    $parent = $o;
+                    $parent['sub_orders']           = [$o];
+                    $parent['store_names']          = [$o['store_name'] ?? 'Toko'];
+                    $parent['all_items']            = $o['items'] ?? [];
+                    $parent['batch_total_amount']   = (float)($o['total_amount'] ?? 0);
+                    $parent['batch_total_delivery'] = (float)($o['delivery_charge'] ?? 0);
+                    $parent['is_multi_store']       = false;
+                    $batchMap[$batchId]             = count($grouped);
+                    $grouped[]                      = $parent;
+                } else {
+                    $idx = $batchMap[$batchId];
+                    $grouped[$idx]['sub_orders'][] = $o;
+                    $grouped[$idx]['store_names'][] = $o['store_name'] ?? 'Toko';
+                    $grouped[$idx]['all_items'] = array_merge($grouped[$idx]['all_items'], $o['items'] ?? []);
+                    $grouped[$idx]['batch_total_amount'] += (float)($o['total_amount'] ?? 0);
+                    $grouped[$idx]['batch_total_delivery'] += (float)($o['delivery_charge'] ?? 0);
+                    $grouped[$idx]['is_multi_store'] = true;
+                    $grouped[$idx]['store_name'] = implode(' • ', array_unique($grouped[$idx]['store_names']));
+                    $grouped[$idx]['distance_km'] = max((float)$grouped[$idx]['distance_km'], (float)($o['distance_km'] ?? 0));
+                    $grouped[$idx]['driver_earning'] = $grouped[$idx]['batch_total_delivery'];
+                    $grouped[$idx]['delivery_charge'] = $grouped[$idx]['batch_total_delivery'];
+                }
+            } else {
+                $o['is_multi_store'] = false;
+                $grouped[] = $o;
+            }
+        }
+        $orders = $grouped;
+
         $totalDelivered = (int)Database::fetchColumn(
             "SELECT COUNT(DISTINCT id) FROM `orders` WHERE (`delivery_man_id` = ? OR `delivery_man_id` = ?) AND `order_status` = 'delivered'",
             [$dmId, $userId]

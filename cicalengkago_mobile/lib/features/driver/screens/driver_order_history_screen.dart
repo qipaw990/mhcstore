@@ -321,28 +321,41 @@ class _DriverOrderHistoryScreenState extends State<DriverOrderHistoryScreen> {
         ? (order['delivery_address']['address'] ?? 'Cicalengka')
         : (order['delivery_address']?.toString() ?? 'Cicalengka');
 
-    final rawItems = (order['items'] is List) ? (order['items'] as List) : [];
-    final bool isMultiStore = (order['batch_stores'] is List && (order['batch_stores'] as List).isNotEmpty) ||
-        (order['batch_sub_orders'] is List && (order['batch_sub_orders'] as List).isNotEmpty);
-
-    // Untuk multi-store, jumlahkan total komisi dan total rute jarak dari semua sub-order
-    final batchList = (order['batch_sub_orders'] is List && (order['batch_sub_orders'] as List).isNotEmpty)
+    // Backend sudah kelompokkan 1 trip batch jadi 1 baris:
+    // fee/jarak parent = total batch (jarak pakai MAX, bukan SUM).
+    final List<String> batchStoreNames = (order['store_names'] is List)
+        ? (order['store_names'] as List).map((e) => e.toString()).toList()
+        : [];
+    final List batchSubOrders = (order['batch_sub_orders'] is List && (order['batch_sub_orders'] as List).isNotEmpty)
         ? (order['batch_sub_orders'] as List)
-        : (order['sub_orders'] is List && (order['sub_orders'] as List).isNotEmpty)
-            ? (order['sub_orders'] as List)
-            : null;
-    if (batchList != null) {
-      final sumFee = batchList.fold<double>(
+        : (order['sub_orders'] is List ? (order['sub_orders'] as List) : []);
+    final bool isMultiStore = (order['is_multi_store'] == true) ||
+        batchStoreNames.length > 1 ||
+        batchSubOrders.length > 1 ||
+        (order['batch_stores'] is List && (order['batch_stores'] as List).length > 1);
+
+    // Untuk batch: tampilkan gabungan semua item (all_items), bukan item parent saja.
+    final rawItems = (isMultiStore && order['all_items'] is List && (order['all_items'] as List).isNotEmpty)
+        ? (order['all_items'] as List)
+        : (order['items'] is List ? (order['items'] as List) : []);
+
+    // Fallback: jika backend lama (belum grouping) kirim sub-order terpisah,
+    // hitung fee total tapi jarak pakai MAX (tiap sub simpan rute total yg sama).
+    if (batchSubOrders.isNotEmpty && (order['batch_total_delivery'] == null)) {
+      final sumFee = batchSubOrders.fold<double>(
         0.0,
         (s, bo) => s + (double.tryParse((bo is Map ? (bo['driver_earning'] ?? bo['delivery_charge']) : null)?.toString() ?? '0') ?? 0.0),
       );
       if (sumFee > 0) fee = sumFee;
 
-      final sumDist = batchList.fold<double>(
-        0.0,
-        (s, bo) => s + (double.tryParse((bo is Map ? bo['distance_km'] : null)?.toString() ?? '0') ?? 0.0),
-      );
-      if (sumDist > 0) distKm = sumDist;
+      double maxDist = distKm;
+      for (final bo in batchSubOrders) {
+        if (bo is Map) {
+          final d = double.tryParse(bo['distance_km']?.toString() ?? '0') ?? 0.0;
+          if (d > maxDist) maxDist = d;
+        }
+      }
+      distKm = maxDist;
     }
 
     return Container(
@@ -400,7 +413,9 @@ class _DriverOrderHistoryScreenState extends State<DriverOrderHistoryScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        isDelivered ? '✓ Selesai' : (isCanceled ? 'Dibatalkan' : 'Dalam Proses'),
+                        isDelivered
+                            ? (isMultiStore ? '✓ Selesai (${batchSubOrders.length} Toko)' : '✓ Selesai')
+                            : (isCanceled ? 'Dibatalkan' : 'Dalam Proses'),
                         style: TextStyle(
                           fontSize: 9.5,
                           fontWeight: FontWeight.bold,
@@ -416,21 +431,69 @@ class _DriverOrderHistoryScreenState extends State<DriverOrderHistoryScreen> {
                 const Divider(height: 1, color: Color(0xFF1E293B)),
                 const SizedBox(height: 10),
 
-                // Store info
-                Row(
-                  children: [
-                    const Icon(Icons.storefront_rounded, size: 15, color: Color(0xFFFBBF24)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        isMultiStore ? 'Multi-Toko ($storeName)' : storeName,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                // Store info — multi-store: tampil daftar sub-toko
+                if (isMultiStore && batchStoreNames.isNotEmpty)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E3A8A),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'Multi-Toko • ${batchStoreNames.length} Toko • 1 Trip',
+                          style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF93C5FD)),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(height: 6),
+                      ...batchStoreNames.map(
+                        (nm) => Padding(
+                          padding: const EdgeInsets.only(bottom: 3),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 16,
+                                height: 16,
+                                decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
+                                child: Center(
+                                  child: Text(
+                                    '${batchStoreNames.indexOf(nm) + 1}',
+                                    style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  nm,
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  Row(
+                    children: [
+                      const Icon(Icons.storefront_rounded, size: 15, color: Color(0xFFFBBF24)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          storeName,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 const SizedBox(height: 4),
 
                 // Customer info & Address
