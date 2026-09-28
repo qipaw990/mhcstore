@@ -35,6 +35,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
   // Real-time Road Routing & Sequential Multi-Store Pickup State
   List<LatLng> _liveRoadPoints = [];
   String? _lastRouteTargetKey;
+  String? _lastRouteStageKey;
   final Set<int> _pickedStoreIndices = {};
 
   int _getCurrentPickupIndex(int totalStores) {
@@ -67,16 +68,26 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     super.dispose();
   }
 
-  void _syncRoadRoute(LatLng start, LatLng end) {
-    final key = '${start.latitude.toStringAsFixed(3)},${start.longitude.toStringAsFixed(3)}->${end.latitude.toStringAsFixed(3)},${end.longitude.toStringAsFixed(3)}';
+  void _syncRoadRoute(LatLng start, LatLng end, {String? stageKey}) {
+    // Stage berubah (pindah toko / ke pelanggan) -> garis lama langsung
+    // dibuang agar tidak nempel di map. Fetch baru jalan setelah itu.
+    if (stageKey != null && stageKey != _lastRouteStageKey) {
+      _lastRouteStageKey = stageKey;
+      _lastRouteTargetKey = null;
+      _liveRoadPoints = [];
+    }
+    final key = '${start.latitude.toStringAsFixed(5)},${start.longitude.toStringAsFixed(5)}->${end.latitude.toStringAsFixed(5)},${end.longitude.toStringAsFixed(5)}';
     if (_lastRouteTargetKey == key) return;
     _lastRouteTargetKey = key;
 
     RouteService.getRoadRoute(start, end).then((points) {
       if (mounted && points.isNotEmpty) {
-        setState(() {
-          _liveRoadPoints = points;
-        });
+        // Abaikan hasil basi: hanya pakai jika target masih sama.
+        if (_lastRouteTargetKey == key) {
+          setState(() {
+            _liveRoadPoints = points;
+          });
+        }
       }
     }).catchError((_) {});
   }
@@ -535,8 +546,9 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
         ? custPosition
         : (currentPickupIdx < storePositions.length ? storePositions[currentPickupIdx] : custPosition);
 
-    // Synchronize road route dynamically
-    _syncRoadRoute(driverCtrl.currentLocation, currentStageTarget);
+    // Synchronize road route dynamically (stage-aware: garis lama dibuang saat pindah stage)
+    final String routeStageKey = isDeliveringToCustomer ? 'to_customer' : 'to_store_$currentPickupIdx';
+    _syncRoadRoute(driverCtrl.currentLocation, currentStageTarget, stageKey: routeStageKey);
 
     // 3. Build Polyline Route Segments based on Stage
     final List<Polyline> polylines = [];
