@@ -39,7 +39,7 @@ class Zone extends Model
 
         $tariff = [
             'min_delivery_charge'    => (float)($zone['min_delivery_charge']    ?? 5000.00),
-            'per_km_delivery_charge' => (float)($zone['per_km_delivery_charge'] ?? 2500.00),
+            'per_km_delivery_charge' => (float)($zone['per_km_delivery_charge'] ?? 3000.00),
         ];
 
         self::$_cache[$zoneId] = $tariff;
@@ -100,7 +100,7 @@ class Zone extends Model
             'id'                     => (int)($zone['id'] ?? 1),
             'name'                   => $zone['name'] ?? 'Zona Cicalengka Raya',
             'min_delivery_charge'    => (float)($zone['min_delivery_charge'] ?? 5000.00),
-            'per_km_delivery_charge' => (float)($zone['per_km_delivery_charge'] ?? 2500.00),
+            'per_km_delivery_charge' => (float)($zone['per_km_delivery_charge'] ?? 3000.00),
             'center_latitude'        => (float)($zone['center_latitude'] ?? -6.983340),
             'center_longitude'       => (float)($zone['center_longitude'] ?? 107.833900),
             'polygon_coordinates'    => $normalized,

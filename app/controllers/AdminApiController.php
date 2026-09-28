@@ -1096,7 +1096,7 @@ class AdminApiController extends Controller
             $coords = json_encode($coords);
         }
         $minCharge = (float)($data['min_delivery_charge'] ?? 5000);
-        $perKmCharge = (float)($data['per_km_delivery_charge'] ?? 2500);
+        $perKmCharge = (float)($data['per_km_delivery_charge'] ?? 3000);
         $lat = (float)($data['center_latitude'] ?? -6.9840);
         $lng = (float)($data['center_longitude'] ?? 107.8340);
         $status = isset($data['status']) ? (int)$data['status'] : 1;

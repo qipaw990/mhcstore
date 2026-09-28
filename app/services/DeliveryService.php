@@ -482,7 +482,7 @@ class DeliveryService
 
         // If delivery_charge was 0 or not set, calculate based on km or base minimum fee
         if ($sumCharge <= 0) {
-            $sumCharge = max(5000.0 * max(1, count($orders)), $totalKm * 2500.0);
+            $sumCharge = max(5000.0 * max(1, count($orders)), $totalKm * 3000.0);
         }
 
         return max(5000.0, round($sumCharge, 0));

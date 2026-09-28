@@ -25,7 +25,7 @@ function haversine_distance(float $lat1, float $lon1, float $lat2, float $lon2):
     return calculate_distance($lat1, $lon1, $lat2, $lon2);
 }
 
-function calculate_delivery_fee(float $distanceKm, float $minFee = 5000.00, float $perKm = 2500.00): float
+function calculate_delivery_fee(float $distanceKm, float $minFee = 5000.00, float $perKm = 3000.00): float
 {
     if ($distanceKm <= 2.0) {
         return $minFee;

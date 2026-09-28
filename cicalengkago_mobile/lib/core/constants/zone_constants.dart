@@ -7,7 +7,7 @@ class ZoneConstants {
   static const double fallbackLat = -6.9840;
   static const double fallbackLng = 107.8340;
   static const double defaultMinFee = 5000.0;
-  static const double defaultPerKmFee = 2500.0;
+  static const double defaultPerKmFee = 3000.0;
 
   /// Exact Server Polygon boundary for Zona Cicalengka Raya (from database `zones.coordinates_json`)
   static const List<LatLng> cicalengkaZonePolygon = [

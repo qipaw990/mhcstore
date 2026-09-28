@@ -257,7 +257,7 @@ class ZoneInfo {
       name:                m['name']?.toString() ?? '',
       polygon:             polygon,
       minDeliveryCharge:   double.tryParse(m['min_delivery_charge']?.toString() ?? '5000') ?? 5000,
-      perKmDeliveryCharge: double.tryParse(m['per_km_delivery_charge']?.toString() ?? '2500') ?? 2500,
+      perKmDeliveryCharge: double.tryParse(m['per_km_delivery_charge']?.toString() ?? '3000') ?? 3000,
       centerLat:           double.tryParse(m['center_latitude']?.toString() ?? '0') ?? 0,
       centerLng:           double.tryParse(m['center_longitude']?.toString() ?? '0') ?? 0,
     );

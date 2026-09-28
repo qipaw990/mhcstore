@@ -369,7 +369,7 @@ class _ActiveTripScreenState extends State<ActiveTripScreen> {
     final String zoneName = trip['zone_name']?.toString() ?? 'Zona Cicalengka Raya';
 
     final double minFee = double.tryParse(trip['min_delivery_charge']?.toString() ?? '5000') ?? 5000.0;
-    final double perKm = double.tryParse(trip['per_km_delivery_charge']?.toString() ?? '2500') ?? 2500.0;
+    final double perKm = double.tryParse(trip['per_km_delivery_charge']?.toString() ?? '3000') ?? 3000.0;
 
     return Container(
       padding: const EdgeInsets.all(12),

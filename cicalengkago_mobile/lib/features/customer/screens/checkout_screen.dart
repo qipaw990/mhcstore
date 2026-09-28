@@ -67,7 +67,7 @@ double _calcTotalRouteKm(List<dynamic> stores, double userLat, double userLng) {
   return double.parse(total.toStringAsFixed(2));
 }
 
-double _calcZoneDeliveryFeeTopLevel(double distanceKm, {double minFee = 5000, double perKm = 2500}) {
+double _calcZoneDeliveryFeeTopLevel(double distanceKm, {double minFee = 5000, double perKm = 3000}) {
   if (distanceKm <= 2.0) return minFee;
   return (minFee + (distanceKm - 2.0) * perKm).roundToDouble();
 }
@@ -77,7 +77,7 @@ _DeliveryCalculationSummary _calcDeliverySummaryTopLevel(
   double userLat,
   double userLng, {
   double minFee = 5000,
-  double perKm = 2500,
+  double perKm = 3000,
 }) {
   if (stores.isEmpty) {
     return const _DeliveryCalculationSummary(
@@ -137,7 +137,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   double _calculateDistanceKm(double sLat, double sLng, double uLat, double uLng) =>
       _haversineDistanceKm(sLat, sLng, uLat, uLng);
 
-  double _calcZoneDeliveryFee(double distanceKm, {double minFee = 5000, double perKm = 2500}) =>
+  double _calcZoneDeliveryFee(double distanceKm, {double minFee = 5000, double perKm = 3000}) =>
       _calcZoneDeliveryFeeTopLevel(distanceKm, minFee: minFee, perKm: perKm);
 
   _DeliveryCalculationSummary _calcDeliverySummary(
@@ -145,7 +145,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     double userLat,
     double userLng, {
     double minFee = 5000,
-    double perKm = 2500,
+    double perKm = 3000,
   }) => _calcDeliverySummaryTopLevel(stores, userLat, userLng, minFee: minFee, perKm: perKm);
 
   @override

@@ -931,7 +931,7 @@ class _DriverRadarScreenState extends State<DriverRadarScreen> {
           Builder(
             builder: (context) {
               final double zMin = double.tryParse(order['min_delivery_charge']?.toString() ?? '5000') ?? 5000.0;
-              final double zPerKm = double.tryParse(order['per_km_delivery_charge']?.toString() ?? '2500') ?? 2500.0;
+              final double zPerKm = double.tryParse(order['per_km_delivery_charge']?.toString() ?? '3000') ?? 3000.0;
               final String zName = order['zone_name']?.toString() ?? 'Zona Cicalengka Raya';
 
               return Container(

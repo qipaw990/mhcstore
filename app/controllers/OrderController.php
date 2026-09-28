@@ -181,7 +181,7 @@ class OrderController extends Controller
             }
 
             // SATU ongkir untuk seluruh batch (driver 1 trip = 1 fee):
-            // fee = 5000 (s/d 2 km) + 2500 x kelebihan km. Dibagi rata per sub-order
+            // fee = 5000 (s/d 2 km) + 3000 x kelebihan km. Dibagi rata per sub-order
             // agar SUM(delivery_charge) batch = 1 fee, bukan N x 5000.
             $firstStoreForTariff = reset($storeDetailCache);
             $batchZoneId  = (int)(($firstStoreForTariff['zone_id'] ?? 1));

@@ -52,7 +52,7 @@ CREATE TABLE `zones` (
   `coordinates_json` longtext DEFAULT NULL,
   `status` tinyint(1) NOT NULL DEFAULT 1,
   `min_delivery_charge` decimal(12,2) NOT NULL DEFAULT 5000.00,
-  `per_km_delivery_charge` decimal(12,2) NOT NULL DEFAULT 2500.00,
+  `per_km_delivery_charge` decimal(12,2) NOT NULL DEFAULT 3000.00,
   `center_latitude` decimal(10,8) DEFAULT NULL,
   `center_longitude` decimal(11,8) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),

@@ -277,7 +277,7 @@ class Order extends Model
                        COALESCE(u.phone, '-') as customer_phone,
                        COALESCE(z.name, 'Zona Cicalengka Raya') as zone_name,
                        COALESCE(z.min_delivery_charge, 5000.00) as min_delivery_charge,
-                       COALESCE(z.per_km_delivery_charge, 2500.00) as per_km_delivery_charge
+                       COALESCE(z.per_km_delivery_charge, 3000.00) as per_km_delivery_charge
                 FROM `orders` o
                 LEFT JOIN `stores` s ON o.store_id = s.id
                 LEFT JOIN `zones` z ON s.zone_id = z.id
