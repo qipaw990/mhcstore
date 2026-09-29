@@ -32,6 +32,13 @@ Router::group(['prefix' => '/api/v1'], function () {
         Router::get('/orders/{code}', [ApiController::class, 'orderTracking']);
         Router::get('/wallet', [ApiController::class, 'wallet']);
         Router::get('/notifications', [ApiController::class, 'notifications']);
+
+        // PPOB Digiflazz (beli via CicalengkaPay)
+        Router::get('/ppob/catalog', [\App\Controllers\PpobController::class, 'catalog']);
+        Router::get('/ppob/categories', [\App\Controllers\PpobController::class, 'categories']);
+        Router::post('/ppob/purchase', [\App\Controllers\PpobController::class, 'purchase']);
+        Router::get('/ppob/history', [\App\Controllers\PpobController::class, 'history']);
+        Router::get('/ppob/status/{ref_id}', [\App\Controllers\PpobController::class, 'status']);
         Router::post('/delivery/location', [ApiController::class, 'updateDriverLocation']);
         Router::post('/delivery/update-location', [ApiController::class, 'updateDriverLocation']);
 

@@ -150,6 +150,14 @@ $user = auth_user();
                     </div>
                 </a>
             </li>
+            <li>
+                <a href="<?= $baseUrl ?>/admin/ppob/products" class="menu-link <?= ($active_tab ?? '') === 'ppob' ? 'active' : '' ?>">
+                    <div class="menu-link-inner">
+                        <i class="bi bi-phone-fill"></i>
+                        <span>Pulsa & PPOB (Digiflazz)</span>
+                    </div>
+                </a>
+            </li>
 
             <!-- Group 4: Users & Marketing -->
             <li class="sidebar-group-title">

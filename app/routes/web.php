@@ -309,6 +309,13 @@ Router::group(['prefix' => '/admin', 'middleware' => ['AdminMiddleware']], funct
 Router::post('/topups/sync-status', [AdminController::class, 'syncTopupStatus']);
 Router::post('/topups/manual-approve', [AdminController::class, 'manualApproveTopup']);
 Router::post('/topups/manual-cancel', [AdminController::class, 'manualCancelTopup']);
+    // PPOB Digiflazz Admin
+    Router::post('/ppob/sync-price', [\App\Controllers\PpobController::class, 'adminSyncPrice']);
+    Router::get('/ppob/cek-saldo', [\App\Controllers\PpobController::class, 'adminCekSaldo']);
+    Router::get('/ppob/products', [\App\Controllers\PpobController::class, 'adminProducts']);
+    Router::post('/ppob/toggle', [\App\Controllers\PpobController::class, 'adminToggle']);
+    Router::post('/ppob/save-markup', [\App\Controllers\PpobController::class, 'adminSaveMarkup']);
+    Router::get('/ppob/transactions', [\App\Controllers\PpobController::class, 'adminTransactions']);
     Router::get('/withdrawals', [AdminController::class, 'withdrawals']);
     Router::post('/withdrawals/update-status', [AdminController::class, 'updateWithdrawalStatus']);
 
