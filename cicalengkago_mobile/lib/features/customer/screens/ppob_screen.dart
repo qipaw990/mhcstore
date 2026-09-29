@@ -48,21 +48,21 @@ class _PpobScreenState extends State<PpobScreen> with SingleTickerProviderStateM
 
   Future<void> _buy() async {
     final phone=_phoneCtrl.text.trim();
-    if(phone.length<9){ AppAlert.show(context,message:'Nomor tujuan tidak valid',isSuccess:false); return; }
-    if(_selectedSku==null){ AppAlert.show(context,message:'Pilih nominal dulu',isSuccess:false); return; }
+    if(phone.length<9){ AppAlert.showWarning(context,title:'Nomor tujuan tidak valid'); return; }
+    if(_selectedSku==null){ AppAlert.showWarning(context,title:'Pilih nominal dulu'); return; }
     setState(()=>_buying=true);
     final res = await PpobService.purchase(sku:_selectedSku!, customerNo:phone);
     if(!mounted) return;
     setState(()=>_buying=false);
     if(res['success']==true){
-      AppAlert.show(context,message: res['message']?.toString() ?? 'Berhasil — diproses',isSuccess:true);
+      AppAlert.showSuccess(context,title:'Berhasil',message: res['message']?.toString() ?? 'Diproses');
       try{ context.read<CustomerController>().fetchWallet(); }catch(_){}
       _load();
       _tab.animateTo(1);
     } else {
       final msg=res['message']?.toString() ?? 'Gagal';
       final need=res['need'];
-      AppAlert.show(context,message: need!=null ? '$msg (butuh ${CurrencyFormatter.formatRupiah(double.tryParse(need.toString())??0)})' : msg,isSuccess:false);
+      AppAlert.showError(context,title:'Gagal',message: need!=null ? '$msg (butuh ${CurrencyFormatter.formatRupiah(double.tryParse(need.toString())??0)})' : msg);
     }
   }
 
