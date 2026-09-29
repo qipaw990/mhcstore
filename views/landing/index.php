@@ -586,7 +586,7 @@
             position: relative;
             border-radius: 20px;
             overflow: hidden;
-            background: #ffffff;
+            background: linear-gradient(135deg, #1e293b 0%, #b91c22 60%, #e8232a 100%);
             border: 1px solid var(--border);
             height: 320px;
             box-shadow: var(--shadow-card);
@@ -972,13 +972,12 @@
             🏡 Super App Pertama di Cicalengka
         </div>
         <h1>
-            Semua Kebutuhan<br>
-            Kamu Ada di<br>
-            <span class="highlight">CicalengkaGO</span>
+            Pesan Banyak Toko<br>
+            Satu Ongkir, <span class="highlight">Satu Antar</span>
         </h1>
         <p>
-            Dari pesan makanan, belanja sembako, obat-obatan, olshop lokal, hingga kirim paket —
-            semuanya dalam satu web app. Cepat, mudah, langsung buka di browser tanpa install!
+            Pesan dari 3 warung sekaligus, bayar <strong>1x ongkir mulai Rp 5.000</strong>.
+            Driver ambil semua dalam 1 trip. Tanpa install — buka market.cicago.store langsung pesan!
         </p>
         <div class="hero-actions">
             <a href="https://market.cicago.store" target="_blank" rel="noopener" class="btn-primary">
@@ -1166,7 +1165,7 @@
         <div class="cicalengka-grid">
             <!-- Card 1: Stasiun Cicalengka -->
             <div class="cicalengka-card fade-in">
-                <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/stasiun_cicalengka.jpg" alt="Stasiun Cicalengka Baru" loading="lazy">
+                <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/stasiun_cicalengka.jpg" alt="Stasiun Cicalengka Baru" loading="lazy" onerror="this.style.display='none'">
                 <div class="cicalengka-overlay">
                     <span class="cicalengka-tag">Transportasi & Ikon Kota</span>
                     <div class="cicalengka-title">Stasiun Cicalengka Modern</div>
@@ -1177,7 +1176,7 @@
 
             <!-- Card 4: Bukit Teletubbies -->
             <div class="cicalengka-card fade-in">
-                <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/bukit_teletubbies.jpg" alt="Bukit Teletubbies Cicalengka" loading="lazy">
+                <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/bukit_teletubbies.jpg" alt="Bukit Teletubbies Cicalengka" loading="lazy" onerror="this.style.display='none'">
                 <div class="cicalengka-overlay">
                     <span class="cicalengka-tag" style="background:#10b981;">Dataran Tinggi Asri</span>
                     <div class="cicalengka-title">Bukit Teletubbies Cicalengka</div>
@@ -1187,7 +1186,7 @@
 
             <!-- Card 5: Gunung Geulis & Kerenceng -->
             <div class="cicalengka-card fade-in fade-in-delay-1">
-                <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/gunung_geulis.jpg" alt="Lanskap Gunung Geulis Cicalengka" loading="lazy">
+                <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/gunung_geulis.jpg" alt="Lanskap Gunung Geulis Cicalengka" loading="lazy" onerror="this.style.display='none'">
                 <div class="cicalengka-overlay">
                     <span class="cicalengka-tag" style="background:#f59e0b;">Panorama Pegunungan</span>
                     <div class="cicalengka-title">Gunung Geulis & Kerenceng</div>
