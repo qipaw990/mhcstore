@@ -1403,7 +1403,7 @@
                     ],
                     [
                         'q' => 'Berapa biaya pengiriman?',
-                        'a' => 'Biaya pengiriman mulai dari Rp 5.000 dengan tarif Rp 2.500 per kilometer. Gratis ongkir untuk pembelian di atas Rp 100.000! Biaya pengiriman akan ditampilkan transparan sebelum kamu konfirmasi pesanan.'
+                        'a' => 'Biaya pengiriman mulai dari Rp 5.000 dengan tarif Rp 2.500 per kilometer. Biaya pengiriman akan ditampilkan transparan sebelum kamu konfirmasi pesanan.'
                     ],
                     [
                         'q' => 'Metode pembayaran apa saja yang tersedia?',
@@ -1487,7 +1487,6 @@
                     <li><a href="#">Daftar Toko Mitra</a></li>
                     <li><a href="#">Daftar sebagai Driver</a></li>
                     <li><a href="/vendor">Portal Vendor</a></li>
-                    <li><a href="/admin">Admin Panel</a></li>
                 </ul>
             </div>
             <div class="footer-col">
