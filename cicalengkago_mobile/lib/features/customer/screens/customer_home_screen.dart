@@ -25,6 +25,7 @@ import 'customer_orders_screen.dart';
 import 'customer_profile_screen.dart';
 import 'explore_stores_screen.dart';
 import 'vouchers_screen.dart';
+import 'ppob_screen.dart';
 import '../widgets/product_detail_modal.dart';
 import '../../../core/widgets/require_auth_widget.dart';
 import '../../../core/services/app_config_service.dart';
@@ -94,6 +95,8 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
         Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerWalletScreen()));
       } else if (item.actionValue == 'vouchers') {
         Navigator.push(context, MaterialPageRoute(builder: (_) => const VouchersScreen()));
+      } else if (item.actionValue == 'ppob') {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const PpobScreen()));
       } else if (item.actionValue == 'orders') {
         Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerOrdersScreen()));
       } else if (item.actionValue == 'profile') {
@@ -737,6 +740,15 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                         label: 'Voucher',
                         onTap: () {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const VouchersScreen()));
+                        },
+                      ),
+                      _buildGopayActionButton(
+                        icon: Icons.phone_android_rounded,
+                        iconColor: const Color(0xFF8B5CF6),
+                        bgColor: const Color(0xFFF5F3FF),
+                        label: 'Pulsa',
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const PpobScreen()));
                         },
                       ),
                     ],

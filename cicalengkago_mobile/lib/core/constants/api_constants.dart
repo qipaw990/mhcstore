@@ -167,4 +167,11 @@ class ApiConstants {
   // + /{productId}/recipe
   static const String vendorProductRecipeBase  = '$domainUrl/api/vendor/products';
   static const String vendorSaveProductRecipe  = '$domainUrl/api/vendor/products/recipe/save';
+
+  // PPOB Digiflazz — beli via CicalengkaPay (auth required, prefix /api/v1)
+  static const String ppobCatalog    = '$domainUrl/api/v1/ppob/catalog';
+  static const String ppobCategories = '$domainUrl/api/v1/ppob/categories';
+  static const String ppobPurchase   = '$domainUrl/api/v1/ppob/purchase';
+  static const String ppobHistory    = '$domainUrl/api/v1/ppob/history';
+  static const String ppobStatus     = '$domainUrl/api/v1/ppob/status'; // + /{ref_id}
 }
