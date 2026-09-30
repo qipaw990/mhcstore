@@ -13,7 +13,7 @@
     <meta property="og:description" content="Pesan makanan, belanja sembako, farmasi, dan kirim paket di Cicalengka langsung lewat browser di market.cicago.store!">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://cicago.store">
-    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" content="#E8400C">
 
     <!-- Favicon & Brand Icons -->
     <link rel="icon" type="image/png" sizes="32x32" href="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/icons/favicon.png">
@@ -30,11 +30,13 @@
         /* ========== RESET & BASE ========== */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
-            --red:            #e8232a;
-            --red-dark:       #b91c22;
-            --red-light:      #fff1f2;
-            --red-glow:       rgba(232,35,42,0.18);
-            --orange:         #f59e0b;
+            --red:            #E8400C;
+            --red-dark:       #B93209;
+            --red-light:      #FFF1E8;
+            --red-glow:       rgba(232,64,12,0.18);
+            --orange:         #FFC61A;
+            --dark:           #0F172A;
+            --yellow:         #FFC61A;
             --bg:             #ffffff;
             --bg-subtle:      #f8fafc;
             --bg-muted:       #f1f5f9;
@@ -118,6 +120,16 @@
         }
         .nav-cta:hover { transform: translateY(-2px); box-shadow: 0 6px 25px var(--red-glow); }
         .nav-mobile { display: none; }
+        .hamburger{ display:none; width:44px;height:44px; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,.95); align-items:center; justify-content:center; cursor:pointer; flex-direction:column; gap:5px; }
+        .hamburger span{ width:18px;height:2px; background:var(--dark); border-radius:99px; display:block; transition:all .25s ease; }
+        .hamburger.active span:nth-child(1){ transform:translateY(7px) rotate(45deg); }
+        .hamburger.active span:nth-child(2){ opacity:0; }
+        .hamburger.active span:nth-child(3){ transform:translateY(-7px) rotate(-45deg); }
+        .nav-drawer{ position:fixed; inset:68px 12px auto 12px; background:rgba(255,255,255,.98); backdrop-filter:blur(18px); border:1px solid var(--border); border-radius:24px; padding:14px; display:none; flex-direction:column; gap:6px; box-shadow:0 20px 60px rgba(15,23,42,.14); z-index:999; }
+        .nav-drawer.open{ display:flex; }
+        .nav-drawer a{ padding:14px 16px; border-radius:14px; font-weight:700; font-size:14px; color:var(--text-secondary); }
+        .nav-drawer a:hover{ background:var(--bg-subtle); color:var(--red); }
+        .nav-drawer .drawer-cta{ background:var(--red); color:#fff; text-align:center; box-shadow:0 8px 24px var(--red-glow); }
 
         /* ========== HERO ========== */
         .hero {
@@ -915,6 +927,23 @@
             .nav-mobile .nav-cta { padding: 6px 9px; font-size: 11px; }
         }
 
+        .hero{background:linear-gradient(135deg,#0F172A 0%,#3A1A0E 45%,#E8400C 100%);color:#fff;}
+        .hero-bg{background:radial-gradient(600px 300px at 80% 20%,rgba(255,198,26,.25),transparent 60%),radial-gradient(500px 320px at 10% 90%,rgba(232,64,12,.35),transparent 60%);}
+        .hero h1,.hero p{color:#fff;}
+        .hero h1 .highlight{background:linear-gradient(90deg,#FFC61A,#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+        .hero-badge{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#FFC61A;}
+        .btn-primary{background:#E8400C;}
+        .btn-secondary{background:#FFC61A;border-color:#FFC61A;color:#0F172A;}
+        .dark-sec{background:#0F172A;color:#E2E8F0;}
+        .dark-sec .section-title,.dark-sec h2{color:#fff;}
+        .dark-sec .section-subtitle{color:#94A3B8;}
+        .rounded-3xl{border-radius:1.75rem !important;}
+        .t-carousel{overflow:hidden;position:relative;border-radius:1.75rem;}
+        .t-track{display:flex;gap:20px;transition:transform .6s cubic-bezier(.16,1,.3,1);overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px;}
+        .t-card{min-width:320px;max-width:360px;scroll-snap-align:start;background:#fff;border:1px solid var(--border);border-radius:1.75rem;padding:28px;box-shadow:var(--shadow-card);flex-shrink:0;}
+        .dark-sec .t-card{background:#1E293B;border-color:#334155;color:#E2E8F0;}
+        .join-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+        @media(max-width:768px){.join-grid{grid-template-columns:1fr;}.hamburger{display:inline-flex !important;}}
         /* ========== ANIMATIONS ========== */
         .fade-in {
             opacity: 0; transform: translateY(24px);
@@ -944,47 +973,54 @@
 <!-- ========== NAVBAR ========== -->
 <nav class="navbar" id="navbar">
     <a href="#home" class="nav-logo">
-        <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/app_logo.png" alt="CicalengkaGO Logo" class="logo-img">
+        <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/app_logo.png" alt="CicalengkaGO Logo" class="logo-img" onerror="this.style.display='none'">
         Cicalengka<span>GO</span>
     </a>
     <div class="nav-links">
         <a href="#layanan">Layanan</a>
-        <a href="#cicalengka">Pesona Cicalengka</a>
-        <a href="#fitur">Fitur</a>
         <a href="#cara-kerja">Cara Pesan</a>
-        <a href="#pembayaran">Pembayaran</a>
+        <a href="#merchant-driver">Mitra</a>
+        <a href="#testimoni">Testimoni</a>
         <a href="#faq">FAQ</a>
-        <a href="https://market.cicago.store" target="_blank" rel="noopener" class="nav-cta" style="background:var(--red);">🚀 Buka Aplikasi</a>
-    </div>
-    <div class="nav-mobile">
         <a href="https://market.cicago.store" target="_blank" rel="noopener" class="nav-cta">Buka Aplikasi</a>
     </div>
+    <div class="nav-mobile" style="gap:10px;align-items:center;">
+        <a href="https://market.cicago.store" target="_blank" rel="noopener" class="nav-cta">Buka Aplikasi</a>
+        <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false" onclick="toggleDrawer()"><span></span><span></span><span></span></button>
+    </div>
 </nav>
+<div class="nav-drawer" id="navDrawer">
+    <a href="#layanan" onclick="closeDrawer()">Layanan</a>
+    <a href="#cara-kerja" onclick="closeDrawer()">Cara Pesan</a>
+    <a href="#merchant-driver" onclick="closeDrawer()">Join Merchant / Driver</a>
+    <a href="#testimoni" onclick="closeDrawer()">Testimoni</a>
+    <a href="#faq" onclick="closeDrawer()">FAQ</a>
+    <a href="https://market.cicago.store" target="_blank" rel="noopener" class="drawer-cta" onclick="closeDrawer()">Buka market.cicago.store</a>
+</div>
 
 <!-- ========== HERO ========== -->
 <section class="hero" id="home">
     <div class="hero-bg"></div>
     <div class="hero-grid"></div>
 
-    <div class="hero-content">
+    <div class="hero-content fade-in visible">
         <div class="hero-badge">
             <span class="dot"></span>
-            🏡 Super App Pertama di Cicalengka
+            Super App Pertama di Cicalengka
         </div>
         <h1>
-            Pesan Banyak Toko<br>
-            Satu Ongkir, <span class="highlight">Satu Antar</span>
+            Pesan Banyak Toko Satu Ongkir Satu Antar mulai Rp 5.000
         </h1>
         <p>
-            Pesan dari 3 warung sekaligus, bayar <strong>1x ongkir mulai Rp 5.000</strong>.
-            Driver ambil semua dalam 1 trip. Tanpa install — buka market.cicago.store langsung pesan!
+            Pesan dari banyak toko sekaligus, bayar <strong>1x ongkir mulai Rp 5.000</strong>.
+            Satu driver antar semua dalam 1 trip. Tanpa install — buka https://market.cicago.store langsung pesan!
         </p>
         <div class="hero-actions">
             <a href="https://market.cicago.store" target="_blank" rel="noopener" class="btn-primary">
-                🚀 Buka Aplikasi Sekarang
+                Buka Aplikasi Sekarang
             </a>
             <a href="#layanan" class="btn-secondary">
-                Lihat Layanan →
+                Lihat Layanan
             </a>
         </div>
         <div style="margin-top:16px; font-size:13px; color:var(--muted); display:flex; align-items:center; gap:8px;">
@@ -997,10 +1033,10 @@
 
         <!-- City backdrop photo -->
         <div class="city-backdrop">
-            <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/alun_alun_cicalengka.jpg" alt="Alun-alun Cicalengka malam hari" loading="lazy">
+            <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/alun_alun_cicalengka.jpg" alt="Alun-alun Cicalengka malam hari" loading="lazy" onerror="this.style.display='none'">
             <div class="city-label">
                 <span class="cl-dot"></span>
-                📍 Cicalengka, Jawa Barat
+                Cicalengka, Jawa Barat
             </div>
         </div>
 
@@ -1027,7 +1063,7 @@
             <div class="phone-screen">
                 <div class="phone-header">
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/app_logo.png" alt="CicalengkaGO" style="width:32px; height:32px; border-radius:9px; object-fit:cover; border:1px solid rgba(255,255,255,0.2); box-shadow:0 2px 8px rgba(0,0,0,0.4);">
+                        <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/app_logo.png" alt="CicalengkaGO" style="width:32px; height:32px; border-radius:9px; object-fit:cover; border:1px solid rgba(255,255,255,0.2); box-shadow:0 2px 8px rgba(0,0,0,0.4);" onerror="this.style.display='none'">
                         <div>
                             <div class="phone-header-title">Cicalengka<span style="color:rgba(255,200,200,1);">GO</span></div>
                             <div class="phone-header-sub">Selamat datang! 👋</div>
@@ -1051,13 +1087,13 @@
                 </div>
                 <!-- City photo inside phone -->
                 <div class="phone-city-photo">
-                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/alun_alun_cicalengka.jpg" alt="Alun-alun Cicalengka" loading="lazy">
+                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/cicalengka/alun_alun_cicalengka.jpg" alt="Alun-alun Cicalengka" loading="lazy" onerror="this.style.display='none'">
                     <div class="phone-city-label">
-                        <span class="tag">🏙️ Kota</span>
+                        <span class="tag">Kota</span>
                         Alun-alun Cicalengka
                     </div>
                 </div>
-                <a href="https://market.cicago.store" target="_blank" rel="noopener" style="display:block;margin:0 14px 14px;background:var(--red);color:#fff;text-align:center;padding:10px;border-radius:10px;font-size:11.5px;font-weight:700;text-decoration:none;box-shadow:0 2px 10px rgba(232,35,42,0.4);">🚀 Buka market.cicago.store</a>
+                <a href="https://market.cicago.store" target="_blank" rel="noopener" style="display:block;margin:0 14px 14px;background:var(--red);color:#fff;text-align:center;padding:10px;border-radius:10px;font-size:11.5px;font-weight:700;text-decoration:none;box-shadow:0 2px 10px rgba(232,64,12,0.4);">Buka market.cicago.store</a>
             </div>
         </div>
 
@@ -1260,40 +1296,97 @@
     </div>
 </section>
 
-<!-- ========== CARA KERJA ========== -->
-<section id="cara-kerja" class="how-bg">
+<!-- ========== CARA KERJA 3 LANGKAH ========== -->
+<section id="cara-kerja" class="how-bg dark-sec" style="border-radius:0;">
     <div class="max-w">
         <div class="section-header fade-in" style="text-align:center;">
-            <div class="section-label" style="justify-content:center;">🔄 Cara Kerja</div>
-            <h2 class="section-title">Pesan dalam 4 Langkah Mudah</h2>
-            <p class="section-subtitle" style="margin:0 auto;">Dari pilih produk hingga pesanan sampai, semua bisa dilakukan dalam hitungan menit.</p>
+            <div class="section-label" style="justify-content:center; color:#FFC61A;">Cara Pesan</div>
+            <h2 class="section-title">Pesan dalam 3 Langkah Mudah</h2>
+            <p class="section-subtitle" style="margin:0 auto;">Pesan banyak toko sekaligus — satu ongkir, satu antar.</p>
         </div>
-        <div class="steps-grid">
-            <div class="step-card fade-in">
-                <div class="step-num">1</div>
-                <h3>Buka Web App</h3>
-                <p>Kunjungi <a href="https://market.cicago.store" target="_blank" rel="noopener" style="color:#b45309;font-weight:700;text-decoration:underline;text-underline-offset:2px;">market.cicago.store</a> langsung di browser HP Anda tanpa perlu download.</p>
+        <div class="steps-grid" style="grid-template-columns:repeat(3,1fr);">
+            <div class="step-card fade-in rounded-3xl" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);padding:28px;">
+                <div class="step-num" style="background:linear-gradient(135deg,#E8400C,#FFC61A);">1</div>
+                <h3 style="color:#fff;">Buka & Pilih Toko</h3>
+                <p style="color:#94A3B8;">Buka <a href="https://market.cicago.store" target="_blank" rel="noopener" style="color:#FFC61A;font-weight:700;text-decoration:underline;text-underline-offset:2px;">https://market.cicago.store</a> di browser, pilih produk dari banyak toko.</p>
             </div>
-            <div class="step-card fade-in fade-in-delay-1">
-                <div class="step-num">2</div>
-                <h3>Pilih Layanan</h3>
-                <p>Pilih dari 5 modul layanan: Makanan, Sembako, Farmasi, Olshop, atau Kirim Paket.</p>
+            <div class="step-card fade-in fade-in-delay-1 rounded-3xl" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);padding:28px;">
+                <div class="step-num" style="background:linear-gradient(135deg,#E8400C,#FFC61A);">2</div>
+                <h3 style="color:#fff;">Checkout Satu Ongkir</h3>
+                <p style="color:#94A3B8;">Bayar sekali — mulai Rp 5.000 untuk 2 km pertama. Satu driver ambil semua pesanan.</p>
             </div>
-            <div class="step-card fade-in fade-in-delay-2">
-                <div class="step-num">3</div>
-                <h3>Bayar & Konfirmasi</h3>
-                <p>Bayar via COD, QRIS, transfer bank, e-wallet, atau CicalengkaPay. Mudah dan aman.</p>
-            </div>
-            <div class="step-card fade-in fade-in-delay-3">
-                <div class="step-num">4</div>
-                <h3>Lacak & Terima</h3>
-                <p>Pantau driver di peta secara real-time. Pesananmu sampai dalam hitungan menit!</p>
+            <div class="step-card fade-in fade-in-delay-2 rounded-3xl" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);padding:28px;">
+                <div class="step-num" style="background:linear-gradient(135deg,#E8400C,#FFC61A);">3</div>
+                <h3 style="color:#fff;">Lacak & Terima</h3>
+                <p style="color:#94A3B8;">Pantau posisi driver real-time. Pesanan sampai dalam satu antar.</p>
             </div>
         </div>
     </div>
 </section>
 
 
+<!-- ========== JOIN MERCHANT / DRIVER ========== -->
+<section id="merchant-driver" style="padding:90px 5%; background:#fff;">
+    <div class="max-w">
+        <div class="section-header fade-in" style="text-align:center;">
+            <div class="section-label" style="justify-content:center; color:var(--red);">Mitra Kami</div>
+            <h2 class="section-title">Gabung Jadi Merchant & Driver</h2>
+            <p class="section-subtitle" style="margin:0 auto;">Kembangkan usaha dan penghasilan bersama ekosistem CicalengkaGO.</p>
+        </div>
+        <div class="join-grid">
+            <div class="fade-in rounded-3xl" style="background:linear-gradient(135deg,#0F172A 0%,#1E293B 100%);color:#fff;padding:36px;border:1px solid #334155;">
+                <div style="width:56px;height:56px;border-radius:16px;background:#E8400C;display:flex;align-items:center;justify-content:center;">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9Z"/><path d="M3 9V7a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2"/><path d="M9 14h6"/></svg>
+                </div>
+                <h3 style="margin:16px 0 8px;font-size:22px;font-weight:800;">Join Merchant</h3>
+                <p style="color:#94A3B8;font-size:14px;line-height:1.7;">Daftarkan toko, kelola produk, terima pesanan langsung. Jangkau ribuan pelanggan Cicalengka tanpa komisi memberatkan.</p>
+                <a href="https://market.cicago.store" target="_blank" rel="noopener" class="btn-primary" style="margin-top:20px;background:#FFC61A;color:#0F172A;">Daftar Merchant</a>
+            </div>
+            <div class="fade-in fade-in-delay-1 rounded-3xl" style="background:#FFF7ED;border:1px solid #fed7aa;padding:36px;">
+                <div style="width:56px;height:56px;border-radius:16px;background:#0F172A;display:flex;align-items:center;justify-content:center;">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFC61A" stroke-width="2"><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M5 17H3a1 1 0 0 1-1-1V9h14v7h-2"/><path d="M14 9h4l3 4v3h-3"/></svg>
+                </div>
+                <h3 style="margin:16px 0 8px;font-size:22px;font-weight:800;color:#0F172A;">Join Driver</h3>
+                <p style="color:#64748b;font-size:14px;line-height:1.7;">Penghasilan fleksibel, order dekat, satu antar untuk banyak toko. Daftar driver dan mulai antar hari ini.</p>
+                <a href="https://market.cicago.store" target="_blank" rel="noopener" class="btn-primary" style="margin-top:20px;">Daftar Driver</a>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- ========== TESTIMONI CAROUSEL ========== -->
+<section id="testimoni" class="dark-sec" style="padding:90px 5%;">
+    <div class="max-w">
+        <div class="section-header fade-in" style="text-align:center;">
+            <div class="section-label" style="justify-content:center;color:#FFC61A;">Testimoni</div>
+            <h2 class="section-title">Dicintai Warga Cicalengka</h2>
+            <p class="section-subtitle" style="margin:0 auto;">Cerita nyata pelanggan, merchant, dan driver.</p>
+        </div>
+        <div class="t-carousel fade-in" id="tCarousel">
+            <div class="t-track" id="tTrack">
+                <div class="t-card">
+                    <div style="color:#FFC61A;letter-spacing:2px;">★★★★★</div>
+                    <p style="margin:12px 0;font-size:14px;line-height:1.7;">"Pesan dari 3 warung sekaligus cuma satu ongkir. Mulai Rp 5.000 hemat banget!"</p>
+                    <strong style="font-size:13px;">Siti — Pelanggan</strong>
+                </div>
+                <div class="t-card">
+                    <div style="color:#FFC61A;letter-spacing:2px;">★★★★★</div>
+                    <p style="margin:12px 0;font-size:14px;line-height:1.7;">"Orderan naik 40% sejak gabung. Kelola toko jadi praktis."</p>
+                    <strong style="font-size:13px;">Pak Asep — Merchant Sembako</strong>
+                </div>
+                <div class="t-card">
+                    <div style="color:#FFC61A;letter-spacing:2px;">★★★★★</div>
+                    <p style="margin:12px 0;font-size:14px;line-height:1.7;">"Satu trip ambil banyak toko, ongkir jelas Rp 2.500/km setelah 2km."</p>
+                    <strong style="font-size:13px;">Rian — Driver</strong>
+                </div>
+                <div class="t-card">
+                    <div style="color:#FFC61A;letter-spacing:2px;">★★★★★</div>
+                    <p style="margin:12px 0;font-size:14px;line-height:1.7;">"Tanpa install, buka market.cicago.store langsung pesan. Cepat!"</p>
+                    <strong style="font-size:13px;">Dewi — Pelanggan</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 <!-- ========== AREA LAYANAN ========== -->
 <section id="area" style="background:#f8fafc; padding:70px 5%; border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
     <div class="max-w">
@@ -1364,7 +1457,7 @@
                     </div>
                 </div>
                 <div class="browser-body">
-                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/app_logo.png" alt="CicalengkaGO" style="width:64px; height:64px; border-radius:16px; margin:0 auto; box-shadow:0 6px 24px rgba(232,35,42,0.55);">
+                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/app_logo.png" alt="CicalengkaGO" style="width:64px; height:64px; border-radius:16px; margin:0 auto; box-shadow:0 6px 24px rgba(232,64,12,0.55);" onerror="this.style.display='none'">
                     <div>
                         <div style="font-size:18px; font-weight:800; color:#ffffff;">Cicalengka<span style="color:#ff6b6b;">GO</span> Web App</div>
                         <div style="font-size:13px; color:#a1a1aa; margin-top:4px;">Platform Belanja &amp; On-Demand Cicalengka</div>
@@ -1401,8 +1494,8 @@
                         'a' => 'Tidak perlu unduh aplikasi dari Play Store atau App Store! Cukup buka website https://market.cicago.store di browser HP Anda, masukkan nomor WhatsApp aktif, dan verifikasi kode OTP. Anda langsung bisa memilih toko mitra favorit dan melakukan pemesanan.'
                     ],
                     [
-                        'q' => 'Berapa biaya pengiriman?',
-                        'a' => 'Biaya pengiriman mulai dari Rp 5.000 dengan tarif Rp 2.500 per kilometer. Biaya pengiriman akan ditampilkan transparan sebelum kamu konfirmasi pesanan.'
+                        'q' => 'Berapa ongkir di CicalengkaGO?',
+                        'a' => 'Ongkir mulai Rp 5.000 untuk 2 km pertama, selanjutnya Rp 2.500 per km. Pesan banyak toko sekaligus tetap satu ongkir satu antar. Biaya ditampilkan transparan sebelum checkout.'
                     ],
                     [
                         'q' => 'Metode pembayaran apa saja yang tersedia?',
@@ -1457,15 +1550,14 @@
         <div class="footer-top">
             <div class="footer-brand">
                 <a href="#home" class="nav-logo" style="margin-bottom:0;">
-                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/app_logo.png" alt="CicalengkaGO Logo" class="logo-img">
+                    <img src="<?= htmlspecialchars($publicUrl ?? '') ?>/assets/images/app_logo.png" alt="CicalengkaGO Logo" class="logo-img" onerror="this.style.display='none'">
                     Cicalengka<span>GO</span>
                 </a>
                 <p>Platform super app on-demand pertama di Cicalengka. Menghubungkan pelanggan, pedagang lokal, dan driver dalam satu ekosistem digital yang mudah dan terpercaya.</p>
                 <div class="social-links">
-                    <a href="#" class="social-btn" title="Instagram">📸</a>
-                    <a href="#" class="social-btn" title="Facebook">📘</a>
-                    <a href="#" class="social-btn" title="WhatsApp">💬</a>
-                    <a href="#" class="social-btn" title="YouTube">▶️</a>
+                    <a href="https://market.cicago.store" target="_blank" rel="noopener" class="social-btn" title="Website"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20Z"/></svg></a>
+                    <a href="https://market.cicago.store" target="_blank" rel="noopener" class="social-btn" title="Chat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.5L3 21l2-5.4A8.5 8.5 0 1 1 21 11.5Z"/></svg></a>
+                    <a href="#faq" class="social-btn" title="Bantuan"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9 9a3 3 0 0 1 5.8 1c-.6 1.5-2.8 2-2.8 3.5M12 17h.01"/></svg></a>
                 </div>
             </div>
             <div class="footer-col">
@@ -1481,11 +1573,11 @@
             <div class="footer-col">
                 <h4>Bergabung</h4>
                 <ul>
-                    <li><a href="https://market.cicago.store" target="_blank" rel="noopener">🚀 Buka Web App (market.cicago.store)</a></li>
+                    <li><a href="https://market.cicago.store" target="_blank" rel="noopener">Buka Web App (market.cicago.store)</a></li>
                     <li><a href="https://market.cicago.store" target="_blank" rel="noopener">Daftar sebagai Pelanggan</a></li>
-                    <li><a href="#">Daftar Toko Mitra</a></li>
-                    <li><a href="#">Daftar sebagai Driver</a></li>
-                    <li><a href="/vendor">Portal Vendor</a></li>
+                    <li><a href="#merchant-driver">Daftar Toko Mitra</a></li>
+                    <li><a href="#merchant-driver">Daftar sebagai Driver</a></li>
+                    <li><a href="https://market.cicago.store" target="_blank" rel="noopener">Portal Mitra</a></li>
                 </ul>
             </div>
             <div class="footer-col">
@@ -1600,6 +1692,12 @@ document.addEventListener('DOMContentLoaded', () => {
             item.classList.add('open');
         }
     };
+
+    // 3b. Drawer + Testimoni carousel auto
+    window.toggleDrawer = function(){ var d=document.getElementById('navDrawer'); var b=document.getElementById('hamburger'); if(!d) return; d.classList.toggle('open'); if(b){ b.classList.toggle('active'); b.setAttribute('aria-expanded', d.classList.contains('open')?'true':'false'); } };
+    window.closeDrawer = function(){ var d=document.getElementById('navDrawer'); var b=document.getElementById('hamburger'); if(d) d.classList.remove('open'); if(b) {b.classList.remove('active'); b.setAttribute('aria-expanded','false');} };
+    var tTrack=document.getElementById('tTrack');
+    if(tTrack){ var tIdx=0; setInterval(function(){ var cards=tTrack.querySelectorAll('.t-card'); if(!cards.length) return; tIdx=(tIdx+1)%cards.length; var c=cards[0]; var w=c.offsetWidth+20; var max=tTrack.scrollWidth-tTrack.clientWidth; var next=tIdx*w; if(next>max) {tIdx=0; next=0;} tTrack.scrollTo({left:next,behavior:'smooth'}); },3500); }
 
     // 4. Navbar Scroll Effect & Back to Top Button
     const navbar = document.getElementById('navbar');
