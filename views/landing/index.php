@@ -503,32 +503,46 @@
         .track-label strong { color: var(--text); display: block; font-size: 13px; font-weight: 700; }
 
         /* ========== HOW IT WORKS ========== */
-        .how-bg { background: #ffffff; }
+        .how-bg { background: #0F172A; color: #E2E8F0; width: 100%; }
         .steps-grid {
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
-            position: relative;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+            position: relative; max-width: 1100px; margin: 0 auto;
         }
-        .steps-grid::before {
-            content: '';
-            position: absolute; top: 32px; left: calc(12.5% + 16px); right: calc(12.5% + 16px);
-            height: 2px;
-            background: linear-gradient(90deg, var(--red) 0%, var(--orange) 100%);
-            opacity: 0.3;
+        @media (min-width: 901px) {
+            .steps-grid::before {
+                content: '';
+                position: absolute; top: 56px; left: calc(16.666% + 40px); right: calc(16.666% + 40px);
+                height: 2px;
+                background: linear-gradient(90deg, #E8400C 0%, #FFC61A 100%);
+                opacity: 0.45;
+                z-index: 0;
+            }
         }
         .step-card {
-            text-align: center; padding: 0 16px;
+            text-align: center; padding: 32px 28px;
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 24px;
+            position: relative; z-index: 1;
+            transition: transform .3s ease, border-color .3s ease, box-shadow .3s ease;
         }
+        .step-card:hover { transform: translateY(-6px); border-color: rgba(255,198,26,.45); box-shadow: 0 20px 40px rgba(0,0,0,.35); }
         .step-num {
             width: 64px; height: 64px; border-radius: 50%;
-            background: linear-gradient(135deg, var(--red), #ff4d4d);
+            background: linear-gradient(135deg, #E8400C, #FFC61A);
             display: flex; align-items: center; justify-content: center;
             font-size: 24px; font-weight: 900; color: #fff;
             margin: 0 auto 20px;
-            box-shadow: 0 8px 24px var(--red-glow);
+            box-shadow: 0 8px 24px rgba(232,64,12,.45);
             position: relative; z-index: 1;
         }
-        .step-card h3 { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
-        .step-card p  { font-size: 13.5px; color: var(--text-secondary); }
+        .step-card h3 { font-size: 17px; font-weight: 800; letter-spacing: -.3px; color: #fff; margin-bottom: 8px; line-height: 1.4; }
+        .step-card p { font-size: 14px; color: #94A3B8; line-height: 1.6; }
+        .step-card p a { color: #FFC61A; font-weight: 700; }
+        @media (max-width: 900px) {
+            .steps-grid { grid-template-columns: 1fr; max-width: 520px; gap: 16px; }
+            .steps-grid::before { display: none !important; content: none; }
+        }
 
         /* ========== PAYMENT ========== */
         #pembayaran { background: #f8fafc; }
@@ -669,11 +683,11 @@
             grid-template-columns: 1.15fr 0.85fr;
             gap: 50px;
             align-items: center;
-            background: linear-gradient(135deg, #b91c22 0%, #e8232a 60%, #ea580c 100%);
-            border: 1px solid rgba(255,255,255,0.25);
-            border-radius: 32px;
+            background: linear-gradient(135deg, #0F172A 0%, #3A1A0E 42%, #E8400C 100%);
+            border: 1px solid rgba(255,255,255,0.22);
+            border-radius: 28px;
             padding: 56px;
-            box-shadow: 0 20px 50px rgba(232,35,42,0.25);
+            box-shadow: 0 24px 60px rgba(15,23,42,.35), 0 8px 28px rgba(232,64,12,.28);
             position: relative;
             color: #ffffff;
         }
@@ -773,10 +787,12 @@
             box-shadow: var(--shadow-sm);
             transition: border-color 0.3s, box-shadow 0.3s;
         }
-        .faq-item:hover { border-color: #cbd5e1; }
+        .faq-list { max-width: 760px; margin: 0 auto; }
+        .faq-item { border-radius: 20px; transition: border-color .3s ease, box-shadow .3s ease, transform .3s ease; }
+        .faq-item:hover { border-color: rgba(232,64,12,.35); transform: translateY(-2px); box-shadow: 0 12px 28px rgba(15,23,42,.07); }
         .faq-item.open {
-            border-color: rgba(232,35,42,0.4);
-            box-shadow: 0 8px 25px rgba(232,35,42,0.06);
+            border-color: rgba(232,64,12,.45);
+            box-shadow: 0 14px 32px rgba(232,64,12,.10);
         }
         .faq-question {
             display: flex; justify-content: space-between; align-items: center;
@@ -901,8 +917,8 @@
             .nav-mobile { display: flex; align-items: center; flex-shrink: 0; }
             .nav-mobile .nav-cta { padding: 8px 14px; font-size: 13px; font-weight: 700; border-radius: 8px; }
             .stats-inner { grid-template-columns: repeat(2, 1fr); }
-            .steps-grid { grid-template-columns: repeat(2, 1fr); }
-            .steps-grid::before { display: none; }
+            .steps-grid { grid-template-columns: 1fr; max-width: 520px; margin: 0 auto; }
+            .steps-grid::before { display: none !important; content: none; }
             .footer-top { grid-template-columns: 1fr; }
             .footer-bottom { flex-direction: column; text-align: center; }
         }
@@ -927,23 +943,48 @@
             .nav-mobile .nav-cta { padding: 6px 9px; font-size: 11px; }
         }
 
-        .hero{background:linear-gradient(135deg,#0F172A 0%,#3A1A0E 45%,#E8400C 100%);color:#fff;}
-        .hero-bg{background:radial-gradient(600px 300px at 80% 20%,rgba(255,198,26,.25),transparent 60%),radial-gradient(500px 320px at 10% 90%,rgba(232,64,12,.35),transparent 60%);}
+        .hero{background:linear-gradient(135deg,#0F172A 0%,#1A2744 28%,#7A2410 62%,#E8400C 100%);color:#fff;gap:48px;}
+        .hero-bg{background:radial-gradient(720px 360px at 78% 22%,rgba(255,198,26,.28),transparent 62%),radial-gradient(560px 380px at 8% 88%,rgba(232,64,12,.42),transparent 62%),radial-gradient(420px 420px at 50% 50%,rgba(255,255,255,.06),transparent 70%);}
+        .hero-grid{background-image:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);background-size:56px 56px;opacity:.9;mask-image:radial-gradient(ellipse 85% 80% at 50% 50%,black 38%,transparent 82%);}
         .hero h1,.hero p{color:#fff;}
+        .hero h1{font-size:clamp(40px,6vw,72px);letter-spacing:-2.5px;line-height:1.05;margin-bottom:20px;}
         .hero h1 .highlight{background:linear-gradient(90deg,#FFC61A,#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-        .hero-badge{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#FFC61A;}
-        .btn-primary{background:#E8400C;}
-        .btn-secondary{background:#FFC61A;border-color:#FFC61A;color:#0F172A;}
+        .hero p{font-size:17.5px;line-height:1.65;letter-spacing:-.15px;color:rgba(255,255,255,.88);max-width:560px;margin-bottom:28px;}
+        .section-title{letter-spacing:-1.2px;line-height:1.12;}
+        .section-subtitle{line-height:1.65;letter-spacing:-.15px;}
+        .hero-badge{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);color:#FFC61A;backdrop-filter:blur(10px);padding:8px 14px;letter-spacing:.4px;box-shadow:0 4px 18px rgba(0,0,0,.18);}
+        .hero .trust-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;}
+        .trust-pill{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);border-radius:100px;padding:8px 12px;font-size:12.5px;font-weight:700;color:#fff;backdrop-filter:blur(10px);}
+        .trust-pill b{color:#FFC61A;}
+        .btn-primary{background:#E8400C;box-shadow:0 10px 28px rgba(232,64,12,.45);border:1px solid rgba(255,255,255,.12);}
+        .btn-primary:hover{box-shadow:0 14px 36px rgba(232,64,12,.55);}
+        .btn-secondary{background:#FFC61A;border-color:#FFC61A;color:#0F172A;box-shadow:0 8px 22px rgba(255,198,26,.35);}
+        .phone-mockup{border-radius:40px;box-shadow:0 30px 70px rgba(0,0,0,.28),0 10px 25px rgba(232,64,12,.18),inset 0 0 0 2px rgba(226,232,240,.9);}
+        .hero-float-card{border-radius:16px;box-shadow:0 14px 40px rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.75);}
         .dark-sec{background:#0F172A;color:#E2E8F0;}
         .dark-sec .section-title,.dark-sec h2{color:#fff;}
         .dark-sec .section-subtitle{color:#94A3B8;}
         .rounded-3xl{border-radius:1.75rem !important;}
         .t-carousel{overflow:hidden;position:relative;border-radius:1.75rem;}
         .t-track{display:flex;gap:20px;transition:transform .6s cubic-bezier(.16,1,.3,1);overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px;}
-        .t-card{min-width:320px;max-width:360px;scroll-snap-align:start;background:#fff;border:1px solid var(--border);border-radius:1.75rem;padding:28px;box-shadow:var(--shadow-card);flex-shrink:0;}
+        .t-card{min-width:320px;max-width:360px;min-height:214px;scroll-snap-align:start;background:#fff;border:1px solid var(--border);border-radius:1.5rem;padding:24px;box-shadow:0 8px 24px rgba(15,23,42,.06);flex-shrink:0;display:flex;flex-direction:column;gap:12px;transition:transform .25s ease,box-shadow .25s ease;}
+        .t-card:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(15,23,42,.12);}
         .dark-sec .t-card{background:#1E293B;border-color:#334155;color:#E2E8F0;}
+        .t-stars{color:#FFC61A;letter-spacing:2px;font-size:14px;}
+        .t-quote{font-size:14px;line-height:1.7;flex:1;}
+        .t-person{display:flex;align-items:center;gap:10px;margin-top:4px;}
+        .t-ava{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#E8400C,#FFC61A);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;}
+        .dark-sec .t-ava{box-shadow:0 4px 14px rgba(232,64,12,.35);}
+        .t-dots{display:flex;gap:8px;justify-content:center;margin-top:18px;}
+        .t-dot{width:8px;height:8px;border-radius:100px;background:rgba(255,255,255,.35);transition:all .3s ease;}
+        .t-dot.active{width:22px;background:#FFC61A;}
         .join-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
-        @media(max-width:768px){.join-grid{grid-template-columns:1fr;}.hamburger{display:inline-flex !important;}}
+        .join-card{border-radius:1.75rem;padding:40px 36px;transition:transform .3s ease,box-shadow .3s ease;position:relative;overflow:hidden;}
+        .join-card:hover{transform:translateY(-6px);box-shadow:0 24px 48px rgba(15,23,42,.16);}
+        .join-list{list-style:none;margin:18px 0 6px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.6;}
+        .join-list li{display:flex;gap:10px;align-items:flex-start;}
+        .join-check{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;margin-top:1px;}
+        @media(max-width:768px){.join-grid{grid-template-columns:1fr;}.hamburger{display:inline-flex !important;}.join-card{padding:32px 24px;}}
         /* ========== ANIMATIONS ========== */
         .fade-in {
             opacity: 0; transform: translateY(24px);
@@ -1006,25 +1047,29 @@
     <div class="hero-content fade-in visible">
         <div class="hero-badge">
             <span class="dot"></span>
-            Super App Pertama di Cicalengka
+            Super App Pertama di Cicalengka • Live di market.cicago.store
         </div>
         <h1>
-            Pesan Banyak Toko Satu Ongkir Satu Antar mulai Rp 5.000
+            Satu Ongkir<br>Satu Antar<br><span class="highlight">Mulai Rp 5.000</span>
         </h1>
         <p>
-            Pesan dari banyak toko sekaligus, bayar <strong>1x ongkir mulai Rp 5.000</strong>.
-            Satu driver antar semua dalam 1 trip. Tanpa install — buka https://market.cicago.store langsung pesan!
+            Pesan dari banyak toko sekaligus — <strong style="color:#fff;">satu ongkir, satu driver, satu antar</strong>. Rp5.000/2km pertama + Rp2.500/km selanjutnya. Tanpa install — buka <strong style="color:#FFC61A;">market.cicago.store</strong> langsung pesan!
         </p>
         <div class="hero-actions">
             <a href="https://market.cicago.store" target="_blank" rel="noopener" class="btn-primary">
-                Buka Aplikasi Sekarang
+                Buka Aplikasi Sekarang →
             </a>
-            <a href="#layanan" class="btn-secondary">
-                Lihat Layanan
+            <a href="#cara-kerja" class="btn-secondary">
+                Lihat Cara Pesan
             </a>
         </div>
-        <div style="margin-top:16px; font-size:13px; color:var(--muted); display:flex; align-items:center; gap:8px;">
-            <span style="color:#22c55e;">●</span> Langsung dibuka di browser HP & PC — Tanpa perlu download atau instal!
+        <div class="trust-row">
+            <span class="trust-pill">★ 4.8/5 <b>rating warga</b></span>
+            <span class="trust-pill">🏪 <?= (int)($stats['stores'] ?? 0) ?>+ <b>toko mitra</b></span>
+            <span class="trust-pill">🛵 <?= (int)($stats['drivers'] ?? 0) ?>+ <b>driver siap</b></span>
+        </div>
+        <div style="margin-top:12px; font-size:12.5px; color:rgba(255,255,255,.78); display:flex; align-items:center; gap:8px;">
+            <span style="color:#22c55e;">●</span> Buka di browser HP & PC — tanpa download atau instal
         </div>
     </div>
 
@@ -1040,21 +1085,31 @@
             </div>
         </div>
 
-        <!-- Floating stat card top-left -->
-        <div class="hero-float-card float-top-left">
-            <span class="fc-icon">🏪</span>
-            <div>
-                <div class="fc-val"><?= (int)($stats['stores'] ?? 0) ?>+</div>
-                <div class="fc-sub">Toko Mitra</div>
+        <!-- Float card: Order summary -->
+        <div class="hero-float-card float-top-left" style="flex-direction:column;align-items:flex-start;gap:8px;min-width:188px;">
+            <div style="display:flex;align-items:center;gap:8px;width:100%;">
+                <span style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#E8400C,#FFC61A);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;">🧾</span>
+                <div>
+                    <div style="font-size:11px;color:#64748b;font-weight:700;letter-spacing:.3px;">PESANAN #CIG-4821</div>
+                    <div style="font-size:13px;font-weight:800;color:#0F172A;">3 toko • 1 antar</div>
+                </div>
+                <span style="margin-left:auto;background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;padding:4px 8px;border-radius:100px;font-size:10px;font-weight:800;">TERKONFIRMASI</span>
+            </div>
+            <div style="width:100%;height:1px;background:#f1f5f9;"></div>
+            <div style="display:flex;justify-content:space-between;width:100%;font-size:11px;font-weight:700;color:#334155;">
+                <span>Ongkir</span><span style="color:#E8400C;">Rp 5.000</span>
             </div>
         </div>
 
-        <!-- Floating stat card bottom-right -->
-        <div class="hero-float-card float-bottom-right">
-            <span class="fc-icon">🛵</span>
+        <!-- Float card: Tracking -->
+        <div class="hero-float-card float-bottom-right" style="min-width:200px;">
+            <span style="width:42px;height:42px;border-radius:12px;background:#0F172A;display:flex;align-items:center;justify-content:center;color:#FFC61A;flex-shrink:0;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 18H3a1 1 0 0 1-1-1V9h14v7h-2"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/><path d="M14 9h4l3 4v3h-3"/></svg>
+            </span>
             <div>
-                <div class="fc-val"><?= (int)($stats['drivers'] ?? 0) ?>+</div>
-                <div class="fc-sub">Driver Siap</div>
+                <div style="font-size:12px;font-weight:800;color:#0F172A;display:flex;align-items:center;gap:6px;">Driver OTW <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,.6);display:inline-block;"></span></div>
+                <div style="font-size:11px;color:#64748b;font-weight:600;">Rian • 500m dari toko</div>
+                <div style="font-size:11px;color:#E8400C;font-weight:800;">Estimasi 8 menit lagi</div>
             </div>
         </div>
 
@@ -1304,21 +1359,21 @@
             <h2 class="section-title">Pesan dalam 3 Langkah Mudah</h2>
             <p class="section-subtitle" style="margin:0 auto;">Pesan banyak toko sekaligus — satu ongkir, satu antar.</p>
         </div>
-        <div class="steps-grid" style="grid-template-columns:repeat(3,1fr);">
-            <div class="step-card fade-in rounded-3xl" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);padding:28px;">
-                <div class="step-num" style="background:linear-gradient(135deg,#E8400C,#FFC61A);">1</div>
-                <h3 style="color:#fff;">Buka & Pilih Toko</h3>
-                <p style="color:#94A3B8;">Buka <a href="https://market.cicago.store" target="_blank" rel="noopener" style="color:#FFC61A;font-weight:700;text-decoration:underline;text-underline-offset:2px;">https://market.cicago.store</a> di browser, pilih produk dari banyak toko.</p>
+        <div class="steps-grid">
+            <div class="step-card fade-in">
+                <div class="step-num">1</div>
+                <h3>Buka & Pilih Toko</h3>
+                <p>Buka <a href="https://market.cicago.store" target="_blank" rel="noopener" style="color:#FFC61A;font-weight:700;text-decoration:underline;text-underline-offset:2px;">market.cicago.store</a> di browser, pilih produk dari banyak toko.</p>
             </div>
-            <div class="step-card fade-in fade-in-delay-1 rounded-3xl" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);padding:28px;">
-                <div class="step-num" style="background:linear-gradient(135deg,#E8400C,#FFC61A);">2</div>
-                <h3 style="color:#fff;">Checkout Satu Ongkir</h3>
-                <p style="color:#94A3B8;">Bayar sekali — mulai Rp 5.000 untuk 2 km pertama. Satu driver ambil semua pesanan.</p>
+            <div class="step-card fade-in fade-in-delay-1">
+                <div class="step-num">2</div>
+                <h3>Checkout Satu Ongkir</h3>
+                <p>Bayar sekali — Rp5.000/2km pertama + Rp2.500/km selanjutnya. Satu driver ambil semua pesanan.</p>
             </div>
-            <div class="step-card fade-in fade-in-delay-2 rounded-3xl" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);padding:28px;">
-                <div class="step-num" style="background:linear-gradient(135deg,#E8400C,#FFC61A);">3</div>
-                <h3 style="color:#fff;">Lacak & Terima</h3>
-                <p style="color:#94A3B8;">Pantau posisi driver real-time. Pesanan sampai dalam satu antar.</p>
+            <div class="step-card fade-in fade-in-delay-2">
+                <div class="step-num">3</div>
+                <h3>Lacak & Terima</h3>
+                <p>Pantau posisi driver real-time. Pesanan sampai dalam satu antar.</p>
             </div>
         </div>
     </div>
@@ -1334,21 +1389,31 @@
             <p class="section-subtitle" style="margin:0 auto;">Kembangkan usaha dan penghasilan bersama ekosistem CicalengkaGO.</p>
         </div>
         <div class="join-grid">
-            <div class="fade-in rounded-3xl" style="background:linear-gradient(135deg,#0F172A 0%,#1E293B 100%);color:#fff;padding:36px;border:1px solid #334155;">
-                <div style="width:56px;height:56px;border-radius:16px;background:#E8400C;display:flex;align-items:center;justify-content:center;">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9Z"/><path d="M3 9V7a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2"/><path d="M9 14h6"/></svg>
+            <div class="fade-in join-card" style="background:linear-gradient(135deg,#0F172A 0%,#1E293B 100%);color:#fff;border:1px solid #334155;">
+                <div style="width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#E8400C,#FFC61A);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(232,64,12,.4);">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9Z"/><path d="M3 9V7a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2"/><path d="M9 14h6"/></svg>
                 </div>
-                <h3 style="margin:16px 0 8px;font-size:22px;font-weight:800;">Join Merchant</h3>
-                <p style="color:#94A3B8;font-size:14px;line-height:1.7;">Daftarkan toko, kelola produk, terima pesanan langsung. Jangkau ribuan pelanggan Cicalengka tanpa komisi memberatkan.</p>
-                <a href="https://market.cicago.store" target="_blank" rel="noopener" class="btn-primary" style="margin-top:20px;background:#FFC61A;color:#0F172A;">Daftar Merchant</a>
+                <h3 style="margin:18px 0 8px;font-size:22px;font-weight:800;letter-spacing:-.5px;">Jadi Merchant</h3>
+                <p style="color:#94A3B8;font-size:14px;line-height:1.6;">Daftarkan toko, kelola produk, terima pesanan langsung. Jangkau ribuan pelanggan Cicalengka.</p>
+                <ul class="join-list" style="color:#CBD5E1;">
+                    <li><span class="join-check" style="background:#E8400C;color:#fff;">✓</span>Kelola katalog + stok real-time</li>
+                    <li><span class="join-check" style="background:#E8400C;color:#fff;">✓</span>Notifikasi order instan + laporan harian</li>
+                    <li><span class="join-check" style="background:#E8400C;color:#fff;">✓</span>Komisi ringan, pencairan cepat</li>
+                </ul>
+                <a href="https://market.cicago.store" target="_blank" rel="noopener" class="btn-primary" style="margin-top:22px;background:#FFC61A;border-color:#FFC61A;color:#0F172A;">Daftar Merchant →</a>
             </div>
-            <div class="fade-in fade-in-delay-1 rounded-3xl" style="background:#FFF7ED;border:1px solid #fed7aa;padding:36px;">
-                <div style="width:56px;height:56px;border-radius:16px;background:#0F172A;display:flex;align-items:center;justify-content:center;">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFC61A" stroke-width="2"><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M5 17H3a1 1 0 0 1-1-1V9h14v7h-2"/><path d="M14 9h4l3 4v3h-3"/></svg>
+            <div class="fade-in fade-in-delay-1 join-card" style="background:#FFF7ED;border:1px solid #fed7aa;">
+                <div style="width:56px;height:56px;border-radius:16px;background:#0F172A;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(15,23,42,.25);">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFC61A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M5 17H3a1 1 0 0 1-1-1V9h14v7h-2"/><path d="M14 9h4l3 4v3h-3"/></svg>
                 </div>
-                <h3 style="margin:16px 0 8px;font-size:22px;font-weight:800;color:#0F172A;">Join Driver</h3>
-                <p style="color:#64748b;font-size:14px;line-height:1.7;">Penghasilan fleksibel, order dekat, satu antar untuk banyak toko. Daftar driver dan mulai antar hari ini.</p>
-                <a href="https://market.cicago.store" target="_blank" rel="noopener" class="btn-primary" style="margin-top:20px;">Daftar Driver</a>
+                <h3 style="margin:18px 0 8px;font-size:22px;font-weight:800;letter-spacing:-.5px;color:#0F172A;">Jadi Driver</h3>
+                <p style="color:#64748b;font-size:14px;line-height:1.6;">Penghasilan fleksibel, order dekat, satu antar untuk banyak toko.</p>
+                <ul class="join-list" style="color:#334155;">
+                    <li><span class="join-check" style="background:#0F172A;color:#FFC61A;">✓</span>Satu trip ambil banyak toko</li>
+                    <li><span class="join-check" style="background:#0F172A;color:#FFC61A;">✓</span>Ongkir jelas Rp5.000/2km + Rp2.500/km</li>
+                    <li><span class="join-check" style="background:#0F172A;color:#FFC61A;">✓</span>Navigasi + telepon in-app</li>
+                </ul>
+                <a href="https://market.cicago.store" target="_blank" rel="noopener" class="btn-primary" style="margin-top:22px;">Daftar Driver →</a>
             </div>
         </div>
     </div>
@@ -1364,26 +1429,27 @@
         <div class="t-carousel fade-in" id="tCarousel">
             <div class="t-track" id="tTrack">
                 <div class="t-card">
-                    <div style="color:#FFC61A;letter-spacing:2px;">★★★★★</div>
-                    <p style="margin:12px 0;font-size:14px;line-height:1.7;">"Pesan dari 3 warung sekaligus cuma satu ongkir. Mulai Rp 5.000 hemat banget!"</p>
-                    <strong style="font-size:13px;">Siti — Pelanggan</strong>
+                    <div class="t-stars">★★★★★</div>
+                    <p class="t-quote">"Pesan dari 3 warung sekaligus cuma satu ongkir. Mulai Rp 5.000 hemat banget!"</p>
+                    <div class="t-person"><span class="t-ava">ST</span><div><strong style="font-size:13px;display:block;">Siti</strong><span style="font-size:12px;color:#94A3B8;">Pelanggan • Cicalengka Kota</span></div></div>
                 </div>
                 <div class="t-card">
-                    <div style="color:#FFC61A;letter-spacing:2px;">★★★★★</div>
-                    <p style="margin:12px 0;font-size:14px;line-height:1.7;">"Orderan naik 40% sejak gabung. Kelola toko jadi praktis."</p>
-                    <strong style="font-size:13px;">Pak Asep — Merchant Sembako</strong>
+                    <div class="t-stars">★★★★★</div>
+                    <p class="t-quote">"Orderan naik 40% sejak gabung. Kelola toko jadi praktis."</p>
+                    <div class="t-person"><span class="t-ava">AS</span><div><strong style="font-size:13px;display:block;">Pak Asep</strong><span style="font-size:12px;color:#94A3B8;">Merchant Sembako</span></div></div>
                 </div>
                 <div class="t-card">
-                    <div style="color:#FFC61A;letter-spacing:2px;">★★★★★</div>
-                    <p style="margin:12px 0;font-size:14px;line-height:1.7;">"Satu trip ambil banyak toko, ongkir jelas Rp 2.500/km setelah 2km."</p>
-                    <strong style="font-size:13px;">Rian — Driver</strong>
+                    <div class="t-stars">★★★★★</div>
+                    <p class="t-quote">"Satu trip ambil banyak toko, ongkir jelas Rp2.500/km setelah 2km."</p>
+                    <div class="t-person"><span class="t-ava">RN</span><div><strong style="font-size:13px;display:block;">Rian</strong><span style="font-size:12px;color:#94A3B8;">Driver Mitra</span></div></div>
                 </div>
                 <div class="t-card">
-                    <div style="color:#FFC61A;letter-spacing:2px;">★★★★★</div>
-                    <p style="margin:12px 0;font-size:14px;line-height:1.7;">"Tanpa install, buka market.cicago.store langsung pesan. Cepat!"</p>
-                    <strong style="font-size:13px;">Dewi — Pelanggan</strong>
+                    <div class="t-stars">★★★★★</div>
+                    <p class="t-quote">"Tanpa install, buka market.cicago.store langsung pesan. Cepat!"</p>
+                    <div class="t-person"><span class="t-ava">DW</span><div><strong style="font-size:13px;display:block;">Dewi</strong><span style="font-size:12px;color:#94A3B8;">Pelanggan • Nagreg</span></div></div>
                 </div>
             </div>
+            <div class="t-dots" id="tDots"><span class="t-dot active"></span><span class="t-dot"></span><span class="t-dot"></span><span class="t-dot"></span></div>
         </div>
     </div>
 </section>
@@ -1697,7 +1763,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.toggleDrawer = function(){ var d=document.getElementById('navDrawer'); var b=document.getElementById('hamburger'); if(!d) return; d.classList.toggle('open'); if(b){ b.classList.toggle('active'); b.setAttribute('aria-expanded', d.classList.contains('open')?'true':'false'); } };
     window.closeDrawer = function(){ var d=document.getElementById('navDrawer'); var b=document.getElementById('hamburger'); if(d) d.classList.remove('open'); if(b) {b.classList.remove('active'); b.setAttribute('aria-expanded','false');} };
     var tTrack=document.getElementById('tTrack');
-    if(tTrack){ var tIdx=0; setInterval(function(){ var cards=tTrack.querySelectorAll('.t-card'); if(!cards.length) return; tIdx=(tIdx+1)%cards.length; var c=cards[0]; var w=c.offsetWidth+20; var max=tTrack.scrollWidth-tTrack.clientWidth; var next=tIdx*w; if(next>max) {tIdx=0; next=0;} tTrack.scrollTo({left:next,behavior:'smooth'}); },3500); }
+    var tDots=document.getElementById('tDots');
+    function tSetDot(i){ if(!tDots) return; var ds=tDots.querySelectorAll('.t-dot'); ds.forEach(function(d,j){ d.classList.toggle('active', i===j); }); }
+    if(tDots){ tDots.addEventListener('click', function(e){ var ds=Array.prototype.slice.call(tDots.querySelectorAll('.t-dot')); var i=ds.indexOf(e.target); if(i<0) return; var cards=tTrack.querySelectorAll('.t-card'); if(!cards.length) return; var w=cards[0].offsetWidth+20; tTrack.scrollTo({left:i*w,behavior:'smooth'}); tIdx=i; tSetDot(i); }); }
+    if(tTrack){ var tIdx=0; setInterval(function(){ var cards=tTrack.querySelectorAll('.t-card'); if(!cards.length) return; tIdx=(tIdx+1)%cards.length; var c=cards[0]; var w=c.offsetWidth+20; var max=tTrack.scrollWidth-tTrack.clientWidth; var next=tIdx*w; if(next>max) {tIdx=0; next=0;} tTrack.scrollTo({left:next,behavior:'smooth'}); tSetDot(tIdx); },3500); }
 
     // 4. Navbar Scroll Effect & Back to Top Button
     const navbar = document.getElementById('navbar');
