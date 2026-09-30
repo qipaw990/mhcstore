@@ -568,8 +568,9 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                   children: [
                     Container(
                       width: 42, height: 42,
-                      decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFF1F5F9), border: Border.all(color: const Color(0xFFE2E8F0), width: 1)),
-                      child: const Icon(Icons.notifications_outlined, color: Color(0xFF334155), size: 21),
+                      decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFF1F5F9), border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2)),
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.notifications, color: Color(0xFF0F172A), size: 24),
                     ),
                     if (unread > 0)
                       Positioned(
