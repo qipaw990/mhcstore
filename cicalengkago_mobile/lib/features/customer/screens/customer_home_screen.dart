@@ -499,19 +499,19 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                       color: const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(25),
                     ),
-                    child: Row(
+                    child: const Row(
                       children: [
-                        const Icon(Icons.search_rounded, size: 19, color: Color(0xFF334155)),
-                        const SizedBox(width: 8),
+                        Icon(Icons.search_rounded, size: 19, color: Color(0xFF334155)),
+                        SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            _currentAddress.isNotEmpty && !_isLocating ? _currentAddress : 'Cari makanan, toko...',
-                            style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                            'Cari makanan, toko...',
+                            style: TextStyle(fontSize: 12.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                             overflow: TextOverflow.ellipsis,
                             maxLines: 1,
                           ),
                         ),
-                        const Icon(Icons.mic_none_rounded, size: 18, color: Color(0xFF64748B)),
+                        Icon(Icons.mic_none_rounded, size: 18, color: Color(0xFF64748B)),
                       ],
                     ),
                   ),
@@ -595,20 +595,31 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: const Color(0xFFE2E8F0),
-                        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
-                      ),
-                      child: Icon(
-                        authCtrl.isLoggedIn ? Icons.person_rounded : Icons.person_outline_rounded,
-                        color: const Color(0xFF64748B),
-                        size: 22,
-                      ),
-                    ),
+                    Builder(builder: (_) {
+                      final rawAvatar = user?['avatar'] ?? user?['profile_photo_url'] ?? user?['photo'] ?? '';
+                      final avatarUrl = rawAvatar.toString().trim().isNotEmpty
+                          ? ApiConstants.formatImageUrl(rawAvatar.toString().trim())
+                          : '';
+                      final uname = (user?['name'] ?? '').toString().trim();
+                      final initial = uname.isNotEmpty ? uname[0].toUpperCase() : 'P';
+                      return Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFFFFE5D4),
+                          border: Border.all(color: AppTheme.primaryRed.withValues(alpha: 0.35), width: 1.5),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: avatarUrl.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: avatarUrl,
+                                fit: BoxFit.cover,
+                                errorWidget: (_, __, ___) => Center(child: Text(initial, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppTheme.primaryRed))),
+                              )
+                            : Center(child: Text(initial, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppTheme.primaryRed))),
+                      );
+                    }),
                     if (cartItemsCount > 0)
                       Positioned(
                         right: -2,
@@ -633,7 +644,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          // Row 2: sapaan + lokasi (kecil, gelap di putih)
+          // Row 2: sapaan + lokasi (tidak kepotong)
           Row(
             children: [
               Expanded(
@@ -643,31 +654,29 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     children: [
                       const Icon(Icons.location_on_rounded, size: 13, color: AppTheme.primaryRed),
                       const SizedBox(width: 4),
-                      Flexible(
+                      Expanded(
                         child: Text(
                           _isLocating ? 'Mendeteksi GPS...' : '$_currentAddress ▾',
                           style: const TextStyle(color: Color(0xFF475569), fontSize: 11, fontWeight: FontWeight.w600),
                           overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
+                          maxLines: 2,
+                          softWrap: true,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              if (authCtrl.isLoggedIn)
-                GestureDetector(
-                  onTap: () {
-                    authCtrl.logout();
-                    context.read<CustomerController>().clearUserData();
-                  },
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('Halo, ', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                    ],
-                  ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  authCtrl.isLoggedIn ? 'Halo, ${(user?['name'] ?? 'Pelanggan').toString()}' : 'Halo, Pelanggan',
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF334155), fontWeight: FontWeight.w700),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  textAlign: TextAlign.right,
                 ),
+              ),
             ],
           ),
         ],
@@ -1021,15 +1030,11 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     );
   }
 
-  // --- Gojek-Exact Service Grid 8 + badge (palet brand) ---
+  // --- Gojek-Exact Service Grid 4 (Antar/Mobil/Kirim/Pulsa dibuang) ---
   Widget _buildServiceCategoriesGrid(BuildContext context) {
     final items = [
-      {'name': 'Antar', 'icon': Icons.two_wheeler_rounded, 'badge': '~5RB', 'go': 'search:Antar'},
-      {'name': 'Mobil', 'icon': Icons.directions_car_rounded, 'badge': '', 'go': 'search:Mobil'},
       {'name': 'Makanan', 'icon': Icons.restaurant_rounded, 'badge': '-50%', 'go': 'search:Makanan'},
-      {'name': 'Kirim', 'icon': Icons.inventory_2_rounded, 'badge': '10rb', 'go': 'search:Kirim'},
       {'name': 'Belanja', 'icon': Icons.shopping_cart_rounded, 'badge': '30MNT', 'go': 'search:Belanja'},
-      {'name': 'Pulsa', 'icon': Icons.phone_android_rounded, 'badge': '', 'go': 'ppob'},
       {'name': 'Hemat', 'icon': Icons.bolt_rounded, 'badge': 'Rp7', 'go': 'search:Hemat'},
       {'name': 'Lainnya', 'icon': Icons.grid_view_rounded, 'badge': '', 'go': 'more'},
     ];
