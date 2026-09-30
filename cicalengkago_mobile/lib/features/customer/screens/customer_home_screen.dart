@@ -1143,7 +1143,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               final img = p['image']?.toString() ?? p['image_url']?.toString() ?? '';
               return GestureDetector(
                 onTap: () {
-                  final storeId = p['store_id']?.toString();
+                  final storeId = int.tryParse(p['store_id']?.toString() ?? '');
                   if (storeId != null) {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => StoreDetailScreen(storeId: storeId)));
                   }
