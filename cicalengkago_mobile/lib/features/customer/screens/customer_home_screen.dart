@@ -24,6 +24,7 @@ import 'order_tracking_screen.dart';
 import 'customer_orders_screen.dart';
 import 'customer_profile_screen.dart';
 import 'customer_notifications_screen.dart';
+import 'customer_chat_list_screen.dart';
 import 'explore_stores_screen.dart';
 import 'vouchers_screen.dart';
 import 'ppob_screen.dart';
@@ -465,7 +466,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
       case 2:
         return const CustomerOrdersScreen();
       case 3:
-        return const CustomerNotificationsScreen();
+        return const CustomerChatListScreen();
       default:
         return const SizedBox();
     }
@@ -473,6 +474,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
 
   // --- Gojek-Exact Header (white search row + palette) ---
   Widget _buildGojekHeader(Map<String, dynamic>? user, AuthController authCtrl, int cartItemsCount, BuildContext context) {
+    final unread = context.watch<CustomerController>().unreadNotifCount;
     return Container(
       width: double.infinity,
       color: Colors.white,
@@ -555,7 +557,33 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                   ),
                 ),
               const SizedBox(width: 10),
-              // Avatar / cart
+              // Bell notif + Avatar / cart
+              GestureDetector(
+                onTap: () {
+                  if (!RequireAuthWidget.check(context)) return;
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerNotificationsScreen()));
+                },
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 42, height: 42,
+                      decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFF1F5F9), border: Border.all(color: const Color(0xFFE2E8F0), width: 1)),
+                      child: const Icon(Icons.notifications_outlined, color: Color(0xFF334155), size: 21),
+                    ),
+                    if (unread > 0)
+                      Positioned(
+                        right: -1, top: -1,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(color: AppTheme.primaryRed, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white, width: 1.5)),
+                          child: Text(unread > 9 ? '9+' : '$unread', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800)),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
               GestureDetector(
                 onTap: () {
                   if (authCtrl.isLoggedIn) {
@@ -1085,36 +1113,40 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   Widget _buildPlusBanner(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFDEF7A5), Color(0xFFB9ED6B)],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
+      child: InkWell(
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VouchersScreen())),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFDEF7A5), Color(0xFFB9ED6B)],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFA3D94A), width: 1),
           ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFA3D94A), width: 1),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(9)),
-              child: const Icon(Icons.confirmation_number_rounded, size: 16, color: Color(0xFF166534)),
-            ),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Makin untung pakai PLUS', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: Color(0xFF14532D))),
-                  Text('Diskon & cashback terus-terusan.', style: TextStyle(fontSize: 11, color: Color(0xFF166534))),
-                ],
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(9)),
+                child: const Icon(Icons.confirmation_number_rounded, size: 16, color: Color(0xFF166534)),
               ),
-            ),
-            const Icon(Icons.chevron_right_rounded, size: 20, color: Color(0xFF14532D)),
-          ],
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Makin untung pakai PLUS', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: Color(0xFF14532D))),
+                    Text('Diskon & cashback terus-terusan.', style: TextStyle(fontSize: 11, color: Color(0xFF166534))),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, size: 20, color: Color(0xFF14532D)),
+            ],
+          ),
         ),
       ),
     );
